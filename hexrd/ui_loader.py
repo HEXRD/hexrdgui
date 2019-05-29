@@ -1,3 +1,4 @@
+from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
 
 from .image_viewer import ImageViewer
@@ -13,3 +14,11 @@ class UiLoader(QUiLoader):
         self.registerCustomWidget(MainWindow)
         self.registerCustomWidget(MenuBar)
         self.registerCustomWidget(StatusBar)
+
+    def load_file(self, file_path):
+        """Load a UI file and return the widget"""
+        f = QFile(file_path)
+        f.open(QFile.ReadOnly)
+        widget = self.load(f)
+        f.close()
+        return widget
