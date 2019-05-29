@@ -17,8 +17,9 @@ class UiLoader(QUiLoader):
 
     def load_file(self, file_path):
         """Load a UI file and return the widget"""
-        f = QFile(file_path)
-        f.open(QFile.ReadOnly)
-        widget = self.load(f)
-        f.close()
-        return widget
+        try:
+            f = QFile(file_path)
+            f.open(QFile.ReadOnly)
+            return self.load(f)
+        finally:
+            f.close()
