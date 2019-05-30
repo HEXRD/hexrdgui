@@ -5,7 +5,8 @@ install_reqs = [
     'pyside2',
     'Pillow',
     'matplotlib',
-    'importlib-resources'
+    'importlib-resources',
+    'fabio'
 ]
 
 setup(
