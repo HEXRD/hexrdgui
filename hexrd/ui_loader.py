@@ -4,7 +4,6 @@ from PySide2.QtUiTools import QUiLoader
 from .image_canvas import ImageCanvas
 from .image_tab_widget import ImageTabWidget
 from .menu_bar import MenuBar
-from .main_window import MainWindow
 from .status_bar import StatusBar
 
 import hexrd.resources.ui
@@ -21,11 +20,10 @@ class UiLoader(QUiLoader):
 
         self.registerCustomWidget(ImageCanvas)
         self.registerCustomWidget(ImageTabWidget)
-        self.registerCustomWidget(MainWindow)
         self.registerCustomWidget(MenuBar)
         self.registerCustomWidget(StatusBar)
 
-    def load_file(self, file_name):
+    def load_file(self, file_name, parent=None):
         """Load a UI file and return the widget
 
         Returns a widget created from the UI file.
@@ -34,10 +32,10 @@ class UiLoader(QUiLoader):
                           in hexrd.resources.ui).
         """
         text = importlib_resources.read_text(hexrd.resources.ui, file_name)
-        return self.load_string(text)
+        return self.load_string(text, parent)
 
-    def load_string(self, string):
+    def load_string(self, string, parent=None):
         """Load a UI file from a string and return the widget"""
         data = QByteArray(string.encode('utf-8'))
         buf = QBuffer(data)
-        return self.load(buf)
+        return self.load(buf, parent)
