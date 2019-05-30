@@ -2,6 +2,7 @@ from PySide2.QtCore import QBuffer, QByteArray, QFile
 from PySide2.QtUiTools import QUiLoader
 
 from .image_canvas import ImageCanvas
+from .image_tab_widget import ImageTabWidget
 from .menu_bar import MenuBar
 from .main_window import MainWindow
 from .status_bar import StatusBar
@@ -19,6 +20,7 @@ class UiLoader(QUiLoader):
         super(UiLoader, self).__init__(parent)
 
         self.registerCustomWidget(ImageCanvas)
+        self.registerCustomWidget(ImageTabWidget)
         self.registerCustomWidget(MainWindow)
         self.registerCustomWidget(MenuBar)
         self.registerCustomWidget(StatusBar)
