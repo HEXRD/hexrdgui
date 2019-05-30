@@ -4,7 +4,8 @@ from setuptools import setup, find_packages
 install_reqs = [
     'pyside2',
     'Pillow',
-    'matplotlib'
+    'matplotlib',
+    'importlib-resources'
 ]
 
 setup(
