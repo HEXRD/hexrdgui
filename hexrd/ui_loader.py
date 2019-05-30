@@ -1,4 +1,4 @@
-from PySide2.QtCore import QFile
+from PySide2.QtCore import QBuffer, QByteArray, QFile
 from PySide2.QtUiTools import QUiLoader
 
 from .image_viewer import ImageViewer
@@ -23,3 +23,9 @@ class UiLoader(QUiLoader):
             return self.load(f)
         finally:
             f.close()
+
+    def load_string(self, string):
+        """Load a UI file from a string and return the widget"""
+        data = QByteArray(string.encode('utf-8'))
+        buf = QBuffer(data)
+        return self.load(buf)
