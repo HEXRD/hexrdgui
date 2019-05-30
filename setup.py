@@ -6,7 +6,8 @@ install_reqs = [
     'Pillow',
     'matplotlib',
     'importlib-resources',
-    'fabio'
+    'fabio',
+    'pyyaml'
 ]
 
 setup(
