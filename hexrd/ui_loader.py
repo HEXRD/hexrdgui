@@ -1,7 +1,7 @@
 from PySide2.QtCore import QBuffer, QByteArray, QFile
 from PySide2.QtUiTools import QUiLoader
 
-from hexrd import importlib_resources
+from hexrd import resource_loader
 
 from .image_canvas import ImageCanvas
 from .image_tab_widget import ImageTabWidget
@@ -27,7 +27,7 @@ class UiLoader(QUiLoader):
         :param file_name: The name of the ui file to load (must be located
                           in hexrd.resources.ui).
         """
-        text = importlib_resources.read_text(hexrd.resources.ui, file_name)
+        text = resource_loader.load_resource(hexrd.resources.ui, file_name)
         return self.load_string(text, parent)
 
     def load_string(self, string, parent=None):
