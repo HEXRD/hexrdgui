@@ -1,18 +1,14 @@
 from PySide2.QtCore import QBuffer, QByteArray, QFile
 from PySide2.QtUiTools import QUiLoader
 
+from hexrd import importlib_resources
+
 from .image_canvas import ImageCanvas
 from .image_tab_widget import ImageTabWidget
 from .menu_bar import MenuBar
 from .status_bar import StatusBar
 
 import hexrd.resources.ui
-
-try:
-    import importlib.resources as importlib_resources
-except ImportError:
-    # Try backported to PY<37 `importlib_resources`.
-    import importlib_resources
 
 class UiLoader(QUiLoader):
     def __init__(self, parent=None):
