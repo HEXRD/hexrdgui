@@ -5,8 +5,6 @@ from hexrd import resource_loader
 
 from .image_canvas import ImageCanvas
 from .image_tab_widget import ImageTabWidget
-from .menu_bar import MenuBar
-from .status_bar import StatusBar
 
 import hexrd.resources.ui
 
@@ -16,8 +14,6 @@ class UiLoader(QUiLoader):
 
         self.registerCustomWidget(ImageCanvas)
         self.registerCustomWidget(ImageTabWidget)
-        self.registerCustomWidget(MenuBar)
-        self.registerCustomWidget(StatusBar)
 
     def load_file(self, file_name, parent=None):
         """Load a UI file and return the widget
