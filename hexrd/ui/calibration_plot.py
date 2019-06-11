@@ -14,6 +14,29 @@ from skimage.exposure import equalize_adapthist
 tvec_DFLT = np.r_[0., 0., -1000.]
 tilt_DFTL = np.zeros(3)
 
+def create_calibration_image(config, images):
+    instr = instrument.HEDMInstrument(instrument_config=config)
+    panel_ids = list(instr._detectors.keys())
+
+    dplane = DisplayPlane(tvec=tvec_DFLT)
+    dpanel = make_dpanel(dplane, instr)
+
+    plane_data = load_ceo2()
+
+    ring_data = add_rings(dpanel, plane_data)
+
+    img = plot_dplane(dpanel, images, panel_ids, instr, dplane)
+
+    # Rescale the data to match the scale of the original dataset
+    # TODO: try to get create_calibration_image to not rescale the
+    # result to be between 0 and 1 in the first place so this will
+    # not be necessary.
+    minimum = min([x.min() for x in images])
+    maximum = max([x.max() for x in images])
+    img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
+
+    return img, ring_data
+
 def load_pdata(data, key, tth_max=None):
     """
     tth_max is in DEGREES
@@ -93,29 +116,6 @@ def plot_dplane(dpanel, images, panel_ids, instr, dplane):
     """
     img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
     return img
-
-def create_calibration_image(config, images):
-    instr = instrument.HEDMInstrument(instrument_config=config)
-    panel_ids = list(instr._detectors.keys())
-
-    dplane = DisplayPlane(tvec=tvec_DFLT)
-    dpanel = make_dpanel(dplane, instr)
-
-    plane_data = load_ceo2()
-
-    ring_data = add_rings(dpanel, plane_data)
-
-    img = plot_dplane(dpanel, images, panel_ids, instr, dplane)
-
-    # Rescale the data to match the scale of the original dataset
-    # TODO: try to get create_calibration_image to not rescale the
-    # result to be between 0 and 1 in the first place so this will
-    # not be necessary.
-    minimum = min([x.min() for x in images])
-    maximum = max([x.max() for x in images])
-    img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
-
-    return img, ring_data
 
 class DisplayPlane(object):
 
