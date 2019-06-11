@@ -89,11 +89,8 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def get_min_max(self):
-        minimum = 1e10
-        maximum = 0
-        for axes_image in self.axes_images:
-            minimum = min(minimum, axes_image.get_array().min())
-            maximum = max(maximum, axes_image.get_array().max())
+        minimum = min([x.get_array().min() for x in self.axes_images])
+        maximum = max([x.get_array().max() for x in self.axes_images])
 
         return minimum, maximum
 

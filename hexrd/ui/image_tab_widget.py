@@ -82,14 +82,9 @@ class ImageTabWidget(QTabWidget):
 
     def value_range(self):
         """Get the range of values in the images"""
-
-        # The number of active canvases is the length of self.image_files
-        minimum = 1e10
-        maximum = 0
-        for canvas in self.active_canvases():
-            cur_range = canvas.get_min_max()
-            minimum = min(minimum, cur_range[0])
-            maximum = max(maximum, cur_range[1])
+        mins_maxes = [x.get_min_max() for x in self.active_canvases()]
+        minimum = min([x[0] for x in mins_maxes])
+        maximum = max([x[1] for x in mins_maxes])
 
         return minimum, maximum
 
