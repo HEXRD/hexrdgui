@@ -67,7 +67,10 @@ class ImageCanvas(FigureCanvas):
         for file in image_files:
             images.append(fabio.open(file).data)
 
-        img, ring_data = create_calibration_image(config, images)
+        material = config.get_active_material()
+
+        img, ring_data = create_calibration_image(config.config, images,
+                                                  material.planeData)
 
         axis = self.figure.add_subplot(111)
         for pr in ring_data:

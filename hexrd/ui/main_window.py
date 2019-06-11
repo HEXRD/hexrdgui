@@ -6,6 +6,7 @@ from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_tree_widget import CalTreeWidget
 from hexrd.ui.configuration import Configuration
+from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.ui_loader import UiLoader
 
 class MainWindow(QObject):
@@ -22,6 +23,8 @@ class MainWindow(QObject):
         self.ui.central_widget_layout.insertWidget(0, self.color_map_editor.ui)
 
         self.cfg = Configuration(self.initial_config)
+
+        self.add_materials_panel()
 
         self.calibration_config_widget = CalibrationConfigWidget(self.cfg,
                                                                  self.ui)
@@ -48,6 +51,23 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.ui.run_calibration.pressed.connect(self.run_calibration)
+
+    def add_materials_panel(self):
+        # Remove the placeholder materials panel from the UI, and
+        # add the real one.
+        materials_panel_index = -1
+        for i in range(self.ui.config_tool_box.count()):
+            if self.ui.config_tool_box.itemText(i) == 'Materials':
+                materials_panel_index = i
+
+        if materials_panel_index < 0:
+            raise Exception('"Materials" panel not found!')
+
+        self.ui.config_tool_box.removeItem(materials_panel_index)
+        self.materials_panel = MaterialsPanel(self.cfg, self.ui)
+        self.ui.config_tool_box.insertItem(materials_panel_index,
+                                           self.materials_panel.ui,
+                                           'Materials')
 
     def save_settings(self):
         settings = QSettings()
@@ -76,7 +96,7 @@ class MainWindow(QObject):
             return self.cfg.save_config(selected_file)
 
     def run_calibration(self):
-        self.ui.image_tab_widget.show_calibration(self.cfg.config)
+        self.ui.image_tab_widget.show_calibration(self.cfg)
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
