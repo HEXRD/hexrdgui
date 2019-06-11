@@ -26,6 +26,7 @@ class ImageCanvas(FigureCanvas):
 
         self.axes_images = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.norm = None
 
         self.press_conn_id = self.mpl_connect('button_press_event',
                                               self.on_button_pressed)
@@ -52,7 +53,8 @@ class ImageCanvas(FigureCanvas):
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
             axis.set_title(os.path.basename(file))
-            self.axes_images.append(axis.imshow(img, cmap=self.cmap))
+            self.axes_images.append(axis.imshow(img, cmap=self.cmap,
+                                                norm=self.norm))
 
         self.figure.tight_layout()
         self.draw()
@@ -71,7 +73,8 @@ class ImageCanvas(FigureCanvas):
         for pr in ring_data:
             axis.plot(pr[:, 1], pr[:, 0], 'c.', ms=2)
 
-        self.axes_images.append(axis.imshow(img, cmap=self.cmap))
+        self.axes_images.append(axis.imshow(img, cmap=self.cmap,
+                                            norm=self.norm))
 
         self.figure.tight_layout()
         self.draw()
