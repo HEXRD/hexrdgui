@@ -107,6 +107,14 @@ def create_calibration_image(config, images):
 
     img = plot_dplane(dpanel, images, panel_ids, instr, dplane)
 
+    # Rescale the data to match the scale of the original dataset
+    # TODO: try to get create_calibration_image to not rescale the
+    # result to be between 0 and 1 in the first place so this will
+    # not be necessary.
+    minimum = min([x.min() for x in images])
+    maximum = max([x.max() for x in images])
+    img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
+
     return img, ring_data
 
 class DisplayPlane(object):
