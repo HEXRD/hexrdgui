@@ -1,7 +1,10 @@
 import math
 import os
 
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qt5agg import (
+    FigureCanvas, NavigationToolbar2QT
+)
+from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
@@ -16,8 +19,16 @@ class ImageCanvas(FigureCanvas):
         self.figure = Figure()
         super(ImageCanvas, self).__init__(self.figure)
 
+        self.navigation_toolbar = NavigationToolbar2QT(self, None)
+
+        # We will be in zoom mode by default
+        self.navigation_toolbar.zoom()
+
         self.axes_images = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+
+        self.press_conn_id = self.mpl_connect('button_press_event',
+                                              self.on_button_pressed)
 
         if image_files is not None:
             self.load_images(image_files)
@@ -85,6 +96,10 @@ class ImageCanvas(FigureCanvas):
             maximum = max(maximum, axes_image.get_array().max())
 
         return minimum, maximum
+
+    def on_button_pressed(self, event):
+        if event.button == MouseButton.RIGHT:
+            self.navigation_toolbar.back()
 
 def main():
     import sys
