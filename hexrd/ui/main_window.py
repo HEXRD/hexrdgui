@@ -47,7 +47,7 @@ class MainWindow(QObject):
             self.on_action_save_config_triggered)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
-        self.ui.start_calibration.pressed.connect(self.begin_calibration)
+        self.ui.run_calibration.pressed.connect(self.run_calibration)
 
     def save_settings(self):
         settings = QSettings()
@@ -75,7 +75,7 @@ class MainWindow(QObject):
         if selected_file:
             return self.cfg.save_config(selected_file)
 
-    def begin_calibration(self):
+    def run_calibration(self):
         self.ui.image_tab_widget.show_calibration(self.cfg.config)
 
     def update_config_gui(self):
