@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import fabio
 
+from hexrd.ui.calibration_plot import create_calibration_image
 import hexrd.ui.constants
 
 class ImageCanvas(FigureCanvas):
@@ -41,6 +42,25 @@ class ImageCanvas(FigureCanvas):
             axis = self.figure.add_subplot(rows, cols, i + 1)
             axis.set_title(os.path.basename(file))
             self.axes_images.append(axis.imshow(img, cmap=self.cmap))
+
+        self.figure.tight_layout()
+        self.draw()
+
+    def show_calibration(self, config, image_files):
+        self.figure.clear()
+        self.axes_images.clear()
+
+        images = []
+        for file in image_files:
+            images.append(fabio.open(file).data)
+
+        img, ring_data = create_calibration_image(config, images)
+
+        axis = self.figure.add_subplot(111)
+        for pr in ring_data:
+            axis.plot(pr[:, 1], pr[:, 0], 'c.', ms=2)
+
+        self.axes_images.append(axis.imshow(img, cmap=self.cmap))
 
         self.figure.tight_layout()
         self.draw()
