@@ -11,7 +11,10 @@ install_reqs = [
     'matplotlib',
     'importlib-resources',
     'fabio',
-    'pyyaml'
+    'pyyaml',
+    'h5py',
+    'scipy',
+    'scikit-image'
 ]
 
 def get_extension_modules():
