@@ -108,7 +108,7 @@ class ImageCanvas(FigureCanvas):
         self.axes_images[0].set_extent(extent)
         axis.relim()
         axis.autoscale_view()
-        axis.axis('normal')
+        axis.axis('auto')
 
         colorspec = 'c-.'
         for pr in ring_data:
