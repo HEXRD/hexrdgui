@@ -1,6 +1,6 @@
 import os
 
-from PySide2.QtCore import Signal, Slot
+from PySide2.QtCore import Signal, Slot, QSettings
 from PySide2.QtWidgets import QFileDialog, QTabWidget
 
 from hexrd.ui.image_canvas import ImageCanvas
@@ -55,8 +55,17 @@ class ImageTabWidget(QTabWidget):
 
     @Slot()
     def open_files(self):
-        selected_files, selected_filter = QFileDialog.getOpenFileNames(self)
-        return self.load_images(selected_files)
+        # Get the most recent images dir
+        settings = QSettings()
+        images_dir = settings.value('images_dir')
+
+        selected_files, selected_filter = QFileDialog.getOpenFileNames(
+            self, dir=images_dir)
+
+        if selected_files:
+            # Save the chosen dir
+            settings.setValue('images_dir', selected_files[0])
+            return self.load_images(selected_files)
 
     @Slot(bool)
     def set_tabbed_view(self, tabbed_view=False):
