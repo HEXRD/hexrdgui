@@ -100,13 +100,11 @@ class ImageCanvas(FigureCanvas):
 
         axis = self.figure.add_subplot(111)
 
-        vmin = np.percentile(img, 50)
-        vmax = np.percentile(img, 99)
         self.axes_images.append(axis.imshow(img, cmap=self.cmap,
-                                            vmin=vmin, vmax=vmax,
-                                            interpolation="none",
-                                            picker=True))
+                                            norm=self.norm, picker=True,
+                                            interpolation='none'))
 
+        # We must adjust the extent of the image
         self.axes_images[0].set_extent(extent)
         axis.relim()
         axis.autoscale_view()

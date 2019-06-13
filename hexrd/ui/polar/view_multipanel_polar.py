@@ -28,7 +28,17 @@ default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
 
 def create_polar_calibration_image(config, images, plane_data):
     iviewer = InstrumentViewer(config, images, plane_data)
-    return iviewer.image, iviewer._extent, iviewer.ring_data, iviewer.rbnd_data
+
+    # Rescale the data to match the scale of the original dataset
+    # TODO: try to get create_calibration_image to not rescale the
+    # result to be between 0 and 1 in the first place so this will
+    # not be necessary.
+    minimum = min([x.min() for x in images])
+    maximum = max([x.max() for x in images])
+    img = iviewer.image
+    img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
+
+    return img, iviewer._extent, iviewer.ring_data, iviewer.rbnd_data
 
 
 def log_scale_img(img):
