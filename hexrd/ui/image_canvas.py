@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 
 import fabio
 
-from hexrd.ui.calibration_plot import create_calibration_image
-from hexrd.ui.polar.view_multipanel_polar import create_polar_calibration_image
+from hexrd.ui.calibration.cartesian_plot import cartesian_image
+from hexrd.ui.calibration.polar_plot import polar_image
 import hexrd.ui.constants
 
 class ImageCanvas(FigureCanvas):
@@ -72,8 +72,8 @@ class ImageCanvas(FigureCanvas):
 
         material = config.get_active_material()
 
-        img, ring_data = create_calibration_image(config.config, images,
-                                                  material.planeData)
+        img, ring_data = cartesian_image(config.config, images,
+                                         material.planeData)
 
         axis = self.figure.add_subplot(111)
         for pr in ring_data:
@@ -95,8 +95,8 @@ class ImageCanvas(FigureCanvas):
 
         material = config.get_active_material()
 
-        img, extent, ring_data, rbnd_data = create_polar_calibration_image(
-            config.config, images, material.planeData)
+        img, extent, ring_data, rbnd_data = polar_image(config.config, images,
+                                                        material.planeData)
 
         axis = self.figure.add_subplot(111)
 

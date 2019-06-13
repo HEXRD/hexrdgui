@@ -14,7 +14,7 @@ from skimage.exposure import equalize_adapthist
 tvec_DFLT = np.r_[0., 0., -1000.]
 tilt_DFTL = np.zeros(3)
 
-def create_calibration_image(config, images, plane_data):
+def cartesian_image(config, images, plane_data):
     instr = instrument.HEDMInstrument(instrument_config=config)
     panel_ids = list(instr._detectors.keys())
 
