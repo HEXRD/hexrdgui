@@ -1,6 +1,8 @@
 import math
 import os
 
+import numpy as np
+
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT
 )
@@ -11,6 +13,7 @@ import matplotlib.pyplot as plt
 import fabio
 
 from hexrd.ui.calibration_plot import create_calibration_image
+from hexrd.ui.polar.view_multipanel_polar import create_polar_calibration_image
 import hexrd.ui.constants
 
 class ImageCanvas(FigureCanvas):
@@ -78,6 +81,42 @@ class ImageCanvas(FigureCanvas):
 
         self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                             norm=self.norm))
+
+        self.figure.tight_layout()
+        self.draw()
+
+    def show_polar_calibration(self, config, image_files):
+        self.figure.clear()
+        self.axes_images.clear()
+
+        images = []
+        for file in image_files:
+            images.append(fabio.open(file).data)
+
+        material = config.get_active_material()
+
+        img, extent, ring_data, rbnd_data = create_polar_calibration_image(
+            config.config, images, material.planeData)
+
+        axis = self.figure.add_subplot(111)
+
+        vmin = np.percentile(img, 50)
+        vmax = np.percentile(img, 99)
+        self.axes_images.append(axis.imshow(img, cmap=self.cmap,
+                                            vmin=vmin, vmax=vmax,
+                                            interpolation="none",
+                                            picker=True))
+
+        self.axes_images[0].set_extent(extent)
+        axis.relim()
+        axis.autoscale_view()
+        axis.axis('normal')
+
+        colorspec = 'c-.'
+        for pr in ring_data:
+            axis.plot(pr[:, 1], pr[:, 0], colorspec, ms=2)
+        for pr in rbnd_data:
+            axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
 
         self.figure.tight_layout()
         self.draw()

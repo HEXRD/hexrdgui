@@ -73,6 +73,11 @@ class ImageTabWidget(QTabWidget):
         self.image_canvases[0].show_calibration(config, self.image_files)
         self.addTab(self.image_canvases[0], '')
 
+    def show_polar_calibration(self, config):
+        self.clear()
+        self.image_canvases[0].show_polar_calibration(config, self.image_files)
+        self.addTab(self.image_canvases[0], '')
+
     def active_canvases(self):
         """Get the canvases that are actively being used"""
         if not self.tabbed_view:
