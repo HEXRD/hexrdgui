@@ -1,0 +1,64 @@
+beam:
+  energy: 'cal_energy'
+  vector: {
+    azimuth: 'cal_vector_azimuth',
+    polar_angle: 'cal_vector_polar'
+  }
+calibration_crystal:
+  grain_id: 'cal_crystal_grain_id'
+  inv_stretch: [
+    'cal_crystal_inv_stretch_0',
+    'cal_crystal_inv_stretch_1',
+    'cal_crystal_inv_stretch_2',
+    'cal_crystal_inv_stretch_3',
+    'cal_crystal_inv_stretch_4',
+    'cal_crystal_inv_stretch_5'
+  ]
+  orientation: [
+    'cal_crystal_orientation_0',
+    'cal_crystal_orientation_1',
+    'cal_crystal_orientation_2'
+  ]
+  position: [
+    'cal_crystal_position_0',
+    'cal_crystal_position_1',
+    'cal_crystal_position_2'
+  ]
+detectors:
+  detector_name:
+    distortion:
+      function_name: 'cal_det_function'
+      parameters: [
+        'cal_det_param_0',
+        'cal_det_param_1',
+        'cal_det_param_2',
+        'cal_det_param_3',
+        'cal_det_param_4',
+        'cal_det_param_5'
+      ]
+    pixels:
+      columns: 'cal_det_columns'
+      rows: 'cal_det_rows'
+      size: [
+        'cal_det_size_0',
+        'cal_det_size_1'
+      ]
+    saturation_level: 'cal_det_saturation'
+    transform:
+      t_vec_d: [
+        'cal_det_t_vec_d_0',
+        'cal_det_t_vec_d_1',
+        'cal_det_t_vec_d_2'
+      ]
+      tilt_angles: [
+        'cal_det_angles_0',
+        'cal_det_angles_1',
+        'cal_det_angles_2'
+      ]
+oscillation_stage:
+  chi: 'cal_osc_chi'
+  t_vec_s: [
+    'cal_osc_t_vec_d_0',
+    'cal_osc_t_vec_d_1',
+    'cal_osc_t_vec_d_2'
+  ]

@@ -1,0 +1,38 @@
+beam:
+  energy: 55.6180
+  vector: {azimuth: 90.0, polar_angle: 90.0}
+calibration_crystal:
+  grain_id: 2
+  inv_stretch: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
+  orientation: [0.0, 0.0, 0.0]
+  position: [0.0, 0.0, 0.0]
+detectors:
+  ge1:
+    distortion:
+      function_name: GE_41RT
+      parameters: [0.0, 0.0, 0.0,
+        2.0, 2.0, 2.0]
+    pixels:
+      columns: 2048
+      rows: 2048
+      size: [1.0, 1.0]
+    saturation_level: 14000.0
+    transform:
+      t_vec_d: [0.0, 0.0, 0.0]
+      tilt_angles: [0.0, 0.0, 0.0]
+  ge2:
+    distortion:
+      function_name: GE_41RT
+      parameters: [0.0, 0.0, 0.0,
+        2.0, 2.0, 2.0]
+    pixels:
+      columns: 2048
+      rows: 2048
+      size: [1.0, 1.0]
+    saturation_level: 14000.0
+    transform:
+      t_vec_d: [0.0, 0.0, 0.0]
+      tilt_angles: [0.0, 0.0, 0.0]
+oscillation_stage:
+  chi: 0.0
+  t_vec_s: [0.0, 0.0, 0.0]
