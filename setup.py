@@ -14,7 +14,8 @@ install_reqs = [
     'pyyaml',
     'h5py',
     'scipy',
-    'scikit-image'
+    'scikit-image',
+    'numba'
 ]
 
 def get_extension_modules():
