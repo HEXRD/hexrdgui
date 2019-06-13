@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>531</width>
-    <height>1077</height>
+    <width>506</width>
+    <height>1078</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -164,16 +164,16 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>x: </string>
+         <string/>
         </property>
         <property name="suffix">
          <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -186,13 +186,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>y: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -225,13 +225,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>z: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -244,13 +244,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>x: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -263,13 +263,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>y: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -282,10 +282,10 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -298,10 +298,10 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -314,10 +314,10 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -350,13 +350,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>z: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -369,13 +369,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>x: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -388,13 +388,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>y: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -407,13 +407,13 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>z: </string>
+         <string/>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>-10000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -474,13 +474,13 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="prefix">
-            <string>y: </string>
+            <string/>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -503,13 +503,13 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="prefix">
-            <string>z: </string>
+            <string/>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -522,13 +522,13 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="prefix">
-            <string>x: </string>
+            <string/>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -539,6 +539,9 @@
           <widget class="QLabel" name="label_16">
            <property name="text">
             <string>Tilt Angles:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -551,10 +554,10 @@
             <string>°</string>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -570,10 +573,10 @@
             <string>°</string>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -589,10 +592,10 @@
             <string>°</string>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -651,13 +654,13 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="prefix">
-            <string>z: </string>
+            <string/>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -670,13 +673,13 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="prefix">
-            <string>x: </string>
+            <string/>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -689,13 +692,13 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="prefix">
-            <string>y: </string>
+            <string/>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -708,10 +711,10 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -724,10 +727,10 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -740,10 +743,10 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
-            <double>-100000.000000000000000</double>
+            <double>-10000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>100000.000000000000000</double>
+            <double>10000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -933,7 +936,7 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>x: </string>
+         <string/>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
@@ -952,7 +955,7 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>z: </string>
+         <string/>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
@@ -971,7 +974,7 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="prefix">
-         <string>y: </string>
+         <string/>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>

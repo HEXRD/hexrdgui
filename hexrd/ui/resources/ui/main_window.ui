@@ -62,7 +62,7 @@
   <widget class="QDockWidget" name="config_dock_widget">
    <property name="minimumSize">
     <size>
-     <width>600</width>
+     <width>550</width>
      <height>229</height>
     </size>
    </property>
@@ -75,7 +75,7 @@
    <widget class="QWidget" name="config_dock_widgets">
     <property name="minimumSize">
      <size>
-      <width>220</width>
+      <width>150</width>
       <height>0</height>
      </size>
     </property>
@@ -90,7 +90,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>582</width>
+          <width>532</width>
           <height>695</height>
          </rect>
         </property>
@@ -103,7 +103,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>582</width>
+          <width>532</width>
           <height>695</height>
          </rect>
         </property>
