@@ -34,6 +34,7 @@ class ImageTabWidget(QTabWidget):
 
         self.update_canvas_cmaps()
         self.update_canvas_norms()
+        self.tabBar().show()
 
     def load_images_untabbed(self):
         self.clear()
@@ -42,6 +43,7 @@ class ImageTabWidget(QTabWidget):
 
         self.update_canvas_cmaps()
         self.update_canvas_norms()
+        self.tabBar().hide()
 
     def load_images(self, image_files):
         self.image_files = image_files
@@ -76,21 +78,21 @@ class ImageTabWidget(QTabWidget):
     def set_tabbed_view(self, tabbed_view=False):
         self.tabbed_view = tabbed_view
         if self.tabbed_view:
-            self.tabBar().show()
             self.load_images_tabbed()
         else:
-            self.tabBar().hide()
             self.load_images_untabbed()
 
     def show_calibration(self, config):
         self.clear()
         self.image_canvases[0].show_calibration(config, self.image_files)
         self.addTab(self.image_canvases[0], '')
+        self.tabBar().hide()
 
     def show_polar_calibration(self, config):
         self.clear()
         self.image_canvases[0].show_polar_calibration(config, self.image_files)
         self.addTab(self.image_canvases[0], '')
+        self.tabBar().hide()
 
     def active_canvases(self):
         """Get the canvases that are actively being used"""
