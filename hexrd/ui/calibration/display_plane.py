@@ -3,13 +3,16 @@ import numpy as np
 from hexrd.xrd import transforms_CAPI as xfcapi
 from hexrd import instrument
 
+tvec_DFLT = np.r_[0., 0., -1000.]
+tilt_DFTL = np.zeros(3)
 
-class DisplayPlane(object):
 
-    def __init__(self):
-        self.tilt = np.zeros(3)
+class DisplayPlane:
+
+    def __init__(self, tilt=tilt_DFTL, tvec=tvec_DFLT):
+        self.tilt = tilt
         self.rmat = xfcapi.makeDetectorRotMat(self.tilt)
-        self.tvec = np.r_[0., 0., -1000.]
+        self.tvec = tvec
 
     def panel_size(self, instr):
         """return bounding box of instrument panels in display plane"""
