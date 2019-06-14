@@ -1,6 +1,6 @@
 import os
 
-from PySide2.QtCore import Signal, Slot
+from PySide2.QtCore import Signal, Slot, QSettings
 from PySide2.QtWidgets import QFileDialog, QTabWidget
 
 from hexrd.ui.image_canvas import ImageCanvas
@@ -34,6 +34,7 @@ class ImageTabWidget(QTabWidget):
 
         self.update_canvas_cmaps()
         self.update_canvas_norms()
+        self.tabBar().show()
 
     def load_images_untabbed(self):
         self.clear()
@@ -42,6 +43,7 @@ class ImageTabWidget(QTabWidget):
 
         self.update_canvas_cmaps()
         self.update_canvas_norms()
+        self.tabBar().hide()
 
     def load_images(self, image_files):
         self.image_files = image_files
@@ -53,25 +55,44 @@ class ImageTabWidget(QTabWidget):
 
         self.new_images_loaded.emit()
 
+    def images_dir(self):
+        return QSettings().value('images_dir')
+
+    def save_images_dir(self, images_dir):
+        QSettings().setValue('images_dir', images_dir)
+
     @Slot()
     def open_files(self):
-        selected_files, selected_filter = QFileDialog.getOpenFileNames(self)
-        return self.load_images(selected_files)
+        # Get the most recent images dir
+        images_dir = self.images_dir()
+
+        selected_files, selected_filter = QFileDialog.getOpenFileNames(
+            self, dir=images_dir)
+
+        if selected_files:
+            # Save the chosen dir
+            self.save_images_dir(selected_files[0])
+            return self.load_images(selected_files)
 
     @Slot(bool)
     def set_tabbed_view(self, tabbed_view=False):
         self.tabbed_view = tabbed_view
         if self.tabbed_view:
-            self.tabBar().show()
             self.load_images_tabbed()
         else:
-            self.tabBar().hide()
             self.load_images_untabbed()
 
     def show_calibration(self, config):
         self.clear()
         self.image_canvases[0].show_calibration(config, self.image_files)
         self.addTab(self.image_canvases[0], '')
+        self.tabBar().hide()
+
+    def show_polar_calibration(self, config):
+        self.clear()
+        self.image_canvases[0].show_polar_calibration(config, self.image_files)
+        self.addTab(self.image_canvases[0], '')
+        self.tabBar().hide()
 
     def active_canvases(self):
         """Get the canvases that are actively being used"""

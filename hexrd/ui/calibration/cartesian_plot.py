@@ -2,7 +2,6 @@ import numpy as np
 import pickle
 
 from hexrd.gridutil import cellIndices
-from hexrd.xrd import transforms_CAPI as xfcapi
 from hexrd import instrument
 
 from hexrd.ui import resource_loader
@@ -11,14 +10,14 @@ import hexrd.ui.resources.materials
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
 
-tvec_DFLT = np.r_[0., 0., -1000.]
-tilt_DFTL = np.zeros(3)
+from .display_plane import DisplayPlane
 
-def create_calibration_image(config, images, plane_data):
+
+def cartesian_image(config, images, plane_data):
     instr = instrument.HEDMInstrument(instrument_config=config)
     panel_ids = list(instr._detectors.keys())
 
-    dplane = DisplayPlane(tvec=tvec_DFLT)
+    dplane = DisplayPlane()
     dpanel = make_dpanel(dplane, instr)
 
     ring_data = add_rings(dpanel, plane_data)
@@ -35,6 +34,7 @@ def create_calibration_image(config, images, plane_data):
 
     return img, ring_data
 
+
 def load_pdata(data, key, tth_max=None):
     """
     tth_max is in DEGREES
@@ -49,15 +49,18 @@ def load_pdata(data, key, tth_max=None):
         pd.tThMax = np.radians(tth_max)
     return pd
 
+
 def load_ceo2():
     materials = resource_loader.load_resource(hexrd.ui.resources.materials,
                                               'materials.hexrd', binary=True)
     return load_pdata(materials, 'ceo2')
 
+
 def make_dpanel(dplane, instr, pixel_size=0.5):
     dpanel_sizes = dplane.panel_size(instr)
     dpanel = dplane.display_panel(dpanel_sizes, pixel_size)
     return dpanel
+
 
 def add_rings(dpanel, plane_data):
     ring_angs, ring_xys = dpanel.make_powder_rings(
@@ -67,6 +70,7 @@ def add_rings(dpanel, plane_data):
         ring_data.append(dpanel.cartToPixel(ring))
 
     return ring_data
+
 
 def plot_dplane(dpanel, images, panel_ids, instr, dplane):
     nrows_map = dpanel.rows
@@ -114,54 +118,3 @@ def plot_dplane(dpanel, images, panel_ids, instr, dplane):
     """
     img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
     return img
-
-class DisplayPlane(object):
-
-    def __init__(self, tilt=tilt_DFTL, tvec=tvec_DFLT):
-        self.tilt = tilt
-        self.rmat = xfcapi.makeDetectorRotMat(self.tilt)
-        self.tvec = tvec
-
-    def panel_size(self, instr):
-        """return bounding box of instrument panels in display plane"""
-        xmin_i = ymin_i = np.inf
-        xmax_i = ymax_i = -np.inf
-        for detector_id in instr._detectors:
-            panel = instr._detectors[detector_id]
-            # find max extent
-            corners = np.vstack(
-                [panel.corner_ll,
-                 panel.corner_lr,
-                 panel.corner_ur,
-                 panel.corner_ul,
-                 ]
-            )
-            tmp = panel.map_to_plane(corners, self.rmat, self.tvec)
-            xmin, xmax = np.sort(tmp[:, 0])[[0, -1]]
-            ymin, ymax = np.sort(tmp[:, 1])[[0, -1]]
-
-            xmin_i = min(xmin, xmin_i)
-            ymin_i = min(ymin, ymin_i)
-            xmax_i = max(xmax, xmax_i)
-            ymax_i = max(ymax, ymax_i)
-            pass
-
-        del_x = 2*max(abs(xmin_i), abs(xmax_i))
-        del_y = 2*max(abs(ymin_i), abs(ymax_i))
-
-        return (del_x, del_y)
-
-    def display_panel(self, sizes, mps):
-
-        del_x = sizes[0]
-        del_y = sizes[1]
-
-        ncols_map = int(del_x/mps)
-        nrows_map = int(del_y/mps)
-
-        display_panel = instrument.PlanarDetector(
-            rows=nrows_map, cols=ncols_map,
-            pixel_size=(mps, mps),
-            tvec=self.tvec, tilt=self.tilt)
-
-        return display_panel

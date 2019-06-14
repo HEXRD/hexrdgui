@@ -51,6 +51,8 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.ui.run_calibration.pressed.connect(self.run_calibration)
+        self.ui.run_polar_calibration.pressed.connect(
+            self.run_polar_calibration)
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -97,6 +99,9 @@ class MainWindow(QObject):
 
     def run_calibration(self):
         self.ui.image_tab_widget.show_calibration(self.cfg)
+
+    def run_polar_calibration(self):
+        self.ui.image_tab_widget.show_polar_calibration(self.cfg)
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()

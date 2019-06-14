@@ -1,6 +1,8 @@
 import math
 import os
 
+import numpy as np
+
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvas, NavigationToolbar2QT
 )
@@ -10,7 +12,8 @@ import matplotlib.pyplot as plt
 
 import fabio
 
-from hexrd.ui.calibration_plot import create_calibration_image
+from hexrd.ui.calibration.cartesian_plot import cartesian_image
+from hexrd.ui.calibration.polar_plot import polar_image
 import hexrd.ui.constants
 
 class ImageCanvas(FigureCanvas):
@@ -69,8 +72,8 @@ class ImageCanvas(FigureCanvas):
 
         material = config.get_active_material()
 
-        img, ring_data = create_calibration_image(config.config, images,
-                                                  material.planeData)
+        img, ring_data = cartesian_image(config.config, images,
+                                         material.planeData)
 
         axis = self.figure.add_subplot(111)
         for pr in ring_data:
@@ -78,6 +81,40 @@ class ImageCanvas(FigureCanvas):
 
         self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                             norm=self.norm))
+
+        self.figure.tight_layout()
+        self.draw()
+
+    def show_polar_calibration(self, config, image_files):
+        self.figure.clear()
+        self.axes_images.clear()
+
+        images = []
+        for file in image_files:
+            images.append(fabio.open(file).data)
+
+        material = config.get_active_material()
+
+        img, extent, ring_data, rbnd_data = polar_image(config.config, images,
+                                                        material.planeData)
+
+        axis = self.figure.add_subplot(111)
+
+        self.axes_images.append(axis.imshow(img, cmap=self.cmap,
+                                            norm=self.norm, picker=True,
+                                            interpolation='none'))
+
+        # We must adjust the extent of the image
+        self.axes_images[0].set_extent(extent)
+        axis.relim()
+        axis.autoscale_view()
+        axis.axis('auto')
+
+        colorspec = 'c-.'
+        for pr in ring_data:
+            axis.plot(pr[:, 1], pr[:, 0], colorspec, ms=2)
+        for pr in rbnd_data:
+            axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
 
         self.figure.tight_layout()
         self.draw()
