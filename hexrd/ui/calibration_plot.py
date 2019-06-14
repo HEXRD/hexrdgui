@@ -14,14 +14,12 @@ from skimage.exposure import equalize_adapthist
 tvec_DFLT = np.r_[0., 0., -1000.]
 tilt_DFTL = np.zeros(3)
 
-def create_calibration_image(config, images):
+def create_calibration_image(config, images, plane_data):
     instr = instrument.HEDMInstrument(instrument_config=config)
     panel_ids = list(instr._detectors.keys())
 
     dplane = DisplayPlane(tvec=tvec_DFLT)
     dpanel = make_dpanel(dplane, instr)
-
-    plane_data = load_ceo2()
 
     ring_data = add_rings(dpanel, plane_data)
 

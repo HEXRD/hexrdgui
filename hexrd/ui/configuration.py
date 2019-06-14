@@ -1,11 +1,12 @@
 import copy
+import pickle
 
 import yaml
 
 from hexrd.ui import resource_loader
 
 import hexrd.ui.resources.calibration
-
+import hexrd.ui.resources.materials
 
 class Configuration:
 
@@ -15,6 +16,8 @@ class Configuration:
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
+        self.materials = None
+        self.active_material = None
 
         # Load default configuration settings
         self.load_default_config()
@@ -28,6 +31,9 @@ class Configuration:
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
 
+        # Load the default materials
+        self.load_default_materials()
+
     def load_gui_yaml_dict(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
                                              'yaml_to_gui.yml')
@@ -37,6 +43,28 @@ class Configuration:
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
                                              'defaults.yml')
         self.default_config = yaml.load(text, Loader=yaml.FullLoader)
+
+    def load_default_materials(self):
+        data = resource_loader.load_resource(hexrd.ui.resources.materials,
+                                             'materials.hexrd', binary=True)
+
+        matlist = pickle.loads(data, encoding='latin1')
+        self.materials = dict(zip([i.name for i in matlist], matlist))
+
+        self.set_active_material('ceo2')
+
+    def get_material(self, name):
+        return self.materials.get(name)
+
+    def set_active_material(self, name):
+        if name not in self.materials:
+            raise Exception(name + ' was not found in materials list: ' +
+                            str(self.materials.keys()))
+
+        self.active_material = name
+
+    def get_active_material(self):
+        return self.get_material(self.active_material)
 
     def load_config(self, yml_file):
         with open(yml_file, 'r') as f:
