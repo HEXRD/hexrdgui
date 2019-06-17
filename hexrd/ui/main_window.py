@@ -1,3 +1,5 @@
+import os
+
 from PySide2.QtCore import QEvent, QObject
 from PySide2.QtWidgets import QFileDialog, QMainWindow
 
@@ -21,8 +23,6 @@ class MainWindow(QObject):
         self.color_map_editor = ColorMapEditor(self.ui.image_tab_widget,
                                                self.ui.central_widget)
         self.ui.central_widget_layout.insertWidget(0, self.color_map_editor.ui)
-
-        self.cfg = HexrdConfig()
 
         self.add_materials_panel()
 
@@ -53,6 +53,9 @@ class MainWindow(QObject):
         self.ui.run_polar_calibration.pressed.connect(
             self.run_polar_calibration)
 
+        self.ui.action_open_images.triggered.connect(
+            self.open_image_files)
+
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
         # add the real one.
@@ -72,21 +75,38 @@ class MainWindow(QObject):
 
     def on_action_open_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Configuration', self.cfg.working_dir,
+            self.ui, 'Load Configuration', HexrdConfig().working_dir,
             'YAML files (*.yml)')
 
         if selected_file:
-            self.cfg.load_iconfig(selected_file)
+            HexrdConfig().load_iconfig(selected_file)
             self.cal_tree_widget.rebuild_tree()
             self.calibration_config_widget.update_gui_from_config()
 
     def on_action_save_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Configuration', self.cfg.working_dir,
+            self.ui, 'Save Configuration', HexrdConfig().working_dir,
             'YAML files (*.yml)')
 
         if selected_file:
-            return self.cfg.save_iconfig(selected_file)
+            return HexrdConfig().save_iconfig(selected_file)
+
+    def open_image_files(self):
+        # Get the most recent images dir
+        images_dir = HexrdConfig().images_dir
+
+        selected_files, selected_filter = QFileDialog.getOpenFileNames(
+            self.ui, dir=images_dir)
+
+        if selected_files:
+            # Save the chosen dir
+            HexrdConfig().set_images_dir(selected_files[0])
+
+            # For now, just use the base names without the extension
+            names = [os.path.basename(x) for x in selected_files]
+            names = [os.path.splitext(x)[0] for x in names]
+            HexrdConfig().load_images(names, selected_files)
+            self.ui.image_tab_widget.load_images()
 
     def run_calibration(self):
         self.ui.image_tab_widget.show_calibration()
@@ -104,7 +124,7 @@ class MainWindow(QObject):
     def eventFilter(self, target, event):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
             # If the main window is closing, save the config settings
-            self.cfg.save_settings()
+            HexrdConfig().save_settings()
 
         return False
 

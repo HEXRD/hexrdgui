@@ -13,21 +13,28 @@ from skimage.exposure import equalize_adapthist
 from .display_plane import DisplayPlane
 
 
-def cartesian_image(config, images, plane_data):
+def cartesian_image(config, images_dict, plane_data):
     instr = instrument.HEDMInstrument(instrument_config=config)
-    panel_ids = list(instr._detectors.keys())
+
+    # Make sure each key in the image dict is in the panel_ids
+    if images_dict.keys() != instr._detectors.keys():
+        msg = ('Images do not match the panel ids!\n' +
+               'Images: ' + str(list(images_dict.keys())) + '\n' +
+               'PanelIds: ' + str(list(instr._detectors.keys())))
+        raise Exception(msg)
 
     dplane = DisplayPlane()
     dpanel = make_dpanel(dplane, instr)
 
     ring_data = add_rings(dpanel, plane_data)
 
-    img = plot_dplane(dpanel, images, panel_ids, instr, dplane)
+    img = plot_dplane(dpanel, images_dict, instr, dplane)
 
     # Rescale the data to match the scale of the original dataset
     # TODO: try to get create_calibration_image to not rescale the
     # result to be between 0 and 1 in the first place so this will
     # not be necessary.
+    images = images_dict.values()
     minimum = min([x.min() for x in images])
     maximum = max([x.max() for x in images])
     img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
@@ -72,12 +79,12 @@ def add_rings(dpanel, plane_data):
     return ring_data
 
 
-def plot_dplane(dpanel, images, panel_ids, instr, dplane):
+def plot_dplane(dpanel, images_dict, instr, dplane):
     nrows_map = dpanel.rows
     ncols_map = dpanel.cols
     warped = np.zeros((nrows_map, ncols_map))
-    for i, img in enumerate(images):
-        detector_id = panel_ids[i]
+    for detector_id in images_dict.keys():
+        img = images_dict[detector_id]
 
         max_int = np.percentile(img, 99.95)
         pbuf = 10

@@ -1,5 +1,4 @@
 import math
-import os
 
 import numpy as np
 
@@ -10,8 +9,6 @@ from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-import fabio
-
 from hexrd.ui.calibration.cartesian_plot import cartesian_image
 from hexrd.ui.calibration.polar_plot import polar_image
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -19,7 +16,7 @@ import hexrd.ui.constants
 
 class ImageCanvas(FigureCanvas):
 
-    def __init__(self, parent=None, image_files=None):
+    def __init__(self, parent=None, image_names=None):
         self.figure = Figure()
         super(ImageCanvas, self).__init__(self.figure)
 
@@ -35,47 +32,43 @@ class ImageCanvas(FigureCanvas):
         self.press_conn_id = self.mpl_connect('button_press_event',
                                               self.on_button_pressed)
 
-        if image_files is not None:
-            self.load_images(image_files)
+        if image_names is not None:
+            self.load_images(image_names)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def load_images(self, image_files):
+    def load_images(self, image_names):
         self.figure.clear()
         self.axes_images.clear()
 
         cols = 1
-        if len(image_files) > 1:
+        if len(image_names) > 1:
             cols = 2
 
-        rows = math.ceil(len(image_files) / cols)
+        rows = math.ceil(len(image_names) / cols)
 
-        for i, file in enumerate(image_files):
-            img = fabio.open(file).data
+        for i, name in enumerate(image_names):
+            img = HexrdConfig().image(name)
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
-            axis.set_title(os.path.basename(file))
+            axis.set_title(name)
             self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                                 norm=self.norm))
 
         self.figure.tight_layout()
         self.draw()
 
-    def show_calibration(self, image_files):
+    def show_calibration(self):
         self.figure.clear()
         self.axes_images.clear()
 
         config = HexrdConfig()
-
-        images = []
-        for file in image_files:
-            images.append(fabio.open(file).data)
-
+        images_dict = config.images()
         material = config.get_active_material()
 
-        img, ring_data = cartesian_image(config.iconfig, images,
+        img, ring_data = cartesian_image(config.iconfig, images_dict,
                                          material.planeData)
 
         axis = self.figure.add_subplot(111)
@@ -88,19 +81,16 @@ class ImageCanvas(FigureCanvas):
         self.figure.tight_layout()
         self.draw()
 
-    def show_polar_calibration(self, image_files):
+    def show_polar_calibration(self):
         self.figure.clear()
         self.axes_images.clear()
 
         config = HexrdConfig()
-
-        images = []
-        for file in image_files:
-            images.append(fabio.open(file).data)
-
+        images_dict = config.images()
         material = config.get_active_material()
 
-        img, extent, ring_data, rbnd_data = polar_image(config.iconfig, images,
+        img, extent, ring_data, rbnd_data = polar_image(config.iconfig,
+                                                        images_dict,
                                                         material.planeData)
 
         axis = self.figure.add_subplot(111)
@@ -145,20 +135,3 @@ class ImageCanvas(FigureCanvas):
     def on_button_pressed(self, event):
         if event.button == MouseButton.RIGHT:
             self.navigation_toolbar.back()
-
-def main():
-    import sys
-    from PySide2.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-
-    image_files = ['0.tiff', '1.tiff', '2.tiff', '3.tiff']
-
-    images = ImageCanvas(image_files=image_files)
-    images.show()
-
-    # start event processing
-    sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main()
