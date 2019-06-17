@@ -1,6 +1,8 @@
 import copy
 import pickle
 
+from PySide2.QtCore import QSettings
+
 import yaml
 
 from hexrd.ui import resource_loader
@@ -8,17 +10,32 @@ from hexrd.ui import resource_loader
 import hexrd.ui.resources.calibration
 import hexrd.ui.resources.materials
 
-class Configuration:
 
-    def __init__(self, iconfig=None):
+class Singleton(type):
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args,
+                                                                 **kwargs)
+        return cls._instances[cls]
+
+
+# This is a singleton class that contains the configuration
+class HexrdConfig(metaclass=Singleton):
+
+    def __init__(self):
         """iconfig means instrument config"""
-        self.iconfig = iconfig
+        self.iconfig = None
         self.default_iconfig = None
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
         self.materials = None
         self.active_material = None
+
+        self.load_settings()
 
         # Load default configuration settings
         self.load_default_config()
@@ -32,6 +49,14 @@ class Configuration:
 
         # Load the default materials
         self.load_default_materials()
+
+    def save_settings(self):
+        settings = QSettings()
+        settings.setValue('iconfig', self.iconfig)
+
+    def load_settings(self):
+        settings = QSettings()
+        self.iconfig = settings.value('iconfig', None)
 
     def load_gui_yaml_dict(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,

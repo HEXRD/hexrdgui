@@ -2,14 +2,15 @@ from PySide2.QtCore import QObject
 from PySide2.QtWidgets import QComboBox, QLineEdit, QPushButton
 
 from hexrd.ui import constants
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 class CalibrationConfigWidget(QObject):
 
-    def __init__(self, config, parent=None):
+    def __init__(self, parent=None):
         super(CalibrationConfigWidget, self).__init__(parent)
 
-        self.cfg = config
+        self.cfg = HexrdConfig()
 
         loader = UiLoader()
         self.ui = loader.load_file('calibration_config_widget.ui', parent)

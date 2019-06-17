@@ -14,6 +14,7 @@ import fabio
 
 from hexrd.ui.calibration.cartesian_plot import cartesian_image
 from hexrd.ui.calibration.polar_plot import polar_image
+from hexrd.ui.hexrd_config import HexrdConfig
 import hexrd.ui.constants
 
 class ImageCanvas(FigureCanvas):
@@ -62,9 +63,11 @@ class ImageCanvas(FigureCanvas):
         self.figure.tight_layout()
         self.draw()
 
-    def show_calibration(self, config, image_files):
+    def show_calibration(self, image_files):
         self.figure.clear()
         self.axes_images.clear()
+
+        config = HexrdConfig()
 
         images = []
         for file in image_files:
@@ -85,9 +88,11 @@ class ImageCanvas(FigureCanvas):
         self.figure.tight_layout()
         self.draw()
 
-    def show_polar_calibration(self, config, image_files):
+    def show_polar_calibration(self, image_files):
         self.figure.clear()
         self.axes_images.clear()
+
+        config = HexrdConfig()
 
         images = []
         for file in image_files:

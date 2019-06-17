@@ -82,15 +82,15 @@ class ImageTabWidget(QTabWidget):
         else:
             self.load_images_untabbed()
 
-    def show_calibration(self, config):
+    def show_calibration(self):
         self.clear()
-        self.image_canvases[0].show_calibration(config, self.image_files)
+        self.image_canvases[0].show_calibration(self.image_files)
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
 
-    def show_polar_calibration(self, config):
+    def show_polar_calibration(self):
         self.clear()
-        self.image_canvases[0].show_polar_calibration(config, self.image_files)
+        self.image_canvases[0].show_polar_calibration(self.image_files)
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
 

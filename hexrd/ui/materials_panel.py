@@ -5,13 +5,14 @@ from PySide2.QtWidgets import QMenu, QTableWidgetItem
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.add_material_dialog import AddMaterialDialog
+from hexrd.ui.hexrd_config import HexrdConfig
 
 class MaterialsPanel(QObject):
 
-    def __init__(self, config, parent=None):
+    def __init__(self, parent=None):
         super(MaterialsPanel, self).__init__(parent)
 
-        self.config = config
+        self.config = HexrdConfig()
 
         loader = UiLoader()
         self.ui = loader.load_file('materials_panel.ui', parent)

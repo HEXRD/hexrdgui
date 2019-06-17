@@ -1,19 +1,19 @@
-from PySide2.QtCore import QEvent, QObject, QSettings
+from PySide2.QtCore import QEvent, QObject
 from PySide2.QtWidgets import QFileDialog, QMainWindow
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_tree_widget import CalTreeWidget
-from hexrd.ui.configuration import Configuration
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.ui_loader import UiLoader
+
 
 class MainWindow(QObject):
 
     def __init__(self, parent=None, image_files=None):
         super(MainWindow, self).__init__(parent)
-        self.load_settings()
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -22,13 +22,12 @@ class MainWindow(QObject):
                                                self.ui.central_widget)
         self.ui.central_widget_layout.insertWidget(0, self.color_map_editor.ui)
 
-        self.cfg = Configuration(self.initial_iconfig)
+        self.cfg = HexrdConfig()
 
         self.add_materials_panel()
 
-        self.calibration_config_widget = CalibrationConfigWidget(self.cfg,
-                                                                 self.ui)
-        self.cal_tree_widget = CalTreeWidget(self.cfg, self.ui)
+        self.calibration_config_widget = CalibrationConfigWidget(self.ui)
+        self.cal_tree_widget = CalTreeWidget(self.ui)
 
         tab_texts = ['Tree View', 'Form View']
         self.ui.calibration_tab_widget.clear()
@@ -66,18 +65,10 @@ class MainWindow(QObject):
             raise Exception('"Materials" panel not found!')
 
         self.ui.config_tool_box.removeItem(materials_panel_index)
-        self.materials_panel = MaterialsPanel(self.cfg, self.ui)
+        self.materials_panel = MaterialsPanel(self.ui)
         self.ui.config_tool_box.insertItem(materials_panel_index,
                                            self.materials_panel.ui,
                                            'Materials')
-
-    def save_settings(self):
-        settings = QSettings()
-        settings.setValue('iconfig', self.cfg.iconfig)
-
-    def load_settings(self):
-        settings = QSettings()
-        self.initial_iconfig = settings.value('iconfig', None)
 
     def on_action_open_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -98,10 +89,10 @@ class MainWindow(QObject):
             return self.cfg.save_iconfig(selected_file)
 
     def run_calibration(self):
-        self.ui.image_tab_widget.show_calibration(self.cfg)
+        self.ui.image_tab_widget.show_calibration()
 
     def run_polar_calibration(self):
-        self.ui.image_tab_widget.show_polar_calibration(self.cfg)
+        self.ui.image_tab_widget.show_polar_calibration()
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
@@ -112,10 +103,11 @@ class MainWindow(QObject):
 
     def eventFilter(self, target, event):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
-            # If the main window is closing, save the settings
-            self.save_settings()
+            # If the main window is closing, save the config settings
+            self.cfg.save_settings()
 
         return False
+
 
 def main():
     import sys
@@ -127,6 +119,7 @@ def main():
     window.ui.show()
 
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
