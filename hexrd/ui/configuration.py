@@ -10,9 +10,10 @@ import hexrd.ui.resources.materials
 
 class Configuration:
 
-    def __init__(self, initial_config=None):
-        self.config = None
-        self.default_config = None
+    def __init__(self, iconfig=None):
+        """iconfig means instrument config"""
+        self.iconfig = iconfig
+        self.default_iconfig = None
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
@@ -22,11 +23,9 @@ class Configuration:
         # Load default configuration settings
         self.load_default_config()
 
-        if initial_config is not None:
-            self.config = initial_config
-        else:
-            # Load the default config settings
-            self.config = copy.deepcopy(self.default_config)
+        if self.iconfig is None:
+            # Load the default iconfig settings
+            self.iconfig = copy.deepcopy(self.default_iconfig)
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -42,7 +41,7 @@ class Configuration:
     def load_default_config(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
                                              'defaults.yml')
-        self.default_config = yaml.load(text, Loader=yaml.FullLoader)
+        self.default_iconfig = yaml.load(text, Loader=yaml.FullLoader)
 
     def load_default_materials(self):
         data = resource_loader.load_resource(hexrd.ui.resources.materials,
@@ -66,15 +65,15 @@ class Configuration:
     def get_active_material(self):
         return self.get_material(self.active_material)
 
-    def load_config(self, yml_file):
+    def load_iconfig(self, yml_file):
         with open(yml_file, 'r') as f:
-            self.config = yaml.load(f, Loader=yaml.FullLoader)
+            self.iconfig = yaml.load(f, Loader=yaml.FullLoader)
 
-        return self.config
+        return self.iconfig
 
-    def save_config(self, output_file):
+    def save_iconfig(self, output_file):
         with open(output_file, 'w') as f:
-            yaml.dump(self.config, f)
+            yaml.dump(self.iconfig, f)
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
@@ -86,7 +85,7 @@ class Configuration:
         For instance, it will contain
         ("cal_energy", [ "beam", "energy" ] ), which means that
         the path to the default value of "cal_energy" is
-        self.config["beam"]["energy"]
+        self.iconfig["beam"]["energy"]
         """
         if cur_path is None:
             cur_path = []
@@ -115,7 +114,7 @@ class Configuration:
         For instance, the returned list may contain
         ("cal_energy", [ "beam", "energy" ] ), which means that
         the path to the default value of "cal_energy" is
-        self.config["beam"]["energy"]
+        self.iconfig["beam"]["energy"]
         """
         search_dict = self.gui_yaml_dict
         if path is not None:
@@ -133,9 +132,9 @@ class Configuration:
         self.cached_gui_yaml_dicts[string_path] = res
         return res
 
-    def set_config_val(self, path, value):
+    def set_iconfig_val(self, path, value):
         """This sets a value from a path list."""
-        cur_val = self.config
+        cur_val = self.iconfig
         try:
             for val in path[:-1]:
                 cur_val = cur_val[val]
@@ -143,23 +142,23 @@ class Configuration:
             cur_val[path[-1]] = value
         except:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
-                   str(self.config))
+                   str(self.iconfig))
             raise Exception(msg)
 
-    def get_config_val(self, path):
+    def get_iconfig_val(self, path):
         """This obtains a dict value from a path list.
 
         For instance, if path is [ "beam", "energy" ], it will
-        return self.config["beam"]["energy"]
+        return self.iconfig["beam"]["energy"]
 
         """
-        cur_val = self.config
+        cur_val = self.iconfig
         try:
             for val in path:
                 cur_val = cur_val[val]
         except:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
-                   str(self.config))
+                   str(self.iconfig))
             raise Exception(msg)
 
         return cur_val
@@ -172,10 +171,10 @@ class Configuration:
                     # Replace detector_name with the detector name
                     path[path.index('detector_name')] = detector
 
-                self.set_config_val(path, value)
+                self.set_iconfig_val(path, value)
                 return
 
-        raise Exception(widget_name + ' was not found in config!')
+        raise Exception(widget_name + ' was not found in iconfig!')
 
     def get_detector_widgets(self):
         # These ones won't be found in the gui yaml dict
@@ -188,13 +187,13 @@ class Configuration:
         return [x[0] for x in res]
 
     def get_detector_names(self):
-        return list(self.config.get('detectors', {}).keys())
+        return list(self.iconfig.get('detectors', {}).keys())
 
     def get_default_detector(self):
-        return copy.deepcopy(self.default_config['detectors']['ge1'])
+        return copy.deepcopy(self.default_iconfig['detectors']['ge1'])
 
     def get_detector(self, detector_name):
-        return self.config['detectors'][detector_name]
+        return self.iconfig['detectors'][detector_name]
 
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
@@ -202,12 +201,13 @@ class Configuration:
         else:
             new_detector = self.get_default_detector()
 
-        self.config['detectors'][detector_name] = new_detector
+        self.iconfig['detectors'][detector_name] = new_detector
 
     def remove_detector(self, detector_name):
-        del self.config['detectors'][detector_name]
+        del self.iconfig['detectors'][detector_name]
 
     def rename_detector(self, old_name, new_name):
         if old_name != new_name:
-            self.config['detectors'][new_name] = self.config['detectors'][old_name]
+            self.iconfig['detectors'][new_name] = (
+                self.iconfig['detectors'][old_name])
             self.remove_detector(old_name)

@@ -25,10 +25,10 @@ class CalTreeWidget(QTreeWidget):
             self.header().resizeSection(0, 200)
             self.header().resizeSection(1, 200)
 
-            for key in self.cfg.config.keys():
+            for key in self.cfg.iconfig.keys():
                 tree_item = self.add_tree_item(key, None, self)
                 tree_item.setExpanded(True)
-                self.recursive_add_tree_items(self.cfg.config[key], tree_item)
+                self.recursive_add_tree_items(self.cfg.iconfig[key], tree_item)
         finally:
             self.blockSignals(block_signals)
 
@@ -80,7 +80,7 @@ class CalTreeWidget(QTreeWidget):
 
     def item_changed(self, tree_item, column):
         path = self.get_path_from_root(tree_item)
-        old_value = self.cfg.get_config_val(path)
+        old_value = self.cfg.get_iconfig_val(path)
         new_value = tree_item.text(column)
 
         # Convert the new value to the old value's type
@@ -92,7 +92,7 @@ class CalTreeWidget(QTreeWidget):
             QMessageBox.warning(self, 'HEXRD', msg)
             return
 
-        self.cfg.set_config_val(path, new_value)
+        self.cfg.set_iconfig_val(path, new_value)
 
     def _is_int(self, s):
         try:
