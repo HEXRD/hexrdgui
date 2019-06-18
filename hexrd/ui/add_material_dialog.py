@@ -1,3 +1,5 @@
+import copy
+
 from PySide2.QtCore import QObject
 
 from hexrd.xrd import spacegroup
@@ -132,4 +134,4 @@ class AddMaterialDialog(QObject):
         # This will create a new planeData object as well.
         self.material.hklMax = self.ui.max_hkl.value()
 
-        return self.material
+        return copy.deepcopy(self.material)
