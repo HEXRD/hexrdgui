@@ -69,10 +69,10 @@ class MaterialsPanel(QObject):
             self.ui.materials_combo.clear()
             materials = list(HexrdConfig().materials().keys())
             for mat in materials:
-                self.ui.materials_combo.addItem(_format_mat_name(mat))
+                self.ui.materials_combo.addItem(mat)
 
             self.ui.materials_combo.setCurrentText(
-                _format_mat_name(HexrdConfig().active_material_name()))
+                HexrdConfig().active_material_name())
 
             self.ui.show_rings.setChecked(HexrdConfig().show_rings())
             self.ui.show_ranges.setChecked(HexrdConfig().show_ring_ranges())
@@ -84,7 +84,7 @@ class MaterialsPanel(QObject):
         self.update_table()
 
     def update_table(self):
-        text = self.ui.materials_combo.currentText().lower()
+        text = self.current_material()
         material = HexrdConfig().material(text)
         if not material:
             raise Exception('Material not found in configuration: ' + material)
@@ -120,8 +120,10 @@ class MaterialsPanel(QObject):
         HexrdConfig().set_selected_rings(selected_rows)
 
     def set_active_material(self):
-        text = self.ui.materials_combo.currentText().lower()
-        HexrdConfig().set_active_material(text)
+        HexrdConfig().set_active_material(self.current_material())
+
+    def current_material(self):
+        return self.ui.materials_combo.currentText()
 
     def add_material(self):
         material = self.add_material_dialog.hexrd_material()
@@ -144,22 +146,6 @@ class MaterialsPanel(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        name = self.ui.materials_combo.currentText().lower()
+        name = self.current_material()
         HexrdConfig().remove_material(name)
         self.update_gui_from_config()
-
-# Just a dictionary to improve the formatting of known names
-# They should only differ in capitalization.
-_format_mat_name_dict = {
-  'ceo2': 'CeO2',
-  'diamond': 'Diamond',
-  'lab6': 'LaB6',
-  'ruby': 'Ruby',
-  'silicon': 'Silicon'
-}
-
-def _format_mat_name(name):
-    if name in _format_mat_name_dict.keys():
-        return _format_mat_name_dict[name]
-
-    return name
