@@ -1,7 +1,7 @@
 import math
 
 from PySide2.QtCore import QObject, Qt
-from PySide2.QtWidgets import QMenu, QTableWidgetItem
+from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.add_material_dialog import AddMaterialDialog
@@ -37,6 +37,8 @@ class MaterialsPanel(QObject):
     def setup_connections(self):
         self.add_material_action.triggered.connect(
             self.add_material_dialog.show)
+        self.add_material_dialog.ui.accepted.connect(
+            self.add_material)
         self.ui.materials_combo.currentIndexChanged.connect(
             self.update_table)
         self.ui.materials_combo.currentIndexChanged.connect(
@@ -119,6 +121,19 @@ class MaterialsPanel(QObject):
         text = self.ui.materials_combo.currentText().lower()
         HexrdConfig().set_active_material(text)
 
+    def add_material(self):
+        material = self.add_material_dialog.hexrd_material()
+        name = material.name
+
+        if name in HexrdConfig().materials().keys():
+            msg = 'Material name "' + name + '" already exists!'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.add_material_dialog.show()
+            return
+
+        HexrdConfig().add_material(name, material)
+        HexrdConfig().set_active_material(name)
+        self.update_gui_from_config()
 
 # Just a dictionary to improve the formatting of known names
 _format_mat_name_dict = {

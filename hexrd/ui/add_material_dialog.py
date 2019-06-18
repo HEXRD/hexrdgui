@@ -30,6 +30,8 @@ class AddMaterialDialog(QObject):
             widget.currentIndexChanged.connect(self.set_space_group)
             widget.currentIndexChanged.connect(self.enable_lattice_params)
 
+        self.ui.material_name.textChanged.connect(self.set_name)
+
     def setup_space_group_widgets(self):
         for k in spacegroup.sgid_to_hall:
             self.ui.space_group.addItem(k)
@@ -70,6 +72,7 @@ class AddMaterialDialog(QObject):
             self.ui.hall_symbol.setCurrentIndex(val)
             self.ui.hermann_mauguin.setCurrentIndex(val)
             sgid = int(self.ui.space_group.currentText().split(':')[0])
+            self.material.sgnum = sgid
             for sgids, lg in spacegroup._pgDict.items():
                 if sgid in sgids:
                     self.ui.laue_group.setText(lg[0])
@@ -106,7 +109,7 @@ class AddMaterialDialog(QObject):
             nreq = len(reqp)
             lp_red = nreq*[0.0]
             for i in range(nreq):
-                boxi = self.lpboxes[reqp[i]]
+                boxi = self.lattice_widgets[reqp[i]]
                 lp_red[i] = boxi.value()
             m.latticeParameters = lp_red
             lprm = m.latticeParameters
@@ -117,7 +120,16 @@ class AddMaterialDialog(QObject):
             self.block_lattice_signals(False)
 
     def set_name(self, name):
-        self.material.name = self.material_name.text()
+        self.material.name = self.ui.material_name.text()
 
     def show(self):
         self.ui.show()
+
+    def hexrd_material(self):
+        """Use the UI selections to create a new hexrd material"""
+
+        # Everything should be set for self.material except hkl
+        # This will create a new planeData object as well.
+        self.material.hklMax = self.ui.max_hkl.value()
+
+        return self.material

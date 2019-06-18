@@ -252,6 +252,16 @@ class HexrdConfig(metaclass=Singleton):
     def set_materials(self, materials):
         self.mconfig['materials'] = materials
 
+    def add_material(self, name, material):
+        if name in self.materials():
+            raise Exception(name + ' is already in materials list!')
+        self.mconfig['materials'][name] = material
+
+    def modify_material(self, name, material):
+        if name not in self.materials():
+            raise Exception(name + ' is not in materials list!')
+        self.mconfig['materials'][name] = material
+
     def materials(self):
         return self.mconfig.get('materials', {})
 
