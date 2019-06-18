@@ -36,6 +36,7 @@ class ColorMapEditor:
 
         self.ui.maximum.valueChanged.connect(self.update_norm)
         self.ui.minimum.valueChanged.connect(self.update_norm)
+        self.ui.log_scale.toggled.connect(self.update_norm)
 
         self.image_tab_widget.new_images_loaded.connect(self.update_bounds)
 
@@ -75,5 +76,10 @@ class ColorMapEditor:
     def update_norm(self):
         min = self.ui.minimum.value()
         max = self.ui.maximum.value()
-        norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
+
+        if self.ui.log_scale.isChecked():
+            norm = matplotlib.colors.LogNorm(vmin=min, vmax=max)
+        else:
+            norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
+
         self.image_tab_widget.set_norm(norm)
