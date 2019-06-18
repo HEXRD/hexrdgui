@@ -138,7 +138,7 @@ class CalibrationConfigWidget(QObject):
                     continue
 
                 gui_var = getattr(self.ui, var)
-                config_val = self.cfg.get_config_val(path)
+                config_val = self.cfg.get_iconfig_val(path)
 
                 self._set_gui_value(gui_var, config_val)
         finally:
@@ -174,7 +174,7 @@ class CalibrationConfigWidget(QObject):
             for var, path in gui_yaml_paths:
                 gui_var = getattr(self.ui, var)
                 full_path = ['detectors', cur_detector] + path
-                config_val = self.cfg.get_config_val(full_path)
+                config_val = self.cfg.get_iconfig_val(full_path)
                 self._set_gui_value(gui_var, config_val)
 
             combo_items = []

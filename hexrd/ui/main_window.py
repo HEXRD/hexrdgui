@@ -22,7 +22,7 @@ class MainWindow(QObject):
                                                self.ui.central_widget)
         self.ui.central_widget_layout.insertWidget(0, self.color_map_editor.ui)
 
-        self.cfg = Configuration(self.initial_config)
+        self.cfg = Configuration(self.initial_iconfig)
 
         self.add_materials_panel()
 
@@ -73,11 +73,11 @@ class MainWindow(QObject):
 
     def save_settings(self):
         settings = QSettings()
-        settings.setValue('configuration', self.cfg.config)
+        settings.setValue('iconfig', self.cfg.iconfig)
 
     def load_settings(self):
         settings = QSettings()
-        self.initial_config = settings.value('configuration', None)
+        self.initial_iconfig = settings.value('iconfig', None)
 
     def on_action_open_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -85,7 +85,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
-            self.cfg.load_config(selected_file)
+            self.cfg.load_iconfig(selected_file)
             self.cal_tree_widget.rebuild_tree()
             self.calibration_config_widget.update_gui_from_config()
 
@@ -95,7 +95,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
-            return self.cfg.save_config(selected_file)
+            return self.cfg.save_iconfig(selected_file)
 
     def run_calibration(self):
         self.ui.image_tab_widget.show_calibration(self.cfg)

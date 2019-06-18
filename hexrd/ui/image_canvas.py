@@ -72,7 +72,7 @@ class ImageCanvas(FigureCanvas):
 
         material = config.get_active_material()
 
-        img, ring_data = cartesian_image(config.config, images,
+        img, ring_data = cartesian_image(config.iconfig, images,
                                          material.planeData)
 
         axis = self.figure.add_subplot(111)
@@ -95,7 +95,7 @@ class ImageCanvas(FigureCanvas):
 
         material = config.get_active_material()
 
-        img, extent, ring_data, rbnd_data = polar_image(config.config, images,
+        img, extent, ring_data, rbnd_data = polar_image(config.iconfig, images,
                                                         material.planeData)
 
         axis = self.figure.add_subplot(111)
