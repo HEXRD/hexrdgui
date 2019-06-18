@@ -66,7 +66,7 @@ class ImageCanvas(FigureCanvas):
 
         config = HexrdConfig()
         images_dict = config.images()
-        material = config.get_active_material()
+        material = config.active_material()
 
         img, ring_data = cartesian_image(config.iconfig, images_dict,
                                          material.planeData)
@@ -87,7 +87,7 @@ class ImageCanvas(FigureCanvas):
 
         config = HexrdConfig()
         images_dict = config.images()
-        material = config.get_active_material()
+        material = config.active_material()
 
         img, extent, ring_data, rbnd_data = polar_image(config.iconfig,
                                                         images_dict,

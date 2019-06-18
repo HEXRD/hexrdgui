@@ -12,8 +12,6 @@ class MaterialsPanel(QObject):
     def __init__(self, parent=None):
         super(MaterialsPanel, self).__init__(parent)
 
-        self.config = HexrdConfig()
-
         loader = UiLoader()
         self.ui = loader.load_file('materials_panel.ui', parent)
         self.add_material_dialog = AddMaterialDialog(self.ui)
@@ -44,9 +42,16 @@ class MaterialsPanel(QObject):
         self.ui.materials_combo.currentIndexChanged.connect(
             self.set_active_material)
 
+        self.ui.materials_table.selectionModel().selectionChanged.connect(
+            self.update_ring_selection)
+
+        self.ui.show_rings.toggled.connect(HexrdConfig().set_show_rings)
+        self.ui.show_ranges.toggled.connect(HexrdConfig().set_show_ring_ranges)
+        self.ui.tth_ranges.valueChanged.connect(HexrdConfig().set_ring_ranges)
+
     def update_table(self):
         text = self.ui.materials_combo.currentText().lower()
-        material = self.config.get_material(text)
+        material = HexrdConfig().material(text)
         if not material:
             raise Exception('Material not found in configuration: ' + material)
 
@@ -71,6 +76,11 @@ class MaterialsPanel(QObject):
             table_item.setTextAlignment(Qt.AlignCenter)
             self.ui.materials_table.setItem(i, 2, table_item)
 
+    def update_ring_selection(self):
+        selection_model = self.ui.materials_table.selectionModel()
+        selected_rows = [x.row() for x in selection_model.selectedRows()]
+        HexrdConfig().set_selected_rings(selected_rows)
+
     def set_active_material(self):
         text = self.ui.materials_combo.currentText().lower()
-        self.config.set_active_material(text)
+        HexrdConfig().set_active_material(text)

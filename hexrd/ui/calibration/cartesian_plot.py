@@ -5,6 +5,8 @@ from hexrd.gridutil import cellIndices
 from hexrd import instrument
 
 from hexrd.ui import resource_loader
+from hexrd.ui.hexrd_config import HexrdConfig
+
 import hexrd.ui.resources.materials
 
 from skimage import transform as tf
@@ -70,9 +72,24 @@ def make_dpanel(dplane, instr, pixel_size=0.5):
 
 
 def add_rings(dpanel, plane_data):
-    ring_angs, ring_xys = dpanel.make_powder_rings(
-        plane_data, delta_eta=1)
     ring_data = []
+    if not HexrdConfig().show_rings():
+        # We are not supposed to add rings
+        return ring_data
+
+    selected_rings = HexrdConfig().selected_rings()
+    if selected_rings:
+        # We should only get specific values
+        tth = plane_data.getTTh()
+        tth = [tth[i] for i in selected_rings]
+        delta_tth = np.degrees(plane_data.tThWidth)
+
+        ring_angs, ring_xys = dpanel.make_powder_rings(
+            tth, delta_tth=delta_tth, delta_eta=1)
+    else:
+        ring_angs, ring_xys = dpanel.make_powder_rings(
+            plane_data, delta_eta=1)
+
     for ring in ring_xys:
         ring_data.append(dpanel.cartToPixel(ring))
 

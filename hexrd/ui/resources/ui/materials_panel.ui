@@ -155,6 +155,9 @@
      <property name="text">
       <string>Show Rings</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
@@ -171,6 +174,9 @@
      </item>
      <item>
       <widget class="QDoubleSpinBox" name="tth_ranges">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;±2θ range&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -196,7 +202,7 @@
         <double>0.005000000000000</double>
        </property>
        <property name="value">
-        <double>0.010000000000000</double>
+        <double>0.125000000000000</double>
        </property>
       </widget>
      </item>
@@ -218,5 +224,22 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>show_ranges</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>tth_ranges</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>67</x>
+     <y>514</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>514</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

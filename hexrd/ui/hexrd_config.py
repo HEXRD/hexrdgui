@@ -34,8 +34,7 @@ class HexrdConfig(metaclass=Singleton):
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
         self.images_dir = None
-        self.materials = None
-        self.active_material = None
+        self.mconfig = {}
         self.images_dict = {}
 
         self.load_settings()
@@ -76,15 +75,6 @@ class HexrdConfig(metaclass=Singleton):
                                              'defaults.yml')
         self.default_iconfig = yaml.load(text, Loader=yaml.FullLoader)
 
-    def load_default_materials(self):
-        data = resource_loader.load_resource(hexrd.ui.resources.materials,
-                                             'materials.hexrd', binary=True)
-
-        matlist = pickle.loads(data, encoding='latin1')
-        self.materials = dict(zip([i.name for i in matlist], matlist))
-
-        self.set_active_material('ceo2')
-
     def load_images(self, names, image_files):
         self.images_dict.clear()
         for name, f in zip(names, image_files):
@@ -95,19 +85,6 @@ class HexrdConfig(metaclass=Singleton):
 
     def images(self):
         return self.images_dict
-
-    def get_material(self, name):
-        return self.materials.get(name)
-
-    def set_active_material(self, name):
-        if name not in self.materials:
-            raise Exception(name + ' was not found in materials list: ' +
-                            str(self.materials.keys()))
-
-        self.active_material = name
-
-    def get_active_material(self):
-        return self.get_material(self.active_material)
 
     def load_iconfig(self, yml_file):
         with open(yml_file, 'r') as f:
@@ -255,3 +232,56 @@ class HexrdConfig(metaclass=Singleton):
             self.iconfig['detectors'][new_name] = (
                 self.iconfig['detectors'][old_name])
             self.remove_detector(old_name)
+
+    # This section is for materials configuration
+    def load_default_materials(self):
+        data = resource_loader.load_resource(hexrd.ui.resources.materials,
+                                             'materials.hexrd', binary=True)
+
+        matlist = pickle.loads(data, encoding='latin1')
+        self.set_materials(dict(zip([i.name for i in matlist], matlist)))
+        self.set_active_material('ceo2')
+
+    def set_materials(self, materials):
+        self.mconfig['materials'] = materials
+
+    def materials(self):
+        return self.mconfig.get('materials', {})
+
+    def material(self, name):
+        return self.mconfig['materials'].get(name)
+
+    def set_active_material(self, name):
+        if name not in self.materials():
+            raise Exception(name + ' was not found in materials list: ' +
+                            str(self.materials()))
+
+        self.mconfig['active_material'] = name
+
+    def active_material(self):
+        active_material = self.mconfig.get('active_material')
+        return self.material(active_material)
+
+    def set_selected_rings(self, rings):
+        self.mconfig['selected_rings'] = rings
+
+    def selected_rings(self):
+        return self.mconfig.get('selected_rings')
+
+    def set_show_rings(self, b):
+        self.mconfig['show_rings'] = b
+
+    def show_rings(self):
+        return self.mconfig.get('show_rings', True)
+
+    def set_show_ring_ranges(self, b):
+        self.mconfig['show_ring_ranges'] = b
+
+    def show_ring_ranges(self):
+        return self.mconfig.get('show_ring_ranges')
+
+    def set_ring_ranges(self, r):
+        self.mconfig['ring_ranges'] = r
+
+    def ring_ranges(self):
+        return self.mconfig.get('ring_ranges')
