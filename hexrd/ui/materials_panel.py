@@ -37,6 +37,8 @@ class MaterialsPanel(QObject):
     def setup_connections(self):
         self.add_material_action.triggered.connect(
             self.add_material_dialog.show)
+        self.delete_material_action.triggered.connect(
+            self.remove_current_material)
         self.add_material_dialog.ui.accepted.connect(
             self.add_material)
         self.ui.materials_combo.currentIndexChanged.connect(
@@ -135,7 +137,19 @@ class MaterialsPanel(QObject):
         HexrdConfig().set_active_material(name)
         self.update_gui_from_config()
 
+    def remove_current_material(self):
+        # Don't allow the user to remove all of the materials
+        if len(HexrdConfig().materials().keys()) == 1:
+            msg = 'Cannot remove all materials. Add another first.'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
+        name = self.ui.materials_combo.currentText().lower()
+        HexrdConfig().remove_material(name)
+        self.update_gui_from_config()
+
 # Just a dictionary to improve the formatting of known names
+# They should only differ in capitalization.
 _format_mat_name_dict = {
   'ceo2': 'CeO2',
   'diamond': 'Diamond',

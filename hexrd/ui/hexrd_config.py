@@ -262,6 +262,17 @@ class HexrdConfig(metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         self.mconfig['materials'][name] = material
 
+    def remove_material(self, name):
+        if name not in self.materials():
+            raise Exception(name + ' is not in materials list!')
+        del self.mconfig['materials'][name]
+
+        if name == self.active_material_name():
+            if self.materials().keys():
+                self.set_active_material(list(self.materials().keys())[0])
+            else:
+                self.set_active_material(None)
+
     def materials(self):
         return self.mconfig.get('materials', {})
 
@@ -269,7 +280,7 @@ class HexrdConfig(metaclass=Singleton):
         return self.mconfig['materials'].get(name)
 
     def set_active_material(self, name):
-        if name not in self.materials():
+        if name not in self.materials() and name is not None:
             raise Exception(name + ' was not found in materials list: ' +
                             str(self.materials()))
 
