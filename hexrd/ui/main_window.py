@@ -1,13 +1,14 @@
 import os
 
 from PySide2.QtCore import QEvent, QObject
-from PySide2.QtWidgets import QFileDialog, QMainWindow
+from PySide2.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_tree_widget import CalTreeWidget
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.ui_loader import UiLoader
 
@@ -102,11 +103,20 @@ class MainWindow(QObject):
             # Save the chosen dir
             HexrdConfig().set_images_dir(selected_files[0])
 
-            # For now, just use the base names without the extension
-            names = [os.path.basename(x) for x in selected_files]
-            names = [os.path.splitext(x)[0] for x in names]
-            HexrdConfig().load_images(names, selected_files)
-            self.ui.image_tab_widget.load_images()
+            # Make sure the number of files and number of detectors match
+            num_detectors = len(HexrdConfig().get_detector_names())
+            if len(selected_files) != num_detectors:
+                msg = ('Number of files must match number of detectors: ' +
+                       str(num_detectors))
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
+                return
+
+            dialog = LoadImagesDialog(selected_files, self.ui)
+
+            if dialog.exec_():
+                detector_names, image_files = dialog.results()
+                HexrdConfig().load_images(detector_names, image_files)
+                self.ui.image_tab_widget.load_images()
 
     def run_calibration(self):
         self.ui.image_tab_widget.show_calibration()
