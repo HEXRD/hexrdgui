@@ -1,6 +1,9 @@
 import copy
 import pickle
 
+from PySide2.QtCore import QSettings
+
+import fabio
 import yaml
 
 from hexrd.ui import resource_loader
@@ -8,17 +11,34 @@ from hexrd.ui import resource_loader
 import hexrd.ui.resources.calibration
 import hexrd.ui.resources.materials
 
-class Configuration:
 
-    def __init__(self, iconfig=None):
+class Singleton(type):
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args,
+                                                                 **kwargs)
+        return cls._instances[cls]
+
+
+# This is a singleton class that contains the configuration
+class HexrdConfig(metaclass=Singleton):
+
+    def __init__(self):
         """iconfig means instrument config"""
-        self.iconfig = iconfig
+        self.iconfig = None
         self.default_iconfig = None
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
+        self.images_dir = None
         self.materials = None
         self.active_material = None
+        self.images_dict = {}
+
+        self.load_settings()
 
         # Load default configuration settings
         self.load_default_config()
@@ -32,6 +52,19 @@ class Configuration:
 
         # Load the default materials
         self.load_default_materials()
+
+    def save_settings(self):
+        settings = QSettings()
+        settings.setValue('iconfig', self.iconfig)
+        settings.setValue('images_dir', self.images_dir)
+
+    def load_settings(self):
+        settings = QSettings()
+        self.iconfig = settings.value('iconfig', None)
+        self.images_dir = settings.value('images_dir', None)
+
+    def set_images_dir(self, images_dir):
+        self.images_dir = images_dir
 
     def load_gui_yaml_dict(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
@@ -51,6 +84,17 @@ class Configuration:
         self.materials = dict(zip([i.name for i in matlist], matlist))
 
         self.set_active_material('ceo2')
+
+    def load_images(self, names, image_files):
+        self.images_dict.clear()
+        for name, f in zip(names, image_files):
+            self.images_dict[name] = fabio.open(f).data
+
+    def image(self, name):
+        return self.images_dict.get(name)
+
+    def images(self):
+        return self.images_dict
 
     def get_material(self, name):
         return self.materials.get(name)

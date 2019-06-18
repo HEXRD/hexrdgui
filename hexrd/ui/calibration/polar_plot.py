@@ -1,14 +1,11 @@
 import numpy as np
 
 from hexrd import instrument
-from hexrd import imageseries
 from .polarview import PolarView
 
 from skimage.exposure import rescale_intensity
 
 from .display_plane import DisplayPlane
-
-Pimgs = imageseries.process.ProcessedImageSeries
 
 snip_width = 9
 
@@ -26,13 +23,14 @@ tth_pixel_size = default_options['polarview']['tth-pixel-size']
 default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
 
 
-def polar_image(config, images, plane_data):
-    iviewer = InstrumentViewer(config, images, plane_data)
+def polar_image(config, images_dict, plane_data):
+    iviewer = InstrumentViewer(config, images_dict, plane_data)
 
     # Rescale the data to match the scale of the original dataset
     # TODO: try to get create_calibration_image to not rescale the
     # result to be between 0 and 1 in the first place so this will
     # not be necessary.
+    images = images_dict.values()
     minimum = min([x.min() for x in images])
     maximum = max([x.max() for x in images])
     img = iviewer.image
@@ -52,11 +50,11 @@ def load_instrument(config):
 
 class InstrumentViewer:
 
-    def __init__(self, config, imgs, plane_data, opts=default_options):
+    def __init__(self, config, image_dict, plane_data, opts=default_options):
         self.plane_data = plane_data
         self.instr = load_instrument(config)
         self._load_panels()
-        self._load_images(imgs)
+        self._load_images(image_dict)
         self._load_opts(opts)
         self.dplane = DisplayPlane()
         self.pixel_size = 0.5
@@ -82,16 +80,17 @@ class InstrumentViewer:
             self.do_erosion = np.bool(d['do_erosion'])
 
     def _load_panels(self):
-        self.panel_ids = list(self.instr._detectors.keys())
         self.panels = list(self.instr._detectors.values())
 
-    def _load_images(self, imgs):
-        self.images = []
-        self.image_dict = {}
-        # Just assume for now they are already arranged correctly
-        for img, pid in zip(imgs, self.panel_ids):
-            self.images.append(img)
-            self.image_dict[pid] = img
+    def _load_images(self, image_dict):
+        # Make sure image keys and detector keys match
+        if image_dict.keys() != self.instr._detectors.keys():
+            msg = ('Images do not match the panel ids!\n' +
+                   'Images: ' + str(list(image_dict.keys())) + '\n' +
+                   'PanelIds: ' + str(list(self.instr._detectors.keys())))
+            raise Exception(msg)
+
+        self.image_dict = image_dict
 
     def _make_dpanel(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)

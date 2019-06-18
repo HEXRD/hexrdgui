@@ -1,13 +1,15 @@
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QMessageBox, QTreeWidget, QTreeWidgetItem
 
+from hexrd.ui.hexrd_config import HexrdConfig
+
 
 class CalTreeWidget(QTreeWidget):
 
-    def __init__(self, cfg, parent=None):
+    def __init__(self, parent=None):
         super(CalTreeWidget, self).__init__(parent)
 
-        self.cfg = cfg
+        self.cfg = HexrdConfig()
         self.rebuild_tree()
         self.setup_connections()
 
