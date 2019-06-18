@@ -39,6 +39,9 @@ class HexrdConfig(metaclass=Singleton):
 
         self.load_settings()
 
+        self.load_default_mconfig()
+        self.mconfig = self.default_mconfig
+
         # Load default configuration settings
         self.load_default_config()
 
@@ -240,7 +243,11 @@ class HexrdConfig(metaclass=Singleton):
 
         matlist = pickle.loads(data, encoding='latin1')
         self.set_materials(dict(zip([i.name for i in matlist], matlist)))
-        self.set_active_material('ceo2')
+
+    def load_default_mconfig(self):
+        yml = resource_loader.load_resource(hexrd.ui.resources.materials,
+                                            'materials_panel_defaults.yml')
+        self.default_mconfig = yaml.load(yml, Loader=yaml.FullLoader)
 
     def set_materials(self, materials):
         self.mconfig['materials'] = materials
@@ -258,9 +265,12 @@ class HexrdConfig(metaclass=Singleton):
 
         self.mconfig['active_material'] = name
 
+    def active_material_name(self):
+        return self.mconfig.get('active_material')
+
     def active_material(self):
-        active_material = self.mconfig.get('active_material')
-        return self.material(active_material)
+        m = self.active_material_name()
+        return self.material(m)
 
     def set_selected_rings(self, rings):
         self.mconfig['selected_rings'] = rings
@@ -272,7 +282,7 @@ class HexrdConfig(metaclass=Singleton):
         self.mconfig['show_rings'] = b
 
     def show_rings(self):
-        return self.mconfig.get('show_rings', True)
+        return self.mconfig.get('show_rings')
 
     def set_show_ring_ranges(self, b):
         self.mconfig['show_ring_ranges'] = b
