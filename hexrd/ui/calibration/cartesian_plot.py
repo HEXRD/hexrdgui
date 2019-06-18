@@ -15,8 +15,12 @@ from skimage.exposure import equalize_adapthist
 from .display_plane import DisplayPlane
 
 
-def cartesian_image(config, images_dict, plane_data):
-    instr = instrument.HEDMInstrument(instrument_config=config)
+def cartesian_image():
+    iconfig = HexrdConfig().iconfig
+    images_dict = HexrdConfig().images()
+    plane_data = HexrdConfig().active_material().planeData
+
+    instr = instrument.HEDMInstrument(instrument_config=iconfig)
 
     # Make sure each key in the image dict is in the panel_ids
     if images_dict.keys() != instr._detectors.keys():

@@ -25,8 +25,12 @@ tth_pixel_size = default_options['polarview']['tth-pixel-size']
 default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
 
 
-def polar_image(config, images_dict, plane_data):
-    iviewer = InstrumentViewer(config, images_dict, plane_data)
+def polar_image():
+    iconfig = HexrdConfig().iconfig
+    images_dict = HexrdConfig().images()
+    plane_data = HexrdConfig().active_material().planeData
+
+    iviewer = InstrumentViewer(iconfig, images_dict, plane_data)
 
     # Rescale the data to match the scale of the original dataset
     # TODO: try to get create_calibration_image to not rescale the
