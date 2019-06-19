@@ -26,7 +26,7 @@ default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
 
 
 def polar_image():
-    iconfig = HexrdConfig().iconfig
+    iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().images()
     plane_data = HexrdConfig().active_material.planeData
 
