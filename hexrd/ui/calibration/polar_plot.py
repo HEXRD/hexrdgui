@@ -14,17 +14,6 @@ snip_width = 9
 tth_min = 1.
 tth_max = 20.
 
-default_options = {
-    'polarview': {
-        'tth-pixel-size': 0.05,
-        'eta-pixel-size': 0.2
-    },
-    'do_erosion': False
-}
-tth_pixel_size = default_options['polarview']['tth-pixel-size']
-default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
-
-
 def polar_image():
     iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().images()
@@ -56,33 +45,26 @@ def load_instrument(config):
 
 class InstrumentViewer:
 
-    def __init__(self, config, image_dict, plane_data, opts=default_options):
+    def __init__(self, config, image_dict, plane_data):
         self.plane_data = plane_data
         self.instr = load_instrument(config)
         self._load_panels()
         self._load_images(image_dict)
-        self._load_opts(opts)
         self.dplane = DisplayPlane()
-        self.pixel_size = 0.5
+
+        # Resolution settings
+        self.pixel_size = HexrdConfig().polar_pixel_size
+        self.pv_pixel_size = (
+            HexrdConfig().polar_pixel_size_tth,
+            HexrdConfig().polar_pixel_size_eta
+        )
+
         self._make_dpanel()
+        self.snip_width_init = 9
+        self.snip_width = self.snip_width_init*self.pv_pixel_size[0]
 
         self.image = None
         self.generate_image()
-
-    # ========== Set up
-    def _load_opts(self, d):
-        pview = d['polarview']
-        self.opts = d
-        self.pv_pixel_size = (pview['tth-pixel-size'],
-                              pview['eta-pixel-size'])
-        if 'snip_width' in d:
-            self.snip_width_init = d['snip_width']
-        else:
-            self.snip_width_init = 9
-        self.snip_width = self.snip_width_init*self.pv_pixel_size[0]
-
-        if 'do_erosion' in d:
-            self.do_erosion = np.bool(d['do_erosion'])
 
     def _load_panels(self):
         self.panels = list(self.instr._detectors.values())
@@ -103,7 +85,7 @@ class InstrumentViewer:
                                                 self.pixel_size)
 
     # ========== Drawing
-    def draw_polar(self, snip_width=None):
+    def draw_polar(self, snip_width=snip_width):
         """show polar view of rings"""
         pv = PolarView([tth_min, tth_max], self.instr,
                        eta_min=-180., eta_max=180.,
@@ -160,9 +142,6 @@ class InstrumentViewer:
                                                 [180, tth + tthw]]))
 
     def plot_dplane(self, warped, snip_width=None):
-        if snip_width is None:
-            snip_width = self.opts['snip_width']
-
         img = rescale_intensity(warped, out_range=(0., 1.))
         img = log_scale_img(log_scale_img(img))
 

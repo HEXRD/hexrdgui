@@ -47,8 +47,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         super(HexrdConfig, self).__init__(None)
         self.instrument_config = None
         self.materials_config = None
+        self.resolution_config = None
         self.default_instrument_config = None
         self.default_materials_config = None
+        self.default_resolution_config = None
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
@@ -62,6 +64,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         # Load default configuration settings
         self.load_default_config()
+
+        self.resolution_config = copy.deepcopy(
+            self.default_resolution_config)
 
         if self.instrument_config is None:
             # Load the default instrument_config settings
@@ -96,8 +101,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def load_default_config(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
-                                             'defaults.yml')
+                                             'default_instrument_config.yml')
         self.default_instrument_config = yaml.load(text,
+                                                   Loader=yaml.FullLoader)
+
+        text = resource_loader.load_resource(hexrd.ui.resources.calibration,
+                                             'default_resolution_config.yml')
+        self.default_resolution_config = yaml.load(text,
                                                    Loader=yaml.FullLoader)
 
     def load_images(self, names, image_files):
@@ -396,3 +406,38 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.materials_config['ring_ranges'] = r
 
     ring_ranges = property(_ring_ranges, _set_ring_ranges)
+
+    def _polar_pixel_size_tth(self):
+        return self.resolution_config['polar']['pixel_size_tth']
+
+    def _set_polar_pixel_size_tth(self, v):
+        self.resolution_config['polar']['pixel_size_tth'] = v
+
+    polar_pixel_size_tth = property(_polar_pixel_size_tth,
+                                    _set_polar_pixel_size_tth)
+
+    def _polar_pixel_size_eta(self):
+        return self.resolution_config['polar']['pixel_size_eta']
+
+    def _set_polar_pixel_size_eta(self, v):
+        self.resolution_config['polar']['pixel_size_eta'] = v
+
+    polar_pixel_size_eta = property(_polar_pixel_size_eta,
+                                    _set_polar_pixel_size_eta)
+
+    def _polar_pixel_size(self):
+        return self.resolution_config['polar']['pixel_size']
+
+    def _set_polar_pixel_size(self, v):
+        self.resolution_config['polar']['pixel_size'] = v
+
+    polar_pixel_size = property(_polar_pixel_size, _set_polar_pixel_size)
+
+    def _cartesian_pixel_size(self):
+        return self.resolution_config['cartesian']['pixel_size']
+
+    def _set_cartesian_pixel_size(self, v):
+        self.resolution_config['cartesian']['pixel_size'] = v
+
+    cartesian_pixel_size = property(_cartesian_pixel_size,
+                                    _set_cartesian_pixel_size)

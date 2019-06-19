@@ -19,6 +19,7 @@ def cartesian_image():
     iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().images()
     plane_data = HexrdConfig().active_material.planeData
+    pixel_size = HexrdConfig().cartesian_pixel_size
 
     instr = instrument.HEDMInstrument(instrument_config=iconfig)
 
@@ -30,7 +31,7 @@ def cartesian_image():
         raise Exception(msg)
 
     dplane = DisplayPlane()
-    dpanel = make_dpanel(dplane, instr)
+    dpanel = make_dpanel(dplane, instr, pixel_size)
 
     ring_data = add_rings(dpanel, plane_data)
 
@@ -69,7 +70,7 @@ def load_ceo2():
     return load_pdata(materials, 'ceo2')
 
 
-def make_dpanel(dplane, instr, pixel_size=0.5):
+def make_dpanel(dplane, instr, pixel_size):
     dpanel_sizes = dplane.panel_size(instr)
     dpanel = dplane.display_panel(dpanel_sizes, pixel_size)
     return dpanel
