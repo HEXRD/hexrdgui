@@ -1,3 +1,5 @@
+import copy
+
 from PySide2.QtCore import QObject
 
 from hexrd.xrd import spacegroup
@@ -30,11 +32,23 @@ class AddMaterialDialog(QObject):
             widget.currentIndexChanged.connect(self.set_space_group)
             widget.currentIndexChanged.connect(self.enable_lattice_params)
 
+        self.ui.material_name.textChanged.connect(self.set_name)
+
     def setup_space_group_widgets(self):
         for k in spacegroup.sgid_to_hall:
             self.ui.space_group.addItem(k)
             self.ui.hall_symbol.addItem(spacegroup.sgid_to_hall[k])
             self.ui.hermann_mauguin.addItem(spacegroup.sgid_to_hm[k])
+
+    def update_gui_from_material(self):
+        key_list = [x[0] for x in spacegroup.sgid_to_hall.items()]
+        key_list = [x.split(':')[0] for x in key_list]
+        sgid = key_list.index(str(self.material.sgnum))
+
+        self.set_space_group(sgid)
+        self.enable_lattice_params() # This updates the values also
+        self.ui.max_hkl.setValue(self.material.hklMax)
+        self.ui.material_name.setText(self.material.name)
 
     @property
     def lattice_widgets(self):
@@ -64,12 +78,13 @@ class AddMaterialDialog(QObject):
             widget.blockSignals(block)
 
     def set_space_group(self, val):
+        self.block_sgs_signals(True)
         try:
-            self.block_sgs_signals(True)
             self.ui.space_group.setCurrentIndex(val)
             self.ui.hall_symbol.setCurrentIndex(val)
             self.ui.hermann_mauguin.setCurrentIndex(val)
             sgid = int(self.ui.space_group.currentText().split(':')[0])
+            self.material.sgnum = sgid
             for sgids, lg in spacegroup._pgDict.items():
                 if sgid in sgids:
                     self.ui.laue_group.setText(lg[0])
@@ -106,7 +121,7 @@ class AddMaterialDialog(QObject):
             nreq = len(reqp)
             lp_red = nreq*[0.0]
             for i in range(nreq):
-                boxi = self.lpboxes[reqp[i]]
+                boxi = self.lattice_widgets[reqp[i]]
                 lp_red[i] = boxi.value()
             m.latticeParameters = lp_red
             lprm = m.latticeParameters
@@ -117,7 +132,22 @@ class AddMaterialDialog(QObject):
             self.block_lattice_signals(False)
 
     def set_name(self, name):
-        self.material.name = self.material_name.text()
+        self.material.name = name
 
-    def show(self):
-        self.ui.show()
+    def hexrd_material(self):
+        """Use the UI selections to create a new hexrd material"""
+
+        # Everything should be set for self.material except hkl
+        # This will create a new planeData object as well.
+        self.material.hklMax = self.ui.max_hkl.value()
+
+        # The default is to exclude all hkl values after the 5th one.
+        # Let's not do this...
+        excl = [False] * len(self.material.planeData.exclusions)
+        self.material.planeData.exclusions = excl
+
+        return copy.deepcopy(self.material)
+
+    def set_material(self, mat):
+        self.material = copy.deepcopy(mat)
+        self.update_gui_from_material()

@@ -7,6 +7,8 @@ from skimage.exposure import rescale_intensity
 
 from .display_plane import DisplayPlane
 
+from hexrd.ui.hexrd_config import HexrdConfig
+
 snip_width = 9
 
 tth_min = 1.
@@ -23,8 +25,12 @@ tth_pixel_size = default_options['polarview']['tth-pixel-size']
 default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
 
 
-def polar_image(config, images_dict, plane_data):
-    iviewer = InstrumentViewer(config, images_dict, plane_data)
+def polar_image():
+    iconfig = HexrdConfig().iconfig
+    images_dict = HexrdConfig().images()
+    plane_data = HexrdConfig().active_material().planeData
+
+    iviewer = InstrumentViewer(iconfig, images_dict, plane_data)
 
     # Rescale the data to match the scale of the original dataset
     # TODO: try to get create_calibration_image to not rescale the
@@ -61,7 +67,6 @@ class InstrumentViewer:
         self._make_dpanel()
 
         self.image = None
-        self.have_rings = False
         self.generate_image()
 
     # ========== Set up
@@ -118,20 +123,41 @@ class InstrumentViewer:
     def add_rings(self):
         self.ring_data = []
         self.rbnd_data = []
-        tthw = 0.5*np.degrees(self.plane_data.tThWidth)
-        if not self.have_rings:
-            # generate and save rings
-            dp = self.dpanel
+
+        if not HexrdConfig().show_rings():
+            # We are not supposed to add rings
+            return
+
+        dp = self.dpanel
+
+        selected_rings = HexrdConfig().selected_rings()
+        if selected_rings:
+            # We should only get specific values
+            tth_list = self.plane_data.getTTh()
+            tth_list = [tth_list[i] for i in selected_rings]
+            delta_tth = np.degrees(self.plane_data.tThWidth)
+
+            ring_angs, ring_xys = dp.make_powder_rings(
+                tth_list, delta_tth=delta_tth, delta_eta=1)
+        else:
             ring_angs, ring_xys = dp.make_powder_rings(
                 self.plane_data, delta_eta=1)
 
-            for tth in np.degrees(self.plane_data.getTTh()):
-                self.ring_data.append(np.array([[-180, tth], [180, tth]]))
+            tth_list = self.plane_data.getTTh()
+
+        for tth in np.degrees(tth_list):
+            self.ring_data.append(np.array([[-180, tth], [180, tth]]))
+
+        if HexrdConfig().show_ring_ranges():
+            tthw = HexrdConfig().ring_ranges()
+            if tthw is None:
+                tthw = 0.5*np.degrees(self.plane_data.tThWidth)
+
+            for tth in np.degrees(tth_list):
                 self.rbnd_data.append(np.array([[-180, tth - tthw],
                                                 [180, tth - tthw]]))
                 self.rbnd_data.append(np.array([[-180, tth + tthw],
                                                 [180, tth + tthw]]))
-            self.have_rings = True
 
     def plot_dplane(self, warped, snip_width=None):
         if snip_width is None:
