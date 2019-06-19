@@ -140,8 +140,12 @@ class MainWindow(QObject):
 
 
 def main():
+    import signal
     import sys
     from PySide2.QtWidgets import QApplication
+
+    # Kill the program when ctrl-c is used
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     app = QApplication(sys.argv)
 
