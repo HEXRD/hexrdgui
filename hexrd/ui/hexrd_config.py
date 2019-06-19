@@ -1,7 +1,7 @@
 import copy
 import pickle
 
-from PySide2.QtCore import QSettings
+from PySide2.QtCore import Signal, QObject, QSettings
 
 import fabio
 import yaml
@@ -13,7 +13,7 @@ import hexrd.ui.resources.calibration
 import hexrd.ui.resources.materials
 
 
-class Singleton(type):
+class Singleton(type(QObject)):
 
     _instances = {}
 
@@ -25,9 +25,14 @@ class Singleton(type):
 
 
 # This is a singleton class that contains the configuration
-class HexrdConfig(metaclass=Singleton):
+class HexrdConfig(QObject, metaclass=Singleton):
+
+    """Emitted when new plane data is generated for the active material"""
+    new_plane_data = Signal()
 
     def __init__(self):
+        # Should this have a parent?
+        super(HexrdConfig, self).__init__(None)
         """iconfig means instrument config"""
         self.iconfig = None
         self.default_iconfig = None
@@ -338,6 +343,8 @@ class HexrdConfig(metaclass=Singleton):
 
         mat.beamEnergy = energy
         mat._newPdata()
+
+        self.new_plane_data.emit()
 
     def set_selected_rings(self, rings):
         self.mconfig['selected_rings'] = rings

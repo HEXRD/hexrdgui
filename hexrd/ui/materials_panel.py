@@ -50,6 +50,8 @@ class MaterialsPanel(QObject):
         self.ui.show_ranges.toggled.connect(HexrdConfig().set_show_ring_ranges)
         self.ui.tth_ranges.valueChanged.connect(HexrdConfig().set_ring_ranges)
 
+        HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
+
     def update_gui_from_config(self):
         block_list = [
             self.ui.materials_combo,
