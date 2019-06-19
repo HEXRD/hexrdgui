@@ -140,6 +140,12 @@ class AddMaterialDialog(QObject):
         # Everything should be set for self.material except hkl
         # This will create a new planeData object as well.
         self.material.hklMax = self.ui.max_hkl.value()
+
+        # The default is to exclude all hkl values after the 5th one.
+        # Let's not do this...
+        excl = [False] * len(self.material.planeData.exclusions)
+        self.material.planeData.exclusions = excl
+
         return copy.deepcopy(self.material)
 
     def set_material(self, mat):
