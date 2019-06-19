@@ -6,6 +6,7 @@ from PySide2.QtCore import QSettings
 import fabio
 import yaml
 
+from hexrd.ui import constants
 from hexrd.ui import resource_loader
 
 import hexrd.ui.resources.calibration
@@ -55,6 +56,8 @@ class HexrdConfig(metaclass=Singleton):
         # Load the default materials
         self.load_default_materials()
 
+        self.update_active_material_energy()
+
     def save_settings(self):
         settings = QSettings()
         settings.setValue('iconfig', self.iconfig)
@@ -93,6 +96,7 @@ class HexrdConfig(metaclass=Singleton):
         with open(yml_file, 'r') as f:
             self.iconfig = yaml.load(f, Loader=yaml.FullLoader)
 
+        self.update_active_material_energy()
         return self.iconfig
 
     def save_iconfig(self, output_file):
@@ -169,6 +173,10 @@ class HexrdConfig(metaclass=Singleton):
                    str(self.iconfig))
             raise Exception(msg)
 
+        # If the beam energy was modified, update the active material
+        if path == ['beam', 'energy']:
+            self.update_active_material_energy()
+
     def get_iconfig_val(self, path):
         """This obtains a dict value from a path list.
 
@@ -242,7 +250,15 @@ class HexrdConfig(metaclass=Singleton):
                                              'materials.hexrd', binary=True)
 
         matlist = pickle.loads(data, encoding='latin1')
-        self.set_materials(dict(zip([i.name for i in matlist], matlist)))
+        materials = dict(zip([i.name for i in matlist], matlist))
+
+        # For some reason, the default materials do not have the same beam
+        # energy as their plane data. We need to fix this.
+        for material in materials.values():
+            pd_wavelength = material.planeData.get_wavelength()
+            material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
+
+        self.set_materials(materials)
 
     def load_default_mconfig(self):
         yml = resource_loader.load_resource(hexrd.ui.resources.materials,
@@ -285,6 +301,7 @@ class HexrdConfig(metaclass=Singleton):
                             str(self.materials()))
 
         self.mconfig['active_material'] = name
+        self.update_active_material_energy()
 
     def active_material_name(self):
         return self.mconfig.get('active_material')
@@ -292,6 +309,24 @@ class HexrdConfig(metaclass=Singleton):
     def active_material(self):
         m = self.active_material_name()
         return self.material(m)
+
+    def update_active_material_energy(self):
+        # This is a potentially expensive operation...
+        energy = self.iconfig.get('beam', {}).get('energy')
+        mat = self.active_material()
+
+        # If the plane data energy already matches, skip it
+        pd_wavelength = mat.planeData.get_wavelength()
+        old_energy = constants.WAVELENGTH_TO_KEV / pd_wavelength
+
+        # If these are rounded to 5 decimal places instead of 4, this
+        # always fails. Maybe we are using a slightly different constant
+        # than hexrd uses?
+        if round(old_energy, 4) == round(energy, 4):
+            return
+
+        mat.beamEnergy = energy
+        mat._newPdata()
 
     def set_selected_rings(self, rings):
         self.mconfig['selected_rings'] = rings
