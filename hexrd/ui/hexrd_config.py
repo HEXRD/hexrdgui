@@ -273,6 +273,17 @@ class HexrdConfig(metaclass=Singleton):
             raise Exception(name + ' is already in materials list!')
         self.mconfig['materials'][name] = material
 
+    def rename_material(self, old_name, new_name):
+        if old_name != new_name:
+            self.mconfig['materials'][new_name] = (
+                self.mconfig['materials'][old_name])
+
+            if self.active_material_name() == old_name:
+                # Change the active material before removing the old one
+                self.set_active_material(new_name)
+
+            self.remove_material(old_name)
+
     def modify_material(self, name, material):
         if name not in self.materials():
             raise Exception(name + ' is not in materials list!')

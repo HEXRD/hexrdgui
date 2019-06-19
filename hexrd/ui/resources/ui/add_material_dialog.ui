@@ -27,7 +27,11 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QLineEdit" name="material_name"/>
+         <widget class="QLineEdit" name="material_name">
+          <property name="text">
+           <string>material</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>

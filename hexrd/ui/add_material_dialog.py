@@ -40,6 +40,16 @@ class AddMaterialDialog(QObject):
             self.ui.hall_symbol.addItem(spacegroup.sgid_to_hall[k])
             self.ui.hermann_mauguin.addItem(spacegroup.sgid_to_hm[k])
 
+    def update_gui_from_material(self):
+        key_list = [x[0] for x in spacegroup.sgid_to_hall.items()]
+        key_list = [x.split(':')[0] for x in key_list]
+        sgid = key_list.index(str(self.material.sgnum))
+
+        self.set_space_group(sgid)
+        self.enable_lattice_params() # This updates the values also
+        self.ui.max_hkl.setValue(self.material.hklMax)
+        self.ui.material_name.setText(self.material.name)
+
     @property
     def lattice_widgets(self):
         return [
@@ -68,8 +78,8 @@ class AddMaterialDialog(QObject):
             widget.blockSignals(block)
 
     def set_space_group(self, val):
+        self.block_sgs_signals(True)
         try:
-            self.block_sgs_signals(True)
             self.ui.space_group.setCurrentIndex(val)
             self.ui.hall_symbol.setCurrentIndex(val)
             self.ui.hermann_mauguin.setCurrentIndex(val)
@@ -122,10 +132,7 @@ class AddMaterialDialog(QObject):
             self.block_lattice_signals(False)
 
     def set_name(self, name):
-        self.material.name = self.ui.material_name.text()
-
-    def show(self):
-        self.ui.show()
+        self.material.name = name
 
     def hexrd_material(self):
         """Use the UI selections to create a new hexrd material"""
@@ -133,5 +140,8 @@ class AddMaterialDialog(QObject):
         # Everything should be set for self.material except hkl
         # This will create a new planeData object as well.
         self.material.hklMax = self.ui.max_hkl.value()
-
         return copy.deepcopy(self.material)
+
+    def set_material(self, mat):
+        self.material = copy.deepcopy(mat)
+        self.update_gui_from_material()

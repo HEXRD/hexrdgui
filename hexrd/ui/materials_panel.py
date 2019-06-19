@@ -35,16 +35,13 @@ class MaterialsPanel(QObject):
         b.setMenu(m)
 
     def setup_connections(self):
-        self.add_material_action.triggered.connect(
-            self.add_material_dialog.show)
+        self.add_material_action.triggered.connect(self.add_material)
+        self.modify_material_action.triggered.connect(self.modify_material)
         self.delete_material_action.triggered.connect(
             self.remove_current_material)
-        self.add_material_dialog.ui.accepted.connect(
-            self.add_material)
-        self.ui.materials_combo.currentIndexChanged.connect(
-            self.update_table)
         self.ui.materials_combo.currentIndexChanged.connect(
             self.set_active_material)
+        self.ui.materials_combo.currentIndexChanged.connect(self.update_table)
 
         self.ui.materials_table.selectionModel().selectionChanged.connect(
             self.update_ring_selection)
@@ -94,7 +91,6 @@ class MaterialsPanel(QObject):
             plane_data = material.planeData
             self.ui.materials_table.clearContents()
             self.ui.materials_table.setRowCount(plane_data.nHKLs)
-
             d_spacings = plane_data.getPlaneSpacings()
             tth = plane_data.getTTh()
 
@@ -126,18 +122,35 @@ class MaterialsPanel(QObject):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
-        material = self.add_material_dialog.hexrd_material()
-        name = material.name
+        if self.add_material_dialog.ui.exec_():
+            material = self.add_material_dialog.hexrd_material()
+            name = material.name
 
-        if name in HexrdConfig().materials().keys():
-            msg = 'Material name "' + name + '" already exists!'
-            QMessageBox.warning(self.ui, 'HEXRD', msg)
-            self.add_material_dialog.show()
-            return
+            if name in HexrdConfig().materials().keys():
+                msg = 'Material name "' + name + '" already exists!'
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
+                self.add_material_dialog.show()
+                return
 
-        HexrdConfig().add_material(name, material)
-        HexrdConfig().set_active_material(name)
-        self.update_gui_from_config()
+            HexrdConfig().add_material(name, material)
+            HexrdConfig().set_active_material(name)
+            self.update_gui_from_config()
+
+    def modify_material(self):
+        material = HexrdConfig().active_material()
+        self.add_material_dialog.set_material(material)
+        title = self.add_material_dialog.ui.windowTitle()
+        self.add_material_dialog.ui.setWindowTitle('Modify Material')
+
+        if self.add_material_dialog.ui.exec_():
+            new_mat = self.add_material_dialog.hexrd_material()
+            old_name = self.current_material()
+            new_name = new_mat.name
+            HexrdConfig().rename_material(old_name, new_name)
+            HexrdConfig().modify_material(new_name, new_mat)
+            self.update_gui_from_config()
+
+        self.add_material_dialog.ui.setWindowTitle(title)
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
