@@ -13,6 +13,8 @@ import hexrd.ui.resources.calibration
 import hexrd.ui.resources.materials
 
 
+# This metaclass must inherit from `type(QObject)` for classes that use
+# it to inherit from QObject.
 class Singleton(type(QObject)):
 
     _instances = {}
