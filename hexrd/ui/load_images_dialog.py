@@ -64,16 +64,12 @@ class LoadImagesDialog:
         cur_regex = self.current_regex()
 
         try:
-            detectors.sort(key=lambda s: _re_res(cur_regex, s))
             image_files.sort(key=lambda s: _re_res(cur_regex, s))
         except Exception as e:
             # The user is probably in the middle of typing...
             pass
 
         for i in range(len(detectors)):
-            d = QTableWidgetItem(detectors[i])
-            table.setItem(i, 0, d)
-
             f = QTableWidgetItem(image_files[i])
             table.setItem(i, 1, f)
 
