@@ -28,6 +28,16 @@ class Singleton(type(QObject)):
 
 # This is a singleton class that contains the configuration
 class HexrdConfig(QObject, metaclass=Singleton):
+    """The central configuration class for the program
+
+    This class contains properties where possible, and it uses the
+    following syntax for declaring them:
+
+    name = property(_name, _set_name)
+
+    This is done so that _set_name() may be connected to in Qt's signal
+    and slot syntax.
+    """
 
     """Emitted when new plane data is generated for the active material"""
     new_plane_data = Signal()
@@ -265,18 +275,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
             pd_wavelength = material.planeData.get_wavelength()
             material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
 
-        self.set_materials(materials)
+        self.materials = materials
 
     def load_default_mconfig(self):
         yml = resource_loader.load_resource(hexrd.ui.resources.materials,
                                             'materials_panel_defaults.yml')
         self.default_mconfig = yaml.load(yml, Loader=yaml.FullLoader)
 
-    def set_materials(self, materials):
-        self.mconfig['materials'] = materials
-
     def add_material(self, name, material):
-        if name in self.materials():
+        if name in self.materials:
             raise Exception(name + ' is already in materials list!')
         self.mconfig['materials'][name] = material
 
@@ -287,51 +294,58 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
             if self.active_material_name() == old_name:
                 # Change the active material before removing the old one
-                self.set_active_material(new_name)
+                self.active_material = new_name
 
             self.remove_material(old_name)
 
     def modify_material(self, name, material):
-        if name not in self.materials():
+        if name not in self.materials:
             raise Exception(name + ' is not in materials list!')
         self.mconfig['materials'][name] = material
 
     def remove_material(self, name):
-        if name not in self.materials():
+        if name not in self.materials:
             raise Exception(name + ' is not in materials list!')
         del self.mconfig['materials'][name]
 
         if name == self.active_material_name():
-            if self.materials().keys():
-                self.set_active_material(list(self.materials().keys())[0])
+            if self.materials.keys():
+                self.active_material = list(self.materials.keys())[0]
             else:
-                self.set_active_material(None)
+                self.active_material = None
 
-    def materials(self):
+    def _materials(self):
         return self.mconfig.get('materials', {})
+
+    def _set_materials(self, materials):
+        self.mconfig['materials'] = materials
+
+    materials = property(_materials, _set_materials)
 
     def material(self, name):
         return self.mconfig['materials'].get(name)
 
-    def set_active_material(self, name):
-        if name not in self.materials() and name is not None:
+    def _active_material(self):
+        m = self.active_material_name()
+        return self.material(m)
+
+    def _set_active_material(self, name):
+        if name not in self.materials and name is not None:
             raise Exception(name + ' was not found in materials list: ' +
-                            str(self.materials()))
+                            str(self.materials))
 
         self.mconfig['active_material'] = name
         self.update_active_material_energy()
 
+    active_material = property(_active_material, _set_active_material)
+
     def active_material_name(self):
         return self.mconfig.get('active_material')
-
-    def active_material(self):
-        m = self.active_material_name()
-        return self.material(m)
 
     def update_active_material_energy(self):
         # This is a potentially expensive operation...
         energy = self.iconfig.get('beam', {}).get('energy')
-        mat = self.active_material()
+        mat = self.active_material
 
         # If the plane data energy already matches, skip it
         pd_wavelength = mat.planeData.get_wavelength()
@@ -348,26 +362,34 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.new_plane_data.emit()
 
-    def set_selected_rings(self, rings):
-        self.mconfig['selected_rings'] = rings
-
-    def selected_rings(self):
+    def _selected_rings(self):
         return self.mconfig.get('selected_rings')
 
-    def set_show_rings(self, b):
-        self.mconfig['show_rings'] = b
+    def _set_selected_rings(self, rings):
+        self.mconfig['selected_rings'] = rings
 
-    def show_rings(self):
+    selected_rings = property(_selected_rings, _set_selected_rings)
+
+    def _show_rings(self):
         return self.mconfig.get('show_rings')
 
-    def set_show_ring_ranges(self, b):
-        self.mconfig['show_ring_ranges'] = b
+    def _set_show_rings(self, b):
+        self.mconfig['show_rings'] = b
 
-    def show_ring_ranges(self):
+    show_rings = property(_show_rings, _set_show_rings)
+
+    def _show_ring_ranges(self):
         return self.mconfig.get('show_ring_ranges')
 
-    def set_ring_ranges(self, r):
+    def _set_show_ring_ranges(self, b):
+        self.mconfig['show_ring_ranges'] = b
+
+    show_ring_ranges = property(_show_ring_ranges, _set_show_ring_ranges)
+
+    def _ring_ranges(self):
+        return self.mconfig.get('ring_ranges')
+
+    def _set_ring_ranges(self, r):
         self.mconfig['ring_ranges'] = r
 
-    def ring_ranges(self):
-        return self.mconfig.get('ring_ranges')
+    ring_ranges = property(_ring_ranges, _set_ring_ranges)

@@ -28,7 +28,7 @@ default_options['snip_width'] = int(np.ceil(2.0 / tth_pixel_size))
 def polar_image():
     iconfig = HexrdConfig().iconfig
     images_dict = HexrdConfig().images()
-    plane_data = HexrdConfig().active_material().planeData
+    plane_data = HexrdConfig().active_material.planeData
 
     iviewer = InstrumentViewer(iconfig, images_dict, plane_data)
 
@@ -124,13 +124,13 @@ class InstrumentViewer:
         self.ring_data = []
         self.rbnd_data = []
 
-        if not HexrdConfig().show_rings():
+        if not HexrdConfig().show_rings:
             # We are not supposed to add rings
             return
 
         dp = self.dpanel
 
-        selected_rings = HexrdConfig().selected_rings()
+        selected_rings = HexrdConfig().selected_rings
         if selected_rings:
             # We should only get specific values
             tth_list = self.plane_data.getTTh()
@@ -148,8 +148,8 @@ class InstrumentViewer:
         for tth in np.degrees(tth_list):
             self.ring_data.append(np.array([[-180, tth], [180, tth]]))
 
-        if HexrdConfig().show_ring_ranges():
-            tthw = HexrdConfig().ring_ranges()
+        if HexrdConfig().show_ring_ranges:
+            tthw = HexrdConfig().ring_ranges
             if tthw is None:
                 tthw = 0.5*np.degrees(self.plane_data.tThWidth)
 

@@ -18,7 +18,7 @@ from .display_plane import DisplayPlane
 def cartesian_image():
     iconfig = HexrdConfig().iconfig
     images_dict = HexrdConfig().images()
-    plane_data = HexrdConfig().active_material().planeData
+    plane_data = HexrdConfig().active_material.planeData
 
     instr = instrument.HEDMInstrument(instrument_config=iconfig)
 
@@ -77,11 +77,11 @@ def make_dpanel(dplane, instr, pixel_size=0.5):
 
 def add_rings(dpanel, plane_data):
     ring_data = []
-    if not HexrdConfig().show_rings():
+    if not HexrdConfig().show_rings:
         # We are not supposed to add rings
         return ring_data
 
-    selected_rings = HexrdConfig().selected_rings()
+    selected_rings = HexrdConfig().selected_rings
     if selected_rings:
         # We should only get specific values
         tth = plane_data.getTTh()
