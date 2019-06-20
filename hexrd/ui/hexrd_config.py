@@ -110,6 +110,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
         with open(output_file, 'w') as f:
             yaml.dump(self.iconfig, f)
 
+    def load_materials(self, f):
+        with open(f, 'rb') as rf:
+            data = rf.read()
+        self.load_materials_from_binary(data)
+
+    def save_materials(self, f):
+        with open(f, 'wb') as wf:
+            pickle.dump(list(self.materials().values()), wf)
+
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
 
@@ -255,7 +264,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_default_materials(self):
         data = resource_loader.load_resource(hexrd.ui.resources.materials,
                                              'materials.hexrd', binary=True)
+        self.load_materials_from_binary(data)
 
+    def load_materials_from_binary(self, data):
         matlist = pickle.loads(data, encoding='latin1')
         materials = dict(zip([i.name for i in matlist], matlist))
 
