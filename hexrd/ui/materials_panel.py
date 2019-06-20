@@ -46,9 +46,9 @@ class MaterialsPanel(QObject):
         self.ui.materials_table.selectionModel().selectionChanged.connect(
             self.update_ring_selection)
 
-        self.ui.show_rings.toggled.connect(HexrdConfig().set_show_rings)
-        self.ui.show_ranges.toggled.connect(HexrdConfig().set_show_ring_ranges)
-        self.ui.tth_ranges.valueChanged.connect(HexrdConfig().set_ring_ranges)
+        self.ui.show_rings.toggled.connect(HexrdConfig()._set_show_rings)
+        self.ui.show_ranges.toggled.connect(HexrdConfig()._set_show_ring_ranges)
+        self.ui.tth_ranges.valueChanged.connect(HexrdConfig()._set_ring_ranges)
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
@@ -66,16 +66,16 @@ class MaterialsPanel(QObject):
 
         try:
             self.ui.materials_combo.clear()
-            materials = list(HexrdConfig().materials().keys())
+            materials = list(HexrdConfig().materials.keys())
             for mat in materials:
                 self.ui.materials_combo.addItem(mat)
 
             self.ui.materials_combo.setCurrentText(
                 HexrdConfig().active_material_name())
 
-            self.ui.show_rings.setChecked(HexrdConfig().show_rings())
-            self.ui.show_ranges.setChecked(HexrdConfig().show_ring_ranges())
-            self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges())
+            self.ui.show_rings.setChecked(HexrdConfig().show_rings)
+            self.ui.show_ranges.setChecked(HexrdConfig().show_ring_ranges)
+            self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges)
         finally:
             for b, item in zip(block_signals, block_list):
                item.blockSignals(b)
@@ -114,10 +114,10 @@ class MaterialsPanel(QObject):
     def update_ring_selection(self):
         selection_model = self.ui.materials_table.selectionModel()
         selected_rows = [x.row() for x in selection_model.selectedRows()]
-        HexrdConfig().set_selected_rings(selected_rows)
+        HexrdConfig().selected_rings = selected_rows
 
     def set_active_material(self):
-        HexrdConfig().set_active_material(self.current_material())
+        HexrdConfig().active_material = self.current_material()
 
     def current_material(self):
         return self.ui.materials_combo.currentText()
@@ -128,20 +128,20 @@ class MaterialsPanel(QObject):
             if self.add_material_dialog.ui.exec_():
                 material = self.add_material_dialog.hexrd_material()
                 name = material.name
-                if name in HexrdConfig().materials().keys():
+                if name in HexrdConfig().materials.keys():
                     msg = 'Material name "' + name + '" already exists!'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
                     continue
 
                 HexrdConfig().add_material(name, material)
-                HexrdConfig().set_active_material(name)
+                HexrdConfig().active_material = name
                 self.update_gui_from_config()
                 return
             else:
                 return
 
     def modify_material(self):
-        material = HexrdConfig().active_material()
+        material = HexrdConfig().active_material
         self.add_material_dialog.set_material(material)
         title = self.add_material_dialog.ui.windowTitle()
         self.add_material_dialog.ui.setWindowTitle('Modify Material')
@@ -158,7 +158,7 @@ class MaterialsPanel(QObject):
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
-        if len(HexrdConfig().materials().keys()) == 1:
+        if len(HexrdConfig().materials.keys()) == 1:
             msg = 'Cannot remove all materials. Add another first.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
