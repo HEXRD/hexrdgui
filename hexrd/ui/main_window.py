@@ -84,7 +84,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
-            HexrdConfig().load_iconfig(selected_file)
+            HexrdConfig().load_instrument_config(selected_file)
             self.cal_tree_widget.rebuild_tree()
             self.calibration_config_widget.update_gui_from_config()
 
@@ -94,7 +94,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
-            return HexrdConfig().save_iconfig(selected_file)
+            return HexrdConfig().save_instrument_config(selected_file)
 
     def open_image_files(self):
         # Get the most recent images dir
