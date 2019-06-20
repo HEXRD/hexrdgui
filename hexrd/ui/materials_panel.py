@@ -1,4 +1,3 @@
-import copy
 import math
 
 from PySide2.QtCore import QObject, Qt
@@ -124,21 +123,11 @@ class MaterialsPanel(QObject):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
-        # Set the material so that the properties match the current one
-        # This also prevents some strange bugs when starting with a
-        # default material...
-        mat = copy.deepcopy(HexrdConfig().active_material())
-        mat.name = 'material'
-        # No need to keep copying the plane data. It will be remade.
-        mat._pData = None
-        self.add_material_dialog.set_material(mat)
-
         # Loop until validation succeeds or the user cancels
         while True:
             if self.add_material_dialog.ui.exec_():
                 material = self.add_material_dialog.hexrd_material()
                 name = material.name
-
                 if name in HexrdConfig().materials().keys():
                     msg = 'Material name "' + name + '" already exists!'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)

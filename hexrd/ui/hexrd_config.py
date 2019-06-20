@@ -8,6 +8,7 @@ import yaml
 
 from hexrd.ui import constants
 from hexrd.ui import resource_loader
+from hexrd.ui import utils
 
 import hexrd.ui.resources.calibration
 import hexrd.ui.resources.materials
@@ -344,7 +345,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return
 
         mat.beamEnergy = energy
-        mat._newPdata()
+        utils.make_new_pdata(mat)
 
         self.new_plane_data.emit()
 
