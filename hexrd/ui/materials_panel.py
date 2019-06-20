@@ -98,7 +98,6 @@ class MaterialsPanel(QObject):
             tth = plane_data.getTTh()
 
             for i, hkl in enumerate(plane_data.getHKLs(asStr=True)):
-                hkl = '(' + hkl.replace(' ', '') + ')'
                 table_item = QTableWidgetItem(hkl)
                 table_item.setTextAlignment(Qt.AlignCenter)
                 self.ui.materials_table.setItem(i, 0, table_item)
