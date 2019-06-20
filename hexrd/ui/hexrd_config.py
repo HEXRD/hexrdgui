@@ -285,6 +285,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_materials(self, materials):
         self.mconfig['materials'] = materials
+        if materials.keys():
+            self.set_active_material(list(materials.keys())[0])
 
     def add_material(self, name, material):
         if name in self.materials():
