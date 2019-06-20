@@ -15,14 +15,11 @@ class AddMaterialDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('add_material_dialog.ui', parent)
 
-        self.material = Material()
+        self.material = None
 
         self.setup_space_group_widgets()
 
         self.setup_connections()
-
-        # Start with space group 255
-        self.ui.space_group.setCurrentIndex(522)
 
     def setup_connections(self):
         for widget in self.lattice_widgets:
