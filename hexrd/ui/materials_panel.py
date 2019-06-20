@@ -129,6 +129,8 @@ class MaterialsPanel(QObject):
         # default material...
         mat = copy.deepcopy(HexrdConfig().active_material())
         mat.name = 'material'
+        # No need to keep copying the plane data. It will be remade.
+        mat._pData = None
         self.add_material_dialog.set_material(mat)
 
         # Loop until validation succeeds or the user cancels
