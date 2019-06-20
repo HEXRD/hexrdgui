@@ -124,19 +124,23 @@ class MaterialsPanel(QObject):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
-        if self.add_material_dialog.ui.exec_():
-            material = self.add_material_dialog.hexrd_material()
-            name = material.name
+        # Loop until validation succeeds or the user cancels
+        while True:
+            if self.add_material_dialog.ui.exec_():
+                material = self.add_material_dialog.hexrd_material()
+                name = material.name
 
-            if name in HexrdConfig().materials().keys():
-                msg = 'Material name "' + name + '" already exists!'
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                self.add_material_dialog.show()
+                if name in HexrdConfig().materials().keys():
+                    msg = 'Material name "' + name + '" already exists!'
+                    QMessageBox.warning(self.ui, 'HEXRD', msg)
+                    continue
+
+                HexrdConfig().add_material(name, material)
+                HexrdConfig().set_active_material(name)
+                self.update_gui_from_config()
                 return
-
-            HexrdConfig().add_material(name, material)
-            HexrdConfig().set_active_material(name)
-            self.update_gui_from_config()
+            else:
+                return
 
     def modify_material(self):
         material = HexrdConfig().active_material()
