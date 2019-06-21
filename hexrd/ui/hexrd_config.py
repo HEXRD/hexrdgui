@@ -46,10 +46,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
-        self.instrument_config = None
-        self.materials_config = None
-        self.default_instrument_config = None
-        self.default_materials_config = None
+        self.config = {}
+        self.default_config = {}
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
         self.working_dir = None
@@ -58,16 +56,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.load_settings()
 
-        self.load_default_materials_config()
-        self.materials_config = self.default_materials_config
-
         # Load default configuration settings
         self.load_default_config()
 
-        if self.instrument_config is None:
-            # Load the default instrument_config settings
-            self.instrument_config = copy.deepcopy(
-                self.default_instrument_config)
+        self.config['materials'] = copy.deepcopy(
+            self.default_config['materials'])
+        self.config['resolution'] = copy.deepcopy(
+            self.default_config['resolution'])
+
+        if self.config.get('instrument') is None:
+            # Load the default config['instrument'] settings
+            self.config['instrument'] = copy.deepcopy(
+                self.default_config['instrument'])
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -79,13 +79,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def save_settings(self):
         settings = QSettings()
-        settings.setValue('instrument_config', self.instrument_config)
+        settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
 
     def load_settings(self):
         settings = QSettings()
-        self.instrument_config = settings.value('instrument_config', None)
+        self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
+
+    # This is here for backward compatibility
+    @property
+    def instrument_config(self):
+        return self.config['instrument']
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -97,9 +102,19 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def load_default_config(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
-                                             'defaults.yml')
-        self.default_instrument_config = yaml.load(text,
-                                                   Loader=yaml.FullLoader)
+                                             'default_instrument_config.yml')
+        self.default_config['instrument'] = yaml.load(text,
+                                                      Loader=yaml.FullLoader)
+
+        yml = resource_loader.load_resource(hexrd.ui.resources.materials,
+                                            'materials_panel_defaults.yml')
+        self.default_config['materials'] = yaml.load(yml,
+                                                     Loader=yaml.FullLoader)
+
+        text = resource_loader.load_resource(hexrd.ui.resources.calibration,
+                                             'default_resolution_config.yml')
+        self.default_config['resolution'] = yaml.load(text,
+                                                      Loader=yaml.FullLoader)
 
     def load_images(self, names, image_files):
         self.images_dict.clear()
@@ -114,14 +129,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
-            self.instrument_config = yaml.load(f, Loader=yaml.FullLoader)
+            self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
         self.update_active_material_energy()
-        return self.instrument_config
+        return self.config['instrument']
 
     def save_instrument_config(self, output_file):
         with open(output_file, 'w') as f:
-            yaml.dump(self.instrument_config, f)
+            yaml.dump(self.config['instrument'], f)
 
     def load_materials(self, f):
         with open(f, 'rb') as rf:
@@ -142,7 +157,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         For instance, it will contain
         ("cal_energy", [ "beam", "energy" ] ), which means that
         the path to the default value of "cal_energy" is
-        self.instrument_config["beam"]["energy"]
+        self.config['instrument']["beam"]["energy"]
         """
         if cur_path is None:
             cur_path = []
@@ -171,7 +186,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         For instance, the returned list may contain
         ("cal_energy", [ "beam", "energy" ] ), which means that
         the path to the default value of "cal_energy" is
-        self.instrument_config["beam"]["energy"]
+        self.config['instrument']["beam"]["energy"]
         """
         search_dict = self.gui_yaml_dict
         if path is not None:
@@ -191,7 +206,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_instrument_config_val(self, path, value):
         """This sets a value from a path list."""
-        cur_val = self.instrument_config
+        cur_val = self.config['instrument']
         try:
             for val in path[:-1]:
                 cur_val = cur_val[val]
@@ -199,7 +214,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             cur_val[path[-1]] = value
         except:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
-                   str(self.instrument_config))
+                   str(self.config['instrument']))
             raise Exception(msg)
 
         # If the beam energy was modified, update the active material
@@ -210,16 +225,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
         """This obtains a dict value from a path list.
 
         For instance, if path is [ "beam", "energy" ], it will
-        return self.instrument_config["beam"]["energy"]
+        return self.config['instrument']["beam"]["energy"]
 
         """
-        cur_val = self.instrument_config
+        cur_val = self.config['instrument']
         try:
             for val in path:
                 cur_val = cur_val[val]
         except:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
-                   str(self.instrument_config))
+                   str(self.config['instrument']))
             raise Exception(msg)
 
         return cur_val
@@ -248,14 +263,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return [x[0] for x in res]
 
     def get_detector_names(self):
-        return list(self.instrument_config.get('detectors', {}).keys())
+        return list(self.config['instrument'].get('detectors', {}).keys())
 
     def get_default_detector(self):
         return copy.deepcopy(
-            self.default_instrument_config['detectors']['ge1'])
+            self.default_config['instrument']['detectors']['ge1'])
 
     def get_detector(self, detector_name):
-        return self.instrument_config['detectors'][detector_name]
+        return self.config['instrument']['detectors'][detector_name]
 
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
@@ -263,15 +278,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
         else:
             new_detector = self.get_default_detector()
 
-        self.instrument_config['detectors'][detector_name] = new_detector
+        self.config['instrument']['detectors'][detector_name] = new_detector
 
     def remove_detector(self, detector_name):
-        del self.instrument_config['detectors'][detector_name]
+        del self.config['instrument']['detectors'][detector_name]
 
     def rename_detector(self, old_name, new_name):
         if old_name != new_name:
-            self.instrument_config['detectors'][new_name] = (
-                self.instrument_config['detectors'][old_name])
+            self.config['instrument']['detectors'][new_name] = (
+                self.config['instrument']['detectors'][old_name])
             self.remove_detector(old_name)
 
     # This section is for materials configuration
@@ -292,20 +307,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.materials = materials
 
-    def load_default_materials_config(self):
-        yml = resource_loader.load_resource(hexrd.ui.resources.materials,
-                                            'materials_panel_defaults.yml')
-        self.default_materials_config = yaml.load(yml, Loader=yaml.FullLoader)
-
     def add_material(self, name, material):
         if name in self.materials:
             raise Exception(name + ' is already in materials list!')
-        self.materials_config['materials'][name] = material
+        self.config['materials']['materials'][name] = material
 
     def rename_material(self, old_name, new_name):
         if old_name != new_name:
-            self.materials_config['materials'][new_name] = (
-                self.materials_config['materials'][old_name])
+            self.config['materials']['materials'][new_name] = (
+                self.config['materials']['materials'][old_name])
 
             if self.active_material_name() == old_name:
                 # Change the active material before removing the old one
@@ -316,12 +326,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def modify_material(self, name, material):
         if name not in self.materials:
             raise Exception(name + ' is not in materials list!')
-        self.materials_config['materials'][name] = material
+        self.config['materials']['materials'][name] = material
 
     def remove_material(self, name):
         if name not in self.materials:
             raise Exception(name + ' is not in materials list!')
-        del self.materials_config['materials'][name]
+        del self.config['materials']['materials'][name]
 
         if name == self.active_material_name():
             if self.materials.keys():
@@ -330,17 +340,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.active_material = None
 
     def _materials(self):
-        return self.materials_config.get('materials', {})
+        return self.config['materials'].get('materials', {})
 
     def _set_materials(self, materials):
-        self.materials_config['materials'] = materials
+        self.config['materials']['materials'] = materials
         if materials.keys():
             self.active_material = list(materials.keys())[0]
 
     materials = property(_materials, _set_materials)
 
     def material(self, name):
-        return self.materials_config['materials'].get(name)
+        return self.config['materials']['materials'].get(name)
 
     def _active_material(self):
         m = self.active_material_name()
@@ -351,17 +361,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' was not found in materials list: ' +
                             str(self.materials))
 
-        self.materials_config['active_material'] = name
+        self.config['materials']['active_material'] = name
         self.update_active_material_energy()
 
     active_material = property(_active_material, _set_active_material)
 
     def active_material_name(self):
-        return self.materials_config.get('active_material')
+        return self.config['materials'].get('active_material')
 
     def update_active_material_energy(self):
         # This is a potentially expensive operation...
-        energy = self.instrument_config.get('beam', {}).get('energy')
+        energy = self.config['instrument'].get('beam', {}).get('energy')
         mat = self.active_material
 
         # If the plane data energy already matches, skip it
@@ -380,33 +390,68 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.new_plane_data.emit()
 
     def _selected_rings(self):
-        return self.materials_config.get('selected_rings')
+        return self.config['materials'].get('selected_rings')
 
     def _set_selected_rings(self, rings):
-        self.materials_config['selected_rings'] = rings
+        self.config['materials']['selected_rings'] = rings
 
     selected_rings = property(_selected_rings, _set_selected_rings)
 
     def _show_rings(self):
-        return self.materials_config.get('show_rings')
+        return self.config['materials'].get('show_rings')
 
     def _set_show_rings(self, b):
-        self.materials_config['show_rings'] = b
+        self.config['materials']['show_rings'] = b
 
     show_rings = property(_show_rings, _set_show_rings)
 
     def _show_ring_ranges(self):
-        return self.materials_config.get('show_ring_ranges')
+        return self.config['materials'].get('show_ring_ranges')
 
     def _set_show_ring_ranges(self, b):
-        self.materials_config['show_ring_ranges'] = b
+        self.config['materials']['show_ring_ranges'] = b
 
     show_ring_ranges = property(_show_ring_ranges, _set_show_ring_ranges)
 
     def _ring_ranges(self):
-        return self.materials_config.get('ring_ranges')
+        return self.config['materials'].get('ring_ranges')
 
     def _set_ring_ranges(self, r):
-        self.materials_config['ring_ranges'] = r
+        self.config['materials']['ring_ranges'] = r
 
     ring_ranges = property(_ring_ranges, _set_ring_ranges)
+
+    def _polar_pixel_size_tth(self):
+        return self.config['resolution']['polar']['pixel_size_tth']
+
+    def _set_polar_pixel_size_tth(self, v):
+        self.config['resolution']['polar']['pixel_size_tth'] = v
+
+    polar_pixel_size_tth = property(_polar_pixel_size_tth,
+                                    _set_polar_pixel_size_tth)
+
+    def _polar_pixel_size_eta(self):
+        return self.config['resolution']['polar']['pixel_size_eta']
+
+    def _set_polar_pixel_size_eta(self, v):
+        self.config['resolution']['polar']['pixel_size_eta'] = v
+
+    polar_pixel_size_eta = property(_polar_pixel_size_eta,
+                                    _set_polar_pixel_size_eta)
+
+    def _polar_pixel_size(self):
+        return self.config['resolution']['polar']['pixel_size']
+
+    def _set_polar_pixel_size(self, v):
+        self.config['resolution']['polar']['pixel_size'] = v
+
+    polar_pixel_size = property(_polar_pixel_size, _set_polar_pixel_size)
+
+    def _cartesian_pixel_size(self):
+        return self.config['resolution']['cartesian']['pixel_size']
+
+    def _set_cartesian_pixel_size(self, v):
+        self.config['resolution']['cartesian']['pixel_size'] = v
+
+    cartesian_pixel_size = property(_cartesian_pixel_size,
+                                    _set_cartesian_pixel_size)

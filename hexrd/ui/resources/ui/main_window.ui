@@ -62,6 +62,12 @@
   </widget>
   <widget class="QStatusBar" name="status_bar"/>
   <widget class="QDockWidget" name="config_dock_widget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="minimumSize">
     <size>
      <width>550</width>
@@ -93,7 +99,7 @@
           <x>0</x>
           <y>0</y>
           <width>532</width>
-          <height>695</height>
+          <height>657</height>
          </rect>
         </property>
         <attribute name="label">
@@ -106,7 +112,7 @@
           <x>0</x>
           <y>0</y>
           <width>532</width>
-          <height>695</height>
+          <height>657</height>
          </rect>
         </property>
         <attribute name="label">
@@ -149,6 +155,28 @@
       </widget>
      </item>
     </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="color_map_dock_widget">
+   <property name="windowTitle">
+    <string>Color Map</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>4</number>
+   </attribute>
+   <widget class="QWidget" name="color_map_dock_widgets">
+    <layout class="QHBoxLayout" name="horizontalLayout"/>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="resolution_dock_widget">
+   <property name="windowTitle">
+    <string>Calibration Resolution</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>4</number>
+   </attribute>
+   <widget class="QWidget" name="resolution_dock_widgets">
+    <layout class="QHBoxLayout" name="horizontalLayout_2"/>
    </widget>
   </widget>
   <action name="action_tabbed_view">

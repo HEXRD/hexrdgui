@@ -1,6 +1,6 @@
 import os
 
-from PySide2.QtCore import QEvent, QObject
+from PySide2.QtCore import QEvent, QObject, Qt
 from PySide2.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -10,6 +10,7 @@ from hexrd.ui.cal_tree_widget import CalTreeWidget
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
+from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -21,9 +22,18 @@ class MainWindow(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
 
+        # Let the left dock widget take up the whole left side
+        self.ui.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
+        self.ui.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
+
         self.color_map_editor = ColorMapEditor(self.ui.image_tab_widget,
                                                self.ui.central_widget)
-        self.ui.central_widget_layout.insertWidget(0, self.color_map_editor.ui)
+        self.ui.color_map_dock_widgets.layout().addWidget(
+            self.color_map_editor.ui)
+
+        self.resolution_editor = ResolutionEditor(self.ui.central_widget)
+        self.ui.resolution_dock_widgets.layout().addWidget(
+            self.resolution_editor.ui)
 
         self.add_materials_panel()
 
@@ -140,9 +150,13 @@ class MainWindow(QObject):
             return HexrdConfig().save_materials(selected_file)
 
     def run_calibration(self):
+        # Automatically make the cartesian resolution tab the active tab
+        self.resolution_editor.ui.tab_widget.setCurrentIndex(0)
         self.ui.image_tab_widget.show_calibration()
 
     def run_polar_calibration(self):
+        # Automatically make the polar resolution tab the active tab
+        self.resolution_editor.ui.tab_widget.setCurrentIndex(1)
         self.ui.image_tab_widget.show_polar_calibration()
 
     def update_config_gui(self):
