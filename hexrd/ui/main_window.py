@@ -150,9 +150,13 @@ class MainWindow(QObject):
             return HexrdConfig().save_materials(selected_file)
 
     def run_calibration(self):
+        # Automatically make the cartesian resolution tab the active tab
+        self.resolution_editor.ui.tab_widget.setCurrentIndex(0)
         self.ui.image_tab_widget.show_calibration()
 
     def run_polar_calibration(self):
+        # Automatically make the polar resolution tab the active tab
+        self.resolution_editor.ui.tab_widget.setCurrentIndex(1)
         self.ui.image_tab_widget.show_polar_calibration()
 
     def update_config_gui(self):
