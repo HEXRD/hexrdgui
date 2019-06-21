@@ -48,6 +48,10 @@ class MainWindow(QObject):
             self.on_action_open_config_triggered)
         self.ui.action_save_config.triggered.connect(
             self.on_action_save_config_triggered)
+        self.ui.action_open_materials.triggered.connect(
+            self.on_action_open_materials_triggered)
+        self.ui.action_save_materials.triggered.connect(
+            self.on_action_save_materials_triggered)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.ui.run_calibration.pressed.connect(self.run_calibration)
@@ -117,6 +121,23 @@ class MainWindow(QObject):
                 detector_names, image_files = dialog.results()
                 HexrdConfig().load_images(detector_names, image_files)
                 self.ui.image_tab_widget.load_images()
+
+    def on_action_open_materials_triggered(self):
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, 'Load Materials File', HexrdConfig().working_dir,
+            'HEXRD files (*.hexrd)')
+
+        if selected_file:
+            HexrdConfig().load_materials(selected_file)
+            self.materials_panel.update_gui_from_config()
+
+    def on_action_save_materials_triggered(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Materials', HexrdConfig().working_dir,
+            'HEXRD files (*.hexrd)')
+
+        if selected_file:
+            return HexrdConfig().save_materials(selected_file)
 
     def run_calibration(self):
         self.ui.image_tab_widget.show_calibration()
