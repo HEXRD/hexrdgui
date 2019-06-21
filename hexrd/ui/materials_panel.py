@@ -97,7 +97,6 @@ class MaterialsPanel(QObject):
             tth = plane_data.getTTh()
 
             for i, hkl in enumerate(plane_data.getHKLs(asStr=True)):
-                hkl = '(' + hkl.replace(' ', '') + ')'
                 table_item = QTableWidgetItem(hkl)
                 table_item.setTextAlignment(Qt.AlignCenter)
                 self.ui.materials_table.setItem(i, 0, table_item)
@@ -124,19 +123,22 @@ class MaterialsPanel(QObject):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
-        if self.add_material_dialog.ui.exec_():
-            material = self.add_material_dialog.hexrd_material()
-            name = material.name
+        # Loop until validation succeeds or the user cancels
+        while True:
+            if self.add_material_dialog.ui.exec_():
+                material = self.add_material_dialog.hexrd_material()
+                name = material.name
+                if name in HexrdConfig().materials.keys():
+                    msg = 'Material name "' + name + '" already exists!'
+                    QMessageBox.warning(self.ui, 'HEXRD', msg)
+                    continue
 
-            if name in HexrdConfig().materials.keys():
-                msg = 'Material name "' + name + '" already exists!'
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                self.add_material_dialog.show()
+                HexrdConfig().add_material(name, material)
+                HexrdConfig().active_material = name
+                self.update_gui_from_config()
                 return
-
-            HexrdConfig().add_material(name, material)
-            HexrdConfig().active_material = name
-            self.update_gui_from_config()
+            else:
+                return
 
     def modify_material(self):
         material = HexrdConfig().active_material

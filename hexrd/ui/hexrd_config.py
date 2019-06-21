@@ -8,6 +8,7 @@ import yaml
 
 from hexrd.ui import constants
 from hexrd.ui import resource_loader
+from hexrd.ui import utils
 
 import hexrd.ui.resources.calibration
 import hexrd.ui.resources.materials
@@ -136,6 +137,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def save_instrument_config(self, output_file):
         with open(output_file, 'w') as f:
             yaml.dump(self.config['instrument'], f)
+
+    def load_materials(self, f):
+        with open(f, 'rb') as rf:
+            data = rf.read()
+        self.load_materials_from_binary(data)
+
+    def save_materials(self, f):
+        with open(f, 'wb') as wf:
+            pickle.dump(list(self.materials().values()), wf)
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
@@ -283,7 +293,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_default_materials(self):
         data = resource_loader.load_resource(hexrd.ui.resources.materials,
                                              'materials.hexrd', binary=True)
+        self.load_materials_from_binary(data)
 
+    def load_materials_from_binary(self, data):
         matlist = pickle.loads(data, encoding='latin1')
         materials = dict(zip([i.name for i in matlist], matlist))
 
@@ -332,6 +344,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_materials(self, materials):
         self.config['materials']['materials'] = materials
+        if materials.keys():
+            self.active_material = list(materials.keys())[0]
 
     materials = property(_materials, _set_materials)
 
@@ -371,7 +385,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return
 
         mat.beamEnergy = energy
-        mat._newPdata()
+        utils.make_new_pdata(mat)
 
         self.new_plane_data.emit()
 

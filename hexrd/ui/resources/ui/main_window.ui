@@ -39,12 +39,14 @@
      </property>
      <addaction name="action_open_images"/>
      <addaction name="action_open_config"/>
+     <addaction name="action_open_materials"/>
     </widget>
     <widget class="QMenu" name="menu_save">
      <property name="title">
       <string>Save</string>
      </property>
      <addaction name="action_save_config"/>
+     <addaction name="action_save_materials"/>
     </widget>
     <addaction name="menu_open"/>
     <addaction name="menu_save"/>
@@ -201,6 +203,16 @@
   <action name="action_save_config">
    <property name="text">
     <string>Configuration</string>
+   </property>
+  </action>
+  <action name="action_open_materials">
+   <property name="text">
+    <string>Materials</string>
+   </property>
+  </action>
+  <action name="action_save_materials">
+   <property name="text">
+    <string>Materials</string>
    </property>
   </action>
  </widget>

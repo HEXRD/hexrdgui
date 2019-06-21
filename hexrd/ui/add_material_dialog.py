@@ -6,6 +6,7 @@ from hexrd.xrd import spacegroup
 from hexrd.xrd.material import Material
 
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui import utils
 
 class AddMaterialDialog(QObject):
 
@@ -141,13 +142,13 @@ class AddMaterialDialog(QObject):
         # This will create a new planeData object as well.
         self.material.hklMax = self.ui.max_hkl.value()
 
-        # The default is to exclude all hkl values after the 5th one.
-        # Let's not do this...
-        excl = [False] * len(self.material.planeData.exclusions)
-        self.material.planeData.exclusions = excl
-
+        utils.fix_exclusions(self.material)
         return copy.deepcopy(self.material)
 
-    def set_material(self, mat):
+    def set_material(self, mat, new_name=None):
         self.material = copy.deepcopy(mat)
+
+        if new_name is not None:
+            self.material.name = new_name
+
         self.update_gui_from_material()

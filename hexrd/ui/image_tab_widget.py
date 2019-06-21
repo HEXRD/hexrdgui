@@ -1,5 +1,5 @@
 from PySide2.QtCore import Signal, Slot
-from PySide2.QtWidgets import QFileDialog, QTabWidget
+from PySide2.QtWidgets import QFileDialog, QMessageBox, QTabWidget
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
@@ -63,12 +63,24 @@ class ImageTabWidget(QTabWidget):
             self.load_images_untabbed()
 
     def show_calibration(self):
+        # Make sure we actually have images
+        if len(self.image_names) == 0:
+            msg = 'Cannot run calibration without images!'
+            QMessageBox.warning(self, 'HEXRD', msg)
+            return
+
         self.clear()
         self.image_canvases[0].show_calibration()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
 
     def show_polar_calibration(self):
+        # Make sure we actually have images
+        if len(self.image_names) == 0:
+            msg = 'Cannot run calibration without images!'
+            QMessageBox.warning(self, 'HEXRD', msg)
+            return
+
         self.clear()
         self.image_canvases[0].show_polar_calibration()
         self.addTab(self.image_canvases[0], '')
