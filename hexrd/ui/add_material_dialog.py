@@ -16,14 +16,13 @@ class AddMaterialDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('add_material_dialog.ui', parent)
 
-        self.material = Material()
+        # Don't create a material until later to avoid the expensive
+        # _newPdata() operation at startup.
+        self.material = None
 
         self.setup_space_group_widgets()
 
         self.setup_connections()
-
-        # Start with space group 255
-        self.ui.space_group.setCurrentIndex(522)
 
     def setup_connections(self):
         for widget in self.lattice_widgets:
@@ -85,7 +84,12 @@ class AddMaterialDialog(QObject):
             self.ui.hall_symbol.setCurrentIndex(val)
             self.ui.hermann_mauguin.setCurrentIndex(val)
             sgid = int(self.ui.space_group.currentText().split(':')[0])
-            self.material.sgnum = sgid
+
+            # This can be an expensive operation, so make sure it isn't
+            # already equal before setting.
+            if self.material.sgnum != sgid:
+                self.material.sgnum = sgid
+
             for sgids, lg in spacegroup._pgDict.items():
                 if sgid in sgids:
                     self.ui.laue_group.setText(lg[0])
@@ -101,7 +105,12 @@ class AddMaterialDialog(QObject):
         try:
             m = self.material
             sgid = int(self.ui.space_group.currentText().split(':')[0])
-            self.material.sgnum = sgid
+
+            # This can be an expensive operation, so make sure it isn't
+            # already equal before setting.
+            if self.material.sgnum != sgid:
+                self.material.sgnum = sgid
+
             reqp = m.spaceGroup.reqParams
             lprm = m.latticeParameters
             for i, widget in enumerate(self.lattice_widgets):
@@ -140,6 +149,8 @@ class AddMaterialDialog(QObject):
 
         # Everything should be set for self.material except hkl
         # This will create a new planeData object as well.
+        # Although this may be expensive, it is necessary to create
+        # a new planeData object in case the lattice parameters changed.
         self.material.hklMax = self.ui.max_hkl.value()
 
         utils.fix_exclusions(self.material)

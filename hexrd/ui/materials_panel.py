@@ -123,6 +123,10 @@ class MaterialsPanel(QObject):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
+        # Copy all of the active material properties to the dialog
+        active_material = HexrdConfig().active_material
+        self.add_material_dialog.set_material(active_material, 'material')
+
         # Loop until validation succeeds or the user cancels
         while True:
             if self.add_material_dialog.ui.exec_():
