@@ -2,12 +2,16 @@ import math
 
 import numpy as np
 
+from PySide2.QtCore import QThreadPool
+
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
+from hexrd.ui.async_worker import AsyncWorker
+from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -27,6 +31,10 @@ class ImageCanvas(FigureCanvas):
         # The presence of an iviewer indicates we are currently viewing
         # a calibration.
         self.iviewer = None
+
+        # Set up our async stuff
+        self.thread_pool = QThreadPool(parent)
+        self.cal_progress_dialog = CalProgressDialog(parent)
 
         if image_names is not None:
             self.load_images(image_names)
@@ -105,7 +113,17 @@ class ImageCanvas(FigureCanvas):
         self.figure.clear()
         self.axes_images.clear()
 
-        self.iviewer = cartesian_viewer()
+        # Run the calibration in a background thread
+        worker = AsyncWorker(cartesian_viewer)
+        self.thread_pool.start(worker)
+
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_show_calibration)
+        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        self.cal_progress_dialog.exec_()
+
+    def finish_show_calibration(self, iviewer):
+        self.iviewer = iviewer
         img = self.iviewer.img
 
         self.axis = self.figure.add_subplot(111)
@@ -118,7 +136,17 @@ class ImageCanvas(FigureCanvas):
         self.figure.clear()
         self.axes_images.clear()
 
-        self.iviewer = polar_viewer()
+        # Run the calibration in a background thread
+        worker = AsyncWorker(polar_viewer)
+        self.thread_pool.start(worker)
+
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_show_polar_calibration)
+        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        self.cal_progress_dialog.exec_()
+
+    def finish_show_polar_calibration(self, iviewer):
+        self.iviewer = iviewer
         img = self.iviewer.img
         extent = self.iviewer._extent
 
