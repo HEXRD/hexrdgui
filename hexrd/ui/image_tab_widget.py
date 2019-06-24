@@ -84,7 +84,7 @@ class ImageTabWidget(QTabWidget):
         self.nav_toolbar_visible = b
 
         idx = self.currentIndex()
-        if idx < 0:
+        if idx < 0 or not self.nav_toolbars:
             return
 
         self.nav_toolbars[idx].setVisible(b)
