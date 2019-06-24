@@ -2,9 +2,8 @@ import math
 
 import numpy as np
 
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvas, NavigationToolbar2QT
-)
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+
 from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -20,11 +19,6 @@ class ImageCanvas(FigureCanvas):
         self.figure = Figure()
         super(ImageCanvas, self).__init__(self.figure)
 
-        self.navigation_toolbar = NavigationToolbar2QT(self, None)
-
-        # We will be in zoom mode by default
-        self.navigation_toolbar.zoom()
-
         self.axes_images = []
         self.cached_rings = []
         self.cached_rbnds = []
@@ -33,9 +27,6 @@ class ImageCanvas(FigureCanvas):
         # The presence of an iviewer indicates we are currently viewing
         # a calibration.
         self.iviewer = None
-
-        self.press_conn_id = self.mpl_connect('button_press_event',
-                                              self.on_button_pressed)
 
         if image_names is not None:
             self.load_images(image_names)
@@ -161,7 +152,3 @@ class ImageCanvas(FigureCanvas):
         maximum = max([x.get_array().max() for x in self.axes_images])
 
         return minimum, maximum
-
-    def on_button_pressed(self, event):
-        if event.button == MouseButton.RIGHT:
-            self.navigation_toolbar.back()
