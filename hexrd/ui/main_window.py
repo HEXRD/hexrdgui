@@ -6,7 +6,7 @@ from PySide2.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
 from hexrd.ui.color_map_editor import ColorMapEditor
-from hexrd.ui.cal_tree_widget import CalTreeWidget
+from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
@@ -38,11 +38,11 @@ class MainWindow(QObject):
         self.add_materials_panel()
 
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
-        self.cal_tree_widget = CalTreeWidget(self.ui)
+        self.cal_tree_view = CalTreeView(self.ui)
 
         tab_texts = ['Tree View', 'Form View']
         self.ui.calibration_tab_widget.clear()
-        self.ui.calibration_tab_widget.addTab(self.cal_tree_widget,
+        self.ui.calibration_tab_widget.addTab(self.cal_tree_view,
                                               tab_texts[0])
         self.ui.calibration_tab_widget.addTab(
             self.calibration_config_widget.ui, tab_texts[1])
@@ -95,7 +95,7 @@ class MainWindow(QObject):
 
         if selected_file:
             HexrdConfig().load_instrument_config(selected_file)
-            self.cal_tree_widget.rebuild_tree()
+            self.cal_tree_view.rebuild_tree()
             self.calibration_config_widget.update_gui_from_config()
 
     def on_action_save_config_triggered(self):
@@ -161,8 +161,8 @@ class MainWindow(QObject):
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
-        if current_widget is self.cal_tree_widget:
-            self.cal_tree_widget.rebuild_tree()
+        if current_widget is self.cal_tree_view:
+            self.cal_tree_view.rebuild_tree()
         elif current_widget is self.calibration_config_widget.ui:
             self.calibration_config_widget.update_gui_from_config()
 
