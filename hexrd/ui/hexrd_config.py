@@ -148,7 +148,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def save_materials(self, f):
         with open(f, 'wb') as wf:
-            pickle.dump(list(self.materials().values()), wf)
+            pickle.dump(list(self.materials.values()), wf)
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
