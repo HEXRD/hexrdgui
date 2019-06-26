@@ -160,6 +160,8 @@ class ImageCanvas(FigureCanvas):
         self.axis.relim()
         self.axis.autoscale_view()
         self.axis.axis('auto')
+        self.axis.set_xlabel(r'2$\theta$ (deg)')
+        self.axis.set_ylabel(r'$\eta$ (deg)')
 
         self.redraw_rings()
 
