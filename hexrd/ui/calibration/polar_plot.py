@@ -4,6 +4,7 @@ from hexrd import instrument
 from .polarview import PolarView
 
 from skimage.exposure import rescale_intensity
+from skimage.exposure import equalize_adapthist
 
 from .display_plane import DisplayPlane
 
@@ -139,6 +140,8 @@ class InstrumentViewer:
 
         # plotting
         self.warped_image = warped
+
+        img = equalize_adapthist(img, clip_limit=0.1, nbins=2**16)
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get the function to not rescale the
