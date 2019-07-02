@@ -1,8 +1,18 @@
-from PySide2.QtCore import Signal, Slot
+from PySide2.QtCore import Signal, Slot, Qt
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QTabWidget
+
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
+
+# Remove these buttons from the navigation toolbar
+nav_toolbar_blacklist = [
+    'Subplots'
+]
+NavigationToolbar2QT.toolitems = [x for x in NavigationToolbar2QT.toolitems if
+                                  x[0] not in nav_toolbar_blacklist]
+
 
 class ImageTabWidget(QTabWidget):
 
@@ -17,8 +27,15 @@ class ImageTabWidget(QTabWidget):
         # These will get set later
         self.cmap = None
         self.norm = None
+        self.nav_toolbars = []
+        self.nav_toolbar_visible = True
 
         self.set_tabbed_view(False)
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.currentChanged.connect(self.switch_nav_toolbar)
 
     def allocate_canvases(self):
         while len(self.image_canvases) < len(self.image_names):
@@ -61,6 +78,45 @@ class ImageTabWidget(QTabWidget):
             self.load_images_tabbed()
         else:
             self.load_images_untabbed()
+
+    @Slot(bool)
+    def show_nav_toolbar(self, b):
+        self.nav_toolbar_visible = b
+
+        idx = self.currentIndex()
+        if idx < 0 or not self.nav_toolbars:
+            return
+
+        self.nav_toolbars[idx].setVisible(b)
+
+    def allocate_nav_toolbars(self):
+        parent = self.parent()
+        while len(self.nav_toolbars) != len(self.image_canvases):
+            # The new one to add
+            idx = len(self.nav_toolbars)
+            tb = NavigationToolbar2QT(self.image_canvases[idx], parent, False)
+
+            # Invisible by default
+            tb.setVisible(False)
+
+            # This will put it at the bottom of the central widget
+            parent.layout().addWidget(tb)
+            parent.layout().setAlignment(tb, Qt.AlignCenter)
+            self.nav_toolbars.append(tb)
+
+    def switch_nav_toolbar(self):
+        idx = self.currentIndex()
+        if idx < 0:
+            return
+
+        # Make sure all the toolbars are present and accounted for
+        self.allocate_nav_toolbars()
+
+        # None should be visible except the current one
+        for tb in self.nav_toolbars:
+            tb.setVisible(False)
+
+        self.nav_toolbars[idx].setVisible(self.nav_toolbar_visible)
 
     def show_calibration(self):
         # Make sure we actually have images

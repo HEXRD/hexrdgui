@@ -2,15 +2,18 @@ import math
 
 import numpy as np
 
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvas, NavigationToolbar2QT
-)
+from PySide2.QtCore import QThreadPool
+
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+
 from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-from hexrd.ui.calibration.cartesian_plot import cartesian_image
-from hexrd.ui.calibration.polar_plot import polar_image
+from hexrd.ui.async_worker import AsyncWorker
+from hexrd.ui.cal_progress_dialog import CalProgressDialog
+from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
+from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
 import hexrd.ui.constants
 
@@ -20,26 +23,34 @@ class ImageCanvas(FigureCanvas):
         self.figure = Figure()
         super(ImageCanvas, self).__init__(self.figure)
 
-        self.navigation_toolbar = NavigationToolbar2QT(self, None)
-
-        # We will be in zoom mode by default
-        self.navigation_toolbar.zoom()
-
         self.axes_images = []
+        self.cached_rings = []
+        self.cached_rbnds = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
+        # The presence of an iviewer indicates we are currently viewing
+        # a calibration.
+        self.iviewer = None
 
-        self.press_conn_id = self.mpl_connect('button_press_event',
-                                              self.on_button_pressed)
+        # Set up our async stuff
+        self.thread_pool = QThreadPool(parent)
+        self.cal_progress_dialog = CalProgressDialog(parent)
 
         if image_names is not None:
             self.load_images(image_names)
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        HexrdConfig().ring_config_changed.connect(self.redraw_rings)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
     def load_images(self, image_names):
+        # We are not in calibration mode. Remove the iviewer.
+        self.iviewer = None
         self.figure.clear()
         self.axes_images.clear()
 
@@ -60,48 +71,99 @@ class ImageCanvas(FigureCanvas):
         self.figure.tight_layout()
         self.draw()
 
+    def clear_rings(self):
+        while self.cached_rings:
+            self.cached_rings.pop(0).remove()
+
+        while self.cached_rbnds:
+            self.cached_rbnds.pop(0).remove()
+
+    def redraw_rings(self):
+        # If there is no iviewer, we are not currently viewing a
+        # calibration. Just return.
+        if not self.iviewer:
+            return
+
+        self.clear_rings()
+
+        # In case the plane data has changed
+        self.iviewer.plane_data = HexrdConfig().active_material.planeData
+
+        ring_data = self.iviewer.add_rings()
+
+        colorspec = 'c.'
+        if self.iviewer.type == 'polar':
+            colorspec = 'c.-'
+
+        for pr in ring_data:
+            ring, = self.axis.plot(pr[:, 1], pr[:, 0], colorspec, ms=2)
+            self.cached_rings.append(ring)
+
+        if self.iviewer.type == 'polar':
+            # Add the rbnds too
+            for pr in self.iviewer.rbnd_data:
+                rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
+                self.cached_rbnds.append(rbnd)
+
+
+        self.figure.tight_layout()
+        self.draw()
+
     def show_calibration(self):
         self.figure.clear()
         self.axes_images.clear()
 
-        img, ring_data = cartesian_image()
+        # Run the calibration in a background thread
+        worker = AsyncWorker(cartesian_viewer)
+        self.thread_pool.start(worker)
 
-        axis = self.figure.add_subplot(111)
-        for pr in ring_data:
-            axis.plot(pr[:, 1], pr[:, 0], 'c.', ms=2)
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_show_calibration)
+        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        self.cal_progress_dialog.exec_()
 
-        self.axes_images.append(axis.imshow(img, cmap=self.cmap,
-                                            norm=self.norm))
+    def finish_show_calibration(self, iviewer):
+        self.iviewer = iviewer
+        img = self.iviewer.img
 
-        self.figure.tight_layout()
-        self.draw()
+        self.axis = self.figure.add_subplot(111)
+        self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                 norm=self.norm))
+
+        self.redraw_rings()
 
     def show_polar_calibration(self):
         self.figure.clear()
         self.axes_images.clear()
 
-        img, extent, ring_data, rbnd_data = polar_image()
+        # Run the calibration in a background thread
+        worker = AsyncWorker(polar_viewer)
+        self.thread_pool.start(worker)
 
-        axis = self.figure.add_subplot(111)
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_show_polar_calibration)
+        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        self.cal_progress_dialog.exec_()
 
-        self.axes_images.append(axis.imshow(img, cmap=self.cmap,
-                                            norm=self.norm, picker=True,
-                                            interpolation='none'))
+    def finish_show_polar_calibration(self, iviewer):
+        self.iviewer = iviewer
+        img = self.iviewer.img
+        extent = self.iviewer._extent
+
+        self.axis = self.figure.add_subplot(111)
+        self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                 norm=self.norm, picker=True,
+                                                 interpolation='none'))
 
         # We must adjust the extent of the image
         self.axes_images[0].set_extent(extent)
-        axis.relim()
-        axis.autoscale_view()
-        axis.axis('auto')
+        self.axis.relim()
+        self.axis.autoscale_view()
+        self.axis.axis('auto')
+        self.axis.set_xlabel(r'2$\theta$ (deg)')
+        self.axis.set_ylabel(r'$\eta$ (deg)')
 
-        colorspec = 'c-.'
-        for pr in ring_data:
-            axis.plot(pr[:, 1], pr[:, 0], colorspec, ms=2)
-        for pr in rbnd_data:
-            axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
-
-        self.figure.tight_layout()
-        self.draw()
+        self.redraw_rings()
 
     def set_cmap(self, cmap):
         self.cmap = cmap
@@ -120,7 +182,3 @@ class ImageCanvas(FigureCanvas):
         maximum = max([x.get_array().max() for x in self.axes_images])
 
         return minimum, maximum
-
-    def on_button_pressed(self, event):
-        if event.button == MouseButton.RIGHT:
-            self.navigation_toolbar.back()

@@ -4,6 +4,7 @@ from hexrd import instrument
 from .polarview import PolarView
 
 from skimage.exposure import rescale_intensity
+from skimage.exposure import equalize_adapthist
 
 from .display_plane import DisplayPlane
 
@@ -14,24 +15,12 @@ snip_width = 9
 tth_min = 1.
 tth_max = 20.
 
-def polar_image():
+def polar_viewer():
     iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().images()
     plane_data = HexrdConfig().active_material.planeData
 
-    iviewer = InstrumentViewer(iconfig, images_dict, plane_data)
-
-    # Rescale the data to match the scale of the original dataset
-    # TODO: try to get create_calibration_image to not rescale the
-    # result to be between 0 and 1 in the first place so this will
-    # not be necessary.
-    images = images_dict.values()
-    minimum = min([x.min() for x in images])
-    maximum = max([x.max() for x in images])
-    img = iviewer.image
-    img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
-
-    return img, iviewer._extent, iviewer.ring_data, iviewer.rbnd_data
+    return InstrumentViewer(iconfig, images_dict, plane_data)
 
 
 def log_scale_img(img):
@@ -45,11 +34,12 @@ def load_instrument(config):
 
 class InstrumentViewer:
 
-    def __init__(self, config, image_dict, plane_data):
+    def __init__(self, config, images_dict, plane_data):
+        self.type = 'polar'
         self.plane_data = plane_data
         self.instr = load_instrument(config)
         self._load_panels()
-        self._load_images(image_dict)
+        self._load_images(images_dict)
         self.dplane = DisplayPlane()
 
         # Resolution settings
@@ -63,21 +53,20 @@ class InstrumentViewer:
         self.snip_width_init = 9
         self.snip_width = self.snip_width_init*self.pv_pixel_size[0]
 
-        self.image = None
         self.generate_image()
 
     def _load_panels(self):
         self.panels = list(self.instr._detectors.values())
 
-    def _load_images(self, image_dict):
+    def _load_images(self, images_dict):
         # Make sure image keys and detector keys match
-        if image_dict.keys() != self.instr._detectors.keys():
+        if images_dict.keys() != self.instr._detectors.keys():
             msg = ('Images do not match the panel ids!\n' +
-                   'Images: ' + str(list(image_dict.keys())) + '\n' +
+                   'Images: ' + str(list(images_dict.keys())) + '\n' +
                    'PanelIds: ' + str(list(self.instr._detectors.keys())))
             raise Exception(msg)
 
-        self.image_dict = image_dict
+        self.images_dict = images_dict
 
     def _make_dpanel(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
@@ -90,7 +79,7 @@ class InstrumentViewer:
         pv = PolarView([tth_min, tth_max], self.instr,
                        eta_min=-180., eta_max=180.,
                        pixel_size=self.pv_pixel_size)
-        wimg = pv.warp_image(self.image_dict)
+        wimg = pv.warp_image(self.images_dict)
         self._angular_coords = pv.angular_grid
         self._extent = [tth_min, tth_max, 180., -180.]   # l, r, b, t
         self.plot_dplane(warped=wimg, snip_width=snip_width)
@@ -102,13 +91,15 @@ class InstrumentViewer:
             self.draw_polar()
         self.add_rings()
 
-    def add_rings(self):
+    def clear_rings(self):
         self.ring_data = []
         self.rbnd_data = []
 
+    def add_rings(self):
+        self.clear_rings()
         if not HexrdConfig().show_rings:
             # We are not supposed to add rings
-            return
+            return self.ring_data
 
         dp = self.dpanel
 
@@ -141,10 +132,22 @@ class InstrumentViewer:
                 self.rbnd_data.append(np.array([[-180, tth + tthw],
                                                 [180, tth + tthw]]))
 
+        return self.ring_data
+
     def plot_dplane(self, warped, snip_width=None):
         img = rescale_intensity(warped, out_range=(0., 1.))
         img = log_scale_img(log_scale_img(img))
 
         # plotting
         self.warped_image = warped
-        self.image = img
+
+        img = equalize_adapthist(img, clip_limit=0.1, nbins=2**16)
+
+        # Rescale the data to match the scale of the original dataset
+        # TODO: try to get the function to not rescale the
+        # result to be between 0 and 1 in the first place so this will
+        # not be necessary.
+        images = self.images_dict.values()
+        minimum = min([x.min() for x in images])
+        maximum = max([x.max() for x in images])
+        self.img = np.interp(img, (img.min(), img.max()), (minimum, maximum))

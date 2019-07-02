@@ -56,6 +56,7 @@
      <string>View</string>
     </property>
     <addaction name="action_tabbed_view"/>
+    <addaction name="action_show_nav_toolbar"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menuView"/>
@@ -215,6 +216,17 @@
     <string>Materials</string>
    </property>
   </action>
+  <action name="action_show_nav_toolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Navigation Toolbar</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -225,6 +237,7 @@
    <slots>
     <slot>open_files()</slot>
     <slot>set_tabbed_view(bool)</slot>
+    <slot>show_nav_toolbar(bool)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -243,6 +256,22 @@
     <hint type="destinationlabel">
      <x>465</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_show_nav_toolbar</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>image_tab_widget</receiver>
+   <slot>show_nav_toolbar(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1075</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>

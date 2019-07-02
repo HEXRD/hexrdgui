@@ -43,6 +43,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when new plane data is generated for the active material"""
     new_plane_data = Signal()
 
+    """Emitted when ring configuration has changed"""
+    ring_config_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -145,7 +148,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def save_materials(self, f):
         with open(f, 'wb') as wf:
-            pickle.dump(list(self.materials().values()), wf)
+            pickle.dump(list(self.materials.values()), wf)
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
@@ -328,6 +331,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         self.config['materials']['materials'][name] = material
 
+        if self.active_material_name() == name:
+            self.ring_config_changed.emit()
+
     def remove_material(self, name):
         if name not in self.materials:
             raise Exception(name + ' is not in materials list!')
@@ -363,6 +369,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
+        self.ring_config_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
@@ -388,12 +395,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         utils.make_new_pdata(mat)
 
         self.new_plane_data.emit()
+        self.ring_config_changed.emit()
 
     def _selected_rings(self):
         return self.config['materials'].get('selected_rings')
 
     def _set_selected_rings(self, rings):
         self.config['materials']['selected_rings'] = rings
+        self.ring_config_changed.emit()
 
     selected_rings = property(_selected_rings, _set_selected_rings)
 
@@ -402,6 +411,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_show_rings(self, b):
         self.config['materials']['show_rings'] = b
+        self.ring_config_changed.emit()
 
     show_rings = property(_show_rings, _set_show_rings)
 
@@ -410,6 +420,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_show_ring_ranges(self, b):
         self.config['materials']['show_ring_ranges'] = b
+        self.ring_config_changed.emit()
 
     show_ring_ranges = property(_show_ring_ranges, _set_show_ring_ranges)
 
@@ -418,6 +429,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_ring_ranges(self, r):
         self.config['materials']['ring_ranges'] = r
+        self.ring_config_changed.emit()
 
     ring_ranges = property(_ring_ranges, _set_ring_ranges)
 
