@@ -118,7 +118,7 @@ class ImageTabWidget(QTabWidget):
 
         self.nav_toolbars[idx].setVisible(self.nav_toolbar_visible)
 
-    def show_calibration(self):
+    def show_cartesian(self):
         # Make sure we actually have images
         if len(self.image_names) == 0:
             msg = 'Cannot run calibration without images!'
@@ -126,11 +126,11 @@ class ImageTabWidget(QTabWidget):
             return
 
         self.clear()
-        self.image_canvases[0].show_calibration()
+        self.image_canvases[0].show_cartesian()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
 
-    def show_polar_calibration(self):
+    def show_polar(self):
         # Make sure we actually have images
         if len(self.image_names) == 0:
             msg = 'Cannot run calibration without images!'
@@ -138,7 +138,7 @@ class ImageTabWidget(QTabWidget):
             return
 
         self.clear()
-        self.image_canvases[0].show_polar_calibration()
+        self.image_canvases[0].show_polar()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
 

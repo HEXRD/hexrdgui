@@ -109,7 +109,7 @@ class ImageCanvas(FigureCanvas):
         self.figure.tight_layout()
         self.draw()
 
-    def show_calibration(self):
+    def show_cartesian(self):
         self.figure.clear()
         self.axes_images.clear()
 
@@ -118,11 +118,11 @@ class ImageCanvas(FigureCanvas):
         self.thread_pool.start(worker)
 
         # Get the results and close the progress dialog when finished
-        worker.signals.result.connect(self.finish_show_calibration)
+        worker.signals.result.connect(self.finish_show_cartesian)
         worker.signals.finished.connect(self.cal_progress_dialog.accept)
         self.cal_progress_dialog.exec_()
 
-    def finish_show_calibration(self, iviewer):
+    def finish_show_cartesian(self, iviewer):
         self.iviewer = iviewer
         img = self.iviewer.img
 
@@ -132,7 +132,7 @@ class ImageCanvas(FigureCanvas):
 
         self.redraw_rings()
 
-    def show_polar_calibration(self):
+    def show_polar(self):
         self.figure.clear()
         self.axes_images.clear()
 
@@ -141,11 +141,11 @@ class ImageCanvas(FigureCanvas):
         self.thread_pool.start(worker)
 
         # Get the results and close the progress dialog when finished
-        worker.signals.result.connect(self.finish_show_polar_calibration)
+        worker.signals.result.connect(self.finish_show_polar)
         worker.signals.finished.connect(self.cal_progress_dialog.accept)
         self.cal_progress_dialog.exec_()
 
-    def finish_show_polar_calibration(self, iviewer):
+    def finish_show_polar(self, iviewer):
         self.iviewer = iviewer
         img = self.iviewer.img
         extent = self.iviewer._extent

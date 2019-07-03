@@ -64,9 +64,8 @@ class MainWindow(QObject):
             self.on_action_save_materials_triggered)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
-        self.ui.run_calibration.pressed.connect(self.run_calibration)
-        self.ui.run_polar_calibration.pressed.connect(
-            self.run_polar_calibration)
+        self.ui.cartesian_view.pressed.connect(self.show_cartesian)
+        self.ui.polar_view.pressed.connect(self.show_polar)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
@@ -149,15 +148,15 @@ class MainWindow(QObject):
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
 
-    def run_calibration(self):
+    def show_cartesian(self):
         # Automatically make the cartesian resolution tab the active tab
         self.resolution_editor.ui.tab_widget.setCurrentIndex(0)
-        self.ui.image_tab_widget.show_calibration()
+        self.ui.image_tab_widget.show_cartesian()
 
-    def run_polar_calibration(self):
+    def show_polar(self):
         # Automatically make the polar resolution tab the active tab
         self.resolution_editor.ui.tab_widget.setCurrentIndex(1)
-        self.ui.image_tab_widget.show_polar_calibration()
+        self.ui.image_tab_widget.show_polar()
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
