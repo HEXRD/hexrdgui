@@ -1008,6 +1008,50 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>cal_energy_wavelength</tabstop>
+  <tabstop>cal_energy</tabstop>
+  <tabstop>cal_vector_azimuth</tabstop>
+  <tabstop>cal_vector_polar</tabstop>
+  <tabstop>cal_crystal_grain_id</tabstop>
+  <tabstop>cal_crystal_inv_stretch_0</tabstop>
+  <tabstop>cal_crystal_inv_stretch_1</tabstop>
+  <tabstop>cal_crystal_inv_stretch_2</tabstop>
+  <tabstop>cal_crystal_inv_stretch_3</tabstop>
+  <tabstop>cal_crystal_inv_stretch_4</tabstop>
+  <tabstop>cal_crystal_inv_stretch_5</tabstop>
+  <tabstop>cal_crystal_orientation_0</tabstop>
+  <tabstop>cal_crystal_orientation_1</tabstop>
+  <tabstop>cal_crystal_orientation_2</tabstop>
+  <tabstop>cal_crystal_position_0</tabstop>
+  <tabstop>cal_crystal_position_1</tabstop>
+  <tabstop>cal_crystal_position_2</tabstop>
+  <tabstop>cal_det_current</tabstop>
+  <tabstop>cal_det_add</tabstop>
+  <tabstop>cal_det_remove</tabstop>
+  <tabstop>cal_det_function</tabstop>
+  <tabstop>cal_det_param_0</tabstop>
+  <tabstop>cal_det_param_1</tabstop>
+  <tabstop>cal_det_param_2</tabstop>
+  <tabstop>cal_det_param_3</tabstop>
+  <tabstop>cal_det_param_4</tabstop>
+  <tabstop>cal_det_param_5</tabstop>
+  <tabstop>cal_det_columns</tabstop>
+  <tabstop>cal_det_rows</tabstop>
+  <tabstop>cal_det_size_0</tabstop>
+  <tabstop>cal_det_size_1</tabstop>
+  <tabstop>cal_det_saturation</tabstop>
+  <tabstop>cal_det_t_vec_d_0</tabstop>
+  <tabstop>cal_det_t_vec_d_1</tabstop>
+  <tabstop>cal_det_t_vec_d_2</tabstop>
+  <tabstop>cal_det_angles_0</tabstop>
+  <tabstop>cal_det_angles_1</tabstop>
+  <tabstop>cal_det_angles_2</tabstop>
+  <tabstop>cal_osc_chi</tabstop>
+  <tabstop>cal_osc_t_vec_d_0</tabstop>
+  <tabstop>cal_osc_t_vec_d_1</tabstop>
+  <tabstop>cal_osc_t_vec_d_2</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
