@@ -451,14 +451,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_pixel_size_eta = property(_polar_pixel_size_eta,
                                     _set_polar_pixel_size_eta)
 
-    def _polar_pixel_size(self):
-        return self.config['resolution']['polar']['pixel_size']
-
-    def _set_polar_pixel_size(self, v):
-        self.config['resolution']['polar']['pixel_size'] = v
-
-    polar_pixel_size = property(_polar_pixel_size, _set_polar_pixel_size)
-
     def _cartesian_pixel_size(self):
         return self.config['resolution']['cartesian']['pixel_size']
 
