@@ -314,6 +314,9 @@
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
           <property name="suffix">
            <string>°</string>
           </property>
@@ -329,6 +332,9 @@
           </property>
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
           </property>
           <property name="suffix">
            <string> Å</string>
@@ -379,6 +385,9 @@
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
           <property name="suffix">
            <string>°</string>
           </property>
@@ -414,6 +423,9 @@
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
           <property name="suffix">
            <string> Å</string>
           </property>
@@ -430,6 +442,9 @@
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
           <property name="suffix">
            <string> Å</string>
           </property>
@@ -445,6 +460,9 @@
           </property>
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
           </property>
           <property name="suffix">
            <string>°</string>

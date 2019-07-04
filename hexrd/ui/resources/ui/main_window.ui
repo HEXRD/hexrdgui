@@ -142,16 +142,16 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="run_calibration">
+      <widget class="QPushButton" name="cartesian_view">
        <property name="text">
-        <string>Run Calibration</string>
+        <string>Cartesian View</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="run_polar_calibration">
+      <widget class="QPushButton" name="polar_view">
        <property name="text">
-        <string>Run Polar Calibration</string>
+        <string>Polar View</string>
        </property>
       </widget>
      </item>

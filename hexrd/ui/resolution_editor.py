@@ -13,7 +13,6 @@ class ResolutionEditor:
     def all_widgets(self):
         widgets = [
             self.ui.cartesian_pixel_size,
-            self.ui.polar_pixel_size,
             self.ui.polar_pixel_size_tth,
             self.ui.polar_pixel_size_eta
         ]
@@ -36,8 +35,6 @@ class ResolutionEditor:
         try:
             self.ui.cartesian_pixel_size.setValue(
                 HexrdConfig().cartesian_pixel_size)
-            self.ui.polar_pixel_size.setValue(
-                HexrdConfig().polar_pixel_size)
             self.ui.polar_pixel_size_tth.setValue(
                 HexrdConfig().polar_pixel_size_tth)
             self.ui.polar_pixel_size_eta.setValue(
@@ -48,8 +45,6 @@ class ResolutionEditor:
     def setup_connections(self):
         self.ui.cartesian_pixel_size.valueChanged.connect(
             HexrdConfig()._set_cartesian_pixel_size)
-        self.ui.polar_pixel_size.valueChanged.connect(
-            HexrdConfig()._set_polar_pixel_size)
         self.ui.polar_pixel_size_tth.valueChanged.connect(
             HexrdConfig()._set_polar_pixel_size_tth)
         self.ui.polar_pixel_size_eta.valueChanged.connect(

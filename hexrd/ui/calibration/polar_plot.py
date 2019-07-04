@@ -43,7 +43,9 @@ class InstrumentViewer:
         self.dplane = DisplayPlane()
 
         # Resolution settings
-        self.pixel_size = HexrdConfig().polar_pixel_size
+        # As far as I can tell, self.pixel_size won't actually change
+        # anything for a polar plot, so just hard-code it.
+        self.pixel_size = 0.5
         self.pv_pixel_size = (
             HexrdConfig().polar_pixel_size_tth,
             HexrdConfig().polar_pixel_size_eta

@@ -779,7 +779,7 @@
          <string>Pixels</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
-         <item row="2" column="2">
+         <item row="4" column="2">
           <widget class="QDoubleSpinBox" name="cal_det_size_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -801,7 +801,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
+         <item row="1" column="1">
           <widget class="QLabel" name="label_12">
            <property name="text">
             <string>Rows:</string>
@@ -811,27 +811,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>Columns:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_13">
-           <property name="text">
-            <string>Size:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
+         <item row="3" column="2">
           <widget class="QDoubleSpinBox" name="cal_det_size_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -853,7 +833,17 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1" colspan="2">
+         <item row="4" column="1">
+          <widget class="QLabel" name="label_13">
+           <property name="text">
+            <string>Column Size:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
           <widget class="QSpinBox" name="cal_det_rows">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -869,7 +859,17 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1" colspan="2">
+         <item row="3" column="1">
+          <widget class="QLabel" name="label_17">
+           <property name="text">
+            <string>Row Size:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
           <widget class="QSpinBox" name="cal_det_columns">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -882,6 +882,16 @@
            </property>
            <property name="value">
             <number>2048</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>Columns:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -992,6 +1002,9 @@
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
+        <property name="suffix">
+         <string>°</string>
+        </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
         </property>
@@ -1008,6 +1021,50 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>cal_energy_wavelength</tabstop>
+  <tabstop>cal_energy</tabstop>
+  <tabstop>cal_vector_azimuth</tabstop>
+  <tabstop>cal_vector_polar</tabstop>
+  <tabstop>cal_crystal_grain_id</tabstop>
+  <tabstop>cal_crystal_inv_stretch_0</tabstop>
+  <tabstop>cal_crystal_inv_stretch_1</tabstop>
+  <tabstop>cal_crystal_inv_stretch_2</tabstop>
+  <tabstop>cal_crystal_inv_stretch_3</tabstop>
+  <tabstop>cal_crystal_inv_stretch_4</tabstop>
+  <tabstop>cal_crystal_inv_stretch_5</tabstop>
+  <tabstop>cal_crystal_orientation_0</tabstop>
+  <tabstop>cal_crystal_orientation_1</tabstop>
+  <tabstop>cal_crystal_orientation_2</tabstop>
+  <tabstop>cal_crystal_position_0</tabstop>
+  <tabstop>cal_crystal_position_1</tabstop>
+  <tabstop>cal_crystal_position_2</tabstop>
+  <tabstop>cal_det_current</tabstop>
+  <tabstop>cal_det_add</tabstop>
+  <tabstop>cal_det_remove</tabstop>
+  <tabstop>cal_det_function</tabstop>
+  <tabstop>cal_det_param_0</tabstop>
+  <tabstop>cal_det_param_1</tabstop>
+  <tabstop>cal_det_param_2</tabstop>
+  <tabstop>cal_det_param_3</tabstop>
+  <tabstop>cal_det_param_4</tabstop>
+  <tabstop>cal_det_param_5</tabstop>
+  <tabstop>cal_det_rows</tabstop>
+  <tabstop>cal_det_columns</tabstop>
+  <tabstop>cal_det_size_0</tabstop>
+  <tabstop>cal_det_size_1</tabstop>
+  <tabstop>cal_det_saturation</tabstop>
+  <tabstop>cal_det_t_vec_d_0</tabstop>
+  <tabstop>cal_det_t_vec_d_1</tabstop>
+  <tabstop>cal_det_t_vec_d_2</tabstop>
+  <tabstop>cal_det_angles_0</tabstop>
+  <tabstop>cal_det_angles_1</tabstop>
+  <tabstop>cal_det_angles_2</tabstop>
+  <tabstop>cal_osc_chi</tabstop>
+  <tabstop>cal_osc_t_vec_d_0</tabstop>
+  <tabstop>cal_osc_t_vec_d_1</tabstop>
+  <tabstop>cal_osc_t_vec_d_2</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
