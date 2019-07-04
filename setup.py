@@ -36,7 +36,7 @@ setup(
     install_requires=install_reqs,
     entry_points={
         'console_scripts': [
-            'hexrd = hexrd.ui.main_window:main'
+            'hexrd = hexrd.ui.main:main'
         ]
     }
 )
