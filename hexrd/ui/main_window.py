@@ -64,6 +64,7 @@ class MainWindow(QObject):
             self.on_action_save_materials_triggered)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
+        self.ui.image_view.pressed.connect(self.show_images)
         self.ui.cartesian_view.pressed.connect(self.show_cartesian)
         self.ui.polar_view.pressed.connect(self.show_polar)
 
@@ -147,6 +148,9 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
+
+    def show_images(self):
+        self.ui.image_tab_widget.load_images()
 
     def show_cartesian(self):
         # Automatically make the cartesian resolution tab the active tab
