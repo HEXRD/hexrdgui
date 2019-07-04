@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import warnings
 
 from hexrd.gridutil import cellIndices
 from hexrd import instrument
@@ -121,7 +122,9 @@ class InstrumentViewer:
         """
         IMAGE PLOTTING AND LIMIT CALCULATION
         """
-        img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get create_calibration_image to not rescale the
