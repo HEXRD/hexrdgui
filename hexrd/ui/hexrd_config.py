@@ -200,7 +200,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         string_path = str(path)
         if string_path in self.cached_gui_yaml_dicts.keys():
-            return self.cached_gui_yaml_dicts[string_path]
+            return copy.deepcopy(self.cached_gui_yaml_dicts[string_path])
 
         res = []
         self._search_gui_yaml_dict(search_dict, res)
