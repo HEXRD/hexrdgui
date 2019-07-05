@@ -72,7 +72,7 @@
    <property name="minimumSize">
     <size>
      <width>550</width>
-     <height>229</height>
+     <height>260</height>
     </size>
    </property>
    <property name="windowTitle">
@@ -100,7 +100,7 @@
           <x>0</x>
           <y>0</y>
           <width>532</width>
-          <height>657</height>
+          <height>626</height>
          </rect>
         </property>
         <attribute name="label">
@@ -113,7 +113,7 @@
           <x>0</x>
           <y>0</y>
           <width>532</width>
-          <height>657</height>
+          <height>626</height>
          </rect>
         </property>
         <attribute name="label">
@@ -139,6 +139,13 @@
          </item>
         </layout>
        </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="image_view">
+       <property name="text">
+        <string>Image View</string>
+       </property>
       </widget>
      </item>
      <item>
