@@ -339,6 +339,9 @@
           <property name="suffix">
            <string> Å</string>
           </property>
+          <property name="decimals">
+           <number>5</number>
+          </property>
           <property name="maximum">
            <double>1000.000000000000000</double>
           </property>
@@ -429,6 +432,9 @@
           <property name="suffix">
            <string> Å</string>
           </property>
+          <property name="decimals">
+           <number>5</number>
+          </property>
           <property name="maximum">
            <double>1000.000000000000000</double>
           </property>
@@ -447,6 +453,9 @@
           </property>
           <property name="suffix">
            <string> Å</string>
+          </property>
+          <property name="decimals">
+           <number>5</number>
           </property>
           <property name="maximum">
            <double>1000.000000000000000</double>
