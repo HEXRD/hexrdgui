@@ -1,5 +1,6 @@
 from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
-from PySide2.QtWidgets import QMessageBox, QTreeView
+from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu
+from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
 
@@ -208,6 +209,15 @@ class CalTreeView(QTreeView):
 
         self.header().resizeSection(0, 200)
         self.header().resizeSection(1, 200)
+
+    def contextMenuEvent(self, event):
+        index = self.indexAt(event.pos())
+        if index.column() == 0:
+            menu = QMenu(self)
+            collapse = menu.addAction("Collapse All")
+            menu.addAction("Expand All")
+            action = menu.exec_(QCursor.pos())
+            self.collapseAll() if (action == collapse) else self.expandAll()
 
     def rebuild_tree(self):
         # We rebuild it from scratch every time it is shown in case
