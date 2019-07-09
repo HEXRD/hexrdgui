@@ -226,14 +226,13 @@ class CalTreeView(QTreeView):
         self.expand_rows()
 
     def expand_rows(self, parent=QModelIndex()):
-        # Recursively expands all rows except for the detectors
+        # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, 0, parent)
 
-            # Don't expand detectors
             item = self.model().get_item(index)
             parent_item = item.parent_item
-            if parent_item and parent_item.data(0) != 'detectors':
+            if parent_item:
                 self.expand(index)
 
             self.expand_rows(index)
