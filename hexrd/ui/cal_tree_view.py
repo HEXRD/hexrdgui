@@ -54,7 +54,7 @@ class CalTreeItemModel(QAbstractItemModel):
 
     def __init__(self, parent=None):
         super(CalTreeItemModel, self).__init__(parent)
-        self.root_item = TreeItem(['key', 'value'])
+        self.root_item = TreeItem(['key', 'value', 'status'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
 
@@ -69,30 +69,43 @@ class CalTreeItemModel(QAbstractItemModel):
             return None
 
         item = self.get_item(index)
-        return item.data(index.column())
+
+        value = item.data(index.column())
+        if index.column() == 2:
+            result = str(value)
+            if result == None or result == '0':
+                return ''
+            elif result == '1':
+                return 'Refined'
+            elif result  == '2':
+                return 'Fixed'
+        return value
 
     def setData(self, index, value, role):
         item = self.get_item(index)
-
+        path = self.get_path_from_root(item, index.column())
+             
         # If they are identical, don't do anything
-        if value == item.data(1):
+        if value == item.data(index.column()):
             return True
 
-        path = self.get_path_from_root(item)
-        old_value = self.cfg.get_instrument_config_val(path)
+        if index.column() == 1:
+            old_value = self.cfg.get_instrument_config_val(path)
 
-        # As a validation step, ensure that the new value can be
-        # converted to the old value's type
-        try:
-            value = type(old_value)(value)
-        except ValueError:
-            msg = ('Could not convert ' + str(value) + ' to type ' +
-                   str(type(old_value).__name__))
-            QMessageBox.warning(None, 'HEXRD', msg)
-            return False
+            # As a validation step, ensure that the new value can be
+            # converted to the old value's type
+            try:
+                value = type(old_value)(value)
+            except ValueError:
+                msg = ('Could not convert ' + str(value) + ' to type ' +
+                    str(type(old_value).__name__))
+                QMessageBox.warning(None, 'HEXRD', msg)
+                return False
 
+        item.set_data(index.column(), value)
+        
         self.cfg.set_instrument_config_val(path, value)
-        item.set_data(1, value)
+
         return True
 
     def flags(self, index):
@@ -102,8 +115,8 @@ class CalTreeItemModel(QAbstractItemModel):
         flags = super(CalTreeItemModel, self).flags(index)
 
         item = self.get_item(index)
-        if index.column() == 1 and item.child_count() == 0:
-            # The second column with no children is editable
+        if index.column() >= 1 and item.child_count() == 0:
+            # The second and third columns with no children are editable
             flags = flags | Qt.ItemIsEditable
 
         return flags
@@ -161,14 +174,25 @@ class CalTreeItemModel(QAbstractItemModel):
         # Rebuild the tree from scratch
         self.clear()
         for key in self.cfg.instrument_config.keys():
-            tree_item = self.add_tree_item(key, None, self.root_item)
+            tree_item = self.add_tree_item(key, None, None, self.root_item)
             self.recursive_add_tree_items(self.cfg.instrument_config[key],
                                           tree_item)
 
-    def add_tree_item(self, key, value, parent):
-        data = [key, value]
+    def add_tree_item(self, key, value, status, parent):
+        data = [key, value, status]
         tree_item = TreeItem(data, parent)
         return tree_item
+
+    def set_status(self, key, cur_config, cur_tree_item):
+        if isinstance(cur_config, list):
+            children = cur_tree_item.child_items
+            for child in children:
+                value = cur_config[child.data(0)]
+                child.set_data(1, str(value))
+        else:
+            #print('value for ', cur_tree_item.data(0), ': ', cur_config)
+            cur_tree_item.set_data(1, str(cur_config))
+        return
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         if isinstance(cur_config, dict):
@@ -177,22 +201,28 @@ class CalTreeItemModel(QAbstractItemModel):
             keys = range(len(cur_config))
         else:
             # This must be a value. Set it.
-            cur_tree_item.set_data(1, str(cur_config))
+            cur_tree_item.set_data(2, str(cur_config))
             return
 
         for key in keys:
-            tree_item = self.add_tree_item(key, None, cur_tree_item)
+            if key == 'value':
+                self.set_status(key, cur_config[key], cur_tree_item)
+                continue
+            elif key == 'status':
+                tree_item = cur_tree_item
+            else:
+                tree_item = self.add_tree_item(key, None, None, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
-    def get_path_from_root(self, tree_item):
-        path = []
+    def get_path_from_root(self, tree_item, column):
+        path = ['value'] if column == 1 else ['status']
         cur_tree_item = tree_item
         while True:
             text = cur_tree_item.data(0)
             if _is_int(text):
-                text = int(text)
-
-            path.insert(0, text)
+                path.append(int(text))
+            else:
+                path.insert(0, text)
             cur_tree_item = cur_tree_item.parent_item
             if cur_tree_item is self.root_item:
                 break
