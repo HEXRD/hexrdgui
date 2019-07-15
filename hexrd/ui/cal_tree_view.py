@@ -190,7 +190,6 @@ class CalTreeItemModel(QAbstractItemModel):
                 value = cur_config[child.data(0)]
                 child.set_data(1, str(value))
         else:
-            #print('value for ', cur_tree_item.data(0), ': ', cur_config)
             cur_tree_item.set_data(1, str(cur_config))
         return
 
