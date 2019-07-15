@@ -81,12 +81,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.update_active_material_energy()
 
     def save_settings(self):
-        settings = QSettings()
+        settings = QSettings('hexrd', 'hexrd')
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
 
     def load_settings(self):
-        settings = QSettings()
+        settings = QSettings('hexrd', 'hexrd')
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
 

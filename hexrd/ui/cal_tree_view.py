@@ -1,5 +1,5 @@
 from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
-from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu
+from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu, QComboBox, QStyledItemDelegate
 from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -199,13 +199,41 @@ class CalTreeItemModel(QAbstractItemModel):
 
         return path
 
+class ComboBoxDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent=None):
+        super(ComboBoxDelegate, self).__init__(parent)
+
+    def createEditor(self, parent, option, index):
+        combo = QComboBox(parent)
+        options = []
+        options.append("")
+        options.append("Refined")
+        options.append("Fixed")
+        combo.addItems(options)
+
+        combo.currentIndexChanged.connect(self.statusChanged)
+
+        return combo
+
+    def statusChanged(self):
+        self.commitData.emit(self.sender())
+
+    def setModelData(self, combo, model, index):
+        self.parent().model().setData(index, 
+                                      combo.currentIndex(), 
+                                      Qt.DisplayRole)
 
 class CalTreeView(QTreeView):
 
     def __init__(self, parent=None):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
+        self.setItemDelegateForColumn(2, ComboBoxDelegate(self))
         self.expand_rows()
+        self.resizeColumnToContents(0)
+        self.resizeColumnToContents(1)
+        self.resizeColumnToContents(2)
 
         self.header().resizeSection(0, 200)
         self.header().resizeSection(1, 200)
