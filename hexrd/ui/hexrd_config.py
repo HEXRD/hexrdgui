@@ -71,7 +71,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Load the default config['instrument'] settings
             self.config['instrument'] = copy.deepcopy(
                 self.default_config['instrument'])
-            self.add_status(self.config['instrument'])
+            if self.needs_status(self.config['instrument']):
+                self.add_status(self.config['instrument'])
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -90,6 +91,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings('hexrd', 'hexrd')
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
+        if self.config.get('instrument') is not None:
+            if self.needs_status(self.config['instrument']):
+                self.add_status(self.config['instrument'])
 
     # This is here for backward compatibility
     @property
@@ -157,7 +161,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if isinstance(config, dict):
             if 'status' in config.keys():
                 return False
-            self.needs_status(config.keys())
+
+            for v in config.values():
+                if not self.needs_status(v):
+                    return False
+
         return True
 
     def add_status(self, current):
