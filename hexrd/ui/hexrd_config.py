@@ -4,7 +4,10 @@ import pickle
 from PySide2.QtCore import Signal, QObject, QSettings
 
 import fabio
+import os
 import yaml
+
+from hexrd import imageseries
 
 from hexrd.ui import constants
 from hexrd.ui import resource_loader
@@ -122,7 +125,24 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_images(self, names, image_files):
         self.images_dict.clear()
         for name, f in zip(names, image_files):
-            self.images_dict[name] = fabio.open(f).data
+            try:
+                hdf5 = ['.h5', '.hdf5', '.he5']
+                ext = os.path.splitext(f)[1]
+                if ext in hdf5:
+                    img = imageseries.open(f, 'hdf5', path='/imageseries')
+                    print("img: ", img)
+                    print("img[0]: ", img[0])
+                elif ext == '.npz':
+                    img = imageseries.open(f, 'frame-cache')
+                elif ext == '.yml':
+                    data = yaml.load(open(f))
+                    form = next(iter(data))
+                    img = imageseries.open(f, form)
+                else:
+                    img = imageseries.open(f, 'array')
+                self.images_dict[name] = img[0]
+            except:
+                self.images_dict[name] = fabio.open(f).data
 
     def image(self, name):
         return self.images_dict.get(name)
