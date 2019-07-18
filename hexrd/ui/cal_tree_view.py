@@ -1,4 +1,4 @@
-from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
+from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal
 from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu
 from PySide2.QtGui import QCursor
 
@@ -52,6 +52,9 @@ class TreeItem:
 
 class CalTreeItemModel(QAbstractItemModel):
 
+    """Emitted when data has changed in tree view"""
+    tree_data_changed = Signal()
+
     def __init__(self, parent=None):
         super(CalTreeItemModel, self).__init__(parent)
         self.root_item = TreeItem(['key', 'value'])
@@ -93,6 +96,7 @@ class CalTreeItemModel(QAbstractItemModel):
 
         self.cfg.set_instrument_config_val(path, value)
         item.set_data(1, value)
+        self.tree_data_changed.emit()
         return True
 
     def flags(self, index):

@@ -1,11 +1,14 @@
-from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QComboBox, QLineEdit, QPushButton
+from PySide2.QtCore import QObject, Signal
+from PySide2.QtWidgets import QAbstractSpinBox, QComboBox, QLineEdit, QPushButton
 
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 class CalibrationConfigWidget(QObject):
+
+    """Emitted when GUI data has changed"""
+    gui_data_changed = Signal()
 
     def __init__(self, parent=None):
         super(CalibrationConfigWidget, self).__init__(parent)
@@ -45,6 +48,7 @@ class CalibrationConfigWidget(QObject):
                 widget.pressed.connect(self.update_config_from_gui)
             else:
                 widget.valueChanged.connect(self.update_config_from_gui)
+                widget.editingFinished.connect(self.gui_data_changed)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -219,6 +223,12 @@ class CalibrationConfigWidget(QObject):
 
         for block, widget in zip(previously_blocked, all_widgets):
             widget.blockSignals(block)
+
+    def set_keyboard_tracking(self, b):
+        widgets = self.get_all_widgets()
+        for widget in widgets:
+            if isinstance(widget, QAbstractSpinBox):
+                widget.setKeyboardTracking(b)
 
     def _set_gui_value(self, gui_object, value):
         """This is for calling various set methods for GUI variables
