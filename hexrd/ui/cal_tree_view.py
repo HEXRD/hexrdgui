@@ -50,6 +50,14 @@ class TreeItem:
         return 0
 
 
+# Global constants
+REFINED = 0
+FIXED = 1
+
+KEY_COL = 0
+VALUE_COL = 1
+STATUS_COL = 2
+
 class CalTreeItemModel(QAbstractItemModel):
 
     def __init__(self, parent=None):
@@ -71,7 +79,7 @@ class CalTreeItemModel(QAbstractItemModel):
         item = self.get_item(index)
 
         value = item.data(index.column())
-        if index.column() == 2:
+        if index.column() == STATUS_COL:
             if role == Qt.EditRole:
                 return value
             if role == Qt.DisplayRole:
@@ -86,7 +94,7 @@ class CalTreeItemModel(QAbstractItemModel):
         if value == item.data(index.column()):
             return True
 
-        if index.column() == 1:
+        if index.column() == VALUE_COL:
             old_value = self.cfg.get_instrument_config_val(path)
 
             # As a validation step, ensure that the new value can be
@@ -113,7 +121,8 @@ class CalTreeItemModel(QAbstractItemModel):
         flags = super(CalTreeItemModel, self).flags(index)
 
         item = self.get_item(index)
-        if (index.column() == 1 and item.child_count() == 0) or index.column() == 2:
+        if ((index.column() == VALUE_COL and item.child_count() == 0)
+            or index.column() == STATUS_COL):
             # The second and third columns with no children are editable
             flags = flags | Qt.ItemIsEditable
 
@@ -145,7 +154,7 @@ class CalTreeItemModel(QAbstractItemModel):
         if not parent_item or parent_item is self.root_item:
             return QModelIndex()
 
-        return self.createIndex(parent_item.row(), 0, parent_item)
+        return self.createIndex(parent_item.row(), KEY_COL, parent_item)
 
     def rowCount(self, parent=QModelIndex()):
         parent_item = self.get_item(parent)
@@ -182,14 +191,14 @@ class CalTreeItemModel(QAbstractItemModel):
         tree_item = TreeItem(data, parent)
         return tree_item
 
-    def set_status(self, key, cur_config, cur_tree_item):
+    def set_value(self, key, cur_config, cur_tree_item):
         if isinstance(cur_config, list):
             children = cur_tree_item.child_items
             for child in children:
                 value = cur_config[child.data(0)]
-                child.set_data(1, str(value))
+                child.set_data(VALUE_COL, str(value))
         else:
-            cur_tree_item.set_data(1, str(cur_config))
+            cur_tree_item.set_data(VALUE_COL, str(cur_config))
         return
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
@@ -199,17 +208,17 @@ class CalTreeItemModel(QAbstractItemModel):
             keys = range(len(cur_config))
         else:
             # This must be a value. Set it.
-            cur_tree_item.set_data(2, cur_config)
+            cur_tree_item.set_data(STATUS_COL, cur_config)
             return
 
         for key in keys:
             if key == 'value':
-                self.set_status(key, cur_config[key], cur_tree_item)
+                self.set_value(key, cur_config[key], cur_tree_item)
                 continue
             elif key == 'status':
                 tree_item = cur_tree_item
             else:
-                tree_item = self.add_tree_item(key, None, 0, cur_tree_item)
+                tree_item = self.add_tree_item(key, None, REFINED, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def update_parent_status(self, parent):
@@ -217,15 +226,15 @@ class CalTreeItemModel(QAbstractItemModel):
         for child in children:
             if child.child_count() > 0:
                 self.update_parent_status(child)
-            if child.data(2):
-                parent.set_data(2, 1)
+            if child.data(STATUS_COL):
+                parent.set_data(STATUS_COL, FIXED)
 
 
     def get_path_from_root(self, tree_item, column):
-        path = ['value'] if column == 1 else ['status']
+        path = ['value'] if column == VALUE_COL else ['status']
         cur_tree_item = tree_item
         while True:
-            text = cur_tree_item.data(0)
+            text = cur_tree_item.data(KEY_COL)
             if _is_int(text):
                 path.append(int(text))
             else:
@@ -256,16 +265,15 @@ class CheckBoxDelegate(QStyledItemDelegate):
         if item.child_count() > 0:
             self.setChildData(item, int(check.isChecked()))
         model.setData(index, int(check.isChecked()), Qt.DisplayRole)
-        count = item.child_count()
-        end = model.index(-1, 2, model.parent(index))
+        end = model.index(-1, STATUS_COL, model.parent(index))
         model.dataChanged.emit(index, end)
 
     def setChildData(self, parent, value):
         children = parent.child_items
         for child in children:
-            child.set_data(2, value)
+            child.set_data(STATUS_COL, value)
             if child.child_count() == 0:
-                path = self.parent().model().get_path_from_root(child, 2)
+                path = self.parent().model().get_path_from_root(child, STATUS_COL)
                 self.parent().model().cfg.set_instrument_config_val(path, value)
             else:
                 self.setChildData(child, value)
@@ -275,18 +283,18 @@ class CalTreeView(QTreeView):
     def __init__(self, parent=None):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
-        self.setItemDelegateForColumn(2, CheckBoxDelegate(self))
+        self.setItemDelegateForColumn(STATUS_COL, CheckBoxDelegate(self))
         self.expand_rows()
-        self.resizeColumnToContents(0)
-        self.resizeColumnToContents(1)
-        self.resizeColumnToContents(2)
+        self.resizeColumnToContents(KEY_COL)
+        self.resizeColumnToContents(VALUE_COL)
+        self.resizeColumnToContents(STATUS_COL)
 
-        self.header().resizeSection(0, 200)
-        self.header().resizeSection(1, 200)
+        self.header().resizeSection(KEY_COL, 200)
+        self.header().resizeSection(VALUE_COL, 200)
 
     def contextMenuEvent(self, event):
         index = self.indexAt(event.pos())
-        if index.column() == 0:
+        if index.column() == KEY_COL:
             menu = QMenu(self)
             collapse = menu.addAction("Collapse All")
             menu.addAction("Expand All")
@@ -302,8 +310,8 @@ class CalTreeView(QTreeView):
     def expand_rows(self, parent=QModelIndex()):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
-            index = self.model().index(i, 0, parent)
-            editor_idx = self.model().index(i, 2, parent)
+            index = self.model().index(i, KEY_COL, parent)
+            editor_idx = self.model().index(i, STATUS_COL, parent)
 
             item = self.model().get_item(index)
             parent_item = item.parent_item
