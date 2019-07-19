@@ -71,7 +71,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Load the default config['instrument'] settings
             self.config['instrument'] = copy.deepcopy(
                 self.default_config['instrument'])
-            if self.needs_status(self.config['instrument']):
+            if not self.has_status(self.config['instrument']):
                 self.add_status(self.config['instrument'])
 
         # Load the GUI to yaml maps
@@ -92,7 +92,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
         if self.config.get('instrument') is not None:
-            if self.needs_status(self.config['instrument']):
+            if not self.has_status(self.config['instrument']):
                 self.add_status(self.config['instrument'])
 
     # This is here for backward compatibility
@@ -138,13 +138,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
-        if self.needs_status(self.config['instrument']):
+        if not self.has_status(self.config['instrument']):
             self.add_status(self.config['instrument'])
 
         self.update_active_material_energy()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
+        if self.has_status(self.config['instrument']):
+            self.remove_status(self.config['instrument'])
         with open(output_file, 'w') as f:
             yaml.dump(self.config['instrument'], f)
 
@@ -157,16 +159,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
         with open(f, 'wb') as wf:
             pickle.dump(list(self.materials.values()), wf)
 
-    def needs_status(self, config):
+    def has_status(self, config):
         if isinstance(config, dict):
             if 'status' in config.keys():
-                return False
+                return True
 
             for v in config.values():
-                if not self.needs_status(v):
-                    return False
+                if self.has_status(v):
+                    return True
 
-        return True
+        return False
 
     def add_status(self, current):
         for key, value in current.items():
@@ -174,10 +176,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.add_status(value)
             else:
                 if isinstance(value, list):
-                    stat_default = [0] * len(value)
+                    stat_default = [1] * len(value)
                 else:
-                    stat_default = 0
+                    stat_default = 1
                 current[key] = {'status': (stat_default), 'value': value}
+
+    def remove_status(self, current, prev=None, parent=None):
+        for key, value in current.items():
+            if isinstance(value, dict):
+                if 'status' in value.keys():
+                    current[key] = value['value']
+                else:
+                    self.remove_status(value, current, key)
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
