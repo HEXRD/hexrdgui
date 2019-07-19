@@ -175,6 +175,7 @@ class CalTreeItemModel(QAbstractItemModel):
             tree_item = self.add_tree_item(key, None, 0, self.root_item)
             self.recursive_add_tree_items(self.cfg.instrument_config[key],
                                           tree_item)
+            self.update_parent_status(tree_item)
 
     def add_tree_item(self, key, value, status, parent):
         data = [key, value, status]
@@ -210,6 +211,15 @@ class CalTreeItemModel(QAbstractItemModel):
             else:
                 tree_item = self.add_tree_item(key, None, 0, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
+
+    def update_parent_status(self, parent):
+        children = parent.child_items
+        for child in children:
+            if child.child_count() > 0:
+                self.update_parent_status(child)
+            if child.data(2):
+                parent.set_data(2, 1)
+
 
     def get_path_from_root(self, tree_item, column):
         path = ['value'] if column == 1 else ['status']
