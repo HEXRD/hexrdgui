@@ -72,6 +72,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Load the default config['instrument'] settings
             self.config['instrument'] = copy.deepcopy(
                 self.default_config['instrument'])
+            self.create_internal_config(self.config['instrument'])
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -93,10 +94,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.images_dir = settings.value('images_dir', None)
         # All QSettings come back as strings.
         self.live_update = bool(settings.value('live_update', False) == 'true')
+        if self.config.get('instrument') is not None:
+            self.create_internal_config(self.config['instrument'])
 
     # This is here for backward compatibility
     @property
     def instrument_config(self):
+        return self.filer_instrument_config(
+            self.config['instrument'])
+
+    @property
+    def internal_instrument_config(self):
         return self.config['instrument']
 
     def set_images_dir(self, images_dir):
@@ -137,11 +145,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
+        self.create_internal_config(self.config['instrument'])
 
         self.update_active_material_energy()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
+        self.filter_instrument_config(self.config['instrument'])
         with open(output_file, 'w') as f:
             yaml.dump(self.config['instrument'], f)
 
@@ -156,6 +166,49 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_live_update(self, status):
         self.live_update = status
+    def create_internal_config(self, cur_config):
+        if not self.has_status(cur_config):
+            self.add_status(cur_config)
+
+    def filter_instrument_config(self, cur_config):
+        # Filters the refined status values out of the
+        # intrument config tree
+        default = {}
+        default['instrument'] = copy.deepcopy(cur_config)
+        if self.has_status(default['instrument']):
+            self.remove_status(default['instrument'])
+            return default['instrument']
+        return cur_config
+
+    def has_status(self, config):
+        if isinstance(config, dict):
+            if 'status' in config.keys():
+                return True
+
+            for v in config.values():
+                if self.has_status(v):
+                    return True
+
+        return False
+
+    def add_status(self, current):
+        for key, value in current.items():
+            if isinstance(value, dict):
+                self.add_status(value)
+            else:
+                if isinstance(value, list):
+                    stat_default = [1] * len(value)
+                else:
+                    stat_default = 1
+                current[key] = {'status': (stat_default), 'value': value}
+
+    def remove_status(self, current, prev=None, parent=None):
+        for key, value in current.items():
+            if isinstance(value, dict):
+                if 'status' in value.keys():
+                    current[key] = value['value']
+                else:
+                    self.remove_status(value, current, key)
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
@@ -179,10 +232,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
             elif isinstance(value, list):
                 for i, element in enumerate(value):
                     if isinstance(element, str) and element.startswith('cal_'):
-                        res.append((element, cur_path + [key, i]))
+                        res.append((element, cur_path + [key, 'value', i]))
             else:
                 if isinstance(value, str) and value.startswith('cal_'):
-                    res.append((value, cur_path + [key]))
+                    res.append((value, cur_path + [key, 'value']))
 
     def get_gui_yaml_paths(self, path=None):
         """This returns all GUI variables along with their paths
@@ -385,7 +438,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def update_active_material_energy(self):
         # This is a potentially expensive operation...
-        energy = self.config['instrument'].get('beam', {}).get('energy')
+        energy = self.config['instrument'].get('beam', {}).get('energy', {}).get('value')
         mat = self.active_material
 
         # If the plane data energy already matches, skip it
