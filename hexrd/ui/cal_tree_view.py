@@ -60,6 +60,9 @@ STATUS_COL = 2
 
 class CalTreeItemModel(QAbstractItemModel):
 
+    """Emitted when data has changed in tree view"""
+    tree_data_changed = Signal()
+
     def __init__(self, parent=None):
         super(CalTreeItemModel, self).__init__(parent)
         self.root_item = TreeItem(['key', 'value', 'fixed'])
@@ -94,6 +97,9 @@ class CalTreeItemModel(QAbstractItemModel):
         if value == item.data(index.column()):
             return True
 
+        path = self.get_path_from_root(item, index.column())
+        old_value = self.cfg.get_instrument_config_val(path)
+
         if index.column() == VALUE_COL:
             old_value = self.cfg.get_instrument_config_val(path)
 
@@ -108,6 +114,7 @@ class CalTreeItemModel(QAbstractItemModel):
                 return False
 
         item.set_data(index.column(), value)
+        self.tree_data_changed.emit()
 
         if item.child_count() == 0:
             self.cfg.set_instrument_config_val(path, value)

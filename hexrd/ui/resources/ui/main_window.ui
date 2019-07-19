@@ -57,6 +57,7 @@
     </property>
     <addaction name="action_tabbed_view"/>
     <addaction name="action_show_nav_toolbar"/>
+    <addaction name="action_show_live_updates"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menuView"/>
@@ -232,6 +233,22 @@
    </property>
    <property name="text">
     <string>Show Navigation Toolbar</string>
+   </property>
+  </action>
+  <action name="actionShow_Live_Updates">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Live Updates</string>
+   </property>
+  </action>
+  <action name="action_show_live_updates">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Live Updates</string>
    </property>
   </action>
  </widget>

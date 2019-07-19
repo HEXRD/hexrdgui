@@ -56,6 +56,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
+        self.live_update = False
 
         self.load_settings()
 
@@ -85,11 +86,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings('hexrd', 'hexrd')
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
+        settings.setValue('live_update', self.live_update)
 
     def load_settings(self):
         settings = QSettings('hexrd', 'hexrd')
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
+        # All QSettings come back as strings.
+        self.live_update = bool(settings.value('live_update', False) == 'true')
         if self.config.get('instrument') is not None:
             self.create_internal_config(self.config['instrument'])
 
@@ -160,6 +164,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         with open(f, 'wb') as wf:
             pickle.dump(list(self.materials.values()), wf)
 
+    def set_live_update(self, status):
+        self.live_update = status
     def create_internal_config(self, cur_config):
         if not self.has_status(cur_config):
             self.add_status(cur_config)
