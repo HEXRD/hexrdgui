@@ -1,5 +1,5 @@
-from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
-from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu, QComboBox, QStyledItemDelegate
+from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal
+from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu, QCheckBox, QStyledItemDelegate
 from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -54,7 +54,7 @@ class CalTreeItemModel(QAbstractItemModel):
 
     def __init__(self, parent=None):
         super(CalTreeItemModel, self).__init__(parent)
-        self.root_item = TreeItem(['key', 'value', 'status'])
+        self.root_item = TreeItem(['key', 'value', 'fixed'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
 
@@ -72,13 +72,10 @@ class CalTreeItemModel(QAbstractItemModel):
 
         value = item.data(index.column())
         if index.column() == 2:
-            result = str(value)
-            if result == None or result == '0':
-                return ''
-            elif result == '1':
-                return 'Refined'
-            elif result  == '2':
-                return 'Fixed'
+            if role == Qt.EditRole:
+                return value
+            if role == Qt.DisplayRole:
+                return None
         return value
 
     def setData(self, index, value, role):
@@ -103,8 +100,9 @@ class CalTreeItemModel(QAbstractItemModel):
                 return False
 
         item.set_data(index.column(), value)
-        
-        self.cfg.set_instrument_config_val(path, value)
+
+        if item.child_count() == 0:
+            self.cfg.set_instrument_config_val(path, value)
 
         return True
 
@@ -115,7 +113,7 @@ class CalTreeItemModel(QAbstractItemModel):
         flags = super(CalTreeItemModel, self).flags(index)
 
         item = self.get_item(index)
-        if index.column() >= 1 and item.child_count() == 0:
+        if (index.column() == 1 and item.child_count() == 0) or index.column() == 2:
             # The second and third columns with no children are editable
             flags = flags | Qt.ItemIsEditable
 
@@ -174,7 +172,7 @@ class CalTreeItemModel(QAbstractItemModel):
         # Rebuild the tree from scratch
         self.clear()
         for key in self.cfg.instrument_config.keys():
-            tree_item = self.add_tree_item(key, None, None, self.root_item)
+            tree_item = self.add_tree_item(key, None, 0, self.root_item)
             self.recursive_add_tree_items(self.cfg.instrument_config[key],
                                           tree_item)
 
@@ -200,7 +198,7 @@ class CalTreeItemModel(QAbstractItemModel):
             keys = range(len(cur_config))
         else:
             # This must be a value. Set it.
-            cur_tree_item.set_data(2, str(cur_config))
+            cur_tree_item.set_data(2, cur_config)
             return
 
         for key in keys:
@@ -210,7 +208,7 @@ class CalTreeItemModel(QAbstractItemModel):
             elif key == 'status':
                 tree_item = cur_tree_item
             else:
-                tree_item = self.add_tree_item(key, None, None, cur_tree_item)
+                tree_item = self.add_tree_item(key, None, 0, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def get_path_from_root(self, tree_item, column):
@@ -228,37 +226,46 @@ class CalTreeItemModel(QAbstractItemModel):
 
         return path
 
-class ComboBoxDelegate(QStyledItemDelegate):
+class CheckBoxDelegate(QStyledItemDelegate):
 
     def __init__(self, parent=None):
-        super(ComboBoxDelegate, self).__init__(parent)
+        super(CheckBoxDelegate, self).__init__(parent)
 
     def createEditor(self, parent, option, index):
-        combo = QComboBox(parent)
-        options = []
-        options.append("")
-        options.append("Refined")
-        options.append("Fixed")
-        combo.addItems(options)
+        check = QCheckBox(parent)
 
-        combo.currentIndexChanged.connect(self.statusChanged)
+        check.toggled.connect(self.statusChanged)
 
-        return combo
+        return check
 
     def statusChanged(self):
         self.commitData.emit(self.sender())
 
-    def setModelData(self, combo, model, index):
-        self.parent().model().setData(index, 
-                                      combo.currentIndex(), 
-                                      Qt.DisplayRole)
+    def setModelData(self, check, model, index):
+        item = self.parent().model().get_item(index)
+        if item.child_count() > 0:
+            self.setChildData(item, int(check.isChecked()))
+        model.setData(index, int(check.isChecked()), Qt.DisplayRole)
+        count = item.child_count()
+        end = model.index(-1, 2, model.parent(index))
+        model.dataChanged.emit(index, end)
+
+    def setChildData(self, parent, value):
+        children = parent.child_items
+        for child in children:
+            child.set_data(2, value)
+            if child.child_count() == 0:
+                path = self.parent().model().get_path_from_root(child, 2)
+                self.parent().model().cfg.set_instrument_config_val(path, value)
+            else:
+                self.setChildData(child, value)
 
 class CalTreeView(QTreeView):
 
     def __init__(self, parent=None):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
-        self.setItemDelegateForColumn(2, ComboBoxDelegate(self))
+        self.setItemDelegateForColumn(2, CheckBoxDelegate(self))
         self.expand_rows()
         self.resizeColumnToContents(0)
         self.resizeColumnToContents(1)
@@ -286,11 +293,13 @@ class CalTreeView(QTreeView):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, 0, parent)
+            editor_idx = self.model().index(i, 2, parent)
 
             item = self.model().get_item(index)
             parent_item = item.parent_item
             if parent_item:
                 self.expand(index)
+                self.openPersistentEditor(editor_idx)
 
             self.expand_rows(index)
 
