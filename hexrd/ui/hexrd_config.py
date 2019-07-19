@@ -71,8 +71,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Load the default config['instrument'] settings
             self.config['instrument'] = copy.deepcopy(
                 self.default_config['instrument'])
-            if not self.has_status(self.config['instrument']):
-                self.add_status(self.config['instrument'])
+            self.create_internal_config(self.config['instrument'])
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -92,12 +91,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
         if self.config.get('instrument') is not None:
-            if not self.has_status(self.config['instrument']):
-                self.add_status(self.config['instrument'])
+            self.create_internal_config(self.config['instrument'])
 
     # This is here for backward compatibility
     @property
     def instrument_config(self):
+        return self.filer_instrument_config(
+            self.config['instrument'])
+
+    @property
+    def internal_instrument_config(self):
         return self.config['instrument']
 
     def set_images_dir(self, images_dir):
@@ -138,15 +141,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
-        if not self.has_status(self.config['instrument']):
-            self.add_status(self.config['instrument'])
+        self.create_internal_config(self.config['instrument'])
 
         self.update_active_material_energy()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
-        if self.has_status(self.config['instrument']):
-            self.remove_status(self.config['instrument'])
+        self.filter_instrument_config(self.config['instrument'])
         with open(output_file, 'w') as f:
             yaml.dump(self.config['instrument'], f)
 
@@ -158,6 +159,20 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def save_materials(self, f):
         with open(f, 'wb') as wf:
             pickle.dump(list(self.materials.values()), wf)
+
+    def create_internal_config(self, cur_config):
+        if not self.has_status(cur_config):
+            self.add_status(cur_config)
+
+    def filter_instrument_config(self, cur_config):
+        # Filters the refined status values out of the
+        # intrument config tree
+        default = {}
+        default['instrument'] = copy.deepcopy(cur_config)
+        if self.has_status(default['instrument']):
+            self.remove_status(default['instrument'])
+            return default['instrument']
+        return cur_config
 
     def has_status(self, config):
         if isinstance(config, dict):

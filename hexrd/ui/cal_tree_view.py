@@ -173,16 +173,16 @@ class CalTreeItemModel(QAbstractItemModel):
     def clear(self):
         # Remove all of the root item children. That clears it.
         root = self.root_item
-        self.beginRemoveRows(QModelIndex(), 0, root.child_count() - 1)
+        self.beginRemoveRows(QModelIndex(), KEY_COL, root.child_count() - 1)
         root.clear_children()
         self.endRemoveRows()
 
     def rebuild_tree(self):
         # Rebuild the tree from scratch
         self.clear()
-        for key in self.cfg.instrument_config.keys():
-            tree_item = self.add_tree_item(key, None, 0, self.root_item)
-            self.recursive_add_tree_items(self.cfg.instrument_config[key],
+        for key in self.cfg.internal_instrument_config.keys():
+            tree_item = self.add_tree_item(key, None, REFINED, self.root_item)
+            self.recursive_add_tree_items(self.cfg.internal_instrument_config[key],
                                           tree_item)
             self.update_parent_status(tree_item)
 
