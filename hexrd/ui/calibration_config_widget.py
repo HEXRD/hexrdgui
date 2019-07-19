@@ -49,6 +49,11 @@ class CalibrationConfigWidget(QObject):
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
 
+        # Make sure energy has same style
+        kev_widget = getattr(self.ui, 'cal_energy')
+        wave_widget = getattr(self.ui, 'cal_energy_wavelength')
+        wave_widget.setStyleSheet(kev_widget.styleSheet())
+
         block_signals = self.ui.cal_energy_wavelength.blockSignals(True)
         try:
             new_wavelength = constants.KEV_TO_WAVELENGTH / val
@@ -233,9 +238,9 @@ class CalibrationConfigWidget(QObject):
         if isinstance(gui_object, QComboBox):
             gui_object.setCurrentText(value)
         else:
-            if flag == 2 and not gui_object.styleSheet():
+            if flag == 1 and not gui_object.styleSheet():
                 gui_object.setStyleSheet("QSpinBox, QDoubleSpinBox { background-color: lightgray; }")
-            elif gui_object.styleSheet() and flag != 2:
+            elif gui_object.styleSheet() and flag != 1:
                 gui_object.setStyleSheet("")
             # If it is anything else, just assume setValue()
             gui_object.setValue(value)
