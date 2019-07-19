@@ -56,6 +56,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
+        self.live_update = False
 
         self.load_settings()
 
@@ -84,11 +85,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings('hexrd', 'hexrd')
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
+        settings.setValue('live_update', self.live_update)
 
     def load_settings(self):
         settings = QSettings('hexrd', 'hexrd')
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
+        # All QSettings come back as strings.
+        self.live_update = bool(settings.value('live_update', False) == 'true')
 
     # This is here for backward compatibility
     @property
@@ -149,6 +153,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def save_materials(self, f):
         with open(f, 'wb') as wf:
             pickle.dump(list(self.materials.values()), wf)
+
+    def set_live_update(self, status):
+        self.live_update = status
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables

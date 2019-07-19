@@ -51,6 +51,8 @@ class MainWindow(QObject):
 
         self.calibration_config_widget.update_gui_from_config()
 
+        self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
+
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
@@ -181,9 +183,9 @@ class MainWindow(QObject):
     def update_all(self):
         prev_blocked = self.calibration_config_widget.block_all_signals()
 
-        """Need to clear focus from current widget if enter is pressed or
-        else all clicks are emit an editingFinished signal and view is
-        constantly re-rendered"""
+        # Need to clear focus from current widget if enter is pressed or
+        # else all clicks are emit an editingFinished signal and view is
+        # constantly re-rendered
         if QApplication.focusWidget() is not None:
             QApplication.focusWidget().clearFocus()
         # Determine current canvas and update
@@ -199,6 +201,8 @@ class MainWindow(QObject):
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
     def live_update(self, enabled):
+        HexrdConfig().set_live_update(enabled)
+
         dis_widgets = { self.calibration_config_widget.gui_data_changed,
                         self.cal_tree_view.model().tree_data_changed }
         pix_widgets = { self.resolution_editor.ui.cartesian_pixel_size,
