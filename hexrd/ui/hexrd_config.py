@@ -96,7 +96,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     # This is here for backward compatibility
     @property
     def instrument_config(self):
-        return self.filer_instrument_config(
+        return self.filter_instrument_config(
             self.config['instrument'])
 
     @property
