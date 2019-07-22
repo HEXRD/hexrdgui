@@ -1,7 +1,7 @@
 import os
 
 from PySide2.QtCore import QEvent, QObject, Qt
-from PySide2.QtWidgets import QFileDialog, QMainWindow, QMessageBox
+from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
@@ -52,6 +52,8 @@ class MainWindow(QObject):
 
         self.calibration_config_widget.update_gui_from_config()
 
+        self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
+
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
@@ -63,6 +65,8 @@ class MainWindow(QObject):
             self.on_action_open_materials_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
+        self.ui.action_show_live_updates.toggled.connect(
+            self.live_update)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.ui.image_view.pressed.connect(self.show_images)
@@ -191,3 +195,46 @@ class MainWindow(QObject):
             HexrdConfig().save_settings()
 
         return False
+
+    def update_all(self):
+        prev_blocked = self.calibration_config_widget.block_all_signals()
+
+        # Need to clear focus from current widget if enter is pressed or
+        # else all clicks are emit an editingFinished signal and view is
+        # constantly re-rendered
+        if QApplication.focusWidget() is not None:
+            QApplication.focusWidget().clearFocus()
+        # Determine current canvas and update
+        canvas = self.ui.image_tab_widget.image_canvases[0]
+        if canvas.iviewer is not None:
+            if canvas.iviewer.type == 'polar':
+                canvas.show_polar()
+            else:
+                canvas.show_cartesian()
+        else:
+            self.show_images()
+
+        self.calibration_config_widget.unblock_all_signals(prev_blocked)
+
+    def live_update(self, enabled):
+        HexrdConfig().set_live_update(enabled)
+
+        dis_widgets = { self.calibration_config_widget.gui_data_changed,
+                        self.cal_tree_view.model().tree_data_changed }
+        pix_widgets = { self.resolution_editor.ui.cartesian_pixel_size,
+                        self.resolution_editor.ui.polar_pixel_size_eta,
+                        self.resolution_editor.ui.polar_pixel_size_tth }
+
+        for widget in dis_widgets:
+            if enabled:
+                widget.connect(self.update_all)
+            else:
+                widget.disconnect(self.update_all)
+        self.calibration_config_widget.set_keyboard_tracking(not enabled)
+
+        for widget in pix_widgets:
+            if enabled:
+                widget.editingFinished.connect(self.update_all)
+            else:
+                widget.editingFinished.disconnect(self.update_all)
+            widget.setKeyboardTracking(not enabled)

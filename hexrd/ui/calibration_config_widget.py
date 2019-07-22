@@ -1,11 +1,14 @@
-from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QComboBox, QLineEdit, QPushButton
+from PySide2.QtCore import QObject, Signal
+from PySide2.QtWidgets import QAbstractSpinBox, QComboBox, QLineEdit, QPushButton, QDoubleSpinBox
 
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 class CalibrationConfigWidget(QObject):
+
+    """Emitted when GUI data has changed"""
+    gui_data_changed = Signal()
 
     def __init__(self, parent=None):
         super(CalibrationConfigWidget, self).__init__(parent)
@@ -45,9 +48,15 @@ class CalibrationConfigWidget(QObject):
                 widget.pressed.connect(self.update_config_from_gui)
             else:
                 widget.valueChanged.connect(self.update_config_from_gui)
+                widget.editingFinished.connect(self.gui_data_changed)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
+
+        # Make sure energy has same style
+        kev_widget = getattr(self.ui, 'cal_energy')
+        wave_widget = getattr(self.ui, 'cal_energy_wavelength')
+        wave_widget.setStyleSheet(kev_widget.styleSheet())
 
         block_signals = self.ui.cal_energy_wavelength.blockSignals(True)
         try:
@@ -140,8 +149,10 @@ class CalibrationConfigWidget(QObject):
 
                 gui_var = getattr(self.ui, var)
                 config_val = self.cfg.get_instrument_config_val(path)
+                path[path.index('value')] = 'status'
+                status_val = self.cfg.get_instrument_config_val(path)
 
-                self._set_gui_value(gui_var, config_val)
+                self._set_gui_value(gui_var, config_val, status_val)
         finally:
             self.unblock_all_signals(previously_blocked)
 
@@ -176,7 +187,9 @@ class CalibrationConfigWidget(QObject):
                 gui_var = getattr(self.ui, var)
                 full_path = ['detectors', cur_detector] + path
                 config_val = self.cfg.get_instrument_config_val(full_path)
-                self._set_gui_value(gui_var, config_val)
+                full_path[full_path.index('value')] = 'status'
+                status_val = self.cfg.get_instrument_config_val(full_path)
+                self._set_gui_value(gui_var, config_val, status_val)
 
             combo_items = []
             for i in range(self.ui.cal_det_current.count()):
@@ -220,7 +233,13 @@ class CalibrationConfigWidget(QObject):
         for block, widget in zip(previously_blocked, all_widgets):
             widget.blockSignals(block)
 
-    def _set_gui_value(self, gui_object, value):
+    def set_keyboard_tracking(self, b):
+        widgets = self.get_all_widgets()
+        for widget in widgets:
+            if isinstance(widget, QAbstractSpinBox):
+                widget.setKeyboardTracking(b)
+
+    def _set_gui_value(self, gui_object, value, flag=None):
         """This is for calling various set methods for GUI variables
 
         For instance, QComboBox will call "setCurrentText", while
@@ -229,6 +248,10 @@ class CalibrationConfigWidget(QObject):
         if isinstance(gui_object, QComboBox):
             gui_object.setCurrentText(value)
         else:
+            if flag == 1 and not gui_object.styleSheet():
+                gui_object.setStyleSheet("QSpinBox, QDoubleSpinBox { background-color: lightgray; }")
+            elif gui_object.styleSheet() and flag != 1:
+                gui_object.setStyleSheet("")
             # If it is anything else, just assume setValue()
             gui_object.setValue(value)
 
