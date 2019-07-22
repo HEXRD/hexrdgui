@@ -3,11 +3,7 @@ import pickle
 
 from PySide2.QtCore import Signal, QObject, QSettings
 
-import fabio
-import os
 import yaml
-
-from hexrd import imageseries
 
 from hexrd.ui import constants
 from hexrd.ui import resource_loader
@@ -106,7 +102,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     # This is here for backward compatibility
     @property
     def instrument_config(self):
-        return self.filer_instrument_config(
+        return self.filter_instrument_config(
             self.config['instrument'])
 
     @property
@@ -136,41 +132,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                              'default_resolution_config.yml')
         self.default_config['resolution'] = yaml.load(text,
                                                       Loader=yaml.FullLoader)
-
-    def open_file(self, f):
-        hdf5 = ['.h5', '.hdf5', '.he5']
-        ext = os.path.splitext(f)[1]
-        if ext in hdf5:
-            try:
-                img = imageseries.open(f, 'hdf5', path=self.hdf5_path[0], dataname=self.hdf5_path[1])
-            except:
-                # Delay loading until needed to avoid circular ref
-                from hexrd.ui.load_hdf5_dialog import LoadHDF5Dialog
-                path_dialog = LoadHDF5Dialog(f)
-                if path_dialog.ui.exec_():
-                    group, data, remember = path_dialog.results()
-                img = imageseries.open(f, 'hdf5', path=group, dataname=data)
-                if remember:
-                    HexrdConfig().hdf5_path = [group, data]
-        elif ext == '.npz':
-            img = imageseries.open(f, 'frame-cache')
-        elif ext == '.yml':
-            data = yaml.load(open(f))
-            form = next(iter(data))
-            img = imageseries.open(f, form)
-        else:
-            img = imageseries.open(f, 'array')
-
-        return img
-
-    def load_images(self, names, image_files):
-        self.images_dict.clear()
-        for name, f in zip(names, image_files):
-            try:
-                img = self.open_file(f)
-                self.images_dict[name] = img[0]
-            except:
-                self.images_dict[name] = fabio.open(f).data
 
     def image(self, name):
         return self.images_dict.get(name)
