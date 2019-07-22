@@ -12,6 +12,7 @@ from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.load_hdf5_dialog import LoadHDF5Dialog
 
 
 class MainWindow(QObject):
@@ -125,12 +126,27 @@ class MainWindow(QObject):
                 QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
 
+            # If it is a hdf5 file allow the user to select the path
+            remember = True
+            if HexrdConfig().hdf5_path == None:
+                hdf5 = ['.h5', '.hdf5', '.he5']
+                ext = os.path.splitext(selected_files[0])[1]
+                if ext in hdf5:
+                    path_dialog = LoadHDF5Dialog(selected_files[0], self.ui)
+                    if path_dialog.ui.exec_():
+                        group, data, remember = path_dialog.results()
+                        HexrdConfig().hdf5_path = [group, data]
+
             dialog = LoadImagesDialog(selected_files, self.ui)
 
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 HexrdConfig().load_images(detector_names, image_files)
                 self.ui.image_tab_widget.load_images()
+
+            # Clear the path if it shouldn't be remembered
+            if not remember:
+                HexrdConfig().hdf5_path = [None]
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(

@@ -59,6 +59,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
+        self.hdf5_path = []
 
         self.load_settings()
 
@@ -87,11 +88,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings('hexrd', 'hexrd')
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
+        settings.setValue('hdf5_path', self.hdf5_path)
 
     def load_settings(self):
         settings = QSettings('hexrd', 'hexrd')
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
+        self.hdf5_path = settings.value('hdf5_path', None)
 
     # This is here for backward compatibility
     @property
