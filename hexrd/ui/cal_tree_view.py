@@ -195,7 +195,7 @@ class CalTreeItemModel(QAbstractItemModel):
         if isinstance(cur_config, list):
             children = cur_tree_item.child_items
             for child in children:
-                value = cur_config[child.data(0)]
+                value = cur_config[child.data(KEY_COL)]
                 child.set_data(VALUE_COL, str(value))
         else:
             cur_tree_item.set_data(VALUE_COL, str(cur_config))
@@ -265,8 +265,7 @@ class CheckBoxDelegate(QStyledItemDelegate):
         if item.child_count() > 0:
             self.setChildData(item, int(check.isChecked()))
         model.setData(index, int(check.isChecked()), Qt.DisplayRole)
-        end = model.index(-1, STATUS_COL, model.parent(index))
-        model.dataChanged.emit(index, end)
+        self.updateModel(index)
 
     def setChildData(self, parent, value):
         children = parent.child_items
@@ -278,12 +277,18 @@ class CheckBoxDelegate(QStyledItemDelegate):
             else:
                 self.setChildData(child, value)
 
+    def updateModel(self, index):
+        end = self.parent().model().index(
+            -1, STATUS_COL, self.parent().model().parent(index))
+        self.parent().model().dataChanged.emit(index, end)
+
 class CalTreeView(QTreeView):
 
     def __init__(self, parent=None):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
-        self.setItemDelegateForColumn(STATUS_COL, CheckBoxDelegate(self))
+        self.setItemDelegateForColumn(
+            STATUS_COL, CheckBoxDelegate(self))
         self.expand_rows()
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)
@@ -294,12 +299,33 @@ class CalTreeView(QTreeView):
 
     def contextMenuEvent(self, event):
         index = self.indexAt(event.pos())
+        item = self.model().get_item(index)
+        children = item.child_count()
+
         if index.column() == KEY_COL:
             menu = QMenu(self)
-            collapse = menu.addAction("Collapse All")
-            menu.addAction("Expand All")
+            collapse = menu.addAction('Collapse All')
+            expand = menu.addAction('Expand All')
+            check = None
+            uncheck = None
+            if children:
+                menu.addSeparator()
+                check = menu.addAction('Check All')
+                uncheck = menu.addAction('Uncheck All')
             action = menu.exec_(QCursor.pos())
-            self.collapseAll() if (action == collapse) else self.expandAll()
+
+            if action == collapse:
+                self.collapseAll()
+            elif action == expand:
+                self.expandAll()
+            elif action == check:
+                self.itemDelegateForColumn(STATUS_COL).setChildData(
+                    item, True)
+                self.itemDelegateForColumn(STATUS_COL).updateModel(index)
+            elif action == uncheck:
+                self.itemDelegateForColumn(STATUS_COL).setChildData(
+                    item, False)
+                self.itemDelegateForColumn(STATUS_COL).updateModel(index)
 
     def rebuild_tree(self):
         # We rebuild it from scratch every time it is shown in case
@@ -317,6 +343,7 @@ class CalTreeView(QTreeView):
             parent_item = item.parent_item
             if parent_item:
                 self.expand(index)
+            if item.child_count() == 0 and item.data(KEY_COL) != 'function_name':
                 self.openPersistentEditor(editor_idx)
 
             self.expand_rows(index)
