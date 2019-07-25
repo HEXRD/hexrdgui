@@ -147,9 +147,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
-        self.filter_instrument_config(self.config['instrument'])
+        default = self.filter_instrument_config(self.config['instrument'])
         with open(output_file, 'w') as f:
-            yaml.dump(self.config['instrument'], f)
+            yaml.dump(default, f)
 
     def load_materials(self, f):
         with open(f, 'rb') as rf:
