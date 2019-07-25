@@ -196,9 +196,9 @@ class CalTreeItemModel(QAbstractItemModel):
             children = cur_tree_item.child_items
             for child in children:
                 value = cur_config[child.data(KEY_COL)]
-                child.set_data(VALUE_COL, str(value))
+                child.set_data(VALUE_COL, value)
         else:
-            cur_tree_item.set_data(VALUE_COL, str(cur_config))
+            cur_tree_item.set_data(VALUE_COL, cur_config)
         return
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
@@ -343,7 +343,7 @@ class CalTreeView(QTreeView):
             parent_item = item.parent_item
             if parent_item:
                 self.expand(index)
-            if item.child_count() == 0 and item.data(KEY_COL) != 'function_name':
+            if item.child_count() == 0 and not isinstance(item.data(VALUE_COL), str):
                 self.openPersistentEditor(editor_idx)
 
             self.expand_rows(index)
