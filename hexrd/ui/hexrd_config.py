@@ -3,7 +3,6 @@ import pickle
 
 from PySide2.QtCore import Signal, QObject, QSettings
 
-import fabio
 import yaml
 
 from hexrd.ui import constants
@@ -56,6 +55,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
+        self.hdf5_path = []
         self.live_update = False
 
         self.load_settings()
@@ -86,12 +86,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings('hexrd', 'hexrd')
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
+        settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
 
     def load_settings(self):
         settings = QSettings('hexrd', 'hexrd')
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
+        self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
         self.live_update = bool(settings.value('live_update', False) == 'true')
         if self.config.get('instrument') is not None:
@@ -130,11 +132,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                              'default_resolution_config.yml')
         self.default_config['resolution'] = yaml.load(text,
                                                       Loader=yaml.FullLoader)
-
-    def load_images(self, names, image_files):
-        self.images_dict.clear()
-        for name, f in zip(names, image_files):
-            self.images_dict[name] = fabio.open(f).data
 
     def image(self, name):
         return self.images_dict.get(name)
