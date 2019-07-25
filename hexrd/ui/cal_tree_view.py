@@ -97,9 +97,6 @@ class CalTreeItemModel(QAbstractItemModel):
         if value == item.data(index.column()):
             return True
 
-        path = self.get_path_from_root(item, index.column())
-        old_value = self.cfg.get_instrument_config_val(path)
-
         if index.column() == VALUE_COL:
             old_value = self.cfg.get_instrument_config_val(path)
 
