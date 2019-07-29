@@ -83,14 +83,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.update_active_material_energy()
 
     def save_settings(self):
-        settings = QSettings('hexrd', 'hexrd')
+        settings = QSettings()
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
 
     def load_settings(self):
-        settings = QSettings('hexrd', 'hexrd')
+        settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
