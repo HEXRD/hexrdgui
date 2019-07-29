@@ -45,6 +45,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when ring configuration has changed"""
     ring_config_changed = Signal()
 
+    """Emitted when the option to show the saturation level is changed"""
+    show_saturation_level_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -57,6 +60,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.images_dict = {}
         self.hdf5_path = []
         self.live_update = False
+        self._show_saturation_level = False
 
         self.load_settings()
 
@@ -518,3 +522,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
+
+    def get_show_saturation_level(self):
+        return self._show_saturation_level
+
+    def set_show_saturation_level(self, v):
+        if self._show_saturation_level != v:
+            self._show_saturation_level = v
+            self.show_saturation_level_changed.emit()
+
+    show_saturation_level = property(get_show_saturation_level,
+                                     set_show_saturation_level)
