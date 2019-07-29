@@ -341,12 +341,12 @@ class CalTreeView(QTreeView):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
-            editor_idx = self.model().index(i, STATUS_COL, parent)
-
-            item = self.model().get_item(index)
             self.expand(index)
 
-            if item.child_count() == 0 and not isinstance(item.data(VALUE_COL), str):
+            item = self.model().get_item(index)
+            if item.child_count() == 0 and not isinstance(item.data(VALUE_COL),
+                                                          str):
+                editor_idx = self.model().index(i, STATUS_COL, parent)
                 self.openPersistentEditor(editor_idx)
 
             self.expand_rows(index)
