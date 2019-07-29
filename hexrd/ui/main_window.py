@@ -198,6 +198,11 @@ class MainWindow(QObject):
         return False
 
     def update_all(self):
+
+        # If there are no images loaded, skip the request
+        if not HexrdConfig().images():
+            return
+
         prev_blocked = self.calibration_config_widget.block_all_signals()
 
         # Need to clear focus from current widget if enter is pressed or
