@@ -350,13 +350,41 @@ class CalTreeView(QTreeView):
             index = self.model().index(i, KEY_COL, parent)
             self.expand(index)
 
-            item = self.model().get_item(index)
-            if item.child_count() == 0 and not isinstance(item.data(VALUE_COL),
-                                                          str):
-                editor_idx = self.model().index(i, STATUS_COL, parent)
-                self.openPersistentEditor(editor_idx)
+            self.display_status_checkbox(i, parent)
 
             self.expand_rows(index)
+
+    # Display status checkbox for the row if the requirements are met
+    def display_status_checkbox(self, row, parent=QModelIndex()):
+
+        index = self.model().index(row, KEY_COL, parent)
+        item = self.model().get_item(index)
+
+        # If it has children, return
+        if item.child_count() != 0:
+            return
+
+        # If the data is a string, return
+        if isinstance(item.data(VALUE_COL), str):
+            return
+
+        # If the key is blacklisted, return
+        blacklisted_keys = ['saturation_level']
+        if item.data(KEY_COL) in blacklisted_keys:
+            return
+
+        # If one of the parents of the item is blacklisted, return
+        blacklisted_parents = ['pixels']
+        parent_item = item.parent_item
+        while parent_item is not None:
+            if parent_item.data(KEY_COL) in blacklisted_parents:
+                return
+
+            parent_item = parent_item.parent_item
+
+        # Show the checkbox
+        editor_idx = self.model().index(row, STATUS_COL, parent)
+        self.openPersistentEditor(editor_idx)
 
 
 def _is_int(s):
