@@ -1,4 +1,4 @@
-from PySide2.QtCore import QBuffer, QByteArray, QFile
+from PySide2.QtCore import QBuffer, QByteArray
 from PySide2.QtUiTools import QUiLoader
 
 from hexrd.ui import resource_loader
@@ -7,6 +7,7 @@ from .image_canvas import ImageCanvas
 from .image_tab_widget import ImageTabWidget
 
 import hexrd.ui.resources.ui
+
 
 class UiLoader(QUiLoader):
     def __init__(self, parent=None):

@@ -1,10 +1,11 @@
-from collections import Counter # To compare two lists' contents
+from collections import Counter  # To compare two lists' contents
 import re
 
 from PySide2.QtWidgets import QMessageBox, QTableWidgetItem
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+
 
 class LoadImagesDialog:
 
@@ -65,7 +66,7 @@ class LoadImagesDialog:
 
         try:
             image_files.sort(key=lambda s: _re_res(cur_regex, s))
-        except Exception as e:
+        except Exception:
             # The user is probably in the middle of typing...
             pass
 
@@ -88,6 +89,7 @@ class LoadImagesDialog:
             return self.ui.regex_line_edit.text()
 
         return self.ui.regex_combo.currentText()
+
 
 def _re_res(pat, s):
     r = re.search(pat, s)

@@ -1,6 +1,7 @@
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
+
 class ResolutionEditor:
 
     def __init__(self, parent=None):

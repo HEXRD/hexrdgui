@@ -1,5 +1,5 @@
 from PySide2.QtCore import Signal, Slot, Qt
-from PySide2.QtWidgets import QFileDialog, QMessageBox, QTabWidget
+from PySide2.QtWidgets import QMessageBox, QTabWidget
 
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
@@ -174,6 +174,7 @@ class ImageTabWidget(QTabWidget):
     def set_norm(self, norm):
         self.norm = norm
         self.update_canvas_norms()
+
 
 if __name__ == '__main__':
     import sys
