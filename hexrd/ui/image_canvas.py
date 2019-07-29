@@ -1,12 +1,9 @@
 import math
 
-import numpy as np
-
 from PySide2.QtCore import QThreadPool
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
-from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
@@ -16,6 +13,7 @@ from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
 import hexrd.ui.constants
+
 
 class ImageCanvas(FigureCanvas):
 
@@ -104,7 +102,6 @@ class ImageCanvas(FigureCanvas):
             for pr in self.iviewer.rbnd_data:
                 rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
                 self.cached_rbnds.append(rbnd)
-
 
         self.figure.tight_layout()
         self.draw()

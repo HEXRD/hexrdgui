@@ -7,6 +7,7 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.add_material_dialog import AddMaterialDialog
 from hexrd.ui.hexrd_config import HexrdConfig
 
+
 class MaterialsPanel(QObject):
 
     def __init__(self, parent=None):
@@ -47,7 +48,8 @@ class MaterialsPanel(QObject):
             self.update_ring_selection)
 
         self.ui.show_rings.toggled.connect(HexrdConfig()._set_show_rings)
-        self.ui.show_ranges.toggled.connect(HexrdConfig()._set_show_ring_ranges)
+        self.ui.show_ranges.toggled.connect(
+            HexrdConfig()._set_show_ring_ranges)
         self.ui.tth_ranges.valueChanged.connect(HexrdConfig()._set_ring_ranges)
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
@@ -78,7 +80,7 @@ class MaterialsPanel(QObject):
             self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges)
         finally:
             for b, item in zip(block_signals, block_list):
-               item.blockSignals(b)
+                item.blockSignals(b)
 
         self.update_table()
 

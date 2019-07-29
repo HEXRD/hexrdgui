@@ -1,5 +1,7 @@
 from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal
-from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu, QCheckBox, QStyledItemDelegate
+from PySide2.QtWidgets import (
+    QMessageBox, QTreeView, QMenu, QCheckBox, QStyledItemDelegate
+)
 from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -58,6 +60,7 @@ KEY_COL = 0
 VALUE_COL = 1
 STATUS_COL = 2
 
+
 class CalTreeItemModel(QAbstractItemModel):
 
     """Emitted when data has changed in tree view"""
@@ -92,7 +95,7 @@ class CalTreeItemModel(QAbstractItemModel):
     def setData(self, index, value, role):
         item = self.get_item(index)
         path = self.get_path_from_root(item, index.column())
-             
+
         # If they are identical, don't do anything
         if value == item.data(index.column()):
             return True
@@ -106,7 +109,7 @@ class CalTreeItemModel(QAbstractItemModel):
                 value = type(old_value)(value)
             except ValueError:
                 msg = ('Could not convert ' + str(value) + ' to type ' +
-                    str(type(old_value).__name__))
+                       str(type(old_value).__name__))
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return False
 
@@ -125,8 +128,8 @@ class CalTreeItemModel(QAbstractItemModel):
         flags = super(CalTreeItemModel, self).flags(index)
 
         item = self.get_item(index)
-        if ((index.column() == VALUE_COL and item.child_count() == 0)
-            or index.column() == STATUS_COL):
+        if ((index.column() == VALUE_COL and item.child_count() == 0) or
+                index.column() == STATUS_COL):
             # The second and third columns with no children are editable
             flags = flags | Qt.ItemIsEditable
 
@@ -186,8 +189,8 @@ class CalTreeItemModel(QAbstractItemModel):
         self.clear()
         for key in self.cfg.internal_instrument_config.keys():
             tree_item = self.add_tree_item(key, None, REFINED, self.root_item)
-            self.recursive_add_tree_items(self.cfg.internal_instrument_config[key],
-                                          tree_item)
+            self.recursive_add_tree_items(
+                self.cfg.internal_instrument_config[key], tree_item)
             self.update_parent_status(tree_item)
 
     def add_tree_item(self, key, value, status, parent):
@@ -222,7 +225,8 @@ class CalTreeItemModel(QAbstractItemModel):
             elif key == 'status':
                 tree_item = cur_tree_item
             else:
-                tree_item = self.add_tree_item(key, None, REFINED, cur_tree_item)
+                tree_item = self.add_tree_item(key, None, REFINED,
+                                               cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def update_parent_status(self, parent):
@@ -232,7 +236,6 @@ class CalTreeItemModel(QAbstractItemModel):
                 self.update_parent_status(child)
             if child.data(STATUS_COL):
                 parent.set_data(STATUS_COL, FIXED)
-
 
     def get_path_from_root(self, tree_item, column):
         path = ['value'] if column == VALUE_COL else ['status']
@@ -248,6 +251,7 @@ class CalTreeItemModel(QAbstractItemModel):
                 break
 
         return path
+
 
 class CheckBoxDelegate(QStyledItemDelegate):
 
@@ -276,8 +280,10 @@ class CheckBoxDelegate(QStyledItemDelegate):
         for child in children:
             child.set_data(STATUS_COL, value)
             if child.child_count() == 0:
-                path = self.parent().model().get_path_from_root(child, STATUS_COL)
-                self.parent().model().cfg.set_instrument_config_val(path, value)
+                path = self.parent().model().get_path_from_root(child,
+                                                                STATUS_COL)
+                self.parent().model().cfg.set_instrument_config_val(path,
+                                                                    value)
             else:
                 self.setChildData(child, value)
 
@@ -285,6 +291,7 @@ class CheckBoxDelegate(QStyledItemDelegate):
         end = self.parent().model().index(
             -1, STATUS_COL, self.parent().model().parent(index))
         self.parent().model().dataChanged.emit(index, end)
+
 
 class CalTreeView(QTreeView):
 
@@ -341,13 +348,12 @@ class CalTreeView(QTreeView):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
-            editor_idx = self.model().index(i, STATUS_COL, parent)
+            self.expand(index)
 
             item = self.model().get_item(index)
-            parent_item = item.parent_item
-            if parent_item:
-                self.expand(index)
-            if item.child_count() == 0 and not isinstance(item.data(VALUE_COL), str):
+            if item.child_count() == 0 and not isinstance(item.data(VALUE_COL),
+                                                          str):
+                editor_idx = self.model().index(i, STATUS_COL, parent)
                 self.openPersistentEditor(editor_idx)
 
             self.expand_rows(index)

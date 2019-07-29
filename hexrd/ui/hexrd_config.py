@@ -163,6 +163,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_live_update(self, status):
         self.live_update = status
+
     def create_internal_config(self, cur_config):
         if not self.has_status(cur_config):
             self.add_status(cur_config)
@@ -435,7 +436,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def update_active_material_energy(self):
         # This is a potentially expensive operation...
-        energy = self.config['instrument'].get('beam', {}).get('energy', {}).get('value')
+        cfg = self.config['instrument']
+        energy = cfg.get('beam', {}).get('energy', {}).get('value')
         mat = self.active_material
 
         # If the plane data energy already matches, skip it

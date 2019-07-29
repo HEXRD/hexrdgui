@@ -5,6 +5,7 @@ from PySide2.QtWidgets import QApplication
 
 from hexrd.ui.main_window import MainWindow
 
+
 def main():
     # Kill the program when ctrl-c is used
     signal.signal(signal.SIGINT, signal.SIG_DFL)

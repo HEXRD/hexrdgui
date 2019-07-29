@@ -1,9 +1,12 @@
 from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QAbstractSpinBox, QComboBox, QLineEdit, QPushButton, QDoubleSpinBox
+from PySide2.QtWidgets import (
+    QAbstractSpinBox, QComboBox, QLineEdit, QPushButton
+)
 
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+
 
 class CalibrationConfigWidget(QObject):
 
@@ -249,7 +252,8 @@ class CalibrationConfigWidget(QObject):
             gui_object.setCurrentText(value)
         else:
             if flag == 1 and not gui_object.styleSheet():
-                gui_object.setStyleSheet("QSpinBox, QDoubleSpinBox { background-color: lightgray; }")
+                s = 'QSpinBox, QDoubleSpinBox { background-color: lightgray; }'
+                gui_object.setStyleSheet(s)
             elif gui_object.styleSheet() and flag != 1:
                 gui_object.setStyleSheet("")
             # If it is anything else, just assume setValue()

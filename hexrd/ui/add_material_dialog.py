@@ -3,10 +3,10 @@ import copy
 from PySide2.QtCore import QObject
 
 from hexrd.xrd import spacegroup
-from hexrd.xrd.material import Material
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import utils
+
 
 class AddMaterialDialog(QObject):
 
@@ -46,7 +46,7 @@ class AddMaterialDialog(QObject):
         sgid = key_list.index(str(self.material.sgnum))
 
         self.set_space_group(sgid)
-        self.enable_lattice_params() # This updates the values also
+        self.enable_lattice_params()  # This updates the values also
         self.ui.max_hkl.setValue(self.material.hklMax)
         self.ui.material_name.setText(self.material.name)
 

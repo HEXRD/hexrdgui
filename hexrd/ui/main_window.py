@@ -1,7 +1,9 @@
 import os
 
 from PySide2.QtCore import QEvent, QObject, Qt
-from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
+from PySide2.QtWidgets import (
+    QApplication, QFileDialog, QMainWindow, QMessageBox
+)
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 

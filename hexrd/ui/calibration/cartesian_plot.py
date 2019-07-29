@@ -1,19 +1,16 @@
 import numpy as np
-import pickle
 import warnings
 
 from hexrd.gridutil import cellIndices
 from hexrd import instrument
 
-from hexrd.ui import resource_loader
 from hexrd.ui.hexrd_config import HexrdConfig
-
-import hexrd.ui.resources.materials
 
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
 
 from .display_plane import DisplayPlane
+
 
 def cartesian_viewer():
     iconfig = HexrdConfig().instrument_config
