@@ -11,6 +11,10 @@ def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+
+    QCoreApplication.setOrganizationName('hexrd')
+    QCoreApplication.setApplicationName('hexrd')
+
     app = QApplication(sys.argv)
 
     window = MainWindow()
