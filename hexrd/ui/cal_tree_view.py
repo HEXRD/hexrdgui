@@ -92,7 +92,7 @@ class CalTreeItemModel(QAbstractItemModel):
     def setData(self, index, value, role):
         item = self.get_item(index)
         path = self.get_path_from_root(item, index.column())
-             
+
         # If they are identical, don't do anything
         if value == item.data(index.column()):
             return True
@@ -344,9 +344,8 @@ class CalTreeView(QTreeView):
             editor_idx = self.model().index(i, STATUS_COL, parent)
 
             item = self.model().get_item(index)
-            parent_item = item.parent_item
-            if parent_item:
-                self.expand(index)
+            self.expand(index)
+
             if item.child_count() == 0 and not isinstance(item.data(VALUE_COL), str):
                 self.openPersistentEditor(editor_idx)
 
