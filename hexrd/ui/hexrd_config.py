@@ -278,7 +278,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(msg)
 
         # If the beam energy was modified, update the active material
-        if path == ['beam', 'energy']:
+        if path == ['beam', 'energy', 'value']:
             self.update_active_material_energy()
 
     def get_instrument_config_val(self, path):
