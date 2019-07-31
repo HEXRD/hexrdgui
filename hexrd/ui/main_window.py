@@ -14,6 +14,7 @@ from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.process_ims_dialog import ProcessIMSDialog
 
 
 class MainWindow(QObject):
@@ -66,6 +67,8 @@ class MainWindow(QObject):
             self.on_action_open_materials_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
+        self.ui.action_edit_ims.triggered.connect(
+            self.on_action_edit_ims)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.calibration_tab_widget.currentChanged.connect(
@@ -112,6 +115,19 @@ class MainWindow(QObject):
         if selected_file:
             return HexrdConfig().save_instrument_config(selected_file)
 
+    def open_image_file(self):
+        images_dir = HexrdConfig().images_dir
+
+        selected_file, selected_filter = QFileDialog.getOpenFileNames(
+            self.ui, dir=images_dir)
+
+        if len(selected_file) > 1:
+            msg = ('Please select only one file.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
+        return selected_file
+
     def open_image_files(self):
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
@@ -145,6 +161,8 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageFileManager().load_images(detector_names, image_files)
+                # Enable editing once images have been loaded
+                self.ui.action_edit_ims.setEnabled(True)
                 self.ui.image_tab_widget.load_images()
 
             # Clear the path if it shouldn't be remembered
@@ -167,6 +185,14 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
+
+    def on_action_edit_ims(self):
+        # display in tabs
+        self.ui.image_tab_widget.set_tabbed_view(True)
+        # open scrollbar
+        self.ui.image_tab_widget.show_ims_toolbar(True)
+        # open dialog
+        ProcessIMSDialog(self)
 
     def show_images(self):
         self.ui.image_tab_widget.load_images()
@@ -196,6 +222,10 @@ class MainWindow(QObject):
         return False
 
     def update_all(self):
+        # If there are no images loaded, skip the request
+        if not HexrdConfig().images():
+            return
+
         prev_blocked = self.calibration_config_widget.block_all_signals()
 
         # Need to clear focus from current widget if enter is pressed or

@@ -20,6 +20,9 @@ class ImageTabWidget(QTabWidget):
     # Emitted when new images are loaded
     new_images_loaded = Signal()
 
+    # Emitted when editing is complete
+    close_editor = Signal()
+
     def __init__(self, parent=None):
         super(ImageTabWidget, self).__init__(parent)
         self.image_canvases = [ImageCanvas(self)]

@@ -59,7 +59,14 @@
     <addaction name="action_show_nav_toolbar"/>
     <addaction name="action_show_live_updates"/>
    </widget>
+   <widget class="QMenu" name="menu_edit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="action_edit_ims"/>
+   </widget>
    <addaction name="menu_file"/>
+   <addaction name="menu_edit"/>
    <addaction name="menuView"/>
   </widget>
   <widget class="QStatusBar" name="status_bar"/>
@@ -249,6 +256,14 @@
    </property>
    <property name="text">
     <string>Show Live Updates</string>
+   </property>
+  </action>
+  <action name="action_edit_ims">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Edit Image Series</string>
    </property>
   </action>
  </widget>
