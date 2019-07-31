@@ -1,7 +1,9 @@
 import os
 
 from PySide2.QtCore import QEvent, QObject, Qt
-from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
+from PySide2.QtWidgets import (
+    QApplication, QFileDialog, QMainWindow, QMessageBox
+)
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
@@ -150,7 +152,7 @@ class MainWindow(QObject):
             # If it is a hdf5 file allow the user to select the path
             remember = True
             ext = os.path.splitext(selected_files[0])[1]
-            if ImageFileManager().is_hdf5(ext) and HexrdConfig().hdf5_path == None:
+            if ImageFileManager().is_hdf5(ext) and HexrdConfig().hdf5_path is None:
                 path_dialog = LoadHDF5Dialog(selected_files[0], self.ui)
                 if path_dialog.ui.exec_():
                     group, data, remember = path_dialog.results()
@@ -248,11 +250,11 @@ class MainWindow(QObject):
     def live_update(self, enabled):
         HexrdConfig().set_live_update(enabled)
 
-        dis_widgets = { self.calibration_config_widget.gui_data_changed,
-                        self.cal_tree_view.model().tree_data_changed }
-        pix_widgets = { self.resolution_editor.ui.cartesian_pixel_size,
-                        self.resolution_editor.ui.polar_pixel_size_eta,
-                        self.resolution_editor.ui.polar_pixel_size_tth }
+        dis_widgets = {self.calibration_config_widget.gui_data_changed,
+                       self.cal_tree_view.model().tree_data_changed}
+        pix_widgets = {self.resolution_editor.ui.cartesian_pixel_size,
+                       self.resolution_editor.ui.polar_pixel_size_eta,
+                       self.resolution_editor.ui.polar_pixel_size_tth}
 
         for widget in dis_widgets:
             if enabled:
