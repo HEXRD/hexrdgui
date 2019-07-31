@@ -191,10 +191,6 @@ class MainWindow(QObject):
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_edit_ims(self):
-        # display in tabs
-        self.ui.image_tab_widget.set_tabbed_view(True)
-        # open scrollbar
-        self.ui.image_tab_widget.show_ims_toolbar(True)
         # open dialog
         ProcessIMSDialog(self)
 

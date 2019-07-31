@@ -62,7 +62,10 @@ class ImageCanvas(FigureCanvas):
         rows = math.ceil(len(image_names) / cols)
 
         for i, name in enumerate(image_names):
-            img = HexrdConfig().ims_image(name)[idx]
+            if HexrdConfig().imageseries():
+                img = HexrdConfig().ims_image(name)[idx]
+            else:
+                img = HexrdConfig().image(name)
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
             axis.set_title(name)

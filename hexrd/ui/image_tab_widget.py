@@ -80,8 +80,12 @@ class ImageTabWidget(QTabWidget):
 
     def change_ims_image(self, pos, name):
         idx = self.currentIndex()
-        self.image_canvases[idx].load_images(
-            image_names=[name], idx=pos)
+        if not self.tabbed_view:
+            self.image_canvases[0].load_images(
+                image_names=self.image_names, idx=pos)
+        else:
+            self.image_canvases[idx].load_images(
+                image_names=[name], idx=pos)
 
     @Slot(bool)
     def set_tabbed_view(self, tabbed_view=False):
