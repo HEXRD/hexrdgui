@@ -29,7 +29,6 @@ class ProcessIMSDialog(QDialog):
 
         self.set_defaults()
         self.create_tabs(loader)
-        # FIX - Why is this needed?
         self.ui.show()
 
         self.setup_connections()
@@ -42,13 +41,11 @@ class ProcessIMSDialog(QDialog):
         self.ui.detectors.currentChanged.connect(self.set_prev_tab)
         self.ui.offset.valueChanged.connect(self.create_frame_list)
         self.ui.max_total.valueChanged.connect(self.create_frame_list)
-        self.parent.ui.image_tab_widget.close_editor.connect(self.ui.close)
 
     def setup_tab_connections(self, i):
         self.tabs[i].dark_combo.currentIndexChanged.connect(self.set_dark)
         self.tabs[i].upload_dark.clicked.connect(self.load_image)
         self.tabs[i].apply_to_all.clicked.connect(self.apply_to_all)
-        self.tabs[i].apply_to_all.clicked.connect(self.ui.close)
 
     def create_tabs(self, loader):
         for i in range(len(self.names)):
@@ -77,17 +74,20 @@ class ProcessIMSDialog(QDialog):
         self.prev_tab = self.ui.detectors.tabText(
           self.ui.detectors.currentIndex())
 
-    def set_dark(self, index):
-        self.dark_img = index
+    def get_current_index(self):
         # Offset because tab array does not include first
         # tab but currentIndex does
-        idx = self.ui.detectors.currentIndex() - 1
+        return self.ui.detectors.currentIndex() - 1
+
+    def set_dark(self, index):
+        self.dark_img = index
+        idx = self.get_current_index()
         self.tabs[idx].percentile.setEnabled(index == 2)
 
     def load_image(self):
         f = self.parent.open_image_file()[0]
         self.dark_img = fabio.open(f).data
-        idx = self.ui.detectors.currentIndex() - 1
+        idx = self.get_current_index()
         fileName = f.split('/')[-1]
         self.tabs[idx].upload_dark.setText(fileName)
 
@@ -127,7 +127,7 @@ class ProcessIMSDialog(QDialog):
             if self.dark_img == 1:
                 dark = imageseries.stats.median(self.ims[name], frames)
             elif self.dark_img == 2:
-                idx = self.ui.detectors.currentIndex() - 1
+                idx = self.get_current_index()
                 dark = imageseries.stats.percentile(
                   self.ims[name], self.tabs[idx].percentile.value(), frames)
             elif self.dark_img == 3:

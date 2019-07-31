@@ -1,5 +1,5 @@
 from PySide2.QtCore import Signal, Slot, Qt
-from PySide2.QtWidgets import QMessageBox, QTabWidget
+from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
@@ -108,9 +108,7 @@ class ImageTabWidget(QTabWidget):
             tb = NavigationToolbar2QT(self.image_canvases[idx], parent, False)
             # Current detector
             name = self.image_names[idx]
-	    # Hold onto original tabbed/untabbed status
-            tabbed = self.tabbed_view
-            sb = ImageSeriesToolbar(name, tabbed, self)
+            sb = ImageSeriesToolbar(name, self)
 
             # This will put it at the bottom of the central widget
             toolbar = QHBoxLayout()

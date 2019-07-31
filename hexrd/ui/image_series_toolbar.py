@@ -1,24 +1,18 @@
-from PySide2.QtCore import Qt, Signal
-from PySide2.QtWidgets import (
-    QGridLayout, QPushButton, QSlider, QSpinBox, QWidget
-)
+from PySide2.QtCore import Qt
+from PySide2.QtWidgets import QGridLayout, QSlider, QSpinBox, QWidget
 
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
 class ImageSeriesToolbar(QWidget):
 
-    def __init__(self, name, tabbed, parent=None):
+    def __init__(self, name, parent=None):
         super(ImageSeriesToolbar, self).__init__(parent)
 
-        self.tabbed = tabbed
         self.ims = HexrdConfig().ims_image(name)
         self.slider = None
         self.frame = None
-        self.done = None
 
-        self.h1_layout = None
-        self.h2_layout = None
         self.layout = None
 
         self.widget = None
@@ -36,20 +30,16 @@ class ImageSeriesToolbar(QWidget):
         self.slider.valueChanged.connect(self.frame.setValue)
         self.frame.valueChanged.connect(
             self.slider.setSliderPosition)
-        self.done.clicked.connect(self.restore_view)
-        self.close_editor.connect(self.parent().close_editor)
 
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
         self.frame = QSpinBox(self.parent())
-        self.done = QPushButton('Done', self.parent())
 
         self.widget = QWidget(self.parent())
 
         self.layout = QGridLayout(self.widget)
         self.layout.addWidget(self.slider, 0, 0, 1, 9)
         self.layout.addWidget(self.frame, 0, 9, 1, 1)
-        self.layout.addWidget(self.done, 1, 8, 1, 1)
 
         self.widget.setLayout(self.layout)
 
