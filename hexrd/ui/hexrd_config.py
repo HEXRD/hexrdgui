@@ -55,6 +55,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
+        self.imageseries_dict = {}
         self.hdf5_path = []
         self.live_update = False
 
@@ -83,14 +84,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.update_active_material_energy()
 
     def save_settings(self):
-        settings = QSettings('hexrd', 'hexrd')
+        settings = QSettings()
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('images_dir', self.images_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
 
     def load_settings(self):
-        settings = QSettings('hexrd', 'hexrd')
+        settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
@@ -139,6 +140,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def images(self):
         return self.images_dict
 
+    def ims_image(self, name):
+        return self.imageseries_dict.get(name)
+
+    def imageseries(self):
+        return self.imageseries_dict
+
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
@@ -148,9 +155,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
-        self.filter_instrument_config(self.config['instrument'])
+        default = self.filter_instrument_config(self.config['instrument'])
         with open(output_file, 'w') as f:
-            yaml.dump(self.config['instrument'], f)
+            yaml.dump(default, f)
 
     def load_materials(self, f):
         with open(f, 'rb') as rf:
@@ -163,6 +170,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_live_update(self, status):
         self.live_update = status
+
     def create_internal_config(self, cur_config):
         if not self.has_status(cur_config):
             self.add_status(cur_config)
@@ -278,7 +286,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(msg)
 
         # If the beam energy was modified, update the active material
-        if path == ['beam', 'energy']:
+        if path == ['beam', 'energy', 'value']:
             self.update_active_material_energy()
 
     def get_instrument_config_val(self, path):
@@ -435,7 +443,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def update_active_material_energy(self):
         # This is a potentially expensive operation...
-        energy = self.config['instrument'].get('beam', {}).get('energy', {}).get('value')
+        cfg = self.config['instrument']
+        energy = cfg.get('beam', {}).get('energy', {}).get('value')
         mat = self.active_material
 
         # If the plane data energy already matches, skip it

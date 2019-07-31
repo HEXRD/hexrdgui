@@ -6,6 +6,7 @@ import matplotlib.colors
 import hexrd.ui.constants
 from hexrd.ui.ui_loader import UiLoader
 
+
 class ColorMapEditor:
 
     def __init__(self, image_tab_widget, parent=None):

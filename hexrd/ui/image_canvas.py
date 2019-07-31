@@ -1,12 +1,9 @@
 import math
 
-import numpy as np
-
 from PySide2.QtCore import QThreadPool
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
-from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
@@ -16,6 +13,7 @@ from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
 import hexrd.ui.constants
+
 
 class ImageCanvas(FigureCanvas):
 
@@ -48,7 +46,7 @@ class ImageCanvas(FigureCanvas):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def load_images(self, image_names):
+    def load_images(self, image_names, idx=0):
         # We are not in calibration mode. Remove the iviewer.
         self.iviewer = None
         self.figure.clear()
@@ -61,7 +59,7 @@ class ImageCanvas(FigureCanvas):
         rows = math.ceil(len(image_names) / cols)
 
         for i, name in enumerate(image_names):
-            img = HexrdConfig().image(name)
+            img = HexrdConfig().ims_image(name)[idx]
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
             axis.set_title(name)
@@ -104,7 +102,6 @@ class ImageCanvas(FigureCanvas):
             for pr in self.iviewer.rbnd_data:
                 rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
                 self.cached_rbnds.append(rbnd)
-
 
         self.figure.tight_layout()
         self.draw()

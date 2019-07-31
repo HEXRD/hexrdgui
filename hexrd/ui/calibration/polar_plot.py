@@ -16,6 +16,7 @@ snip_width = 9
 tth_min = 1.
 tth_max = 20.
 
+
 def polar_viewer():
     iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().images()

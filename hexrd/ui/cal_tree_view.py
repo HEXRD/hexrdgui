@@ -1,5 +1,7 @@
 from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal
-from PySide2.QtWidgets import QMessageBox, QTreeView, QMenu, QCheckBox, QStyledItemDelegate
+from PySide2.QtWidgets import (
+    QMessageBox, QTreeView, QMenu, QCheckBox, QStyledItemDelegate
+)
 from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -58,6 +60,7 @@ KEY_COL = 0
 VALUE_COL = 1
 STATUS_COL = 2
 
+
 class CalTreeItemModel(QAbstractItemModel):
 
     """Emitted when data has changed in tree view"""
@@ -92,13 +95,10 @@ class CalTreeItemModel(QAbstractItemModel):
     def setData(self, index, value, role):
         item = self.get_item(index)
         path = self.get_path_from_root(item, index.column())
-             
+
         # If they are identical, don't do anything
         if value == item.data(index.column()):
             return True
-
-        path = self.get_path_from_root(item, index.column())
-        old_value = self.cfg.get_instrument_config_val(path)
 
         if index.column() == VALUE_COL:
             old_value = self.cfg.get_instrument_config_val(path)
@@ -128,8 +128,8 @@ class CalTreeItemModel(QAbstractItemModel):
         flags = super(CalTreeItemModel, self).flags(index)
 
         item = self.get_item(index)
-        if ((index.column() == VALUE_COL and item.child_count() == 0)
-            or index.column() == STATUS_COL):
+        if ((index.column() == VALUE_COL and item.child_count() == 0) or
+                index.column() == STATUS_COL):
             # The second and third columns with no children are editable
             flags = flags | Qt.ItemIsEditable
 
@@ -189,8 +189,8 @@ class CalTreeItemModel(QAbstractItemModel):
         self.clear()
         for key in self.cfg.internal_instrument_config.keys():
             tree_item = self.add_tree_item(key, None, REFINED, self.root_item)
-            self.recursive_add_tree_items(self.cfg.internal_instrument_config[key],
-                                          tree_item)
+            self.recursive_add_tree_items(
+                self.cfg.internal_instrument_config[key], tree_item)
             self.update_parent_status(tree_item)
 
     def add_tree_item(self, key, value, status, parent):
@@ -202,10 +202,10 @@ class CalTreeItemModel(QAbstractItemModel):
         if isinstance(cur_config, list):
             children = cur_tree_item.child_items
             for child in children:
-                value = cur_config[child.data(0)]
-                child.set_data(VALUE_COL, str(value))
+                value = cur_config[child.data(KEY_COL)]
+                child.set_data(VALUE_COL, value)
         else:
-            cur_tree_item.set_data(VALUE_COL, str(cur_config))
+            cur_tree_item.set_data(VALUE_COL, cur_config)
         return
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
@@ -225,7 +225,8 @@ class CalTreeItemModel(QAbstractItemModel):
             elif key == 'status':
                 tree_item = cur_tree_item
             else:
-                tree_item = self.add_tree_item(key, None, REFINED, cur_tree_item)
+                tree_item = self.add_tree_item(key, None, REFINED,
+                                               cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def update_parent_status(self, parent):
@@ -235,7 +236,6 @@ class CalTreeItemModel(QAbstractItemModel):
                 self.update_parent_status(child)
             if child.data(STATUS_COL):
                 parent.set_data(STATUS_COL, FIXED)
-
 
     def get_path_from_root(self, tree_item, column):
         path = ['value'] if column == VALUE_COL else ['status']
@@ -251,6 +251,7 @@ class CalTreeItemModel(QAbstractItemModel):
                 break
 
         return path
+
 
 class CheckBoxDelegate(QStyledItemDelegate):
 
@@ -272,25 +273,33 @@ class CheckBoxDelegate(QStyledItemDelegate):
         if item.child_count() > 0:
             self.setChildData(item, int(check.isChecked()))
         model.setData(index, int(check.isChecked()), Qt.DisplayRole)
-        end = model.index(-1, STATUS_COL, model.parent(index))
-        model.dataChanged.emit(index, end)
+        self.updateModel(index)
 
     def setChildData(self, parent, value):
         children = parent.child_items
         for child in children:
             child.set_data(STATUS_COL, value)
             if child.child_count() == 0:
-                path = self.parent().model().get_path_from_root(child, STATUS_COL)
-                self.parent().model().cfg.set_instrument_config_val(path, value)
+                path = self.parent().model().get_path_from_root(child,
+                                                                STATUS_COL)
+                self.parent().model().cfg.set_instrument_config_val(path,
+                                                                    value)
             else:
                 self.setChildData(child, value)
+
+    def updateModel(self, index):
+        end = self.parent().model().index(
+            -1, STATUS_COL, self.parent().model().parent(index))
+        self.parent().model().dataChanged.emit(index, end)
+
 
 class CalTreeView(QTreeView):
 
     def __init__(self, parent=None):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
-        self.setItemDelegateForColumn(STATUS_COL, CheckBoxDelegate(self))
+        self.setItemDelegateForColumn(
+            STATUS_COL, CheckBoxDelegate(self))
         self.expand_rows()
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)
@@ -301,12 +310,33 @@ class CalTreeView(QTreeView):
 
     def contextMenuEvent(self, event):
         index = self.indexAt(event.pos())
+        item = self.model().get_item(index)
+        children = item.child_count()
+
         if index.column() == KEY_COL:
             menu = QMenu(self)
-            collapse = menu.addAction("Collapse All")
-            menu.addAction("Expand All")
+            collapse = menu.addAction('Collapse All')
+            expand = menu.addAction('Expand All')
+            check = None
+            uncheck = None
+            if children:
+                menu.addSeparator()
+                check = menu.addAction('Check All')
+                uncheck = menu.addAction('Uncheck All')
             action = menu.exec_(QCursor.pos())
-            self.collapseAll() if (action == collapse) else self.expandAll()
+
+            if action == collapse:
+                self.collapseAll()
+            elif action == expand:
+                self.expandAll()
+            elif action == check:
+                self.itemDelegateForColumn(STATUS_COL).setChildData(
+                    item, True)
+                self.itemDelegateForColumn(STATUS_COL).updateModel(index)
+            elif action == uncheck:
+                self.itemDelegateForColumn(STATUS_COL).setChildData(
+                    item, False)
+                self.itemDelegateForColumn(STATUS_COL).updateModel(index)
 
     def rebuild_tree(self):
         # We rebuild it from scratch every time it is shown in case
@@ -318,15 +348,43 @@ class CalTreeView(QTreeView):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
-            editor_idx = self.model().index(i, STATUS_COL, parent)
+            self.expand(index)
 
-            item = self.model().get_item(index)
-            parent_item = item.parent_item
-            if parent_item:
-                self.expand(index)
-                self.openPersistentEditor(editor_idx)
+            self.display_status_checkbox(i, parent)
 
             self.expand_rows(index)
+
+    # Display status checkbox for the row if the requirements are met
+    def display_status_checkbox(self, row, parent=QModelIndex()):
+
+        index = self.model().index(row, KEY_COL, parent)
+        item = self.model().get_item(index)
+
+        # If it has children, return
+        if item.child_count() != 0:
+            return
+
+        # If the data is a string, return
+        if isinstance(item.data(VALUE_COL), str):
+            return
+
+        # If the key is blacklisted, return
+        blacklisted_keys = ['saturation_level']
+        if item.data(KEY_COL) in blacklisted_keys:
+            return
+
+        # If one of the parents of the item is blacklisted, return
+        blacklisted_parents = ['pixels']
+        parent_item = item.parent_item
+        while parent_item is not None:
+            if parent_item.data(KEY_COL) in blacklisted_parents:
+                return
+
+            parent_item = parent_item.parent_item
+
+        # Show the checkbox
+        editor_idx = self.model().index(row, STATUS_COL, parent)
+        self.openPersistentEditor(editor_idx)
 
 
 def _is_int(s):
