@@ -24,6 +24,7 @@ class ImageCanvas(FigureCanvas):
         self.axes_images = []
         self.cached_rings = []
         self.cached_rbnds = []
+        self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
         # The presence of an iviewer indicates we are currently viewing
@@ -41,6 +42,8 @@ class ImageCanvas(FigureCanvas):
 
     def setup_connections(self):
         HexrdConfig().ring_config_changed.connect(self.redraw_rings)
+        HexrdConfig().show_saturation_level_changed.connect(
+            self.show_saturation)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -67,7 +70,9 @@ class ImageCanvas(FigureCanvas):
                                                 norm=self.norm))
 
         self.figure.tight_layout()
-        self.draw()
+
+        # This will call self.draw()
+        self.show_saturation()
 
     def clear_rings(self):
         while self.cached_rings:
@@ -104,6 +109,49 @@ class ImageCanvas(FigureCanvas):
                 self.cached_rbnds.append(rbnd)
 
         self.figure.tight_layout()
+        self.draw()
+
+    def clear_saturation(self):
+        for t in self.saturation_texts:
+            t.remove()
+        self.saturation_texts.clear()
+        self.draw()
+
+    def show_saturation(self):
+        # Do not proceed without config approval
+        if not HexrdConfig().show_saturation_level:
+            self.clear_saturation()
+            return
+
+        if not self.axes_images:
+            self.clear_saturation()
+            return
+
+        # Do not show the saturation in calibration mode
+        if self.iviewer:
+            self.clear_saturation()
+            return
+
+        for img in self.axes_images:
+            # The titles of the images are currently the detector names
+            # If we change this in the future, we will need to change
+            # our method for getting the saturation level as well.
+            ax = img.axes
+            detector_name = ax.get_title()
+            detector = HexrdConfig().get_detector(detector_name)
+            saturation_level = detector['saturation_level']['value']
+
+            array = img.get_array()
+
+            num_sat = (array >= saturation_level).sum()
+            percent = num_sat / array.size * 100.0
+            str_sat = 'Saturation: ' + str(num_sat)
+            str_sat += '\n%5.3f %%' % percent
+
+            t = ax.text(0.05, 0.05, str_sat, fontdict={ 'color': 'w' },
+                        transform=ax.transAxes)
+            self.saturation_texts.append(t)
+
         self.draw()
 
     def show_cartesian(self):

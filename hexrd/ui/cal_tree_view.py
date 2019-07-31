@@ -109,7 +109,7 @@ class CalTreeItemModel(QAbstractItemModel):
                 value = type(old_value)(value)
             except ValueError:
                 msg = ('Could not convert ' + str(value) + ' to type ' +
-                    str(type(old_value).__name__))
+                       str(type(old_value).__name__))
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return False
 

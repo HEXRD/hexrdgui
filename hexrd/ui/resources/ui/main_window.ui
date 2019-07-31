@@ -58,6 +58,7 @@
     <addaction name="action_tabbed_view"/>
     <addaction name="action_show_nav_toolbar"/>
     <addaction name="action_show_live_updates"/>
+    <addaction name="action_show_saturation_percentages"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
@@ -264,6 +265,15 @@
    </property>
    <property name="text">
     <string>Edit Image Series</string>
+  <action name="action_show_saturation_percentages">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Saturation Percentages</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show the saturation percentages of the images when in &amp;quot;Image View&amp;quot; mode. The saturation percentages will appear as white text in the bottom left corners of the images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
  </widget>

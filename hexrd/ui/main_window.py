@@ -73,6 +73,8 @@ class MainWindow(QObject):
             self.on_action_edit_ims)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
+        self.ui.action_show_saturation_percentages.toggled.connect(
+            HexrdConfig().set_show_saturation_level)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.ui.image_view.pressed.connect(self.show_images)
