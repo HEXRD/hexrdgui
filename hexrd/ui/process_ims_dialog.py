@@ -83,6 +83,9 @@ class ProcessIMSDialog(QDialog):
     def load_image(self):
         f = self.parent.open_image_file()[0]
         self.dark_img = fabio.open(f).data
+        idx = self.ui.detectors.currentIndex() - 1
+        fileName = f.split('/')[-1]
+        self.tabs[idx].upload_dark.setText(fileName)
 
     def set_data(self):
         if self.prev_tab == 'General':
@@ -115,8 +118,8 @@ class ProcessIMSDialog(QDialog):
         if self.dark_img is None:
             return
 
+        name = self.prev_tab
         if isinstance(self.dark_img, int):
-            name = self.prev_tab
             frames = len(self.frame_list)
             if self.dark_img == 1:
                 dark = imageseries.stats.median(self.ims[name], frames)
