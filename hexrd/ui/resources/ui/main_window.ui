@@ -56,7 +56,7 @@
      <string>View</string>
     </property>
     <addaction name="action_tabbed_view"/>
-    <addaction name="action_show_nav_toolbar"/>
+    <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
     <addaction name="action_show_saturation_percentages"/>
    </widget>
@@ -232,7 +232,7 @@
     <string>Materials</string>
    </property>
   </action>
-  <action name="action_show_nav_toolbar">
+  <action name="action_show_toolbar">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -240,7 +240,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Navigation Toolbar</string>
+    <string>Show Toolbar</string>
    </property>
   </action>
   <action name="actionShow_Live_Updates">
@@ -288,7 +288,7 @@
    <slots>
     <slot>open_files()</slot>
     <slot>set_tabbed_view(bool)</slot>
-    <slot>show_nav_toolbar(bool)</slot>
+    <slot>show_toolbar(bool)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -311,10 +311,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>action_show_nav_toolbar</sender>
+   <sender>action_show_toolbar</sender>
    <signal>toggled(bool)</signal>
    <receiver>image_tab_widget</receiver>
-   <slot>show_nav_toolbar(bool)</slot>
+   <slot>show_toolbar(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>

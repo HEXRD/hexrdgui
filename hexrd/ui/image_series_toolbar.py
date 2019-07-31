@@ -8,9 +8,6 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 class ImageSeriesToolbar(QWidget):
 
-    # Emitted when editing is complete
-    close_editor = Signal()
-
     def __init__(self, name, tabbed, parent=None):
         super(ImageSeriesToolbar, self).__init__(parent)
 
@@ -71,8 +68,3 @@ class ImageSeriesToolbar(QWidget):
 
     def val_changed(self, pos):
         self.parent().change_ims_image(pos, self.name)
-
-    def restore_view(self):
-        self.parent().set_tabbed_view(self.tabbed)
-        self.parent().show_nav_toolbar(True)
-        self.close_editor.emit()
