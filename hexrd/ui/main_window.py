@@ -143,6 +143,8 @@ class MainWindow(QObject):
                 if path_dialog.ui.exec_():
                     group, data, remember = path_dialog.results()
                     HexrdConfig().hdf5_path = [group, data]
+                else:
+                    return
 
             dialog = LoadImagesDialog(selected_files, self.ui)
 
