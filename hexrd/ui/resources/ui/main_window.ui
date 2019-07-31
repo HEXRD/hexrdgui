@@ -275,7 +275,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Edit Image Series</string>
+    <string>Process Image Series</string>
    </property>
   </action>
  </widget>

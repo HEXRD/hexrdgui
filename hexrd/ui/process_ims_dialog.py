@@ -1,3 +1,4 @@
+import copy
 import fabio
 
 from PySide2.QtWidgets import QDialog, QRadioButton
@@ -16,6 +17,7 @@ class ProcessIMSDialog(QDialog):
 
         self.names = list(HexrdConfig().imageseries().keys())
         self.ims = HexrdConfig().imageseries()
+        self.original_ims = copy.deepcopy(self.ims)
         self.tabs = []
         self.oplists = {}
         self.prev_tab = None
@@ -33,7 +35,9 @@ class ProcessIMSDialog(QDialog):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.buttonBox.accepted.connect(self.apply_ops)
+        self.ui.buttonBox.accepted.connect(self.apply_to_one)
+        self.ui.buttonBox.rejected.connect(self.cancel)
+        self.ui.apply.clicked.connect(self.apply_to_one)
         self.ui.detectors.currentChanged.connect(self.set_data)
         self.ui.detectors.currentChanged.connect(self.set_prev_tab)
         self.ui.offset.valueChanged.connect(self.create_frame_list)
@@ -103,16 +107,15 @@ class ProcessIMSDialog(QDialog):
         name = self.prev_tab
         for tab in self.tabs:
             for child in tab.children():
-                for widget in child.children():
-                    if isinstance(widget, QRadioButton) and widget.isChecked():
-                        num = [int(w)
-                              for w in widget.objectName().split('_')
-                              if w.isdigit()]
-                        if num:
-                            key = 'r' + str(num[0])
-                        else:
-                            key = widget.objectName()[0]
-                        self.oplists[name] = [['flip', key]]
+                if isinstance(child, QRadioButton) and child.isChecked():
+                    num = [int(w)
+                            for w in child.objectName().split('_')
+                            if w.isdigit()]
+                    if num:
+                        key = 'r' + str(num[0])
+                    else:
+                        key = child.objectName()[0]
+                    self.oplists[name] = [['flip', key]]
 
     def create_dark(self):
         if self.dark_img is None:
@@ -141,6 +144,17 @@ class ProcessIMSDialog(QDialog):
 
         self.dark_img = None
 
+    def reset_values(self):
+        for tab in self.tabs:
+            for child in tab.children():
+                if isinstance(child, QRadioButton) and child.isChecked():
+                    child.setAutoExclusive(False)
+                    child.setChecked(False)
+                    child.setAutoExclusive(True)
+                tab.upload_dark.setText('Upload Image')
+                tab.dark_combo.setCurrentIndex(0)
+                tab.percentile.setValue(0)
+
     def apply_to_all(self):
         self.set_prev_tab()
         self.set_data()
@@ -148,20 +162,26 @@ class ProcessIMSDialog(QDialog):
         for name in self.names:
             self.oplists[name] = self.oplists[self.prev_tab]
 
+        self.apply_ops()
+
+    def apply_to_one(self):
+        self.set_prev_tab()
+        self.set_data()
+        self.apply_ops()
+
+    def apply_ops(self):
+        self.reset_values()
+
         for key in self.oplists.keys():
             self.ims[key] = imageseries.process.ProcessedImageSeries(
                 self.ims[key], self.oplists[key], frame_list=self.frame_list)
 
         self.parent.ui.image_tab_widget.load_images()
         self.parent.ui.image_tab_widget.update_ims_toolbar()
+        self.oplists = {}
 
-    def apply_ops(self):
-        self.set_prev_tab()
-        self.set_data()
-
-        for key in self.oplists.keys():
-            self.ims[key] = imageseries.process.ProcessedImageSeries(
-                self.ims[key], self.oplists[key], frame_list=self.frame_list)
-
+    def cancel(self):
+        for name in self.names:
+            self.ims[name] = self.original_ims[name]
         self.parent.ui.image_tab_widget.load_images()
         self.parent.ui.image_tab_widget.update_ims_toolbar()
