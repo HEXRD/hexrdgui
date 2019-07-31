@@ -146,7 +146,7 @@ class ImageCanvas(FigureCanvas):
             num_sat = (array >= saturation_level).sum()
             percent = num_sat / array.size * 100.0
             str_sat = 'Saturation: ' + str(num_sat)
-            str_sat += '\n%5.3f' % percent + ' %'
+            str_sat += '\n%5.3f %%' % percent
 
             t = ax.text(0.05, 0.05, str_sat, fontdict={ 'color': 'w' },
                         transform=ax.transAxes)
