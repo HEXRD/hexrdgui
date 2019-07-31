@@ -5,6 +5,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
+from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
 
 # Remove these buttons from the navigation toolbar
 nav_toolbar_blacklist = [
@@ -29,6 +30,8 @@ class ImageTabWidget(QTabWidget):
         self.norm = None
         self.nav_toolbars = []
         self.nav_toolbar_visible = True
+        self.ims_toolbars = []
+        self.ims_toolbar_visible = False
 
         self.set_tabbed_view(False)
 
@@ -36,6 +39,7 @@ class ImageTabWidget(QTabWidget):
 
     def setup_connections(self):
         self.currentChanged.connect(self.switch_nav_toolbar)
+        self.currentChanged.connect(self.switch_ims_toolbar)
 
     def allocate_canvases(self):
         while len(self.image_canvases) < len(self.image_names):
@@ -71,6 +75,11 @@ class ImageTabWidget(QTabWidget):
 
         self.new_images_loaded.emit()
 
+    def change_ims_image(self, pos, name):
+        idx = self.currentIndex()
+        self.image_canvases[idx].load_images(
+            image_names=[name], idx=pos)
+
     @Slot(bool)
     def set_tabbed_view(self, tabbed_view=False):
         self.tabbed_view = tabbed_view
@@ -82,12 +91,26 @@ class ImageTabWidget(QTabWidget):
     @Slot(bool)
     def show_nav_toolbar(self, b):
         self.nav_toolbar_visible = b
+        self.ims_toolbar_visible = not b
 
         idx = self.currentIndex()
         if idx < 0 or not self.nav_toolbars:
             return
 
         self.nav_toolbars[idx].setVisible(b)
+        self.ims_toolbars[idx].set_visible(not b)
+
+    @Slot(bool)
+    def show_ims_toolbar(self, b):
+        self.ims_toolbar_visible = b
+        self.nav_toolbar_visible = not b
+
+        idx = self.currentIndex()
+        if idx < 0 or not self.ims_toolbars:
+            return
+
+        self.ims_toolbars[idx].set_visible(b)
+        self.nav_toolbars[idx].setVisible(not b)
 
     def allocate_nav_toolbars(self):
         parent = self.parent()
@@ -104,6 +127,21 @@ class ImageTabWidget(QTabWidget):
             parent.layout().setAlignment(tb, Qt.AlignCenter)
             self.nav_toolbars.append(tb)
 
+    def allocate_ims_toolbars(self):
+        parent = self.parent()
+        while len(self.ims_toolbars) != len(self.image_canvases):
+            idx = len(self.ims_toolbars)
+	    # Current detector
+            name = self.image_names[idx]
+	    # Hold onto original tabbed/untabbed status
+            tabbed = self.tabbed_view
+            sb = ImageSeriesToolbar(name, tabbed, self)
+
+            # Keep it at the bottom of the central widget
+            parent.layout().addWidget(sb.widget)
+            parent.layout().setAlignment(sb.widget, Qt.AlignCenter)
+            self.ims_toolbars.append(sb)
+
     def switch_nav_toolbar(self):
         idx = self.currentIndex()
         if idx < 0:
@@ -117,6 +155,24 @@ class ImageTabWidget(QTabWidget):
             tb.setVisible(False)
 
         self.nav_toolbars[idx].setVisible(self.nav_toolbar_visible)
+
+    def switch_ims_toolbar(self):
+        idx = self.currentIndex()
+        if idx < 0:
+            return
+
+        # Create the toolbars
+        self.allocate_ims_toolbars()
+
+        # Hide all except the current one
+        for sb in self.ims_toolbars:
+            sb.set_visible(False)
+
+        self.ims_toolbars[idx].set_visible(self.ims_toolbar_visible)
+
+    def update_ims_toolbar(self):
+        for slider in self.ims_toolbars:
+            slider.update_range()
 
     def show_cartesian(self):
         # Make sure we actually have images
