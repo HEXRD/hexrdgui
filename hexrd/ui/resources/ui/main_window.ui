@@ -45,6 +45,7 @@
      <property name="title">
       <string>Save</string>
      </property>
+     <addaction name="action_save_imageseries"/>
      <addaction name="action_save_config"/>
      <addaction name="action_save_materials"/>
     </widget>
@@ -217,9 +218,9 @@
     <string>Configuration</string>
    </property>
   </action>
-  <action name="action_save_config">
+  <action name="action_save_imageseries">
    <property name="text">
-    <string>Configuration</string>
+    <string>ImageSeries</string>
    </property>
   </action>
   <action name="action_open_materials">
@@ -227,9 +228,9 @@
     <string>Materials</string>
    </property>
   </action>
-  <action name="action_save_materials">
+  <action name="action_save_config">
    <property name="text">
-    <string>Materials</string>
+    <string>Configuration</string>
    </property>
   </action>
   <action name="action_show_toolbar">
@@ -276,6 +277,11 @@
    </property>
    <property name="text">
     <string>Process Image Series</string>
+   </property>
+  </action>
+  <action name="action_save_materials">
+   <property name="text">
+    <string>Materials</string>
    </property>
   </action>
  </widget>
