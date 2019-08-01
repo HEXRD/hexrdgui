@@ -1,10 +1,10 @@
 import numpy as np
 
-from hexrd.xrd.transforms_CAPI import \
+from hexrd.transforms.xfcapi import \
      anglesToGVec, \
      gvecToDetectorXY
 
-from hexrd.xrd.crystallography import PlaneData
+from hexrd.crystallography import PlaneData
 
 from hexrd import constants as cnst
 
