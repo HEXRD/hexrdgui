@@ -11,7 +11,6 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
-from hexrd.ui.load_hdf5_dialog import LoadHDF5Dialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.resolution_editor import ResolutionEditor
@@ -152,15 +151,11 @@ class MainWindow(QObject):
                 return
 
             # If it is a hdf5 file allow the user to select the path
-            remember = True
             ext = os.path.splitext(selected_files[0])[1]
-            if ImageFileManager().is_hdf5(ext) and HexrdConfig().hdf5_path is None:
-                path_dialog = LoadHDF5Dialog(selected_files[0], self.ui)
-                if path_dialog.ui.exec_():
-                    group, data, remember = path_dialog.results()
-                    HexrdConfig().hdf5_path = [group, data]
-                else:
-                    return
+            if (ImageFileManager().is_hdf5(ext) and not
+                    ImageFileManager().path_exists(selected_files[0])):
+
+                ImageFileManager().path_prompt(selected_files[0])
 
             dialog = LoadImagesDialog(selected_files, self.ui)
 
@@ -170,10 +165,6 @@ class MainWindow(QObject):
                 # Enable editing once images have been loaded
                 self.ui.action_edit_ims.setEnabled(True)
                 self.ui.image_tab_widget.load_images()
-
-            # Clear the path if it shouldn't be remembered
-            if not remember:
-                HexrdConfig().hdf5_path = []
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
