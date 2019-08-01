@@ -1,6 +1,6 @@
 import numpy as np
 
-from hexrd.xrd import transforms_CAPI as xfcapi
+from hexrd.transforms import xfcapi
 from hexrd import instrument
 
 tvec_DFLT = np.r_[0., 0., -1000.]

@@ -2,7 +2,7 @@ import copy
 
 from PySide2.QtCore import QObject
 
-from hexrd.xrd import spacegroup
+from hexrd import spacegroup
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import utils
