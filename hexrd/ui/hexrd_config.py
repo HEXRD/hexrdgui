@@ -5,6 +5,8 @@ from PySide2.QtCore import Signal, QObject, QSettings
 
 import yaml
 
+import hexrd.imageseries.save
+
 from hexrd.ui import constants
 from hexrd.ui import resource_loader
 from hexrd.ui import utils
@@ -149,6 +151,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def imageseries(self):
         return self.imageseries_dict
+
+    def save_imageseries(self, name, write_file, selected_format, **kwargs):
+        ims = self.ims_image(name)
+        hexrd.imageseries.save.write(ims, write_file, selected_format,
+                                     **kwargs)
 
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:

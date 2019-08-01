@@ -2,7 +2,7 @@ import os
 
 from PySide2.QtCore import QEvent, QObject, Qt
 from PySide2.QtWidgets import (
-    QApplication, QFileDialog, QMainWindow, QMessageBox
+    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -67,6 +67,8 @@ class MainWindow(QObject):
             self.on_action_save_config_triggered)
         self.ui.action_open_materials.triggered.connect(
             self.on_action_open_materials_triggered)
+        self.ui.action_save_imageseries.triggered.connect(
+            self.on_action_save_imageseries_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
         self.ui.action_edit_ims.triggered.connect(
@@ -183,6 +185,56 @@ class MainWindow(QObject):
         if selected_file:
             HexrdConfig().load_materials(selected_file)
             self.materials_panel.update_gui_from_config()
+
+    def on_action_save_imageseries_triggered(self):
+        if not HexrdConfig().imageseries():
+            msg = ('No ImageSeries available for saving.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
+        if len(HexrdConfig().imageseries()) > 1:
+            # Have the user choose an imageseries to save
+            names = list(HexrdConfig().imageseries().keys())
+            name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
+                                            'Select ImageSeries', names, 0,
+                                            False)
+            if not ok:
+                # User canceled...
+                return
+        else:
+            name = list(HexrdConfig().imageseries().keys())[0]
+
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save ImageSeries', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
+
+        if selected_file:
+            if selected_filter.startswith('HDF5'):
+                selected_format = 'hdf5'
+            elif selected_filter.startswith('NPZ'):
+                selected_format = 'frame-cache'
+
+            kwargs = {}
+            if selected_format == 'hdf5':
+                # A path must be specified. Set it ourselves for now.
+                kwargs['path'] = 'imageseries'
+            elif selected_format == 'frame-cache':
+                # Get the user to pick a threshold
+                result, ok = QInputDialog.getDouble(self.ui, 'HEXRD',
+                                                    'Choose Threshold',
+                                                    1000, 0, 1e12, 3)
+                if not ok:
+                    # User canceled...
+                    return
+
+                kwargs['threshold'] = result
+
+                # This needs to be specified, but I think it just needs
+                # to be the same as the file name...
+                kwargs['cache_file'] = selected_file
+
+            HexrdConfig().save_imageseries(name, selected_file,
+                                           selected_format, **kwargs)
 
     def on_action_save_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
