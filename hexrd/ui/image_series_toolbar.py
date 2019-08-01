@@ -15,7 +15,7 @@ class ImageSeriesToolbar(QWidget):
         self.layout = None
         self.widget = None
 
-        self.show = len(HexrdConfig().imageseries())
+        self.show = False
         self.name = name
 
         self.create_widget()
@@ -40,6 +40,9 @@ class ImageSeriesToolbar(QWidget):
         self.layout.addWidget(self.frame, 0, 9, 1, 1)
 
         self.widget.setLayout(self.layout)
+
+        if self.ims and len(self.ims) > 1:
+            self.show = True
         self.widget.setVisible(self.show)
 
     def set_range(self):
