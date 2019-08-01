@@ -12,16 +12,14 @@ class ImageSeriesToolbar(QWidget):
         self.ims = HexrdConfig().ims_image(name)
         self.slider = None
         self.frame = None
-
         self.layout = None
-
         self.widget = None
+
+        self.show = len(HexrdConfig().imageseries())
+        self.name = name
 
         self.create_widget()
         self.set_range()
-        self.set_visible()
-
-        self.name = name
 
         self.setup_connections()
 
@@ -42,6 +40,7 @@ class ImageSeriesToolbar(QWidget):
         self.layout.addWidget(self.frame, 0, 9, 1, 1)
 
         self.widget.setLayout(self.layout)
+        self.widget.setVisible(self.show)
 
     def set_range(self):
         if self.ims:
@@ -54,7 +53,8 @@ class ImageSeriesToolbar(QWidget):
         self.set_range()
 
     def set_visible(self, b=False):
-        self.widget.setVisible(b)
+        if self.show:
+            self.widget.setVisible(b)
 
     def val_changed(self, pos):
         self.parent().change_ims_image(pos, self.name)

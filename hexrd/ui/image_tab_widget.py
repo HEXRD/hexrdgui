@@ -98,7 +98,7 @@ class ImageTabWidget(QTabWidget):
             return
 
         self.toolbars[idx]['tb'].setVisible(b)
-        self.toolbars[idx]['sb'].widget.setVisible(b)
+        self.toolbars[idx]['sb'].set_visible(b)
 
     def allocate_toolbars(self):
         parent = self.parent()
@@ -113,8 +113,7 @@ class ImageTabWidget(QTabWidget):
             # This will put it at the bottom of the central widget
             toolbar = QHBoxLayout()
             toolbar.addWidget(tb)
-            if HexrdConfig().imageseries():
-                toolbar.addWidget(sb.widget)
+            toolbar.addWidget(sb.widget)
             parent.layout().addLayout(toolbar)
             parent.layout().setAlignment(toolbar, Qt.AlignCenter)
             self.toolbars.append({'tb': tb, 'sb': sb})
@@ -130,10 +129,10 @@ class ImageTabWidget(QTabWidget):
         # None should be visible except the current one
         for toolbar in self.toolbars:
             toolbar['tb'].setVisible(False)
-            toolbar['sb'].widget.setVisible(False)
+            toolbar['sb'].set_visible(False)
 
         self.toolbars[idx]['tb'].setVisible(self.toolbar_visible)
-        self.toolbars[idx]['sb'].widget.setVisible(self.toolbar_visible)
+        self.toolbars[idx]['sb'].set_visible(self.toolbar_visible)
 
     def update_ims_toolbar(self):
         for toolbar in self.toolbars:
