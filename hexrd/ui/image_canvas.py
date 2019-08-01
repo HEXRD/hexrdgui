@@ -49,7 +49,7 @@ class ImageCanvas(FigureCanvas):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def load_images(self, image_names):
+    def load_images(self, image_names, idx=0):
         # We are not in calibration mode. Remove the iviewer.
         self.iviewer = None
         self.figure.clear()
@@ -62,7 +62,10 @@ class ImageCanvas(FigureCanvas):
         rows = math.ceil(len(image_names) / cols)
 
         for i, name in enumerate(image_names):
-            img = HexrdConfig().image(name)
+            if HexrdConfig().imageseries():
+                img = HexrdConfig().ims_image(name)[idx]
+            else:
+                img = HexrdConfig().image(name)
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
             axis.set_title(name)
@@ -148,7 +151,7 @@ class ImageCanvas(FigureCanvas):
             str_sat = 'Saturation: ' + str(num_sat)
             str_sat += '\n%5.3f %%' % percent
 
-            t = ax.text(0.05, 0.05, str_sat, fontdict={ 'color': 'w' },
+            t = ax.text(0.05, 0.05, str_sat, fontdict={'color': 'w'},
                         transform=ax.transAxes)
             self.saturation_texts.append(t)
 

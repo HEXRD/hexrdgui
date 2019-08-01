@@ -58,6 +58,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
+        self.imageseries_dict = {}
         self.hdf5_path = []
         self.live_update = False
         self._show_saturation_level = False
@@ -142,6 +143,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def images(self):
         return self.images_dict
+
+    def ims_image(self, name):
+        return self.imageseries_dict.get(name)
+
+    def imageseries(self):
+        return self.imageseries_dict
 
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
