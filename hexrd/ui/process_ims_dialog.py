@@ -56,17 +56,18 @@ class ProcessIMSDialog(QDialog):
 
         self.set_prev_tab()
 
-    def set_defaults(self, min_frames=0, max_frames=0):
+    def set_defaults(self, max_frames=0, min_frames=0):
         if not max_frames:
             max_frames = len(self.ims[self.names[0]])
 
         self.ui.offset.setMinimum(min_frames)
         self.ui.max_total.setMinimum(min_frames)
 
-        self.ui.offset.setMaximum(max_frames)
-        self.ui.max_total.setMaximum(max_frames)
+        self.ui.offset.setMaximum(max_frames-1)
+        self.ui.max_total.setMaximum(max_frames-1)
 
-        self.ui.max_total.setValue(max_frames)
+        self.ui.offset.setValue(min_frames)
+        self.ui.max_total.setValue(max_frames-1)
 
         self.frame_list = range(min_frames, max_frames)
 
@@ -103,6 +104,12 @@ class ProcessIMSDialog(QDialog):
         end = self.ui.max_total.value()
         self.frame_list = range(start, end)
 
+        # Make sure all the detectors are updated even
+        # if there are no operations performed on them
+        if self.oplists == {}:
+            for name in self.names:
+                self.oplists[name] = []
+
     def create_oplists(self):
         name = self.prev_tab
         for tab in self.tabs:
@@ -115,7 +122,7 @@ class ProcessIMSDialog(QDialog):
                         key = 'r' + str(num[0])
                     else:
                         key = child.objectName()[0]
-                    self.oplists[name] = [['flip', key]]
+                    self.oplists[name].append(['flip', key])
 
     def create_dark(self):
         if self.dark_img is None:
@@ -145,6 +152,12 @@ class ProcessIMSDialog(QDialog):
         self.dark_img = None
 
     def reset_values(self):
+        max_ = self.ui.max_total.value() - self.ui.offset.value()
+        if max_ > 0:
+            self.set_defaults(max_)
+        else:
+            self.set_defaults()
+
         for tab in self.tabs:
             for child in tab.children():
                 if isinstance(child, QRadioButton) and child.isChecked():
