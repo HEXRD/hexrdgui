@@ -245,6 +245,11 @@ class MainWindow(QObject):
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_edit_ims(self):
+        if not HexrdConfig().imageseries():
+            msg = 'No ImageSeries available for processing'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
         # open dialog
         ProcessIMSDialog(self)
 
