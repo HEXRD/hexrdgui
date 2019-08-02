@@ -170,7 +170,7 @@ class MainWindow(QObject):
                 detector_names, image_files = dialog.results()
                 ImageFileManager().load_images(detector_names, image_files)
                 # Enable editing once images have been loaded
-                if len(HexrdConfig().ims_image(detector_names[0])) > 1:
+                if HexrdConfig().imageseries():
                     self.ui.action_edit_ims.setEnabled(True)
                 self.ui.image_tab_widget.load_images()
 

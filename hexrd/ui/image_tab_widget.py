@@ -138,9 +138,6 @@ class ImageTabWidget(QTabWidget):
     def update_ims_toolbar(self):
         for toolbar in self.toolbars:
             toolbar['sb'].update_range()
-            # Disable editing for single images
-            self.parent().parent().action_edit_ims.setEnabled(
-                toolbar['sb'].show)
 
     def show_cartesian(self):
         # Make sure we actually have images

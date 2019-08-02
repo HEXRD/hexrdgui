@@ -122,10 +122,10 @@ class ProcessIMSDialog(QDialog):
                         key = 'r' + str(num[0])
                     else:
                         key = child.objectName()[0]
-                    self.oplists[name].append(['flip', key])
+                    self.oplists[name] = [['flip', key]]
 
     def create_dark(self):
-        if self.dark_img is None:
+        if not self.dark_img:
             return
 
         name = self.prev_tab
