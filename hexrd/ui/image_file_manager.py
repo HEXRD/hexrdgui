@@ -24,7 +24,8 @@ class Singleton(type):
 class ImageFileManager(metaclass=Singleton):
 
     def __init__(self):
-        self.remember_path = False
+        self.remember = True
+        self.path = []
 
     def load_images(self, detectors, file_names):
         HexrdConfig().images_dict.clear()
@@ -39,14 +40,19 @@ class ImageFileManager(metaclass=Singleton):
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return
 
-        if not self.remember_path:
-            HexrdConfig().hdf5_path = []
+        # Save the path if it should be remembered
+        if self.remember:
+            self.path = HexrdConfig().hdf5_path
+        else:
+            HexrdConfig().hdf5_path = self.path
 
     def open_file(self, f):
         ext = os.path.splitext(f)[1]
         try:
             if self.is_hdf5(ext):
-                img = self.handle_hdf5(f)
+                img = imageseries.open(f, 'hdf5',
+                    path=HexrdConfig().hdf5_path[0],
+                    dataname=HexrdConfig().hdf5_path[1])
             elif ext == '.npz':
                 img = imageseries.open(f, 'frame-cache')
             elif ext == '.yml':
@@ -67,20 +73,19 @@ class ImageFileManager(metaclass=Singleton):
 
         return False
 
-    def handle_hdf5(self, f):
+    def path_exists(self, f):
         try:
-            img = imageseries.open(
-                f, 'hdf5', path=HexrdConfig().hdf5_path[0],
+            imageseries.open(f, 'hdf5', path=HexrdConfig().hdf5_path[0],
                 dataname=HexrdConfig().hdf5_path[1])
+            return True
         except:
-            path_dialog = LoadHDF5Dialog(f)
-            if path_dialog.ui.exec_():
-                group, data, remember = path_dialog.results()
-                HexrdConfig().hdf5_path = [group, data]
-                img = imageseries.open(
-                    f, 'hdf5', path=HexrdConfig().hdf5_path[0],
-                    dataname=HexrdConfig().hdf5_path[1])
-            if remember:
-                self.remember_path = True
+            return False
 
-        return img
+    def path_prompt(self, f):
+        path_dialog = LoadHDF5Dialog(f)
+        if path_dialog.ui.exec_():
+            group, data, remember = path_dialog.results()
+            HexrdConfig().hdf5_path = [group, data]
+            self.remember = remember
+        else:
+            return
