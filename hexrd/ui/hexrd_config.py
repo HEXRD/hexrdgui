@@ -1,7 +1,7 @@
 import copy
 import pickle
 
-from PySide2.QtCore import Signal, QObject, QSettings
+from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
 
 import yaml
 
@@ -65,7 +65,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = False
         self._show_saturation_level = False
 
-        self.load_settings()
+        if '--ignore-settings' not in QCoreApplication.arguments():
+            self.load_settings()
 
         # Load default configuration settings
         self.load_default_config()
