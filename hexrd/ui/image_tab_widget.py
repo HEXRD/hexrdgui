@@ -71,6 +71,7 @@ class ImageTabWidget(QTabWidget):
             self.load_images_untabbed()
 
         self.new_images_loaded.emit()
+        self.update_ims_toolbar()
 
     def change_ims_image(self, pos, name):
         idx = self.currentIndex()

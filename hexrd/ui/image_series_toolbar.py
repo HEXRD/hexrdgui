@@ -48,6 +48,11 @@ class ImageSeriesToolbar(QWidget):
     def set_range(self):
         if self.ims:
             size = len(self.ims) - 1
+            if not size and self.show:
+                self.show = False
+            elif size and not self.show:
+                self.show = True
+            self.widget.setVisible(self.show)
             self.slider.setMaximum(size)
             self.slider.setMinimumWidth(self.parent().width()/2)
             self.frame.setMaximum(size)
