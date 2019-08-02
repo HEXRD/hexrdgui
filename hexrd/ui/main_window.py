@@ -222,7 +222,7 @@ class MainWindow(QObject):
                 # Get the user to pick a threshold
                 result, ok = QInputDialog.getDouble(self.ui, 'HEXRD',
                                                     'Choose Threshold',
-                                                    1000, 0, 1e12, 3)
+                                                    10, 0, 1e12, 3)
                 if not ok:
                     # User canceled...
                     return
