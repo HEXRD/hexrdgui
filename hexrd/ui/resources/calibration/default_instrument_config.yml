@@ -18,8 +18,8 @@ detectors:
       size: [1.0, 1.0]
     saturation_level: 14000.0
     transform:
-      t_vec_d: [0.0, 0.0, 0.0]
-      tilt_angles: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+      tilt: [0.0, 0.0, 0.0]
   ge2:
     distortion:
       function_name: GE_41RT
@@ -31,8 +31,8 @@ detectors:
       size: [1.0, 1.0]
     saturation_level: 14000.0
     transform:
-      t_vec_d: [0.0, 0.0, 0.0]
-      tilt_angles: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+      tilt: [0.0, 0.0, 0.0]
 oscillation_stage:
   chi: 0.0
-  t_vec_s: [0.0, 0.0, 0.0]
+  translation: [0.0, 0.0, 0.0]
