@@ -16,6 +16,7 @@ from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.process_ims_dialog import ProcessIMSDialog
+from hexrd.ui.frame_aggregation import FrameAggregation
 
 
 class MainWindow(QObject):
@@ -38,6 +39,10 @@ class MainWindow(QObject):
         self.resolution_editor = ResolutionEditor(self.ui.central_widget)
         self.ui.resolution_dock_widgets.layout().addWidget(
             self.resolution_editor.ui)
+
+        self.frame_aggregation = FrameAggregation(self.ui.central_widget)
+        self.ui.frame_aggregation_widgets.layout().addWidget(
+            self.frame_aggregation.ui)
 
         self.add_materials_panel()
 

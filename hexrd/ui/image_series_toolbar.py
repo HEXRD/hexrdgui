@@ -56,6 +56,9 @@ class ImageSeriesToolbar(QWidget):
             self.slider.setMaximum(size)
             self.slider.setMinimumWidth(self.parent().width()/2)
             self.frame.setMaximum(size)
+        else:
+            self.show = False
+            self.widget.setVisible(self.show)
 
     def update_range(self):
         self.ims = HexrdConfig().ims_image(self.name)

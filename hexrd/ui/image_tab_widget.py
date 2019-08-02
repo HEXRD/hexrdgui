@@ -46,7 +46,8 @@ class ImageTabWidget(QTabWidget):
         self.clear()
         self.allocate_canvases()
         for i, name in enumerate(self.image_names):
-            self.image_canvases[i].load_images(image_names=[name])
+            self.image_canvases[i].load_images(
+                image_names=[name], parent=self.parent())
             self.addTab(self.image_canvases[i], name)
 
         self.update_canvas_cmaps()
@@ -55,7 +56,8 @@ class ImageTabWidget(QTabWidget):
 
     def load_images_untabbed(self):
         self.clear()
-        self.image_canvases[0].load_images(image_names=self.image_names)
+        self.image_canvases[0].load_images(
+            image_names=self.image_names, parent=self.parent())
         self.addTab(self.image_canvases[0], '')
 
         self.update_canvas_cmaps()
@@ -77,10 +79,10 @@ class ImageTabWidget(QTabWidget):
         idx = self.currentIndex()
         if not self.tabbed_view:
             self.image_canvases[0].load_images(
-                image_names=self.image_names, idx=pos)
+                image_names=self.image_names, parent=self.parent(), idx=pos)
         else:
             self.image_canvases[idx].load_images(
-                image_names=[name], idx=pos)
+                image_names=[name], parent=self.parent(), idx=pos)
 
     @Slot(bool)
     def set_tabbed_view(self, tabbed_view=False):

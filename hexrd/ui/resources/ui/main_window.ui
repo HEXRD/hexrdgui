@@ -197,6 +197,17 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2"/>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="frame_aggregation_widget">
+   <property name="windowTitle">
+    <string>Frame Aggregation</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>4</number>
+   </attribute>
+   <widget class="QWidget" name="frame_aggregation_widgets">
+    <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+   </widget>
+  </widget>
   <action name="action_tabbed_view">
    <property name="checkable">
     <bool>true</bool>

@@ -49,7 +49,7 @@ class ImageCanvas(FigureCanvas):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def load_images(self, image_names, idx=0):
+    def load_images(self, image_names, parent=None, idx=0):
         # We are not in calibration mode. Remove the iviewer.
         self.iviewer = None
         self.figure.clear()
@@ -63,8 +63,10 @@ class ImageCanvas(FigureCanvas):
 
         for i, name in enumerate(image_names):
             if HexrdConfig().imageseries():
+                parent.parent().action_edit_ims.setEnabled(True)
                 img = HexrdConfig().ims_image(name)[idx]
             else:
+                parent.parent().action_edit_ims.setEnabled(False)
                 img = HexrdConfig().image(name)
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
