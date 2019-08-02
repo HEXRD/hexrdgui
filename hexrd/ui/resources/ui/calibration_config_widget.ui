@@ -469,7 +469,7 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_7">
          <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="cal_det_t_vec_d_1">
+          <widget class="QDoubleSpinBox" name="cal_det_translation_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -498,7 +498,7 @@
           </widget>
          </item>
          <item row="0" column="3">
-          <widget class="QDoubleSpinBox" name="cal_det_t_vec_d_2">
+          <widget class="QDoubleSpinBox" name="cal_det_translation_2">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -517,7 +517,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="cal_det_t_vec_d_0">
+          <widget class="QDoubleSpinBox" name="cal_det_translation_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -546,7 +546,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="cal_det_angles_0">
+          <widget class="QDoubleSpinBox" name="cal_det_tilt_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -565,7 +565,7 @@
           </widget>
          </item>
          <item row="1" column="2">
-          <widget class="QDoubleSpinBox" name="cal_det_angles_1">
+          <widget class="QDoubleSpinBox" name="cal_det_tilt_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -584,7 +584,7 @@
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QDoubleSpinBox" name="cal_det_angles_2">
+          <widget class="QDoubleSpinBox" name="cal_det_tilt_2">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -941,7 +941,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="cal_osc_t_vec_d_0">
+       <widget class="QDoubleSpinBox" name="cal_osc_translation_0">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -960,7 +960,7 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QDoubleSpinBox" name="cal_osc_t_vec_d_2">
+       <widget class="QDoubleSpinBox" name="cal_osc_translation_2">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -979,7 +979,7 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="cal_osc_t_vec_d_1">
+       <widget class="QDoubleSpinBox" name="cal_osc_translation_1">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -1054,16 +1054,16 @@
   <tabstop>cal_det_size_0</tabstop>
   <tabstop>cal_det_size_1</tabstop>
   <tabstop>cal_det_saturation</tabstop>
-  <tabstop>cal_det_t_vec_d_0</tabstop>
-  <tabstop>cal_det_t_vec_d_1</tabstop>
-  <tabstop>cal_det_t_vec_d_2</tabstop>
-  <tabstop>cal_det_angles_0</tabstop>
-  <tabstop>cal_det_angles_1</tabstop>
-  <tabstop>cal_det_angles_2</tabstop>
+  <tabstop>cal_det_translation_0</tabstop>
+  <tabstop>cal_det_translation_1</tabstop>
+  <tabstop>cal_det_translation_2</tabstop>
+  <tabstop>cal_det_tilt_0</tabstop>
+  <tabstop>cal_det_tilt_1</tabstop>
+  <tabstop>cal_det_tilt_2</tabstop>
   <tabstop>cal_osc_chi</tabstop>
-  <tabstop>cal_osc_t_vec_d_0</tabstop>
-  <tabstop>cal_osc_t_vec_d_1</tabstop>
-  <tabstop>cal_osc_t_vec_d_2</tabstop>
+  <tabstop>cal_osc_translation_0</tabstop>
+  <tabstop>cal_osc_translation_1</tabstop>
+  <tabstop>cal_osc_translation_2</tabstop>
  </tabstops>
  <resources/>
  <connections/>

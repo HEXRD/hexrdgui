@@ -45,20 +45,20 @@ detectors:
       ]
     saturation_level: 'cal_det_saturation'
     transform:
-      t_vec_d: [
-        'cal_det_t_vec_d_0',
-        'cal_det_t_vec_d_1',
-        'cal_det_t_vec_d_2'
+      translation: [
+        'cal_det_translation_0',
+        'cal_det_translation_1',
+        'cal_det_translation_2'
       ]
-      tilt_angles: [
-        'cal_det_angles_0',
-        'cal_det_angles_1',
-        'cal_det_angles_2'
+      tilt: [
+        'cal_det_tilt_0',
+        'cal_det_tilt_1',
+        'cal_det_tilt_2'
       ]
 oscillation_stage:
   chi: 'cal_osc_chi'
-  t_vec_s: [
-    'cal_osc_t_vec_d_0',
-    'cal_osc_t_vec_d_1',
-    'cal_osc_t_vec_d_2'
+  translation: [
+    'cal_osc_translation_0',
+    'cal_osc_translation_1',
+    'cal_osc_translation_2'
   ]
