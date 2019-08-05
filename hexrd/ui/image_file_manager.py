@@ -24,6 +24,10 @@ class Singleton(type):
 class ImageFileManager(metaclass=Singleton):
 
     def __init__(self):
+        # Clear any previous images
+        HexrdConfig().images_dict.clear()
+        HexrdConfig().imageseries_dict.clear()
+
         self.remember = True
         self.path = []
 

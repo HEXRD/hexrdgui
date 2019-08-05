@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>211</width>
+    <width>231</width>
     <height>146</height>
    </rect>
   </property>
@@ -25,6 +25,9 @@
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0" colspan="3">
        <widget class="QCheckBox" name="view_stats">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="text">
          <string>View Frame Aggregation</string>
         </property>

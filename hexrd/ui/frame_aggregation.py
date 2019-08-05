@@ -10,6 +10,7 @@ class FrameAggregation:
 
     def __init__(self, parent=None):
         self.parent = parent
+        self.image_tab_widget = self.parent.parent().image_tab_widget
         self.ui = UiLoader().load_file('frame_aggregation.ui', parent)
         self.ims = {}
         self.results = {}

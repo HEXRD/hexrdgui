@@ -141,10 +141,6 @@ class MainWindow(QObject):
         return selected_file
 
     def open_image_files(self):
-        # Clear any previous images
-        HexrdConfig().images_dict.clear()
-        HexrdConfig().imageseries_dict.clear()
-
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
 

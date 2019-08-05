@@ -49,7 +49,7 @@ class ImageCanvas(FigureCanvas):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def load_images(self, image_names, parent=None, idx=0):
+    def load_images(self, image_names, idx=0):
         # We are not in calibration mode. Remove the iviewer.
         self.iviewer = None
         self.figure.clear()
