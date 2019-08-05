@@ -16,6 +16,7 @@ from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.process_ims_dialog import ProcessIMSDialog
+from hexrd.ui.frame_aggregation import FrameAggregation
 
 
 class MainWindow(QObject):
@@ -38,6 +39,10 @@ class MainWindow(QObject):
         self.resolution_editor = ResolutionEditor(self.ui.central_widget)
         self.ui.resolution_dock_widgets.layout().addWidget(
             self.resolution_editor.ui)
+
+        self.frame_aggregation = FrameAggregation(self.ui.central_widget)
+        self.ui.frame_aggregation_widgets.layout().addWidget(
+            self.frame_aggregation.ui)
 
         self.add_materials_panel()
 
@@ -81,6 +86,8 @@ class MainWindow(QObject):
         self.ui.image_view.pressed.connect(self.show_images)
         self.ui.cartesian_view.pressed.connect(self.show_cartesian)
         self.ui.polar_view.pressed.connect(self.show_polar)
+        self.ui.image_tab_widget.new_images_loaded.connect(
+            self.enable_editing_ims)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
@@ -235,6 +242,10 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
+
+    def enable_editing_ims(self):
+        self.ui.action_edit_ims.setEnabled(
+            len(HexrdConfig().imageseries()))
 
     def on_action_edit_ims(self):
         # open dialog

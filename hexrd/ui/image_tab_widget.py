@@ -55,7 +55,8 @@ class ImageTabWidget(QTabWidget):
 
     def load_images_untabbed(self):
         self.clear()
-        self.image_canvases[0].load_images(image_names=self.image_names)
+        self.image_canvases[0].load_images(
+            image_names=self.image_names)
         self.addTab(self.image_canvases[0], '')
 
         self.update_canvas_cmaps()

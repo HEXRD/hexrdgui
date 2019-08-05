@@ -51,8 +51,10 @@ class ColorMapEditor:
     def update_bounds(self):
         bounds = self.image_tab_widget.value_range()
         self.ui.minimum.setMinimum(bounds[0])
+        self.ui.minimum.setValue(bounds[0])
         self.ui.minimum.setToolTip('Min: ' + str(bounds[0]))
         self.ui.maximum.setMaximum(bounds[1])
+        self.ui.maximum.setValue(bounds[1])
         self.ui.maximum.setToolTip('Max: ' + str(bounds[1]))
 
     def update_cmap(self):
