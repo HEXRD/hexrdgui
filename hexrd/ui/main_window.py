@@ -86,6 +86,8 @@ class MainWindow(QObject):
         self.ui.image_view.pressed.connect(self.show_images)
         self.ui.cartesian_view.pressed.connect(self.show_cartesian)
         self.ui.polar_view.pressed.connect(self.show_polar)
+        self.ui.image_tab_widget.new_images_loaded.connect(
+            self.enable_editing_ims)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
@@ -139,6 +141,10 @@ class MainWindow(QObject):
         return selected_file
 
     def open_image_files(self):
+        # Clear any previous images
+        HexrdConfig().images_dict.clear()
+        HexrdConfig().imageseries_dict.clear()
+
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
 
@@ -240,6 +246,10 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
+
+    def enable_editing_ims(self):
+        self.ui.action_edit_ims.setEnabled(
+            len(HexrdConfig().imageseries()))
 
     def on_action_edit_ims(self):
         # open dialog

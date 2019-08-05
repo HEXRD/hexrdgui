@@ -63,10 +63,8 @@ class ImageCanvas(FigureCanvas):
 
         for i, name in enumerate(image_names):
             if HexrdConfig().imageseries():
-                parent.parent().action_edit_ims.setEnabled(True)
                 img = HexrdConfig().ims_image(name)[idx]
             else:
-                parent.parent().action_edit_ims.setEnabled(False)
                 img = HexrdConfig().image(name)
 
             axis = self.figure.add_subplot(rows, cols, i + 1)
