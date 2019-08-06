@@ -296,7 +296,7 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.show_polar()
 
     def start_powder_calibration(self):
-        if not HexrdConfig().images():
+        if not HexrdConfig().images() and not HexrdConfig().imageseries():
             msg = ('No images available for calibration.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
@@ -305,7 +305,21 @@ class MainWindow(QObject):
         if not d.exec_():
             return
 
-        run_powder_calibration()
+        ind = 0
+        ims = HexrdConfig().imageseries()
+        if ims:
+            keys = list(ims.keys())
+            nframes = len(ims[keys[0]])
+            if nframes > 1:
+                # Have the user pick an index for the calibration
+                ind, ok = QInputDialog.getInt(self.ui, 'HEXRD',
+                                              'Select Frame Index', 0, 0,
+                                              nframes - 1)
+                if not ok:
+                    return
+
+
+        run_powder_calibration(ind)
         self.update_config_gui()
         self.update_all()
 

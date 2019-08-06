@@ -262,7 +262,7 @@ class PowderCalibrator(object):
         return np.hstack(resd)
 
 
-def run_powder_calibration():
+def run_powder_calibration(imageseries_ind=None):
 
     # Set up the instrument
     iconfig = HexrdConfig().instrument_config
@@ -283,7 +283,15 @@ def run_powder_calibration():
 
     # Plane data and images
     plane_data = HexrdConfig().active_material.planeData
-    img_dict = HexrdConfig().images()
+
+    if HexrdConfig().imageseries():
+        ims = HexrdConfig().imageseries()
+        keys = list(ims.keys())
+        img_dict = {}
+        for key in keys:
+            img_dict[key] = ims[key][imageseries_ind]
+    else:
+        img_dict = HexrdConfig().images()
 
     # tolerances for patches
     tth_tol = HexrdConfig().config['calibration']['powder']['tth_tol']
