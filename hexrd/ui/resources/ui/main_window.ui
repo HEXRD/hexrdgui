@@ -66,6 +66,7 @@
      <string>Edit</string>
     </property>
     <addaction name="action_edit_ims"/>
+    <addaction name="action_edit_euler_angle_convention"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -305,6 +306,11 @@
   <action name="action_run_powder_calibration">
    <property name="text">
     <string>Powder Calibration</string>
+   </property>
+  </action>
+  <action name="action_edit_euler_angle_convention">
+   <property name="text">
+    <string>Euler Angle Convention</string>
    </property>
   </action>
  </widget>

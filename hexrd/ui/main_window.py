@@ -78,6 +78,8 @@ class MainWindow(QObject):
             self.on_action_save_materials_triggered)
         self.ui.action_edit_ims.triggered.connect(
             self.on_action_edit_ims)
+        self.ui.action_edit_euler_angle_convention.triggered.connect(
+            self.on_action_edit_euler_angle_convention)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_saturation_percentages.toggled.connect(
@@ -253,6 +255,31 @@ class MainWindow(QObject):
     def on_action_edit_ims(self):
         # open dialog
         ProcessIMSDialog(self)
+
+    def on_action_edit_euler_angle_convention(self):
+        allowed_conventions = [
+            'Extrinsic XYZ',
+            'Intrinsic ZXZ'
+        ]
+        current = HexrdConfig().euler_angle_convention
+        ind = 0
+        for i, convention in enumerate(allowed_conventions):
+            is_extrinsic = 'Extrinsic' in convention
+            if current[0].upper() in convention and current[1] == is_extrinsic:
+                ind = i
+                break
+
+        name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
+                                        'Select Euler Angle Convention',
+                                        allowed_conventions, ind, False)
+
+        if not ok:
+            # User canceled...
+            return
+
+        chosen = name.split()[1].lower()
+        extrinsic = 'Extrinsic' in name
+        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
 
     def show_images(self):
         self.ui.image_tab_widget.load_images()

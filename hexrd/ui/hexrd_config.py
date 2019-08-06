@@ -67,6 +67,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = False
         self._show_saturation_level = False
 
+        self.set_euler_angle_convention()
+
         if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
 
@@ -101,6 +103,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('images_dir', self.images_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
+        settings.setValue('euler_angle_convention', self._euler_angle_convention)
 
     def load_settings(self):
         settings = QSettings()
@@ -109,6 +112,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
         self.live_update = bool(settings.value('live_update', False) == 'true')
+        self._euler_angle_convention = settings.value('euler_angle_convention',
+                                                      ('xyz', True))
         if self.config.get('instrument') is not None:
             self.create_internal_config(self.config['instrument'])
 
@@ -636,3 +641,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     show_saturation_level = property(get_show_saturation_level,
                                      set_show_saturation_level)
+
+    def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True):
+        self._euler_angle_convention = (axes_order, extrinsic)
+
+    @property
+    def euler_angle_convention(self):
+        return self._euler_angle_convention

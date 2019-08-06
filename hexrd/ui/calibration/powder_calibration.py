@@ -269,7 +269,8 @@ def run_powder_calibration():
     instr = instrument.HEDMInstrument(instrument_config=iconfig)
 
     # Set up the tilt calibration mapping
-    rme = RotMatEuler(np.zeros(3), 'xyz', extrinsic=True)
+    axes, extrinsic = HexrdConfig().euler_angle_convention
+    rme = RotMatEuler(np.zeros(3), axes, extrinsic)
     instr.tilt_calibration_mapping = rme
 
     flags = HexrdConfig().get_statuses_instrument_format()
