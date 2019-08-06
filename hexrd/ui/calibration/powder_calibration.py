@@ -1,36 +1,14 @@
-import os
-
-import glob
-
-import matplotlib.gridspec as gridspec
-from matplotlib import pyplot as plt
-
 import numpy as np
 
 from scipy.optimize import leastsq, least_squares
-try:
-    import dill as cpl
-except(ImportError):
-    import pickle as cpl
 
-from skimage.exposure import equalize_adapthist, rescale_intensity
-from skimage.morphology import disk, binary_erosion
-
-import yaml
-
-from hexrd import imageseries
 from hexrd import instrument
-from hexrd import material
 from hexrd.matrixutil import findDuplicateVectors
 from hexrd.fitting import fitpeak
-from hexrd.rotations import \
-    angleAxisOfRotMat, \
-    angles_from_rmat_xyz, make_rmat_euler, \
-    RotMatEuler
-from hexrd.transforms.xfcapi import mapAngle
-from hexrd.xrdutil import make_reflection_patches
+from hexrd.rotations import RotMatEuler
 
 from hexrd.ui.hexrd_config import HexrdConfig
+
 
 class InstrumentCalibrator(object):
     def __init__(self, *args):
@@ -282,6 +260,7 @@ class PowderCalibrator(object):
             else:
                 continue
         return np.hstack(resd)
+
 
 def run_powder_calibration():
 
