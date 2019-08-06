@@ -1,0 +1,4 @@
+powder:
+  tth_tol: 0.2
+  eta_tol: 2.0
+  pk_type: 'pvoigt'

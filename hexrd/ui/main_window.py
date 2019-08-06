@@ -14,6 +14,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
+from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.process_ims_dialog import ProcessIMSDialog
@@ -268,6 +269,15 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.show_polar()
 
     def start_powder_calibration(self):
+        if not HexrdConfig().images():
+            msg = ('No images available for calibration.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
+        d = PowderCalibrationDialog(self.ui)
+        if not d.exec_():
+            return
+
         run_powder_calibration()
         self.update_config_gui()
         self.update_all()
