@@ -67,9 +67,16 @@
     </property>
     <addaction name="action_edit_ims"/>
    </widget>
+   <widget class="QMenu" name="menu_run">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="action_run_powder_calibration"/>
+   </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
    <addaction name="menuView"/>
+   <addaction name="menu_run"/>
   </widget>
   <widget class="QStatusBar" name="status_bar"/>
   <widget class="QDockWidget" name="config_dock_widget">
@@ -82,7 +89,7 @@
    <property name="minimumSize">
     <size>
      <width>550</width>
-     <height>260</height>
+     <height>291</height>
     </size>
    </property>
    <property name="windowTitle">
@@ -293,6 +300,11 @@
   <action name="action_save_materials">
    <property name="text">
     <string>Materials</string>
+   </property>
+  </action>
+  <action name="action_run_powder_calibration">
+   <property name="text">
+    <string>Powder Calibration</string>
    </property>
   </action>
  </widget>

@@ -9,6 +9,7 @@ from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_tree_view import CalTreeView
+from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
@@ -86,6 +87,8 @@ class MainWindow(QObject):
         self.ui.image_view.pressed.connect(self.show_images)
         self.ui.cartesian_view.pressed.connect(self.show_cartesian)
         self.ui.polar_view.pressed.connect(self.show_polar)
+        self.ui.action_run_powder_calibration.triggered.connect(
+            self.start_powder_calibration)
         self.ui.image_tab_widget.new_images_loaded.connect(
             self.enable_editing_ims)
 
@@ -263,6 +266,11 @@ class MainWindow(QObject):
         # Automatically make the polar resolution tab the active tab
         self.resolution_editor.ui.tab_widget.setCurrentIndex(1)
         self.ui.image_tab_widget.show_polar()
+
+    def start_powder_calibration(self):
+        run_powder_calibration()
+        self.update_config_gui()
+        self.update_all()
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()

@@ -1,0 +1,12 @@
+instrument: [
+  ['beam', 'energy', 'status'],
+  ['beam', 'vector', 'azimuth', 'status'],
+  ['beam', 'vector', 'polar_angle', 'status'],
+  ['oscillation_stage', 'chi', 'status'],
+  ['oscillation_stage', 'translation', 'status']
+]
+detectors: [
+  ['transform', 'tilt', 'status'],
+  ['transform', 'translation', 'status'],
+  ['distortion', 'parameters', 'status']
+]
