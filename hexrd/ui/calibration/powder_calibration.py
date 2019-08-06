@@ -286,11 +286,9 @@ def run_powder_calibration():
     img_dict = HexrdConfig().images()
 
     # tolerances for patches
-    tth_tol = 0.2
-    eta_tol = 2.
-
-    # pktype = 'gaussian'
-    pktype = 'pvoigt'
+    tth_tol = HexrdConfig().config['calibration']['powder']['tth_tol']
+    eta_tol = HexrdConfig().config['calibration']['powder']['eta_tol']
+    pktype = HexrdConfig().config['calibration']['powder']['pk_type']
 
     # powder calibrator
     pc = PowderCalibrator(instr, plane_data, img_dict,

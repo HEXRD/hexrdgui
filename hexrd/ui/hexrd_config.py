@@ -86,6 +86,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.default_config['instrument'])
             self.create_internal_config(self.config['instrument'])
 
+        if self.config.get('calibration') is None:
+            self.config['calibration'] = copy.deepcopy(
+                self.default_config['calibration'])
+
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
 
@@ -100,6 +104,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def save_settings(self):
         settings = QSettings()
         settings.setValue('config_instrument', self.config['instrument'])
+        settings.setValue('config_calibration', self.config['calibration'])
         settings.setValue('images_dir', self.images_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
@@ -108,6 +113,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_settings(self):
         settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
+        self.config['calibration'] = settings.value('config_calibration', None)
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
@@ -155,6 +161,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                              'default_resolution_config.yml')
         self.default_config['resolution'] = yaml.load(text,
                                                       Loader=yaml.FullLoader)
+
+        text = resource_loader.load_resource(hexrd.ui.resources.calibration,
+                                             'default_calibration_config.yml')
+        self.default_config['calibration'] = yaml.load(text,
+                                                       Loader=yaml.FullLoader)
 
     def image(self, name):
         return self.images_dict.get(name)
