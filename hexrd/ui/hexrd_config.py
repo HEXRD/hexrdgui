@@ -3,6 +3,7 @@ import pickle
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
 
+import numpy as np
 import yaml
 
 import hexrd.imageseries.save
@@ -57,6 +58,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.default_config = {}
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
+        self.calibration_flags_order = {}
         self.working_dir = None
         self.images_dir = None
         self.images_dict = {}
@@ -84,6 +86,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
+
+        # Load calibration flag order
+        self.load_calibration_flags_order()
 
         # Load the default materials
         self.load_default_materials()
@@ -124,6 +129,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
                                              'yaml_to_gui.yml')
         self.gui_yaml_dict = yaml.load(text, Loader=yaml.FullLoader)
+
+    def load_calibration_flags_order(self):
+        text = resource_loader.load_resource(hexrd.ui.resources.calibration,
+                                             'calibration_flags_order.yml')
+        self.calibration_flags_order = yaml.load(text, Loader=yaml.FullLoader)
 
     def load_default_config(self):
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
@@ -226,6 +236,84 @@ class HexrdConfig(QObject, metaclass=Singleton):
                     current[key] = value['value']
                 else:
                     self.remove_status(value, current, key)
+
+    def get_statuses_instrument_format(self):
+        """This gets statuses in the hexrd instrument format"""
+        statuses = []
+
+        iflags_order = self.calibration_flags_order['instrument']
+        dflags_order = self.calibration_flags_order['detectors']
+
+        # Get the instrument flags
+        for path in iflags_order:
+            status = self.get_instrument_config_val(path)
+            # If it is a list, loop through the values
+            if isinstance(status, list):
+                for entry in status:
+                    statuses.append(entry)
+            else:
+                statuses.append(status)
+
+        # Get the detector flags
+        det_names = self.get_detector_names()
+        for name in det_names:
+            for path in dflags_order:
+                full_path = ['detectors', name] + path
+                status = self.get_instrument_config_val(full_path)
+                # If it is a list, loop through the values
+                if isinstance(status, list):
+                    for entry in status:
+                        statuses.append(entry)
+                else:
+                    statuses.append(status)
+
+        # Finally, reverse all booleans. We use "fixed", but they use
+        # "refinable".
+        statuses = [not x for x in statuses]
+        return np.asarray(statuses)
+
+    def set_statuses_from_instrument_format(self, statuses):
+        """This sets statuses using the hexrd instrument format"""
+        # First, make a deep copy, and then reverse all booleans. We
+        # use "fixed", but they use "refinable"
+        statuses = copy.deepcopy(statuses)
+        statuses = [not x for x in statuses]
+
+        cur_ind = 0
+
+        iflags_order = self.calibration_flags_order['instrument']
+        dflags_order = self.calibration_flags_order['detectors']
+
+        # Set the instrument flags
+        for path in iflags_order:
+            prev_val = self.get_instrument_config_val(path)
+            # If it is a list, loop through the values
+            if isinstance(prev_val, list):
+                for i in range(len(prev_val)):
+                    v = statuses[cur_ind]
+                    self.set_instrument_config_val(path + [i], v)
+                    cur_ind += 1
+            else:
+                v = statuses[cur_ind]
+                self.set_instrument_config_val(path, v)
+                cur_ind += 1
+
+        # Set the detector flags
+        det_names = self.get_detector_names()
+        for name in det_names:
+            for path in dflags_order:
+                full_path = ['detectors', name] + path
+                prev_val = self.get_instrument_config_val(full_path)
+                # If it is a list, loop through the values
+                if isinstance(prev_val, list):
+                    for i in range(len(prev_val)):
+                        v = statuses[cur_ind]
+                        self.set_instrument_config_val(full_path + [i], v)
+                        cur_ind += 1
+                else:
+                    v = statuses[cur_ind]
+                    self.set_instrument_config_val(full_path, v)
+                    cur_ind += 1
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables

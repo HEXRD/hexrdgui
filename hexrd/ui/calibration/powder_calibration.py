@@ -293,15 +293,13 @@ def run_powder_calibration():
     rme = RotMatEuler(np.zeros(3), 'xyz', extrinsic=True)
     instr.tilt_calibration_mapping = rme
 
-    # Set up the refinement flags
-    cf = instr.calibration_flags
-    ii = 7
-    for i in range(instr.num_panels):
-        cf[ii + 2] = True
-        cf[ii + 6:ii + 9] = True
-        ii += 12
-        pass
-    instr.calibration_flags = cf
+    flags = HexrdConfig().get_status_instrument_format()
+
+    if len(flags) != len(instr.calibration_flags):
+        msg = 'Length of internal flags does not match instr.calibration_flags'
+        raise Exception(msg)
+
+    instr.calibration_flags = flags
 
     # Plane data and images
     plane_data = HexrdConfig().active_material.planeData
@@ -337,5 +335,11 @@ def run_powder_calibration():
     for det in output_dict['detectors'].keys():
         output_dict['detectors'][det][sl] = iconfig['detectors'][det][sl]
 
+    # Add status values
+    HexrdConfig().add_status(output_dict)
+
     # Update the config
     HexrdConfig().config['instrument'] = output_dict
+
+    # Set the previous statuses to be the current statuses
+    HexrdConfig().set_statuses_from_instrument_format(flags)
