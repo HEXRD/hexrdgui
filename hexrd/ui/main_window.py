@@ -87,7 +87,7 @@ class MainWindow(QObject):
         self.ui.image_view.pressed.connect(self.show_images)
         self.ui.cartesian_view.pressed.connect(self.show_cartesian)
         self.ui.polar_view.pressed.connect(self.show_polar)
-        self.ui.action_run_powder_calibration.pressed.connect(
+        self.ui.action_run_powder_calibration.triggered.connect(
             self.start_powder_calibration)
         self.ui.image_tab_widget.new_images_loaded.connect(
             self.enable_editing_ims)

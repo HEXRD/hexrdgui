@@ -293,7 +293,7 @@ def run_powder_calibration():
     rme = RotMatEuler(np.zeros(3), 'xyz', extrinsic=True)
     instr.tilt_calibration_mapping = rme
 
-    flags = HexrdConfig().get_status_instrument_format()
+    flags = HexrdConfig().get_statuses_instrument_format()
 
     if len(flags) != len(instr.calibration_flags):
         msg = 'Length of internal flags does not match instr.calibration_flags'

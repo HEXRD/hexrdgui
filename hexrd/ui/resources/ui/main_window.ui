@@ -67,9 +67,16 @@
     </property>
     <addaction name="action_edit_ims"/>
    </widget>
+   <widget class="QMenu" name="menu_run">
+    <property name="title">
+     <string>Run</string>
+    </property>
+    <addaction name="action_run_powder_calibration"/>
+   </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
    <addaction name="menuView"/>
+   <addaction name="menu_run"/>
   </widget>
   <widget class="QStatusBar" name="status_bar"/>
   <widget class="QDockWidget" name="config_dock_widget">
@@ -110,7 +117,7 @@
           <x>0</x>
           <y>0</y>
           <width>532</width>
-          <height>595</height>
+          <height>626</height>
          </rect>
         </property>
         <attribute name="label">
@@ -123,7 +130,7 @@
           <x>0</x>
           <y>0</y>
           <width>532</width>
-          <height>595</height>
+          <height>626</height>
          </rect>
         </property>
         <attribute name="label">
@@ -169,13 +176,6 @@
       <widget class="QPushButton" name="polar_view">
        <property name="text">
         <string>Polar View</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="action_run_powder_calibration">
-       <property name="text">
-        <string>Run Powder Calibration</string>
        </property>
       </widget>
      </item>
@@ -300,6 +300,11 @@
   <action name="action_save_materials">
    <property name="text">
     <string>Materials</string>
+   </property>
+  </action>
+  <action name="action_run_powder_calibration">
+   <property name="text">
+    <string>Powder Calibration</string>
    </property>
   </action>
  </widget>
