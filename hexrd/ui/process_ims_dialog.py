@@ -63,11 +63,11 @@ class ProcessIMSDialog(QDialog):
         self.ui.offset.setMinimum(min_frames)
         self.ui.max_total.setMinimum(min_frames)
 
-        self.ui.offset.setMaximum(max_frames-1)
-        self.ui.max_total.setMaximum(max_frames-1)
+        self.ui.offset.setMaximum(max_frames)
+        self.ui.max_total.setMaximum(max_frames)
 
         self.ui.offset.setValue(min_frames)
-        self.ui.max_total.setValue(max_frames-1)
+        self.ui.max_total.setValue(max_frames)
 
         self.frame_list = range(min_frames, max_frames)
 

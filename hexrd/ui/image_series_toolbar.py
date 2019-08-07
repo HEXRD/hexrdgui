@@ -56,6 +56,7 @@ class ImageSeriesToolbar(QWidget):
             self.slider.setMaximum(size)
             self.slider.setMinimumWidth(self.parent().width()/2)
             self.frame.setMaximum(size)
+            self.slider.setValue(0)
         else:
             self.show = False
             self.widget.setVisible(self.show)
