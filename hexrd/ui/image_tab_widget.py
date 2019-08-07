@@ -64,7 +64,7 @@ class ImageTabWidget(QTabWidget):
         self.tabBar().hide()
 
     def load_images(self):
-        self.image_names = list(HexrdConfig().images().keys())
+        self.image_names = list(HexrdConfig().imageseries_dict.keys())
 
         if self.tabbed_view:
             self.load_images_tabbed()
@@ -75,13 +75,14 @@ class ImageTabWidget(QTabWidget):
         self.update_ims_toolbar()
 
     def change_ims_image(self, pos, name):
+        HexrdConfig().current_imageseries_idx = pos
         idx = self.currentIndex()
         if not self.tabbed_view:
             self.image_canvases[0].load_images(
-                image_names=self.image_names, idx=pos)
+                image_names=self.image_names)
         else:
             self.image_canvases[idx].load_images(
-                image_names=[name], idx=pos)
+                image_names=[name])
 
     @Slot(bool)
     def set_tabbed_view(self, tabbed_view=False):

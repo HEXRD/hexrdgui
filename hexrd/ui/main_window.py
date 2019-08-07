@@ -182,9 +182,7 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageFileManager().load_images(detector_names, image_files)
-                # Enable editing once images have been loaded
-                if HexrdConfig().imageseries():
-                    self.ui.action_edit_ims.setEnabled(True)
+                self.ui.action_edit_ims.setEnabled(True)
                 self.ui.image_tab_widget.load_images()
 
     def on_action_open_materials_triggered(self):
@@ -197,14 +195,14 @@ class MainWindow(QObject):
             self.materials_panel.update_gui_from_config()
 
     def on_action_save_imageseries_triggered(self):
-        if not HexrdConfig().imageseries():
+        if not HexrdConfig().has_images():
             msg = ('No ImageSeries available for saving.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        if len(HexrdConfig().imageseries()) > 1:
+        if len(HexrdConfig().imageseries_dict) > 1:
             # Have the user choose an imageseries to save
-            names = list(HexrdConfig().imageseries().keys())
+            names = list(HexrdConfig().imageseries_dict.keys())
             name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
                                             'Select ImageSeries', names, 0,
                                             False)
@@ -212,7 +210,7 @@ class MainWindow(QObject):
                 # User canceled...
                 return
         else:
-            name = list(HexrdConfig().imageseries().keys())[0]
+            name = list(HexrdConfig().imageseries_dict.keys())[0]
 
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save ImageSeries', HexrdConfig().working_dir,
@@ -255,8 +253,7 @@ class MainWindow(QObject):
             return HexrdConfig().save_materials(selected_file)
 
     def enable_editing_ims(self):
-        self.ui.action_edit_ims.setEnabled(
-            len(HexrdConfig().imageseries()))
+        self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
 
     def on_action_edit_ims(self):
         # open dialog
@@ -301,7 +298,7 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.show_polar()
 
     def start_powder_calibration(self):
-        if not HexrdConfig().images():
+        if not HexrdConfig().has_images():
             msg = ('No images available for calibration.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
@@ -339,7 +336,7 @@ class MainWindow(QObject):
 
     def update_all(self):
         # If there are no images loaded, skip the request
-        if not HexrdConfig().images():
+        if not HexrdConfig().has_images():
             return
 
         prev_blocked = self.calibration_config_widget.block_all_signals()

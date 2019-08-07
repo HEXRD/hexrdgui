@@ -1,5 +1,5 @@
-import fabio
 import os
+import tempfile
 import yaml
 
 from PySide2.QtWidgets import QMessageBox
@@ -23,22 +23,21 @@ class Singleton(type):
 
 class ImageFileManager(metaclass=Singleton):
 
+    IMAGE_FILE_EXTS = ['.tiff', '.tif']
+
     def __init__(self):
         # Clear any previous images
-        HexrdConfig().images_dict.clear()
         HexrdConfig().imageseries_dict.clear()
 
         self.remember = True
         self.path = []
 
     def load_images(self, detectors, file_names):
-        HexrdConfig().images_dict.clear()
+        HexrdConfig().imageseries_dict.clear()
         for name, f in zip(detectors, file_names):
             try:
-                img, ims = self.open_file(f)
-                HexrdConfig().images_dict[name] = img
-                if ims is not None:
-                    HexrdConfig().imageseries_dict[name] = ims
+                ims = self.open_file(f)
+                HexrdConfig().imageseries_dict[name] = ims
             except (Exception, IOError) as error:
                 msg = ('ERROR - Could not read file: \n' + str(error))
                 QMessageBox.warning(None, 'HEXRD', msg)
@@ -52,23 +51,36 @@ class ImageFileManager(metaclass=Singleton):
 
     def open_file(self, f):
         ext = os.path.splitext(f)[1]
-        try:
-            if self.is_hdf5(ext):
-                img = imageseries.open(f, 'hdf5',
-                    path=HexrdConfig().hdf5_path[0],
-                    dataname=HexrdConfig().hdf5_path[1])
-            elif ext == '.npz':
-                img = imageseries.open(f, 'frame-cache')
-            elif ext == '.yml':
-                data = yaml.load(open(f))
-                form = next(iter(data))
-                img = imageseries.open(f, form)
-            else:
-                img = imageseries.open(f, 'array')
-            return img[0], img
-        except:
-            img = fabio.open(f).data
-            return img, None
+        if self.is_hdf5(ext):
+            ims = imageseries.open(f, 'hdf5',
+                path=HexrdConfig().hdf5_path[0],
+                dataname=HexrdConfig().hdf5_path[1])
+        elif ext == '.npz':
+            ims = imageseries.open(f, 'frame-cache')
+        elif ext == '.yml':
+            data = yaml.load(open(f))
+            form = next(iter(data))
+            ims = imageseries.open(f, form)
+        elif ext in self.IMAGE_FILE_EXTS:
+            input_dict = {
+                'image-files': {}
+            }
+            input_dict['image-files']['directory'] = os.path.dirname(f)
+            input_dict['image-files']['files'] = os.path.basename(f)
+            input_dict['options'] = {}
+            input_dict['meta'] = {}
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                data = yaml.dump(input_dict).encode('utf-8')
+                temp.write(data)
+                temp.close()
+                ims = imageseries.open(temp.name, 'image-files')
+            finally:
+                # Ensure the file gets removed from the filesystem
+                os.remove(temp.name)
+        else:
+            ims = imageseries.open(f, 'array')
+        return ims
 
     def is_hdf5(self, extension):
         hdf5_extensions = ['.h5', '.hdf5', '.he5']

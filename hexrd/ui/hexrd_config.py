@@ -61,8 +61,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.calibration_flags_order = {}
         self.working_dir = None
         self.images_dir = None
-        self.images_dict = {}
         self.imageseries_dict = {}
+        self.current_imageseries_idx = 0
         self.hdf5_path = []
         self.live_update = False
         self._show_saturation_level = False
@@ -167,17 +167,22 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.default_config['calibration'] = yaml.load(text,
                                                        Loader=yaml.FullLoader)
 
-    def image(self, name):
-        return self.images_dict.get(name)
+    def image(self, name, idx):
+        return self.imageseries(name)[idx]
 
-    def images(self):
-        return self.images_dict
-
-    def ims_image(self, name):
+    def imageseries(self, name):
         return self.imageseries_dict.get(name)
 
-    def imageseries(self):
-        return self.imageseries_dict
+    def has_images(self):
+        return len(self.imageseries_dict) != 0
+
+    def current_images_dict(self):
+        idx = self.current_imageseries_idx
+        ret = {}
+        for key in self.imageseries_dict.keys():
+            ret[key] = self.image(key, idx)
+
+        return ret
 
     def save_imageseries(self, name, write_file, selected_format, **kwargs):
         ims = self.ims_image(name)

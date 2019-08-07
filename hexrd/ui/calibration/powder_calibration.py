@@ -283,7 +283,7 @@ def run_powder_calibration():
 
     # Plane data and images
     plane_data = HexrdConfig().active_material.planeData
-    img_dict = HexrdConfig().images()
+    img_dict = HexrdConfig().current_images_dict()
 
     # tolerances for patches
     tth_tol = HexrdConfig().config['calibration']['powder']['tth_tol']

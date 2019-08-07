@@ -19,7 +19,7 @@ tth_max = 20.
 
 def polar_viewer():
     iconfig = HexrdConfig().instrument_config
-    images_dict = HexrdConfig().images()
+    images_dict = HexrdConfig().current_images_dict()
     plane_data = HexrdConfig().active_material.planeData
 
     return InstrumentViewer(iconfig, images_dict, plane_data)

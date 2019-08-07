@@ -15,9 +15,9 @@ class ProcessIMSDialog(QDialog):
         self.parent = parent
         super(ProcessIMSDialog, self).__init__(parent.ui)
 
-        self.names = list(HexrdConfig().imageseries().keys())
-        self.ims = HexrdConfig().imageseries()
-        self.original_ims = copy.deepcopy(self.ims)
+        self.names = list(HexrdConfig().imageseries_dict.keys())
+        self.ims = HexrdConfig().imageseries_dict
+        self.original_ims = self.ims.copy()
         self.tabs = []
         self.oplists = {}
         self.prev_tab = None

@@ -9,7 +9,7 @@ class ImageSeriesToolbar(QWidget):
     def __init__(self, name, parent=None):
         super(ImageSeriesToolbar, self).__init__(parent)
 
-        self.ims = HexrdConfig().ims_image(name)
+        self.ims = HexrdConfig().imageseries(name)
         self.slider = None
         self.frame = None
         self.layout = None
@@ -56,13 +56,13 @@ class ImageSeriesToolbar(QWidget):
             self.slider.setMaximum(size)
             self.slider.setMinimumWidth(self.parent().width()/2)
             self.frame.setMaximum(size)
-            self.slider.setValue(0)
+            self.slider.setValue(HexrdConfig().current_imageseries_idx)
         else:
             self.show = False
             self.widget.setVisible(self.show)
 
     def update_range(self):
-        self.ims = HexrdConfig().ims_image(self.name)
+        self.ims = HexrdConfig().imageseries(self.name)
         self.set_range()
 
     def set_visible(self, b=False):
