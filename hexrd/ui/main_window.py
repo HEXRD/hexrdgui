@@ -1,13 +1,15 @@
 import os
 
-from PySide2.QtCore import QEvent, QObject, Qt
+from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 
+from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
+from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -28,6 +30,9 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
+
+        self.thread_pool = QThreadPool(self)
+        self.cal_progress_dialog = CalProgressDialog(self.ui)
 
         # Let the left dock widget take up the whole left side
         self.ui.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
@@ -319,7 +324,16 @@ class MainWindow(QObject):
                     return
 
 
-        run_powder_calibration(ind)
+        # Run the calibration in a background thread
+        worker = AsyncWorker(run_powder_calibration, ind)
+        self.thread_pool.start(worker)
+
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_powder_calibration)
+        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        self.cal_progress_dialog.exec_()
+
+    def finish_powder_calibration(self):
         self.update_config_gui()
         self.update_all()
 
