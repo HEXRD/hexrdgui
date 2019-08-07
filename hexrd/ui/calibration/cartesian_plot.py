@@ -8,6 +8,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
+from skimage.exposure import rescale_intensity
 
 from .display_plane import DisplayPlane
 
@@ -119,6 +120,11 @@ class InstrumentViewer:
         """
         IMAGE PLOTTING AND LIMIT CALCULATION
         """
+        if np.issubdtype(warped.dtype, np.floating):
+            # Floating types must be between -1 and 1 for equalize_adapthist
+            # Negative values will not show up in the GUI for some reason
+            warped = rescale_intensity(warped, out_range=(0., 1.))
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
