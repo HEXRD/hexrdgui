@@ -14,7 +14,7 @@ from .display_plane import DisplayPlane
 
 def cartesian_viewer():
     iconfig = HexrdConfig().instrument_config
-    images_dict = HexrdConfig().images()
+    images_dict = HexrdConfig().current_images_dict()
     plane_data = HexrdConfig().active_material.planeData
     pixel_size = HexrdConfig().cartesian_pixel_size
 
