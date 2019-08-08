@@ -1,8 +1,8 @@
 import numpy as np
 import warnings
 
-from hexrd.gridutil import cellIndices
 from hexrd import instrument
+from hexrd.gridutil import cellIndices
 
 from hexrd.ui.hexrd_config import HexrdConfig
 
@@ -19,7 +19,9 @@ def cartesian_viewer():
     plane_data = HexrdConfig().active_material.planeData
     pixel_size = HexrdConfig().cartesian_pixel_size
 
-    instr = instrument.HEDMInstrument(instrument_config=iconfig)
+    rme = HexrdConfig().rotation_matrix_euler()
+    instr = instrument.HEDMInstrument(instrument_config=iconfig,
+                                      tilt_calibration_mapping=rme)
 
     # Make sure each key in the image dict is in the panel_ids
     if images_dict.keys() != instr._detectors.keys():

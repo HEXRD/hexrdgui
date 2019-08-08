@@ -31,7 +31,9 @@ def log_scale_img(img):
 
 
 def load_instrument(config):
-    return instrument.HEDMInstrument(instrument_config=config)
+    rme = HexrdConfig().rotation_matrix_euler()
+    return instrument.HEDMInstrument(instrument_config=config,
+                                     tilt_calibration_mapping=rme)
 
 
 class InstrumentViewer:
