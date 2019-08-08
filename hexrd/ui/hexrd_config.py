@@ -7,6 +7,7 @@ import numpy as np
 import yaml
 
 import hexrd.imageseries.save
+from hexrd.rotations import RotMatEuler
 
 from hexrd.ui import constants
 from hexrd.ui import resource_loader
@@ -67,7 +68,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = False
         self._show_saturation_level = False
 
-        self.set_euler_angle_convention()
+        self._euler_angle_convention = ('xyz', True)
 
         if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
@@ -436,6 +437,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
                     # Replace detector_name with the detector name
                     path[path.index('detector_name')] = detector
 
+                    if self.rotation_matrix_euler() is not None:
+                        tilt_path = ['transform', 'tilt', 'value']
+                        if path[2:-1] == tilt_path:
+                            # This will be in degrees. Convert to radians.
+                            value = np.radians(value)
+
                 self.set_instrument_config_val(path, value)
                 return
 
@@ -659,8 +666,21 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                      set_show_saturation_level)
 
     def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True):
-        self._euler_angle_convention = (axes_order, extrinsic)
+        # First, convert all the tilt angles
+        old_conv = self._euler_angle_convention
+        new_conv = (axes_order, extrinsic)
+        utils.convert_tilt_convention(self.config['instrument'], old_conv,
+                                      new_conv)
+        # Next, set the variable
+        self._euler_angle_convention = new_conv
 
     @property
     def euler_angle_convention(self):
         return self._euler_angle_convention
+
+    def rotation_matrix_euler(self):
+        axes, extrinsic = self.euler_angle_convention
+        if axes is None or extrinsic is None:
+            return None
+
+        return RotMatEuler(np.zeros(3), axes, extrinsic)

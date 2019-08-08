@@ -268,16 +268,18 @@ class MainWindow(QObject):
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
+            'None',
             'Extrinsic XYZ',
             'Intrinsic ZXZ'
         ]
         current = HexrdConfig().euler_angle_convention
         ind = 0
-        for i, convention in enumerate(allowed_conventions):
-            is_extrinsic = 'Extrinsic' in convention
-            if current[0].upper() in convention and current[1] == is_extrinsic:
-                ind = i
-                break
+        if current[0] is not None and current[1] is not None:
+            for i, convention in enumerate(allowed_conventions):
+                is_extr = 'Extrinsic' in convention
+                if current[0].upper() in convention and current[1] == is_extr:
+                    ind = i
+                    break
 
         name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
                                         'Select Euler Angle Convention',
@@ -287,9 +289,20 @@ class MainWindow(QObject):
             # User canceled...
             return
 
-        chosen = name.split()[1].lower()
-        extrinsic = 'Extrinsic' in name
-        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
+        if name == 'None':
+            chosen = None
+            extrinsic = None
+        else:
+            chosen = name.split()[1].lower()
+            extrinsic = 'Extrinsic' in name
+
+        msg = 'Update current tilt angles?'
+        if QMessageBox.question(self.ui, 'HEXRD', msg):
+            HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
+        else:
+            HexrdConfig()._euler_angle_convention = (chosen, extrinsic)
+
+        self.update_config_gui()
 
     def show_images(self):
         self.ui.image_tab_widget.load_images()

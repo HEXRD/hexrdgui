@@ -3,6 +3,8 @@ from PySide2.QtWidgets import (
     QAbstractSpinBox, QComboBox, QLineEdit, QPushButton
 )
 
+import numpy as np
+
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -186,12 +188,22 @@ class CalibrationConfigWidget(QObject):
             gui_yaml_paths = self.cfg.get_gui_yaml_paths(['detectors',
                                                           'detector_name'])
 
+            tilt_path = ['transform', 'tilt', 'value']
             for var, path in gui_yaml_paths:
                 gui_var = getattr(self.ui, var)
                 full_path = ['detectors', cur_detector] + path
                 config_val = self.cfg.get_instrument_config_val(full_path)
                 full_path[full_path.index('value')] = 'status'
                 status_val = self.cfg.get_instrument_config_val(full_path)
+
+                if path[:-1] == tilt_path:
+                    # Special treatment for tilt widgets
+                    if HexrdConfig().rotation_matrix_euler() is None:
+                        gui_var.setSuffix('')
+                    else:
+                        gui_var.setSuffix('°')
+                        config_val = np.degrees(config_val)
+
                 self._set_gui_value(gui_var, config_val, status_val)
 
             combo_items = []
