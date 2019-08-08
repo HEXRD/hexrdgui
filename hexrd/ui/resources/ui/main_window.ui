@@ -66,6 +66,7 @@
      <string>Edit</string>
     </property>
     <addaction name="action_edit_ims"/>
+    <addaction name="action_edit_angles"/>
     <addaction name="action_edit_euler_angle_convention"/>
    </widget>
    <widget class="QMenu" name="menu_run">
@@ -313,6 +314,14 @@
     <string>Euler Angle Convention</string>
    </property>
   </action>
+  <action name="action_edit_angles">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Edit Angles</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -323,6 +332,7 @@
    <slots>
     <slot>open_files()</slot>
     <slot>set_tabbed_view(bool)</slot>
+    <slot>show_nav_toolbar(bool)</slot>
     <slot>show_toolbar(bool)</slot>
    </slots>
   </customwidget>

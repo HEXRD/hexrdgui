@@ -21,6 +21,7 @@ from hexrd.ui.resolution_editor import ResolutionEditor
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.process_ims_dialog import ProcessIMSDialog
 from hexrd.ui.frame_aggregation import FrameAggregation
+from hexrd.ui.wedge_editor import WedgeEditor
 
 
 class MainWindow(QObject):
@@ -84,6 +85,8 @@ class MainWindow(QObject):
             self.on_action_save_materials_triggered)
         self.ui.action_edit_ims.triggered.connect(
             self.on_action_edit_ims)
+        self.ui.action_edit_angles.triggered.connect(
+            self.on_action_edit_angles)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
         self.ui.action_show_live_updates.toggled.connect(
@@ -183,6 +186,7 @@ class MainWindow(QObject):
                 detector_names, image_files = dialog.results()
                 ImageFileManager().load_images(detector_names, image_files)
                 self.ui.action_edit_ims.setEnabled(True)
+                self.ui.action_edit_angles.setEnabled(True)
                 self.ui.image_tab_widget.load_images()
 
     def on_action_open_materials_triggered(self):
@@ -258,6 +262,9 @@ class MainWindow(QObject):
     def on_action_edit_ims(self):
         # open dialog
         ProcessIMSDialog(self)
+
+    def on_action_edit_angles(self):
+        WedgeEditor(self.ui)
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
