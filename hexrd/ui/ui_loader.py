@@ -5,6 +5,7 @@ from hexrd.ui import resource_loader
 
 from .image_canvas import ImageCanvas
 from .image_tab_widget import ImageTabWidget
+from .scientificspinbox import ScientificDoubleSpinBox
 
 import hexrd.ui.resources.ui
 
@@ -15,6 +16,7 @@ class UiLoader(QUiLoader):
 
         self.registerCustomWidget(ImageCanvas)
         self.registerCustomWidget(ImageTabWidget)
+        self.registerCustomWidget(ScientificDoubleSpinBox)
 
     def load_file(self, file_name, parent=None):
         """Load a UI file and return the widget
