@@ -80,6 +80,9 @@ class InstrumentViewer:
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = self.plane_data.getMergedRanges()
+            if selected_rings:
+                ranges = [ranges[i] for i in selected_rings]
+
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]
             l_angs, l_xyz = self.dpanel.make_powder_rings(
