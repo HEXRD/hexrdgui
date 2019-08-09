@@ -1,5 +1,7 @@
-# Wavelength to kilo electron volt conversion
-WAVELENGTH_TO_KEV = 12.398425
-KEV_TO_WAVELENGTH = 12.398425
+from hexrd import constants
 
-DEFAULT_CMAP = 'viridis'
+# Wavelength to kilo electron volt conversion
+WAVELENGTH_TO_KEV = constants.keVToAngstrom(1.)
+KEV_TO_WAVELENGTH = constants.keVToAngstrom(1.)
+
+DEFAULT_CMAP = 'plasma'
