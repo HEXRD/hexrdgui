@@ -13,9 +13,6 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 snip_width = 9
 
-tth_min = 1.
-tth_max = 20.
-
 
 def polar_viewer():
     iconfig = HexrdConfig().instrument_config
@@ -82,6 +79,9 @@ class InstrumentViewer:
     # ========== Drawing
     def draw_polar(self, snip_width=snip_width):
         """show polar view of rings"""
+        tth_min = HexrdConfig().polar_res_tth_min
+        tth_max = HexrdConfig().polar_res_tth_max
+
         pv = PolarView([tth_min, tth_max], self.instr,
                        eta_min=-180., eta_max=180.,
                        pixel_size=self.pv_pixel_size)

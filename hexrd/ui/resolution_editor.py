@@ -15,7 +15,9 @@ class ResolutionEditor:
         widgets = [
             self.ui.cartesian_pixel_size,
             self.ui.polar_pixel_size_tth,
-            self.ui.polar_pixel_size_eta
+            self.ui.polar_pixel_size_eta,
+            self.ui.polar_res_tth_min,
+            self.ui.polar_res_tth_max
         ]
 
         return widgets
@@ -40,6 +42,10 @@ class ResolutionEditor:
                 HexrdConfig().polar_pixel_size_tth)
             self.ui.polar_pixel_size_eta.setValue(
                 HexrdConfig().polar_pixel_size_eta)
+            self.ui.polar_res_tth_min.setValue(
+                HexrdConfig().polar_res_tth_min)
+            self.ui.polar_res_tth_max.setValue(
+                HexrdConfig().polar_res_tth_max)
         finally:
             self.unblock_widgets(block_list)
 
@@ -50,3 +56,7 @@ class ResolutionEditor:
             HexrdConfig()._set_polar_pixel_size_tth)
         self.ui.polar_pixel_size_eta.valueChanged.connect(
             HexrdConfig()._set_polar_pixel_size_eta)
+        self.ui.polar_res_tth_min.valueChanged.connect(
+            HexrdConfig().set_polar_res_tth_min)
+        self.ui.polar_res_tth_max.valueChanged.connect(
+            HexrdConfig().set_polar_res_tth_max)
