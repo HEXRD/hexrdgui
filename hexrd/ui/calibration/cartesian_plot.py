@@ -52,6 +52,8 @@ class InstrumentViewer:
 
     def clear_rings(self):
         self.ring_data = []
+        self.rbnd_data = []
+        self.rbnd_indices = []
 
     def add_rings(self):
         self.clear_rings()
@@ -60,20 +62,37 @@ class InstrumentViewer:
             return self.ring_data
 
         selected_rings = HexrdConfig().selected_rings
+        delta_tth = np.degrees(self.plane_data.tThWidth)
         if selected_rings:
             # We should only get specific values
             tth = self.plane_data.getTTh()
             tth = [tth[i] for i in selected_rings]
-            delta_tth = np.degrees(self.plane_data.tThWidth)
 
             ring_angs, ring_xys = self.dpanel.make_powder_rings(
                 tth, delta_tth=delta_tth, delta_eta=1)
+
         else:
             ring_angs, ring_xys = self.dpanel.make_powder_rings(
                 self.plane_data, delta_eta=1)
 
         for ring in ring_xys:
             self.ring_data.append(self.dpanel.cartToPixel(ring))
+
+        if HexrdConfig().show_ring_ranges:
+            indices, ranges = self.plane_data.getMergedRanges()
+            r_lower = [r[0] for r in ranges]
+            r_upper = [r[1] for r in ranges]
+            l_angs, l_xyz = self.dpanel.make_powder_rings(
+                r_lower, delta_tth=delta_tth, delta_eta=1)
+            u_angs, u_xyz = self.dpanel.make_powder_rings(
+                r_upper, delta_tth=delta_tth, delta_eta=1)
+            for l, u in zip(l_xyz, u_xyz):
+                self.rbnd_data.append(self.dpanel.cartToPixel(l))
+                self.rbnd_data.append(self.dpanel.cartToPixel(u))
+            self.rbnd_indices = []
+            for ind in indices:
+                self.rbnd_indices.append(ind)
+                self.rbnd_indices.append(ind)
 
         return self.ring_data
 
