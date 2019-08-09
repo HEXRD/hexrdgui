@@ -2,8 +2,7 @@ import os
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool
 from PySide2.QtWidgets import (
-    QAbstractItemView, QApplication, QFileDialog, QInputDialog, QMainWindow,
-    QMessageBox, QTreeView, QListView
+    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -195,43 +194,21 @@ class MainWindow(QObject):
     def open_aps_imageseries(self):
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
-
-        dialog = QFileDialog(self.ui)
-        dialog.setDirectory(images_dir)
-        dialog.setOption(QFileDialog.DontUseNativeDialog)
-        dialog.setFileMode(QFileDialog.Directory)
-        l = dialog.findChild(QListView, 'listView')
-        if l:
-            l.setSelectionMode(QAbstractItemView.MultiSelection)
-        t = dialog.findChild(QTreeView)
-        if t:
-            t.setSelectionMode(QAbstractItemView.MultiSelection)
-
-        if not dialog.exec_():
-            return
-
-        selected_dirs = dialog.selectedFiles()
-
-        if selected_dirs:
-            # Save the chosen dir
-            HexrdConfig().set_images_dir(selected_dirs[0])
-
-            # Make sure the number of files and number of detectors match
-            num_detectors = len(HexrdConfig().get_detector_names())
-            if len(selected_dirs) != num_detectors:
-                msg = ('Number of files must match number of detectors: ' +
-                       str(num_detectors))
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
+        detector_names = HexrdConfig().get_detector_names()
+        selected_dirs = []
+        for name in detector_names:
+            caption = 'Select directory for detector: ' + name
+            d = QFileDialog.getExistingDirectory(self.ui, caption, dir=images_dir)
+            if not d:
                 return
 
-            dialog = LoadImagesDialog(selected_dirs, self.ui)
+            selected_dirs.append(d)
+            images_dir = os.path.dirname(d)
 
-            if dialog.exec_():
-                detector_names, image_files = dialog.results()
-                ImageFileManager().load_aps_imageseries(detector_names, image_files)
-                self.ui.action_edit_ims.setEnabled(True)
-                self.ui.action_edit_angles.setEnabled(True)
-                self.ui.image_tab_widget.load_images()
+        ImageFileManager().load_aps_imageseries(detector_names, selected_dirs)
+        self.ui.action_edit_ims.setEnabled(True)
+        self.ui.action_edit_angles.setEnabled(True)
+        self.ui.image_tab_widget.load_images()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
