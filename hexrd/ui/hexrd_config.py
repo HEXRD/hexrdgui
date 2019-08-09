@@ -100,6 +100,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Load the default materials
         self.load_default_materials()
 
+        self.update_plane_data_tth_width()
         self.update_active_material_energy()
 
     def save_settings(self):
@@ -561,6 +562,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                             str(self.materials))
 
         self.config['materials']['active_material'] = name
+        self.update_plane_data_tth_width()
         self.update_active_material_energy()
         self.ring_config_changed.emit()
 
@@ -588,8 +590,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         mat.beamEnergy = energy
         utils.make_new_pdata(mat)
 
+        self.update_plane_data_tth_width()
+
         self.new_plane_data.emit()
         self.ring_config_changed.emit()
+
+    def update_plane_data_tth_width(self):
+        mat = self.active_material
+        mat.planeData.tThWidth = np.radians(self.ring_ranges)
 
     def _selected_rings(self):
         return self.config['materials'].get('selected_rings')
@@ -623,6 +631,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_ring_ranges(self, r):
         self.config['materials']['ring_ranges'] = r
+        self.update_plane_data_tth_width()
         self.ring_config_changed.emit()
 
     ring_ranges = property(_ring_ranges, _set_ring_ranges)
