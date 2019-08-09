@@ -49,6 +49,17 @@ class ImageFileManager(metaclass=Singleton):
         else:
             HexrdConfig().hdf5_path = self.path
 
+    def load_aps_imageseries(self, detectors, directory_names):
+        HexrdConfig().imageseries_dict.clear()
+        for name, d in zip(detectors, directory_names):
+            try:
+                ims = self.open_directory(d)
+                HexrdConfig().imageseries_dict[name] = ims
+            except (Exception, IOError) as error:
+                msg = ('ERROR - Could not read file: \n' + str(error))
+                QMessageBox.warning(None, 'HEXRD', msg)
+                return
+
     def open_file(self, f):
         ext = os.path.splitext(f)[1]
         if self.is_hdf5(ext):
@@ -82,6 +93,33 @@ class ImageFileManager(metaclass=Singleton):
         # else:
         #     ims = imageseries.open(f, 'array')
         return ims
+
+    def open_directory(self, d):
+        files = os.listdir(d)
+        input_dict = {
+            'image-files': {}
+        }
+        input_dict['image-files']['directory'] = d
+        file_str = ''
+        for i, f in enumerate(files):
+            file_str += os.path.basename(f)
+            if i != len(files) - 1:
+                file_str += ' '
+
+        input_dict['image-files']['files'] = file_str
+        input_dict['options'] = {}
+        input_dict['meta'] = {}
+        temp = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            data = yaml.dump(input_dict).encode('utf-8')
+            temp.write(data)
+            temp.close()
+            ims = imageseries.open(temp.name, 'image-files')
+        finally:
+            # Ensure the file gets removed from the filesystem
+            os.remove(temp.name)
+        return ims
+
 
     def is_hdf5(self, extension):
         hdf5_extensions = ['.h5', '.hdf5', '.he5']

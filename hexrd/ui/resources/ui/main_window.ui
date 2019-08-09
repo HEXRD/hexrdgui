@@ -40,6 +40,7 @@
      <addaction name="action_open_images"/>
      <addaction name="action_open_config"/>
      <addaction name="action_open_materials"/>
+     <addaction name="action_open_aps_imageseries"/>
     </widget>
     <widget class="QMenu" name="menu_save">
      <property name="title">
@@ -320,6 +321,11 @@
    </property>
    <property name="text">
     <string>Edit Angles</string>
+   </property>
+  </action>
+  <action name="action_open_aps_imageseries">
+   <property name="text">
+    <string>APS ImageSeries</string>
    </property>
   </action>
  </widget>
