@@ -7,7 +7,7 @@ install_reqs = [
     'Pillow',
     'matplotlib',
     'importlib-resources',
-    'fabio',
+    'fabio@git+https://github.com/joelvbernier/fabio.git@master',
     'pyyaml',
     'hexrd'
 ]
