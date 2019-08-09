@@ -597,7 +597,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def update_plane_data_tth_width(self):
         mat = self.active_material
-        mat.planeData.tThWidth = self.ring_ranges
+        mat.planeData.tThWidth = np.radians(self.ring_ranges)
 
     def _selected_rings(self):
         return self.config['materials'].get('selected_rings')
