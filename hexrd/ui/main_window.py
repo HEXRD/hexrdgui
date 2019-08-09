@@ -2,7 +2,8 @@ import os
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool
 from PySide2.QtWidgets import (
-    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
+    QAbstractItemView, QApplication, QFileDialog, QInputDialog, QMainWindow,
+    QMessageBox, QTreeView, QListView
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -195,8 +196,21 @@ class MainWindow(QObject):
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
 
-        selected_dirs, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, dir=images_dir)
+        dialog = QFileDialog(self.ui)
+        dialog.setDirectory(images_dir)
+        dialog.setOption(QFileDialog.DontUseNativeDialog)
+        dialog.setFileMode(QFileDialog.Directory)
+        l = dialog.findChild(QListView, 'listView')
+        if l:
+            l.setSelectionMode(QAbstractItemView.MultiSelection)
+        t = dialog.findChild(QTreeView)
+        if t:
+            t.setSelectionMode(QAbstractItemView.MultiSelection)
+
+        if not dialog.exec_():
+            return
+
+        selected_dirs = dialog.selectedFiles()
 
         if selected_dirs:
             # Save the chosen dir

@@ -99,11 +99,11 @@ class ImageFileManager(metaclass=Singleton):
         input_dict = {
             'image-files': {}
         }
-        input_dict['image-files']['directory'] = os.path.dirname(f)
+        input_dict['image-files']['directory'] = d
         file_str = ''
         for i, f in enumerate(files):
             file_str += os.path.basename(f)
-            if i != len(files - 1):
+            if i != len(files) - 1:
                 file_str += ' '
 
         input_dict['image-files']['files'] = file_str
