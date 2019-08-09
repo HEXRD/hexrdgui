@@ -1065,6 +1065,14 @@
   <tabstop>cal_osc_translation_1</tabstop>
   <tabstop>cal_osc_translation_2</tabstop>
  </tabstops>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.py</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
