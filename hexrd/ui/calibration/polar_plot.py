@@ -100,6 +100,7 @@ class InstrumentViewer:
     def clear_rings(self):
         self.ring_data = []
         self.rbnd_data = []
+        self.rbnd_indices = []
 
     def add_rings(self):
         self.clear_rings()
@@ -128,15 +129,16 @@ class InstrumentViewer:
             self.ring_data.append(np.array([[-180, tth], [180, tth]]))
 
         if HexrdConfig().show_ring_ranges:
-            tthw = HexrdConfig().ring_ranges
-            if tthw is None:
-                tthw = 0.5*np.degrees(self.plane_data.tThWidth)
+            indices, ranges = self.plane_data.getMergedRanges()
 
-            for tth in np.degrees(tth_list):
-                self.rbnd_data.append(np.array([[-180, tth - tthw],
-                                                [180, tth - tthw]]))
-                self.rbnd_data.append(np.array([[-180, tth + tthw],
-                                                [180, tth + tthw]]))
+            for ind, r in zip(indices, np.degrees(ranges)):
+                self.rbnd_data.append(np.array([[-180, r[0]],
+                                                [180, r[0]]]))
+                self.rbnd_data.append(np.array([[-180, r[1]],
+                                                [180, r[1]]]))
+                # Append twice since we append to rbnd_data twice
+                self.rbnd_indices.append(ind)
+                self.rbnd_indices.append(ind)
 
         return self.ring_data
 
