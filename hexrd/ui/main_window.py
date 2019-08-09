@@ -105,6 +105,8 @@ class MainWindow(QObject):
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
+        self.ui.action_open_aps_imageseries.triggered.connect(
+            self.open_aps_imageseries)
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -185,6 +187,34 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageFileManager().load_images(detector_names, image_files)
+                self.ui.action_edit_ims.setEnabled(True)
+                self.ui.action_edit_angles.setEnabled(True)
+                self.ui.image_tab_widget.load_images()
+
+    def open_aps_imageseries(self):
+        # Get the most recent images dir
+        images_dir = HexrdConfig().images_dir
+
+        selected_dirs, selected_filter = QFileDialog.getOpenFileNames(
+            self.ui, dir=images_dir)
+
+        if selected_dirs:
+            # Save the chosen dir
+            HexrdConfig().set_images_dir(selected_dirs[0])
+
+            # Make sure the number of files and number of detectors match
+            num_detectors = len(HexrdConfig().get_detector_names())
+            if len(selected_dirs) != num_detectors:
+                msg = ('Number of files must match number of detectors: ' +
+                       str(num_detectors))
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
+                return
+
+            dialog = LoadImagesDialog(selected_dirs, self.ui)
+
+            if dialog.exec_():
+                detector_names, image_files = dialog.results()
+                ImageFileManager().load_aps_imageseries(detector_names, image_files)
                 self.ui.action_edit_ims.setEnabled(True)
                 self.ui.action_edit_angles.setEnabled(True)
                 self.ui.image_tab_widget.load_images()
