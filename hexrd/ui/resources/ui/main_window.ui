@@ -197,7 +197,7 @@
   </widget>
   <widget class="QDockWidget" name="resolution_dock_widget">
    <property name="windowTitle">
-    <string>Calibration Resolution</string>
+    <string>Rendering Resolution</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
