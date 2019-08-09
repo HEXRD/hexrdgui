@@ -85,13 +85,6 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
-       <widget class="QCheckBox" name="log_scale">
-        <property name="text">
-         <string>log scale</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="2">
        <widget class="QLabel" name="label_3">
         <property name="text">
@@ -111,6 +104,9 @@
       </item>
       <item row="1" column="1">
        <widget class="QSpinBox" name="minimum">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="maximum">
          <number>100000</number>
         </property>
@@ -131,6 +127,9 @@
       </item>
       <item row="1" column="3">
        <widget class="QSpinBox" name="maximum">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="maximum">
          <number>100000</number>
         </property>
@@ -165,6 +164,23 @@
         </property>
        </spacer>
       </item>
+      <item row="2" column="4">
+       <widget class="QCheckBox" name="log_scale">
+        <property name="text">
+         <string>log scale</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QPushButton" name="reset_range">
+        <property name="toolTip">
+         <string>Reset the range to the boundary values of the images</string>
+        </property>
+        <property name="text">
+         <string>Reset Range</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -175,9 +191,10 @@
   <tabstop>reverse</tabstop>
   <tabstop>minimum</tabstop>
   <tabstop>maximum</tabstop>
-  <tabstop>log_scale</tabstop>
+  <tabstop>reset_range</tabstop>
   <tabstop>show_under</tabstop>
   <tabstop>show_over</tabstop>
+  <tabstop>log_scale</tabstop>
  </tabstops>
  <resources/>
  <connections/>

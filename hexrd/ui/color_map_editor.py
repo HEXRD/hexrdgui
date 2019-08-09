@@ -15,6 +15,8 @@ class ColorMapEditor:
         loader = UiLoader()
         self.ui = loader.load_file('color_map_editor.ui', parent)
 
+        self.bounds = (0, 16384)
+
         self.load_cmaps()
 
         self.setup_connections()
@@ -37,6 +39,7 @@ class ColorMapEditor:
 
         self.ui.maximum.valueChanged.connect(self.update_norm)
         self.ui.minimum.valueChanged.connect(self.update_norm)
+        self.ui.reset_range.pressed.connect(self.reset_range)
         self.ui.log_scale.toggled.connect(self.update_norm)
 
         self.image_tab_widget.new_images_loaded.connect(self.update_bounds)
@@ -50,12 +53,16 @@ class ColorMapEditor:
 
     def update_bounds(self):
         bounds = self.image_tab_widget.value_range()
-        self.ui.minimum.setMinimum(bounds[0])
         self.ui.minimum.setValue(bounds[0])
         self.ui.minimum.setToolTip('Min: ' + str(bounds[0]))
-        self.ui.maximum.setMaximum(bounds[1])
         self.ui.maximum.setValue(bounds[1])
         self.ui.maximum.setToolTip('Max: ' + str(bounds[1]))
+
+        self.bounds = bounds
+
+    def reset_range(self):
+        self.ui.minimum.setValue(self.bounds[0])
+        self.ui.maximum.setValue(self.bounds[1])
 
     def update_cmap(self):
         # Get the Colormap object from the name
