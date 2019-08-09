@@ -105,8 +105,12 @@ class ImageCanvas(FigureCanvas):
 
         if self.iviewer.type == 'polar':
             # Add the rbnds too
-            for pr in self.iviewer.rbnd_data:
-                rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], 'm:', ms=1)
+            for ind, pr in zip(self.iviewer.rbnd_indices,
+                               self.iviewer.rbnd_data):
+                color = 'm:'
+                if len(ind) > 1:
+                    color = 'r:'
+                rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=2)
                 self.cached_rbnds.append(rbnd)
 
         self.figure.tight_layout()
