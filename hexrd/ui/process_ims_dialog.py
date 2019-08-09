@@ -125,7 +125,7 @@ class ProcessIMSDialog(QDialog):
                     self.oplists[name] = [['flip', key]]
 
     def create_dark(self):
-        if not self.dark_img:
+        if self.dark_img is None:
             return
 
         name = self.prev_tab
