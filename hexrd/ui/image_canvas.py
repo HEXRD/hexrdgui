@@ -109,7 +109,7 @@ class ImageCanvas(FigureCanvas):
             color = 'm:'
             if len(ind) > 1:
                 color = 'r:'
-            rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=2)
+            rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=1)
             self.cached_rbnds.append(rbnd)
 
         self.figure.tight_layout()
