@@ -61,7 +61,8 @@ class ImageFileManager(metaclass=Singleton):
             data = yaml.load(open(f))
             form = next(iter(data))
             ims = imageseries.open(f, form)
-        elif ext in self.IMAGE_FILE_EXTS:
+        else:
+            # elif ext in self.IMAGE_FILE_EXTS:
             input_dict = {
                 'image-files': {}
             }
@@ -78,8 +79,8 @@ class ImageFileManager(metaclass=Singleton):
             finally:
                 # Ensure the file gets removed from the filesystem
                 os.remove(temp.name)
-        else:
-            ims = imageseries.open(f, 'array')
+        # else:
+        #     ims = imageseries.open(f, 'array')
         return ims
 
     def is_hdf5(self, extension):
