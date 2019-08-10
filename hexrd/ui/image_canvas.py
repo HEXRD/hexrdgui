@@ -32,6 +32,7 @@ class ImageCanvas(FigureCanvas):
         # The presence of an iviewer indicates we are currently viewing
         # a calibration.
         self.iviewer = None
+        self.azimuthal_integral_axis = None
 
         # Set up our async stuff
         self.thread_pool = QThreadPool(parent)
@@ -51,11 +52,15 @@ class ImageCanvas(FigureCanvas):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def load_images(self, image_names):
-        # We are not in calibration mode. Remove the iviewer.
+    def clear(self):
         self.iviewer = None
         self.figure.clear()
         self.axes_images.clear()
+        self.clear_rings()
+        self.azimuthal_integral_axis = None
+
+    def load_images(self, image_names):
+        self.clear()
 
         cols = 1
         if len(image_names) > 1:
@@ -113,6 +118,22 @@ class ImageCanvas(FigureCanvas):
                 color = 'r:'
             rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=1)
             self.cached_rbnds.append(rbnd)
+
+        if self.azimuthal_integral_axis is not None:
+            axis = self.azimuthal_integral_axis
+            yrange = axis.get_ylim()
+            for pr in ring_data:
+                ring, = axis.plot(pr[:, 1], yrange, colorspec, ms=2)
+                self.cached_rings.append(ring)
+
+            # Add the rbnds too
+            for ind, pr in zip(self.iviewer.rbnd_indices,
+                               self.iviewer.rbnd_data):
+                color = 'g:'
+                if len(ind) > 1:
+                    color = 'r:'
+                rbnd, = axis.plot(pr[:, 1], yrange, color, ms=1)
+                self.cached_rbnds.append(rbnd)
 
         self.draw()
 
@@ -190,8 +211,7 @@ class ImageCanvas(FigureCanvas):
         self.redraw_rings()
 
     def show_polar(self):
-        self.figure.clear()
-        self.axes_images.clear()
+        self.clear()
 
         # Run the calibration in a background thread
         worker = AsyncWorker(polar_viewer)
@@ -207,18 +227,46 @@ class ImageCanvas(FigureCanvas):
         img = self.iviewer.img
         extent = self.iviewer._extent
 
-        self.axis = self.figure.add_subplot(111)
-        self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                 norm=self.norm, picker=True,
-                                                 interpolation='none'))
+        # TODO: maybe make this an option in the UI? Perhaps a checkbox
+        # in the "View" menu?
+        # if HexrdConfig().polar_show_azimuthal_integral
+        if True:
+            # The top image will have 2x the height of the bottom image
+            grid = plt.GridSpec(3, 1)
+            self.axis = self.figure.add_subplot(grid[:2, 0])
+            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                     norm=self.norm,
+                                                     picker=True,
+                                                     interpolation='none'))
+
+            # Get the "tth" vector
+            angular_grid = self.iviewer.angular_grid
+            tth = np.degrees(angular_grid[1][0])
+
+            self.axis.set_ylabel(r'$\eta$ (deg)')
+
+            axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
+            axis.plot(tth, np.sum(img, axis=0))
+
+            self.axis.label_outer()
+            axis.set_xlabel(r'2$\theta$ (deg)')
+            axis.set_ylabel(r'Azimuthal Integration')
+
+            self.azimuthal_integral_axis = axis
+        else:
+            self.axis = self.figure.add_subplot(111)
+            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                     norm=self.norm,
+                                                     picker=True,
+                                                     interpolation='none'))
+            self.axis.set_xlabel(r'2$\theta$ (deg)')
+            self.axis.set_ylabel(r'$\eta$ (deg)')
 
         # We must adjust the extent of the image
         self.axes_images[0].set_extent(extent)
         self.axis.relim()
         self.axis.autoscale_view()
         self.axis.axis('auto')
-        self.axis.set_xlabel(r'2$\theta$ (deg)')
-        self.axis.set_ylabel(r'$\eta$ (deg)')
 
         self.redraw_rings()
 
