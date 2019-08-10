@@ -234,8 +234,14 @@ class ImageCanvas(FigureCanvas):
 
         return minimum, maximum
 
-    def percentile_range(self, low = 69.0, high = 99.6):
+    def percentile_range(self, low = 69.0, high = 99.9):
         l = min([np.percentile(x.get_array(), low) for x in self.axes_images])
         h = min([np.percentile(x.get_array(), high) for x in self.axes_images])
+
+        if h - l < 5:
+            h = l + 5
+
+        # This debug is useful for now, keeping it in for sanity...
+        print("Range to be used: ", l, " -> ", h)
 
         return l, h
