@@ -14,7 +14,7 @@ class FrameAggregation:
         self.ui = UiLoader().load_file('frame_aggregation.ui', parent)
         self.ims = {}
         self.results = {}
-        self.select_fn(0)
+        self.select_fn(1)
         self.previous_ims_ind = 0
 
         self.setup_connections()
