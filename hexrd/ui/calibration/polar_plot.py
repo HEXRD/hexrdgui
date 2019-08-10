@@ -149,9 +149,9 @@ class InstrumentViewer:
         # plotting
         self.warped_image = warped
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            img = equalize_adapthist(img, clip_limit=0.1, nbins=2**16)
+        #with warnings.catch_warnings():
+        #    warnings.simplefilter("ignore")
+        #    img = equalize_adapthist(img, clip_limit=0.1, nbins=2**16)
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get the function to not rescale the
