@@ -11,8 +11,26 @@
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_7">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_7">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
       <widget class="QComboBox" name="materials_combo">
        <property name="sizePolicy">
@@ -116,11 +134,11 @@
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
      </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>70</number>
-     </attribute>
      <attribute name="horizontalHeaderDefaultSectionSize">
       <number>85</number>
+     </attribute>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>70</number>
      </attribute>
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
@@ -162,6 +180,9 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
       <widget class="QCheckBox" name="show_ranges">
        <property name="toolTip">

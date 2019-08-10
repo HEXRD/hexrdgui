@@ -15,6 +15,21 @@
   </property>
   <widget class="QWidget" name="central_widget">
    <layout class="QVBoxLayout" name="central_widget_layout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
      <widget class="ImageTabWidget" name="image_tab_widget"/>
     </item>
@@ -26,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -35,7 +50,7 @@
     </property>
     <widget class="QMenu" name="menu_open">
      <property name="title">
-      <string>Open</string>
+      <string>&amp;Open</string>
      </property>
      <addaction name="action_open_images"/>
      <addaction name="action_open_config"/>
@@ -44,7 +59,7 @@
     </widget>
     <widget class="QMenu" name="menu_save">
      <property name="title">
-      <string>Save</string>
+      <string>&amp;Save</string>
      </property>
      <addaction name="action_save_imageseries"/>
      <addaction name="action_save_config"/>
@@ -52,6 +67,8 @@
     </widget>
     <addaction name="menu_open"/>
     <addaction name="menu_save"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -64,7 +81,7 @@
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
-     <string>Edit</string>
+     <string>E&amp;dit</string>
     </property>
     <addaction name="action_edit_ims"/>
     <addaction name="action_edit_angles"/>
@@ -72,7 +89,7 @@
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
-     <string>Run</string>
+     <string>R&amp;un</string>
     </property>
     <addaction name="action_run_powder_calibration"/>
    </widget>
@@ -92,11 +109,11 @@
    <property name="minimumSize">
     <size>
      <width>550</width>
-     <height>291</height>
+     <height>310</height>
     </size>
    </property>
    <property name="windowTitle">
-    <string>Configuration</string>
+    <string>&amp;Configuration</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -109,18 +126,33 @@
      </size>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
      <item>
       <widget class="QToolBox" name="config_tool_box">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="materials_page">
         <property name="geometry">
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>532</width>
-          <height>626</height>
+          <width>546</width>
+          <height>598</height>
          </rect>
         </property>
         <attribute name="label">
@@ -132,14 +164,29 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>532</width>
-          <height>626</height>
+          <width>546</width>
+          <height>598</height>
          </rect>
         </property>
         <attribute name="label">
          <string>Instrument Calibration</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item>
           <widget class="QTabWidget" name="calibration_tab_widget">
            <property name="currentIndex">
@@ -187,35 +234,77 @@
   </widget>
   <widget class="QDockWidget" name="color_map_dock_widget">
    <property name="windowTitle">
-    <string>Color Map</string>
+    <string>Co&amp;lor Map</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
    <widget class="QWidget" name="color_map_dock_widgets">
-    <layout class="QHBoxLayout" name="horizontalLayout"/>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+    </layout>
    </widget>
   </widget>
   <widget class="QDockWidget" name="resolution_dock_widget">
    <property name="windowTitle">
-    <string>Rendering Resolution</string>
+    <string>Re&amp;ndering Resolution</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
    <widget class="QWidget" name="resolution_dock_widgets">
-    <layout class="QHBoxLayout" name="horizontalLayout_2"/>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+    </layout>
    </widget>
   </widget>
   <widget class="QDockWidget" name="frame_aggregation_widget">
    <property name="windowTitle">
-    <string>Frame Aggregation</string>
+    <string>Frame A&amp;ggregation</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
    <widget class="QWidget" name="frame_aggregation_widgets">
-    <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+    </layout>
    </widget>
   </widget>
   <action name="action_tabbed_view">
@@ -223,7 +312,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Tab Images</string>
+    <string>&amp;Tab Images</string>
    </property>
    <property name="toolTip">
     <string>View images in tabs</string>
@@ -231,27 +320,27 @@
   </action>
   <action name="action_open_images">
    <property name="text">
-    <string>Images</string>
+    <string>&amp;Images</string>
    </property>
   </action>
   <action name="action_open_config">
    <property name="text">
-    <string>Configuration</string>
+    <string>&amp;Configuration</string>
    </property>
   </action>
   <action name="action_save_imageseries">
    <property name="text">
-    <string>ImageSeries</string>
+    <string>&amp;ImageSeries</string>
    </property>
   </action>
   <action name="action_open_materials">
    <property name="text">
-    <string>Materials</string>
+    <string>&amp;Materials</string>
    </property>
   </action>
   <action name="action_save_config">
    <property name="text">
-    <string>Configuration</string>
+    <string>&amp;Configuration</string>
    </property>
   </action>
   <action name="action_show_toolbar">
@@ -262,7 +351,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Toolbar</string>
+    <string>&amp;Show Toolbar</string>
    </property>
   </action>
   <action name="actionShow_Live_Updates">
@@ -278,7 +367,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Live Updates</string>
+    <string>Show &amp;Live Updates</string>
    </property>
   </action>
   <action name="action_show_saturation_percentages">
@@ -286,7 +375,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show Saturation Percentages</string>
+    <string>Show Saturation &amp;Percentages</string>
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show the saturation percentages of the images when in &amp;quot;Image View&amp;quot; mode. The saturation percentages will appear as white text in the bottom left corners of the images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -297,22 +386,22 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Process Image Series</string>
+    <string>&amp;Process Image Series</string>
    </property>
   </action>
   <action name="action_save_materials">
    <property name="text">
-    <string>Materials</string>
+    <string>&amp;Materials</string>
    </property>
   </action>
   <action name="action_run_powder_calibration">
    <property name="text">
-    <string>Powder Calibration</string>
+    <string>&amp;Powder Calibration</string>
    </property>
   </action>
   <action name="action_edit_euler_angle_convention">
    <property name="text">
-    <string>Euler Angle Convention</string>
+    <string>Euler Angle &amp;Convention</string>
    </property>
   </action>
   <action name="action_edit_angles">
@@ -320,12 +409,20 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Edit Angles</string>
+    <string>&amp;Edit Angles</string>
    </property>
   </action>
   <action name="action_open_aps_imageseries">
    <property name="text">
-    <string>APS ImageSeries</string>
+    <string>&amp;APS ImageSeries</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
  </widget>
@@ -374,6 +471,22 @@
     <hint type="destinationlabel">
      <x>1075</x>
      <y>460</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuit</sender>
+   <signal>triggered()</signal>
+   <receiver>main_window</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>799</x>
+     <y>449</y>
     </hint>
    </hints>
   </connection>

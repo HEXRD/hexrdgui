@@ -7,22 +7,67 @@
     <x>0</x>
     <y>0</y>
     <width>506</width>
-    <height>1078</height>
+    <height>1184</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Beam Properties</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
       <item>
        <widget class="QGroupBox" name="groupBox_2">
         <property name="title">
          <string>Energy</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item>
           <widget class="QDoubleSpinBox" name="cal_energy_wavelength">
            <property name="alignment">
@@ -82,6 +127,21 @@
          <string>Vector</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <item row="1" column="1">
           <widget class="QDoubleSpinBox" name="cal_vector_azimuth">
            <property name="alignment">
@@ -94,10 +154,13 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>1</number>
+            <number>5</number>
            </property>
            <property name="maximum">
             <double>360.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
            </property>
            <property name="value">
             <double>90.000000000000000</double>
@@ -116,10 +179,13 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>1</number>
+            <number>5</number>
            </property>
            <property name="maximum">
             <double>360.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
            </property>
            <property name="value">
             <double>90.000000000000000</double>
@@ -158,6 +224,21 @@
       <string>Calibration Crystal</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <item row="3" column="1">
        <widget class="QDoubleSpinBox" name="cal_crystal_orientation_0">
         <property name="alignment">
@@ -168,6 +249,9 @@
         </property>
         <property name="suffix">
          <string/>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -187,6 +271,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -227,6 +314,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -245,6 +335,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -265,6 +358,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -280,6 +376,9 @@
        <widget class="QDoubleSpinBox" name="cal_crystal_inv_stretch_3">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -297,6 +396,9 @@
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -312,6 +414,9 @@
        <widget class="QDoubleSpinBox" name="cal_crystal_inv_stretch_4">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -352,6 +457,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -370,6 +478,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -390,6 +501,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -408,6 +522,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -439,6 +556,21 @@
       <string>Detector Parameters</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <item row="3" column="1" colspan="2">
        <widget class="QDoubleSpinBox" name="cal_det_saturation">
         <property name="alignment">
@@ -468,6 +600,21 @@
          <string>Transform:</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_7">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <item row="0" column="2">
           <widget class="QDoubleSpinBox" name="cal_det_translation_1">
            <property name="alignment">
@@ -475,6 +622,9 @@
            </property>
            <property name="prefix">
             <string/>
+           </property>
+           <property name="decimals">
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
@@ -505,6 +655,9 @@
            <property name="prefix">
             <string/>
            </property>
+           <property name="decimals">
+            <number>5</number>
+           </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
            </property>
@@ -523,6 +676,9 @@
            </property>
            <property name="prefix">
             <string/>
+           </property>
+           <property name="decimals">
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
@@ -553,6 +709,9 @@
            <property name="suffix">
             <string>°</string>
            </property>
+           <property name="decimals">
+            <number>5</number>
+           </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
            </property>
@@ -572,6 +731,9 @@
            <property name="suffix">
             <string>°</string>
            </property>
+           <property name="decimals">
+            <number>5</number>
+           </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
            </property>
@@ -590,6 +752,9 @@
            </property>
            <property name="suffix">
             <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
@@ -626,6 +791,21 @@
          <string>Distortion</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_5">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_9">
            <property name="text">
@@ -656,6 +836,9 @@
            <property name="prefix">
             <string/>
            </property>
+           <property name="decimals">
+            <number>5</number>
+           </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
            </property>
@@ -674,6 +857,9 @@
            </property>
            <property name="prefix">
             <string/>
+           </property>
+           <property name="decimals">
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
@@ -694,6 +880,9 @@
            <property name="prefix">
             <string/>
            </property>
+           <property name="decimals">
+            <number>5</number>
+           </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
            </property>
@@ -709,6 +898,9 @@
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_3">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="decimals">
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
@@ -726,6 +918,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="decimals">
+            <number>5</number>
+           </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
            </property>
@@ -741,6 +936,9 @@
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_5">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="decimals">
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>-10000.000000000000000</double>
@@ -779,13 +977,28 @@
          <string>Pixels</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <item row="4" column="2">
           <widget class="QDoubleSpinBox" name="cal_det_size_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="decimals">
-            <number>2</number>
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>0.100000000000000</double>
@@ -817,7 +1030,7 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="decimals">
-            <number>2</number>
+            <number>5</number>
            </property>
            <property name="minimum">
             <double>0.000000000000000</double>
@@ -920,6 +1133,21 @@
       <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <item row="1" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
@@ -948,6 +1176,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
         </property>
@@ -966,6 +1197,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="decimals">
+         <number>5</number>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
@@ -986,6 +1220,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
         </property>
@@ -1005,6 +1242,9 @@
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="decimals">
+         <number>5</number>
+        </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
         </property>
@@ -1021,6 +1261,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.py</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>cal_energy_wavelength</tabstop>
   <tabstop>cal_energy</tabstop>
@@ -1065,14 +1313,6 @@
   <tabstop>cal_osc_translation_1</tabstop>
   <tabstop>cal_osc_translation_2</tabstop>
  </tabstops>
- <customwidgets>
-  <customwidget>
-   <class>ScientificDoubleSpinBox</class>
-   <extends>QDoubleSpinBox</extends>
-   <header>scientificspinbox.py</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
