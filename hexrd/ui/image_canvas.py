@@ -7,6 +7,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
+import numpy as np
+
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
@@ -106,7 +108,7 @@ class ImageCanvas(FigureCanvas):
         # Add the rbnds too
         for ind, pr in zip(self.iviewer.rbnd_indices,
                            self.iviewer.rbnd_data):
-            color = 'm:'
+            color = 'g:'
             if len(ind) > 1:
                 color = 'r:'
             rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=1)
@@ -231,3 +233,9 @@ class ImageCanvas(FigureCanvas):
         maximum = max([x.get_array().max() for x in self.axes_images])
 
         return minimum, maximum
+
+    def percentile_range(self, low = 69.0, high = 99.6):
+        l = min([np.percentile(x.get_array(), low) for x in self.axes_images])
+        h = min([np.percentile(x.get_array(), high) for x in self.axes_images])
+
+        return l, h

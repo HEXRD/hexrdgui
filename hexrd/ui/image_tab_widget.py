@@ -174,7 +174,7 @@ class ImageTabWidget(QTabWidget):
 
     def value_range(self):
         """Get the range of values in the images"""
-        mins_maxes = [x.get_min_max() for x in self.active_canvases()]
+        mins_maxes = [x.percentile_range() for x in self.active_canvases()]
         minimum = min([x[0] for x in mins_maxes])
         maximum = max([x[1] for x in mins_maxes])
 
