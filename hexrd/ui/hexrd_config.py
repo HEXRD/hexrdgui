@@ -654,6 +654,24 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_pixel_size_eta = property(_polar_pixel_size_eta,
                                     _set_polar_pixel_size_eta)
 
+    def _polar_res_tth_min(self):
+        return self.config['resolution']['polar']['tth_min']
+
+    def set_polar_res_tth_min(self, v):
+        self.config['resolution']['polar']['tth_min'] = v
+
+    polar_res_tth_min = property(_polar_res_tth_min,
+                                 set_polar_res_tth_min)
+
+    def _polar_res_tth_max(self):
+        return self.config['resolution']['polar']['tth_max']
+
+    def set_polar_res_tth_max(self, v):
+        self.config['resolution']['polar']['tth_max'] = v
+
+    polar_res_tth_max = property(_polar_res_tth_max,
+                                 set_polar_res_tth_max)
+
     def _cartesian_pixel_size(self):
         return self.config['resolution']['cartesian']['pixel_size']
 
