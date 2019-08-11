@@ -34,6 +34,9 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = None
         self.azimuthal_integral_axis = None
 
+        # Track the current mode so that we can more lazily clear on change.
+        self.mode = None
+
         # Set up our async stuff
         self.thread_pool = QThreadPool(parent)
         self.cal_progress_dialog = CalProgressDialog(parent)
@@ -58,8 +61,14 @@ class ImageCanvas(FigureCanvas):
         self.axes_images.clear()
         self.clear_rings()
         self.azimuthal_integral_axis = None
+        self.mode = None
 
     def load_images(self, image_names):
+        # TODO: Make this lazily clear only if number of images changes.
+        if self.mode != 'images':
+            self.clear()
+            self.mode = 'images'
+
         self.clear()
 
         cols = 1
@@ -181,6 +190,10 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def show_cartesian(self):
+        if self.mode != 'cartesian':
+            self.clear()
+            self.mode = 'cartesian'
+
         if self.iviewer is None:
             self.figure.clear()
             self.axes_images.clear()
@@ -211,6 +224,10 @@ class ImageCanvas(FigureCanvas):
         self.redraw_rings()
 
     def show_polar(self):
+        # TODO: Make this set updated data on updates, not clear/redraw.
+        if self.mode != 'polar':
+            self.clear()
+            self.mode = 'polar'
         self.clear()
 
         # Run the calibration in a background thread
