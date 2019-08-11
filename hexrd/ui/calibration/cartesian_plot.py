@@ -8,6 +8,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
+from skimage.exposure import equalize_hist
 from skimage.exposure import rescale_intensity
 
 from .display_plane import DisplayPlane
@@ -157,6 +158,7 @@ class InstrumentViewer:
         #with warnings.catch_warnings():
         #    warnings.simplefilter("ignore")
         #    img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
+        img = equalize_hist(warped, nbins=2**8)
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get create_calibration_image to not rescale the
