@@ -37,6 +37,9 @@ class ImageCanvas(FigureCanvas):
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
 
+        # Track the pixel size
+        self.cartesian_pixel_size = HexrdConfig().cartesian_pixel_size
+
         # Set up our async stuff
         self.thread_pool = QThreadPool(parent)
         self.cal_progress_dialog = CalProgressDialog(parent)
@@ -163,7 +166,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         # Do not show the saturation in calibration mode
-        if self.iviewer:
+        if self.mode == 'cartesian' or self.mode == 'polar':
             self.clear_saturation()
             return
 
@@ -193,6 +196,12 @@ class ImageCanvas(FigureCanvas):
         if self.mode != 'cartesian':
             self.clear()
             self.mode = 'cartesian'
+
+        # Force a redraw when the pixel size changes.
+        if self.cartesian_pixel_size != HexrdConfig().cartesian_pixel_size:
+            self.cartesian_pixel_size = HexrdConfig().cartesian_pixel_size
+            self.figure.clear()
+            self.axes_images.clear()
 
         if self.iviewer is None:
             self.figure.clear()
