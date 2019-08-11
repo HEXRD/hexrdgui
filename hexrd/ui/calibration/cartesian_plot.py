@@ -63,6 +63,10 @@ class InstrumentViewer:
 
         selected_rings = HexrdConfig().selected_rings
         delta_tth = np.degrees(self.plane_data.tThWidth)
+
+        # must update self.dpanel from HexrdConfig
+        self.pixel_size = HexrdConfig().cartesian_pixel_size
+        self.make_dpanel()
         if selected_rings:
             # We should only get specific values
             tth = self.plane_data.getTTh()
