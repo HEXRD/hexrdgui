@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Signal, QTimer
 from PySide2.QtWidgets import (
     QAbstractSpinBox, QComboBox, QLineEdit, QPushButton
 )
@@ -27,6 +27,8 @@ class CalibrationConfigWidget(QObject):
 
         self.setup_connections()
 
+        self.timer = None
+
     def setup_connections(self):
         self.ui.cal_energy.valueChanged.connect(self.on_energy_changed)
         self.ui.cal_energy_wavelength.valueChanged.connect(
@@ -53,7 +55,7 @@ class CalibrationConfigWidget(QObject):
                 widget.pressed.connect(self.update_config_from_gui)
             else:
                 widget.valueChanged.connect(self.update_config_from_gui)
-                widget.editingFinished.connect(self.gui_data_changed)
+                widget.valueChanged.connect(self.gui_value_changed)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -141,6 +143,16 @@ class CalibrationConfigWidget(QObject):
         value = self._get_gui_value(sender)
         current_detector = self.get_current_detector()
         self.cfg.set_val_from_widget_name(name, value, current_detector)
+
+    def gui_value_changed(self):
+        """We only want to emit a changed signal once editing is done"""
+        if self.timer is None:
+            self.timer = QTimer()
+            self.timer.setSingleShot(True)
+            self.timer.timeout.connect(self.gui_data_changed)
+
+        # Start or restart our timer...
+        self.timer.start(666)
 
     def update_gui_from_config(self):
         previously_blocked = self.block_all_signals()
