@@ -144,14 +144,15 @@ class InstrumentViewer:
         """
         IMAGE PLOTTING AND LIMIT CALCULATION
         """
-        if np.issubdtype(warped.dtype, np.floating):
+        img = warped
+        #if np.issubdtype(warped.dtype, np.floating):
             # Floating types must be between -1 and 1 for equalize_adapthist
             # Negative values will not show up in the GUI for some reason
-            warped = rescale_intensity(warped, out_range=(0., 1.))
+        #    warped = rescale_intensity(warped, out_range=(0., 1.))
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
+        #with warnings.catch_warnings():
+        #    warnings.simplefilter("ignore")
+        #    img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get create_calibration_image to not rescale the
