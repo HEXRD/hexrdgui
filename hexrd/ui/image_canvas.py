@@ -114,7 +114,6 @@ class ImageCanvas(FigureCanvas):
             rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=1)
             self.cached_rbnds.append(rbnd)
 
-        self.figure.tight_layout()
         self.draw()
 
     def clear_saturation(self):
@@ -161,8 +160,9 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def show_cartesian(self):
-        self.figure.clear()
-        self.axes_images.clear()
+        if self.iviewer is None:
+            self.figure.clear()
+            self.axes_images.clear()
 
         # Run the calibration in a background thread
         worker = AsyncWorker(cartesian_viewer)
@@ -177,9 +177,15 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = iviewer
         img = self.iviewer.img
 
-        self.axis = self.figure.add_subplot(111)
-        self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                 norm=self.norm))
+        # It is important to persist the plot so that we don't reset the scale.
+        if len(self.axes_images) == 0:
+            self.axis = self.figure.add_subplot(111)
+            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                     norm=self.norm,
+                                                     vmin = None, vmax = None,
+                                                     interpolation = "none"))
+        else:
+            self.axes_images[0].set_data(img)
 
         self.redraw_rings()
 
