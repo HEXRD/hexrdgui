@@ -171,7 +171,7 @@ class ImageCanvas(FigureCanvas):
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_cartesian)
         worker.signals.finished.connect(self.cal_progress_dialog.accept)
-        self.cal_progress_dialog.exec_()
+        #self.cal_progress_dialog.exec_()
 
     def finish_show_cartesian(self, iviewer):
         self.iviewer = iviewer
