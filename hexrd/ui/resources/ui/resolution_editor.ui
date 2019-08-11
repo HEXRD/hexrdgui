@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="iconSize">
       <size>
@@ -118,6 +118,9 @@
              <widget class="QDoubleSpinBox" name="cartesian_pixel_size">
               <property name="decimals">
                <number>3</number>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
               </property>
               <property name="value">
                <double>0.500000000000000</double>
