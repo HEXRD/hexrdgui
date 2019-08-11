@@ -86,6 +86,7 @@ class InstrumentViewer:
                        eta_min=-180., eta_max=180.,
                        pixel_size=self.pv_pixel_size)
         wimg = pv.warp_image(self.images_dict)
+        self.angular_grid = pv.angular_grid
         self._angular_coords = pv.angular_grid
         self._extent = [tth_min, tth_max, 180., -180.]   # l, r, b, t
         self.plot_dplane(warped=wimg, snip_width=snip_width)
