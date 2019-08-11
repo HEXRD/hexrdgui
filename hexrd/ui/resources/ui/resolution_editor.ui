@@ -239,6 +239,9 @@
                 <property name="maximum">
                  <double>99.989999999999995</double>
                 </property>
+                <property name="singleStep">
+                 <double>0.005000000000000</double>
+                </property>
                 <property name="value">
                  <double>0.050000000000000</double>
                 </property>
@@ -262,6 +265,9 @@
                 <property name="maximum">
                  <double>99.989999999999995</double>
                 </property>
+                <property name="singleStep">
+                 <double>0.005000000000000</double>
+                </property>
                 <property name="value">
                  <double>0.200000000000000</double>
                 </property>
@@ -282,6 +288,9 @@
                 <property name="maximum">
                  <double>10000.000000000000000</double>
                 </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
                 <property name="value">
                  <double>1.000000000000000</double>
                 </property>
@@ -301,6 +310,9 @@
                <widget class="QDoubleSpinBox" name="polar_res_tth_max">
                 <property name="maximum">
                  <double>10000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
                 </property>
                 <property name="value">
                  <double>20.000000000000000</double>
