@@ -134,6 +134,7 @@ class MainWindow(QObject):
             HexrdConfig().load_instrument_config(selected_file)
             self.cal_tree_view.rebuild_tree()
             self.calibration_config_widget.update_gui_from_config()
+            self.update_all(clear_canvases=True)
 
     def on_action_save_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -375,7 +376,7 @@ class MainWindow(QObject):
 
         return False
 
-    def update_all(self):
+    def update_all(self, clear_canvases=False):
         # If there are no images loaded, skip the request
         if not HexrdConfig().has_images():
             return
@@ -387,13 +388,19 @@ class MainWindow(QObject):
         # constantly re-rendered
         if QApplication.focusWidget() is not None:
             QApplication.focusWidget().clearFocus()
+
         # Determine current canvas and update
-        canvas = self.ui.image_tab_widget.image_canvases[0]
-        if canvas.iviewer is not None:
-            if canvas.iviewer.type == 'polar':
-                canvas.show_polar()
-            else:
-                canvas.show_cartesian()
+        first_canvas = self.ui.image_tab_widget.image_canvases[0]
+        mode = first_canvas.mode
+
+        if clear_canvases:
+            for canvas in self.ui.image_tab_widget.image_canvases:
+                canvas.clear()
+
+        if mode == 'cartesian':
+            first_canvas.show_cartesian()
+        elif mode == 'polar':
+            first_canvas.show_polar()
         else:
             self.show_images()
 
