@@ -298,6 +298,8 @@ class ImageCanvas(FigureCanvas):
         self.axis.autoscale_view()
         self.axis.axis('auto')
 
+        self.figure.tight_layout()
+
         self.redraw_rings()
 
     def set_cmap(self, cmap):
