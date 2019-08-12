@@ -278,6 +278,10 @@ class ImageCanvas(FigureCanvas):
             axis.set_xlabel(r'2$\theta$ (deg)')
             axis.set_ylabel(r'Azimuthal Integration')
 
+            x_min = HexrdConfig().polar_res_tth_min
+            x_max = HexrdConfig().polar_res_tth_max
+            axis.set_xlim(x_min, x_max)
+
             self.azimuthal_integral_axis = axis
         else:
             self.axis = self.figure.add_subplot(111)
