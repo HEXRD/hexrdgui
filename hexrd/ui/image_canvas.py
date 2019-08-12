@@ -53,6 +53,10 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().ring_config_changed.connect(self.redraw_rings)
         HexrdConfig().show_saturation_level_changed.connect(
             self.show_saturation)
+        HexrdConfig().cartesian_resolution_config_changed.connect(
+            self.on_cartesian_resolution_changed)
+        HexrdConfig().polar_resolution_config_changed.connect(
+            self.on_polar_resolution_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -65,6 +69,20 @@ class ImageCanvas(FigureCanvas):
         self.clear_rings()
         self.azimuthal_integral_axis = None
         self.mode = None
+
+    def on_cartesian_resolution_changed(self):
+        if self.mode != 'cartesian':
+            # Don't do anything...
+            return
+
+        self.show_cartesian()
+
+    def on_polar_resolution_changed(self):
+        if self.mode != 'polar':
+            # Don't do anything...
+            return
+
+        self.show_polar()
 
     def load_images(self, image_names):
         # TODO: Make this lazily clear only if number of images changes.
@@ -234,10 +252,9 @@ class ImageCanvas(FigureCanvas):
 
     def show_polar(self):
         # TODO: Make this set updated data on updates, not clear/redraw.
-        if self.mode != 'polar':
-            self.clear()
-            self.mode = 'polar'
         self.clear()
+        if self.mode != 'polar':
+            self.mode = 'polar'
 
         # Run the calibration in a background thread
         worker = AsyncWorker(polar_viewer)

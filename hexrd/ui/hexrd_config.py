@@ -52,6 +52,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
+    """Emitted when cartesian resolution configuration has changed"""
+    cartesian_resolution_config_changed = Signal()
+
+    """Emitted when polar resolution configuration has changed"""
+    polar_resolution_config_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -641,6 +647,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_polar_pixel_size_tth(self, v):
         self.config['resolution']['polar']['pixel_size_tth'] = v
+        self.polar_resolution_config_changed.emit()
 
     polar_pixel_size_tth = property(_polar_pixel_size_tth,
                                     _set_polar_pixel_size_tth)
@@ -650,6 +657,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_polar_pixel_size_eta(self, v):
         self.config['resolution']['polar']['pixel_size_eta'] = v
+        self.polar_resolution_config_changed.emit()
 
     polar_pixel_size_eta = property(_polar_pixel_size_eta,
                                     _set_polar_pixel_size_eta)
@@ -659,6 +667,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_polar_res_tth_min(self, v):
         self.config['resolution']['polar']['tth_min'] = v
+        self.polar_resolution_config_changed.emit()
 
     polar_res_tth_min = property(_polar_res_tth_min,
                                  set_polar_res_tth_min)
@@ -668,6 +677,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_polar_res_tth_max(self, v):
         self.config['resolution']['polar']['tth_max'] = v
+        self.polar_resolution_config_changed.emit()
 
     polar_res_tth_max = property(_polar_res_tth_max,
                                  set_polar_res_tth_max)
@@ -677,6 +687,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_cartesian_pixel_size(self, v):
         self.config['resolution']['cartesian']['pixel_size'] = v
+        self.cartesian_resolution_config_changed.emit()
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
