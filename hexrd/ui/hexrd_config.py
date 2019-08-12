@@ -67,6 +67,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.hdf5_path = []
         self.live_update = False
         self._show_saturation_level = False
+        self.previous_active_material = None
 
         self._euler_angle_convention = ('xyz', True)
 
@@ -100,6 +101,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Load the default materials
         self.load_default_materials()
 
+        # Re-load the previous active material if available
+        mat = self.previous_active_material
+        if mat is not None and mat in self.materials.keys():
+            self.active_material = mat
+
         self.update_plane_data_tth_width()
         self.update_active_material_energy()
 
@@ -111,6 +117,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
         settings.setValue('euler_angle_convention', self._euler_angle_convention)
+        settings.setValue('active_material', self.active_material_name())
 
     def load_settings(self):
         settings = QSettings()
@@ -124,6 +131,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                                       ('xyz', True))
         if self.config.get('instrument') is not None:
             self.create_internal_config(self.config['instrument'])
+        self.previous_active_material = settings.value('active_material', None)
 
     # This is here for backward compatibility
     @property
