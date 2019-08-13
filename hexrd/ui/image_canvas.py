@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from hexrd.ui.async_worker import AsyncWorker
-from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -39,10 +38,12 @@ class ImageCanvas(FigureCanvas):
 
         # Track the pixel size
         self.cartesian_pixel_size = HexrdConfig().cartesian_pixel_size
+        self.polar_res_config = (
+            HexrdConfig().config['resolution']['polar'].copy()
+        )
 
         # Set up our async stuff
         self.thread_pool = QThreadPool(parent)
-        self.cal_progress_dialog = CalProgressDialog(parent)
 
         if image_names is not None:
             self.load_images(image_names)
@@ -53,6 +54,10 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().ring_config_changed.connect(self.redraw_rings)
         HexrdConfig().show_saturation_level_changed.connect(
             self.show_saturation)
+        HexrdConfig().cartesian_resolution_config_changed.connect(
+            self.on_cartesian_resolution_changed)
+        HexrdConfig().polar_resolution_config_changed.connect(
+            self.on_polar_resolution_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -65,6 +70,20 @@ class ImageCanvas(FigureCanvas):
         self.clear_rings()
         self.azimuthal_integral_axis = None
         self.mode = None
+
+    def on_cartesian_resolution_changed(self):
+        if self.mode != 'cartesian':
+            # Don't do anything...
+            return
+
+        self.show_cartesian()
+
+    def on_polar_resolution_changed(self):
+        if self.mode != 'polar':
+            # Don't do anything...
+            return
+
+        self.show_polar()
 
     def load_images(self, image_names):
         # TODO: Make this lazily clear only if number of images changes.
@@ -203,18 +222,12 @@ class ImageCanvas(FigureCanvas):
             self.figure.clear()
             self.axes_images.clear()
 
-        if self.iviewer is None:
-            self.figure.clear()
-            self.axes_images.clear()
-
         # Run the calibration in a background thread
         worker = AsyncWorker(cartesian_viewer)
         self.thread_pool.start(worker)
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_cartesian)
-        worker.signals.finished.connect(self.cal_progress_dialog.accept)
-        #self.cal_progress_dialog.exec_()
 
     def finish_show_cartesian(self, iviewer):
         self.iviewer = iviewer
@@ -233,11 +246,16 @@ class ImageCanvas(FigureCanvas):
         self.redraw_rings()
 
     def show_polar(self):
-        # TODO: Make this set updated data on updates, not clear/redraw.
         if self.mode != 'polar':
             self.clear()
             self.mode = 'polar'
-        self.clear()
+
+        # Reset on resolution changes
+        polar_res_config = HexrdConfig().config['resolution']['polar']
+        if self.polar_res_config != polar_res_config:
+            self.polar_res_config = polar_res_config.copy()
+            self.clear()
+            self.mode = 'polar'
 
         # Run the calibration in a background thread
         worker = AsyncWorker(polar_viewer)
@@ -245,54 +263,81 @@ class ImageCanvas(FigureCanvas):
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_polar)
-        worker.signals.finished.connect(self.cal_progress_dialog.accept)
-        self.cal_progress_dialog.exec_()
 
     def finish_show_polar(self, iviewer):
         self.iviewer = iviewer
         img = self.iviewer.img
         extent = self.iviewer._extent
 
+        rescale_image = True
         # TODO: maybe make this an option in the UI? Perhaps a checkbox
         # in the "View" menu?
         # if HexrdConfig().polar_show_azimuthal_integral
         if True:
             # The top image will have 2x the height of the bottom image
             grid = plt.GridSpec(3, 1)
-            self.axis = self.figure.add_subplot(grid[:2, 0])
-            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                     norm=self.norm,
-                                                     picker=True,
-                                                     interpolation='none'))
+
+            # It is important to persist the plot so that we don't reset the scale.
+            if len(self.axes_images) == 0:
+                self.axis = self.figure.add_subplot(grid[:2, 0])
+                self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                         norm=self.norm,
+                                                         picker=True,
+                                                         interpolation='none'))
+            else:
+                rescale_image = False
+                self.axes_images[0].set_data(img)
 
             # Get the "tth" vector
             angular_grid = self.iviewer.angular_grid
             tth = np.degrees(angular_grid[1][0])
 
-            self.axis.set_ylabel(r'$\eta$ (deg)')
+            if self.azimuthal_integral_axis is None:
+                axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
+                axis.plot(tth, np.sum(img, axis=0))
 
-            axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
-            axis.plot(tth, np.sum(img, axis=0))
+                self.axis.set_ylabel(r'$\eta$ (deg)')
 
+                self.azimuthal_integral_axis = axis
+            else:
+                axis = self.azimuthal_integral_axis
+                axis.clear()
+                axis.plot(tth, np.sum(img, axis=0))
+
+            # These need to be set every time for some reason
             self.axis.label_outer()
             axis.set_xlabel(r'2$\theta$ (deg)')
             axis.set_ylabel(r'Azimuthal Integration')
 
-            self.azimuthal_integral_axis = axis
+            # If the x limits are outside what the user set,
+            # modify them.
+            x_min = HexrdConfig().polar_res_tth_min
+            x_max = HexrdConfig().polar_res_tth_max
+            xlim = axis.get_xlim()
+            if xlim[0] < x_min:
+                axis.set_xlim(left=x_min)
+            if xlim[1] > x_max:
+                axis.set_xlim(right=x_max)
         else:
-            self.axis = self.figure.add_subplot(111)
-            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                     norm=self.norm,
-                                                     picker=True,
-                                                     interpolation='none'))
-            self.axis.set_xlabel(r'2$\theta$ (deg)')
-            self.axis.set_ylabel(r'$\eta$ (deg)')
+            if len(self.axes_images) == 0:
+                self.axis = self.figure.add_subplot(111)
+                self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                                                         norm=self.norm,
+                                                         picker=True,
+                                                         interpolation='none'))
+                self.axis.set_xlabel(r'2$\theta$ (deg)')
+                self.axis.set_ylabel(r'$\eta$ (deg)')
+            else:
+                rescale_image = False
+                self.axes_images[0].set_data(img)
 
         # We must adjust the extent of the image
-        self.axes_images[0].set_extent(extent)
-        self.axis.relim()
-        self.axis.autoscale_view()
-        self.axis.axis('auto')
+        if rescale_image:
+            self.axes_images[0].set_extent(extent)
+            self.axis.relim()
+            self.axis.autoscale_view()
+            self.axis.axis('auto')
+            self.figure.tight_layout()
 
         self.redraw_rings()
 

@@ -116,6 +116,9 @@
             </item>
             <item>
              <widget class="QDoubleSpinBox" name="cartesian_pixel_size">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
               <property name="decimals">
                <number>3</number>
               </property>
@@ -236,6 +239,9 @@
               </item>
               <item row="0" column="2">
                <widget class="QDoubleSpinBox" name="polar_pixel_size_tth">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="decimals">
                  <number>3</number>
                 </property>
@@ -262,6 +268,9 @@
               </item>
               <item row="0" column="4">
                <widget class="QDoubleSpinBox" name="polar_pixel_size_eta">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="decimals">
                  <number>3</number>
                 </property>
@@ -288,6 +297,9 @@
               </item>
               <item row="1" column="2">
                <widget class="QDoubleSpinBox" name="polar_res_tth_min">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="maximum">
                  <double>10000.000000000000000</double>
                 </property>
@@ -311,6 +323,9 @@
               </item>
               <item row="1" column="4">
                <widget class="QDoubleSpinBox" name="polar_res_tth_max">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="maximum">
                  <double>10000.000000000000000</double>
                 </property>
