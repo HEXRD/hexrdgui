@@ -86,29 +86,33 @@ class ImageCanvas(FigureCanvas):
         self.show_polar()
 
     def load_images(self, image_names):
-        # TODO: Make this lazily clear only if number of images changes.
-        if self.mode != 'images':
+        if self.mode != 'images' or len(image_names) != len(self.axes_images):
+            # Either we weren't in image mode before, or we have a different
+            # number of images. Clear and re-draw.
             self.clear()
             self.mode = 'images'
 
-        self.clear()
+            cols = 1
+            if len(image_names) > 1:
+                cols = 2
 
-        cols = 1
-        if len(image_names) > 1:
-            cols = 2
+            rows = math.ceil(len(image_names) / cols)
 
-        rows = math.ceil(len(image_names) / cols)
+            idx = HexrdConfig().current_imageseries_idx
+            for i, name in enumerate(image_names):
+                img = HexrdConfig().image(name, idx)
 
-        idx = HexrdConfig().current_imageseries_idx
-        for i, name in enumerate(image_names):
-            img = HexrdConfig().image(name, idx)
+                axis = self.figure.add_subplot(rows, cols, i + 1)
+                axis.set_title(name)
+                self.axes_images.append(axis.imshow(img, cmap=self.cmap,
+                                                    norm=self.norm))
 
-            axis = self.figure.add_subplot(rows, cols, i + 1)
-            axis.set_title(name)
-            self.axes_images.append(axis.imshow(img, cmap=self.cmap,
-                                                norm=self.norm))
-
-        self.figure.tight_layout()
+            self.figure.tight_layout()
+        else:
+            idx = HexrdConfig().current_imageseries_idx
+            for i, name in enumerate(image_names):
+                img = HexrdConfig().image(name, idx)
+                self.axes_images[i].set_data(img)
 
         # This will call self.draw()
         self.show_saturation()
