@@ -300,13 +300,23 @@ class CalTreeView(QTreeView):
         self.setModel(CalTreeItemModel(self))
         self.setItemDelegateForColumn(
             STATUS_COL, CheckBoxDelegate(self))
+
+        self.blockSignals(True)
         self.expand_rows()
+        self.blockSignals(False)
+
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)
         self.resizeColumnToContents(STATUS_COL)
 
         self.header().resizeSection(KEY_COL, 200)
         self.header().resizeSection(VALUE_COL, 200)
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.collapsed.connect(self.update_collapsed_status)
+        self.expanded.connect(self.update_collapsed_status)
 
     def contextMenuEvent(self, event):
         index = self.indexAt(event.pos())
@@ -342,13 +352,20 @@ class CalTreeView(QTreeView):
         # We rebuild it from scratch every time it is shown in case
         # the number of detectors have changed.
         self.model().rebuild_tree()
+
+        self.blockSignals(True)
         self.expand_rows()
+        self.blockSignals(False)
 
     def expand_rows(self, parent=QModelIndex()):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
-            self.expand(index)
+            item = self.model().get_item(index)
+
+            path = self.model().get_path_from_root(item, KEY_COL)
+            if path not in HexrdConfig().collapsed_state:
+                self.expand(index)
 
             self.display_status_checkbox(i, parent)
 
@@ -367,6 +384,12 @@ class CalTreeView(QTreeView):
                 parent.child_items[child],
                 self.model().index(child, KEY_COL, index))
         self.collapse(index)
+
+    def update_collapsed_status(self, index):
+        item = self.model().get_item(index)
+        path = self.model().get_path_from_root(item, KEY_COL)
+
+        HexrdConfig().update_collapsed_state(path)
 
     # Display status checkbox for the row if the requirements are met
     def display_status_checkbox(self, row, parent=QModelIndex()):

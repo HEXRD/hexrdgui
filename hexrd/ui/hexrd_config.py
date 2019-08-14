@@ -74,6 +74,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = False
         self._show_saturation_level = False
         self.previous_active_material = None
+        self.collapsed_state = []
 
         self._euler_angle_convention = ('xyz', True)
 
@@ -124,6 +125,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('live_update', self.live_update)
         settings.setValue('euler_angle_convention', self._euler_angle_convention)
         settings.setValue('active_material', self.active_material_name())
+        settings.setValue('collapsed_state', self.collapsed_state)
 
     def load_settings(self):
         settings = QSettings()
@@ -138,6 +140,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if self.config.get('instrument') is not None:
             self.create_internal_config(self.config['instrument'])
         self.previous_active_material = settings.value('active_material', None)
+        self.collapsed_state = settings.value('collapsed_state', [])
 
     # This is here for backward compatibility
     @property
@@ -243,6 +246,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.remove_status(default['instrument'])
             return default['instrument']
         return cur_config
+
+    def update_collapsed_state(self, item):
+        if item in self.collapsed_state:
+            self.collapsed_state.remove(item)
+        else:
+            self.collapsed_state.append(item)
 
     def has_status(self, config):
         if isinstance(config, dict):
