@@ -369,14 +369,16 @@ class CalTreeView(QTreeView):
 
     def expand_selection(self, parent, index):
         for child in range(parent.child_count()):
-            idx = self.model().index(child, KEY_COL, index)
-            self.expand(idx)
+            self.expand_selection(
+                parent.child_items[child],
+                self.model().index(child, KEY_COL, index))
         self.expand(index)
 
     def collapse_selection(self, parent, index):
         for child in range(parent.child_count()):
-            idx = self.model().index(child, KEY_COL, index)
-            self.collapse(idx)
+            self.collapse_selection(
+                parent.child_items[child],
+                self.model().index(child, KEY_COL, index))
         self.collapse(index)
 
     def update_collapsed_status(self, index):
