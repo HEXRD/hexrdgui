@@ -356,12 +356,16 @@ class CalTreeView(QTreeView):
 
     def expand_selection(self, parent, index):
         for child in range(parent.child_count()):
-            self.expand(self.model().index(child, KEY_COL, index))
+            self.expand_selection(
+                parent.child_items[child],
+                self.model().index(child, KEY_COL, index))
         self.expand(index)
 
     def collapse_selection(self, parent, index):
         for child in range(parent.child_count()):
-            self.collapse(self.model().index(child, KEY_COL, index))
+            self.collapse_selection(
+                parent.child_items[child],
+                self.model().index(child, KEY_COL, index))
         self.collapse(index)
 
     # Display status checkbox for the row if the requirements are met
