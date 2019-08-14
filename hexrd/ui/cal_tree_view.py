@@ -300,7 +300,11 @@ class CalTreeView(QTreeView):
         self.setModel(CalTreeItemModel(self))
         self.setItemDelegateForColumn(
             STATUS_COL, CheckBoxDelegate(self))
+
+        self.blockSignals(True)
         self.expand_rows()
+        self.blockSignals(False)
+
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)
         self.resizeColumnToContents(STATUS_COL)

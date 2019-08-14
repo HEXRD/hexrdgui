@@ -125,6 +125,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('live_update', self.live_update)
         settings.setValue('euler_angle_convention', self._euler_angle_convention)
         settings.setValue('active_material', self.active_material_name())
+        settings.setValue('collapsed_state', self.collapsed_state)
 
     def load_settings(self):
         settings = QSettings()
@@ -139,6 +140,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if self.config.get('instrument') is not None:
             self.create_internal_config(self.config['instrument'])
         self.previous_active_material = settings.value('active_material', None)
+        self.collapsed_state = settings.value('collapsed_state', [])
 
     # This is here for backward compatibility
     @property
