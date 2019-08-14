@@ -6,6 +6,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
+from hexrd.ui import utils
 
 # Remove these buttons from the navigation toolbar
 nav_toolbar_blacklist = [
@@ -20,9 +21,20 @@ class ImageTabWidget(QTabWidget):
     # Emitted when new images are loaded
     new_images_loaded = Signal()
 
+    # Emitted when the mouse moves on top of an image/plot
+    # Arguments are: x, y, xdata, ydata, intensity
+    new_mouse_position = Signal(int, int, float, float, float)
+
     def __init__(self, parent=None):
         super(ImageTabWidget, self).__init__(parent)
         self.image_canvases = [ImageCanvas(self)]
+
+        # Set up a mouse move connection to use with the status bar
+        cid = self.image_canvases[0].mpl_connect(
+            'motion_notify_event',
+            self.on_motion_notify_event)
+        self.mpl_connections = [cid]
+
         self.image_names = []
 
         # These will get set later
@@ -41,6 +53,15 @@ class ImageTabWidget(QTabWidget):
     def allocate_canvases(self):
         while len(self.image_canvases) < len(self.image_names):
             self.image_canvases.append(ImageCanvas(self))
+
+        # Make connections to use with the status bar
+        while len(self.mpl_connections) < len(self.image_canvases):
+            ind = len(self.mpl_connections)
+            cid = self.image_canvases[ind].mpl_connect(
+                'motion_notify_event',
+                self.on_motion_notify_event)
+
+            self.mpl_connections.append(cid)
 
     def load_images_tabbed(self):
         self.clear()
@@ -197,6 +218,30 @@ class ImageTabWidget(QTabWidget):
     def set_norm(self, norm):
         self.norm = norm
         self.update_canvas_norms()
+
+    def on_motion_notify_event(self, event):
+        # Don't emit a signal if there is no image/plot under the mouse
+        if event.inaxes is None:
+            return
+
+        x = event.x
+        y = event.y
+        x_data = event.xdata
+        y_data = event.ydata
+
+        # TODO: we are currently calculating the pixel intensity
+        # mathematically, because I couldn't find any other way
+        # to obtain it. If we find a better way, let's do it.
+
+        if event.inaxes.get_images():
+            # Image was created with imshow()
+            artist = event.inaxes.get_images()[0]
+            intensity = utils.calculate_intensity(event, artist)
+        else:
+            # This is probably just a plot. Do not calculate intensity.
+            intensity = None
+
+        self.new_mouse_position.emit(x, y, x_data, y_data, intensity)
 
 
 if __name__ == '__main__':
