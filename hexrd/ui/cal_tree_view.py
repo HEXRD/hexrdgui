@@ -313,7 +313,7 @@ class CalTreeView(QTreeView):
         item = self.model().get_item(index)
         children = item.child_count()
 
-        if index.column() == KEY_COL:
+        if index.column() == KEY_COL and children:
             menu = QMenu(self)
             collapse = menu.addAction('Collapse All')
             expand = menu.addAction('Expand All')
@@ -326,9 +326,9 @@ class CalTreeView(QTreeView):
             action = menu.exec_(QCursor.pos())
 
             if action == collapse:
-                self.collapseAll()
+                self.collapse_selection(item, index)
             elif action == expand:
-                self.expandAll()
+                self.expand_selection(item, index)
             elif action == check:
                 self.itemDelegateForColumn(STATUS_COL).setChildData(
                     item, True)
@@ -348,11 +348,33 @@ class CalTreeView(QTreeView):
         # Recursively expands all rows
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
+
+            # print('state: ', HexrdConfig().collapsed_state)
+            # print('index: ', index)
+            # if index not in HexrdConfig().collapsed_state:
+            #     self.expand(index)
+
             self.expand(index)
 
             self.display_status_checkbox(i, parent)
 
             self.expand_rows(index)
+
+    def expand_selection(self, parent, index):
+        for child in range(parent.child_count()):
+            self.expand(self.model().index(child, KEY_COL, index))
+            # HexrdConfig().update_collapsed_state(
+            #     self.model().index(child, KEY_COL, index))
+        self.expand(index)
+        # HexrdConfig().update_collapsed_state(index)
+
+    def collapse_selection(self, parent, index):
+        for child in range(parent.child_count()):
+            self.collapse(self.model().index(child, KEY_COL, index))
+            # HexrdConfig().update_collapsed_state(
+            #     self.model().index(child, KEY_COL, index))
+        self.collapse(index)
+        # HexrdConfig().update_collapsed_state(index)
 
     # Display status checkbox for the row if the requirements are met
     def display_status_checkbox(self, row, parent=QModelIndex()):
