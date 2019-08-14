@@ -74,7 +74,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = False
         self._show_saturation_level = False
         self.previous_active_material = None
-        # self.collapsed_state = []
+        self.collapsed_state = []
 
         self._euler_angle_convention = ('xyz', True)
 
@@ -245,12 +245,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return default['instrument']
         return cur_config
 
-    def update_collapsed_state(self, index):
-        print('index: ', index)
-        # if index in self.collapsed_state:
-        #     self.collapsed_state.remove(index)
-        # else:
-        #     self.collapsed_state.append(index)
+    def update_collapsed_state(self, item):
+        if item in self.collapsed_state:
+            self.collapsed_state.remove(item)
+        else:
+            self.collapsed_state.append(item)
 
     def has_status(self, config):
         if isinstance(config, dict):
