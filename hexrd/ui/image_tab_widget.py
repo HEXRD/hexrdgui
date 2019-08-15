@@ -21,6 +21,10 @@ class ImageTabWidget(QTabWidget):
     # Emitted when new images are loaded
     new_images_loaded = Signal()
 
+    # Emitted when the mouse is moving on the canvas, but outside
+    # an image/plot. Intended to clear the status bar.
+    clear_mouse_position = Signal()
+
     # Emitted when the mouse moves on top of an image/plot
     # Arguments are: x, y, xdata, ydata, intensity
     new_mouse_position = Signal(int, int, float, float, float)
@@ -220,8 +224,9 @@ class ImageTabWidget(QTabWidget):
         self.update_canvas_norms()
 
     def on_motion_notify_event(self, event):
-        # Don't emit a signal if there is no image/plot under the mouse
+        # Clear the info if the mouse leaves a plot
         if event.inaxes is None:
+            self.clear_mouse_position.emit()
             return
 
         x = event.x

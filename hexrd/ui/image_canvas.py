@@ -86,7 +86,7 @@ class ImageCanvas(FigureCanvas):
         self.show_polar()
 
     def load_images(self, image_names):
-        HexrdConfig().emit_update_processing_label('Loading image view...')
+        HexrdConfig().emit_update_status_bar('Loading image view...')
         if self.mode != 'images' or len(image_names) != len(self.axes_images):
             # Either we weren't in image mode before, or we have a different
             # number of images. Clear and re-draw.
@@ -119,8 +119,7 @@ class ImageCanvas(FigureCanvas):
         self.show_saturation()
 
         msg = 'Image view loaded!'
-        timeout = 5000
-        HexrdConfig().emit_update_processing_label(msg, timeout)
+        HexrdConfig().emit_update_status_bar(msg)
 
     def clear_rings(self):
         while self.cached_rings:
@@ -221,7 +220,7 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def show_cartesian(self):
-        HexrdConfig().emit_update_processing_label('Loading Cartesian view...')
+        HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
         if self.mode != 'cartesian':
             self.clear()
             self.mode = 'cartesian'
@@ -256,11 +255,10 @@ class ImageCanvas(FigureCanvas):
         self.redraw_rings()
 
         msg = 'Cartesian view loaded!'
-        timeout = 5000
-        HexrdConfig().emit_update_processing_label(msg, timeout)
+        HexrdConfig().emit_update_status_bar(msg)
 
     def show_polar(self):
-        HexrdConfig().emit_update_processing_label('Loading polar view...')
+        HexrdConfig().emit_update_status_bar('Loading polar view...')
         if self.mode != 'polar':
             self.clear()
             self.mode = 'polar'
@@ -357,8 +355,7 @@ class ImageCanvas(FigureCanvas):
         self.redraw_rings()
 
         msg = 'Polar view loaded!'
-        timeout = 5000
-        HexrdConfig().emit_update_processing_label(msg, timeout)
+        HexrdConfig().emit_update_status_bar(msg)
 
     def set_cmap(self, cmap):
         self.cmap = cmap
