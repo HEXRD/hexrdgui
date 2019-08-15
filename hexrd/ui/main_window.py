@@ -440,15 +440,21 @@ class MainWindow(QObject):
                 widget.editingFinished.disconnect(self.update_all)
             widget.setKeyboardTracking(not enabled)
 
-    def new_mouse_position(self, x, y, x_data, y_data, intensity):
-        x_str = 'x = {:8.3f}'.format(x_data)
-        y_str = 'y = {:8.3f}'.format(y_data)
-        between = ',  '
-        msg = x_str + between + y_str
+    def new_mouse_position(self, info):
+        labels = []
+        labels.append('x = {:8.3f}'.format(info['x_data']))
+        labels.append('y = {:8.3f}'.format(info['y_data']))
+        delimiter = ',  '
 
-        if intensity != 0.0:
-            # The intensity will be exactly 0.0 if "None" was passed
-            intensity = 'value = {:8.3f}'.format(intensity)
-            msg += between + intensity
+        intensity = info['intensity']
+        if intensity is not None:
+            labels.append('value = {:8.3f}'.format(info['intensity']))
 
+            if info['mode'] in ['cartesian', 'polar']:
+                labels.append('tth = {:8.3f}'.format(info['tth']))
+                labels.append('eta = {:8.3f}'.format(info['eta']))
+                labels.append('dsp = {:8.3f}'.format(info['dsp']))
+                labels.append('hkl = ' + info['hkl'])
+
+        msg = delimiter.join(labels)
         self.ui.status_bar.showMessage(msg)
