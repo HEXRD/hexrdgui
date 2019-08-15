@@ -362,9 +362,10 @@ class CalTreeView(QTreeView):
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
             item = self.model().get_item(index)
-
             path = self.model().get_path_from_root(item, KEY_COL)
-            if path not in HexrdConfig().collapsed_state:
+
+            if (HexrdConfig().collapsed_state is None
+                    or path not in HexrdConfig().collapsed_state):
                 self.expand(index)
 
             self.display_status_checkbox(i, parent)

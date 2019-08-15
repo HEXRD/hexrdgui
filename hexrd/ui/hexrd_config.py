@@ -248,10 +248,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return cur_config
 
     def update_collapsed_state(self, item):
-        if item in self.collapsed_state:
-            self.collapsed_state.remove(item)
-        else:
+        if self.collapsed_state is None:
+            self.collapsed_state = []
+
+        if item not in self.collapsed_state:
             self.collapsed_state.append(item)
+        else:
+            self.collapsed_state.remove(item)
 
     def has_status(self, config):
         if isinstance(config, dict):
