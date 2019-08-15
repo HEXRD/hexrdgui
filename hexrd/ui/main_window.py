@@ -1,8 +1,8 @@
 import os
 
-from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool
+from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer
 from PySide2.QtWidgets import (
-    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
+    QApplication, QFileDialog, QInputDialog, QLabel, QMainWindow, QMessageBox
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -109,6 +109,8 @@ class MainWindow(QObject):
             self.open_image_files)
         self.ui.action_open_aps_imageseries.triggered.connect(
             self.open_aps_imageseries)
+        HexrdConfig().update_processing_label.connect(
+            self.update_processing_label)
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -351,6 +353,8 @@ class MainWindow(QObject):
         if not d.exec_():
             return
 
+        self.update_processing_label('Running powder calibration...')
+
         # Run the calibration in a background thread
         worker = AsyncWorker(run_powder_calibration)
         self.thread_pool.start(worker)
@@ -358,6 +362,10 @@ class MainWindow(QObject):
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_powder_calibration)
         worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        msg = 'Powder calibration finished!'
+        timeout = 5000
+        f = lambda: self.update_processing_label(msg, timeout)
+        worker.signals.finished.connect(f)
         self.cal_progress_dialog.exec_()
 
     def finish_powder_calibration(self):
@@ -443,3 +451,24 @@ class MainWindow(QObject):
             msg += between + intensity
 
         self.ui.status_bar.showMessage(msg)
+
+    def clear_processing_label(self):
+        self.update_processing_label('')
+
+    def update_processing_label(self, msg, timeout=None):
+        if not hasattr(self.ui.status_bar, 'processing_label'):
+            label = QLabel()
+            self.ui.status_bar.addPermanentWidget(label)
+            self.ui.status_bar.processing_label = label
+
+        self.ui.status_bar.processing_label.setText(msg)
+
+        if timeout is not None and timeout != 0:
+            if not hasattr(self.ui.status_bar, 'timer'):
+                t = QTimer()
+                t.setSingleShot(True)
+                t.timeout.connect(self.clear_processing_label)
+                self.ui.status_bar.timer = t
+
+            # Start or restart the timer
+            self.ui.status_bar.timer.start(timeout)
