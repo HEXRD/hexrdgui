@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>30</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -98,7 +98,11 @@
    <addaction name="menuView"/>
    <addaction name="menu_run"/>
   </widget>
-  <widget class="QStatusBar" name="status_bar"/>
+  <widget class="QStatusBar" name="status_bar">
+   <property name="sizeGripEnabled">
+    <bool>false</bool>
+   </property>
+  </widget>
   <widget class="QDockWidget" name="config_dock_widget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -151,8 +155,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>546</width>
-          <height>598</height>
+          <width>550</width>
+          <height>664</height>
          </rect>
         </property>
         <attribute name="label">
@@ -164,8 +168,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>546</width>
-          <height>598</height>
+          <width>550</width>
+          <height>664</height>
          </rect>
         </property>
         <attribute name="label">

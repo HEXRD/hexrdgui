@@ -102,11 +102,17 @@ class MainWindow(QObject):
             self.start_powder_calibration)
         self.ui.image_tab_widget.new_images_loaded.connect(
             self.enable_editing_ims)
+        self.ui.image_tab_widget.new_mouse_position.connect(
+            self.new_mouse_position)
+        self.ui.image_tab_widget.clear_mouse_position.connect(
+            self.ui.status_bar.clearMessage)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
         self.ui.action_open_aps_imageseries.triggered.connect(
             self.open_aps_imageseries)
+        HexrdConfig().update_status_bar.connect(
+            self.ui.status_bar.showMessage)
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -349,6 +355,8 @@ class MainWindow(QObject):
         if not d.exec_():
             return
 
+        HexrdConfig().emit_update_status_bar('Running powder calibration...')
+
         # Run the calibration in a background thread
         worker = AsyncWorker(run_powder_calibration)
         self.thread_pool.start(worker)
@@ -356,6 +364,9 @@ class MainWindow(QObject):
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_powder_calibration)
         worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        msg = 'Powder calibration finished!'
+        f = lambda: HexrdConfig().emit_update_status_bar(msg)
+        worker.signals.finished.connect(f)
         self.cal_progress_dialog.exec_()
 
     def finish_powder_calibration(self):
@@ -428,3 +439,16 @@ class MainWindow(QObject):
             else:
                 widget.editingFinished.disconnect(self.update_all)
             widget.setKeyboardTracking(not enabled)
+
+    def new_mouse_position(self, x, y, x_data, y_data, intensity):
+        x_str = 'x = {:8.3f}'.format(x_data)
+        y_str = 'y = {:8.3f}'.format(y_data)
+        between = ',  '
+        msg = x_str + between + y_str
+
+        if intensity != 0.0:
+            # The intensity will be exactly 0.0 if "None" was passed
+            intensity = 'value = {:8.3f}'.format(intensity)
+            msg += between + intensity
+
+        self.ui.status_bar.showMessage(msg)

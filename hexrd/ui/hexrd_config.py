@@ -58,6 +58,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when polar resolution configuration has changed"""
     polar_resolution_config_changed = Signal()
 
+    """Convenience signal to update the main window's status bar
+
+    Arguments are: message (str)
+
+    """
+    update_status_bar = Signal(str)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -141,6 +148,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.create_internal_config(self.config['instrument'])
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
+
+    def emit_update_status_bar(self, msg):
+        """Convenience signal to update the main window's status bar"""
+        self.update_status_bar.emit(msg)
 
     # This is here for backward compatibility
     @property
