@@ -12,8 +12,6 @@ class CalibrationCrystalEditor(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('calibration_crystal_editor.ui', parent)
 
-        self.set_defaults_if_missing()
-
         self.setup_connections()
         self.update_gui_from_config()
 
@@ -101,11 +99,3 @@ class CalibrationCrystalEditor(QObject):
 
     def root_dict(self):
         return HexrdConfig().config['calibration']['crystal']
-
-    def set_defaults_if_missing(self):
-        # TODO: we should do this for the entire config in HexrdConfig
-        # to assist with backward compatibility.
-        defaults = HexrdConfig().default_config['calibration']['crystal']
-        d = HexrdConfig().config['calibration'].setdefault('crystal', defaults)
-        for key in defaults.keys():
-            d.setdefault(key, defaults[key])
