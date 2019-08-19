@@ -18,9 +18,6 @@ NavigationToolbar2QT.toolitems = [x for x in NavigationToolbar2QT.toolitems if
 
 class ImageTabWidget(QTabWidget):
 
-    # Emitted when new images are loaded
-    new_images_loaded = Signal()
-
     # Emitted when the mouse is moving on the canvas, but outside
     # an image/plot. Intended to clear the status bar.
     clear_mouse_position = Signal()
@@ -47,12 +44,11 @@ class ImageTabWidget(QTabWidget):
         self.toolbars = []
         self.toolbar_visible = True
 
-        self.set_tabbed_view(False)
-
         self.setup_connections()
 
     def setup_connections(self):
         self.currentChanged.connect(self.switch_toolbar)
+        HexrdConfig().tab_images_changed.connect(self.load_images)
 
     def allocate_canvases(self):
         while len(self.image_canvases) < len(self.image_names):
@@ -88,34 +84,30 @@ class ImageTabWidget(QTabWidget):
         self.update_canvas_norms()
         self.tabBar().hide()
 
-    def load_images(self):
-        self.image_names = list(HexrdConfig().imageseries_dict.keys())
+    def update_image_names(self):
+        # Returns True if new images were loaded, and False otherwise
+        if self.image_names != list(HexrdConfig().imageseries_dict.keys()):
+            self.image_names = list(HexrdConfig().imageseries_dict.keys())
 
-        if self.tabbed_view:
+    def load_images(self):
+        self.update_image_names()
+
+        if HexrdConfig().tab_images:
             self.load_images_tabbed()
         else:
             self.load_images_untabbed()
 
-        self.new_images_loaded.emit()
         self.update_ims_toolbar()
 
     def change_ims_image(self, pos, name):
         HexrdConfig().current_imageseries_idx = pos
         idx = self.currentIndex()
-        if not self.tabbed_view:
+        if not HexrdConfig().tab_images:
             self.image_canvases[0].load_images(
                 image_names=self.image_names)
         else:
             self.image_canvases[idx].load_images(
                 image_names=[name])
-
-    @Slot(bool)
-    def set_tabbed_view(self, tabbed_view=False):
-        self.tabbed_view = tabbed_view
-        if self.tabbed_view:
-            self.load_images_tabbed()
-        else:
-            self.load_images_untabbed()
 
     @Slot(bool)
     def show_toolbar(self, b):
@@ -167,9 +159,11 @@ class ImageTabWidget(QTabWidget):
             toolbar['sb'].update_range()
 
     def show_cartesian(self):
+        self.update_image_names()
+
         # Make sure we actually have images
         if len(self.image_names) == 0:
-            msg = 'Cannot run calibration without images!'
+            msg = 'Cannot show Cartesian view without images!'
             QMessageBox.warning(self, 'HEXRD', msg)
             return
 
@@ -179,9 +173,11 @@ class ImageTabWidget(QTabWidget):
         self.tabBar().hide()
 
     def show_polar(self):
+        self.update_image_names()
+
         # Make sure we actually have images
         if len(self.image_names) == 0:
-            msg = 'Cannot run calibration without images!'
+            msg = 'Cannot show Polar view without images!'
             QMessageBox.warning(self, 'HEXRD', msg)
             return
 
@@ -192,18 +188,10 @@ class ImageTabWidget(QTabWidget):
 
     def active_canvases(self):
         """Get the canvases that are actively being used"""
-        if not self.tabbed_view:
+        if not HexrdConfig().tab_images:
             return [self.image_canvases[0]]
 
         return self.image_canvases[:len(self.image_names)]
-
-    def value_range(self):
-        """Get the range of values in the images"""
-        mins_maxes = [x.percentile_range() for x in self.active_canvases()]
-        minimum = min([x[0] for x in mins_maxes])
-        maximum = max([x[1] for x in mins_maxes])
-
-        return minimum, maximum
 
     def update_canvas_cmaps(self):
         if self.cmap is not None:
