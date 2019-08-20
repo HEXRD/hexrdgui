@@ -18,6 +18,9 @@ NavigationToolbar2QT.toolitems = [x for x in NavigationToolbar2QT.toolitems if
 
 class ImageTabWidget(QTabWidget):
 
+    # Tell the main window that an update is needed
+    update_needed = Signal()
+
     # Emitted when the mouse is moving on the canvas, but outside
     # an image/plot. Intended to clear the status bar.
     clear_mouse_position = Signal()
@@ -98,15 +101,9 @@ class ImageTabWidget(QTabWidget):
 
         self.update_ims_toolbar()
 
-    def change_ims_image(self, pos, name):
+    def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
-        idx = self.currentIndex()
-        if not HexrdConfig().tab_images:
-            self.image_canvases[0].load_images(
-                image_names=self.image_names)
-        else:
-            self.image_canvases[idx].load_images(
-                image_names=[name])
+        self.update_needed.emit()
 
     @Slot(bool)
     def show_toolbar(self, b):

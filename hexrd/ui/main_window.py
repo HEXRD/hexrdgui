@@ -102,6 +102,7 @@ class MainWindow(QObject):
             self.start_powder_calibration)
         self.new_images_loaded.connect(self.enable_editing_ims)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(

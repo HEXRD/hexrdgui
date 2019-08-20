@@ -70,4 +70,4 @@ class ImageSeriesToolbar(QWidget):
             self.widget.setVisible(b)
 
     def val_changed(self, pos):
-        self.parent().change_ims_image(pos, self.name)
+        self.parent().change_ims_image(pos)
