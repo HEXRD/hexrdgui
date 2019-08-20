@@ -118,7 +118,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>&amp;Configuration</string>
+    <string>Configuration</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -239,7 +239,7 @@
   </widget>
   <widget class="QDockWidget" name="color_map_dock_widget">
    <property name="windowTitle">
-    <string>Co&amp;lor Map</string>
+    <string>Color Map</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
@@ -266,7 +266,7 @@
   </widget>
   <widget class="QDockWidget" name="resolution_dock_widget">
    <property name="windowTitle">
-    <string>Re&amp;ndering Resolution</string>
+    <string>Rendering Resolution</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
@@ -290,7 +290,7 @@
   </widget>
   <widget class="QDockWidget" name="frame_aggregation_widget">
    <property name="windowTitle">
-    <string>Frame A&amp;ggregation</string>
+    <string>Frame Aggregation</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
@@ -330,7 +330,7 @@
   </action>
   <action name="action_open_config">
    <property name="text">
-    <string>&amp;Configuration</string>
+    <string>Configuration</string>
    </property>
   </action>
   <action name="action_save_imageseries">
