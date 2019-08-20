@@ -4,26 +4,6 @@ beam:
     azimuth: 'cal_vector_azimuth',
     polar_angle: 'cal_vector_polar'
   }
-calibration_crystal:
-  grain_id: 'cal_crystal_grain_id'
-  inv_stretch: [
-    'cal_crystal_inv_stretch_0',
-    'cal_crystal_inv_stretch_1',
-    'cal_crystal_inv_stretch_2',
-    'cal_crystal_inv_stretch_3',
-    'cal_crystal_inv_stretch_4',
-    'cal_crystal_inv_stretch_5'
-  ]
-  orientation: [
-    'cal_crystal_orientation_0',
-    'cal_crystal_orientation_1',
-    'cal_crystal_orientation_2'
-  ]
-  position: [
-    'cal_crystal_position_0',
-    'cal_crystal_position_1',
-    'cal_crystal_position_2'
-  ]
 detectors:
   detector_name:
     distortion:

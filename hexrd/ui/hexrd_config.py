@@ -100,11 +100,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Load the default config['instrument'] settings
             self.config['instrument'] = copy.deepcopy(
                 self.default_config['instrument'])
-            self.create_internal_config(self.config['instrument'])
 
         if self.config.get('calibration') is None:
             self.config['calibration'] = copy.deepcopy(
                 self.default_config['calibration'])
+
+        # Set required defaults if any are missing
+        self.set_defaults_if_missing()
+
+        # Add the statuses to the config
+        self.create_internal_config(self.config['instrument'])
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -144,8 +149,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = bool(settings.value('live_update', False) == 'true')
         self._euler_angle_convention = settings.value('euler_angle_convention',
                                                       ('xyz', True))
-        if self.config.get('instrument') is not None:
-            self.create_internal_config(self.config['instrument'])
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
 
@@ -197,6 +200,29 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.default_config['calibration'] = yaml.load(text,
                                                        Loader=yaml.FullLoader)
 
+    def set_defaults_if_missing(self):
+        # Find missing required keys and set defaults for them.
+        to_do_keys = ['instrument', 'calibration', 'resolution']
+        for key in to_do_keys:
+            self._recursive_set_defaults(self.config[key],
+                                         self.default_config[key])
+
+        # Find missing keys under detectors and set defaults for them
+        default = self.get_default_detector()
+        for name in self.get_detector_names():
+            self._recursive_set_defaults(self.get_detector(name), default)
+
+    def _recursive_set_defaults(self, current, default):
+        for key in default.keys():
+            current.setdefault(key, default[key])
+
+            if key == 'detectors':
+                # Don't copy the default detectors into the current ones
+                continue
+
+            if isinstance(default[key], dict):
+                self._recursive_set_defaults(current[key], default[key])
+
     def image(self, name, idx):
         return self.imageseries(name)[idx]
 
@@ -222,6 +248,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
+
+        # Set any required keys that might be missing to prevent key errors
+        self.set_defaults_if_missing()
         self.create_internal_config(self.config['instrument'])
 
         self.update_active_material_energy()

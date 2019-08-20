@@ -303,7 +303,7 @@ def run_powder_calibration():
     # data_dict = pc._extract_powder_lines()
 
     # Add this so the calibration crystal gets written
-    cal_crystal = iconfig['calibration_crystal']
+    cal_crystal = iconfig.get('calibration_crystal')
     output_dict = instr.write_config(calibration_dict=cal_crystal)
 
     # Add the saturation levels, as they seem to be missing
