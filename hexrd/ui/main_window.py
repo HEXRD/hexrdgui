@@ -11,6 +11,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
+from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -93,6 +94,8 @@ class MainWindow(QObject):
             self.on_action_edit_angles)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
+        self.ui.action_edit_calibration_crystal.triggered.connect(
+            self.on_action_edit_calibration_crystal)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.calibration_tab_widget.currentChanged.connect(
@@ -334,6 +337,15 @@ class MainWindow(QObject):
             HexrdConfig()._euler_angle_convention = (chosen, extrinsic)
 
         self.update_config_gui()
+
+    def on_action_edit_calibration_crystal(self):
+        if not hasattr(self, 'calibration_crystal_editor'):
+            self.calibration_crystal_editor = CalibrationCrystalEditor(self.ui)
+        else:
+            # Update the GUI in case it needs updating
+            self.calibration_crystal_editor.update_gui_from_config()
+
+        self.calibration_crystal_editor.exec_()
 
     def change_image_mode(self, text):
         self.image_mode = text.lower()

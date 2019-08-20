@@ -1,11 +1,6 @@
 beam:
   energy: 55.6180
   vector: {azimuth: 90.0, polar_angle: 90.0}
-calibration_crystal:
-  grain_id: 2
-  inv_stretch: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
-  orientation: [0.0, 0.0, 0.0]
-  position: [0.0, 0.0, 0.0]
 detectors:
   ge1:
     distortion:
