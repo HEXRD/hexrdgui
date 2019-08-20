@@ -85,7 +85,6 @@ class ImageTabWidget(QTabWidget):
         self.tabBar().hide()
 
     def update_image_names(self):
-        # Returns True if new images were loaded, and False otherwise
         if self.image_names != list(HexrdConfig().imageseries_dict.keys()):
             self.image_names = list(HexrdConfig().imageseries_dict.keys())
 
