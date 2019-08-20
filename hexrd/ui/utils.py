@@ -57,7 +57,7 @@ def make_new_pdata(mat):
     fix_exclusions(mat)
 
 
-def _coords2index(im, x, y):
+def coords2index(im, x, y):
     """
     This function is modified from here:
     https://github.com/joferkington/mpldatacursor/blob/7dabc589ed02c35ac5d89de5931f91e0323aa795/mpldatacursor/pick_info.py#L28
@@ -86,27 +86,3 @@ def _coords2index(im, x, y):
              mtransforms.BboxTransformTo(array_extent))
 
     return trans.transform_point([y, x]).astype(int)
-
-
-def calculate_intensity(event, artist):
-    """
-    This function is modified from here:
-    https://github.com/joferkington/mpldatacursor/blob/7dabc589ed02c35ac5d89de5931f91e0323aa795/mpldatacursor/pick_info.py#L61
-
-    Get uninterpolated pixel intensity for the pixel behind the mouse
-    event.
-
-    Parameters
-    -----------
-    event : MouseEvent
-        The mouse event to process
-    artist : An AxesImage instance
-        The image artist to operate on
-
-    Returns
-    --------
-    pixel intensity : float
-    """
-    x, y = event.xdata, event.ydata
-    i, j = _coords2index(artist, x, y)
-    return artist.get_array()[i, j]

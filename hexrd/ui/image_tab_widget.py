@@ -3,6 +3,8 @@ from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
+import numpy as np
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
@@ -27,7 +29,7 @@ class ImageTabWidget(QTabWidget):
 
     # Emitted when the mouse moves on top of an image/plot
     # Arguments are: x, y, xdata, ydata, intensity
-    new_mouse_position = Signal(int, int, float, float, float)
+    new_mouse_position = Signal(dict)
 
     def __init__(self, parent=None):
         super(ImageTabWidget, self).__init__(parent)
@@ -213,10 +215,18 @@ class ImageTabWidget(QTabWidget):
             self.clear_mouse_position.emit()
             return
 
-        x = event.x
-        y = event.y
-        x_data = event.xdata
-        y_data = event.ydata
+        mode = self.image_canvases[0].mode
+
+        if mode is None:
+            mode = 'images'
+
+        info = {
+            'x': event.x,
+            'y': event.y,
+            'x_data': event.xdata,
+            'y_data': event.ydata,
+            'mode': mode
+        }
 
         # TODO: we are currently calculating the pixel intensity
         # mathematically, because I couldn't find any other way
@@ -225,12 +235,39 @@ class ImageTabWidget(QTabWidget):
         if event.inaxes.get_images():
             # Image was created with imshow()
             artist = event.inaxes.get_images()[0]
-            intensity = utils.calculate_intensity(event, artist)
+            i, j = utils.coords2index(artist, info['x_data'], info['y_data'])
+            intensity = artist.get_array()[i, j]
         else:
             # This is probably just a plot. Do not calculate intensity.
             intensity = None
 
-        self.new_mouse_position.emit(x, y, x_data, y_data, intensity)
+        info['intensity'] = intensity
+
+        # intensity being None implies here that the mouse is on top of the
+        # azimuthal integration plot in the polar view.
+        if mode in ['cartesian', 'polar'] and intensity is not None:
+
+            iviewer = self.image_canvases[0].iviewer
+
+            if mode == 'cartesian':
+                xy_data = iviewer.dpanel.pixelToCart(np.vstack([i, j]).T)
+                ang_data, gvec = iviewer.dpanel.cart_to_angles(xy_data)
+                tth = ang_data[:, 0][0]
+                eta = ang_data[:, 1][0]
+            else:
+                tth = np.radians(info['x_data'])
+                eta = np.radians(info['y_data'])
+
+            dsp = 0.5 * iviewer.plane_data.wavelength / np.sin(0.5 * tth)
+            hkl = str(iviewer.plane_data.getHKLs(asStr=True, allHKLs=True,
+                                                 thisTTh=tth))
+
+            info['tth'] = np.degrees(tth)
+            info['eta'] = np.degrees(eta)
+            info['dsp'] = dsp
+            info['hkl'] = hkl
+
+        self.new_mouse_position.emit(info)
 
 
 if __name__ == '__main__':
