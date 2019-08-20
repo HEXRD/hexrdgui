@@ -45,13 +45,13 @@ Currently, there are three main keys for the configuration:
 ```
 instrument: contains the instrument config used by hexrd
 materials: contains materials settings and the loaded materials
-resolution: contains resolution settings
+image: contains image settings
 ```
 
 No additional keys should be added to `instrument`, because it is
 supposed to be exactly what is passed to the `hexrd` source code.
 
-However, additional keys can be added to `materials` and `resolution`
+However, additional keys can be added to `materials` and `image`
 as needed. Additional main keys can be added as well, when more
 generic categories are needed.
 

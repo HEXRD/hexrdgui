@@ -1,6 +1,6 @@
 import os
 
-from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool
+from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
 )
@@ -18,7 +18,7 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
-from hexrd.ui.resolution_editor import ResolutionEditor
+from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.process_ims_dialog import ProcessIMSDialog
 from hexrd.ui.frame_aggregation import FrameAggregation
@@ -26,6 +26,9 @@ from hexrd.ui.wedge_editor import WedgeEditor
 
 
 class MainWindow(QObject):
+
+    # Emitted when new images are loaded
+    new_images_loaded = Signal()
 
     def __init__(self, parent=None, image_files=None):
         super(MainWindow, self).__init__(parent)
@@ -45,9 +48,10 @@ class MainWindow(QObject):
         self.ui.color_map_dock_widgets.layout().addWidget(
             self.color_map_editor.ui)
 
-        self.resolution_editor = ResolutionEditor(self.ui.central_widget)
-        self.ui.resolution_dock_widgets.layout().addWidget(
-            self.resolution_editor.ui)
+        self.image_mode = 'raw'
+        self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
+        self.ui.image_mode_dock_widgets.layout().addWidget(
+            self.image_mode_widget.ui)
 
         self.frame_aggregation = FrameAggregation(self.ui.central_widget)
         self.ui.frame_aggregation_widgets.layout().addWidget(
@@ -94,17 +98,14 @@ class MainWindow(QObject):
             self.on_action_edit_calibration_crystal)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
-        self.ui.action_show_saturation_percentages.toggled.connect(
-            HexrdConfig().set_show_saturation_level)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
-        self.ui.image_view.pressed.connect(self.show_images)
-        self.ui.cartesian_view.pressed.connect(self.show_cartesian)
-        self.ui.polar_view.pressed.connect(self.show_polar)
+        self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.ui.action_run_powder_calibration.triggered.connect(
             self.start_powder_calibration)
-        self.ui.image_tab_widget.new_images_loaded.connect(
-            self.enable_editing_ims)
+        self.new_images_loaded.connect(self.enable_editing_ims)
+        self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
@@ -199,7 +200,8 @@ class MainWindow(QObject):
                 ImageFileManager().load_images(detector_names, image_files)
                 self.ui.action_edit_ims.setEnabled(True)
                 self.ui.action_edit_angles.setEnabled(True)
-                self.ui.image_tab_widget.load_images()
+                self.update_all()
+                self.new_images_loaded.emit()
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
@@ -218,7 +220,8 @@ class MainWindow(QObject):
         ImageFileManager().load_aps_imageseries(detector_names, selected_dirs)
         self.ui.action_edit_ims.setEnabled(True)
         self.ui.action_edit_angles.setEnabled(True)
-        self.ui.image_tab_widget.load_images()
+        self.update_all()
+        self.new_images_loaded.emit()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -344,18 +347,9 @@ class MainWindow(QObject):
 
         self.calibration_crystal_editor.exec_()
 
-    def show_images(self):
-        self.ui.image_tab_widget.load_images()
-
-    def show_cartesian(self):
-        # Automatically make the cartesian resolution tab the active tab
-        self.resolution_editor.ui.tab_widget.setCurrentIndex(0)
-        self.ui.image_tab_widget.show_cartesian()
-
-    def show_polar(self):
-        # Automatically make the polar resolution tab the active tab
-        self.resolution_editor.ui.tab_widget.setCurrentIndex(1)
-        self.ui.image_tab_widget.show_polar()
+    def change_image_mode(self, text):
+        self.image_mode = text.lower()
+        self.update_all()
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():
@@ -412,20 +406,16 @@ class MainWindow(QObject):
         if QApplication.focusWidget() is not None:
             QApplication.focusWidget().clearFocus()
 
-        # Determine current canvas and update
-        first_canvas = self.ui.image_tab_widget.image_canvases[0]
-        mode = first_canvas.mode
-
         if clear_canvases:
             for canvas in self.ui.image_tab_widget.image_canvases:
                 canvas.clear()
 
-        if mode == 'cartesian':
-            first_canvas.show_cartesian()
-        elif mode == 'polar':
-            first_canvas.show_polar()
+        if self.image_mode == 'cartesian':
+            self.ui.image_tab_widget.show_cartesian()
+        elif self.image_mode == 'polar':
+            self.ui.image_tab_widget.show_polar()
         else:
-            self.show_images()
+            self.ui.image_tab_widget.load_images()
 
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
@@ -434,9 +424,9 @@ class MainWindow(QObject):
 
         dis_widgets = {self.calibration_config_widget.gui_data_changed,
                        self.cal_tree_view.model().tree_data_changed}
-        pix_widgets = {self.resolution_editor.ui.cartesian_pixel_size,
-                       self.resolution_editor.ui.polar_pixel_size_eta,
-                       self.resolution_editor.ui.polar_pixel_size_tth}
+        pix_widgets = {self.image_mode_widget.ui.cartesian_pixel_size,
+                       self.image_mode_widget.ui.polar_pixel_size_eta,
+                       self.image_mode_widget.ui.polar_pixel_size_tth}
 
         for widget in dis_widgets:
             if enabled:
