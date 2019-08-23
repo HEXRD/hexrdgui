@@ -32,6 +32,7 @@ setup(
         'Programming Language :: Python :: 3.6'
     ],
     packages=find_packages(),
+    package_data={'hexrd': ['ui/resources/**/*']},
     python_requires='>=3.6',
     install_requires=install_reqs,
     entry_points={
