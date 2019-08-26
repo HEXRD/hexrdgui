@@ -58,6 +58,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when polar resolution configuration has changed"""
     polar_resolution_config_changed = Signal()
 
+    """Emitted when detectors have been added or removed"""
+    detectors_changed = Signal()
+
     """Convenience signal to update the main window's status bar
 
     Arguments are: message (str)
@@ -513,9 +516,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             new_detector = self.get_default_detector()
 
         self.config['instrument']['detectors'][detector_name] = new_detector
+        self.detectors_changed.emit()
 
     def remove_detector(self, detector_name):
         del self.config['instrument']['detectors'][detector_name]
+        self.detectors_changed.emit()
 
     def rename_detector(self, old_name, new_name):
         if old_name != new_name:
