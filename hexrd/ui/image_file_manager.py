@@ -36,6 +36,9 @@ class ImageFileManager(metaclass=Singleton):
         HexrdConfig().imageseries_dict.clear()
         for name, f in zip(detectors, file_names):
             try:
+                if isinstance(f, list):
+                    f = f[0]
+
                 ims = self.open_file(f)
                 HexrdConfig().imageseries_dict[name] = ims
             except (Exception, IOError) as error:
@@ -94,8 +97,10 @@ class ImageFileManager(metaclass=Singleton):
         #     ims = imageseries.open(f, 'array')
         return ims
 
-    def open_directory(self, d):
-        files = os.listdir(d)
+    def open_directory(self, d, files=None):
+        if files is None:
+            files = os.listdir(d)
+
         input_dict = {
             'image-files': {}
         }
@@ -120,7 +125,6 @@ class ImageFileManager(metaclass=Singleton):
             os.remove(temp.name)
         return ims
 
-
     def is_hdf5(self, extension):
         hdf5_extensions = ['.h5', '.hdf5', '.he5']
         if extension in hdf5_extensions:
@@ -143,4 +147,4 @@ class ImageFileManager(metaclass=Singleton):
             HexrdConfig().hdf5_path = [group, data]
             self.remember = remember
         else:
-            return
+            return False
