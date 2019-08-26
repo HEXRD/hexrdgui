@@ -3,7 +3,10 @@ import copy
 from matplotlib import cm
 import matplotlib.colors
 
+import numpy as np
+
 import hexrd.ui.constants
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -42,8 +45,6 @@ class ColorMapEditor:
         self.ui.reset_range.pressed.connect(self.reset_range)
         self.ui.log_scale.toggled.connect(self.update_norm)
 
-        self.image_tab_widget.new_images_loaded.connect(self.update_bounds)
-
     def update_mins_and_maxes(self):
         # We can't do this in PySide2 for some reason:
         # self.ui.maximum.valueChanged.connect(self.ui.minimum.setMaximum)
@@ -52,13 +53,26 @@ class ColorMapEditor:
         self.ui.minimum.setMaximum(self.ui.maximum.value())
 
     def update_bounds(self):
-        bounds = self.image_tab_widget.value_range()
+        bounds = self.percentile_range()
         self.ui.minimum.setValue(bounds[0])
         self.ui.minimum.setToolTip('Min: ' + str(bounds[0]))
         self.ui.maximum.setValue(bounds[1])
         self.ui.maximum.setToolTip('Max: ' + str(bounds[1]))
 
         self.bounds = bounds
+
+    def percentile_range(self, low = 69.0, high = 99.9):
+        d = HexrdConfig().current_images_dict()
+        l = min([np.percentile(d[key], low) for key in d.keys()])
+        h = min([np.percentile(d[key], high) for key in d.keys()])
+
+        if h - l < 5:
+            h = l + 5
+
+        # This debug is useful for now, keeping it in for sanity...
+        print("Range to be used: ", l, " -> ", h)
+
+        return l, h
 
     def reset_range(self):
         self.ui.minimum.setValue(self.bounds[0])

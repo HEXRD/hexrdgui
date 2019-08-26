@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>resolution_editor</class>
- <widget class="QWidget" name="resolution_editor">
+ <class>image_mode_widget</class>
+ <widget class="QWidget" name="image_mode_widget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -55,6 +55,27 @@
      <property name="tabBarAutoHide">
       <bool>false</bool>
      </property>
+     <widget class="QWidget" name="raw_tab">
+      <attribute name="title">
+       <string>Raw</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QCheckBox" name="raw_tabbed_view">
+         <property name="text">
+          <string>Tabbed View</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="raw_show_saturation">
+         <property name="text">
+          <string>Show Saturation</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="cartesian_tab">
       <attribute name="title">
        <string>Cartesian</string>

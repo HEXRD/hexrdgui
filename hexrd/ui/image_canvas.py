@@ -38,9 +38,7 @@ class ImageCanvas(FigureCanvas):
 
         # Track the pixel size
         self.cartesian_pixel_size = HexrdConfig().cartesian_pixel_size
-        self.polar_res_config = (
-            HexrdConfig().config['resolution']['polar'].copy()
-        )
+        self.polar_res_config = HexrdConfig().config['image']['polar'].copy()
 
         # Set up our async stuff
         self.thread_pool = QThreadPool(parent)
@@ -54,10 +52,9 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().ring_config_changed.connect(self.redraw_rings)
         HexrdConfig().show_saturation_level_changed.connect(
             self.show_saturation)
-        HexrdConfig().cartesian_resolution_config_changed.connect(
-            self.on_cartesian_resolution_changed)
-        HexrdConfig().polar_resolution_config_changed.connect(
-            self.on_polar_resolution_changed)
+        HexrdConfig().cartesian_config_changed.connect(
+            self.on_cartesian_changed)
+        HexrdConfig().polar_config_changed.connect(self.on_polar_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -71,14 +68,14 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_integral_axis = None
         self.mode = None
 
-    def on_cartesian_resolution_changed(self):
+    def on_cartesian_changed(self):
         if self.mode != 'cartesian':
             # Don't do anything...
             return
 
         self.show_cartesian()
 
-    def on_polar_resolution_changed(self):
+    def on_polar_changed(self):
         if self.mode != 'polar':
             # Don't do anything...
             return
@@ -263,8 +260,8 @@ class ImageCanvas(FigureCanvas):
             self.clear()
             self.mode = 'polar'
 
-        # Reset on resolution changes
-        polar_res_config = HexrdConfig().config['resolution']['polar']
+        # Reset on image setting changes
+        polar_res_config = HexrdConfig().config['image']['polar']
         if self.polar_res_config != polar_res_config:
             self.polar_res_config = polar_res_config.copy()
             self.clear()
@@ -368,21 +365,3 @@ class ImageCanvas(FigureCanvas):
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
         self.draw()
-
-    def get_min_max(self):
-        minimum = min([x.get_array().min() for x in self.axes_images])
-        maximum = max([x.get_array().max() for x in self.axes_images])
-
-        return minimum, maximum
-
-    def percentile_range(self, low = 69.0, high = 99.9):
-        l = min([np.percentile(x.get_array(), low) for x in self.axes_images])
-        h = min([np.percentile(x.get_array(), high) for x in self.axes_images])
-
-        if h - l < 5:
-            h = l + 5
-
-        # This debug is useful for now, keeping it in for sanity...
-        print("Range to be used: ", l, " -> ", h)
-
-        return l, h

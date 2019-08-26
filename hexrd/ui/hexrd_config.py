@@ -52,11 +52,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
-    """Emitted when cartesian resolution configuration has changed"""
-    cartesian_resolution_config_changed = Signal()
+    """Emitted when the option to tab images is changed"""
+    tab_images_changed = Signal()
 
-    """Emitted when polar resolution configuration has changed"""
-    polar_resolution_config_changed = Signal()
+    """Emitted when cartesian configuration has changed"""
+    cartesian_config_changed = Signal()
+
+    """Emitted when polar configuration has changed"""
+    polar_config_changed = Signal()
 
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
@@ -83,6 +86,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.hdf5_path = []
         self.live_update = False
         self._show_saturation_level = False
+        self._tab_images = False
         self.previous_active_material = None
         self.collapsed_state = []
 
@@ -96,18 +100,22 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials'] = copy.deepcopy(
             self.default_config['materials'])
-        self.config['resolution'] = copy.deepcopy(
-            self.default_config['resolution'])
+        self.config['image'] = copy.deepcopy(self.default_config['image'])
 
         if self.config.get('instrument') is None:
             # Load the default config['instrument'] settings
             self.config['instrument'] = copy.deepcopy(
                 self.default_config['instrument'])
-            self.create_internal_config(self.config['instrument'])
 
         if self.config.get('calibration') is None:
             self.config['calibration'] = copy.deepcopy(
                 self.default_config['calibration'])
+
+        # Set required defaults if any are missing
+        self.set_defaults_if_missing()
+
+        # Add the statuses to the config
+        self.create_internal_config(self.config['instrument'])
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
@@ -147,8 +155,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.live_update = bool(settings.value('live_update', False) == 'true')
         self._euler_angle_convention = settings.value('euler_angle_convention',
                                                       ('xyz', True))
-        if self.config.get('instrument') is not None:
-            self.create_internal_config(self.config['instrument'])
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
 
@@ -191,14 +197,36 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                                      Loader=yaml.FullLoader)
 
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
-                                             'default_resolution_config.yml')
-        self.default_config['resolution'] = yaml.load(text,
-                                                      Loader=yaml.FullLoader)
+                                             'default_image_config.yml')
+        self.default_config['image'] = yaml.load(text, Loader=yaml.FullLoader)
 
         text = resource_loader.load_resource(hexrd.ui.resources.calibration,
                                              'default_calibration_config.yml')
         self.default_config['calibration'] = yaml.load(text,
                                                        Loader=yaml.FullLoader)
+
+    def set_defaults_if_missing(self):
+        # Find missing required keys and set defaults for them.
+        to_do_keys = ['instrument', 'calibration', 'image']
+        for key in to_do_keys:
+            self._recursive_set_defaults(self.config[key],
+                                         self.default_config[key])
+
+        # Find missing keys under detectors and set defaults for them
+        default = self.get_default_detector()
+        for name in self.get_detector_names():
+            self._recursive_set_defaults(self.get_detector(name), default)
+
+    def _recursive_set_defaults(self, current, default):
+        for key in default.keys():
+            current.setdefault(key, default[key])
+
+            if key == 'detectors':
+                # Don't copy the default detectors into the current ones
+                continue
+
+            if isinstance(default[key], dict):
+                self._recursive_set_defaults(current[key], default[key])
 
     def image(self, name, idx):
         return self.imageseries(name)[idx]
@@ -225,6 +253,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
+
+        # Set any required keys that might be missing to prevent key errors
+        self.set_defaults_if_missing()
         self.create_internal_config(self.config['instrument'])
 
         self.update_active_material_energy()
@@ -679,51 +710,51 @@ class HexrdConfig(QObject, metaclass=Singleton):
     ring_ranges = property(_ring_ranges, _set_ring_ranges)
 
     def _polar_pixel_size_tth(self):
-        return self.config['resolution']['polar']['pixel_size_tth']
+        return self.config['image']['polar']['pixel_size_tth']
 
     def _set_polar_pixel_size_tth(self, v):
-        self.config['resolution']['polar']['pixel_size_tth'] = v
-        self.polar_resolution_config_changed.emit()
+        self.config['image']['polar']['pixel_size_tth'] = v
+        self.polar_config_changed.emit()
 
     polar_pixel_size_tth = property(_polar_pixel_size_tth,
                                     _set_polar_pixel_size_tth)
 
     def _polar_pixel_size_eta(self):
-        return self.config['resolution']['polar']['pixel_size_eta']
+        return self.config['image']['polar']['pixel_size_eta']
 
     def _set_polar_pixel_size_eta(self, v):
-        self.config['resolution']['polar']['pixel_size_eta'] = v
-        self.polar_resolution_config_changed.emit()
+        self.config['image']['polar']['pixel_size_eta'] = v
+        self.polar_config_changed.emit()
 
     polar_pixel_size_eta = property(_polar_pixel_size_eta,
                                     _set_polar_pixel_size_eta)
 
     def _polar_res_tth_min(self):
-        return self.config['resolution']['polar']['tth_min']
+        return self.config['image']['polar']['tth_min']
 
     def set_polar_res_tth_min(self, v):
-        self.config['resolution']['polar']['tth_min'] = v
-        self.polar_resolution_config_changed.emit()
+        self.config['image']['polar']['tth_min'] = v
+        self.polar_config_changed.emit()
 
     polar_res_tth_min = property(_polar_res_tth_min,
                                  set_polar_res_tth_min)
 
     def _polar_res_tth_max(self):
-        return self.config['resolution']['polar']['tth_max']
+        return self.config['image']['polar']['tth_max']
 
     def set_polar_res_tth_max(self, v):
-        self.config['resolution']['polar']['tth_max'] = v
-        self.polar_resolution_config_changed.emit()
+        self.config['image']['polar']['tth_max'] = v
+        self.polar_config_changed.emit()
 
     polar_res_tth_max = property(_polar_res_tth_max,
                                  set_polar_res_tth_max)
 
     def _cartesian_pixel_size(self):
-        return self.config['resolution']['cartesian']['pixel_size']
+        return self.config['image']['cartesian']['pixel_size']
 
     def _set_cartesian_pixel_size(self, v):
-        self.config['resolution']['cartesian']['pixel_size'] = v
-        self.cartesian_resolution_config_changed.emit()
+        self.config['image']['cartesian']['pixel_size'] = v
+        self.cartesian_config_changed.emit()
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
@@ -738,6 +769,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     show_saturation_level = property(get_show_saturation_level,
                                      set_show_saturation_level)
+
+    def tab_images(self):
+        return self._tab_images
+
+    def set_tab_images(self, v):
+        if self._tab_images != v:
+            self._tab_images = v
+            self.tab_images_changed.emit()
+
+    tab_images = property(tab_images, set_tab_images)
 
     def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True):
         # First, convert all the tilt angles
