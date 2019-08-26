@@ -199,6 +199,221 @@ class LoadPanel(QObject):
                 break
 
     def read_data(self):
-        # When this is pressed we need to check that all data is set, and then
-        # read in a complete set of data for all detectors.
-        print("Read all the data!")
+        # When this is pressed read in a complete set of data for all detectors.
+        # Run the imageseries processing in a background thread and display a
+        # loading dialog
+
+        # Create threads and loading dialog
+        thread_pool = QThreadPool(self.parent())
+        progress_dialog = CalProgressDialog(self.parent())
+        progress_dialog.setMinimumDuration(0)
+        progress_dialog.setWindowTitle('Loading Processed Imageseries')
+
+        # Start processing in background
+        worker = AsyncWorker(self.process_ims)
+        thread_pool.start(worker)
+
+        # On completion load imageseries nd close loading dialog
+        worker.signals.result.connect(self.finish_processing_ims)
+        worker.signals.finished.connect(progress_dialog.accept)
+        progress_dialog.exec_()
+
+    def process_ims(self):
+        # Open selected images as imageseries
+        det_names = HexrdConfig().get_detector_names()
+        if len(self.files[0]) > 1:
+            for det, dirs, f in zip(det_names, self.directories, self.files):
+                ims = ImageFileManager().open_directory(dirs, f)
+                HexrdConfig().imageseries_dict[det] = ims
+        else:
+            ImageFileManager().load_images(det_names, self.files)
+
+        # Process the imageseries
+        self.apply_operations(HexrdConfig().imageseries_dict)
+        self.display_aggregation(HexrdConfig().imageseries_dict)
+        self.add_omega_metadata(HexrdConfig().imageseries_dict)
+
+    def finish_processing_ims(self):
+        # Display processed images on completion
+        # The setEnabled options will not be needed once the panel
+        # is complete - those dialogs will be removed.
+        self.parent().action_edit_ims.setEnabled(True)
+        self.parent().action_edit_angles.setEnabled(True)
+        self.parent().image_tab_widget.load_images()
+
+    def create_table(self):
+        # Create the table if files have successfully been selected
+        if not len(self.files):
+            return
+
+        self.idx = self.ui.detector.currentIndex()
+        self.ui.file_options.setRowCount(
+            len(self.files[self.idx]))
+
+        # Create the rows
+        for row in range(self.ui.file_options.rowCount()):
+            for column in range(self.ui.file_options.columnCount()):
+                item = QTableWidgetItem()
+                item.setTextAlignment(Qt.AlignCenter)
+                self.ui.file_options.setItem(row, column, item)
+
+        # Populate the rows
+        for i in range(self.ui.file_options.rowCount()):
+            curr = self.files[self.idx][i]
+            self.ui.file_options.item(i, 0).setText(os.path.split(curr)[1])
+            self.ui.file_options.item(i, 1).setText(str(self.empty_frames))
+            self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
+            self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
+            self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
+            self.ui.file_options.item(i, 5).setText(str(self.delta[i]))
+
+            # Don't allow editing of file name or total frames
+            self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
+            self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
+
+        self.ui.file_options.resizeColumnsToContents()
+
+    def contextMenuEvent(self, event):
+        # Allow user to delete selected file(s)
+        menu = QMenu(self.ui)
+        remove = menu.addAction('Remove Selected Files')
+        action = menu.exec_(QCursor.pos())
+
+        # Re-selects the current row if context menu is called on disabled cell
+        i = self.ui.file_options.indexAt(event)
+        self.ui.file_options.selectRow(i.row())
+
+        indices = []
+        if action == remove:
+            for index in self.ui.file_options.selectedIndexes():
+                indices.append(QPersistentModelIndex(index))
+
+            for idx in indices:
+                self.ui.file_options.removeRow(idx.row())
+
+            if self.ui.file_options.rowCount():
+                for i in range(len(self.files)):
+                    self.files[i] = []
+
+                for row in range(self.ui.file_options.rowCount()):
+                    f = self.ui.file_options.item(row, 0).text()
+                    for i in range(len(self.files)):
+                        self.files[i].append(self.directories[i] + f)
+            else:
+                self.directories = []
+                self.files = []
+        self.ui.read.setEnabled(len(self.files))
+
+    def omega_data_changed(self, row, column):
+        # Update the values for equivalent files when the data is changed
+        curr_val = self.ui.file_options.item(row, column).text()
+        if curr_val != '':
+            if column == 1:
+                self.empty_frames = int(curr_val)
+                for r in range(self.ui.file_options.rowCount()):
+                    self.ui.file_options.item(r, column).setText(str(curr_val))
+            # Update delta when min or max omega are changed
+            elif column == 3:
+                self.omega_min[row] = int(curr_val)
+                diff = abs(self.omega_max[row] - self.omega_min[row])
+                delta = diff / self.total_frames[row]
+                self.ui.file_options.item(row, 5).setText(str(round(delta, 2)))
+            elif column == 4:
+                self.omega_max[row] = int(curr_val)
+                diff = abs(self.omega_max[row] - self.omega_min[row])
+                delta = diff / self.total_frames[row]
+                self.ui.file_options.item(row, 5).setText(str(round(delta, 2)))
+            elif column == 5:
+                self.delta[row] = float(curr_val)
+
+    def apply_operations(self, ims_dict):
+        # Apply the operations to the imageseries
+        for key in ims_dict.keys():
+            ops = []
+            try:
+                self.get_dark_op(ops, ims_dict[key])
+            except (Exception, IOError) as error:
+                msg = ('ERROR - Could not use file for dark subtraction: \n'
+                        + str(error))
+                QMessageBox.warning(None, 'HEXRD', msg)
+                return
+
+            self.get_flip_op(ops)
+            frames = self.get_range(ims_dict[key])
+            ims_dict[key] = imageseries.process.ProcessedImageSeries(
+                ims_dict[key], ops, frame_list=frames)
+
+    def get_dark_op(self, oplist, ims):
+        # Create or load the dark image if selected
+        if self.trans['dark'] == 0:
+            return
+
+        if self.trans['dark'] != 4:
+            frames = len(ims)
+            if self.trans['dark'] == 1:
+                darkimg = imageseries.stats.median(ims, frames)
+            elif self.trans['dark'] == 2:
+                darkimg = imageseries.stats.average(ims, frames)
+            else:
+                darkimg = imageseries.stats.max(ims, frames)
+        else:
+            darkimg = fabio.open(self.dark_file).data
+
+        oplist.append(('dark', darkimg))
+
+    def get_flip_op(self, oplist):
+        # Change the image orientation
+        if self.trans['trans'] == 0:
+            return
+
+        if self.trans['trans'] == 1:
+            key = 'v'
+        elif self.trans['trans'] == 2:
+            key = 'h'
+        elif self.trans['trans'] == 3:
+            key = 't'
+        elif self.trans['trans'] == 4:
+            key = 'r90'
+        elif self.trans['trans'] == 5:
+            key = 'r180'
+        else:
+            key = 'r270'
+
+        oplist.append(('flip', key))
+
+    def get_range(self, ims):
+        return range(self.empty_frames, len(ims))
+
+    def display_aggregation(self, ims_dict):
+        # Display aggregated image from imageseries
+        if self.trans['agg'] == 0:
+            return
+
+        for key in ims_dict.keys():
+            if self.trans['agg'] == 1:
+                ims_dict[key] = [imageseries.stats.max(
+                    ims_dict[key], len(ims_dict[key]))]
+            elif self.trans['agg'] == 2:
+                ims_dict[key] = [imageseries.stats.median(
+                    ims_dict[key], len(ims_dict[key]))]
+            else:
+                ims_dict[key] = [imageseries.stats.average(
+                    ims_dict[key], len(ims_dict[key]))]
+
+    def add_omega_metadata(self, ims_dict):
+        # Add on the omega metadata if there is any
+        for key in ims_dict.keys():
+            nframes = len(ims_dict[key])
+            omw = imageseries.omega.OmegaWedges(nframes)
+            for i in range(len(self.files[0])):
+                nsteps = self.total_frames[i]
+                start = self.omega_min[i]
+                stop = self.omega_max[i]
+
+                # Don't add wedges if defaults are unchanged
+                if not (start - stop):
+                    return
+
+                omw.addwedge(start, stop, nsteps)
+
+            ims_dict[key].metadata['omega'] = omw.omegas
