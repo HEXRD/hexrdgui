@@ -138,6 +138,7 @@ class LoadPanel(QObject):
         self.omega_min = []
         self.omega_max = []
         self.delta = []
+        self.files = []
 
         fnames = []
         for img in selected_files:
@@ -206,7 +207,6 @@ class LoadPanel(QObject):
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent())
         progress_dialog = CalProgressDialog(self.parent())
-        progress_dialog.setMinimumDuration(0)
         progress_dialog.setWindowTitle('Loading Processed Imageseries')
 
         # Start processing in background
