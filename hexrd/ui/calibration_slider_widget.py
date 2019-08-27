@@ -31,6 +31,20 @@ class CalibrationSliderWidget(QObject):
             widget.valueChanged.connect(self.update_widget_counterpart)
             widget.valueChanged.connect(self.update_config_from_gui)
 
+        self.ui.sb_translation_range.valueChanged.connect(self.update_ranges)
+        self.ui.sb_tilt_range.valueChanged.connect(self.update_ranges)
+
+    def update_ranges(self):
+        r = self.ui.sb_translation_range.value()
+        for widget in self.translation_widgets():
+            v = widget.value()
+            widget.setRange(v - r / 2.0, v + r / 2.0)
+
+        r = self.ui.sb_tilt_range.value()
+        for widget in self.tilt_widgets():
+            v = widget.value()
+            widget.setRange(v - r / 2.0, v + r / 2.0)
+
     def setup_ranges(self):
         for widget in self.transform_widgets():
             name = widget.objectName()
@@ -51,20 +65,34 @@ class CalibrationSliderWidget(QObject):
     def current_detector_dict(self):
         return HexrdConfig().get_detector(self.current_detector())
 
-    def transform_widgets(self):
+    def translation_widgets(self):
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
-        roots = ['translation', 'tilt']
+        root = 'translation'
         suffixes = ['0', '1', '2']
-
         widget_names = [
-            '_'.join([p, r, s])
+            '_'.join([p, root, s])
             for p in prefixes
-            for r in roots
             for s in suffixes
         ]
 
         return [getattr(self.ui, x) for x in widget_names]
+
+    def tilt_widgets(self):
+        # Let's take advantage of the naming scheme
+        prefixes = ['sb', 'slider']
+        root = 'tilt'
+        suffixes = ['0', '1', '2']
+        widget_names = [
+            '_'.join([p, root, s])
+            for p in prefixes
+            for s in suffixes
+        ]
+
+        return [getattr(self.ui, x) for x in widget_names]
+
+    def transform_widgets(self):
+        return self.translation_widgets() + self.tilt_widgets()
 
     def all_widgets(self):
         return self.transform_widgets() + [self.ui.detector]
@@ -125,6 +153,8 @@ class CalibrationSliderWidget(QObject):
                 widget.setValue(val)
         finally:
             self.unblock_all_signals(previously_blocked)
+
+        self.update_ranges()
 
     def update_detectors_from_config(self):
         widget = self.ui.detector
