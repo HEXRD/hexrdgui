@@ -428,12 +428,6 @@ class MainWindow(QObject):
     def live_update(self, enabled):
         HexrdConfig().set_live_update(enabled)
 
-        sig = self.calibration_slider_widget.value_changed
-        if enabled:
-            sig.connect(self.update_all)
-        else:
-            sig.disconnect(self.update_all)
-
         dis_widgets = {self.calibration_config_widget.gui_data_changed,
                        self.cal_tree_view.model().tree_data_changed}
         pix_widgets = {self.image_mode_widget.ui.cartesian_pixel_size,

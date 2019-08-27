@@ -8,9 +8,6 @@ from hexrd.ui.ui_loader import UiLoader
 
 class CalibrationSliderWidget(QObject):
 
-    """Emitted when a value changed after waiting a short time"""
-    value_changed = Signal()
-
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10
     SLIDER_VAL_TO_CONF_VAL = 0.1
@@ -200,9 +197,7 @@ class CalibrationSliderWidget(QObject):
 
         det['transform'][key]['value'][ind] = val
 
-        if self.timer is None:
-            self.timer = QTimer()
-            self.timer.setSingleShot(True)
-            self.timer.timeout.connect(self.value_changed)
-
-        self.timer.start(100)
+        # Since we modify the value directly instead of letting the
+        # HexrdConfig() do it, let's also emit the signal it would
+        # have emitted.
+        HexrdConfig().detector_modified.emit(self.current_detector())

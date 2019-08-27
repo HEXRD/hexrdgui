@@ -41,6 +41,7 @@ class InstrumentViewer:
         self.images_dict = images_dict
         self.plane_data = plane_data
         self.pixel_size = pixel_size
+        self.warp_dict = {}
 
         self.dplane = DisplayPlane()
         self.make_dpanel()
@@ -104,65 +105,75 @@ class InstrumentViewer:
         return self.ring_data
 
     def plot_dplane(self):
-        nrows_map = self.dpanel.rows
-        ncols_map = self.dpanel.cols
-        warped = np.zeros((nrows_map, ncols_map))
+        # Cache the image max and min for later use
+        images = self.images_dict.values()
+        self.min = min([x.min() for x in images])
+        self.max = max([x.max() for x in images])
+
+        # Create the warped image for each detector
         for detector_id in self.images_dict.keys():
-            img = self.images_dict[detector_id]
+            self.create_warped_image(detector_id)
 
-            max_int = np.percentile(img, 99.95)
-            pbuf = 10
-            img[:, :pbuf] = max_int
-            img[:, -pbuf:] = max_int
-            img[:pbuf, :] = max_int
-            img[-pbuf:, :] = max_int
-            panel = self.instr._detectors[detector_id]
+        # Generate the final image
+        self.generate_image()
 
-            # map corners
-            corners = np.vstack(
-                [panel.corner_ll,
-                 panel.corner_lr,
-                 panel.corner_ur,
-                 panel.corner_ul,
-                 ]
-            )
-            mp = panel.map_to_plane(corners, self.dplane.rmat,
-                                    self.dplane.tvec)
+    def create_warped_image(self, detector_id):
+        img = self.images_dict[detector_id]
 
-            col_edges = self.dpanel.col_edge_vec
-            row_edges = self.dpanel.row_edge_vec
-            j_col = cellIndices(col_edges, mp[:, 0])
-            i_row = cellIndices(row_edges, mp[:, 1])
+        max_int = np.percentile(img, 99.95)
+        pbuf = 10
+        img[:, :pbuf] = max_int
+        img[:, -pbuf:] = max_int
+        img[:pbuf, :] = max_int
+        img[-pbuf:, :] = max_int
+        panel = self.instr._detectors[detector_id]
 
-            src = np.vstack([j_col, i_row]).T
-            dst = panel.cartToPixel(corners, pixels=True)
-            dst = dst[:, ::-1]
+        # map corners
+        corners = np.vstack(
+            [panel.corner_ll,
+             panel.corner_lr,
+             panel.corner_ur,
+             panel.corner_ul,
+             ]
+        )
+        mp = panel.map_to_plane(corners, self.dplane.rmat,
+                                self.dplane.tvec)
 
-            tform3 = tf.ProjectiveTransform()
-            tform3.estimate(src, dst)
+        col_edges = self.dpanel.col_edge_vec
+        row_edges = self.dpanel.row_edge_vec
+        j_col = cellIndices(col_edges, mp[:, 0])
+        i_row = cellIndices(row_edges, mp[:, 1])
 
-            warped += tf.warp(img, tform3,
-                              output_shape=(self.dpanel.rows,
-                                            self.dpanel.cols))
+        src = np.vstack([j_col, i_row]).T
+        dst = panel.cartToPixel(corners, pixels=True)
+        dst = dst[:, ::-1]
 
-        """
-        IMAGE PLOTTING AND LIMIT CALCULATION
-        """
-        img = warped
-        #if np.issubdtype(warped.dtype, np.floating):
-            # Floating types must be between -1 and 1 for equalize_adapthist
-            # Negative values will not show up in the GUI for some reason
-        #    warped = rescale_intensity(warped, out_range=(0., 1.))
+        tform3 = tf.ProjectiveTransform()
+        tform3.estimate(src, dst)
 
-        #with warnings.catch_warnings():
-        #    warnings.simplefilter("ignore")
-        #    img = equalize_adapthist(warped, clip_limit=0.1, nbins=2**16)
+        res = tf.warp(img, tform3,
+                      output_shape=(self.dpanel.rows, self.dpanel.cols))
+        self.warp_dict[detector_id] = res
+        return res
+
+    def generate_image(self):
+        img = np.zeros((self.dpanel.rows, self.dpanel.cols))
+        for key in self.images_dict.keys():
+            img += self.warp_dict[key]
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get create_calibration_image to not rescale the
         # result to be between 0 and 1 in the first place so this will
         # not be necessary.
-        images = self.images_dict.values()
-        minimum = min([x.min() for x in images])
-        maximum = max([x.max() for x in images])
-        self.img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
+        self.img = np.interp(img, (img.min(), img.max()), (self.min, self.max))
+
+    def update_detector(self, det):
+        t_conf = HexrdConfig().get_detector(det)['transform']
+        self.instr.detectors[det].tvec = t_conf['translation']['value']
+        self.instr.detectors[det].tilt = t_conf['tilt']['value']
+
+        # Update the individual detector image
+        self.create_warped_image(det)
+
+        # Generate the final image
+        self.generate_image()

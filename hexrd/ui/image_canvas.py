@@ -55,6 +55,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().cartesian_config_changed.connect(
             self.on_cartesian_changed)
         HexrdConfig().polar_config_changed.connect(self.on_polar_changed)
+        HexrdConfig().detector_modified.connect(self.on_detector_modified)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -364,4 +365,12 @@ class ImageCanvas(FigureCanvas):
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
+        self.draw()
+
+    def on_detector_modified(self, det):
+        if not self.iviewer:
+            return
+
+        self.iviewer.update_detector(det)
+        self.axes_images[0].set_data(self.iviewer.img)
         self.draw()

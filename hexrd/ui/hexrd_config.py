@@ -61,6 +61,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when polar configuration has changed"""
     polar_config_changed = Signal()
 
+    """Emitted when a detector's config is modified"""
+    detector_modified = Signal(str)
+
     """Convenience signal to update the main window's status bar
 
     Arguments are: message (str)
@@ -479,6 +482,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # If the beam energy was modified, update the active material
         if path == ['beam', 'energy', 'value']:
             self.update_active_material_energy()
+
+        # If a detector was modified, send a signal indicating so
+        if path[0] == 'detectors':
+            det = path[1]
+            self.detector_modified.emit(det)
 
     def get_instrument_config_val(self, path):
         """This obtains a dict value from a path list.
