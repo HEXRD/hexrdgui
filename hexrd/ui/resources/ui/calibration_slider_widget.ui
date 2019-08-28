@@ -312,6 +312,23 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>detector</tabstop>
+  <tabstop>sb_translation_range</tabstop>
+  <tabstop>slider_translation_0</tabstop>
+  <tabstop>sb_translation_0</tabstop>
+  <tabstop>slider_translation_1</tabstop>
+  <tabstop>sb_translation_1</tabstop>
+  <tabstop>slider_translation_2</tabstop>
+  <tabstop>sb_translation_2</tabstop>
+  <tabstop>sb_tilt_range</tabstop>
+  <tabstop>slider_tilt_0</tabstop>
+  <tabstop>sb_tilt_0</tabstop>
+  <tabstop>slider_tilt_1</tabstop>
+  <tabstop>sb_tilt_1</tabstop>
+  <tabstop>slider_tilt_2</tabstop>
+  <tabstop>sb_tilt_2</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
