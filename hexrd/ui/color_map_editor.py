@@ -75,6 +75,10 @@ class ColorMapEditor:
         return l, h
 
     def reset_range(self):
+        if self.ui.minimum.maximum() < self.bounds[0]:
+            # Make sure we can actually set the value...
+            self.ui.minimum.setMaximum(self.bounds[0])
+
         self.ui.minimum.setValue(self.bounds[0])
         self.ui.maximum.setValue(self.bounds[1])
 
