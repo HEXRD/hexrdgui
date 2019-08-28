@@ -105,29 +105,26 @@ class InstrumentViewer:
 
     def add_rings(self):
         self.clear_rings()
-        if not HexrdConfig().show_rings:
-            # We are not supposed to add rings
-            return self.ring_data
+        if HexrdConfig().show_rings:
+            dp = self.dpanel
 
-        dp = self.dpanel
+            selected_rings = HexrdConfig().selected_rings
+            if selected_rings:
+                # We should only get specific values
+                tth_list = self.plane_data.getTTh()
+                tth_list = [tth_list[i] for i in selected_rings]
+                delta_tth = np.degrees(self.plane_data.tThWidth)
 
-        selected_rings = HexrdConfig().selected_rings
-        if selected_rings:
-            # We should only get specific values
-            tth_list = self.plane_data.getTTh()
-            tth_list = [tth_list[i] for i in selected_rings]
-            delta_tth = np.degrees(self.plane_data.tThWidth)
+                ring_angs, ring_xys = dp.make_powder_rings(
+                    tth_list, delta_tth=delta_tth, delta_eta=1)
+            else:
+                ring_angs, ring_xys = dp.make_powder_rings(
+                    self.plane_data, delta_eta=1)
 
-            ring_angs, ring_xys = dp.make_powder_rings(
-                tth_list, delta_tth=delta_tth, delta_eta=1)
-        else:
-            ring_angs, ring_xys = dp.make_powder_rings(
-                self.plane_data, delta_eta=1)
+                tth_list = self.plane_data.getTTh()
 
-            tth_list = self.plane_data.getTTh()
-
-        for tth in np.degrees(tth_list):
-            self.ring_data.append(np.array([[-180, tth], [180, tth]]))
+            for tth in np.degrees(tth_list):
+                self.ring_data.append(np.array([[-180, tth], [180, tth]]))
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = self.plane_data.getMergedRanges()

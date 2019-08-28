@@ -57,30 +57,26 @@ class InstrumentViewer:
 
     def add_rings(self):
         self.clear_rings()
-        if not HexrdConfig().show_rings:
-            # We are not supposed to add rings
-            return self.ring_data
-
         selected_rings = HexrdConfig().selected_rings
         delta_tth = np.degrees(self.plane_data.tThWidth)
+        if HexrdConfig().show_rings:
+            # must update self.dpanel from HexrdConfig
+            self.pixel_size = HexrdConfig().cartesian_pixel_size
+            self.make_dpanel()
+            if selected_rings:
+                # We should only get specific values
+                tth = self.plane_data.getTTh()
+                tth = [tth[i] for i in selected_rings]
 
-        # must update self.dpanel from HexrdConfig
-        self.pixel_size = HexrdConfig().cartesian_pixel_size
-        self.make_dpanel()
-        if selected_rings:
-            # We should only get specific values
-            tth = self.plane_data.getTTh()
-            tth = [tth[i] for i in selected_rings]
+                ring_angs, ring_xys = self.dpanel.make_powder_rings(
+                    tth, delta_tth=delta_tth, delta_eta=1)
 
-            ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                tth, delta_tth=delta_tth, delta_eta=1)
+            else:
+                ring_angs, ring_xys = self.dpanel.make_powder_rings(
+                    self.plane_data, delta_eta=1)
 
-        else:
-            ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                self.plane_data, delta_eta=1)
-
-        for ring in ring_xys:
-            self.ring_data.append(self.dpanel.cartToPixel(ring))
+            for ring in ring_xys:
+                self.ring_data.append(self.dpanel.cartToPixel(ring))
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = self.plane_data.getMergedRanges()
