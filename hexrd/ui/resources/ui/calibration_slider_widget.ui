@@ -41,6 +41,15 @@
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
        </widget>
       </item>
       <item row="3" column="0">
@@ -52,6 +61,12 @@
       </item>
       <item row="2" column="1">
        <widget class="QSlider" name="slider_tilt_1">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -62,10 +77,25 @@
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
        </widget>
       </item>
       <item row="1" column="1">
        <widget class="QSlider" name="slider_tilt_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -75,6 +105,15 @@
        <widget class="QDoubleSpinBox" name="sb_tilt_1">
         <property name="suffix">
          <string>°</string>
+        </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
         </property>
        </widget>
       </item>
@@ -87,6 +126,12 @@
       </item>
       <item row="3" column="1">
        <widget class="QSlider" name="slider_tilt_2">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -103,8 +148,11 @@
         <property name="maximum">
          <double>360.000000000000000</double>
         </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
         <property name="value">
-         <double>100.000000000000000</double>
+         <double>30.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -132,23 +180,65 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_1"/>
+       <widget class="QDoubleSpinBox" name="sb_translation_1">
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="3" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_2"/>
+       <widget class="QDoubleSpinBox" name="sb_translation_2">
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="2" column="1">
        <widget class="QSlider" name="slider_translation_1">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_0"/>
+       <widget class="QDoubleSpinBox" name="sb_translation_0">
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="1" column="1">
        <widget class="QSlider" name="slider_translation_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -170,6 +260,12 @@
       </item>
       <item row="3" column="1">
        <widget class="QSlider" name="slider_translation_2">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -186,8 +282,11 @@
         <property name="maximum">
          <double>100000.000000000000000</double>
         </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
         <property name="value">
-         <double>1000.000000000000000</double>
+         <double>300.000000000000000</double>
         </property>
        </widget>
       </item>

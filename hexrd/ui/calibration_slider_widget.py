@@ -11,13 +11,16 @@ class CalibrationSliderWidget(QObject):
     """Emitted when a value changed after waiting a short time"""
     value_changed = Signal()
 
+    # Conversions from configuration value to slider value and back
+    CONF_VAL_TO_SLIDER_VAL = 10
+    SLIDER_VAL_TO_CONF_VAL = 0.1
+
     def __init__(self, parent=None):
         super(CalibrationSliderWidget, self).__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('calibration_slider_widget.ui', parent)
 
-        self.setup_ranges()
         self.update_gui_from_config()
 
         self.timer = None
@@ -36,28 +39,18 @@ class CalibrationSliderWidget(QObject):
 
     def update_ranges(self):
         r = self.ui.sb_translation_range.value()
-        for widget in self.translation_widgets():
-            v = widget.value()
-            widget.setRange(v - r / 2.0, v + r / 2.0)
+        slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
+        for w in self.translation_widgets():
+            v = w.value()
+            r_val = slider_r if w.objectName().startswith('slider') else r
+            w.setRange(v - r_val / 2.0, v + r_val / 2.0)
 
         r = self.ui.sb_tilt_range.value()
-        for widget in self.tilt_widgets():
-            v = widget.value()
-            widget.setRange(v - r / 2.0, v + r / 2.0)
-
-    def setup_ranges(self):
-        for widget in self.transform_widgets():
-            name = widget.objectName()
-
-            # Take advantage of the widget naming scheme
-            root = name.split('_')[1]
-
-            if root == 'tilt':
-                # The range is always -180 to 180 degrees
-                widget.setRange(-180.0, 180.0)
-            elif root == 'translation':
-                # For now, the range is always -5000 to 5000
-                widget.setRange(-5000, 5000)
+        slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
+        for w in self.tilt_widgets():
+            v = w.value()
+            r_val = slider_r if w.objectName().startswith('slider') else r
+            w.setRange(v - r_val / 2.0, v + r_val / 2.0)
 
     def current_detector(self):
         return self.ui.detector.currentText()
@@ -118,8 +111,14 @@ class CalibrationSliderWidget(QObject):
     def update_widget_counterpart(self):
         sender = self.sender()
         name = sender.objectName()
+        value = sender.value()
 
         prefix, root, ind = name.split('_')
+
+        if prefix == 'slider':
+            value *= self.SLIDER_VAL_TO_CONF_VAL
+        else:
+            value *= self.CONF_VAL_TO_SLIDER_VAL
 
         counter = 'slider' if prefix == 'sb' else 'sb'
 
@@ -128,7 +127,7 @@ class CalibrationSliderWidget(QObject):
 
         blocked = counter_widget.blockSignals(True)
         try:
-            counter_widget.setValue(sender.value())
+            counter_widget.setValue(value)
         finally:
             counter_widget.blockSignals(blocked)
 
@@ -142,13 +141,16 @@ class CalibrationSliderWidget(QObject):
                 name = widget.objectName()
 
                 # Take advantage of the widget naming scheme
-                key = name.split('_')[1]
-                ind = int(name.split('_')[2])
+                prefix, key, ind = name.split('_')
+                ind = int(ind)
 
                 val = det['transform'][key]['value'][ind]
                 if key == 'tilt':
                     # Convert to degrees
                     val = np.degrees(val)
+
+                if prefix == 'slider':
+                    val *= self.CONF_VAL_TO_SLIDER_VAL
 
                 widget.setValue(val)
         finally:
@@ -186,8 +188,11 @@ class CalibrationSliderWidget(QObject):
         det = self.current_detector_dict()
 
         # Take advantage of the widget naming scheme
-        key = name.split('_')[1]
-        ind = int(name.split('_')[2])
+        prefix, key, ind = name.split('_')
+        ind = int(ind)
+
+        if prefix == 'slider':
+            val *= self.SLIDER_VAL_TO_CONF_VAL
 
         if key == 'tilt':
             # Convert to radians before saving
