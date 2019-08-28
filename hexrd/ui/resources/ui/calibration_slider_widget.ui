@@ -139,6 +139,9 @@
       </item>
       <item row="0" column="2">
        <widget class="QDoubleSpinBox" name="sb_tilt_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -158,6 +161,9 @@
       </item>
       <item row="0" column="0" colspan="2">
        <widget class="QLabel" name="label_tilt_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Slider Range:</string>
         </property>
@@ -273,6 +279,9 @@
       </item>
       <item row="0" column="2">
        <widget class="QDoubleSpinBox" name="sb_translation_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -292,6 +301,9 @@
       </item>
       <item row="0" column="0" colspan="2">
        <widget class="QLabel" name="label_translation_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Slider Range:</string>
         </property>
