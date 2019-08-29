@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>slider_page</class>
+ <widget class="QWidget" name="slider_page">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>391</width>
+    <height>369</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item row="2" column="0" colspan="2">
+    <widget class="QGroupBox" name="tilt_group">
+     <property name="title">
+      <string>Tilt</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_tilt_0">
+        <property name="text">
+         <string>Y:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QDoubleSpinBox" name="sb_tilt_0">
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_tilt_1">
+        <property name="text">
+         <string>Z:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSlider" name="slider_tilt_1">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QDoubleSpinBox" name="sb_tilt_2">
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSlider" name="slider_tilt_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QDoubleSpinBox" name="sb_tilt_1">
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_tilt_2">
+        <property name="text">
+         <string>X:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSlider" name="slider_tilt_2">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QDoubleSpinBox" name="sb_tilt_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>360.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>30.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_tilt_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Slider Range:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QGroupBox" name="translation_group">
+     <property name="title">
+      <string>Translation</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_translation_1">
+        <property name="text">
+         <string>Y:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QDoubleSpinBox" name="sb_translation_1">
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QDoubleSpinBox" name="sb_translation_2">
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSlider" name="slider_translation_1">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QDoubleSpinBox" name="sb_translation_0">
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSlider" name="slider_translation_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_translation_0">
+        <property name="text">
+         <string>X:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_translation_2">
+        <property name="text">
+         <string>Z:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSlider" name="slider_translation_2">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QDoubleSpinBox" name="sb_translation_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>300.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_translation_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Slider Range:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Detector:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="detector"/>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>detector</tabstop>
+  <tabstop>sb_translation_range</tabstop>
+  <tabstop>slider_translation_0</tabstop>
+  <tabstop>sb_translation_0</tabstop>
+  <tabstop>slider_translation_1</tabstop>
+  <tabstop>sb_translation_1</tabstop>
+  <tabstop>slider_translation_2</tabstop>
+  <tabstop>sb_translation_2</tabstop>
+  <tabstop>sb_tilt_range</tabstop>
+  <tabstop>slider_tilt_0</tabstop>
+  <tabstop>sb_tilt_0</tabstop>
+  <tabstop>slider_tilt_1</tabstop>
+  <tabstop>sb_tilt_1</tabstop>
+  <tabstop>slider_tilt_2</tabstop>
+  <tabstop>sb_tilt_2</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

@@ -6,6 +6,7 @@ from PySide2.QtWidgets import (
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
+from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
@@ -59,15 +60,18 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
-        self.calibration_config_widget = CalibrationConfigWidget(self.ui)
         self.cal_tree_view = CalTreeView(self.ui)
+        self.calibration_config_widget = CalibrationConfigWidget(self.ui)
+        self.calibration_slider_widget = CalibrationSliderWidget(self.ui)
 
-        tab_texts = ['Tree View', 'Form View']
+        tab_texts = ['Tree View', 'Form View', 'Slider View']
         self.ui.calibration_tab_widget.clear()
         self.ui.calibration_tab_widget.addTab(self.cal_tree_view,
                                               tab_texts[0])
         self.ui.calibration_tab_widget.addTab(
             self.calibration_config_widget.ui, tab_texts[1])
+        self.ui.calibration_tab_widget.addTab(
+            self.calibration_slider_widget.ui, tab_texts[2])
 
         self.setup_connections()
 
@@ -385,6 +389,8 @@ class MainWindow(QObject):
             self.cal_tree_view.rebuild_tree()
         elif current_widget is self.calibration_config_widget.ui:
             self.calibration_config_widget.update_gui_from_config()
+        elif current_widget is self.calibration_slider_widget.ui:
+            self.calibration_slider_widget.update_gui_from_config()
 
     def eventFilter(self, target, event):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
@@ -421,6 +427,12 @@ class MainWindow(QObject):
 
     def live_update(self, enabled):
         HexrdConfig().set_live_update(enabled)
+
+        sig = self.calibration_slider_widget.value_changed
+        if enabled:
+            sig.connect(self.update_all)
+        else:
+            sig.disconnect(self.update_all)
 
         dis_widgets = {self.calibration_config_widget.gui_data_changed,
                        self.cal_tree_view.model().tree_data_changed}
