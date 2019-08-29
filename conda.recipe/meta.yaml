@@ -1,0 +1,37 @@
+package:
+  name: hexrdgui
+  version: {{ environ.get('GIT_DESCRIBE_TAG', environ['GIT_FULL_HASH'][:8]) }}
+
+source:
+  path: ../
+
+build:
+  osx_is_app: yes
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  entry_points:
+    - hexrd = hexrd.ui.main:main
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - pyside2
+    - Pillow
+    - matplotlib
+    - importlib_resources
+    - fabio
+    - pyyaml
+    - hexrd
+
+test:
+  imports:
+    - hexrd.ui
+
+about:
+  home: https://github.com/cryos/hexrdgui
+  license: BSD
+  license_family: BSD
+  summary: "Qt5 PySide2 based HEXRD GUI"
