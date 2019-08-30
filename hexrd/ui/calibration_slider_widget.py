@@ -206,4 +206,4 @@ class CalibrationSliderWidget(QObject):
         # Since we modify the value directly instead of letting the
         # HexrdConfig() do it, let's also emit the signal it would
         # have emitted.
-        HexrdConfig().detector_modified.emit(self.current_detector())
+        HexrdConfig().detector_transform_modified.emit(self.current_detector())
