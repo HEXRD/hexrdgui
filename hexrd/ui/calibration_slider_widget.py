@@ -149,6 +149,12 @@ class CalibrationSliderWidget(QObject):
                 if prefix == 'slider':
                     val *= self.CONF_VAL_TO_SLIDER_VAL
 
+                # Make sure the widget's range will accept the value
+                if val < widget.minimum():
+                    widget.setMinimum(val)
+                elif val > widget.maximum():
+                    widget.setMaximum(val)
+
                 widget.setValue(val)
         finally:
             self.unblock_all_signals(previously_blocked)
