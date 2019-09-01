@@ -33,6 +33,8 @@ class LoadPanel(QObject):
         self.parent_dir = HexrdConfig().images_dir
 
         self.files = []
+        self.omega_min = []
+        self.omega_max = []
         self.dark_file = None
         self.idx = 0
 
@@ -51,9 +53,11 @@ class LoadPanel(QObject):
             self.dark_file = self.state['dark_file']
 
         self.dark_mode_changed()
-        self.ui.img_directory.setText(
-            os.path.dirname(
-                self.parent_dir) if self.parent_dir else 'No directory set')
+        if not self.parent_dir:
+            self.ui.img_directory.setText('No directory set')
+        else:
+            self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+        self.ui.image_files.setEnabled(self.parent_dir is not None)
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
 
@@ -80,13 +84,12 @@ class LoadPanel(QObject):
             self.ui.selectDark.setEnabled(True)
             self.ui.dark_file.setText(
                 self.dark_file if self.dark_file else '(No Dark File Selected)')
-            self.ui.read.setEnabled(
-                self.dark_file is not None and len(self.files))
+            self.enable_read()
         else:
             self.ui.selectDark.setEnabled(False)
             self.ui.dark_file.setText(
                 '(Using ' + str(self.ui.darkMode.currentText()) + ')')
-            self.ui.read.setEnabled(len(self.files))
+            self.enable_read()
             if 'dark_file' in self.state:
                 del self.state['dark_file']
 
@@ -111,6 +114,7 @@ class LoadPanel(QObject):
 
         # Only update if a new directory is selected
         if new_dir and new_dir != self.parent_dir:
+            self.ui.image_files.setEnabled(True)
             HexrdConfig().set_images_dir(new_dir)
             self.parent_dir = new_dir
             self.dir_changed()
@@ -125,7 +129,7 @@ class LoadPanel(QObject):
             self.dark_file = selected_file[0]
             self.state['dark_file'] = self.dark_file
             self.dark_mode_changed()
-            self.ui.read.setEnabled(len(selected_file) and len(self.files))
+            self.enable_read()
 
     def select_images(self):
         # This takes one or more images for a single detector.
@@ -136,14 +140,14 @@ class LoadPanel(QObject):
         if selected_files:
             self.load_image_data(selected_files)
             self.create_table()
-            self.ui.read.setEnabled(len(self.files))
+            self.enable_read()
 
     def load_image_data(self, selected_files):
         # Select the path if the file(s) are HDF5
         ext = os.path.splitext(selected_files[0])[1]
         if (ImageFileManager().is_hdf5(ext) and not
                 ImageFileManager().path_exists(selected_files[0])):
-            if not ImageFileManager().path_prompt(selected_files[0]):
+            if ImageFileManager().path_prompt(selected_files[0]) == 'Cancelled':
                 return
 
         # Hold the data for the selected files
@@ -159,9 +163,9 @@ class LoadPanel(QObject):
         for img in selected_files:
             self.total_frames.append(
                 len(ImageFileManager().open_file(img)))
-            self.omega_min.append(0)
-            self.omega_max.append(0)
-            self.delta.append(0.0)
+            self.omega_min.append('')
+            self.omega_max.append('')
+            self.delta.append('')
             f = os.path.split(img)[1]
             fnames.append(os.path.splitext(f)[0])
 
@@ -213,6 +217,16 @@ class LoadPanel(QObject):
                 QMessageBox.warning(None, 'HEXRD', msg)
                 self.files = []
                 break
+
+    def enable_read(self):
+        if '' not in self.omega_min and '' not in self.omega_max:
+            if self.state['dark'] == 4 and self.dark_file is not None:
+                self.ui.read.setEnabled(len(self.files))
+                return
+            elif self.state['dark'] != 4 and len(self.files):
+                self.ui.read.setEnabled(True)
+                return
+        self.ui.read.setEnabled(False)
 
     def read_data(self):
         # When this is pressed read in a complete set of data for all detectors.
@@ -282,6 +296,14 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
             self.ui.file_options.item(i, 5).setText(str(self.delta[i]))
 
+            # Set tooltips
+            self.ui.file_options.item(i, 0).setToolTip(curr)
+            self.ui.file_options.item(i, 3).setToolTip('Minimum must be set.')
+            self.ui.file_options.item(i, 4).setToolTip(
+                'Must set either maximum or delta.')
+            self.ui.file_options.item(i, 5).setToolTip(
+                'Must set either maximum or delta.')
+
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
@@ -317,29 +339,37 @@ class LoadPanel(QObject):
             else:
                 self.directories = []
                 self.files = []
-        self.ui.read.setEnabled(len(self.files))
+        self.enable_read()
 
     def omega_data_changed(self, row, column):
         # Update the values for equivalent files when the data is changed
         curr_val = self.ui.file_options.item(row, column).text()
+        total_frames = self.total_frames[row] - self.empty_frames
         if curr_val != '':
             if column == 1:
                 self.empty_frames = int(curr_val)
                 for r in range(self.ui.file_options.rowCount()):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
+                self.omega_data_changed(row, 3)
             # Update delta when min or max omega are changed
             elif column == 3:
                 self.omega_min[row] = int(curr_val)
-                diff = abs(self.omega_max[row] - self.omega_min[row])
-                delta = diff / self.total_frames[row]
-                self.ui.file_options.item(row, 5).setText(str(round(delta, 2)))
+                if self.omega_max[row] or self.delta[row]:
+                    self.omega_data_changed(row, 4)
             elif column == 4:
                 self.omega_max[row] = int(curr_val)
-                diff = abs(self.omega_max[row] - self.omega_min[row])
-                delta = diff / self.total_frames[row]
-                self.ui.file_options.item(row, 5).setText(str(round(delta, 2)))
+                if self.omega_min[row] != '':
+                    diff = abs(self.omega_max[row] - self.omega_min[row])
+                    delta = diff / total_frames
+                    self.ui.file_options.item(row, 5).setText(
+                        str(round(delta, 2)))
             elif column == 5:
                 self.delta[row] = float(curr_val)
+                if self.omega_min[row] != '':
+                    diff = self.delta[row] * total_frames
+                    maximum = self.omega_min[row] + diff
+                    self.ui.file_options.item(row, 4).setText(str(int(maximum)))
+            self.enable_read()
 
     def apply_operations(self, ims_dict):
         # Apply the operations to the imageseries

@@ -147,4 +147,4 @@ class ImageFileManager(metaclass=Singleton):
             HexrdConfig().hdf5_path = [group, data]
             self.remember = remember
         else:
-            return False
+            return 'Cancelled'
