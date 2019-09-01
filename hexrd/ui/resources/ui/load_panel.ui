@@ -123,12 +123,12 @@
        <widget class="QComboBox" name="darkMode">
         <item>
          <property name="text">
-          <string>Empty Frames</string>
+          <string>Median</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Median</string>
+          <string>Empty Frames</string>
          </property>
         </item>
         <item>

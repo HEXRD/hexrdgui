@@ -89,6 +89,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self._tab_images = False
         self.previous_active_material = None
         self.collapsed_state = []
+        self.load_panel_state = None
 
         self._euler_angle_convention = ('xyz', True)
 
@@ -144,6 +145,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('euler_angle_convention', self._euler_angle_convention)
         settings.setValue('active_material', self.active_material_name())
         settings.setValue('collapsed_state', self.collapsed_state)
+        settings.setValue('load_panel_state', self.load_panel_state)
 
     def load_settings(self):
         settings = QSettings()
@@ -157,6 +159,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                                       ('xyz', True))
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
+        self.load_panel_state = settings.value('load_panel_state', None)
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""

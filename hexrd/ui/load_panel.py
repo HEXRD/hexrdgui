@@ -31,18 +31,29 @@ class LoadPanel(QObject):
 
         self.ims = HexrdConfig().imageseries_dict
         self.parent_dir = HexrdConfig().images_dir
+
         self.files = []
         self.dark_file = None
-        self.trans = {'agg': 0, 'trans': 0, 'dark': 0}
         self.idx = 0
 
         self.setup_gui()
         self.setup_connections()
 
     def setup_gui(self):
-        self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
-        self.ui.dark_file.setText(
-            '(Using ' + str(self.ui.darkMode.currentText()) + ')')
+        if not HexrdConfig().load_panel_state:
+            HexrdConfig().load_panel_state = {'agg': 0, 'trans': 0, 'dark': 0}
+        self.state = HexrdConfig().load_panel_state
+
+        self.ui.aggregation.setCurrentIndex(self.state['agg'])
+        self.ui.transform.setCurrentIndex(self.state['trans'])
+        self.ui.darkMode.setCurrentIndex(self.state['dark'])
+        if 'dark_file' in self.state:
+            self.dark_file = self.state['dark_file']
+
+        self.dark_mode_changed()
+        self.ui.img_directory.setText(
+            os.path.dirname(
+                self.parent_dir) if self.parent_dir else 'No directory set')
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
 
@@ -63,11 +74,12 @@ class LoadPanel(QObject):
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
 
     def dark_mode_changed(self):
-        self.trans['dark'] = self.ui.darkMode.currentIndex()
+        self.state['dark'] = self.ui.darkMode.currentIndex()
 
-        if self.trans['dark'] == 4:
+        if self.state['dark'] == 4:
             self.ui.selectDark.setEnabled(True)
-            self.ui.dark_file.setText(self.dark_file)
+            self.ui.dark_file.setText(
+                self.dark_file if self.dark_file else '(No Dark File Selected)')
             self.ui.read.setEnabled(
                 self.dark_file is not None and len(self.files))
         else:
@@ -75,16 +87,18 @@ class LoadPanel(QObject):
             self.ui.dark_file.setText(
                 '(Using ' + str(self.ui.darkMode.currentText()) + ')')
             self.ui.read.setEnabled(len(self.files))
+            if 'dark_file' in self.state:
+                del self.state['dark_file']
 
     def detectors_changed(self):
         self.ui.detector.clear()
         self.ui.detector.addItems(HexrdConfig().get_detector_names())
 
     def agg_changed(self):
-        self.trans['agg'] = self.ui.aggregation.currentIndex()
+        self.state['agg'] = self.ui.aggregation.currentIndex()
 
     def trans_changed(self):
-        self.trans['trans'] = self.ui.transform.currentIndex()
+        self.state['trans'] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
         self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
@@ -109,8 +123,9 @@ class LoadPanel(QObject):
 
         if selected_file:
             self.dark_file = selected_file[0]
+            self.state['dark_file'] = self.dark_file
             self.dark_mode_changed()
-            self.ui.read.setEnabled(len(selected_file))
+            self.ui.read.setEnabled(len(selected_file) and len(self.files))
 
     def select_images(self):
         # This takes one or more images for a single detector.
@@ -345,14 +360,14 @@ class LoadPanel(QObject):
 
     def get_dark_op(self, oplist, ims):
         # Create or load the dark image if selected
-        if self.trans['dark'] == 0:
+        if self.state['dark'] == 0:
             return
 
-        if self.trans['dark'] != 4:
+        if self.state['dark'] != 4:
             frames = len(ims)
-            if self.trans['dark'] == 1:
+            if self.state['dark'] == 1:
                 darkimg = imageseries.stats.median(ims, frames)
-            elif self.trans['dark'] == 2:
+            elif self.state['dark'] == 2:
                 darkimg = imageseries.stats.average(ims, frames)
             else:
                 darkimg = imageseries.stats.max(ims, frames)
@@ -363,18 +378,18 @@ class LoadPanel(QObject):
 
     def get_flip_op(self, oplist):
         # Change the image orientation
-        if self.trans['trans'] == 0:
+        if self.state['trans'] == 0:
             return
 
-        if self.trans['trans'] == 1:
+        if self.state['trans'] == 1:
             key = 'v'
-        elif self.trans['trans'] == 2:
+        elif self.state['trans'] == 2:
             key = 'h'
-        elif self.trans['trans'] == 3:
+        elif self.state['trans'] == 3:
             key = 't'
-        elif self.trans['trans'] == 4:
+        elif self.state['trans'] == 4:
             key = 'r90'
-        elif self.trans['trans'] == 5:
+        elif self.state['trans'] == 5:
             key = 'r180'
         else:
             key = 'r270'
@@ -386,14 +401,14 @@ class LoadPanel(QObject):
 
     def display_aggregation(self, ims_dict):
         # Display aggregated image from imageseries
-        if self.trans['agg'] == 0:
+        if self.state['agg'] == 0:
             return
 
         for key in ims_dict.keys():
-            if self.trans['agg'] == 1:
+            if self.state['agg'] == 1:
                 ims_dict[key] = [imageseries.stats.max(
                     ims_dict[key], len(ims_dict[key]))]
-            elif self.trans['agg'] == 2:
+            elif self.state['agg'] == 2:
                 ims_dict[key] = [imageseries.stats.median(
                     ims_dict[key], len(ims_dict[key]))]
             else:
