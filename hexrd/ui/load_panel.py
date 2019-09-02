@@ -145,10 +145,14 @@ class LoadPanel(QObject):
     def load_image_data(self, selected_files):
         # Select the path if the file(s) are HDF5
         ext = os.path.splitext(selected_files[0])[1]
+        has_omega = False
         if (ImageFileManager().is_hdf5(ext) and not
                 ImageFileManager().path_exists(selected_files[0])):
-            if ImageFileManager().path_prompt(selected_files[0]) == 'Cancelled':
+            if ImageFileManager().path_prompt(selected_files[0]) is not None:
                 return
+
+        has_omega = 'omega' in ImageFileManager().open_file(
+            selected_files[0]).metadata
 
         # Hold the data for the selected files
         self.directories = []
@@ -163,13 +167,26 @@ class LoadPanel(QObject):
         for img in selected_files:
             self.total_frames.append(
                 len(ImageFileManager().open_file(img)))
-            self.omega_min.append('')
-            self.omega_max.append('')
-            self.delta.append('')
+            if has_omega:
+                self.get_omega_data(img)
+            else:
+                self.omega_min.append('')
+                self.omega_max.append('')
+                self.delta.append('')
             f = os.path.split(img)[1]
             fnames.append(os.path.splitext(f)[0])
 
         self.find_images(fnames)
+
+    def get_omega_data(self, img):
+        ims = ImageFileManager().open_file(img)
+        minimum = ims.metadata['omega'][0][0]
+        size = len(ims.metadata['omega']) - 1
+        maximum = ims.metadata['omega'][size][1]
+
+        self.omega_min.append(minimum)
+        self.omega_max.append(maximum)
+        self.delta.append((maximum - minimum)/len(ims))
 
     def find_images(self, fnames):
         self.find_directories()
@@ -353,11 +370,11 @@ class LoadPanel(QObject):
                 self.omega_data_changed(row, 3)
             # Update delta when min or max omega are changed
             elif column == 3:
-                self.omega_min[row] = int(curr_val)
+                self.omega_min[row] = float(curr_val)
                 if self.omega_max[row] or self.delta[row]:
                     self.omega_data_changed(row, 4)
             elif column == 4:
-                self.omega_max[row] = int(curr_val)
+                self.omega_max[row] = float(curr_val)
                 if self.omega_min[row] != '':
                     diff = abs(self.omega_max[row] - self.omega_min[row])
                     delta = diff / total_frames
@@ -368,7 +385,8 @@ class LoadPanel(QObject):
                 if self.omega_min[row] != '':
                     diff = self.delta[row] * total_frames
                     maximum = self.omega_min[row] + diff
-                    self.ui.file_options.item(row, 4).setText(str(int(maximum)))
+                    self.ui.file_options.item(row, 4).setText(
+                        str(float(maximum)))
             self.enable_read()
 
     def apply_operations(self, ims_dict):
