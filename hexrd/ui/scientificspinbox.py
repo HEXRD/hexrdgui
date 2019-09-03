@@ -69,4 +69,9 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
         decimal = float(groups[1])
         decimal += steps
         new_string = '{:g}'.format(decimal) + (groups[3] if groups[3] else '')
-        self.lineEdit().setText(new_string)
+
+        # Set the value so that signals get emitted properly
+        self.setValue(self.valueFromText(new_string))
+
+        # Select the text just like a regular spin box would...
+        self.selectAll()
