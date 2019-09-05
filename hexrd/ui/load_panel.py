@@ -160,33 +160,36 @@ class LoadPanel(QObject):
 
     def load_image_data(self, selected_files):
         # Select the path if the file(s) are HDF5
+
         ext = os.path.splitext(selected_files[0])[1]
         has_omega = False
+
         if (ImageFileManager().is_hdf5(ext) and not
                 ImageFileManager().path_exists(selected_files[0])):
             if ImageFileManager().path_prompt(selected_files[0]) is not None:
                 return
 
-        has_omega = 'omega' in ImageFileManager().open_file(
-            selected_files[0]).metadata
-
         fnames = []
+        tmp_ims = []
         for img in selected_files:
-            self.total_frames.append(
-                len(ImageFileManager().open_file(img)))
+            tmp_ims.append(ImageFileManager().open_file(img))
+            f = os.path.split(img)[1]
+            fnames.append(os.path.splitext(f)[0])
+
+        has_omega = 'omega' in tmp_ims[0].metadata
+
+        for ims in tmp_ims:
+            self.total_frames.append(len(ims))
             if has_omega:
-                self.get_omega_data(img)
+                self.get_omega_data(ims)
             else:
                 self.omega_min.append('')
                 self.omega_max.append('')
                 self.delta.append('')
-            f = os.path.split(img)[1]
-            fnames.append(os.path.splitext(f)[0])
 
         self.find_images(fnames)
 
-    def get_omega_data(self, img):
-        ims = ImageFileManager().open_file(img)
+    def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
         size = len(ims.metadata['omega']) - 1
         maximum = ims.metadata['omega'][size][1]
@@ -393,8 +396,9 @@ class LoadPanel(QObject):
 
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
-        self.display_aggregation(HexrdConfig().imageseries_dict)
-        if not self.state['agg'] and len(self.omega_min[0]):
+        if self.state['agg']:
+            self.display_aggregation(HexrdConfig().imageseries_dict)
+        elif '' not in self.omega_min:
             self.add_omega_metadata(HexrdConfig().imageseries_dict)
 
     def finish_processing_ims(self):
@@ -409,16 +413,20 @@ class LoadPanel(QObject):
         # Apply the operations to the imageseries
         for key in ims_dict.keys():
             ops = []
-            try:
-                self.get_dark_op(ops, ims_dict[key])
-            except (Exception, IOError) as error:
-                msg = ('ERROR - Could not use file for dark subtraction: \n'
-                        + str(error))
-                QMessageBox.warning(None, 'HEXRD', msg)
-                return
+            if self.state['dark'] != 5:
+                try:
+                    self.get_dark_op(ops, ims_dict[key])
+                except (Exception, IOError) as error:
+                    msg = ('ERROR - Could not use file for dark subtraction:\n'
+                            + str(error))
+                    QMessageBox.warning(None, 'HEXRD', msg)
+                    return
 
-            self.get_flip_op(ops)
+            if self.state['trans']:
+                self.get_flip_op(ops)
+
             frames = self.get_range(ims_dict[key])
+
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
 
@@ -464,9 +472,6 @@ class LoadPanel(QObject):
 
     def display_aggregation(self, ims_dict):
         # Display aggregated image from imageseries
-        if self.state['agg'] == 0:
-            return
-
         for key in ims_dict.keys():
             if self.state['agg'] == 1:
                 ims_dict[key] = [imageseries.stats.max(
