@@ -57,7 +57,6 @@ class LoadPanel(QObject):
             self.ui.img_directory.setText('No directory set')
         else:
             self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
-        self.ui.image_files.setEnabled(self.parent_dir is not None)
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
 
@@ -106,11 +105,12 @@ class LoadPanel(QObject):
     def dir_changed(self):
         self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
 
-    def select_folder(self):
+    def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
-        caption = HexrdConfig().images_dirtion = 'Select directory for images'
-        new_dir = QFileDialog.getExistingDirectory(
-            self.ui, caption, dir=self.parent_dir)
+        if not new_dir:
+            caption = HexrdConfig().images_dirtion = 'Select directory for images'
+            new_dir = QFileDialog.getExistingDirectory(
+                self.ui, caption, dir=self.parent_dir)
 
         # Only update if a new directory is selected
         if new_dir and new_dir != self.parent_dir:
@@ -138,6 +138,9 @@ class LoadPanel(QObject):
             self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
+            if self.parent_dir is None:
+                self.select_folder(os.path.dirname(selected_files[0]))
+            self.reset_data()
             self.load_image_data(selected_files)
             self.create_table()
             self.enable_read()
