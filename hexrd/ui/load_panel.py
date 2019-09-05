@@ -41,6 +41,8 @@ class LoadPanel(QObject):
         self.setup_gui()
         self.setup_connections()
 
+    # Setup GUI
+
     def setup_gui(self):
         if not HexrdConfig().load_panel_state:
             HexrdConfig().load_panel_state = {'agg': 0, 'trans': 0, 'dark': 0}
@@ -76,13 +78,15 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
 
+    # Handle GUI changes
+
     def dark_mode_changed(self):
         self.state['dark'] = self.ui.darkMode.currentIndex()
 
         if self.state['dark'] == 4:
             self.ui.selectDark.setEnabled(True)
             self.ui.dark_file.setText(
-                self.dark_file if self.dark_file else '(No Dark File Selected)')
+                self.dark_file if self.dark_file else '(No File Selected)')
             self.enable_read()
         else:
             self.ui.selectDark.setEnabled(False)
@@ -145,6 +149,15 @@ class LoadPanel(QObject):
             self.create_table()
             self.enable_read()
 
+    def reset_data(self):
+        self.directories = []
+        self.empty_frames = 0
+        self.total_frames = []
+        self.omega_min = []
+        self.omega_max = []
+        self.delta = []
+        self.files = []
+
     def load_image_data(self, selected_files):
         # Select the path if the file(s) are HDF5
         ext = os.path.splitext(selected_files[0])[1]
@@ -156,15 +169,6 @@ class LoadPanel(QObject):
 
         has_omega = 'omega' in ImageFileManager().open_file(
             selected_files[0]).metadata
-
-        # Hold the data for the selected files
-        self.directories = []
-        self.empty_frames = 0
-        self.total_frames = []
-        self.omega_min = []
-        self.omega_max = []
-        self.delta = []
-        self.files = []
 
         fnames = []
         for img in selected_files:
@@ -248,47 +252,7 @@ class LoadPanel(QObject):
                 return
         self.ui.read.setEnabled(False)
 
-    def read_data(self):
-        # When this is pressed read in a complete set of data for all detectors.
-        # Run the imageseries processing in a background thread and display a
-        # loading dialog
-
-        # Create threads and loading dialog
-        thread_pool = QThreadPool(self.parent())
-        progress_dialog = CalProgressDialog(self.parent())
-        progress_dialog.setWindowTitle('Loading Processed Imageseries')
-
-        # Start processing in background
-        worker = AsyncWorker(self.process_ims)
-        thread_pool.start(worker)
-
-        # On completion load imageseries nd close loading dialog
-        worker.signals.result.connect(self.finish_processing_ims)
-        worker.signals.finished.connect(progress_dialog.accept)
-        progress_dialog.exec_()
-
-    def process_ims(self):
-        # Open selected images as imageseries
-        det_names = HexrdConfig().get_detector_names()
-        if len(self.files[0]) > 1:
-            for det, dirs, f in zip(det_names, self.directories, self.files):
-                ims = ImageFileManager().open_directory(dirs, f)
-                HexrdConfig().imageseries_dict[det] = ims
-        else:
-            ImageFileManager().load_images(det_names, self.files)
-
-        # Process the imageseries
-        self.apply_operations(HexrdConfig().imageseries_dict)
-        self.display_aggregation(HexrdConfig().imageseries_dict)
-        self.add_omega_metadata(HexrdConfig().imageseries_dict)
-
-    def finish_processing_ims(self):
-        # Display processed images on completion
-        # The setEnabled options will not be needed once the panel
-        # is complete - those dialogs will be removed.
-        self.parent().action_edit_ims.setEnabled(True)
-        self.parent().action_edit_angles.setEnabled(True)
-        self.parent().image_tab_widget.load_images()
+    # Handle table setup and changes
 
     def create_table(self):
         # Create the table if files have successfully been selected
@@ -318,11 +282,11 @@ class LoadPanel(QObject):
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(curr)
-            self.ui.file_options.item(i, 3).setToolTip('Minimum must be set.')
+            self.ui.file_options.item(i, 3).setToolTip('Minimum must be set')
             self.ui.file_options.item(i, 4).setToolTip(
-                'Must set either maximum or delta.')
+                'Must set either maximum or delta')
             self.ui.file_options.item(i, 5).setToolTip(
-                'Must set either maximum or delta.')
+                'Must set either maximum or delta')
 
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
@@ -391,6 +355,51 @@ class LoadPanel(QObject):
                     self.ui.file_options.item(row, 4).setText(
                         str(float(maximum)))
             self.enable_read()
+
+    # Process files
+
+    def read_data(self):
+        # When this is pressed read in a complete set of data for all detectors.
+        # Run the imageseries processing in a background thread and display a
+        # loading dialog
+
+        # Create threads and loading dialog
+        thread_pool = QThreadPool(self.parent())
+        progress_dialog = CalProgressDialog(self.parent())
+        progress_dialog.setWindowTitle('Loading Processed Imageseries')
+
+        # Start processing in background
+        worker = AsyncWorker(self.process_ims)
+        thread_pool.start(worker)
+
+        # On completion load imageseries nd close loading dialog
+        worker.signals.result.connect(self.finish_processing_ims)
+        worker.signals.finished.connect(progress_dialog.accept)
+        progress_dialog.exec_()
+
+    def process_ims(self):
+        # Open selected images as imageseries
+        det_names = HexrdConfig().get_detector_names()
+        if len(self.files[0]) > 1:
+            for det, dirs, f in zip(det_names, self.directories, self.files):
+                ims = ImageFileManager().open_directory(dirs, f)
+                HexrdConfig().imageseries_dict[det] = ims
+        else:
+            ImageFileManager().load_images(det_names, self.files)
+
+        # Process the imageseries
+        self.apply_operations(HexrdConfig().imageseries_dict)
+        self.display_aggregation(HexrdConfig().imageseries_dict)
+        if not self.state['agg'] and len(self.omega_min[0]):
+            self.add_omega_metadata(HexrdConfig().imageseries_dict)
+
+    def finish_processing_ims(self):
+        # Display processed images on completion
+        # The setEnabled options will not be needed once the panel
+        # is complete - those dialogs will be removed.
+        self.parent().action_edit_ims.setEnabled(True)
+        self.parent().action_edit_angles.setEnabled(True)
+        self.parent().image_tab_widget.load_images()
 
     def apply_operations(self, ims_dict):
         # Apply the operations to the imageseries
@@ -472,7 +481,7 @@ class LoadPanel(QObject):
             nframes = len(ims_dict[key])
             omw = imageseries.omega.OmegaWedges(nframes)
             for i in range(len(self.files[0])):
-                nsteps = self.total_frames[i]
+                nsteps = self.total_frames[i] - self.empty_frames
                 start = self.omega_min[i]
                 stop = self.omega_max[i]
 
