@@ -243,7 +243,11 @@ class LoadPanel(QObject):
                 break
 
     def enable_read(self):
-        if '' not in self.omega_min and '' not in self.omega_max:
+        ext = ''
+        if self.files:
+            ext = os.path.splitext(os.path.basename(self.files[0][0]))[1]
+        if (ext == '.tiff'
+                or '' not in self.omega_min and '' not in self.omega_max):
             if self.state['dark'] == 4 and self.dark_file is not None:
                 self.ui.read.setEnabled(len(self.files))
                 return
