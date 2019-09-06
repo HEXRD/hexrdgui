@@ -216,7 +216,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _recursive_set_defaults(self, current, default):
         for key in default.keys():
-            current.setdefault(key, default[key])
+            current.setdefault(key, copy.deepcopy(default[key]))
 
             if key == 'detectors':
                 # Don't copy the default detectors into the current ones
