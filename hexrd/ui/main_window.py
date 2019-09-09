@@ -2,7 +2,8 @@ import os
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal
 from PySide2.QtWidgets import (
-    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox
+    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
+    QVBoxLayout
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -17,6 +18,7 @@ from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
+from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
@@ -59,6 +61,11 @@ class MainWindow(QObject):
             self.frame_aggregation.ui)
 
         self.add_materials_panel()
+
+        self.load_widget = LoadPanel(self.ui)
+        self.ui.load_page.setLayout(QVBoxLayout())
+        self.ui.load_page.layout().addWidget(self.load_widget.ui)
+        # self.ui.load_page = self.load_widget
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
