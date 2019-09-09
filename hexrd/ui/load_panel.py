@@ -1,5 +1,7 @@
 import os
-import fabio
+import yaml
+import glob
+import numpy as np
 
 from hexrd import imageseries
 
@@ -37,6 +39,7 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.dark_file = None
         self.idx = 0
+        self.ext = ''
 
         self.setup_gui()
         self.setup_connections()
@@ -161,10 +164,10 @@ class LoadPanel(QObject):
     def load_image_data(self, selected_files):
         # Select the path if the file(s) are HDF5
 
-        ext = os.path.splitext(selected_files[0])[1]
+        self.ext = os.path.splitext(selected_files[0])[1]
         has_omega = False
 
-        if (ImageFileManager().is_hdf5(ext) and not
+        if (ImageFileManager().is_hdf5(self.ext) and not
                 ImageFileManager().path_exists(selected_files[0])):
             if ImageFileManager().path_prompt(selected_files[0]) is not None:
                 return
@@ -172,22 +175,41 @@ class LoadPanel(QObject):
         fnames = []
         tmp_ims = []
         for img in selected_files:
-            tmp_ims.append(ImageFileManager().open_file(img))
             f = os.path.split(img)[1]
-            fnames.append(os.path.splitext(f)[0])
-
-        has_omega = 'omega' in tmp_ims[0].metadata
-
-        for ims in tmp_ims:
-            self.total_frames.append(len(ims))
-            if has_omega:
-                self.get_omega_data(ims)
+            name = os.path.splitext(f)[0]
+            if os.path.splitext(f)[1] == '.yml':
+                name = name.rsplit('_', 1)[0]
             else:
-                self.omega_min.append('')
-                self.omega_max.append('')
-                self.delta.append('')
+                tmp_ims.append(ImageFileManager().open_file(img))
+            fnames.append(name)
 
         self.find_images(fnames)
+
+        if self.ext == '.yml':
+            for yf in self.yml_files[0]:
+                ims = ImageFileManager().open_file(yf)
+                self.total_frames.append(len(ims))
+
+            for f in self.files[0]:
+                with open(f, 'r') as raw_file:
+                    data = yaml.load(raw_file)
+                if 'ostart' in data['meta'] or 'omega' in data['meta']:
+                    self.get_yaml_omega_data(data)
+                else:
+                    self.omega_min = [''] * len(self.yml_files[0])
+                    self.omega_max = [''] * len(self.yml_files[0])
+                    self.delta = [''] * len(self.yml_files[0])
+                self.empty_frames = data['options']['empty-frames']
+        else:
+            for ims in tmp_ims:
+                has_omega = 'omega' in ims.metadata
+                self.total_frames.append(len(ims))
+                if has_omega:
+                    self.get_omega_data(ims)
+                else:
+                    self.omega_min.append('')
+                    self.omega_max.append('')
+                    self.delta.append('')
 
     def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
@@ -197,6 +219,25 @@ class LoadPanel(QObject):
         self.omega_min.append(minimum)
         self.omega_max.append(maximum)
         self.delta.append((maximum - minimum)/len(ims))
+
+    def get_yaml_omega_data(self, data):
+        if 'ostart' in data['meta']:
+            self.omega_min.append(data['meta']['ostart'])
+            self.omega_max.append(data['meta']['ostop'])
+            wedge = (self.omega_max - self.omega_min) / self.total_frames[0]
+            self.delta.append(wedge)
+        else:
+            if isinstance(data['meta']['omega'], str):
+                words = data['meta']['omega'].split()
+                fname = os.path.join(self.parent_dir, words[2])
+                nparray = np.load(fname)
+            else:
+                nparray = data['meta']['omega']
+
+            for idx, vals in enumerate(nparray):
+                self.omega_min.append(vals[0])
+                self.omega_max.append(vals[1])
+                self.delta.append((vals[1] - vals[0]) / self.total_frames[idx])
 
     def find_images(self, fnames):
         self.find_directories()
@@ -234,6 +275,9 @@ class LoadPanel(QObject):
             self.files.append([])
             for item in os.scandir(self.directories[i]):
                 fname = os.path.splitext(item.name)[0]
+                if self.ext == '.yml' and (
+                        os.path.splitext(item.name)[1] == self.ext):
+                    fname = fname.rsplit('_', 1)[0]
                 if os.path.isfile(item) and fname in fnames:
                     self.files[i].append(item.path)
             # Display error if equivalent files are not found for ea. detector
@@ -245,11 +289,21 @@ class LoadPanel(QObject):
                 self.files = []
                 break
 
+        if self.ext == '.yml':
+            self.get_yml_files()
+
+    def get_yml_files(self):
+        self.yml_files = []
+        for det in self.files:
+            for f in det:
+                with open(f, 'r') as raw_file:
+                    data = yaml.load(raw_file)['image-files']
+                files = glob.glob(
+                    os.path.join(data['directory'], data['files']))
+                self.yml_files.append(files)
+
     def enable_read(self):
-        ext = ''
-        if self.files:
-            ext = os.path.splitext(os.path.basename(self.files[0][0]))[1]
-        if (ext == '.tiff'
+        if (self.ext == '.tiff'
                 or '' not in self.omega_min and '' not in self.omega_max):
             if self.state['dark'] == 4 and self.dark_file is not None:
                 self.ui.read.setEnabled(len(self.files))
@@ -266,9 +320,14 @@ class LoadPanel(QObject):
         if not len(self.files):
             return
 
+        if self.ext == '.yml':
+            table_files = self.yml_files
+        else:
+            table_files = self.files
+
         self.idx = self.ui.detector.currentIndex()
         self.ui.file_options.setRowCount(
-            len(self.files[self.idx]))
+            len(table_files[self.idx]))
 
         # Create the rows
         for row in range(self.ui.file_options.rowCount()):
@@ -279,7 +338,7 @@ class LoadPanel(QObject):
 
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
-            curr = self.files[self.idx][i]
+            curr = table_files[self.idx][i]
             self.ui.file_options.item(i, 0).setText(os.path.split(curr)[1])
             self.ui.file_options.item(i, 1).setText(str(self.empty_frames))
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
@@ -387,12 +446,13 @@ class LoadPanel(QObject):
     def process_ims(self):
         # Open selected images as imageseries
         det_names = HexrdConfig().get_detector_names()
-        if len(self.files[0]) > 1:
-            for det, dirs, f in zip(det_names, self.directories, self.files):
+        files = self.yml_files if self.ext == '.yml' else self.files
+        if len(files[0]) > 1:
+            for det, dirs, f in zip(det_names, self.directories, files):
                 ims = ImageFileManager().open_directory(dirs, f)
                 HexrdConfig().imageseries_dict[det] = ims
         else:
-            ImageFileManager().load_images(det_names, self.files)
+            ImageFileManager().load_images(det_names, files)
 
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
@@ -414,13 +474,13 @@ class LoadPanel(QObject):
         for key in ims_dict.keys():
             ops = []
             if self.state['dark'] != 5:
-                try:
-                    self.get_dark_op(ops, ims_dict[key])
-                except (Exception, IOError) as error:
-                    msg = ('ERROR - Could not use file for dark subtraction:\n'
-                            + str(error))
+                if not self.empty_frames and self.state['dark'] == 1:
+                    msg = ('ERROR: \n No empty frames set. '
+                            + 'No dark subtracion will be performed.')
                     QMessageBox.warning(None, 'HEXRD', msg)
                     return
+                else:
+                    self.get_dark_op(ops, ims_dict[key])
 
             if self.state['trans']:
                 self.get_flip_op(ops)
@@ -443,7 +503,8 @@ class LoadPanel(QObject):
             else:
                 darkimg = imageseries.stats.max(ims, frames)
         else:
-            darkimg = fabio.open(self.dark_file).data
+            darkimg = imageseries.stats.median(
+                ImageFileManager().open_file(self.dark_file))
 
         oplist.append(('dark', darkimg))
 
@@ -485,10 +546,11 @@ class LoadPanel(QObject):
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
+        files = self.yml_files if self.ext == '.yml' else self.files
         for key in ims_dict.keys():
             nframes = len(ims_dict[key])
             omw = imageseries.omega.OmegaWedges(nframes)
-            for i in range(len(self.files[0])):
+            for i in range(len(files[0])):
                 nsteps = self.total_frames[i] - self.empty_frames
                 start = self.omega_min[i]
                 stop = self.omega_max[i]
