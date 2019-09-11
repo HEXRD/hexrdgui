@@ -37,7 +37,9 @@ class ImageCanvas(FigureCanvas):
         self.mode = None
 
         # Track the pixel size
-        self.cartesian_pixel_size = HexrdConfig().cartesian_pixel_size
+        self.cartesian_res_config = (
+            HexrdConfig().config['image']['cartesian'].copy()
+        )
         self.polar_res_config = HexrdConfig().config['image']['polar'].copy()
 
         # Set up our async stuff
@@ -223,8 +225,11 @@ class ImageCanvas(FigureCanvas):
             self.mode = 'cartesian'
 
         # Force a redraw when the pixel size changes.
-        if self.cartesian_pixel_size != HexrdConfig().cartesian_pixel_size:
-            self.cartesian_pixel_size = HexrdConfig().cartesian_pixel_size
+        if (self.cartesian_res_config !=
+                HexrdConfig().config['image']['cartesian']):
+            self.cartesian_res_config = (
+                HexrdConfig().config['image']['cartesian'].copy()
+            )
             self.figure.clear()
             self.axes_images.clear()
 

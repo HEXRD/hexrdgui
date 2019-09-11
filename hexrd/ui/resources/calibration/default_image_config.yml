@@ -5,3 +5,6 @@ polar:
   tth_max: 20.0
 cartesian:
   pixel_size: 0.5
+  virtual_plane_distance: 1000.0
+  plane_normal_rotate_x: 0.0
+  plane_normal_rotate_y: 0.0

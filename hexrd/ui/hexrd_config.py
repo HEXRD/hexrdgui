@@ -762,6 +762,39 @@ class HexrdConfig(QObject, metaclass=Singleton):
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
 
+    def _cartesian_virtual_plane_distance(self):
+        return self.config['image']['cartesian']['virtual_plane_distance']
+
+    def set_cartesian_virtual_plane_distance(self, v):
+        self.config['image']['cartesian']['virtual_plane_distance'] = v
+        self.cartesian_config_changed.emit()
+
+    cartesian_virtual_plane_distance = property(
+        _cartesian_virtual_plane_distance,
+        set_cartesian_virtual_plane_distance)
+
+    def _cartesian_plane_normal_rotate_x(self):
+        return self.config['image']['cartesian']['plane_normal_rotate_x']
+
+    def set_cartesian_plane_normal_rotate_x(self, v):
+        self.config['image']['cartesian']['plane_normal_rotate_x'] = v
+        self.cartesian_config_changed.emit()
+
+    cartesian_plane_normal_rotate_x = property(
+        _cartesian_plane_normal_rotate_x,
+        set_cartesian_plane_normal_rotate_x)
+
+    def _cartesian_plane_normal_rotate_y(self):
+        return self.config['image']['cartesian']['plane_normal_rotate_y']
+
+    def set_cartesian_plane_normal_rotate_y(self, v):
+        self.config['image']['cartesian']['plane_normal_rotate_y'] = v
+        self.cartesian_config_changed.emit()
+
+    cartesian_plane_normal_rotate_y = property(
+        _cartesian_plane_normal_rotate_y,
+        set_cartesian_plane_normal_rotate_y)
+
     def get_show_saturation_level(self):
         return self._show_saturation_level
 
