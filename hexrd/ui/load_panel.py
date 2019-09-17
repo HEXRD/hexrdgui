@@ -195,7 +195,7 @@ class LoadPanel(QObject):
 
             for f in self.files[0]:
                 with open(f, 'r') as raw_file:
-                    data = yaml.load(raw_file)
+                    data = yaml.safe_load(raw_file)
                 if 'ostart' in data['meta'] or 'omega' in data['meta']:
                     self.get_yaml_omega_data(data)
                 else:
@@ -278,9 +278,11 @@ class LoadPanel(QObject):
             self.files.append([])
             for item in os.scandir(self.directories[i]):
                 fname = os.path.splitext(item.name)[0]
-                if self.ext == '.yml' and (
-                        os.path.splitext(item.name)[1] == self.ext):
-                    fname = fname.rsplit('_', 1)[0]
+                if self.ext == '.yml':
+                    if os.path.splitext(item.name)[1] == self.ext:
+                        fname = fname.rsplit('_', 1)[0]
+                    else:
+                        fname = ''
                 if os.path.isfile(item) and fname in fnames:
                     self.files[i].append(item.path)
             # Display error if equivalent files are not found for ea. detector
@@ -298,12 +300,13 @@ class LoadPanel(QObject):
     def get_yml_files(self):
         self.yml_files = []
         for det in self.files:
+            files = []
             for f in det:
                 with open(f, 'r') as raw_file:
-                    data = yaml.load(raw_file)['image-files']
-                files = glob.glob(
-                    os.path.join(data['directory'], data['files']))
-                self.yml_files.append(files)
+                    data = yaml.safe_load(raw_file)['image-files']
+                files.extend(glob.glob(
+                    os.path.join(data['directory'], data['files'])))
+            self.yml_files.append(files)
 
     def enable_read(self):
         if (self.ext == '.tiff'
@@ -360,6 +363,10 @@ class LoadPanel(QObject):
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
+            # If raw data offset can only be changed in YAML file
+            if self.ext == '.yml':
+                self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
+
 
         self.ui.file_options.resizeColumnsToContents()
 
@@ -449,13 +456,13 @@ class LoadPanel(QObject):
     def process_ims(self):
         # Open selected images as imageseries
         det_names = HexrdConfig().get_detector_names()
-        files = self.yml_files if self.ext == '.yml' else self.files
-        if len(files[0]) > 1:
-            for det, dirs, f in zip(det_names, self.directories, files):
+
+        if len(self.files[0]) > 1:
+            for det, dirs, f in zip(det_names, self.directories, self.files):
                 ims = ImageFileManager().open_directory(dirs, f)
                 HexrdConfig().imageseries_dict[det] = ims
         else:
-            ImageFileManager().load_images(det_names, files)
+            ImageFileManager().load_images(det_names, self.files)
 
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
@@ -532,7 +539,10 @@ class LoadPanel(QObject):
         oplist.append(('flip', key))
 
     def get_range(self, ims):
-        return range(self.empty_frames, len(ims))
+        if self.ext == '.yml':
+            return range(len(ims))
+        else:
+            return range(self.empty_frames, len(ims))
 
     def display_aggregation(self, ims_dict):
         # Display aggregated image from imageseries
