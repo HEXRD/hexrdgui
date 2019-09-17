@@ -6,7 +6,7 @@ import numpy as np
 from hexrd import imageseries
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
@@ -24,6 +24,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 class LoadPanel(QObject):
+
+    # Emitted when new images are loaded
+    new_images_loaded = Signal()
 
     def __init__(self, parent=None):
         super(LoadPanel, self).__init__(parent)
@@ -465,9 +468,9 @@ class LoadPanel(QObject):
         # Display processed images on completion
         # The setEnabled options will not be needed once the panel
         # is complete - those dialogs will be removed.
-        self.parent().action_edit_ims.setEnabled(True)
         self.parent().action_edit_angles.setEnabled(True)
         self.parent().image_tab_widget.load_images()
+        self.new_images_loaded.emit()
 
     def apply_operations(self, ims_dict):
         # Apply the operations to the imageseries

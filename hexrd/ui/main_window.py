@@ -114,6 +114,7 @@ class MainWindow(QObject):
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.ui.action_run_powder_calibration.triggered.connect(
             self.start_powder_calibration)
+        self.load_widget.new_images_loaded.connect(self.new_images_loaded)
         self.new_images_loaded.connect(self.enable_editing_ims)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
