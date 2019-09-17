@@ -403,6 +403,8 @@ class LoadPanel(QObject):
 
     def omega_data_changed(self, row, column):
         # Update the values for equivalent files when the data is changed
+        self.blockSignals(True)
+
         curr_val = self.ui.file_options.item(row, column).text()
         total_frames = self.total_frames[row] - self.empty_frames
         if curr_val != '':
@@ -421,6 +423,7 @@ class LoadPanel(QObject):
                 if self.omega_min[row] != '':
                     diff = abs(self.omega_max[row] - self.omega_min[row])
                     delta = diff / total_frames
+                    self.delta[row] = delta
                     self.ui.file_options.item(row, 5).setText(
                         str(round(delta, 2)))
             elif column == 5:
@@ -428,9 +431,12 @@ class LoadPanel(QObject):
                 if self.omega_min[row] != '':
                     diff = self.delta[row] * total_frames
                     maximum = self.omega_min[row] + diff
+                    self.omega_max[row] = maximum
                     self.ui.file_options.item(row, 4).setText(
                         str(float(maximum)))
             self.enable_read()
+
+        self.blockSignals(False)
 
     # Process files
 
