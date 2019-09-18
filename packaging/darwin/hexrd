@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+echo $SCRIPT_DIR
+$SCRIPT_DIR/../Resources/bin/python $SCRIPT_DIR/../Resources/bin/hexrd $@

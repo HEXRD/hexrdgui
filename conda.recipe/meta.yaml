@@ -6,7 +6,6 @@ source:
   path: ../
 
 build:
-  osx_is_app: yes
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   entry_points:
     - hexrd = hexrd.ui.main:main
