@@ -8,3 +8,4 @@ cartesian:
   virtual_plane_distance: 1000.0
   plane_normal_rotate_x: 0.0
   plane_normal_rotate_y: 0.0
+show_detector_borders: true

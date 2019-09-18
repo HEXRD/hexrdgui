@@ -109,6 +109,8 @@ class MainWindow(QObject):
             self.on_action_edit_calibration_crystal)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
+        self.ui.action_show_detector_borders.toggled.connect(
+            HexrdConfig().set_show_detector_borders)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
