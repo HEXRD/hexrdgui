@@ -10,6 +10,7 @@ from skimage.exposure import equalize_adapthist
 from .display_plane import DisplayPlane
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import select_merged_rings
 
 snip_width = 9
 
@@ -132,16 +133,8 @@ class InstrumentViewer:
 
             if selected_rings:
                 # This ensures the correct ranges are selected
-                new_indices = []
-                new_ranges = []
-                for ring in selected_rings:
-                    for i, entry in enumerate(indices):
-                        if ring in entry:
-                            new_indices.append(entry)
-                            new_ranges.append(ranges[i])
-                            break
-                indices = new_indices
-                ranges = new_ranges
+                indices, ranges = select_merged_rings(selected_rings, indices,
+                                                      ranges)
 
             for ind, r in zip(indices, np.degrees(ranges)):
                 self.rbnd_data.append(np.array([[-180, r[0]],
