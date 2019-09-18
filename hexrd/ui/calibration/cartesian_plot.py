@@ -5,6 +5,7 @@ from hexrd import instrument
 from hexrd.gridutil import cellIndices
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import select_merged_rings
 
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
@@ -80,8 +81,11 @@ class InstrumentViewer:
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = self.plane_data.getMergedRanges()
+
             if selected_rings:
-                ranges = [ranges[i] for i in selected_rings]
+                # This ensures the correct ranges are selected
+                indices, ranges = select_merged_rings(selected_rings, indices,
+                                                      ranges)
 
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]

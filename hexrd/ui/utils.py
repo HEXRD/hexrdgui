@@ -86,3 +86,21 @@ def coords2index(im, x, y):
              mtransforms.BboxTransformTo(array_extent))
 
     return trans.transform_point([y, x]).astype(int)
+
+
+def select_merged_rings(selected_rings, indices, ranges):
+    """Select indices and ranges for merged rings
+
+    This utility function filters the indices and ranges and returns
+    new (indices, ranges) that were selected in the selected_rings.
+    """
+    new_indices = []
+    new_ranges = []
+    for ring in selected_rings:
+        for i, entry in enumerate(indices):
+            if ring in entry:
+                new_indices.append(entry)
+                new_ranges.append(ranges[i])
+                break
+
+    return new_indices, new_ranges
