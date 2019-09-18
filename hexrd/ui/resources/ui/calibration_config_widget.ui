@@ -73,6 +73,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="suffix">
             <string> Å</string>
            </property>
@@ -97,6 +100,9 @@
           <widget class="QDoubleSpinBox" name="cal_energy">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="suffix">
             <string> keV</string>
@@ -147,6 +153,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="prefix">
             <string/>
            </property>
@@ -171,6 +180,9 @@
           <widget class="QDoubleSpinBox" name="cal_vector_polar">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="prefix">
             <string/>
@@ -244,6 +256,9 @@
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="decimals">
          <number>1</number>
         </property>
@@ -288,6 +303,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="prefix">
             <string/>
            </property>
@@ -320,6 +338,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="prefix">
             <string/>
            </property>
@@ -341,6 +362,9 @@
           <widget class="QDoubleSpinBox" name="cal_det_translation_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="prefix">
             <string/>
@@ -374,6 +398,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="suffix">
             <string>°</string>
            </property>
@@ -396,6 +423,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="suffix">
             <string>°</string>
            </property>
@@ -417,6 +447,9 @@
           <widget class="QDoubleSpinBox" name="cal_det_tilt_2">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="suffix">
             <string>°</string>
@@ -501,6 +534,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="prefix">
             <string/>
            </property>
@@ -522,6 +558,9 @@
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="prefix">
             <string/>
@@ -545,6 +584,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="prefix">
             <string/>
            </property>
@@ -567,6 +609,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
             <number>5</number>
            </property>
@@ -586,6 +631,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
             <number>5</number>
            </property>
@@ -604,6 +652,9 @@
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_5">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="decimals">
             <number>5</number>
@@ -665,6 +716,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
             <number>5</number>
            </property>
@@ -707,6 +761,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
             <number>5</number>
            </property>
@@ -729,6 +786,9 @@
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="minimum">
             <number>1</number>
            </property>
@@ -744,6 +804,9 @@
           <widget class="QSpinBox" name="cal_det_columns">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="minimum">
             <number>1</number>
@@ -811,6 +874,9 @@
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="prefix">
          <string/>
         </property>
@@ -832,6 +898,9 @@
        <widget class="QDoubleSpinBox" name="cal_osc_translation_2">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
         </property>
         <property name="prefix">
          <string/>
@@ -855,6 +924,9 @@
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="prefix">
          <string/>
         </property>
@@ -876,6 +948,9 @@
        <widget class="QDoubleSpinBox" name="cal_osc_chi">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
         </property>
         <property name="suffix">
          <string>°</string>

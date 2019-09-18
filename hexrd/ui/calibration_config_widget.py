@@ -260,12 +260,6 @@ class CalibrationConfigWidget(QObject):
         for block, widget in zip(previously_blocked, all_widgets):
             widget.blockSignals(block)
 
-    def set_keyboard_tracking(self, b):
-        widgets = self.get_all_widgets()
-        for widget in widgets:
-            if isinstance(widget, QAbstractSpinBox):
-                widget.setKeyboardTracking(b)
-
     def _set_gui_value(self, gui_object, value, flag=None):
         """This is for calling various set methods for GUI variables
 
