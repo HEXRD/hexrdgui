@@ -103,7 +103,7 @@ class PolarView(object):
 
         if HexrdConfig().show_detector_borders:
             # Draw a border around the detector panel
-            max_int = img.max()
+            max_int = np.percentile(img, 99.95)
             # A large percentage such as 3% is needed for it to show up
             pbuf = int(0.03 * np.mean(img.shape))
             img[:, :pbuf] = max_int

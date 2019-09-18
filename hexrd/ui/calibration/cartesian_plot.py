@@ -131,7 +131,7 @@ class InstrumentViewer:
 
         if HexrdConfig().show_detector_borders:
             # Draw a border around the detector panel
-            max_int = img.max()
+            max_int = np.percentile(img, 99.95)
             # 0.5% is big enough for cartesian mode
             pbuf = int(0.005 * np.mean(img.shape))
             img[:, :pbuf] = max_int
