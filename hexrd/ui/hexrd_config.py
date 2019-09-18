@@ -865,3 +865,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return None
 
         return RotMatEuler(np.zeros(3), axes, extrinsic)
+
+    @property
+    def show_detector_borders(self):
+        return self.config['image']['show_detector_borders']
+
+    def set_show_detector_borders(self, v):
+        self.config['image']['show_detector_borders'] = v
+        self.rerender_needed.emit()

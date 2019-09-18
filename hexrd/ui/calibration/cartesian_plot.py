@@ -127,16 +127,17 @@ class InstrumentViewer:
 
     def create_warped_image(self, detector_id):
         img = self.images_dict[detector_id]
-
-        # Draw a border around the detector panel
-        max_int = img.max()
-        # 0.5% is big enough for cartesian mode
-        pbuf = int(0.005 * np.mean(img.shape))
-        img[:, :pbuf] = max_int
-        img[:, -pbuf:] = max_int
-        img[:pbuf, :] = max_int
-        img[-pbuf:, :] = max_int
         panel = self.instr._detectors[detector_id]
+
+        if HexrdConfig().show_detector_borders:
+            # Draw a border around the detector panel
+            max_int = img.max()
+            # 0.5% is big enough for cartesian mode
+            pbuf = int(0.005 * np.mean(img.shape))
+            img[:, :pbuf] = max_int
+            img[:, -pbuf:] = max_int
+            img[:pbuf, :] = max_int
+            img[-pbuf:, :] = max_int
 
         # map corners
         corners = np.vstack(

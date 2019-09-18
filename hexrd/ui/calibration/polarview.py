@@ -101,14 +101,15 @@ class PolarView(object):
         panel = self.detectors[det]
         img = self.images_dict[det]
 
-        # Draw a border around the detector panel
-        max_int = img.max()
-        # A large percentage such as 3% is needed for it to show up
-        pbuf = int(0.03 * np.mean(img.shape))
-        img[:, :pbuf] = max_int
-        img[:, -pbuf:] = max_int
-        img[:pbuf, :] = max_int
-        img[-pbuf:, :] = max_int
+        if HexrdConfig().show_detector_borders:
+            # Draw a border around the detector panel
+            max_int = img.max()
+            # A large percentage such as 3% is needed for it to show up
+            pbuf = int(0.03 * np.mean(img.shape))
+            img[:, :pbuf] = max_int
+            img[:, -pbuf:] = max_int
+            img[:pbuf, :] = max_int
+            img[-pbuf:, :] = max_int
 
         gpts = anglesToGVec(
             np.vstack([

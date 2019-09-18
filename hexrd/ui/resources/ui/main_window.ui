@@ -76,6 +76,7 @@
     </property>
     <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
+    <addaction name="action_show_detector_borders"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
@@ -154,8 +155,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>96</width>
-          <height>26</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">
@@ -167,8 +168,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>546</width>
-          <height>566</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">
@@ -180,8 +181,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>546</width>
-          <height>566</height>
+          <width>550</width>
+          <height>708</height>
          </rect>
         </property>
         <attribute name="label">
@@ -423,6 +424,17 @@
   <action name="action_edit_calibration_crystal">
    <property name="text">
     <string>Calibration Crystal</string>
+   </property>
+  </action>
+  <action name="action_show_detector_borders">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Detector Borders</string>
    </property>
   </action>
  </widget>
