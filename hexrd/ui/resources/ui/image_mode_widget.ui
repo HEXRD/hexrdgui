@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>303</width>
+    <width>337</width>
     <height>110</height>
    </rect>
   </property>
@@ -121,21 +121,24 @@
            <number>0</number>
           </property>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label">
-              <property name="text">
-               <string>Pixel Size:</string>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="cartesian_virtual_plane_distance">
+              <property name="toolTip">
+               <string>The distance from the source to the virtual plane.</string>
               </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="maximum">
+               <double>100000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1000.000000000000000</double>
               </property>
              </widget>
             </item>
-            <item>
+            <item row="0" column="1">
              <widget class="QDoubleSpinBox" name="cartesian_pixel_size">
               <property name="keyboardTracking">
                <bool>false</bool>
@@ -151,18 +154,80 @@
               </property>
              </widget>
             </item>
-            <item>
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+            <item row="1" column="3">
+             <widget class="QDoubleSpinBox" name="cartesian_plane_normal_rotate_y">
+              <property name="keyboardTracking">
+               <bool>false</bool>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
+              <property name="suffix">
+               <string>°</string>
               </property>
-             </spacer>
+              <property name="minimum">
+               <double>-180.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>180.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>Pixel Size:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="QDoubleSpinBox" name="cartesian_plane_normal_rotate_x">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="minimum">
+               <double>-180.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>180.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>Rotate x:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLabel" name="label_8">
+              <property name="text">
+               <string>Rotate y:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_9">
+              <property name="toolTip">
+               <string>The distance from the source to the virtual plane.</string>
+              </property>
+              <property name="text">
+               <string>Distance:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -397,6 +462,19 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tab_widget</tabstop>
+  <tabstop>raw_tabbed_view</tabstop>
+  <tabstop>raw_show_saturation</tabstop>
+  <tabstop>cartesian_pixel_size</tabstop>
+  <tabstop>cartesian_plane_normal_rotate_x</tabstop>
+  <tabstop>cartesian_virtual_plane_distance</tabstop>
+  <tabstop>cartesian_plane_normal_rotate_y</tabstop>
+  <tabstop>polar_pixel_size_tth</tabstop>
+  <tabstop>polar_pixel_size_eta</tabstop>
+  <tabstop>polar_res_tth_min</tabstop>
+  <tabstop>polar_res_tth_max</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

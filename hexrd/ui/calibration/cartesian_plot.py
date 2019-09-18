@@ -44,7 +44,15 @@ class InstrumentViewer:
         self.pixel_size = pixel_size
         self.warp_dict = {}
 
-        self.dplane = DisplayPlane()
+        dist = HexrdConfig().cartesian_virtual_plane_distance
+        dplane_tvec = np.array([0., 0., -dist])
+
+        rotate_x = HexrdConfig().cartesian_plane_normal_rotate_x
+        rotate_y = HexrdConfig().cartesian_plane_normal_rotate_y
+
+        dplane_tilt = np.radians(np.array(([rotate_x, rotate_y, 0.])))
+
+        self.dplane = DisplayPlane(tvec=dplane_tvec, tilt=dplane_tilt)
         self.make_dpanel()
         self.plot_dplane()
 

@@ -24,6 +24,12 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_show_saturation_level)
         self.ui.cartesian_pixel_size.valueChanged.connect(
             HexrdConfig()._set_cartesian_pixel_size)
+        self.ui.cartesian_virtual_plane_distance.valueChanged.connect(
+            HexrdConfig().set_cartesian_virtual_plane_distance)
+        self.ui.cartesian_plane_normal_rotate_x.valueChanged.connect(
+            HexrdConfig().set_cartesian_plane_normal_rotate_x)
+        self.ui.cartesian_plane_normal_rotate_y.valueChanged.connect(
+            HexrdConfig().set_cartesian_plane_normal_rotate_y)
         self.ui.polar_pixel_size_tth.valueChanged.connect(
             HexrdConfig()._set_polar_pixel_size_tth)
         self.ui.polar_pixel_size_eta.valueChanged.connect(
@@ -44,6 +50,9 @@ class ImageModeWidget(QObject):
             self.ui.raw_tabbed_view,
             self.ui.raw_show_saturation,
             self.ui.cartesian_pixel_size,
+            self.ui.cartesian_virtual_plane_distance,
+            self.ui.cartesian_plane_normal_rotate_x,
+            self.ui.cartesian_plane_normal_rotate_y,
             self.ui.polar_pixel_size_tth,
             self.ui.polar_pixel_size_eta,
             self.ui.polar_res_tth_min,
@@ -68,6 +77,12 @@ class ImageModeWidget(QObject):
         try:
             self.ui.cartesian_pixel_size.setValue(
                 HexrdConfig().cartesian_pixel_size)
+            self.ui.cartesian_virtual_plane_distance.setValue(
+                HexrdConfig().cartesian_virtual_plane_distance)
+            self.ui.cartesian_plane_normal_rotate_x.setValue(
+                HexrdConfig().cartesian_plane_normal_rotate_x)
+            self.ui.cartesian_plane_normal_rotate_y.setValue(
+                HexrdConfig().cartesian_plane_normal_rotate_y)
             self.ui.polar_pixel_size_tth.setValue(
                 HexrdConfig().polar_pixel_size_tth)
             self.ui.polar_pixel_size_eta.setValue(
