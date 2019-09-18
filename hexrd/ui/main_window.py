@@ -434,31 +434,10 @@ class MainWindow(QObject):
     def live_update(self, enabled):
         HexrdConfig().set_live_update(enabled)
 
-        sig = self.calibration_slider_widget.value_changed
         if enabled:
-            sig.connect(self.update_all)
+            HexrdConfig().rerender_needed.connect(self.update_all)
         else:
-            sig.disconnect(self.update_all)
-
-        dis_widgets = {self.calibration_config_widget.gui_data_changed,
-                       self.cal_tree_view.model().tree_data_changed}
-        pix_widgets = {self.image_mode_widget.ui.cartesian_pixel_size,
-                       self.image_mode_widget.ui.polar_pixel_size_eta,
-                       self.image_mode_widget.ui.polar_pixel_size_tth}
-
-        for widget in dis_widgets:
-            if enabled:
-                widget.connect(self.update_all)
-            else:
-                widget.disconnect(self.update_all)
-        self.calibration_config_widget.set_keyboard_tracking(not enabled)
-
-        for widget in pix_widgets:
-            if enabled:
-                widget.editingFinished.connect(self.update_all)
-            else:
-                widget.editingFinished.disconnect(self.update_all)
-            widget.setKeyboardTracking(not enabled)
+            HexrdConfig().rerender_needed.disconnect(self.update_all)
 
     def new_mouse_position(self, info):
         labels = []

@@ -52,9 +52,8 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().ring_config_changed.connect(self.redraw_rings)
         HexrdConfig().show_saturation_level_changed.connect(
             self.show_saturation)
-        HexrdConfig().cartesian_config_changed.connect(
-            self.on_cartesian_changed)
-        HexrdConfig().polar_config_changed.connect(self.on_polar_changed)
+        HexrdConfig().detector_transform_modified.connect(
+            self.on_detector_transform_modified)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -67,20 +66,6 @@ class ImageCanvas(FigureCanvas):
         self.clear_rings()
         self.azimuthal_integral_axis = None
         self.mode = None
-
-    def on_cartesian_changed(self):
-        if self.mode != 'cartesian':
-            # Don't do anything...
-            return
-
-        self.show_cartesian()
-
-    def on_polar_changed(self):
-        if self.mode != 'polar':
-            # Don't do anything...
-            return
-
-        self.show_polar()
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -364,4 +349,12 @@ class ImageCanvas(FigureCanvas):
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
+        self.draw()
+
+    def on_detector_transform_modified(self, det):
+        if not self.iviewer:
+            return
+
+        self.iviewer.update_detector(det)
+        self.axes_images[0].set_data(self.iviewer.img)
         self.draw()

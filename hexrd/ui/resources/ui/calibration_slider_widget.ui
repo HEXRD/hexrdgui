@@ -38,6 +38,9 @@
       </item>
       <item row="1" column="2">
        <widget class="QDoubleSpinBox" name="sb_tilt_0">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string>°</string>
         </property>
@@ -74,6 +77,9 @@
       </item>
       <item row="3" column="2">
        <widget class="QDoubleSpinBox" name="sb_tilt_2">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string>°</string>
         </property>
@@ -103,6 +109,9 @@
       </item>
       <item row="2" column="2">
        <widget class="QDoubleSpinBox" name="sb_tilt_1">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string>°</string>
         </property>
@@ -187,6 +196,9 @@
       </item>
       <item row="2" column="2">
        <widget class="QDoubleSpinBox" name="sb_translation_1">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -200,6 +212,9 @@
       </item>
       <item row="3" column="2">
        <widget class="QDoubleSpinBox" name="sb_translation_2">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>
@@ -226,6 +241,9 @@
       </item>
       <item row="1" column="2">
        <widget class="QDoubleSpinBox" name="sb_translation_0">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
         </property>

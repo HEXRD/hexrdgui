@@ -1,18 +1,12 @@
 import numpy as np
-import warnings
 
 from hexrd import instrument
 from .polarview import PolarView
-
-from skimage.exposure import rescale_intensity
-from skimage.exposure import equalize_adapthist
 
 from .display_plane import DisplayPlane
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import select_merged_rings
-
-snip_width = 9
 
 
 def polar_viewer():
@@ -21,11 +15,6 @@ def polar_viewer():
     plane_data = HexrdConfig().active_material.planeData
 
     return InstrumentViewer(iconfig, images_dict, plane_data)
-
-
-def log_scale_img(img):
-    img = np.array(img, dtype=float) - np.min(img) + 1.
-    return np.log(img)
 
 
 def load_instrument(config):
@@ -40,64 +29,38 @@ class InstrumentViewer:
         self.type = 'polar'
         self.plane_data = plane_data
         self.instr = load_instrument(config)
-        self._load_panels()
-        self._load_images(images_dict)
+        self.images_dict = images_dict
         self.dplane = DisplayPlane()
 
         # Resolution settings
         # As far as I can tell, self.pixel_size won't actually change
         # anything for a polar plot, so just hard-code it.
         self.pixel_size = 0.5
-        self.pv_pixel_size = (
-            HexrdConfig().polar_pixel_size_tth,
-            HexrdConfig().polar_pixel_size_eta
-        )
 
         self._make_dpanel()
-        self.snip_width_init = 9
-        self.snip_width = self.snip_width_init*self.pv_pixel_size[0]
 
-        self.generate_image()
-
-    def _load_panels(self):
-        self.panels = list(self.instr._detectors.values())
-
-    def _load_images(self, images_dict):
-        # Make sure image keys and detector keys match
-        if images_dict.keys() != self.instr._detectors.keys():
-            msg = ('Images do not match the panel ids!\n' +
-                   'Images: ' + str(list(images_dict.keys())) + '\n' +
-                   'PanelIds: ' + str(list(self.instr._detectors.keys())))
-            raise Exception(msg)
-
-        self.images_dict = images_dict
+        self.draw_polar()
+        self.add_rings()
 
     def _make_dpanel(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
         self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
                                                 self.pixel_size)
 
-    # ========== Drawing
-    def draw_polar(self, snip_width=snip_width):
+    @property
+    def angular_grid(self):
+        return self.pv.angular_grid
+
+    def draw_polar(self):
         """show polar view of rings"""
+        self.pv = PolarView(self.instr, eta_min=-180., eta_max=180.)
+        self.pv.warp_all_images()
+
         tth_min = HexrdConfig().polar_res_tth_min
         tth_max = HexrdConfig().polar_res_tth_max
 
-        pv = PolarView([tth_min, tth_max], self.instr,
-                       eta_min=-180., eta_max=180.,
-                       pixel_size=self.pv_pixel_size)
-        wimg = pv.warp_image(self.images_dict)
-        self.angular_grid = pv.angular_grid
-        self._angular_coords = pv.angular_grid
         self._extent = [tth_min, tth_max, 180., -180.]   # l, r, b, t
-        self.plot_dplane(warped=wimg, snip_width=snip_width)
-
-    def generate_image(self, **kwargs):
-        if 'snip_width' in kwargs:
-            self.draw_polar(snip_width=kwargs['snip_width'])
-        else:
-            self.draw_polar()
-        self.add_rings()
+        self.img = self.pv.img
 
     def clear_rings(self):
         self.ring_data = []
@@ -147,22 +110,6 @@ class InstrumentViewer:
 
         return self.ring_data
 
-    def plot_dplane(self, warped, snip_width=None):
-        img = rescale_intensity(warped, out_range=(0., 1.))
-        img = log_scale_img(log_scale_img(img))
-
-        # plotting
-        self.warped_image = warped
-
-        #with warnings.catch_warnings():
-        #    warnings.simplefilter("ignore")
-        #    img = equalize_adapthist(img, clip_limit=0.1, nbins=2**16)
-
-        # Rescale the data to match the scale of the original dataset
-        # TODO: try to get the function to not rescale the
-        # result to be between 0 and 1 in the first place so this will
-        # not be necessary.
-        images = self.images_dict.values()
-        minimum = min([x.min() for x in images])
-        maximum = max([x.max() for x in images])
-        self.img = np.interp(img, (img.min(), img.max()), (minimum, maximum))
+    def update_detector(self, det):
+        self.pv.update_detector(det)
+        self.img = self.pv.img
