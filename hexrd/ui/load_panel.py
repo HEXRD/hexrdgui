@@ -302,10 +302,12 @@ class LoadPanel(QObject):
         for det in self.files:
             files = []
             for f in det:
-                with open(f, 'r') as raw_file:
-                    data = yaml.safe_load(raw_file)['image-files']
-                files.extend(glob.glob(
-                    os.path.join(data['directory'], data['files'])))
+                with open(f, 'r') as yml_file:
+                    data = yaml.safe_load(yml_file)['image-files']
+                raw_images = data['files'].split()
+                for raw_image in raw_images:
+                    files.extend(glob.glob(
+                        os.path.join(data['directory'], raw_image)))
             self.yml_files.append(files)
 
     def enable_read(self):
