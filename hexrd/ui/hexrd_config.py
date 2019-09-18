@@ -781,7 +781,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_cartesian_virtual_plane_distance(self, v):
         self.config['image']['cartesian']['virtual_plane_distance'] = v
-        self.cartesian_config_changed.emit()
+        self.rerender_needed.emit()
 
     cartesian_virtual_plane_distance = property(
         _cartesian_virtual_plane_distance,
@@ -792,7 +792,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_cartesian_plane_normal_rotate_x(self, v):
         self.config['image']['cartesian']['plane_normal_rotate_x'] = v
-        self.cartesian_config_changed.emit()
+        self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_x = property(
         _cartesian_plane_normal_rotate_x,
@@ -803,7 +803,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_cartesian_plane_normal_rotate_y(self, v):
         self.config['image']['cartesian']['plane_normal_rotate_y'] = v
-        self.cartesian_config_changed.emit()
+        self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_y = property(
         _cartesian_plane_normal_rotate_y,
