@@ -80,8 +80,19 @@ class InstrumentViewer:
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = self.plane_data.getMergedRanges()
+
             if selected_rings:
-                ranges = [ranges[i] for i in selected_rings]
+                # This ensures the correct ranges are selected
+                new_indices = []
+                new_ranges = []
+                for ring in selected_rings:
+                    for i, entry in enumerate(indices):
+                        if ring in entry:
+                            new_indices.append(entry)
+                            new_ranges.append(ranges[i])
+                            break
+                indices = new_indices
+                ranges = new_ranges
 
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]

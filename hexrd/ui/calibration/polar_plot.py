@@ -131,7 +131,17 @@ class InstrumentViewer:
             indices, ranges = self.plane_data.getMergedRanges()
 
             if selected_rings:
-                ranges = [ranges[i] for i in selected_rings]
+                # This ensures the correct ranges are selected
+                new_indices = []
+                new_ranges = []
+                for ring in selected_rings:
+                    for i, entry in enumerate(indices):
+                        if ring in entry:
+                            new_indices.append(entry)
+                            new_ranges.append(ranges[i])
+                            break
+                indices = new_indices
+                ranges = new_ranges
 
             for ind, r in zip(indices, np.degrees(ranges)):
                 self.rbnd_data.append(np.array([[-180, r[0]],
