@@ -105,10 +105,11 @@ class InstrumentViewer:
 
     def add_rings(self):
         self.clear_rings()
+
+        selected_rings = HexrdConfig().selected_rings
         if HexrdConfig().show_rings:
             dp = self.dpanel
 
-            selected_rings = HexrdConfig().selected_rings
             if selected_rings:
                 # We should only get specific values
                 tth_list = self.plane_data.getTTh()
@@ -128,6 +129,9 @@ class InstrumentViewer:
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = self.plane_data.getMergedRanges()
+
+            if selected_rings:
+                ranges = [ranges[i] for i in selected_rings]
 
             for ind, r in zip(indices, np.degrees(ranges)):
                 self.rbnd_data.append(np.array([[-180, r[0]],
