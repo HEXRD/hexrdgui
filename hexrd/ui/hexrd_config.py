@@ -91,7 +91,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = []
         self.load_panel_state = None
 
-        self._euler_angle_convention = ('xyz', True)
+        self.set_euler_angle_convention('xyz', True, convert_config=False)
 
         if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
@@ -142,7 +142,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('images_dir', self.images_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
-        settings.setValue('euler_angle_convention', self._euler_angle_convention)
+        settings.setValue('euler_angle_convention', self.euler_angle_convention)
         settings.setValue('active_material', self.active_material_name())
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
@@ -155,8 +155,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
         self.live_update = bool(settings.value('live_update', False) == 'true')
-        self._euler_angle_convention = settings.value('euler_angle_convention',
-                                                      ('xyz', True))
+
+        conv = settings.value('euler_angle_convention', ('xyz', True))
+        self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)
+
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', None)
@@ -783,13 +785,29 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     tab_images = property(tab_images, set_tab_images)
 
-    def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True):
-        # First, convert all the tilt angles
-        old_conv = self._euler_angle_convention
+    def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True,
+                                   convert_config=True):
+
         new_conv = (axes_order, extrinsic)
-        utils.convert_tilt_convention(self.config['instrument'], old_conv,
-                                      new_conv)
-        # Next, set the variable
+
+        allowed_combinations = [
+            ('xyz', True),
+            ('zxz', False),
+            (None, None)
+        ]
+
+        if new_conv not in allowed_combinations:
+            print('Warning: Euler angle convention not allowed:', new_conv)
+            print('Setting the default instead:', allowed_combinations[0])
+            new_conv = allowed_combinations[0]
+
+        if convert_config:
+            # First, convert all the tilt angles
+            old_conv = self._euler_angle_convention
+            utils.convert_tilt_convention(self.config['instrument'], old_conv,
+                                          new_conv)
+
+        # Set the variable
         self._euler_angle_convention = new_conv
 
     @property
