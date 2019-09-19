@@ -296,6 +296,10 @@ class ImageCanvas(FigureCanvas):
                 axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
                 axis.plot(tth, np.sum(img, axis=0))
 
+                # Turn off autoscale so modifying the rings does not
+                # rescale the y axis.
+                axis.autoscale(False)
+
                 self.axis.set_ylabel(r'$\eta$ (deg)')
 
                 self.azimuthal_integral_axis = axis
