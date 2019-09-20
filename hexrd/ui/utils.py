@@ -25,9 +25,9 @@ def convert_tilt_convention(iconfig, old_convention,
         rme = RotMatEuler(np.zeros(3), old_axes, old_extrinsic)
         for key in det_keys:
             tilt_dict = iconfig['detectors'][key]['transform']['tilt']
-            tilt = np.array(tilt_dict['value'])
-            rme.rmat = makeRotMatOfExpMap(tilt)
-            tilt_dict['value'] = list(rme.angles)
+            rme.angles = np.array(tilt_dict['value'])
+            phi, n = angleAxisOfRotMat(rme.rmat)
+            tilt_dict['value'] = (phi * n.flatten()).tolist()
 
         if new_axes is None or new_extrinsic is None:
             # We are done
@@ -36,10 +36,10 @@ def convert_tilt_convention(iconfig, old_convention,
     # Update to the new mapping
     rme = RotMatEuler(np.zeros(3), new_axes, new_extrinsic)
     for key in det_keys:
-       tilt_dict = iconfig['detectors'][key]['transform']['tilt']
-       rme.angles = np.array(tilt_dict['value'])
-       phi, n = angleAxisOfRotMat(rme.rmat)
-       tilt_dict['value'] = (phi * n.flatten()).tolist()
+        tilt_dict = iconfig['detectors'][key]['transform']['tilt']
+        tilt = np.array(tilt_dict['value'])
+        rme.rmat = makeRotMatOfExpMap(tilt)
+        tilt_dict['value'] = list(rme.angles)
 
 
 def fix_exclusions(mat):
