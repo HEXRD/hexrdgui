@@ -6,7 +6,7 @@ import numpy as np
 from hexrd import imageseries
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
@@ -24,6 +24,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 class LoadPanel(QObject):
+
+    # Emitted when new images are loaded
+    new_images_loaded = Signal()
 
     def __init__(self, parent=None):
         super(LoadPanel, self).__init__(parent)
@@ -192,7 +195,7 @@ class LoadPanel(QObject):
 
             for f in self.files[0]:
                 with open(f, 'r') as raw_file:
-                    data = yaml.load(raw_file)
+                    data = yaml.safe_load(raw_file)
                 if 'ostart' in data['meta'] or 'omega' in data['meta']:
                     self.get_yaml_omega_data(data)
                 else:
@@ -275,9 +278,11 @@ class LoadPanel(QObject):
             self.files.append([])
             for item in os.scandir(self.directories[i]):
                 fname = os.path.splitext(item.name)[0]
-                if self.ext == '.yml' and (
-                        os.path.splitext(item.name)[1] == self.ext):
-                    fname = fname.rsplit('_', 1)[0]
+                if self.ext == '.yml':
+                    if os.path.splitext(item.name)[1] == self.ext:
+                        fname = fname.rsplit('_', 1)[0]
+                    else:
+                        fname = ''
                 if os.path.isfile(item) and fname in fnames:
                     self.files[i].append(item.path)
             # Display error if equivalent files are not found for ea. detector
@@ -295,12 +300,15 @@ class LoadPanel(QObject):
     def get_yml_files(self):
         self.yml_files = []
         for det in self.files:
+            files = []
             for f in det:
-                with open(f, 'r') as raw_file:
-                    data = yaml.load(raw_file)['image-files']
-                files = glob.glob(
-                    os.path.join(data['directory'], data['files']))
-                self.yml_files.append(files)
+                with open(f, 'r') as yml_file:
+                    data = yaml.safe_load(yml_file)['image-files']
+                raw_images = data['files'].split()
+                for raw_image in raw_images:
+                    files.extend(glob.glob(
+                        os.path.join(data['directory'], raw_image)))
+            self.yml_files.append(files)
 
     def enable_read(self):
         if (self.ext == '.tiff'
@@ -357,6 +365,10 @@ class LoadPanel(QObject):
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
+            # If raw data offset can only be changed in YAML file
+            if self.ext == '.yml':
+                self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
+
 
         self.ui.file_options.resizeColumnsToContents()
 
@@ -393,6 +405,8 @@ class LoadPanel(QObject):
 
     def omega_data_changed(self, row, column):
         # Update the values for equivalent files when the data is changed
+        self.blockSignals(True)
+
         curr_val = self.ui.file_options.item(row, column).text()
         total_frames = self.total_frames[row] - self.empty_frames
         if curr_val != '':
@@ -411,6 +425,7 @@ class LoadPanel(QObject):
                 if self.omega_min[row] != '':
                     diff = abs(self.omega_max[row] - self.omega_min[row])
                     delta = diff / total_frames
+                    self.delta[row] = delta
                     self.ui.file_options.item(row, 5).setText(
                         str(round(delta, 2)))
             elif column == 5:
@@ -418,9 +433,12 @@ class LoadPanel(QObject):
                 if self.omega_min[row] != '':
                     diff = self.delta[row] * total_frames
                     maximum = self.omega_min[row] + diff
+                    self.omega_max[row] = maximum
                     self.ui.file_options.item(row, 4).setText(
                         str(float(maximum)))
             self.enable_read()
+
+        self.blockSignals(False)
 
     # Process files
 
@@ -446,13 +464,13 @@ class LoadPanel(QObject):
     def process_ims(self):
         # Open selected images as imageseries
         det_names = HexrdConfig().get_detector_names()
-        files = self.yml_files if self.ext == '.yml' else self.files
-        if len(files[0]) > 1:
-            for det, dirs, f in zip(det_names, self.directories, files):
+
+        if len(self.files[0]) > 1:
+            for det, dirs, f in zip(det_names, self.directories, self.files):
                 ims = ImageFileManager().open_directory(dirs, f)
                 HexrdConfig().imageseries_dict[det] = ims
         else:
-            ImageFileManager().load_images(det_names, files)
+            ImageFileManager().load_images(det_names, self.files)
 
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
@@ -465,9 +483,9 @@ class LoadPanel(QObject):
         # Display processed images on completion
         # The setEnabled options will not be needed once the panel
         # is complete - those dialogs will be removed.
-        self.parent().action_edit_ims.setEnabled(True)
         self.parent().action_edit_angles.setEnabled(True)
         self.parent().image_tab_widget.load_images()
+        self.new_images_loaded.emit()
 
     def apply_operations(self, ims_dict):
         # Apply the operations to the imageseries
@@ -529,7 +547,10 @@ class LoadPanel(QObject):
         oplist.append(('flip', key))
 
     def get_range(self, ims):
-        return range(self.empty_frames, len(ims))
+        if self.ext == '.yml':
+            return range(len(ims))
+        else:
+            return range(self.empty_frames, len(ims))
 
     def display_aggregation(self, ims_dict):
         # Display aggregated image from imageseries
