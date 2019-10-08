@@ -3,6 +3,9 @@ polar:
   pixel_size_eta: 0.20
   tth_min: 1.0
   tth_max: 20.0
+  apply_snip1d: false
+  snip1d_width: 0.2
+  snip1d_numiter: 2
 cartesian:
   pixel_size: 0.5
   virtual_plane_distance: 1000.0

@@ -38,6 +38,12 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_res_tth_min)
         self.ui.polar_res_tth_max.valueChanged.connect(
             HexrdConfig().set_polar_res_tth_max)
+        self.ui.polar_apply_snip1d.toggled.connect(
+            HexrdConfig().set_polar_apply_snip1d)
+        self.ui.polar_snip1d_width.valueChanged.connect(
+            HexrdConfig().set_polar_snip1d_width)
+        self.ui.polar_snip1d_numiter.valueChanged.connect(
+            HexrdConfig().set_polar_snip1d_numiter)
 
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
 
@@ -56,7 +62,10 @@ class ImageModeWidget(QObject):
             self.ui.polar_pixel_size_tth,
             self.ui.polar_pixel_size_eta,
             self.ui.polar_res_tth_min,
-            self.ui.polar_res_tth_max
+            self.ui.polar_res_tth_max,
+            self.ui.polar_apply_snip1d,
+            self.ui.polar_snip1d_width,
+            self.ui.polar_snip1d_numiter
         ]
 
         return widgets
@@ -91,5 +100,11 @@ class ImageModeWidget(QObject):
                 HexrdConfig().polar_res_tth_min)
             self.ui.polar_res_tth_max.setValue(
                 HexrdConfig().polar_res_tth_max)
+            self.ui.polar_apply_snip1d.setChecked(
+                HexrdConfig().polar_apply_snip1d)
+            self.ui.polar_snip1d_width.setValue(
+                HexrdConfig().polar_snip1d_width)
+            self.ui.polar_snip1d_numiter.setValue(
+                HexrdConfig().polar_snip1d_numiter)
         finally:
             self.unblock_widgets(block_list)

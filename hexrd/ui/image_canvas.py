@@ -13,6 +13,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import run_snip1d
 import hexrd.ui.constants
 
 
@@ -250,12 +251,13 @@ class ImageCanvas(FigureCanvas):
             self.clear()
             self.mode = 'polar'
 
-        # Reset on image setting changes
         polar_res_config = HexrdConfig().config['image']['polar']
-        if self.polar_res_config != polar_res_config:
-            self.polar_res_config = polar_res_config.copy()
+        if self._polar_reset_needed(polar_res_config):
+            # Reset the whole image when certain config items change
             self.clear()
             self.mode = 'polar'
+
+        self.polar_res_config = polar_res_config.copy()
 
         # Run the calibration in a background thread
         worker = AsyncWorker(polar_viewer)
@@ -268,6 +270,11 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = iviewer
         img = self.iviewer.img
         extent = self.iviewer._extent
+
+        if HexrdConfig().polar_apply_snip1d:
+            background = run_snip1d(img)
+            # Perform the background subtraction
+            img -= background
 
         rescale_image = True
         # TODO: maybe make this an option in the UI? Perhaps a checkbox
@@ -367,3 +374,18 @@ class ImageCanvas(FigureCanvas):
         self.iviewer.update_detector(det)
         self.axes_images[0].set_data(self.iviewer.img)
         self.draw()
+
+    def _polar_reset_needed(self, new_polar_config):
+        # If any of the entries on this list were changed, a reset is needed
+        reset_needed_list = [
+            'pixel_size_tth',
+            'pixel_size_eta',
+            'tth_min',
+            'tth_max'
+        ]
+
+        for key in reset_needed_list:
+            if self.polar_res_config[key] != new_polar_config[key]:
+                return True
+
+        return False
