@@ -9,6 +9,9 @@ class ImageModeWidget(QObject):
     # The string indicates which tab was selected
     tab_changed = Signal(str)
 
+    # Tell the image canvas to show the snip1d
+    polar_show_snip1d = Signal()
+
     def __init__(self, parent=None):
         super(ImageModeWidget, self).__init__(parent)
 
@@ -45,6 +48,8 @@ class ImageModeWidget(QObject):
         self.ui.polar_snip1d_numiter.valueChanged.connect(
             HexrdConfig().set_polar_snip1d_numiter)
 
+        self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
+
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
 
     def currentChanged(self, index):
@@ -65,7 +70,8 @@ class ImageModeWidget(QObject):
             self.ui.polar_res_tth_max,
             self.ui.polar_apply_snip1d,
             self.ui.polar_snip1d_width,
-            self.ui.polar_snip1d_numiter
+            self.ui.polar_snip1d_numiter,
+            self.ui.polar_show_snip1d
         ]
 
         return widgets

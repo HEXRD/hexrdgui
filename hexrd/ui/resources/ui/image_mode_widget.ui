@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>371</width>
-    <height>110</height>
+    <height>134</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -488,6 +488,13 @@
                 </property>
                 <property name="text">
                  <string>n iter:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1" colspan="2">
+               <widget class="QPushButton" name="polar_show_snip1d">
+                <property name="text">
+                 <string>Show snip1d</string>
                 </property>
                </widget>
               </item>

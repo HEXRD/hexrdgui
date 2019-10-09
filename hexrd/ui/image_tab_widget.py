@@ -269,6 +269,9 @@ class ImageTabWidget(QTabWidget):
 
         self.new_mouse_position.emit(info)
 
+    def polar_show_snip1d(self):
+        self.image_canvases[0].polar_show_snip1d()
+
 
 if __name__ == '__main__':
     import sys

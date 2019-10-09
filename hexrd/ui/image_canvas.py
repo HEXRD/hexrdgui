@@ -1,3 +1,4 @@
+import copy
 import math
 
 from PySide2.QtCore import QThreadPool
@@ -272,6 +273,9 @@ class ImageCanvas(FigureCanvas):
         extent = self.iviewer._extent
 
         if HexrdConfig().polar_apply_snip1d:
+            # Make a deep copy of the image to edit
+            img = copy.deepcopy(img)
+
             background = run_snip1d(img)
             # Perform the background subtraction
             img -= background
@@ -389,3 +393,42 @@ class ImageCanvas(FigureCanvas):
                 return True
 
         return False
+
+    def polar_show_snip1d(self):
+        if self.mode != 'polar':
+            print('snip1d may only be shown in polar mode!')
+            return
+
+        if self.iviewer is None:
+            print('No instrument viewer! Cannot generate snip1d!')
+            return
+
+        if self.iviewer.img is None:
+            print('No image! Cannot generate snip1d!')
+
+        img = self.iviewer.img
+        extent = self.iviewer._extent
+
+        if not hasattr(self, '_snip1d_figure_cache'):
+            # Create the figure and axes to use
+            fig, ax = plt.subplots()
+            ax.set_title('snip1d')
+            ax.set_xlabel(r'2$\theta$ (deg)')
+            ax.set_ylabel(r'$\eta$ (deg)')
+            fig.canvas.set_window_title('HEXRD')
+            self._snip1d_figure_cache = (fig, ax)
+        else:
+            fig, ax = self._snip1d_figure_cache
+
+        background = run_snip1d(img)
+        im = ax.imshow(background, cmap=self.cmap, norm=self.norm,
+                       picker=True, interpolation='none')
+
+        im.set_extent(extent)
+        ax.relim()
+        ax.autoscale_view()
+        ax.axis('auto')
+        fig.tight_layout()
+
+        fig.canvas.draw()
+        fig.show()

@@ -125,6 +125,9 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
 
+        self.image_mode_widget.polar_show_snip1d.connect(
+            self.ui.image_tab_widget.polar_show_snip1d)
+
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
         self.ui.action_open_aps_imageseries.triggered.connect(
