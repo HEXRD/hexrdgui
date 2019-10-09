@@ -435,6 +435,9 @@
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="suffix">
                  <string>°</string>
                 </property>
@@ -455,6 +458,9 @@
               <item row="2" column="4">
                <widget class="QSpinBox" name="polar_snip1d_numiter">
                 <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="keyboardTracking">
                  <bool>false</bool>
                 </property>
                 <property name="minimum">
