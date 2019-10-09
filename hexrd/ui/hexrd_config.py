@@ -913,3 +913,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_show_detector_borders(self, v):
         self.config['image']['show_detector_borders'] = v
         self.rerender_needed.emit()
+
+    @property
+    def colormap_min(self):
+        return self.config['image']['colormap']['min']
+
+    def set_colormap_min(self, v):
+        self.config['image']['colormap']['min'] = v

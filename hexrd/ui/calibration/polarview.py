@@ -1,6 +1,8 @@
 import numpy as np
 
 from skimage.exposure import rescale_intensity
+from skimage.filters.edges import binary_erosion
+from skimage.morphology import disk
 
 from hexrd.transforms.xfcapi import \
      anglesToGVec, \
@@ -9,6 +11,7 @@ from hexrd.transforms.xfcapi import \
 from hexrd import constants as cnst
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import run_snip1d, snip_width_pixels
 
 tvec_c = cnst.zeros_3
 
@@ -32,6 +35,8 @@ class PolarView(object):
         self.images_dict = HexrdConfig().current_images_dict()
 
         self.warp_dict = {}
+
+        self.snip1d_background = None
 
     @property
     def detectors(self):
@@ -140,10 +145,23 @@ class PolarView(object):
         img = log_scale_img(log_scale_img(img))
 
         # Rescale the data to match the scale of the original dataset
-        # TODO: try to get create_calibration_image to not rescale the
-        # result to be between 0 and 1 in the first place so this will
-        # not be necessary.
-        self.img = np.interp(img, (img.min(), img.max()), (self.min, self.max))
+        img = rescale_intensity(img, out_range=(self.min, self.max))
+
+        if HexrdConfig().polar_apply_snip1d:
+            self.snip1d_background = run_snip1d(img)
+            # Perform the background subtraction
+            img -= self.snip1d_background
+
+            if HexrdConfig().polar_apply_erosion:
+                erosion_element = disk(2 * snip_width_pixels())
+                threshold = HexrdConfig().colormap_min
+
+                mask = binary_erosion(img > threshold, structure=erosion_element)
+                img[~mask] = 0
+        else:
+            self.snip1d_background = None
+
+        self.img = img
 
     def warp_all_images(self):
         # Cache the image max and min for later use

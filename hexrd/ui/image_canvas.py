@@ -10,14 +10,11 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-from skimage.filters.edges import binary_erosion
-from skimage.morphology import disk
-
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import run_snip1d, snip_width_pixels
+from hexrd.ui.utils import run_snip1d
 import hexrd.ui.constants
 
 
@@ -275,21 +272,6 @@ class ImageCanvas(FigureCanvas):
         img = self.iviewer.img
         extent = self.iviewer._extent
 
-        if HexrdConfig().polar_apply_snip1d:
-            # Make a deep copy of the image to edit
-            img = copy.deepcopy(img)
-
-            background = run_snip1d(img)
-            # Perform the background subtraction
-            img -= background
-
-            if HexrdConfig().polar_apply_erosion:
-                erosion_element = disk(2 * snip_width_pixels())
-                threshold = self.norm.vmin
-
-                mask = binary_erosion(img > threshold, structure=erosion_element)
-                img[~mask] = 0
-
         rescale_image = True
         # TODO: maybe make this an option in the UI? Perhaps a checkbox
         # in the "View" menu?
@@ -416,7 +398,6 @@ class ImageCanvas(FigureCanvas):
         if self.iviewer.img is None:
             print('No image! Cannot generate snip1d!')
 
-        img = self.iviewer.img
         extent = self.iviewer._extent
 
         if not hasattr(self, '_snip1d_figure_cache'):
@@ -430,7 +411,13 @@ class ImageCanvas(FigureCanvas):
         else:
             fig, ax = self._snip1d_figure_cache
 
-        background = run_snip1d(img)
+        if self.iviewer.snip1d_background is not None:
+            background = self.iviewer.snip1d_background
+        else:
+            # We have to run it ourselves...
+            # It should not have already been applied to the image
+            background = run_snip1d(self.iviewer.img)
+
         im = ax.imshow(background, cmap=self.cmap, norm=self.norm,
                        picker=True, interpolation='none')
 
