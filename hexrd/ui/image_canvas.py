@@ -10,11 +10,14 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from skimage.filters.edges import binary_erosion
+from skimage.morphology import disk
+
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import run_snip1d
+from hexrd.ui.utils import run_snip1d, snip_width_pixels
 import hexrd.ui.constants
 
 
@@ -279,6 +282,13 @@ class ImageCanvas(FigureCanvas):
             background = run_snip1d(img)
             # Perform the background subtraction
             img -= background
+
+            if HexrdConfig().polar_apply_erosion:
+                erosion_element = disk(2 * snip_width_pixels())
+                threshold = self.norm.vmin
+
+                mask = binary_erosion(img > threshold, structure=erosion_element)
+                img[~mask] = 0
 
         rescale_image = True
         # TODO: maybe make this an option in the UI? Perhaps a checkbox

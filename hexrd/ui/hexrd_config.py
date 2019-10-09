@@ -796,6 +796,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_snip1d_numiter = property(_polar_snip1d_numiter,
                                     set_polar_snip1d_numiter)
 
+    def _polar_apply_erosion(self):
+        return self.config['image']['polar']['apply_erosion']
+
+    def set_polar_apply_erosion(self, v):
+        self.config['image']['polar']['apply_erosion'] = v
+        self.rerender_needed.emit()
+
+    polar_apply_erosion = property(_polar_apply_erosion,
+                                   set_polar_apply_erosion)
+
     def _cartesian_pixel_size(self):
         return self.config['image']['cartesian']['pixel_size']
 

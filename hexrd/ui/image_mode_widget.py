@@ -47,6 +47,8 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_snip1d_width)
         self.ui.polar_snip1d_numiter.valueChanged.connect(
             HexrdConfig().set_polar_snip1d_numiter)
+        self.ui.polar_apply_erosion.toggled.connect(
+            HexrdConfig().set_polar_apply_erosion)
 
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
@@ -71,7 +73,8 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_snip1d,
             self.ui.polar_snip1d_width,
             self.ui.polar_snip1d_numiter,
-            self.ui.polar_show_snip1d
+            self.ui.polar_show_snip1d,
+            self.ui.polar_apply_erosion
         ]
 
         return widgets
@@ -112,5 +115,7 @@ class ImageModeWidget(QObject):
                 HexrdConfig().polar_snip1d_width)
             self.ui.polar_snip1d_numiter.setValue(
                 HexrdConfig().polar_snip1d_numiter)
+            self.ui.polar_apply_erosion.setChecked(
+                HexrdConfig().polar_apply_erosion)
         finally:
             self.unblock_widgets(block_list)
