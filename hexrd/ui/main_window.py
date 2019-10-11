@@ -23,9 +23,6 @@ from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.process_ims_dialog import ProcessIMSDialog
-from hexrd.ui.frame_aggregation import FrameAggregation
-from hexrd.ui.wedge_editor import WedgeEditor
 
 
 class MainWindow(QObject):
@@ -55,10 +52,6 @@ class MainWindow(QObject):
         self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
         self.ui.image_mode_dock_widgets.layout().addWidget(
             self.image_mode_widget.ui)
-
-        self.frame_aggregation = FrameAggregation(self.ui.central_widget)
-        self.ui.frame_aggregation_widgets.layout().addWidget(
-            self.frame_aggregation.ui)
 
         self.add_materials_panel()
 
@@ -99,10 +92,6 @@ class MainWindow(QObject):
             self.on_action_save_imageseries_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
-        self.ui.action_edit_ims.triggered.connect(
-            self.on_action_edit_ims)
-        self.ui.action_edit_angles.triggered.connect(
-            self.on_action_edit_angles)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_calibration_crystal.triggered.connect(
@@ -306,13 +295,6 @@ class MainWindow(QObject):
 
     def enable_editing_ims(self):
         self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
-
-    def on_action_edit_ims(self):
-        # open dialog
-        ProcessIMSDialog(self)
-
-    def on_action_edit_angles(self):
-        WedgeEditor(self.ui)
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
