@@ -197,7 +197,7 @@
       <item row="4" column="0">
        <widget class="QCheckBox" name="subdirectories">
         <property name="text">
-         <string>Enforce Subdirectories</string>
+         <string>Use Subdirectories</string>
         </property>
        </widget>
       </item>
