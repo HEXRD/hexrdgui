@@ -236,6 +236,8 @@ class ImageCanvas(FigureCanvas):
                                                      norm=self.norm,
                                                      vmin = None, vmax = None,
                                                      interpolation = "none"))
+            self.axis.set_xlabel(r'x (mm/pixel)')
+            self.axis.set_ylabel(r'y (mm/pixel)')
         else:
             self.axes_images[0].set_data(img)
 
