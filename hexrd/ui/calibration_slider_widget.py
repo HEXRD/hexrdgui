@@ -143,8 +143,16 @@ class CalibrationSliderWidget(QObject):
 
                 val = det['transform'][key]['value'][ind]
                 if key == 'tilt':
-                    # Convert to degrees
-                    val = np.degrees(val)
+                    # Special treatment for tilt widgets
+                    if HexrdConfig().rotation_matrix_euler() is None:
+                        suffix = ''
+                    else:
+                        # Convert to degrees
+                        val = np.degrees(val)
+                        suffix = '°'
+
+                    if prefix == 'sb':
+                        widget.setSuffix(suffix)
 
                 if prefix == 'slider':
                     val *= self.CONF_VAL_TO_SLIDER_VAL
@@ -197,7 +205,7 @@ class CalibrationSliderWidget(QObject):
         if prefix == 'slider':
             val *= self.SLIDER_VAL_TO_CONF_VAL
 
-        if key == 'tilt':
+        if key == 'tilt' and HexrdConfig().rotation_matrix_euler() is not None:
             # Convert to radians before saving
             val = np.radians(val)
 
