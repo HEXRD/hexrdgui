@@ -430,8 +430,9 @@ class ImageCanvas(FigureCanvas):
         else:
             fig, ax = self._snip1d_figure_cache
 
+        # JVB: I removed the norm for the cmap; defulating to auto cmap properties
         background = run_snip1d(img)
-        im = ax.imshow(background, cmap=self.cmap, norm=self.norm,
+        im = ax.imshow(background, cmap=self.cmap,
                        picker=True, interpolation='none')
 
         im.set_extent(extent)

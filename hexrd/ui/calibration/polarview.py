@@ -13,9 +13,16 @@ from hexrd.ui.hexrd_config import HexrdConfig
 tvec_c = cnst.zeros_3
 
 
+def sqrt_scale_img(img):
+    fimg = np.array(img, dtype=float)
+    fimg = fimg - np.min(fimg)
+    return np.sqrt(fimg)
+
+
 def log_scale_img(img):
-    img = np.array(img, dtype=float) - np.min(img) + 1.
-    return np.log(img)
+    fimg = np.array(img, dtype=float)
+    fimg = fimg - np.min(fimg) + 1.
+    return np.log(fimg)
 
 
 class PolarView(object):
@@ -128,7 +135,8 @@ class PolarView(object):
             xypts = dfunc(xypts, dparams)
 
         self.warp_dict[det] = panel.interpolate_bilinear(
-            xypts, img, pad_with_nans=False).reshape(self.shape)
+            xypts, img, pad_with_nans=False
+        ).reshape(self.shape)
         return self.warp_dict[det]
 
     def generate_image(self):
@@ -136,8 +144,8 @@ class PolarView(object):
         for key in self.images_dict.keys():
             img += self.warp_dict[key]
 
-        img = rescale_intensity(img, out_range=(0., 1.))
-        img = log_scale_img(log_scale_img(img))
+        # ??? do log scaling here
+        # img = log_scale_img(log_scale_img(sqrt_scale_img(img)))
 
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get create_calibration_image to not rescale the
