@@ -326,10 +326,7 @@ class MainWindow(QObject):
             chosen = name.split()[1].lower()
             extrinsic = 'Extrinsic' in name
 
-        msg = 'Update current tilt angles?'
-        convert_config = QMessageBox.question(self.ui, 'HEXRD', msg)
-        HexrdConfig().set_euler_angle_convention(chosen, extrinsic,
-                                                 convert_config=convert_config)
+        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
 
         self.update_config_gui()
 
