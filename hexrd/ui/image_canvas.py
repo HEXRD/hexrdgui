@@ -418,8 +418,7 @@ class ImageCanvas(FigureCanvas):
             # It should not have already been applied to the image
             background = run_snip1d(self.iviewer.img)
 
-        im = ax.imshow(background, cmap=self.cmap, norm=self.norm,
-                       picker=True, interpolation='none')
+        im = ax.imshow(background)
 
         im.set_extent(extent)
         ax.relim()
