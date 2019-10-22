@@ -504,16 +504,6 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="0">
-               <widget class="QCheckBox" name="polar_apply_erosion">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="text">
-                 <string>Apply erosion?</string>
-                </property>
-               </widget>
-              </item>
              </layout>
             </item>
             <item>
@@ -597,22 +587,6 @@
     <hint type="destinationlabel">
      <x>287</x>
      <y>92</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>polar_apply_snip1d</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>polar_apply_erosion</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>92</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>64</x>
-     <y>116</y>
     </hint>
    </hints>
   </connection>

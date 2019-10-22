@@ -1,8 +1,6 @@
 import numpy as np
 
 from skimage.exposure import rescale_intensity
-from skimage.filters.edges import binary_erosion
-from skimage.morphology import disk
 
 from hexrd.transforms.xfcapi import \
      anglesToGVec, \
@@ -151,13 +149,6 @@ class PolarView(object):
             self.snip1d_background = run_snip1d(img)
             # Perform the background subtraction
             img -= self.snip1d_background
-
-            if HexrdConfig().polar_apply_erosion:
-                erosion_element = disk(2 * snip_width_pixels())
-                threshold = HexrdConfig().colormap_min
-
-                mask = binary_erosion(img > threshold, structure=erosion_element)
-                img[~mask] = 0
         else:
             self.snip1d_background = None
 
