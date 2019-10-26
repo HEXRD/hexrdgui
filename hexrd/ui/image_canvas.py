@@ -33,6 +33,9 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = None
         self.azimuthal_integral_axis = None
 
+        # If not None, used to rescale the ring data to the new extent
+        self.old_extent = None
+
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
 
@@ -68,6 +71,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_rings()
         self.azimuthal_integral_axis = None
         self.mode = None
+        self.old_extent = None
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -130,16 +134,18 @@ class ImageCanvas(FigureCanvas):
             colorspec = 'c.-'
 
         for pr in ring_data:
-            ring, = self.axis.plot(pr[:, 1], pr[:, 0], colorspec, ms=2)
+            x, y = self.extract_ring_coords(pr)
+            ring, = self.axis.plot(x, y, colorspec, ms=2)
             self.cached_rings.append(ring)
 
         # Add the rbnds too
         for ind, pr in zip(self.iviewer.rbnd_indices,
                            self.iviewer.rbnd_data):
+            x, y = self.extract_ring_coords(pr)
             color = 'g:'
             if len(ind) > 1:
                 color = 'r:'
-            rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=1)
+            rbnd, = self.axis.plot(x, y, color, ms=1)
             self.cached_rbnds.append(rbnd)
 
         if self.azimuthal_integral_axis is not None:
@@ -159,6 +165,25 @@ class ImageCanvas(FigureCanvas):
                 self.cached_rbnds.append(rbnd)
 
         self.draw()
+
+    def extract_ring_coords(self, pr):
+        x, y = pr[:, 1], pr[:, 0]
+        if self.old_extent is None:
+            return x, y
+
+        # Rescale ring coords to the new extent
+        old_extent = self.old_extent
+        old_x_range = (old_extent[0], old_extent[1])
+        old_y_range = (old_extent[3], old_extent[2])
+
+        new_extent = self.axes_images[0].get_extent()
+        new_x_range = (new_extent[0], new_extent[1])
+        new_y_range = (new_extent[3], new_extent[2])
+
+        x = np.interp(x, old_x_range, new_x_range)
+        y = np.interp(y, old_y_range, new_y_range)
+
+        return x, y
 
     def clear_saturation(self):
         for t in self.saturation_texts:
@@ -230,16 +255,29 @@ class ImageCanvas(FigureCanvas):
         img = self.iviewer.img
 
         # It is important to persist the plot so that we don't reset the scale.
+        rescale_image = True
         if len(self.axes_images) == 0:
             self.axis = self.figure.add_subplot(111)
             self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
                                                      norm=self.norm,
                                                      vmin = None, vmax = None,
                                                      interpolation = "none"))
-            self.axis.set_xlabel(r'x (mm/pixel)')
-            self.axis.set_ylabel(r'y (mm/pixel)')
+            self.axis.set_xlabel(r'x (mm)')
+            self.axis.set_ylabel(r'y (mm)')
         else:
+            rescale_image = False
             self.axes_images[0].set_data(img)
+
+        # We must adjust the extent of the image
+        if rescale_image:
+            self.old_extent = self.axes_images[0].get_extent()
+            sizes = iviewer.dpanel_sizes
+            extent = (0., sizes[0], sizes[1], 0.)
+            self.axes_images[0].set_extent(extent)
+            self.axis.relim()
+            self.axis.autoscale_view()
+            self.axis.axis('auto')
+            self.figure.tight_layout()
 
         self.redraw_rings()
 
