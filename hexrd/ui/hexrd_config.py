@@ -530,7 +530,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                         tilt_path = ['transform', 'tilt', 'value']
                         if path[2:-1] == tilt_path:
                             # This will be in degrees. Convert to radians.
-                            value = np.radians(value)
+                            value = np.radians(value).item()
 
                 self.set_instrument_config_val(path, value)
                 return
