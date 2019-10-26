@@ -269,6 +269,9 @@ class ImageTabWidget(QTabWidget):
 
         self.new_mouse_position.emit(info)
 
+    def export_polar_plot(self, filename):
+        self.image_canvases[0].export_polar_plot(filename)
+
 
 if __name__ == '__main__':
     import sys

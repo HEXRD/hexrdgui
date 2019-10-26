@@ -113,3 +113,10 @@ class InstrumentViewer:
     def update_detector(self, det):
         self.pv.update_detector(det)
         self.img = self.pv.img
+
+    def write_image(self, filename='polar_image.npz'):
+        np.savez(filename,
+                 tth_coordinates=self.angular_grid[1],
+                 eta_coordinates=self.angular_grid[0],
+                 intensities=self.img,
+                 extent=np.radians(self._extent))

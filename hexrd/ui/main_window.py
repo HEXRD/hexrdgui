@@ -92,6 +92,8 @@ class MainWindow(QObject):
             self.on_action_save_imageseries_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
+        self.ui.action_export_polar_plot.triggered.connect(
+            self.on_action_export_polar_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_calibration_crystal.triggered.connect(
@@ -293,6 +295,14 @@ class MainWindow(QObject):
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
 
+    def on_action_export_polar_plot_triggered(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Polar Image', HexrdConfig().working_dir,
+            'NPZ files (*.npz)')
+
+        if selected_file:
+            return self.ui.image_tab_widget.export_polar_plot(selected_file)
+
     def enable_editing_ims(self):
         self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
 
@@ -344,7 +354,16 @@ class MainWindow(QObject):
 
     def change_image_mode(self, text):
         self.image_mode = text.lower()
+        self.update_image_mode_enable_states()
         self.update_all()
+
+    def update_image_mode_enable_states(self):
+        # This is for enable states that depend on the image mode
+        is_raw = self.image_mode == 'raw'
+        is_cartesian = self.image_mode == 'cartesian'
+        is_polar = self.image_mode == 'polar'
+
+        self.ui.action_export_polar_plot.setEnabled(is_polar)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():
