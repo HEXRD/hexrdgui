@@ -343,6 +343,7 @@ class MainWindow(QObject):
 
         HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
 
+        self.update_all()
         self.update_config_gui()
 
     def on_action_edit_calibration_crystal(self):
