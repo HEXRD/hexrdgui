@@ -410,6 +410,15 @@ class ImageCanvas(FigureCanvas):
         self.axes_images[0].set_data(self.iviewer.img)
         self.draw()
 
+    def export_polar_plot(self, filename):
+        if self.mode != 'polar':
+            raise Exception('Not in polar mode. Cannot export polar plot')
+
+        if not self.iviewer:
+            raise Exception('No iviewer. Cannot export polar plot')
+
+        self.iviewer.write_image(filename)
+
     def _polar_reset_needed(self, new_polar_config):
         # If any of the entries on this list were changed, a reset is needed
         reset_needed_list = [
