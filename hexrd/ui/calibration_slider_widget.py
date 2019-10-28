@@ -205,8 +205,8 @@ class CalibrationSliderWidget(QObject):
         if key in ['tilt', 'translation']:
             det = self.current_detector_dict()
             if key == 'tilt':
-                # Convert to radians before saving
-                val = np.radians(val)
+                # Convert to radians,and to the native python type before saving
+                val = np.radians(val).item()
 
             det['transform'][key]['value'][ind] = val
 
@@ -248,8 +248,8 @@ class CalibrationSliderWidget(QObject):
                 val = iconfig['beam']['vector'][key]['value']
 
         if key == 'tilt':
-            # Convert to degrees
-            val = np.degrees(val)
+            # Convert to degrees, and to the native python type
+            val = np.degrees(val).item()
 
         if prefix == 'slider':
             val *= self.CONF_VAL_TO_SLIDER_VAL
