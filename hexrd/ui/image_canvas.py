@@ -1,3 +1,4 @@
+import copy
 import math
 
 from PySide2.QtCore import QThreadPool
@@ -13,6 +14,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import run_snip1d
 import hexrd.ui.constants
 
 
@@ -32,6 +34,9 @@ class ImageCanvas(FigureCanvas):
         # a calibration.
         self.iviewer = None
         self.azimuthal_integral_axis = None
+
+        # If not None, used to rescale the ring data to the new extent
+        self.old_extent = None
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -68,6 +73,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_rings()
         self.azimuthal_integral_axis = None
         self.mode = None
+        self.old_extent = None
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -130,16 +136,18 @@ class ImageCanvas(FigureCanvas):
             colorspec = 'c.-'
 
         for pr in ring_data:
-            ring, = self.axis.plot(pr[:, 1], pr[:, 0], colorspec, ms=2)
+            x, y = self.extract_ring_coords(pr)
+            ring, = self.axis.plot(x, y, colorspec, ms=2)
             self.cached_rings.append(ring)
 
         # Add the rbnds too
         for ind, pr in zip(self.iviewer.rbnd_indices,
                            self.iviewer.rbnd_data):
+            x, y = self.extract_ring_coords(pr)
             color = 'g:'
             if len(ind) > 1:
                 color = 'r:'
-            rbnd, = self.axis.plot(pr[:, 1], pr[:, 0], color, ms=1)
+            rbnd, = self.axis.plot(x, y, color, ms=1)
             self.cached_rbnds.append(rbnd)
 
         if self.azimuthal_integral_axis is not None:
@@ -159,6 +167,25 @@ class ImageCanvas(FigureCanvas):
                 self.cached_rbnds.append(rbnd)
 
         self.draw()
+
+    def extract_ring_coords(self, pr):
+        x, y = pr[:, 1], pr[:, 0]
+        if self.old_extent is None:
+            return x, y
+
+        # Rescale ring coords to the new extent
+        old_extent = self.old_extent
+        old_x_range = (old_extent[0], old_extent[1])
+        old_y_range = (old_extent[3], old_extent[2])
+
+        new_extent = self.axes_images[0].get_extent()
+        new_x_range = (new_extent[0], new_extent[1])
+        new_y_range = (new_extent[3], new_extent[2])
+
+        x = np.interp(x, old_x_range, new_x_range)
+        y = np.interp(y, old_y_range, new_y_range)
+
+        return x, y
 
     def clear_saturation(self):
         for t in self.saturation_texts:
@@ -230,14 +257,28 @@ class ImageCanvas(FigureCanvas):
         img = self.iviewer.img
 
         # It is important to persist the plot so that we don't reset the scale.
+        rescale_image = True
         if len(self.axes_images) == 0:
             self.axis = self.figure.add_subplot(111)
             self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
                                                      norm=self.norm,
                                                      vmin = None, vmax = None,
                                                      interpolation = "none"))
+            self.axis.set_xlabel(r'x (mm)')
+            self.axis.set_ylabel(r'y (mm)')
         else:
+            rescale_image = False
             self.axes_images[0].set_data(img)
+
+        # We must adjust the extent of the image
+        if rescale_image:
+            self.old_extent = self.axes_images[0].get_extent()
+            sizes = iviewer.dpanel_sizes
+            extent = (0., sizes[0], sizes[1], 0.)
+            self.axes_images[0].set_extent(extent)
+            self.axis.relim()
+            self.axis.autoscale_view()
+            self.figure.tight_layout()
 
         self.redraw_rings()
 
@@ -250,12 +291,13 @@ class ImageCanvas(FigureCanvas):
             self.clear()
             self.mode = 'polar'
 
-        # Reset on image setting changes
         polar_res_config = HexrdConfig().config['image']['polar']
-        if self.polar_res_config != polar_res_config:
-            self.polar_res_config = polar_res_config.copy()
+        if self._polar_reset_needed(polar_res_config):
+            # Reset the whole image when certain config items change
             self.clear()
             self.mode = 'polar'
+
+        self.polar_res_config = polar_res_config.copy()
 
         # Run the calibration in a background thread
         worker = AsyncWorker(polar_viewer)
@@ -376,3 +418,61 @@ class ImageCanvas(FigureCanvas):
             raise Exception('No iviewer. Cannot export polar plot')
 
         self.iviewer.write_image(filename)
+
+    def _polar_reset_needed(self, new_polar_config):
+        # If any of the entries on this list were changed, a reset is needed
+        reset_needed_list = [
+            'pixel_size_tth',
+            'pixel_size_eta',
+            'tth_min',
+            'tth_max'
+        ]
+
+        for key in reset_needed_list:
+            if self.polar_res_config[key] != new_polar_config[key]:
+                return True
+
+        return False
+
+    def polar_show_snip1d(self):
+        if self.mode != 'polar':
+            print('snip1d may only be shown in polar mode!')
+            return
+
+        if self.iviewer is None:
+            print('No instrument viewer! Cannot generate snip1d!')
+            return
+
+        if self.iviewer.img is None:
+            print('No image! Cannot generate snip1d!')
+
+        extent = self.iviewer._extent
+
+        if not hasattr(self, '_snip1d_figure_cache'):
+            # Create the figure and axes to use
+            fig, ax = plt.subplots()
+            ax.set_title('snip1d')
+            ax.set_xlabel(r'2$\theta$ (deg)')
+            ax.set_ylabel(r'$\eta$ (deg)')
+            fig.canvas.set_window_title('HEXRD')
+            self._snip1d_figure_cache = (fig, ax)
+        else:
+            fig, ax = self._snip1d_figure_cache
+
+        if self.iviewer.snip1d_background is not None:
+            background = self.iviewer.snip1d_background
+        else:
+            # We have to run it ourselves...
+            # It should not have already been applied to the image
+            background = run_snip1d(self.iviewer.img)
+
+        im = ax.imshow(background)
+
+        im.set_extent(extent)
+        ax.relim()
+        ax.autoscale_view()
+        ax.axis('auto')
+        fig.tight_layout()
+
+        fig.canvas.draw()
+        fig.show()

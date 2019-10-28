@@ -115,6 +115,11 @@ class MainWindow(QObject):
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
+        self.calibration_slider_widget.update_if_mode_matches.connect(
+            self.update_if_mode_matches)
+
+        self.image_mode_widget.polar_show_snip1d.connect(
+            self.ui.image_tab_widget.polar_show_snip1d)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
@@ -336,10 +341,7 @@ class MainWindow(QObject):
             chosen = name.split()[1].lower()
             extrinsic = 'Extrinsic' in name
 
-        msg = 'Update current tilt angles?'
-        convert_config = QMessageBox.question(self.ui, 'HEXRD', msg)
-        HexrdConfig().set_euler_angle_convention(chosen, extrinsic,
-                                                 convert_config=convert_config)
+        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
 
         self.update_config_gui()
 
@@ -408,6 +410,10 @@ class MainWindow(QObject):
             HexrdConfig().save_settings()
 
         return False
+
+    def update_if_mode_matches(self, mode):
+        if self.image_mode == mode:
+            self.update_all()
 
     def update_all(self, clear_canvases=False):
         # If there are no images loaded, skip the request
