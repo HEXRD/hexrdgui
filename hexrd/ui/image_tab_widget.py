@@ -10,13 +10,6 @@ from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
 from hexrd.ui import utils
 
-# Remove these buttons from the navigation toolbar
-nav_toolbar_blacklist = [
-    'Subplots'
-]
-NavigationToolbar2QT.toolitems = [x for x in NavigationToolbar2QT.toolitems if
-                                  x[0] not in nav_toolbar_blacklist]
-
 
 class ImageTabWidget(QTabWidget):
 
@@ -123,7 +116,8 @@ class ImageTabWidget(QTabWidget):
         while len(self.toolbars) != len(self.image_canvases):
             # The new one to add
             idx = len(self.toolbars)
-            tb = NavigationToolbar2QT(self.image_canvases[idx], parent, False)
+            tb = CustomNavigationToolbar2QT(self.image_canvases[idx], parent,
+                                            False)
             # Current detector
             name = self.image_names[idx]
             sb = ImageSeriesToolbar(name, self)
@@ -268,6 +262,32 @@ class ImageTabWidget(QTabWidget):
             info['hkl'] = hkl
 
         self.new_mouse_position.emit(info)
+
+    def export_polar_plot(self, filename):
+        self.image_canvases[0].export_polar_plot(filename)
+
+    def polar_show_snip1d(self):
+        self.image_canvases[0].polar_show_snip1d()
+
+
+class CustomNavigationToolbar2QT(NavigationToolbar2QT):
+
+    def __init__(self, canvas, parent, coordinates=True):
+        # Remove these buttons from the navigation toolbar
+        nav_toolbar_blacklist = [
+            'Subplots'
+        ]
+        old_toolitems = NavigationToolbar2QT.toolitems
+        NavigationToolbar2QT.toolitems = [
+            x for x in NavigationToolbar2QT.toolitems
+            if x[0] not in nav_toolbar_blacklist
+        ]
+
+        super(CustomNavigationToolbar2QT, self).__init__(canvas, parent, coordinates)
+
+        # Restore the global navigation tool items for other parts of
+        # the program to use them.
+        NavigationToolbar2QT.toolitems = old_toolitems
 
 
 if __name__ == '__main__':
