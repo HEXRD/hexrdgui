@@ -1,9 +1,11 @@
 # Some general utilities that are used in multiple places
 
+import math
 import numpy as np
 
 import matplotlib.transforms as mtransforms
 
+from hexrd.imageutil import snip1d
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 
@@ -104,3 +106,25 @@ def select_merged_rings(selected_rings, indices, ranges):
                 break
 
     return new_indices, new_ranges
+
+
+def snip_width_pixels():
+
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    pixel_size_tth = HexrdConfig().polar_pixel_size_tth
+    snip_width_deg = HexrdConfig().polar_snip1d_width
+
+    # Convert the snip width into pixels using pixel_size_tth
+    # Always round up
+    return math.ceil(snip_width_deg / pixel_size_tth)
+
+
+def run_snip1d(img):
+
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    snip_width = snip_width_pixels()
+    numiter = HexrdConfig().polar_snip1d_numiter
+
+    return snip1d(img, snip_width, numiter)

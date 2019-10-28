@@ -766,6 +766,36 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_res_tth_max = property(_polar_res_tth_max,
                                  set_polar_res_tth_max)
 
+    def _polar_apply_snip1d(self):
+        return self.config['image']['polar']['apply_snip1d']
+
+    def set_polar_apply_snip1d(self, v):
+        self.config['image']['polar']['apply_snip1d'] = v
+        self.rerender_needed.emit()
+
+    polar_apply_snip1d = property(_polar_apply_snip1d,
+                                  set_polar_apply_snip1d)
+
+    def _polar_snip1d_width(self):
+        return self.config['image']['polar']['snip1d_width']
+
+    def set_polar_snip1d_width(self, v):
+        self.config['image']['polar']['snip1d_width'] = v
+        self.rerender_needed.emit()
+
+    polar_snip1d_width = property(_polar_snip1d_width,
+                                  set_polar_snip1d_width)
+
+    def _polar_snip1d_numiter(self):
+        return self.config['image']['polar']['snip1d_numiter']
+
+    def set_polar_snip1d_numiter(self, v):
+        self.config['image']['polar']['snip1d_numiter'] = v
+        self.rerender_needed.emit()
+
+    polar_snip1d_numiter = property(_polar_snip1d_numiter,
+                                    set_polar_snip1d_numiter)
+
     def _cartesian_pixel_size(self):
         return self.config['image']['cartesian']['pixel_size']
 
@@ -873,3 +903,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_show_detector_borders(self, v):
         self.config['image']['show_detector_borders'] = v
         self.rerender_needed.emit()
+
+    @property
+    def colormap_min(self):
+        return self.config['image']['colormap']['min']
+
+    def set_colormap_min(self, v):
+        self.config['image']['colormap']['min'] = v

@@ -116,6 +116,9 @@ class MainWindow(QObject):
         self.calibration_slider_widget.update_if_mode_matches.connect(
             self.update_if_mode_matches)
 
+        self.image_mode_widget.polar_show_snip1d.connect(
+            self.ui.image_tab_widget.polar_show_snip1d)
+
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
         self.ui.action_open_aps_imageseries.triggered.connect(

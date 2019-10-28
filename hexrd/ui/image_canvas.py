@@ -1,3 +1,4 @@
+import copy
 import math
 
 from PySide2.QtCore import QThreadPool
@@ -13,6 +14,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import run_snip1d
 import hexrd.ui.constants
 
 
@@ -250,12 +252,13 @@ class ImageCanvas(FigureCanvas):
             self.clear()
             self.mode = 'polar'
 
-        # Reset on image setting changes
         polar_res_config = HexrdConfig().config['image']['polar']
-        if self.polar_res_config != polar_res_config:
-            self.polar_res_config = polar_res_config.copy()
+        if self._polar_reset_needed(polar_res_config):
+            # Reset the whole image when certain config items change
             self.clear()
             self.mode = 'polar'
+
+        self.polar_res_config = polar_res_config.copy()
 
         # Run the calibration in a background thread
         worker = AsyncWorker(polar_viewer)
@@ -367,3 +370,61 @@ class ImageCanvas(FigureCanvas):
         self.iviewer.update_detector(det)
         self.axes_images[0].set_data(self.iviewer.img)
         self.draw()
+
+    def _polar_reset_needed(self, new_polar_config):
+        # If any of the entries on this list were changed, a reset is needed
+        reset_needed_list = [
+            'pixel_size_tth',
+            'pixel_size_eta',
+            'tth_min',
+            'tth_max'
+        ]
+
+        for key in reset_needed_list:
+            if self.polar_res_config[key] != new_polar_config[key]:
+                return True
+
+        return False
+
+    def polar_show_snip1d(self):
+        if self.mode != 'polar':
+            print('snip1d may only be shown in polar mode!')
+            return
+
+        if self.iviewer is None:
+            print('No instrument viewer! Cannot generate snip1d!')
+            return
+
+        if self.iviewer.img is None:
+            print('No image! Cannot generate snip1d!')
+
+        extent = self.iviewer._extent
+
+        if not hasattr(self, '_snip1d_figure_cache'):
+            # Create the figure and axes to use
+            fig, ax = plt.subplots()
+            ax.set_title('snip1d')
+            ax.set_xlabel(r'2$\theta$ (deg)')
+            ax.set_ylabel(r'$\eta$ (deg)')
+            fig.canvas.set_window_title('HEXRD')
+            self._snip1d_figure_cache = (fig, ax)
+        else:
+            fig, ax = self._snip1d_figure_cache
+
+        if self.iviewer.snip1d_background is not None:
+            background = self.iviewer.snip1d_background
+        else:
+            # We have to run it ourselves...
+            # It should not have already been applied to the image
+            background = run_snip1d(self.iviewer.img)
+
+        im = ax.imshow(background)
+
+        im.set_extent(extent)
+        ax.relim()
+        ax.autoscale_view()
+        ax.axis('auto')
+        fig.tight_layout()
+
+        fig.canvas.draw()
+        fig.show()
