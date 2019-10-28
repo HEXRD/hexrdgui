@@ -8,6 +8,8 @@ from hexrd.ui.ui_loader import UiLoader
 
 class CalibrationSliderWidget(QObject):
 
+    update_if_mode_matches = Signal(str)
+
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10
     SLIDER_VAL_TO_CONF_VAL = 0.1
@@ -221,8 +223,10 @@ class CalibrationSliderWidget(QObject):
                 HexrdConfig().update_active_material_energy()
             elif key == 'polar':
                 iconfig['beam']['vector']['polar_angle']['value'] = val
+                self.emit_update_if_polar()
             else:
                 iconfig['beam']['vector'][key]['value'] = val
+                self.emit_update_if_polar()
 
     def update_widget_value(self, widget):
         name = widget.objectName()
@@ -257,3 +261,13 @@ class CalibrationSliderWidget(QObject):
             widget.setMaximum(val)
 
         widget.setValue(val)
+
+    def emit_update_if_polar(self):
+        # Only emit this once every 500 milliseconds or so
+        if not hasattr(self, '_update_if_polar_timer'):
+            self._update_if_polar_timer = QTimer()
+            self._update_if_polar_timer.setSingleShot(True)
+            self._update_if_polar_timer.timeout.connect(
+                lambda: self.update_if_mode_matches.emit('polar'))
+
+        self._update_if_polar_timer.start(500)
