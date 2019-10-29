@@ -5,7 +5,7 @@ import numpy as np
 
 import matplotlib.transforms as mtransforms
 
-from hexrd.imageutil import snip1d
+from hexrd import imageutil
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 
@@ -127,4 +127,6 @@ def run_snip1d(img):
     snip_width = snip_width_pixels()
     numiter = HexrdConfig().polar_snip1d_numiter
 
-    return snip1d(img, snip_width, numiter)
+    # !!!: need a selector between
+    # imageutil.fast_snip1d() and imageutil.snip1d()
+    return imageutil.snip1d(img, snip_width, numiter)
