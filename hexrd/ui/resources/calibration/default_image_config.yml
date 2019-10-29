@@ -6,10 +6,11 @@ polar:
   apply_snip1d: false
   snip1d_width: 0.2
   snip1d_numiter: 2
-  apply_erosion: false
 cartesian:
   pixel_size: 0.5
   virtual_plane_distance: 1000.0
   plane_normal_rotate_x: 0.0
   plane_normal_rotate_y: 0.0
+colormap:
+  min: 0
 show_detector_borders: true

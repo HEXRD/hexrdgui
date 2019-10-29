@@ -583,19 +583,6 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="8">
-               <spacer name="horizontalSpacer_3">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
              </layout>
             </item>
            </layout>
@@ -666,22 +653,6 @@
     <hint type="destinationlabel">
      <x>287</x>
      <y>92</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>polar_apply_snip1d</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>polar_apply_erosion</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>92</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>64</x>
-     <y>116</y>
     </hint>
    </hints>
   </connection>

@@ -214,7 +214,7 @@ class CalibrationConfigWidget(QObject):
                         gui_var.setSuffix('')
                     else:
                         gui_var.setSuffix('°')
-                        config_val = np.degrees(config_val)
+                        config_val = np.degrees(config_val).item()
 
                 self._set_gui_value(gui_var, config_val, status_val)
 

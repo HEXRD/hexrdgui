@@ -530,7 +530,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                         tilt_path = ['transform', 'tilt', 'value']
                         if path[2:-1] == tilt_path:
                             # This will be in degrees. Convert to radians.
-                            value = np.radians(value)
+                            value = np.radians(value).item()
 
                 self.set_instrument_config_val(path, value)
                 return
@@ -796,16 +796,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_snip1d_numiter = property(_polar_snip1d_numiter,
                                     set_polar_snip1d_numiter)
 
-    def _polar_apply_erosion(self):
-        return self.config['image']['polar']['apply_erosion']
-
-    def set_polar_apply_erosion(self, v):
-        self.config['image']['polar']['apply_erosion'] = v
-        self.rerender_needed.emit()
-
-    polar_apply_erosion = property(_polar_apply_erosion,
-                                   set_polar_apply_erosion)
-
     def _cartesian_pixel_size(self):
         return self.config['image']['cartesian']['pixel_size']
 
@@ -913,3 +903,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_show_detector_borders(self, v):
         self.config['image']['show_detector_borders'] = v
         self.rerender_needed.emit()
+
+    @property
+    def colormap_min(self):
+        return self.config['image']['colormap']['min']
+
+    def set_colormap_min(self, v):
+        self.config['image']['colormap']['min'] = v
