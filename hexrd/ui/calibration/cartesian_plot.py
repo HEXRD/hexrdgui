@@ -57,8 +57,9 @@ class InstrumentViewer:
         self.plot_dplane()
 
     def make_dpanel(self):
-        dpanel_sizes = self.dplane.panel_size(self.instr)
-        self.dpanel = self.dplane.display_panel(dpanel_sizes, self.pixel_size)
+        self.dpanel_sizes = self.dplane.panel_size(self.instr)
+        self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
+                                                self.pixel_size)
 
     def clear_rings(self):
         self.ring_data = []

@@ -105,6 +105,10 @@ class ColorMapEditor:
         min = self.ui.minimum.value()
         max = self.ui.maximum.value()
 
+        # Set the min in the config, which is the only one we are
+        # currently keeping track of...
+        HexrdConfig().set_colormap_min(min)
+
         if self.ui.log_scale.isChecked():
             norm = matplotlib.colors.LogNorm(vmin=min, vmax=max)
         else:

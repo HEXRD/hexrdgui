@@ -9,13 +9,21 @@ from hexrd.transforms.xfcapi import \
 from hexrd import constants as cnst
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import run_snip1d, snip_width_pixels
 
 tvec_c = cnst.zeros_3
 
 
+def sqrt_scale_img(img):
+    fimg = np.array(img, dtype=float)
+    fimg = fimg - np.min(fimg)
+    return np.sqrt(fimg)
+
+
 def log_scale_img(img):
-    img = np.array(img, dtype=float) - np.min(img) + 1.
-    return np.log(img)
+    fimg = np.array(img, dtype=float)
+    fimg = fimg - np.min(fimg) + 1.
+    return np.log(fimg)
 
 
 class PolarView(object):
@@ -32,6 +40,8 @@ class PolarView(object):
         self.images_dict = HexrdConfig().current_images_dict()
 
         self.warp_dict = {}
+
+        self.snip1d_background = None
 
     @property
     def detectors(self):
@@ -128,7 +138,8 @@ class PolarView(object):
             xypts = dfunc(xypts, dparams)
 
         self.warp_dict[det] = panel.interpolate_bilinear(
-            xypts, img, pad_with_nans=False).reshape(self.shape)
+            xypts, img, pad_with_nans=False
+        ).reshape(self.shape)
         return self.warp_dict[det]
 
     def generate_image(self):
@@ -136,14 +147,20 @@ class PolarView(object):
         for key in self.images_dict.keys():
             img += self.warp_dict[key]
 
-        img = rescale_intensity(img, out_range=(0., 1.))
-        img = log_scale_img(log_scale_img(img))
+        # ??? do log scaling here
+        # img = log_scale_img(log_scale_img(sqrt_scale_img(img)))
 
         # Rescale the data to match the scale of the original dataset
-        # TODO: try to get create_calibration_image to not rescale the
-        # result to be between 0 and 1 in the first place so this will
-        # not be necessary.
-        self.img = np.interp(img, (img.min(), img.max()), (self.min, self.max))
+        img = rescale_intensity(img, out_range=(self.min, self.max))
+
+        if HexrdConfig().polar_apply_snip1d:
+            self.snip1d_background = run_snip1d(img)
+            # Perform the background subtraction
+            img -= self.snip1d_background
+        else:
+            self.snip1d_background = None
+
+        self.img = img
 
     def warp_all_images(self):
         # Cache the image max and min for later use

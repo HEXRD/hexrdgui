@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>406</width>
-    <height>125</height>
+    <width>329</width>
+    <height>121</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -57,115 +57,153 @@
        <number>0</number>
       </property>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout">
+       <layout class="QGridLayout" name="gridLayout">
         <property name="spacing">
          <number>0</number>
         </property>
-        <item>
-         <layout class="QGridLayout" name="gridLayout">
-          <property name="spacing">
+        <item row="0" column="4">
+         <widget class="QCheckBox" name="reverse">
+          <property name="text">
+           <string>reverse</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="4">
+         <widget class="QCheckBox" name="log_scale">
+          <property name="text">
+           <string>log scale</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QSpinBox" name="maximum">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="minimum">
            <number>0</number>
           </property>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Color Map:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="color_map">
-            <property name="styleSheet">
-             <string notr="true">combobox-popup: 0;</string>
-            </property>
-            <property name="maxVisibleItems">
-             <number>5</number>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QCheckBox" name="reverse">
-            <property name="text">
-             <string>reverse</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Range:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QSpinBox" name="minimum">
-            <property name="keyboardTracking">
-             <bool>false</bool>
-            </property>
-            <property name="maximum">
-             <number>100000</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QSpinBox" name="maximum">
-            <property name="keyboardTracking">
-             <bool>false</bool>
-            </property>
-            <property name="maximum">
-             <number>100000</number>
-            </property>
-            <property name="value">
-             <number>16384</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="QPushButton" name="reset_range">
-            <property name="toolTip">
-             <string>Reset the range to the boundary values of the images</string>
-            </property>
-            <property name="text">
-             <string>Reset Range</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QCheckBox" name="show_under">
-            <property name="toolTip">
-             <string>Color under values as blue</string>
-            </property>
-            <property name="text">
-             <string>show under</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QCheckBox" name="show_over">
-            <property name="toolTip">
-             <string>Color over values as red</string>
-            </property>
-            <property name="text">
-             <string> show over</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QCheckBox" name="log_scale">
-            <property name="text">
-             <string>log scale</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+          <property name="maximum">
+           <number>16777215</number>
+          </property>
+          <property name="value">
+           <number>429</number>
+          </property>
+         </widget>
         </item>
-        <item>
+        <item row="4" column="1">
+         <widget class="QPushButton" name="reset_range">
+          <property name="toolTip">
+           <string>Reset the range to the boundary values of the images</string>
+          </property>
+          <property name="text">
+           <string>Reset Range</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="4">
+         <widget class="QCheckBox" name="show_under">
+          <property name="toolTip">
+           <string>Color under values as blue</string>
+          </property>
+          <property name="text">
+           <string>show under</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4">
+         <widget class="QCheckBox" name="show_over">
+          <property name="toolTip">
+           <string>Color over values as red</string>
+          </property>
+          <property name="text">
+           <string>show over</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Color Map: </string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="color_map">
+          <property name="styleSheet">
+           <string notr="true">combobox-popup: 0;</string>
+          </property>
+          <property name="maxVisibleItems">
+           <number>5</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Minimum Value: </string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="minimum">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="minimum">
+           <number>-8388608</number>
+          </property>
+          <property name="maximum">
+           <number>8388607</number>
+          </property>
+          <property name="displayIntegerBase">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Maximum Value: </string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="3">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="3" column="5">
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -180,26 +218,6 @@
         </item>
        </layout>
       </item>
-      <item>
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>-</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>10</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
@@ -207,13 +225,7 @@
  </widget>
  <tabstops>
   <tabstop>color_map</tabstop>
-  <tabstop>reverse</tabstop>
   <tabstop>minimum</tabstop>
-  <tabstop>maximum</tabstop>
-  <tabstop>reset_range</tabstop>
-  <tabstop>show_under</tabstop>
-  <tabstop>show_over</tabstop>
-  <tabstop>log_scale</tabstop>
  </tabstops>
  <resources/>
  <connections/>

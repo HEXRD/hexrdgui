@@ -92,6 +92,8 @@ class MainWindow(QObject):
             self.on_action_save_imageseries_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
+        self.ui.action_export_polar_plot.triggered.connect(
+            self.on_action_export_polar_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_calibration_crystal.triggered.connect(
@@ -113,6 +115,11 @@ class MainWindow(QObject):
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
+        self.calibration_slider_widget.update_if_mode_matches.connect(
+            self.update_if_mode_matches)
+
+        self.image_mode_widget.polar_show_snip1d.connect(
+            self.ui.image_tab_widget.polar_show_snip1d)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
@@ -293,6 +300,14 @@ class MainWindow(QObject):
         if selected_file:
             return HexrdConfig().save_materials(selected_file)
 
+    def on_action_export_polar_plot_triggered(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Polar Image', HexrdConfig().working_dir,
+            'NPZ files (*.npz)')
+
+        if selected_file:
+            return self.ui.image_tab_widget.export_polar_plot(selected_file)
+
     def enable_editing_ims(self):
         self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
 
@@ -326,11 +341,9 @@ class MainWindow(QObject):
             chosen = name.split()[1].lower()
             extrinsic = 'Extrinsic' in name
 
-        msg = 'Update current tilt angles?'
-        convert_config = QMessageBox.question(self.ui, 'HEXRD', msg)
-        HexrdConfig().set_euler_angle_convention(chosen, extrinsic,
-                                                 convert_config=convert_config)
+        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
 
+        self.update_all()
         self.update_config_gui()
 
     def on_action_edit_calibration_crystal(self):
@@ -344,7 +357,16 @@ class MainWindow(QObject):
 
     def change_image_mode(self, text):
         self.image_mode = text.lower()
+        self.update_image_mode_enable_states()
         self.update_all()
+
+    def update_image_mode_enable_states(self):
+        # This is for enable states that depend on the image mode
+        is_raw = self.image_mode == 'raw'
+        is_cartesian = self.image_mode == 'cartesian'
+        is_polar = self.image_mode == 'polar'
+
+        self.ui.action_export_polar_plot.setEnabled(is_polar)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():
@@ -389,6 +411,10 @@ class MainWindow(QObject):
             HexrdConfig().save_settings()
 
         return False
+
+    def update_if_mode_matches(self, mode):
+        if self.image_mode == mode:
+            self.update_all()
 
     def update_all(self, clear_canvases=False):
         # If there are no images loaded, skip the request

@@ -165,11 +165,10 @@ class LoadPanel(QObject):
         self.files = []
 
     def load_image_data(self, selected_files):
-        # Select the path if the file(s) are HDF5
-
         self.ext = os.path.splitext(selected_files[0])[1]
         has_omega = False
 
+        # Select the path if the file(s) are HDF5
         if (ImageFileManager().is_hdf5(self.ext) and not
                 ImageFileManager().path_exists(selected_files[0])):
             if ImageFileManager().path_prompt(selected_files[0]) is not None:
@@ -180,13 +179,17 @@ class LoadPanel(QObject):
         for img in selected_files:
             f = os.path.split(img)[1]
             name = os.path.splitext(f)[0]
-            if os.path.splitext(f)[1] == '.yml':
+            if not self.ui.subdirectories.isChecked():
                 name = name.rsplit('_', 1)[0]
-            else:
+            if self.ext != '.yml':
                 tmp_ims.append(ImageFileManager().open_file(img))
+
             fnames.append(name)
 
         self.find_images(fnames)
+
+        if not self.files:
+            return
 
         if self.ext == '.yml':
             for yf in self.yml_files[0]:
@@ -227,7 +230,7 @@ class LoadPanel(QObject):
         if 'ostart' in data['meta']:
             self.omega_min.append(data['meta']['ostart'])
             self.omega_max.append(data['meta']['ostop'])
-            wedge = (self.omega_max - self.omega_min) / self.total_frames[0]
+            wedge = (data['meta']['ostop'] - data['meta']['ostart']) / self.total_frames[0]
             self.delta.append(wedge)
         else:
             if isinstance(data['meta']['omega'], str):
@@ -243,10 +246,14 @@ class LoadPanel(QObject):
                 self.delta.append((vals[1] - vals[0]) / self.total_frames[idx])
 
     def find_images(self, fnames):
-        self.find_directories()
-
-        if len(self.directories) == len(HexrdConfig().get_detector_names()):
+        if (self.ui.subdirectories.isChecked()):
+            self.find_directories()
+            self.match_dirs_images(fnames)
+        else:
             self.match_images(fnames)
+
+        if self.files and self.ext == '.yml':
+            self.get_yml_files()
 
     def find_directories(self):
         # Find all detector directories
@@ -273,16 +280,41 @@ class LoadPanel(QObject):
         self.directories = sorted(dirs)[:num_det]
 
     def match_images(self, fnames):
+        file_list = []
+        dets = []
+        for item in os.scandir(self.parent_dir):
+            file_name = os.path.splitext(item.name)[0]
+            instance = file_name.rsplit('_', 1)[0]
+            if instance == file_name:
+                continue
+            det = file_name.rsplit('_', 1)[1]
+            if os.path.isfile(item) and instance in fnames:
+                file_list.append(item.path)
+                if det and det not in dets:
+                    dets.append(det)
+                    self.files.append([])
+        for f in file_list:
+            det = f.rsplit('.', 1)[0].rsplit('_', 1)[1]
+            if det in dets:
+                i = dets.index(det)
+                self.files[i].append(f)
+        # Display error if equivalent files are not found for ea. detector
+        files_per_det = all(len(self.files[0]) == len(elem) for elem in self.files)
+        num_det = len(HexrdConfig().get_detector_names())
+        if len(self.files) != num_det or not files_per_det:
+            msg = ('ERROR - There must be the same number of files for each detector.')
+            QMessageBox.warning(None, 'HEXRD', msg)
+            self.files = []
+            return
+
+        self.files = sorted(self.files)[:len(self.files)]
+
+    def match_dirs_images(self, fnames):
         # Find the images with the same name for the remaining detectors
         for i in range(len(self.directories)):
             self.files.append([])
             for item in os.scandir(self.directories[i]):
                 fname = os.path.splitext(item.name)[0]
-                if self.ext == '.yml':
-                    if os.path.splitext(item.name)[1] == self.ext:
-                        fname = fname.rsplit('_', 1)[0]
-                    else:
-                        fname = ''
                 if os.path.isfile(item) and fname in fnames:
                     self.files[i].append(item.path)
             # Display error if equivalent files are not found for ea. detector
@@ -293,9 +325,6 @@ class LoadPanel(QObject):
                 QMessageBox.warning(None, 'HEXRD', msg)
                 self.files = []
                 break
-
-        if self.ext == '.yml':
-            self.get_yml_files()
 
     def get_yml_files(self):
         self.yml_files = []
@@ -466,8 +495,12 @@ class LoadPanel(QObject):
         det_names = HexrdConfig().get_detector_names()
 
         if len(self.files[0]) > 1:
-            for det, dirs, f in zip(det_names, self.directories, self.files):
-                ims = ImageFileManager().open_directory(dirs, f)
+            for i, det in enumerate(det_names):
+                if self.directories:
+                    dirs = self.directories[i]
+                else:
+                    dirs = self.parent_dir
+                ims = ImageFileManager().open_directory(dirs, self.files[i])
                 HexrdConfig().imageseries_dict[det] = ims
         else:
             ImageFileManager().load_images(det_names, self.files)
