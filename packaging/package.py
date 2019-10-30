@@ -132,6 +132,38 @@ def build_conda_pack(base_path, tmp):
 
     return tar_path
 
+# We install a script that ensure the current working directory in
+# the bin directory.
+def install_windows_script(base_path, package_path):
+    logger.info('Patch hexrd script.')
+
+    # Now install a shell script to call the setuptools script
+    hexrd_script = str(package_path / 'Scripts' / 'hexrd-script.py')
+    shutil.copyfile(base_path / 'windows' / 'hexrd-script.py', hexrd_script)
+
+def patch_qt_config_windows(base_path):
+    logger.info('Patching qt.conf.')
+    with (base_path / 'qt.conf').open('w') as fp:
+        fp.write('[Paths]\n')
+        fp.write('Prefix = Library\n')
+        fp.write('Binaries = Library/bin\n')
+        fp.write('Libraries = Library/lib\n')
+        fp.write('Headers = Library/include/qt\n')
+        fp.write('TargetSpec = win32-msvc\n')
+        fp.write('HostSpec = win32-msvc\n')
+
+def build_windows_package_dir(base_path, tar_path):
+    logger.info('Extracting tar into package/ directory.')
+    # Now extract the tar into to packge directory so it ready for cpack.
+    package_path = base_path / 'package'
+    package_path.mkdir(parents=True, exist_ok=True)
+    tar = tarfile.open(tar_path)
+    tar.extractall(path=package_path)
+    tar.close()
+
+    patch_qt_config_windows(package_path)
+    install_windows_script(base_path, package_path)
+
 def build_package():
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -146,6 +178,8 @@ def build_package():
             build_mac_app_bundle(base_path, tar_path)
         elif platform.system() == 'Linux':
             build_linux_package_dir(base_path, tar_path)
+        elif platform.system() == 'Windows':
+            build_windows_package_dir(base_path, tar_path)
         else:
             raise Exception('Unsupported platform: %s' % platform.system())
 
