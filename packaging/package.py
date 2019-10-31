@@ -43,7 +43,7 @@ def install_macos_script(base_path, package_path):
 def build_mac_app_bundle(base_path, tar_path):
     package_path = base_path / 'package'
     package_path.mkdir()
-    hexrd_app_path = package_path / 'hexrd.app'
+    hexrd_app_path = package_path / 'HEXRD.app'
     hexrd_app_path.mkdir()
     hexrd_app_contents = hexrd_app_path / 'Contents'
     hexrd_app_contents.mkdir()
