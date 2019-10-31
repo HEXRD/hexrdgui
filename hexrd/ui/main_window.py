@@ -50,6 +50,7 @@ class MainWindow(QObject):
 
         self.image_mode = 'raw'
         self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
+        self.image_mode_widget.setCurrentIndex(0) # Always start with raw tab
         self.ui.image_mode_dock_widgets.layout().addWidget(
             self.image_mode_widget.ui)
 
