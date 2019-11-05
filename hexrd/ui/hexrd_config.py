@@ -886,6 +886,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self._euler_angle_convention = new_conv
 
     @property
+    def instrument_config_none_euler_convention(self):
+        iconfig = copy.deepcopy(self.config['instrument'])
+        eac = self.euler_angle_convention
+        utils.convert_tilt_convention(iconfig, eac, (None, None))
+        return self.filter_instrument_config(iconfig)
+
+    @property
     def euler_angle_convention(self):
         return self._euler_angle_convention
 

@@ -10,10 +10,12 @@ from hexrd.ui.utils import select_merged_rings
 
 
 def polar_viewer():
-    iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().current_images_dict()
     plane_data = HexrdConfig().active_material.planeData
 
+    # HEDMInstrument expects None Euler angle convention for the
+    # config. Let's get it as such.
+    iconfig = HexrdConfig().instrument_config_none_euler_convention
     return InstrumentViewer(iconfig, images_dict, plane_data)
 
 
