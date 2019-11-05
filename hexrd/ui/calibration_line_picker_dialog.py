@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.zoom_canvas import ZoomCanvas
 
 
 class CalibrationLinePickerDialog(QObject):
@@ -15,7 +16,7 @@ class CalibrationLinePickerDialog(QObject):
     # Emits the ring data that was selected
     finished = Signal(list)
 
-    def __init__(self, canvas, parent=None):
+    def __init__(self, canvas, parent):
         super(CalibrationLinePickerDialog, self).__init__(parent)
 
         loader = UiLoader()
@@ -26,16 +27,37 @@ class CalibrationLinePickerDialog(QObject):
         self.linebuilder = None
         self.lines = []
 
+        self.zoom_canvas = ZoomCanvas(canvas)
+        self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
+        self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
+        self.ui.layout().insertWidget(1, self.zoom_canvas)
+
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
 
+        self.move_dialog_to_left()
+
         self.setup_connections()
+
+    def __del__(self):
+        self.clear()
 
     def setup_connections(self):
         self.ui.accepted.connect(self.accepted)
         self.ui.rejected.connect(self.rejected)
+        self.ui.zoom_tth_width.valueChanged.connect(self.zoom_width_changed)
+        self.ui.zoom_eta_width.valueChanged.connect(self.zoom_width_changed)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
+
+    def move_dialog_to_left(self):
+        # This moves the dialog to the left border of the parent
+        ph = self.ui.parent().geometry().height()
+        px = self.ui.parent().geometry().x()
+        py = self.ui.parent().geometry().y()
+        dw = self.ui.width()
+        dh = self.ui.height()
+        self.ui.setGeometry(px, py + (ph - dh) / 2.0, dw, dh)
 
     def clear(self):
         self.ring_data.clear()
@@ -49,9 +71,17 @@ class CalibrationLinePickerDialog(QObject):
         self.linebuilder = None
         self.cursor = None
 
+        self.zoom_canvas.cleanup()
+        self.zoom_canvas = None
+
         self.canvas.mpl_disconnect(self.bp_id)
         self.bp_id = None
         self.canvas.draw()
+
+    def zoom_width_changed(self):
+        self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
+        self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
+        self.zoom_canvas.render()
 
     def start(self):
         if self.canvas.mode != 'polar':

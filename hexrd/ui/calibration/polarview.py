@@ -67,6 +67,12 @@ class PolarView(object):
     def tth_pixel_size(self):
         return HexrdConfig().polar_pixel_size_tth
 
+    def tth_to_pixel(self, tth):
+        """
+        convert two-theta value to pixel value (float) along two-theta axis
+        """
+        return np.degrees(tth - self.tth_min) / self.tth_pixel_size
+
     @property
     def eta_min(self):
         return self._eta_min
@@ -82,6 +88,12 @@ class PolarView(object):
     @property
     def eta_pixel_size(self):
         return HexrdConfig().polar_pixel_size_eta
+
+    def eta_to_pixel(self, eta):
+        """
+        convert eta value to pixel value (float) along eta axis
+        """
+        return np.degrees(eta - self.eta_min) / self.eta_pixel_size
 
     @property
     def ntth(self):
