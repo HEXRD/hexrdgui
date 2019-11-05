@@ -14,6 +14,7 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
+from hexrd.ui.calibration_line_picker_dialog import CalibrationLinePickerDialog
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -107,6 +108,8 @@ class MainWindow(QObject):
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.ui.action_run_powder_calibration.triggered.connect(
             self.start_powder_calibration)
+        self.ui.action_calibration_line_picker.triggered.connect(
+            self.on_action_calibration_line_picker_triggered)
         self.load_widget.new_images_loaded.connect(self.new_images_loaded)
         self.new_images_loaded.connect(self.enable_editing_ims)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
@@ -308,6 +311,19 @@ class MainWindow(QObject):
         if selected_file:
             return self.ui.image_tab_widget.export_polar_plot(selected_file)
 
+    def on_action_calibration_line_picker_triggered(self):
+        # Make the dialog
+        canvas = self.ui.image_tab_widget.image_canvases[0]
+        self._calibration_line_picker = CalibrationLinePickerDialog(canvas,
+                                                                    self.ui)
+        self._calibration_line_picker.start()
+        self._calibration_line_picker.finished.connect(
+            self.begin_line_picked_calibration)
+
+    def begin_line_picked_calibration(self, line_data):
+        print('Here is where we will start the line picked calibration for data:')
+        print(line_data)
+
     def enable_editing_ims(self):
         self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
 
@@ -366,7 +382,11 @@ class MainWindow(QObject):
         is_cartesian = self.image_mode == 'cartesian'
         is_polar = self.image_mode == 'polar'
 
-        self.ui.action_export_polar_plot.setEnabled(is_polar)
+        has_images = HexrdConfig().has_images()
+
+        self.ui.action_export_polar_plot.setEnabled(is_polar and has_images)
+        self.ui.action_calibration_line_picker.setEnabled(
+            is_polar and has_images)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():

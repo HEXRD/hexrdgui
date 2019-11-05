@@ -97,6 +97,7 @@
      <string>R&amp;un</string>
     </property>
     <addaction name="action_run_powder_calibration"/>
+    <addaction name="action_calibration_line_picker"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
@@ -173,8 +174,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>550</width>
-          <height>708</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">
@@ -186,8 +187,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>550</width>
-          <height>708</height>
+          <width>127</width>
+          <height>49</height>
          </rect>
         </property>
         <attribute name="label">
@@ -424,6 +425,14 @@
    </property>
    <property name="text">
     <string>Polar Plot</string>
+   </property>
+  </action>
+  <action name="action_calibration_line_picker">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Calibration Line Picker</string>
    </property>
   </action>
  </widget>
