@@ -1,26 +1,26 @@
-import copy
-
-from PySide2.QtCore import QObject
+from PySide2.QtCore import Signal, QObject
 
 from hexrd import spacegroup
 
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import utils
 
 
-class AddMaterialDialog(QObject):
+class MaterialEditorWidget(QObject):
 
-    def __init__(self, parent=None):
-        super(AddMaterialDialog, self).__init__(parent)
+    # Emitted whenever the material is modified
+    material_modified = Signal()
+
+    def __init__(self, material, parent=None):
+        super(MaterialEditorWidget, self).__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('add_material_dialog.ui', parent)
-
-        # Don't create a material until later to avoid the expensive
-        # _newPdata() operation at startup.
-        self.material = None
+        self.ui = loader.load_file('material_editor_widget.ui', parent)
 
         self.setup_space_group_widgets()
+
+        self.material = material
 
         self.setup_connections()
 
@@ -32,7 +32,10 @@ class AddMaterialDialog(QObject):
             widget.currentIndexChanged.connect(self.set_space_group)
             widget.currentIndexChanged.connect(self.enable_lattice_params)
 
-        self.ui.material_name.textChanged.connect(self.set_name)
+        self.ui.max_hkl.valueChanged.connect(self.set_max_hkl)
+
+        # Emit that the ring config changed when the material is modified
+        self.material_modified.connect(HexrdConfig().ring_config_changed.emit)
 
     def setup_space_group_widgets(self):
         for k in spacegroup.sgid_to_hall:
@@ -47,8 +50,12 @@ class AddMaterialDialog(QObject):
 
         self.set_space_group(sgid)
         self.enable_lattice_params()  # This updates the values also
-        self.ui.max_hkl.setValue(self.material.hklMax)
-        self.ui.material_name.setText(self.material.name)
+
+        prev_blocked = self.ui.max_hkl.blockSignals(True)
+        try:
+            self.ui.max_hkl.setValue(self.material.hklMax)
+        finally:
+            self.ui.max_hkl.blockSignals(prev_blocked)
 
     @property
     def lattice_widgets(self):
@@ -85,10 +92,7 @@ class AddMaterialDialog(QObject):
             self.ui.hermann_mauguin.setCurrentIndex(val)
             sgid = int(self.ui.space_group.currentText().split(':')[0])
 
-            # This can be an expensive operation, so make sure it isn't
-            # already equal before setting.
-            if self.material.sgnum != sgid:
-                self.material.sgnum = sgid
+            self.set_material_space_group(sgid)
 
             for sgids, lg in spacegroup._pgDict.items():
                 if sgid in sgids:
@@ -106,10 +110,7 @@ class AddMaterialDialog(QObject):
             m = self.material
             sgid = int(self.ui.space_group.currentText().split(':')[0])
 
-            # This can be an expensive operation, so make sure it isn't
-            # already equal before setting.
-            if self.material.sgnum != sgid:
-                self.material.sgnum = sgid
+            self.set_material_space_group(sgid)
 
             reqp = m.spaceGroup.reqParams
             lprm = m.latticeParameters
@@ -141,25 +142,30 @@ class AddMaterialDialog(QObject):
         finally:
             self.block_lattice_signals(False)
 
-    def set_name(self, name):
-        self.material.name = name
+        self.material_modified.emit()
 
-    def hexrd_material(self):
-        """Use the UI selections to create a new hexrd material"""
+    def set_material_space_group(self, sgid):
+        # This can be an expensive operation, so make sure it isn't
+        # already equal before setting.
+        if self.material.sgnum != sgid:
+            self.material.sgnum = sgid
+            utils.fix_exclusions(self.material)
+            self.material_modified.emit()
 
-        # Everything should be set for self.material except hkl
-        # This will create a new planeData object as well.
-        # Although this may be expensive, it is necessary to create
-        # a new planeData object in case the lattice parameters changed.
-        self.material.hklMax = self.ui.max_hkl.value()
+    def set_max_hkl(self):
+        # This can be an expensive operation, so make sure it isn't
+        # already equal before setting.
+        val = self.ui.max_hkl.value()
+        if self.material.hklMax != val:
+            self.material.hklMax = val
+            utils.fix_exclusions(self.material)
+            self.material_modified.emit()
 
-        utils.fix_exclusions(self.material)
-        return copy.deepcopy(self.material)
+    @property
+    def material(self):
+        return self._material
 
-    def set_material(self, mat, new_name=None):
-        self.material = copy.deepcopy(mat)
-
-        if new_name is not None:
-            self.material.name = new_name
-
+    @material.setter
+    def material(self, m):
+        self._material = m
         self.update_gui_from_material()

@@ -1,10 +1,11 @@
+import copy
 import math
 
 from PySide2.QtCore import QObject, Qt
 from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.add_material_dialog import AddMaterialDialog
+from hexrd.ui.material_editor_widget import MaterialEditorWidget
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
@@ -15,7 +16,11 @@ class MaterialsPanel(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('materials_panel.ui', parent)
-        self.add_material_dialog = AddMaterialDialog(self.ui)
+
+        m = HexrdConfig().active_material
+        self.material_editor_widget = MaterialEditorWidget(m, self.ui)
+
+        self.ui.layout().insertWidget(2, self.material_editor_widget.ui)
 
         self.add_tool_button_actions()
 
@@ -30,19 +35,21 @@ class MaterialsPanel(QObject):
         self.tool_button_menu = m
 
         self.add_material_action = m.addAction('Add material')
-        self.modify_material_action = m.addAction('Modify material')
         self.delete_material_action = m.addAction('Delete material')
 
         b.setMenu(m)
 
     def setup_connections(self):
         self.add_material_action.triggered.connect(self.add_material)
-        self.modify_material_action.triggered.connect(self.modify_material)
         self.delete_material_action.triggered.connect(
             self.remove_current_material)
         self.ui.materials_combo.currentIndexChanged.connect(
             self.set_active_material)
         self.ui.materials_combo.currentIndexChanged.connect(self.update_table)
+        self.ui.materials_combo.lineEdit().textEdited.connect(
+            self.modify_material_name)
+
+        self.material_editor_widget.material_modified.connect(self.update_table)
 
         self.ui.materials_table.selectionModel().selectionChanged.connect(
             self.update_ring_selection)
@@ -120,47 +127,28 @@ class MaterialsPanel(QObject):
 
     def set_active_material(self):
         HexrdConfig().active_material = self.current_material()
+        self.material_editor_widget.material = HexrdConfig().active_material
 
     def current_material(self):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
         # Copy all of the active material properties to the dialog
-        active_material = HexrdConfig().active_material
-        self.add_material_dialog.set_material(active_material, 'material')
+        new_mat = copy.deepcopy(HexrdConfig().active_material)
 
-        # Loop until validation succeeds or the user cancels
-        while True:
-            if self.add_material_dialog.ui.exec_():
-                material = self.add_material_dialog.hexrd_material()
-                name = material.name
-                if name in HexrdConfig().materials.keys():
-                    msg = 'Material name "' + name + '" already exists!'
-                    QMessageBox.warning(self.ui, 'HEXRD', msg)
-                    continue
+        # Get a unique name
+        base_name = 'new_material'
+        names = HexrdConfig().materials.keys()
+        for i in range(1, 10000):
+            new_name = base_name + '_' + str(i)
+            if new_name not in names:
+                new_mat.name = new_name
+                break
 
-                HexrdConfig().add_material(name, material)
-                HexrdConfig().active_material = name
-                self.update_gui_from_config()
-                return
-            else:
-                return
-
-    def modify_material(self):
-        material = HexrdConfig().active_material
-        self.add_material_dialog.set_material(material)
-        title = self.add_material_dialog.ui.windowTitle()
-        self.add_material_dialog.ui.setWindowTitle('Modify Material')
-
-        if self.add_material_dialog.ui.exec_():
-            new_mat = self.add_material_dialog.hexrd_material()
-            old_name = self.current_material()
-            new_name = new_mat.name
-            HexrdConfig().rename_material(old_name, new_name)
-            HexrdConfig().modify_material(new_name, new_mat)
-            self.update_gui_from_config()
-
-        self.add_material_dialog.ui.setWindowTitle(title)
+        HexrdConfig().add_material(new_name, new_mat)
+        HexrdConfig().active_material = new_name
+        self.material_editor_widget.material = new_mat
+        self.update_gui_from_config()
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
@@ -171,4 +159,16 @@ class MaterialsPanel(QObject):
 
         name = self.current_material()
         HexrdConfig().remove_material(name)
+        self.material_editor_widget.material = HexrdConfig().active_material
+        self.update_gui_from_config()
+
+    def modify_material_name(self, new_name):
+        names = HexrdConfig().materials.keys()
+
+        if new_name in names:
+            # Just ignore it
+            return
+
+        old_name = HexrdConfig().active_material_name()
+        HexrdConfig().rename_material(old_name, new_name)
         self.update_gui_from_config()

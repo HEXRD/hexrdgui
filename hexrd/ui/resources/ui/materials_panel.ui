@@ -46,7 +46,7 @@
         <string/>
        </property>
        <property name="editable">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <item>
         <property name="text">
