@@ -18,6 +18,9 @@ class ImageModeWidget(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('image_mode_widget.ui', parent)
 
+        # Always start with raw tab
+        self.ui.tab_widget.setCurrentIndex(0)
+
         self.setup_connections()
         self.update_gui_from_config()
 
