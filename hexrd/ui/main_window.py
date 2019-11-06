@@ -16,7 +16,7 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
-from hexrd.ui.calibration_line_picker_dialog import CalibrationLinePickerDialog
+from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
@@ -326,8 +326,7 @@ class MainWindow(QObject):
 
         # Make the dialog
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._calibration_line_picker = CalibrationLinePickerDialog(canvas,
-                                                                    self.ui)
+        self._calibration_line_picker = LinePickerDialog(canvas, self.ui)
         self._calibration_line_picker.start()
         self._calibration_line_picker.finished.connect(
             self.start_line_picked_calibration)

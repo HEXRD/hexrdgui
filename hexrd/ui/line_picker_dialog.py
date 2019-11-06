@@ -11,16 +11,16 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.zoom_canvas import ZoomCanvas
 
 
-class CalibrationLinePickerDialog(QObject):
+class LinePickerDialog(QObject):
 
     # Emits the ring data that was selected
     finished = Signal(list)
 
     def __init__(self, canvas, parent):
-        super(CalibrationLinePickerDialog, self).__init__(parent)
+        super(LinePickerDialog, self).__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('calibration_line_picker_dialog.ui', parent)
+        self.ui = loader.load_file('line_picker_dialog.ui', parent)
 
         self.canvas = canvas
         self.ring_data = []
@@ -85,7 +85,7 @@ class CalibrationLinePickerDialog(QObject):
 
     def start(self):
         if self.canvas.mode != 'polar':
-            print('calibration picker only works in polar mode!')
+            print('line picker only works in polar mode!')
             return
 
         ax = self.canvas.axis
