@@ -172,6 +172,11 @@ class PolarView(object):
         else:
             self.snip1d_background = None
 
+        # Apply masks if they are present
+        masks = HexrdConfig().polar_masks
+        for mask in masks:
+            img[~mask] = 0
+
         self.img = img
 
     def warp_all_images(self):

@@ -94,6 +94,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = None
+        self.polar_masks = []
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
 

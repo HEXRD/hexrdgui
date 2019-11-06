@@ -91,6 +91,7 @@
     </property>
     <addaction name="action_edit_euler_angle_convention"/>
     <addaction name="action_edit_calibration_crystal"/>
+    <addaction name="action_edit_apply_polar_mask"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -433,6 +434,14 @@
    </property>
    <property name="text">
     <string>Calibration Line Picker</string>
+   </property>
+  </action>
+  <action name="action_edit_apply_polar_mask">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply Mask to Polar</string>
    </property>
   </action>
  </widget>
