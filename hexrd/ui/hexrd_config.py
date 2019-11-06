@@ -264,6 +264,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
+        eac = self.euler_angle_convention
+        if eac != (None, None):
+            # Convert it to whatever convention we are using
+            old_conv = (None, None)
+            utils.convert_tilt_convention(self.config['instrument'], old_conv,
+                                          eac)
+
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
         self.create_internal_config(self.config['instrument'])
@@ -273,6 +280,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def save_instrument_config(self, output_file):
         default = self.filter_instrument_config(self.config['instrument'])
+        eac = self.euler_angle_convention
+        if eac != (None, None):
+            # Convert it to None convention before saving
+            new_conv = (None, None)
+            utils.convert_tilt_convention(default, eac, new_conv)
+
         with open(output_file, 'w') as f:
             yaml.dump(default, f)
 
@@ -885,6 +898,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         # Set the variable
         self._euler_angle_convention = new_conv
+
+    @property
+    def instrument_config_none_euler_convention(self):
+        iconfig = self.instrument_config
+        eac = self.euler_angle_convention
+        utils.convert_tilt_convention(iconfig, eac, (None, None))
+        return iconfig
 
     @property
     def euler_angle_convention(self):

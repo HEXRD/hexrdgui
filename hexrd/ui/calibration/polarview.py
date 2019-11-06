@@ -193,9 +193,12 @@ class PolarView(object):
         self.generate_image()
 
     def update_detector(self, det):
-        t_conf = HexrdConfig().get_detector(det)['transform']
-        self.instr.detectors[det].tvec = t_conf['translation']['value']
-        self.instr.detectors[det].tilt = t_conf['tilt']['value']
+        # First, convert to the "None" angle convention
+        iconfig = HexrdConfig().instrument_config_none_euler_convention
+
+        t_conf = iconfig['detectors'][det]['transform']
+        self.instr.detectors[det].tvec = t_conf['translation']
+        self.instr.detectors[det].tilt = t_conf['tilt']
 
         # Update the individual detector image
         self.create_warp_image(det)
