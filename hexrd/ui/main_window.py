@@ -6,6 +6,8 @@ from PySide2.QtWidgets import (
     QVBoxLayout
 )
 
+import numpy as np
+
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 
@@ -16,6 +18,9 @@ from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.calibration_line_picker_dialog import CalibrationLinePickerDialog
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
+from hexrd.ui.calibration.line_picked_calibration import (
+    run_line_picked_calibration
+)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
@@ -312,17 +317,46 @@ class MainWindow(QObject):
             return self.ui.image_tab_widget.export_polar_plot(selected_file)
 
     def on_action_calibration_line_picker_triggered(self):
+        # Do a quick check for refinable paramters, which are required
+        flags = HexrdConfig().get_statuses_instrument_format()
+        if np.count_nonzero(flags) == 0:
+            msg = 'There are no refinable parameters'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
         # Make the dialog
         canvas = self.ui.image_tab_widget.image_canvases[0]
         self._calibration_line_picker = CalibrationLinePickerDialog(canvas,
                                                                     self.ui)
         self._calibration_line_picker.start()
         self._calibration_line_picker.finished.connect(
-            self.begin_line_picked_calibration)
+            self.start_line_picked_calibration)
 
-    def begin_line_picked_calibration(self, line_data):
-        print('Here is where we will start the line picked calibration for data:')
-        print(line_data)
+    def start_line_picked_calibration(self, line_data):
+        HexrdConfig().emit_update_status_bar('Running powder calibration...')
+
+        # Run the calibration in a background thread
+        worker = AsyncWorker(run_line_picked_calibration, line_data)
+        self.thread_pool.start(worker)
+
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_line_picked_calibration)
+        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        msg = 'Powder calibration finished!'
+        f = lambda: HexrdConfig().emit_update_status_bar(msg)
+        worker.signals.finished.connect(f)
+        self.cal_progress_dialog.exec_()
+
+    def finish_line_picked_calibration(self, res):
+        print('Received result from line picked calibration')
+
+        if res is not True:
+            print('Optimization failed!')
+            return
+
+        print('Updating the GUI')
+        self.update_config_gui()
+        self.update_all()
 
     def enable_editing_ims(self):
         self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
