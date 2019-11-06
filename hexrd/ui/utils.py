@@ -41,7 +41,8 @@ def convert_tilt_convention(iconfig, old_convention,
         tilt_dict = iconfig['detectors'][key]['transform']['tilt']
         tilt = np.array(tilt_dict['value'])
         rme.rmat = makeRotMatOfExpMap(tilt)
-        tilt_dict['value'] = list(rme.angles)
+        # Use np.ndarray.tolist() to convert back to native python types
+        tilt_dict['value'] = np.array(rme.angles).tolist()
 
 
 def fix_exclusions(mat):
