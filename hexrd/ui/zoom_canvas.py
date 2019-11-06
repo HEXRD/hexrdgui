@@ -17,6 +17,8 @@ class ZoomCanvas(FigureCanvas):
         self.main_canvas = main_canvas
         self.pv = main_canvas.iviewer.pv
 
+        self.axes_images = None
+
         # Set up the box overlay lines
         ax = self.main_canvas.axis
         self.box_overlay_lines = []
@@ -49,9 +51,6 @@ class ZoomCanvas(FigureCanvas):
         while self.box_overlay_lines:
             self.box_overlay_lines.pop(0).remove()
 
-    def clear(self):
-        self.figure.clear()
-
     def mouse_moved(self, event):
         if event.inaxes is None:
             # Do nothing...
@@ -67,8 +66,6 @@ class ZoomCanvas(FigureCanvas):
         self.render()
 
     def render(self):
-        self.clear()
-
         point = (self.xdata, self.ydata)
         rsimg = self.main_canvas.iviewer.img
         pv = self.pv
@@ -99,22 +96,40 @@ class ZoomCanvas(FigureCanvas):
         roi = rsimg[rr, cc].reshape(len(np.unique(rr)), len(np.unique(cc)))
 
         # plot
-        grid = plt.GridSpec(3, 1)
-        a1 = self.figure.add_subplot(grid[:2, 0])
-        a2 = self.figure.add_subplot(grid[2, 0], sharex=a1)
-        a1.imshow(roi, extent=extent)
-        a1.axis('auto')
-        a2.plot(
+        a2_data = (
             np.degrees(
                 pv.angular_grid[1][0, cc.reshape(len(np.unique(rr)),
                                                  len(np.unique(cc)))[0, :]]
             ),
             np.sum(roi, axis=0)
         )
-        self.figure.suptitle(r"ROI zoom")
-        a2.set_xlabel(r"$2\theta$ [deg]")
-        a2.set_ylabel(r"intensity")
-        a1.set_ylabel(r"$\eta$ [deg]")
+        if self.axes_images is None:
+            grid = self.figure.add_gridspec(3, 1)
+            a1 = self.figure.add_subplot(grid[:2, 0])
+            a2 = self.figure.add_subplot(grid[2, 0], sharex=a1)
+            im1 = a1.imshow(roi, extent=extent, cmap=self.main_canvas.cmap,
+                            norm=self.main_canvas.norm, picker=True,
+                            interpolation='none')
+            a1.axis('auto')
+            im2 = a2.plot(a2_data)[0]
+            self.figure.suptitle(r"ROI zoom")
+            a2.set_xlabel(r"$2\theta$ [deg]")
+            a2.set_ylabel(r"intensity")
+            a1.set_ylabel(r"$\eta$ [deg]")
+            self.axes = [a1, a2]
+            self.axes_images = [im1, im2]
+            self.grid = grid
+        else:
+            self.axes_images[0].set_data(roi)
+            self.axes_images[0].set_extent(extent)
+            self.axes_images[1].set_data(a2_data)
+
+            # I can't figure out how to get the bottom axis to autoscale
+            # properly. Do it manually.
+            data_min, data_max = a2_data[1].min(), a2_data[1].max()
+            ymin = data_min - 0.1 * (data_max - data_min) - 1.e-6
+            ymax = data_max + 0.1 * (data_max - data_min) + 1.e-6
+            self.axes[1].set_ylim((ymin, ymax))
 
         self.box_overlay_lines[0].set_data(roi_deg[:, 0], roi_deg[:, 1])
         self.box_overlay_lines[1].set_data(roi_deg[[-1, 0], 0], roi_deg[[-1, 0], 1])
