@@ -1,5 +1,6 @@
-import numpy as np
 import warnings
+
+import numpy as np
 
 from hexrd import instrument
 from hexrd.gridutil import cellIndices
@@ -15,11 +16,13 @@ from .display_plane import DisplayPlane
 
 
 def cartesian_viewer():
-    iconfig = HexrdConfig().instrument_config
     images_dict = HexrdConfig().current_images_dict()
     plane_data = HexrdConfig().active_material.planeData
     pixel_size = HexrdConfig().cartesian_pixel_size
 
+    # HEDMInstrument expects None Euler angle convention for the
+    # config. Let's get it as such.
+    iconfig = HexrdConfig().instrument_config_none_euler_convention
     rme = HexrdConfig().rotation_matrix_euler()
     instr = instrument.HEDMInstrument(instrument_config=iconfig,
                                       tilt_calibration_mapping=rme)
@@ -180,9 +183,12 @@ class InstrumentViewer:
         self.img = np.interp(img, (img.min(), img.max()), (self.min, self.max))
 
     def update_detector(self, det):
-        t_conf = HexrdConfig().get_detector(det)['transform']
-        self.instr.detectors[det].tvec = t_conf['translation']['value']
-        self.instr.detectors[det].tilt = t_conf['tilt']['value']
+        # First, convert to the "None" angle convention
+        iconfig = HexrdConfig().instrument_config_none_euler_convention
+
+        t_conf = iconfig['detectors'][det]['transform']
+        self.instr.detectors[det].tvec = t_conf['translation']
+        self.instr.detectors[det].tilt = t_conf['tilt']
 
         # Update the individual detector image
         self.create_warped_image(det)
