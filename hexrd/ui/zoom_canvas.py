@@ -111,6 +111,7 @@ class ZoomCanvas(FigureCanvas):
                             norm=self.main_canvas.norm, picker=True,
                             interpolation='none')
             a1.axis('auto')
+            a1.label_outer()
             im2 = a2.plot(a2_data)[0]
             self.figure.suptitle(r"ROI zoom")
             a2.set_xlabel(r"$2\theta$ [deg]")
