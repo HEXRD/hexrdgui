@@ -6,6 +6,7 @@ from scipy import stats
 from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import convert_tilt_convention
 
 # =============================================================================
 # %% Functions and parameters
@@ -145,7 +146,7 @@ def run_line_picked_calibration(line_data):
     print('Setting up the instrument...')
 
     # Set up the instrument
-    iconfig = HexrdConfig().instrument_config
+    iconfig = HexrdConfig().instrument_config_none_euler_convention
     instr = instrument.HEDMInstrument(instrument_config=iconfig,
                                       tilt_calibration_mapping=rme)
 
@@ -175,6 +176,12 @@ def run_line_picked_calibration(line_data):
     # Add this so the calibration crystal gets written
     cal_crystal = iconfig.get('calibration_crystal')
     output_dict = instr.write_config(calibration_dict=cal_crystal)
+
+    # Convert back to whatever convention we were using before
+    eac = HexrdConfig().euler_angle_convention
+    if eac != (None, None):
+        old_conv = (None, None)
+        convert_tilt_convention(output_dict, old_conv, eac)
 
     # Add the saturation levels, as they seem to be missing
     sl = 'saturation_level'
