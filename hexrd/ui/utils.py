@@ -14,9 +14,25 @@ def convert_tilt_convention(iconfig, old_convention,
                             new_convention):
     """
     convert the tilt angles from an old convention to a new convention
+
+    This should work for both configs with statuses and without
     """
     if new_convention == old_convention:
         return
+
+    def _get_tilt_array(data):
+        # This works for both a config with statuses, and without
+        if isinstance(data, dict):
+            return data.get('value')
+        return data
+
+    def _set_tilt_array(data, val):
+        # This works for both a config with statuses, and without
+        if isinstance(data, dict):
+            data['value'] = val
+        else:
+            data.clear()
+            data.extend(val)
 
     old_axes, old_extrinsic = old_convention
     new_axes, new_extrinsic = new_convention
@@ -26,10 +42,10 @@ def convert_tilt_convention(iconfig, old_convention,
         # First, convert these to the matrix invariants
         rme = RotMatEuler(np.zeros(3), old_axes, old_extrinsic)
         for key in det_keys:
-            tilt_dict = iconfig['detectors'][key]['transform']['tilt']
-            rme.angles = np.array(tilt_dict['value'])
+            tilts = iconfig['detectors'][key]['transform']['tilt']
+            rme.angles = np.array(_get_tilt_array(tilts))
             phi, n = angleAxisOfRotMat(rme.rmat)
-            tilt_dict['value'] = (phi * n.flatten()).tolist()
+            _set_tilt_array(tilts, (phi * n.flatten()).tolist())
 
         if new_axes is None or new_extrinsic is None:
             # We are done
@@ -38,11 +54,11 @@ def convert_tilt_convention(iconfig, old_convention,
     # Update to the new mapping
     rme = RotMatEuler(np.zeros(3), new_axes, new_extrinsic)
     for key in det_keys:
-        tilt_dict = iconfig['detectors'][key]['transform']['tilt']
-        tilt = np.array(tilt_dict['value'])
+        tilts = iconfig['detectors'][key]['transform']['tilt']
+        tilt = np.array(_get_tilt_array(tilts))
         rme.rmat = makeRotMatOfExpMap(tilt)
         # Use np.ndarray.tolist() to convert back to native python types
-        tilt_dict['value'] = np.array(rme.angles).tolist()
+        _set_tilt_array(tilts, np.array(rme.angles).tolist())
 
 
 def fix_exclusions(mat):
