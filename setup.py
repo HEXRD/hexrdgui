@@ -42,7 +42,7 @@ setup(
     python_requires='>=3.6',
     install_requires=install_reqs,
     entry_points={
-        'console_scripts': [
+        'gui_scripts': [
             'hexrd = hexrd.ui.main:main'
         ]
     }
