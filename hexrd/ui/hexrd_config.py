@@ -122,6 +122,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Add the statuses to the config
         self.create_internal_config(self.config['instrument'])
 
+        # Save a backup of the previous config for later
+        self.backup_instrument_config()
+
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
 
@@ -180,6 +183,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
     @property
     def internal_instrument_config(self):
         return self.config['instrument']
+
+    def backup_instrument_config(self):
+        self.instrument_config_backup = copy.deepcopy(
+            self.config['instrument'])
+
+    def restore_instrument_config_backup(self):
+        self.config['instrument'] = copy.deepcopy(
+            self.instrument_config_backup)
+        self.rerender_needed.emit()
+        self.update_active_material_energy()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -273,6 +286,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
         self.create_internal_config(self.config['instrument'])
+
+        # Create a backup
+        self.backup_instrument_config()
 
         self.update_active_material_energy()
         return self.config['instrument']

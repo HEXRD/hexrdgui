@@ -98,6 +98,8 @@ class MainWindow(QObject):
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_calibration_crystal.triggered.connect(
             self.on_action_edit_calibration_crystal)
+        self.ui.action_edit_reset_instrument_config.triggered.connect(
+            self.on_action_edit_reset_instrument_config)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
@@ -354,6 +356,10 @@ class MainWindow(QObject):
             self.calibration_crystal_editor.update_gui_from_config()
 
         self.calibration_crystal_editor.exec_()
+
+    def on_action_edit_reset_instrument_config(self):
+        HexrdConfig().restore_instrument_config_backup()
+        self.update_config_gui()
 
     def change_image_mode(self, text):
         self.image_mode = text.lower()
