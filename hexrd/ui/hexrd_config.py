@@ -187,10 +187,20 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def backup_instrument_config(self):
         self.instrument_config_backup = copy.deepcopy(
             self.config['instrument'])
+        self.instrument_config_backup_eac = copy.deepcopy(
+            self.euler_angle_convention)
 
     def restore_instrument_config_backup(self):
         self.config['instrument'] = copy.deepcopy(
             self.instrument_config_backup)
+
+        old_eac = self.instrument_config_backup_eac
+        new_eac = self.euler_angle_convention
+        if old_eac != new_eac:
+            # Convert it to whatever convention we are using
+            utils.convert_tilt_convention(self.config['instrument'], old_eac,
+                                          new_eac)
+
         self.rerender_needed.emit()
         self.update_active_material_energy()
 
