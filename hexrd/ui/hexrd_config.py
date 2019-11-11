@@ -88,7 +88,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.imageseries_dict = {}
         self.current_imageseries_idx = 0
         self.hdf5_path = []
-        self.live_update = False
+        self.live_update = True
         self._show_saturation_level = False
         self._tab_images = False
         self.previous_active_material = None
@@ -161,7 +161,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
-        self.live_update = bool(settings.value('live_update', False) == 'true')
+        self.live_update = bool(settings.value('live_update', True) == 'true')
 
         conv = settings.value('euler_angle_convention', ('xyz', True))
         self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)

@@ -174,8 +174,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>550</width>
-          <height>708</height>
+          <width>98</width>
+          <height>28</height>
          </rect>
         </property>
         <attribute name="label">
@@ -187,8 +187,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>550</width>
-          <height>708</height>
+          <width>127</width>
+          <height>49</height>
          </rect>
         </property>
         <attribute name="label">
@@ -342,6 +342,9 @@
   </action>
   <action name="action_show_live_updates">
    <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
     <bool>true</bool>
    </property>
    <property name="text">

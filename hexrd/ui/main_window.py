@@ -78,6 +78,7 @@ class MainWindow(QObject):
         self.calibration_config_widget.update_gui_from_config()
 
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
+        self.live_update(HexrdConfig().live_update)
 
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
