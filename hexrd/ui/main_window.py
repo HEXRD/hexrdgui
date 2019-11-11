@@ -107,6 +107,8 @@ class MainWindow(QObject):
             self.on_action_edit_calibration_crystal)
         self.ui.action_edit_apply_polar_mask.triggered.connect(
             self.on_action_edit_apply_polar_mask_triggered)
+        self.ui.action_edit_reset_instrument_config.triggered.connect(
+            self.on_action_edit_reset_instrument_config)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
@@ -421,6 +423,10 @@ class MainWindow(QObject):
         pv = canvas.iviewer.pv
         create_polar_mask(line_data, rsimg, pv)
         self.update_all()
+
+    def on_action_edit_reset_instrument_config(self):
+        HexrdConfig().restore_instrument_config_backup()
+        self.update_config_gui()
 
     def change_image_mode(self, text):
         self.image_mode = text.lower()

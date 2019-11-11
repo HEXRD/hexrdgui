@@ -92,6 +92,7 @@
     <addaction name="action_edit_euler_angle_convention"/>
     <addaction name="action_edit_calibration_crystal"/>
     <addaction name="action_edit_apply_polar_mask"/>
+    <addaction name="action_edit_reset_instrument_config"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -442,6 +443,11 @@
    </property>
    <property name="text">
     <string>Apply Mask to Polar</string>
+   </property>
+  </action>
+  <action name="action_edit_reset_instrument_config">
+   <property name="text">
+    <string>Reset Instrument Config</string>
    </property>
   </action>
  </widget>

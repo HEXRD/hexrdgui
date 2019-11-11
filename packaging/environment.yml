@@ -1,0 +1,11 @@
+name: hexrdgui-package
+channels:
+  - cjh1
+dependencies:
+  - python=3.7
+  - coloredlogs
+  - conda
+  - conda-build
+  - cmake
+  - conda-build
+  - conda-pack

@@ -37,6 +37,8 @@ class CalibrationSliderWidget(QObject):
         self.ui.sb_tilt_range.valueChanged.connect(self.update_ranges)
         self.ui.sb_beam_range.valueChanged.connect(self.update_ranges)
 
+        self.ui.push_reset_config.pressed.connect(self.reset_config)
+
     def update_ranges(self):
         r = self.ui.sb_translation_range.value()
         slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
@@ -279,3 +281,7 @@ class CalibrationSliderWidget(QObject):
                 lambda: self.update_if_mode_matches.emit('polar'))
 
         self._update_if_polar_timer.start(500)
+
+    def reset_config(self):
+        HexrdConfig().restore_instrument_config_backup()
+        self.update_gui_from_config()
