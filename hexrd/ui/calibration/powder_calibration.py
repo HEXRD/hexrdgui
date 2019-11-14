@@ -331,4 +331,6 @@ def run_powder_calibration():
     HexrdConfig().add_status(output_dict)
 
     # Set the previous statuses to be the current statuses
-    HexrdConfig().set_statuses_from_instrument_format(flags)
+    # FIXME: this is really slow, but is good to have. Fix in
+    # the future?
+    #HexrdConfig().set_statuses_from_instrument_format(flags)
