@@ -642,6 +642,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if old_name != new_name:
             self.config['materials']['materials'][new_name] = (
                 self.config['materials']['materials'][old_name])
+            self.config['materials']['materials'][new_name].name = new_name
 
             if self.active_material_name() == old_name:
                 # Change the active material before removing the old one
