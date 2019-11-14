@@ -7,6 +7,7 @@ from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import convert_tilt_convention
+from hexrd.ui.utils import remove_none_distortions
 
 # =============================================================================
 # %% Functions and parameters
@@ -147,6 +148,7 @@ def run_line_picked_calibration(line_data):
 
     # Set up the instrument
     iconfig = HexrdConfig().instrument_config_none_euler_convention
+    remove_none_distortions(iconfig)
     instr = instrument.HEDMInstrument(instrument_config=iconfig,
                                       tilt_calibration_mapping=rme)
 
@@ -188,13 +190,17 @@ def run_line_picked_calibration(line_data):
     for det in output_dict['detectors'].keys():
         output_dict['detectors'][det][sl] = iconfig['detectors'][det][sl]
 
-    # Add status values
-    HexrdConfig().add_status(output_dict)
-
     print('Updating the config')
 
     # Update the config
     HexrdConfig().config['instrument'] = output_dict
+
+    # This adds in any missing keys. In particular, it is going to
+    # add in any "None" detector distortions
+    HexrdConfig().set_detector_defaults_if_missing()
+
+    # Add status values
+    HexrdConfig().add_status(output_dict)
 
     # Set the previous statuses to be the current statuses
     HexrdConfig().set_statuses_from_instrument_format(flags)

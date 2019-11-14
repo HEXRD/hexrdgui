@@ -235,6 +235,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self._recursive_set_defaults(self.config[key],
                                          self.default_config[key])
 
+        self.set_detector_defaults_if_missing()
+
+    def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
         default = self.get_default_detector()
         for name in self.get_detector_names():
@@ -393,6 +396,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
             for path in dflags_order:
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
+
+                if path[0] == 'distortion':
+                    # Special case for distortion parameters
+                    func_path = ['detectors', name, 'distortion',
+                                 'function_name', 'value']
+                    func_name = self.get_instrument_config_val(func_path)
+                    num_params = self.num_distortion_parameters(func_name)
+                    for i in range(num_params):
+                        statuses.append(status[i])
+                    continue
+
                 # If it is a list, loop through the values
                 if isinstance(status, list):
                     for entry in status:
@@ -436,7 +450,21 @@ class HexrdConfig(QObject, metaclass=Singleton):
         for name in det_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
+
+                if path[0] == 'distortion':
+                    # Special case for distortion parameters
+                    func_path = ['detectors', name, 'distortion',
+                                 'function_name', 'value']
+                    func_name = self.get_instrument_config_val(func_path)
+                    num_params = self.num_distortion_parameters(func_name)
+                    for i in range(num_params):
+                        v = statuses[cur_ind]
+                        self.set_instrument_config_val(full_path + [i], v)
+                        cur_ind += 1
+                    continue
+
                 prev_val = self.get_instrument_config_val(full_path)
+
                 # If it is a list, loop through the values
                 if isinstance(prev_val, list):
                     for i in range(len(prev_val)):
@@ -947,3 +975,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_colormap_min(self, v):
         self.config['image']['colormap']['min'] = v
+
+    @staticmethod
+    def num_distortion_parameters(func_name):
+        if func_name == 'None':
+            return 0
+        elif func_name == 'GE_41RT':
+            return 6
+
+        raise Exception('Unknown distortion function: ' + func_name)

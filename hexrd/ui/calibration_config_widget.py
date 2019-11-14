@@ -296,17 +296,8 @@ class CalibrationConfigWidget(QObject):
 
     def update_distortion_params_enable_states(self):
         text = self.ui.cal_det_function.currentText()
-        if text == 'None':
-            num_params = 0
-        elif text == 'GE_41RT':
-            num_params = 6
-        else:
-            raise Exception('Unknown distortion function: ' + text)
-
-        if num_params == 0:
-            label_enabled = False
-        else:
-            label_enabled = True
+        num_params = HexrdConfig.num_distortion_parameters(text)
+        label_enabled = (num_params != 0)
 
         self.ui.distortion_parameters_label.setEnabled(label_enabled)
         self.ui.distortion_parameters_label.setVisible(label_enabled)

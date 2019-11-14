@@ -147,3 +147,12 @@ def run_snip1d(img):
     # !!!: need a selector between
     # imageutil.fast_snip1d() and imageutil.snip1d()
     return imageutil.snip1d(img, snip_width, numiter)
+
+
+def remove_none_distortions(iconfig):
+    # This modifies the iconfig in place to remove distortion
+    # parameters that are set to None
+    # This also assumes an iconfig without statuses
+    for det in iconfig['detectors'].values():
+        if det.get('distortion', {}).get('function_name', '').lower() == 'none':
+            del det['distortion']
