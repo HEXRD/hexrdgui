@@ -40,6 +40,8 @@ class CalibrationConfigWidget(QObject):
             self.on_detector_name_edited)
         self.ui.cal_det_remove.clicked.connect(self.on_detector_remove_clicked)
         self.ui.cal_det_add.clicked.connect(self.on_detector_add_clicked)
+        self.ui.cal_det_function.currentIndexChanged.connect(
+            self.update_distortion_params_enable_states)
 
         all_widgets = self.get_all_widgets()
         skip_widgets = ['cal_det_current', 'cal_det_add', 'cal_det_remove']
@@ -230,6 +232,9 @@ class CalibrationConfigWidget(QObject):
         finally:
             self.unblock_all_signals(previously_blocked)
 
+        # Update distortion parameter enable states
+        self.update_distortion_params_enable_states()
+
     def get_current_detector(self):
         if self.detector_widgets_disabled:
             return None
@@ -288,3 +293,31 @@ class CalibrationConfigWidget(QObject):
         else:
             # If it is anything else, just assume value()
             return gui_object.value()
+
+    def update_distortion_params_enable_states(self):
+        text = self.ui.cal_det_function.currentText()
+        if text == 'None':
+            num_params = 0
+        elif text == 'GE_41RT':
+            num_params = 6
+        else:
+            raise Exception('Unknown distortion function: ' + text)
+
+        if num_params == 0:
+            label_enabled = False
+        else:
+            label_enabled = True
+
+        self.ui.distortion_parameters_label.setEnabled(label_enabled)
+        self.ui.distortion_parameters_label.setVisible(label_enabled)
+
+        base_str = 'cal_det_param_'
+        for i in range(1000):
+            widget_name = base_str + str(i)
+            if not hasattr(self.ui, widget_name):
+                break
+
+            widget = getattr(self.ui, widget_name)
+            enable = (num_params > i)
+            widget.setEnabled(enable)
+            widget.setVisible(enable)
