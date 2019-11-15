@@ -567,17 +567,24 @@ class HexrdConfig(QObject, metaclass=Singleton):
                    str(self.config['instrument']))
             raise Exception(msg)
 
+        if 'status' in path[-2:]:
+            # If we are just modifying a status, we are done
+            return
+
         # If the beam energy was modified, update the active material
         if path == ['beam', 'energy', 'value']:
             self.update_active_material_energy()
+            return
 
-        # If a detector transform was modified, send a signal indicating so
         if path[0] == 'detectors' and path[2] == 'transform':
+            # If a detector transform was modified, send a signal
+            # indicating so
             det = path[1]
             self.detector_transform_modified.emit(det)
-        else:
-            # Otherwise, assume we need to re-render the whole image
-            self.rerender_needed.emit()
+            return
+
+        # Otherwise, assume we need to re-render the whole image
+        self.rerender_needed.emit()
 
     def get_instrument_config_val(self, path):
         """This obtains a dict value from a path list.
