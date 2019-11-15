@@ -192,6 +192,9 @@ def run_line_picked_calibration(line_data):
 
     print('Updating the config')
 
+    # Save the previous iconfig to restore the statuses
+    prev_iconfig = HexrdConfig().config['instrument']
+
     # Update the config
     HexrdConfig().config['instrument'] = output_dict
 
@@ -203,8 +206,6 @@ def run_line_picked_calibration(line_data):
     HexrdConfig().add_status(output_dict)
 
     # Set the previous statuses to be the current statuses
-    # FIXME: this is really slow, but is good to have. Fix in
-    # the future?
-    #HexrdConfig().set_statuses_from_instrument_format(flags)
+    HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
 
     return True

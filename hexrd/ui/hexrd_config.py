@@ -419,8 +419,29 @@ class HexrdConfig(QObject, metaclass=Singleton):
         statuses = [not x for x in statuses]
         return np.asarray(statuses)
 
+    def set_statuses_from_prev_iconfig(self, prev_iconfig):
+        # This function seems to be much faster than
+        # "set_statuses_from_instrument_format"
+        self._recursive_set_statuses(self.config['instrument'], prev_iconfig)
+
+    def _recursive_set_statuses(self, cur, prev):
+        # Only use keys that both of them have
+        keys = set(cur.keys()) & set(prev.keys())
+        for key in keys:
+            if isinstance(cur[key], dict) and isinstance(prev[key], dict):
+                if 'status' in cur[key] and 'status' in prev[key]:
+                    cur[key]['status'] = prev[key]['status']
+                    continue
+
+                self._recursive_set_statuses(cur[key], prev[key])
+
     def set_statuses_from_instrument_format(self, statuses):
         """This sets statuses using the hexrd instrument format"""
+        # FIXME: This function is really slow for some reason. We are
+        # currently using "set_statuses_from_prev_iconfig" instead.
+        # If we ever want to use this function again, let's try to make
+        # it much faster.
+
         # First, make a deep copy, and then reverse all booleans. We
         # use "fixed", but they use "refinable"
         statuses = copy.deepcopy(statuses)
