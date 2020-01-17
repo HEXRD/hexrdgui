@@ -450,11 +450,13 @@ class MainWindow(QObject):
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
     def live_update(self, enabled):
+        previous = HexrdConfig().live_update
         HexrdConfig().set_live_update(enabled)
 
         if enabled:
             HexrdConfig().rerender_needed.connect(self.update_all)
-        else:
+        # Only disconnect if we were previously enabled. i.e. the signal was connected
+        elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)
 
     def new_mouse_position(self, info):
