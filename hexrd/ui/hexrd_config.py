@@ -75,6 +75,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """
     update_status_bar = Signal(str)
 
+    """Emitted when a new instrument configuration file has been loaded"""
+    instrument_config_loaded = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -301,6 +304,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_instrument_config()
 
         self.update_active_material_energy()
+        self.instrument_config_loaded.emit()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):

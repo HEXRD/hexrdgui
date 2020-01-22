@@ -83,8 +83,15 @@ class LoadPanel(QObject):
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
+        HexrdConfig().instrument_config_loaded.connect(self.reset_load_panel)
 
     # Handle GUI changes
+
+    def reset_load_panel(self):
+        self.detectors_changed()
+        self.ui.file_options.setRowCount(0)
+        self.reset_data()
+        self.enable_read()
 
     def dark_mode_changed(self):
         self.state['dark'] = self.ui.darkMode.currentIndex()
