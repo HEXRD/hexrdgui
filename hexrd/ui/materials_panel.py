@@ -4,9 +4,10 @@ import math
 from PySide2.QtCore import QObject, Qt
 from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
 
-from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.material_editor_widget import MaterialEditorWidget
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.material_editor_widget import MaterialEditorWidget
+from hexrd.ui.overlay_style_picker import OverlayStylePicker
+from hexrd.ui.ui_loader import UiLoader
 
 
 class MaterialsPanel(QObject):
@@ -59,6 +60,11 @@ class MaterialsPanel(QObject):
             HexrdConfig()._set_show_ring_ranges)
         self.ui.tth_ranges.valueChanged.connect(HexrdConfig()._set_ring_ranges)
 
+        self.ui.edit_style_button.pressed.connect(self.edit_overlay_style)
+
+        self.ui.show_all_materials.toggled.connect(
+            HexrdConfig().set_show_all_materials)
+
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
     def update_gui_from_config(self):
@@ -66,7 +72,8 @@ class MaterialsPanel(QObject):
             self.ui.materials_combo,
             self.ui.show_rings,
             self.ui.show_ranges,
-            self.ui.tth_ranges
+            self.ui.tth_ranges,
+            self.ui.show_all_materials
         ]
 
         block_signals = []
@@ -74,17 +81,22 @@ class MaterialsPanel(QObject):
             block_signals.append(item.blockSignals(True))
 
         try:
-            self.ui.materials_combo.clear()
-            materials = list(HexrdConfig().materials.keys())
-            for mat in materials:
-                self.ui.materials_combo.addItem(mat)
+            current_items = [self.ui.materials_combo.itemText(x) for x in
+                range(self.ui.materials_combo.count())]
+            materials_keys = list(HexrdConfig().materials.keys())
 
-            self.ui.materials_combo.setCurrentText(
-                HexrdConfig().active_material_name())
+            # If the materials in the config have changed, re-build the list
+            if sorted(current_items) != sorted(materials_keys):
+                self.ui.materials_combo.clear()
+                self.ui.materials_combo.addItems(materials_keys)
+                self.ui.materials_combo.setCurrentText(
+                    HexrdConfig().active_material_name())
 
             self.ui.show_rings.setChecked(HexrdConfig().show_rings)
             self.ui.show_ranges.setChecked(HexrdConfig().show_ring_ranges)
             self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges)
+            self.ui.show_all_materials.setChecked(
+                HexrdConfig().show_all_materials)
         finally:
             for b, item in zip(block_signals, block_list):
                 item.blockSignals(b)
@@ -172,3 +184,10 @@ class MaterialsPanel(QObject):
         old_name = HexrdConfig().active_material_name()
         HexrdConfig().rename_material(old_name, new_name)
         self.update_gui_from_config()
+
+    def edit_overlay_style(self):
+        material_name = self.current_material()
+
+        # The overlay style picker will modify the HexrdConfig() itself
+        picker = OverlayStylePicker(material_name, self.ui)
+        picker.ui.exec_()

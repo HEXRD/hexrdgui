@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>350</width>
+    <width>377</width>
     <height>538</height>
    </rect>
   </property>
@@ -166,24 +166,21 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="show_rings">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;show powder rings for the selected HKLs for the active material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Show Rings</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <item>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="1" column="5">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="1" column="0">
       <widget class="QCheckBox" name="show_ranges">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;show 2θ ranges for the selected HKLs for the active material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -193,7 +190,37 @@
        </property>
       </widget>
      </item>
-     <item>
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="show_rings">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;show powder rings for the selected HKLs for the active material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Show Rings</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="edit_style_button">
+       <property name="text">
+        <string>Edit Style...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QCheckBox" name="show_all_materials">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This will show overlays for all materials in hexrd. The styles of the overlays may be edited for each material by selecting it and clicking &amp;quot;Edit Styles...&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Show All Materials</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
       <widget class="QDoubleSpinBox" name="tth_ranges">
        <property name="enabled">
         <bool>false</bool>
@@ -227,23 +254,20 @@
        </property>
       </widget>
      </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
     </layout>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>materials_combo</tabstop>
+  <tabstop>materials_tool_button</tabstop>
+  <tabstop>materials_table</tabstop>
+  <tabstop>show_rings</tabstop>
+  <tabstop>show_all_materials</tabstop>
+  <tabstop>edit_style_button</tabstop>
+  <tabstop>show_ranges</tabstop>
+  <tabstop>tth_ranges</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
