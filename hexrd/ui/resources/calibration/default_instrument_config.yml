@@ -4,7 +4,7 @@ beam:
 detectors:
   ge1:
     distortion:
-      function_name: GE_41RT
+      function_name: None
       parameters: [0.0, 0.0, 0.0,
         2.0, 2.0, 2.0]
     pixels:
@@ -17,7 +17,7 @@ detectors:
       tilt: [0.0, 0.0, 0.0]
   ge2:
     distortion:
-      function_name: GE_41RT
+      function_name: None
       parameters: [0.0, 0.0, 0.0,
         2.0, 2.0, 2.0]
     pixels:

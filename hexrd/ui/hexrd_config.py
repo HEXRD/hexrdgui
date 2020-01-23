@@ -94,6 +94,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = None
+        self.polar_masks = []
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
 
@@ -244,6 +245,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self._recursive_set_defaults(self.config[key],
                                          self.default_config[key])
 
+        self.set_detector_defaults_if_missing()
+
+    def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
         default = self.get_default_detector()
         for name in self.get_detector_names():
@@ -402,6 +406,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
             for path in dflags_order:
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
+
+                if path[0] == 'distortion':
+                    # Special case for distortion parameters
+                    func_path = ['detectors', name, 'distortion',
+                                 'function_name', 'value']
+                    func_name = self.get_instrument_config_val(func_path)
+                    num_params = self.num_distortion_parameters(func_name)
+                    for i in range(num_params):
+                        statuses.append(status[i])
+                    continue
+
                 # If it is a list, loop through the values
                 if isinstance(status, list):
                     for entry in status:
@@ -414,8 +429,29 @@ class HexrdConfig(QObject, metaclass=Singleton):
         statuses = [not x for x in statuses]
         return np.asarray(statuses)
 
+    def set_statuses_from_prev_iconfig(self, prev_iconfig):
+        # This function seems to be much faster than
+        # "set_statuses_from_instrument_format"
+        self._recursive_set_statuses(self.config['instrument'], prev_iconfig)
+
+    def _recursive_set_statuses(self, cur, prev):
+        # Only use keys that both of them have
+        keys = set(cur.keys()) & set(prev.keys())
+        for key in keys:
+            if isinstance(cur[key], dict) and isinstance(prev[key], dict):
+                if 'status' in cur[key] and 'status' in prev[key]:
+                    cur[key]['status'] = prev[key]['status']
+                    continue
+
+                self._recursive_set_statuses(cur[key], prev[key])
+
     def set_statuses_from_instrument_format(self, statuses):
         """This sets statuses using the hexrd instrument format"""
+        # FIXME: This function is really slow for some reason. We are
+        # currently using "set_statuses_from_prev_iconfig" instead.
+        # If we ever want to use this function again, let's try to make
+        # it much faster.
+
         # First, make a deep copy, and then reverse all booleans. We
         # use "fixed", but they use "refinable"
         statuses = copy.deepcopy(statuses)
@@ -445,7 +481,21 @@ class HexrdConfig(QObject, metaclass=Singleton):
         for name in det_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
+
+                if path[0] == 'distortion':
+                    # Special case for distortion parameters
+                    func_path = ['detectors', name, 'distortion',
+                                 'function_name', 'value']
+                    func_name = self.get_instrument_config_val(func_path)
+                    num_params = self.num_distortion_parameters(func_name)
+                    for i in range(num_params):
+                        v = statuses[cur_ind]
+                        self.set_instrument_config_val(full_path + [i], v)
+                        cur_ind += 1
+                    continue
+
                 prev_val = self.get_instrument_config_val(full_path)
+
                 # If it is a list, loop through the values
                 if isinstance(prev_val, list):
                     for i in range(len(prev_val)):
@@ -527,17 +577,24 @@ class HexrdConfig(QObject, metaclass=Singleton):
                    str(self.config['instrument']))
             raise Exception(msg)
 
+        if 'status' in path[-2:]:
+            # If we are just modifying a status, we are done
+            return
+
         # If the beam energy was modified, update the active material
         if path == ['beam', 'energy', 'value']:
             self.update_active_material_energy()
+            return
 
-        # If a detector transform was modified, send a signal indicating so
         if path[0] == 'detectors' and path[2] == 'transform':
+            # If a detector transform was modified, send a signal
+            # indicating so
             det = path[1]
             self.detector_transform_modified.emit(det)
-        else:
-            # Otherwise, assume we need to re-render the whole image
-            self.rerender_needed.emit()
+            return
+
+        # Otherwise, assume we need to re-render the whole image
+        self.rerender_needed.emit()
 
     def get_instrument_config_val(self, path):
         """This obtains a dict value from a path list.
@@ -957,3 +1014,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_colormap_min(self, v):
         self.config['image']['colormap']['min'] = v
+
+    @staticmethod
+    def num_distortion_parameters(func_name):
+        if func_name == 'None':
+            return 0
+        elif func_name == 'GE_41RT':
+            return 6
+
+        raise Exception('Unknown distortion function: ' + func_name)
