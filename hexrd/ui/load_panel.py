@@ -180,7 +180,10 @@ class LoadPanel(QObject):
             f = os.path.split(img)[1]
             name = os.path.splitext(f)[0]
             if not self.ui.subdirectories.isChecked():
-                name = name.rsplit('_', 1)[0]
+                dets = HexrdConfig().get_detector_names()
+                ext = os.path.splitext(f)[1]
+                if ext.split('.')[1] not in dets:
+                    name = name.rsplit('_', 1)[0]
             if self.ext != '.yml':
                 tmp_ims.append(ImageFileManager().open_file(img))
 
@@ -277,51 +280,47 @@ class LoadPanel(QObject):
             QMessageBox.warning(None, 'HEXRD', msg)
             return
 
-        self.directories = sorted(dirs)[:num_det]
 
     def match_images(self, fnames):
-        file_list = []
-        dets = []
+        dets = HexrdConfig().get_detector_names()
+        self.files = [[] for i in range(len(dets))]
         for item in os.scandir(self.parent_dir):
             file_name = os.path.splitext(item.name)[0]
-            instance = file_name.rsplit('_', 1)[0]
-            if instance == file_name:
-                continue
-            det = file_name.rsplit('_', 1)[1]
-            if os.path.isfile(item) and instance in fnames:
-                file_list.append(item.path)
-                if det and det not in dets:
-                    dets.append(det)
-                    self.files.append([])
-        for f in file_list:
-            det = f.rsplit('.', 1)[0].rsplit('_', 1)[1]
-            if det in dets:
-                i = dets.index(det)
-                self.files[i].append(f)
+            ext = os.path.splitext(item.name)[1]
+            det = ext.split('.')[1] if len(ext.split('.')) > 1 else ''
+            if det not in dets:
+                fname = file_name.rsplit('_', 1)[0]
+                if fname == file_name:
+                    continue
+                det = file_name.rsplit('_', 1)[1]
+                if det not in dets:
+                    continue
+                file_name = fname
+            pos = dets.index(det)
+            if os.path.isfile(item) and file_name in fnames:
+                self.files[pos].append(item.path)
         # Display error if equivalent files are not found for ea. detector
-        files_per_det = all(len(self.files[0]) == len(elem) for elem in self.files)
-        num_det = len(HexrdConfig().get_detector_names())
-        if len(self.files) != num_det or not files_per_det:
+        files_per_det = all(len(fnames) == len(elem) for elem in self.files)
+        if not files_per_det:
             msg = ('ERROR - There must be the same number of files for each detector.')
             QMessageBox.warning(None, 'HEXRD', msg)
             self.files = []
             return
 
-        self.files = sorted(self.files)[:len(self.files)]
 
     def match_dirs_images(self, fnames):
+        dets = HexrdConfig().get_detector_names()
+        self.files = [[] for i in range(len(dets))]
         # Find the images with the same name for the remaining detectors
-        for i in range(len(self.directories)):
-            self.files.append([])
-            for item in os.scandir(self.directories[i]):
+        for i, dir in enumerate(self.directories):
+            pos = dets.index(os.path.basename(dir))
+            for item in os.scandir(dir):
                 fname = os.path.splitext(item.name)[0]
                 if os.path.isfile(item) and fname in fnames:
-                    self.files[i].append(item.path)
+                    self.files[pos].append(item.path)
             # Display error if equivalent files are not found for ea. detector
-            if i > 0 and len(self.files[i]) != len(fnames):
-                diff = list(set(self.files[i]) - set(self.files[i-1]))
-                msg = ('ERROR - No equivalent file(s) found for '
-                        + str(diff)[1:-1] + ' in ' + self.directories[i])
+            if len(self.files[pos]) != len(fnames):
+                msg = ('ERROR - Could not find equivalent file(s) in ' + dir)
                 QMessageBox.warning(None, 'HEXRD', msg)
                 self.files = []
                 break
