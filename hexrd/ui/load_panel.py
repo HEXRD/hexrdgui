@@ -6,7 +6,7 @@ import numpy as np
 from hexrd import imageseries
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Signal
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Signal, QDir
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
@@ -73,6 +73,7 @@ class LoadPanel(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
+        self.ui.aps_imageseries.toggled.connect(self.munge_data)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.create_table)
@@ -115,6 +116,10 @@ class LoadPanel(QObject):
     def dir_changed(self):
         self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
 
+    def munge_data(self, state):
+        self.ui.subdirectories.setChecked(state)
+        self.ui.subdirectories.setDisabled(state)
+
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
         if not new_dir:
@@ -143,9 +148,12 @@ class LoadPanel(QObject):
 
     def select_images(self):
         # This takes one or more images for a single detector.
-        caption = HexrdConfig().images_dirtion = 'Select image file(s)'
-        selected_files, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, caption, dir=self.parent_dir)
+        if self.ui.aps_imageseries.isChecked():
+            selected_files = QDir(self.parent_dir).entryList(QDir.Files)
+        else:
+            caption = HexrdConfig().images_dirtion = 'Select image file(s)'
+            selected_files, selected_filter = QFileDialog.getOpenFileNames(
+                self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
             if self.parent_dir is None:
@@ -258,15 +266,14 @@ class LoadPanel(QObject):
     def find_directories(self):
         # Find all detector directories
         num_det = len(HexrdConfig().get_detector_names())
-        dirs = []
         for sub_dir in os.scandir(os.path.dirname(self.parent_dir)):
             if (os.path.isdir(sub_dir)
                     and sub_dir.name in HexrdConfig().get_detector_names()):
-                dirs.append(sub_dir.path)
+                self.directories.append(sub_dir.path)
         # Show error if expected detector directories are not found
-        if len(dirs) != num_det:
+        if len(self.directories) != num_det:
             dir_names = []
-            if len(dirs) > 0:
+            if len(self.directories) > 0:
                 for path in dirs:
                     dir_names.append(os.path.basename(path))
             diff = list(
@@ -276,8 +283,6 @@ class LoadPanel(QObject):
                 + str(diff)[1:-1])
             QMessageBox.warning(None, 'HEXRD', msg)
             return
-
-        self.directories = sorted(dirs)[:num_det]
 
     def match_images(self, fnames):
         file_list = []
