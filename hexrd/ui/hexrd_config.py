@@ -151,11 +151,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
         settings.setValue('euler_angle_convention', self.euler_angle_convention)
-        settings.setValue('active_material', self.active_material_name())
+        settings.setValue('active_material', self.active_material_name)
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
         settings.setValue('ring_styles', self.ring_styles)
-        settings.setValue('show_all_materials', self.show_all_materials)
+        settings.setValue('visible_material_names',
+                          self.visible_material_names)
 
     def load_settings(self):
         settings = QSettings()
@@ -173,8 +174,20 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', None)
         self.ring_styles = settings.value('ring_styles', {})
-        self.show_all_materials = (
-            settings.value('show_all_materials') == 'true')
+
+        # Set this manually since we don't have any materials yet
+        key = 'visible_material_names'
+        self.config['materials'][key] = settings.value(key, [])
+
+        # This will not be a list if only one material was on it
+        # Make sure it is a list
+        if not isinstance(self.config['materials'][key], list):
+            self.config['materials'][key] = [self.config['materials'][key]]
+
+        # Saving an empty list and then loading it results in [None]
+        # for some reason
+        if self.config['materials'][key] == [None]:
+            self.config['materials'][key] = []
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -710,7 +723,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             if old_name in self.ring_styles:
                 self.ring_styles[new_name] = self.ring_styles.pop(old_name)
 
-            if self.active_material_name() == old_name:
+            if old_name in self.visible_material_names:
+                idx = self.visible_material_names.index(old_name)
+                self.visible_material_names[idx] = new_name
+
+            if self.active_material_name == old_name:
                 # Change the active material before removing the old one
                 self.active_material = new_name
 
@@ -721,7 +738,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         self.config['materials']['materials'][name] = material
 
-        if self.active_material_name() == name or self.show_all_materials:
+        if self.material_is_visible(name):
             self.ring_config_changed.emit()
 
     def remove_material(self, name):
@@ -732,7 +749,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if name in self.ring_styles:
             del self.ring_styles[name]
 
-        if name == self.active_material_name():
+        if name in self.visible_material_names:
+            self.visible_material_names.remove(name)
+
+        if name == self.active_material_name:
             if self.materials.keys():
                 self.active_material = list(self.materials.keys())[0]
             else:
@@ -752,7 +772,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['materials']['materials'].get(name)
 
     def _active_material(self):
-        m = self.active_material_name()
+        m = self.active_material_name
         return self.material(m)
 
     def _set_active_material(self, name):
@@ -767,6 +787,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     active_material = property(_active_material, _set_active_material)
 
+    @property
     def active_material_name(self):
         return self.config['materials'].get('active_material')
 
@@ -794,36 +815,53 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.new_plane_data.emit()
         self.ring_config_changed.emit()
 
-    def update_all_material_energies(self):
-        for mat in self.materials.values():
+    def update_visible_material_energies(self):
+        for mat in self.visible_materials:
             self.update_material_energy(mat)
+
         self.update_plane_data_tth_widths()
         self.new_plane_data.emit()
         self.ring_config_changed.emit()
 
-    def update_visible_material_energies(self):
-        if self.show_all_materials:
-            self.update_all_material_energies()
-        else:
-            self.update_active_material_energy()
-
     def update_plane_data_tth_widths(self):
-        for mat in self.materials.values():
+        for mat in self.visible_materials:
             mat.planeData.tThWidth = np.radians(self.ring_ranges)
 
-    def _show_all_materials(self):
-        return self.config['materials'].get('show_all_materials', False)
+    def material_is_visible(self, name):
+        return name in self.visible_material_names
 
-    def set_show_all_materials(self, v):
-        if v != self.show_all_materials:
-            self.config['materials']['show_all_materials'] = v
-            if v:
-                # We need to update all material energies
-                self.update_all_material_energies()
-
+    def set_material_visibility(self, name, visible):
+        if visible and name not in self.visible_material_names:
+            self.visible_material_names.append(name)
+            self.update_visible_material_energies()
+            self.ring_config_changed.emit()
+        elif not visible and name in self.visible_material_names:
+            self.visible_material_names.remove(name)
+            self.update_visible_material_energies()
             self.ring_config_changed.emit()
 
-    show_all_materials = property(_show_all_materials, set_show_all_materials)
+    @property
+    def visible_materials(self):
+        mats = []
+        for name in self.visible_material_names:
+            # Confirm that it exists
+            if name in self.materials:
+                mats.append(self.materials[name])
+
+        return mats
+
+    def _visible_material_names(self):
+        return self.config['materials'].setdefault('visible_material_names',
+                                                   [])
+
+    def _set_visible_material_names(self, v):
+        if v != self.visible_material_names:
+            self.config['materials']['visible_material_names'] = v
+            self.update_visible_material_energies()
+            self.ring_config_changed.emit()
+
+    visible_material_names = property(_visible_material_names,
+                                      _set_visible_material_names)
 
     def _selected_rings(self):
         return self.config['materials'].get('selected_rings')

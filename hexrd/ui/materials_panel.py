@@ -62,8 +62,8 @@ class MaterialsPanel(QObject):
 
         self.ui.edit_style_button.pressed.connect(self.edit_overlay_style)
 
-        self.ui.show_all_materials.toggled.connect(
-            HexrdConfig().set_show_all_materials)
+        self.ui.material_visible.toggled.connect(
+            self.material_visibility_toggled)
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
@@ -73,7 +73,7 @@ class MaterialsPanel(QObject):
             self.ui.show_rings,
             self.ui.show_ranges,
             self.ui.tth_ranges,
-            self.ui.show_all_materials
+            self.ui.material_visible
         ]
 
         block_signals = []
@@ -90,13 +90,13 @@ class MaterialsPanel(QObject):
                 self.ui.materials_combo.clear()
                 self.ui.materials_combo.addItems(materials_keys)
                 self.ui.materials_combo.setCurrentText(
-                    HexrdConfig().active_material_name())
+                    HexrdConfig().active_material_name)
 
             self.ui.show_rings.setChecked(HexrdConfig().show_rings)
             self.ui.show_ranges.setChecked(HexrdConfig().show_ring_ranges)
             self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges)
-            self.ui.show_all_materials.setChecked(
-                HexrdConfig().show_all_materials)
+            self.ui.material_visible.setChecked(
+                HexrdConfig().material_is_visible(self.current_material()))
         finally:
             for b, item in zip(block_signals, block_list):
                 item.blockSignals(b)
@@ -181,7 +181,7 @@ class MaterialsPanel(QObject):
             # Just ignore it
             return
 
-        old_name = HexrdConfig().active_material_name()
+        old_name = HexrdConfig().active_material_name
         HexrdConfig().rename_material(old_name, new_name)
         self.update_gui_from_config()
 
@@ -191,3 +191,8 @@ class MaterialsPanel(QObject):
         # The overlay style picker will modify the HexrdConfig() itself
         picker = OverlayStylePicker(material_name, self.ui)
         picker.ui.exec_()
+
+    def material_visibility_toggled(self):
+        visible = self.ui.material_visible.isChecked()
+        name = self.current_material()
+        HexrdConfig().set_material_visibility(name, visible)

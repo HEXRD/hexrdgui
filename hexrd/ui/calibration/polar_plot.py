@@ -114,13 +114,13 @@ class InstrumentViewer:
     def add_rings(self):
         self.clear_rings()
 
-        # If there are any rings selected, only do the active material
-        if HexrdConfig().selected_rings or not HexrdConfig().show_all_materials:
-            material_names = [HexrdConfig().active_material_name()]
-        else:
-            material_names = HexrdConfig().materials.keys()
+        materials_list = HexrdConfig().visible_material_names
+        if HexrdConfig().selected_rings:
+            # Only show the active material, if it is part of the list
+            active = HexrdConfig().active_material_name
+            materials_list = [active] if active in materials_list else []
 
-        for name in material_names:
+        for name in materials_list:
             mat = HexrdConfig().material(name)
 
             rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
