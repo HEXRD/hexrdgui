@@ -280,6 +280,7 @@ class LoadPanel(QObject):
             QMessageBox.warning(None, 'HEXRD', msg)
             return
 
+        self.directories = sorted(dirs)[:num_det]
 
     def match_images(self, fnames):
         dets = HexrdConfig().get_detector_names()
