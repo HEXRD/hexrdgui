@@ -52,6 +52,9 @@ class LoadPanel(QObject):
     def setup_gui(self):
         self.state = self.setup_processing_options()
 
+        if 'subdirs' in self.state:
+            self.ui.subdirectories.setChecked(self.state['subdirs'])
+        self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'][0])
         self.ui.darkMode.setCurrentIndex(self.state['dark'][0])
@@ -61,7 +64,11 @@ class LoadPanel(QObject):
         if not self.parent_dir:
             self.ui.img_directory.setText('No directory set')
         else:
-            self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+            if self.ui.subdirectories.isChecked():
+                self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+            else:
+                self.ui.img_directory.setText(self.parent_dir)
+
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
 
@@ -70,6 +77,7 @@ class LoadPanel(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
+        self.ui.subdirectories.toggled.connect(self.subdirs_changed)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.switch_detector)
@@ -123,7 +131,15 @@ class LoadPanel(QObject):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
-        self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+        if self.ui.subdirectories.isChecked():
+            self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+        else:
+            self.ui.img_directory.setText(self.parent_dir)
+
+    def subdirs_changed(self, checked):
+        self.dir_changed()
+        self.ui.image_folder.setEnabled(checked)
+        self.state['subdirs'] = checked
 
     def config_changed(self):
         self.detectors_changed()
@@ -178,7 +194,7 @@ class LoadPanel(QObject):
             self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
-            if self.parent_dir is None:
+            if self.parent_dir is None or not self.ui.subdirectories.isChecked():
                 self.select_folder(os.path.dirname(selected_files[0]))
             self.reset_data()
             self.load_image_data(selected_files)
