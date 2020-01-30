@@ -126,11 +126,12 @@ class LoadPanel(QObject):
         self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
 
     def config_changed(self):
-        current_state = len(self.state['trans'])
-        num_dets = len(HexrdConfig().get_detector_names())
-        if current_state != num_dets:
-            HexrdConfig().load_panel_state = {}
-            self.setup_processing_options()
+        self.detectors_changed()
+        self.ui.file_options.setRowCount(0)
+        self.reset_data()
+        self.enable_read()
+        HexrdConfig().load_panel_state = {}
+        self.state = self.setup_processing_options()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
