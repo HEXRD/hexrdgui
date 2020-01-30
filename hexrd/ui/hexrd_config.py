@@ -710,6 +710,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             pd_wavelength = material.planeData.get_wavelength()
             material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
 
+        # Make sure all materials on the visible materials list exist
+        material_names = materials.keys()
+        self.visible_material_names = [
+            x for x in self.visible_material_names if x in material_names]
+
         self.materials = materials
 
     def add_material(self, name, material):
