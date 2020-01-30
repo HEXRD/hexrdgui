@@ -1,6 +1,7 @@
 import os
 import yaml
 import glob
+import re
 import numpy as np
 
 from hexrd import imageseries
@@ -211,7 +212,10 @@ class LoadPanel(QObject):
                 dets = HexrdConfig().get_detector_names()
                 ext = os.path.splitext(f)[1]
                 if ext.split('.')[1] not in dets:
-                    name = name.rsplit('_', 1)[0]
+                    chunks = re.split(r'[_-]', name)
+                    for det in dets:
+                        if det in chunks:
+                            name = name.replace(det, '')
             if self.ext != '.yml':
                 tmp_ims.append(ImageFileManager().open_file(img))
 
@@ -318,13 +322,13 @@ class LoadPanel(QObject):
             ext = os.path.splitext(item.name)[1]
             det = ext.split('.')[1] if len(ext.split('.')) > 1 else ''
             if det not in dets:
-                fname = file_name.rsplit('_', 1)[0]
-                if fname == file_name:
-                    continue
-                det = file_name.rsplit('_', 1)[1]
-                if det not in dets:
-                    continue
-                file_name = fname
+                chunks = re.split(r'[_-]', file_name)
+                for name in dets:
+                    if name in chunks:
+                        det = name
+                        file_name = file_name.replace(name, '')
+            if det not in dets:
+                continue
             pos = dets.index(det)
             if os.path.isfile(item) and file_name in fnames:
                 self.files[pos].append(item.path)
