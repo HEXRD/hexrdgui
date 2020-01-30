@@ -595,6 +595,8 @@ class LoadPanel(QObject):
         # Create or load the dark image if selected
         if self.state['dark'][idx] != 4:
             frames = len(ims)
+            if frames > 120:
+                frames = 120
             if self.state['dark'][idx] == 0:
                 darkimg = imageseries.stats.median(ims, frames)
             elif self.state['dark'][idx] == 1:
