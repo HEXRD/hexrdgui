@@ -125,6 +125,7 @@ class LoadPanel(QObject):
 
     def subdirs_changed(self, checked):
         self.dir_changed()
+        self.ui.image_folder.setEnabled(checked)
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
@@ -159,7 +160,7 @@ class LoadPanel(QObject):
             self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
-            if self.parent_dir is None:
+            if self.parent_dir is None or not self.ui.subdirectories.isChecked():
                 self.select_folder(os.path.dirname(selected_files[0]))
             self.reset_data()
             self.load_image_data(selected_files)
@@ -291,25 +292,16 @@ class LoadPanel(QObject):
         self.directories = sorted(dirs)[:num_det]
 
     def match_images(self, fnames):
-        file_list = []
-        dets = []
+        dets = HexrdConfig().get_detector_names()
+        self.files = [[] for x in range(len(dets))]
         for item in os.scandir(self.parent_dir):
             file_name = os.path.splitext(item.name)[0]
             instance = file_name.rsplit('_', 1)[0]
             if instance == file_name:
                 continue
             det = file_name.rsplit('_', 1)[1]
-            if os.path.isfile(item) and instance in fnames:
-                file_list.append(item.path)
-                if det and det not in dets:
-                    dets.append(det)
-                    self.files.append([])
-        for f in file_list:
-            det = f.rsplit('.', 1)[0].rsplit('_', 1)[1]
-            if det in dets:
-                i = dets.index(det)
-                self.files[i].append(f)
-        # Display error if equivalent files are not found for ea. detector
+            if os.path.isfile(item) and instance in fnames and det in dets:
+                self.files[dets.index(det)].append(item.path)
         files_per_det = all(len(self.files[0]) == len(elem) for elem in self.files)
         num_det = len(HexrdConfig().get_detector_names())
         if len(self.files) != num_det or not files_per_det:
