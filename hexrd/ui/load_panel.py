@@ -64,7 +64,11 @@ class LoadPanel(QObject):
         if not self.parent_dir:
             self.ui.img_directory.setText('No directory set')
         else:
-            self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+            if self.ui.subdirectories.isChecked():
+                self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+            else:
+                self.ui.img_directory.setText(self.parent_dir)
+
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
 
@@ -73,6 +77,7 @@ class LoadPanel(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
+        self.ui.subdirectories.toggled.connect(self.subdirs_changed)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.create_table)
@@ -113,7 +118,13 @@ class LoadPanel(QObject):
         self.state['trans'] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
-        self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+        if self.ui.subdirectories.isChecked():
+            self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+        else:
+            self.ui.img_directory.setText(self.parent_dir)
+
+    def subdirs_changed(self, checked):
+        self.dir_changed()
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
