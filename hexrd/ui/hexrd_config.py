@@ -1,4 +1,5 @@
 import copy
+import math
 import pickle
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
@@ -160,6 +161,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('ring_styles', self.ring_styles)
         settings.setValue('visible_material_names',
                           self.visible_material_names)
+        settings.setValue('rings_max_bragg_angle', self.rings_max_bragg_angle)
+        settings.setValue('limit_active_rings', self.limit_active_rings)
 
     def load_settings(self):
         settings = QSettings()
@@ -177,6 +180,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', None)
         self.ring_styles = settings.value('ring_styles', {})
+        self.rings_max_bragg_angle = float(
+            settings.value('rings_max_bragg_angle', 1.0))
+        self.limit_active_rings = bool(
+            settings.value('limit_active_rings', False) == 'true')
 
         # Set this manually since we don't have any materials yet
         key = 'visible_material_names'
@@ -875,6 +882,35 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.ring_config_changed.emit()
 
     selected_rings = property(_selected_rings, _set_selected_rings)
+
+    def _rings_max_bragg_angle(self):
+        return self.config['materials'].setdefault('max_bragg_angle', 1.0)
+
+    def set_rings_max_bragg_angle(self, v):
+        if v != self.rings_max_bragg_angle:
+            self.config['materials']['max_bragg_angle'] = v
+            self.ring_config_changed.emit()
+
+    rings_max_bragg_angle = property(_rings_max_bragg_angle,
+                                     set_rings_max_bragg_angle)
+
+    @property
+    def rings_min_d_spacing(self):
+        # This is a read-only property, as it is calculated from the
+        # max bragg angle.
+        # Any material should have an up-to-date wavelength.
+        wavelength = self.active_material.planeData.get_wavelength()
+        return wavelength / (2.0 * math.sin(self.rings_max_bragg_angle))
+
+    def _limit_active_rings(self):
+        return self.config['materials'].setdefault('limit_active_rings', False)
+
+    def set_limit_active_rings(self, v):
+        if v != self.limit_active_rings:
+            self.config['materials']['limit_active_rings'] = v
+            self.ring_config_changed.emit()
+
+    limit_active_rings = property(_limit_active_rings, set_limit_active_rings)
 
     def _show_rings(self):
         return self.config['materials'].get('show_rings')

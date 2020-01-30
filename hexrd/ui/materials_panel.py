@@ -29,6 +29,8 @@ class MaterialsPanel(QObject):
 
         self.update_gui_from_config()
 
+        self.update_enable_states()
+
     def add_tool_button_actions(self):
         b = self.ui.materials_tool_button
 
@@ -60,6 +62,13 @@ class MaterialsPanel(QObject):
             HexrdConfig()._set_show_ring_ranges)
         self.ui.tth_ranges.valueChanged.connect(HexrdConfig()._set_ring_ranges)
 
+        self.ui.limit_active.toggled.connect(
+            HexrdConfig().set_limit_active_rings)
+        self.ui.max_bragg_angle.valueChanged.connect(
+            self.on_max_bragg_angle_changed)
+        self.ui.min_d_spacing.valueChanged.connect(
+            self.on_min_d_spacing_changed)
+
         self.ui.edit_style_button.pressed.connect(self.edit_overlay_style)
 
         self.ui.material_visible.toggled.connect(
@@ -67,13 +76,61 @@ class MaterialsPanel(QObject):
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
+        self.ui.show_ranges.toggled.connect(self.update_enable_states)
+        self.ui.limit_active.toggled.connect(self.update_enable_states)
+
+    def update_enable_states(self):
+        show_ranges = self.ui.show_ranges.isChecked()
+        self.ui.tth_ranges.setEnabled(show_ranges)
+
+        limit_active = self.ui.limit_active.isChecked()
+        self.ui.max_bragg_angle.setEnabled(limit_active)
+        self.ui.min_d_spacing.setEnabled(limit_active)
+        self.ui.min_d_spacing_label.setEnabled(limit_active)
+        self.ui.max_bragg_angle_label.setEnabled(limit_active)
+
+    def on_max_bragg_angle_changed(self):
+        max_bragg = math.radians(self.ui.max_bragg_angle.value())
+        wavelength = HexrdConfig().active_material.planeData.get_wavelength()
+
+        w = self.ui.min_d_spacing
+        block_signals = w.blockSignals(True)
+        try:
+            # Bragg's law
+            d = wavelength / (2.0 * math.sin(max_bragg))
+            w.setValue(d)
+        finally:
+            w.blockSignals(block_signals)
+
+        # Update the config
+        HexrdConfig().rings_max_bragg_angle = max_bragg
+
+    def on_min_d_spacing_changed(self):
+        min_d = self.ui.min_d_spacing.value()
+        wavelength = HexrdConfig().active_material.planeData.get_wavelength()
+
+        w = self.ui.max_bragg_angle
+        block_signals = w.blockSignals(True)
+        try:
+            # Bragg's law
+            theta = math.degrees(math.asin(wavelength / 2.0 / min_d))
+            w.setValue(theta)
+        finally:
+            w.blockSignals(block_signals)
+
+        # Update the config
+        HexrdConfig().rings_max_bragg_angle = math.radians(theta)
+
     def update_gui_from_config(self):
         block_list = [
             self.ui.materials_combo,
             self.ui.show_rings,
             self.ui.show_ranges,
             self.ui.tth_ranges,
-            self.ui.material_visible
+            self.ui.material_visible,
+            self.ui.min_d_spacing,
+            self.ui.max_bragg_angle,
+            self.ui.limit_active
         ]
 
         block_signals = []
@@ -97,6 +154,10 @@ class MaterialsPanel(QObject):
             self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges)
             self.ui.material_visible.setChecked(
                 HexrdConfig().material_is_visible(self.current_material()))
+            self.ui.min_d_spacing.setValue(HexrdConfig().rings_min_d_spacing)
+            self.ui.max_bragg_angle.setValue(
+                math.degrees(HexrdConfig().rings_max_bragg_angle))
+            self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
         finally:
             for b, item in zip(block_signals, block_list):
                 item.blockSignals(b)

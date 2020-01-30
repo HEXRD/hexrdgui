@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>382</width>
-    <height>538</height>
+    <height>574</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -167,18 +167,22 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="3" column="5">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+     <item row="4" column="0">
+      <widget class="QCheckBox" name="limit_active">
+       <property name="text">
+        <string>Limit Active</string>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QLabel" name="min_d_spacing_label">
+       <property name="enabled">
+        <bool>false</bool>
        </property>
-      </spacer>
+       <property name="text">
+        <string>Min d-spacing:</string>
+       </property>
+      </widget>
      </item>
      <item row="3" column="0">
       <widget class="QCheckBox" name="show_ranges">
@@ -251,6 +255,93 @@
        </property>
       </widget>
      </item>
+     <item row="8" column="5">
+      <widget class="QDoubleSpinBox" name="min_d_spacing">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string> Å</string>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLabel" name="max_bragg_angle_label">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Max Bragg Angle:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="5">
+      <widget class="QDoubleSpinBox" name="max_bragg_angle">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string>°</string>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="6">
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="3" column="5" colspan="2">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="8" column="6">
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
     </layout>
    </item>
   </layout>
@@ -264,24 +355,10 @@
   <tabstop>show_rings</tabstop>
   <tabstop>show_ranges</tabstop>
   <tabstop>tth_ranges</tabstop>
+  <tabstop>limit_active</tabstop>
+  <tabstop>max_bragg_angle</tabstop>
+  <tabstop>min_d_spacing</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>show_ranges</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>tth_ranges</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>514</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>171</x>
-     <y>514</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

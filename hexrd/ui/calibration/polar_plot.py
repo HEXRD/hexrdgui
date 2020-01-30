@@ -71,23 +71,21 @@ class InstrumentViewer:
         rbnds = []
         rbnd_indices = []
 
-        selected_rings = HexrdConfig().selected_rings
+        all_tths = plane_data.getTTh()
+        rings_to_use = HexrdConfig().selected_rings
+        if not rings_to_use:
+            # If it's empty, select all rings
+            rings_to_use = list(range(len(all_tths)))
+
+        if HexrdConfig().limit_active_rings:
+            max_tth = HexrdConfig().rings_max_bragg_angle * 2.0
+            rings_to_use = [i for i in rings_to_use if all_tths[i] <= max_tth]
+
         if HexrdConfig().show_rings:
             dp = self.dpanel
 
-            if selected_rings:
-                # We should only get specific values
-                tth_list = plane_data.getTTh()
-                tth_list = [tth_list[i] for i in selected_rings]
-                delta_tth = np.degrees(plane_data.tThWidth)
-
-                ring_angs, ring_xys = dp.make_powder_rings(
-                    tth_list, delta_tth=delta_tth, delta_eta=1)
-            else:
-                ring_angs, ring_xys = dp.make_powder_rings(
-                    plane_data, delta_eta=1)
-
-                tth_list = plane_data.getTTh()
+            # Update the tth list with the rings to use
+            tth_list = [all_tths[i] for i in rings_to_use]
 
             for tth in np.degrees(tth_list):
                 rings.append(np.array([[-180, tth], [180, tth]]))
@@ -95,10 +93,9 @@ class InstrumentViewer:
         if HexrdConfig().show_ring_ranges:
             indices, ranges = plane_data.getMergedRanges()
 
-            if selected_rings:
-                # This ensures the correct ranges are selected
-                indices, ranges = select_merged_rings(selected_rings, indices,
-                                                      ranges)
+            # This ensures the correct ranges are selected
+            indices, ranges = select_merged_rings(rings_to_use, indices,
+                                                  ranges)
 
             for ind, r in zip(indices, np.degrees(ranges)):
                 rbnds.append(np.array([[-180, r[0]],

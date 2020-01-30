@@ -70,20 +70,23 @@ class InstrumentViewer:
         rbnds = []
         rbnd_indices = []
 
-        selected_rings = HexrdConfig().selected_rings
-        delta_tth = np.degrees(plane_data.tThWidth)
+        all_tths = plane_data.getTTh()
+        rings_to_use = HexrdConfig().selected_rings
+        if not rings_to_use:
+            # If it's empty, select all rings
+            rings_to_use = list(range(len(all_tths)))
+
+        if HexrdConfig().limit_active_rings:
+            max_tth = HexrdConfig().rings_max_bragg_angle * 2.0
+            rings_to_use = [i for i in rings_to_use if all_tths[i] <= max_tth]
+
         if HexrdConfig().show_rings:
-            if selected_rings:
-                # We should only get specific values
-                tth = plane_data.getTTh()
-                tth = [tth[i] for i in selected_rings]
+            # Update the tth list with the rings to use
+            tth_list = [all_tths[i] for i in rings_to_use]
 
-                ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                    tth, delta_tth=delta_tth, delta_eta=1)
-
-            else:
-                ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                    plane_data, delta_eta=1)
+            delta_tth = np.degrees(plane_data.tThWidth)
+            ring_angs, ring_xys = self.dpanel.make_powder_rings(
+                tth_list, delta_tth=delta_tth, delta_eta=1)
 
             for ring in ring_xys:
                 rings.append(self.dpanel.cartToPixel(ring))
@@ -91,10 +94,9 @@ class InstrumentViewer:
         if HexrdConfig().show_ring_ranges:
             indices, ranges = plane_data.getMergedRanges()
 
-            if selected_rings:
-                # This ensures the correct ranges are selected
-                indices, ranges = select_merged_rings(selected_rings, indices,
-                                                      ranges)
+            # This function ensures the correct ranges are selected
+            indices, ranges = select_merged_rings(rings_to_use, indices,
+                                                  ranges)
 
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]
@@ -114,10 +116,13 @@ class InstrumentViewer:
     def add_rings(self):
         self.clear_rings()
 
-        if HexrdConfig().show_rings:
-            # must update self.dpanel from HexrdConfig
-            self.pixel_size = HexrdConfig().cartesian_pixel_size
-            self.make_dpanel()
+        if not HexrdConfig().show_rings and not HexrdConfig().show_ring_ranges:
+            # Nothing to do
+            return self.ring_data
+
+        # must update self.dpanel from HexrdConfig
+        self.pixel_size = HexrdConfig().cartesian_pixel_size
+        self.make_dpanel()
 
         materials_list = HexrdConfig().visible_material_names
         if HexrdConfig().selected_rings:
