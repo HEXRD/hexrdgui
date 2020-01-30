@@ -35,54 +35,6 @@
       <property name="spacing">
        <number>0</number>
       </property>
-      <item row="3" column="1">
-       <widget class="QPushButton" name="image_folder">
-        <property name="text">
-         <string>Change Image Folder</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>Image Files:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QPushButton" name="read">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Read Files</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="aggregation">
-        <item>
-         <property name="text">
-          <string>Maximum</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Median</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Average</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>None</string>
-         </property>
-        </item>
-       </widget>
-      </item>
       <item row="1" column="1">
        <widget class="QComboBox" name="transform">
         <item>
@@ -122,10 +74,45 @@
         </item>
        </widget>
       </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Image Files:</string>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
          <string>Dark Mode:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QCheckBox" name="subdirectories">
+        <property name="text">
+         <string>Use Subdirectories</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="image_files">
+        <property name="text">
+         <string>Select Image Files</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Aggregation:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Image Transform:</string>
         </property>
        </widget>
       </item>
@@ -163,10 +150,13 @@
         </item>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
+      <item row="4" column="1">
+       <widget class="QPushButton" name="read">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
-         <string>Aggregation:</string>
+         <string>Read Files</string>
         </property>
        </widget>
       </item>
@@ -180,25 +170,35 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="image_files">
+      <item row="3" column="1">
+       <widget class="QPushButton" name="image_folder">
         <property name="text">
-         <string>Select Image Files</string>
+         <string>Change Image Folder</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Image Transform:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QCheckBox" name="subdirectories">
-        <property name="text">
-         <string>Use Subdirectories</string>
-        </property>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="aggregation">
+        <item>
+         <property name="text">
+          <string>None</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Maximum</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Median</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Average</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>
@@ -210,26 +210,8 @@
       <string>Multiframe Options</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
-        <property name="spacing">
-         <number>0</number>
-        </property>
         <item>
          <widget class="QLabel" name="label_5">
           <property name="text">
@@ -251,6 +233,26 @@
         </item>
         <item>
          <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="all_detectors">
+          <property name="text">
+           <string>Apply Selections to All Detectors</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>

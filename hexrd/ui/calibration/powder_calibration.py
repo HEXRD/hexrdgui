@@ -8,6 +8,8 @@ from hexrd.fitting import fitpeak
 from hexrd.rotations import RotMatEuler
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import convert_tilt_convention
+from hexrd.ui.utils import remove_none_distortions
 
 
 class InstrumentCalibrator(object):
@@ -267,7 +269,8 @@ def run_powder_calibration():
     rme = HexrdConfig().rotation_matrix_euler()
 
     # Set up the instrument
-    iconfig = HexrdConfig().instrument_config
+    iconfig = HexrdConfig().instrument_config_none_euler_convention
+    remove_none_distortions(iconfig)
     instr = instrument.HEDMInstrument(instrument_config=iconfig,
                                       tilt_calibration_mapping=rme)
 
@@ -306,16 +309,29 @@ def run_powder_calibration():
     cal_crystal = iconfig.get('calibration_crystal')
     output_dict = instr.write_config(calibration_dict=cal_crystal)
 
+    # Convert back to whatever convention we were using before
+    eac = HexrdConfig().euler_angle_convention
+    if eac != (None, None):
+        old_conv = (None, None)
+        convert_tilt_convention(output_dict, old_conv, eac)
+
     # Add the saturation levels, as they seem to be missing
     sl = 'saturation_level'
     for det in output_dict['detectors'].keys():
         output_dict['detectors'][det][sl] = iconfig['detectors'][det][sl]
 
-    # Add status values
-    HexrdConfig().add_status(output_dict)
+    # Save the previous iconfig to restore the statuses
+    prev_iconfig = HexrdConfig().config['instrument']
 
     # Update the config
     HexrdConfig().config['instrument'] = output_dict
 
+    # This adds in any missing keys. In particular, it is going to
+    # add in any "None" detector distortions
+    HexrdConfig().set_detector_defaults_if_missing()
+
+    # Add status values
+    HexrdConfig().add_status(output_dict)
+
     # Set the previous statuses to be the current statuses
-    HexrdConfig().set_statuses_from_instrument_format(flags)
+    HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)

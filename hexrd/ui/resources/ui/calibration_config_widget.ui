@@ -520,8 +520,13 @@
          <item row="0" column="1" colspan="3">
           <widget class="QComboBox" name="cal_det_function">
            <property name="currentText">
-            <string>GE_41RT</string>
+            <string>None</string>
            </property>
+           <item>
+            <property name="text">
+             <string>None</string>
+            </property>
+           </item>
            <item>
             <property name="text">
              <string>GE_41RT</string>
@@ -531,6 +536,9 @@
          </item>
          <item row="2" column="3">
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -556,6 +564,9 @@
          </item>
          <item row="2" column="1">
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_0">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -581,6 +592,9 @@
          </item>
          <item row="2" column="2">
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_1">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -606,6 +620,9 @@
          </item>
          <item row="3" column="1">
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_3">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -628,6 +645,9 @@
          </item>
          <item row="3" column="2">
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_4">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -650,6 +670,9 @@
          </item>
          <item row="3" column="3">
           <widget class="ScientificDoubleSpinBox" name="cal_det_param_5">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -671,7 +694,10 @@
           </widget>
          </item>
          <item row="2" column="0" rowspan="2">
-          <widget class="QLabel" name="label_10">
+          <widget class="QLabel" name="distortion_parameters_label">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Parameters:</string>
            </property>
