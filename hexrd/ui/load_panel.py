@@ -54,6 +54,9 @@ class LoadPanel(QObject):
             HexrdConfig().load_panel_state = {'agg': 0, 'trans': 0, 'dark': 0}
         self.state = HexrdConfig().load_panel_state
 
+        if 'subdirs' in self.state:
+            self.ui.subdirectories.setChecked(self.state['subdirs'])
+        self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'])
         self.ui.darkMode.setCurrentIndex(self.state['dark'])
@@ -126,6 +129,7 @@ class LoadPanel(QObject):
     def subdirs_changed(self, checked):
         self.dir_changed()
         self.ui.image_folder.setEnabled(checked)
+        self.state['subdirs'] = checked
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
