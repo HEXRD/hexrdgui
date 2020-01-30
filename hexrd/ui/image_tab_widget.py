@@ -252,9 +252,11 @@ class ImageTabWidget(QTabWidget):
                 tth = np.radians(info['x_data'])
                 eta = np.radians(info['y_data'])
 
-            dsp = 0.5 * iviewer.plane_data.wavelength / np.sin(0.5 * tth)
-            hkl = str(iviewer.plane_data.getHKLs(asStr=True, allHKLs=True,
-                                                 thisTTh=tth))
+            # We will only display the active material's hkls
+            plane_data = HexrdConfig().active_material.planeData
+            dsp = 0.5 * plane_data.wavelength / np.sin(0.5 * tth)
+            hkl = str(plane_data.getHKLs(asStr=True, allHKLs=True,
+                                         thisTTh=tth))
 
             info['tth'] = np.degrees(tth)
             info['eta'] = np.degrees(eta)

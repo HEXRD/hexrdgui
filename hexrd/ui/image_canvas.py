@@ -126,45 +126,59 @@ class ImageCanvas(FigureCanvas):
 
         self.clear_rings()
 
-        # In case the plane data has changed
-        self.iviewer.plane_data = HexrdConfig().active_material.planeData
-
         ring_data = self.iviewer.add_rings()
 
-        colorspec = 'c.'
-        if self.iviewer.type == 'polar':
-            colorspec = 'c.-'
+        for mat_name in ring_data.keys():
+            style = HexrdConfig().get_ring_style(mat_name)
+            ring_color = style['ring_color']
+            ring_linestyle = style['ring_linestyle']
+            ring_linewidth = style['ring_linewidth']
+            rbnd_color = style['rbnd_color']
+            rbnd_linestyle = style['rbnd_linestyle']
+            rbnd_linewidth = style['rbnd_linewidth']
 
-        for pr in ring_data:
-            x, y = self.extract_ring_coords(pr)
-            ring, = self.axis.plot(x, y, colorspec, ms=2)
-            self.cached_rings.append(ring)
+            rings = ring_data[mat_name]['ring_data']
+            rbnds = ring_data[mat_name]['rbnd_data']
+            rbnd_indices = ring_data[mat_name]['rbnd_indices']
 
-        # Add the rbnds too
-        for ind, pr in zip(self.iviewer.rbnd_indices,
-                           self.iviewer.rbnd_data):
-            x, y = self.extract_ring_coords(pr)
-            color = 'g:'
-            if len(ind) > 1:
-                color = 'r:'
-            rbnd, = self.axis.plot(x, y, color, ms=1)
-            self.cached_rbnds.append(rbnd)
-
-        if self.azimuthal_integral_axis is not None:
-            axis = self.azimuthal_integral_axis
-            yrange = axis.get_ylim()
-            for pr in ring_data:
-                ring, = axis.plot(pr[:, 1], yrange, colorspec, ms=2)
+            for pr in rings:
+                x, y = self.extract_ring_coords(pr)
+                ring, = self.axis.plot(x, y, color=ring_color,
+                                       linestyle=ring_linestyle,
+                                       lw=ring_linewidth)
                 self.cached_rings.append(ring)
 
             # Add the rbnds too
-            for ind, pr in zip(self.iviewer.rbnd_indices,
-                               self.iviewer.rbnd_data):
-                color = 'g:'
+            for ind, pr in zip(rbnd_indices, rbnds):
+                x, y = self.extract_ring_coords(pr)
+                color = rbnd_color
                 if len(ind) > 1:
-                    color = 'r:'
-                rbnd, = axis.plot(pr[:, 1], yrange, color, ms=1)
+                    # If rbnds are combined, override the color to red
+                    color = 'r'
+                rbnd, = self.axis.plot(x, y, color=color,
+                                       linestyle=rbnd_linestyle,
+                                       lw=rbnd_linewidth)
                 self.cached_rbnds.append(rbnd)
+
+            if self.azimuthal_integral_axis is not None:
+                axis = self.azimuthal_integral_axis
+                yrange = axis.get_ylim()
+                for pr in rings:
+                    ring, = axis.plot(pr[:, 1], yrange, color=ring_color,
+                                      linestyle=ring_linestyle,
+                                      lw=ring_linewidth)
+                    self.cached_rings.append(ring)
+
+                # Add the rbnds too
+                for ind, pr in zip(rbnd_indices, rbnds):
+                    color = rbnd_color
+                    if len(ind) > 1:
+                        # If rbnds are combined, override the color to red
+                        color = 'r'
+                    rbnd, = axis.plot(pr[:, 1], yrange, color=color,
+                                      linestyle=rbnd_linestyle,
+                                      lw=rbnd_linewidth)
+                    self.cached_rbnds.append(rbnd)
 
         self.draw()
 

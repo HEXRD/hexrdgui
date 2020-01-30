@@ -1,6 +1,7 @@
 import os
 import yaml
 import glob
+import re
 import numpy as np
 
 from hexrd import imageseries
@@ -40,7 +41,6 @@ class LoadPanel(QObject):
         self.files = []
         self.omega_min = []
         self.omega_max = []
-        self.dark_file = None
         self.idx = 0
         self.ext = ''
 
@@ -50,18 +50,15 @@ class LoadPanel(QObject):
     # Setup GUI
 
     def setup_gui(self):
-        if not HexrdConfig().load_panel_state:
-            HexrdConfig().load_panel_state = {'agg': 0, 'trans': 0, 'dark': 0}
-        self.state = HexrdConfig().load_panel_state
+        self.state = self.setup_processing_options()
 
         if 'subdirs' in self.state:
             self.ui.subdirectories.setChecked(self.state['subdirs'])
         self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
-        self.ui.transform.setCurrentIndex(self.state['trans'])
-        self.ui.darkMode.setCurrentIndex(self.state['dark'])
-        if 'dark_file' in self.state:
-            self.dark_file = self.state['dark_file']
+        self.ui.transform.setCurrentIndex(self.state['trans'][0])
+        self.ui.darkMode.setCurrentIndex(self.state['dark'][0])
+        self.dark_files = self.state['dark_files']
 
         self.dark_mode_changed()
         if not self.parent_dir:
@@ -83,32 +80,45 @@ class LoadPanel(QObject):
         self.ui.subdirectories.toggled.connect(self.subdirs_changed)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
-        self.ui.detector.currentIndexChanged.connect(self.create_table)
+        self.ui.detector.currentIndexChanged.connect(self.switch_detector)
         self.ui.aggregation.currentIndexChanged.connect(self.agg_changed)
         self.ui.transform.currentIndexChanged.connect(self.trans_changed)
+        self.ui.all_detectors.toggled.connect(self.apply_to_all_changed)
 
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
+        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
+
+    def setup_processing_options(self):
+        num_dets = len(HexrdConfig().get_detector_names())
+        if (not HexrdConfig().load_panel_state
+                or not isinstance(HexrdConfig().load_panel_state['trans'], list)):
+            HexrdConfig().load_panel_state = {
+                'agg': 0,
+                'trans': [0 for x in range(num_dets)],
+                'dark': [0 for x in range(num_dets)],
+                'dark_files': [None for x in range(num_dets)]}
+
+        return HexrdConfig().load_panel_state
 
     # Handle GUI changes
 
     def dark_mode_changed(self):
-        self.state['dark'] = self.ui.darkMode.currentIndex()
+        self.state['dark'][self.idx] = self.ui.darkMode.currentIndex()
 
-        if self.state['dark'] == 4:
+        if self.state['dark'][self.idx] == 4:
             self.ui.selectDark.setEnabled(True)
             self.ui.dark_file.setText(
-                self.dark_file if self.dark_file else '(No File Selected)')
+                self.dark_files[self.idx] if self.dark_files[self.idx] else '(No File Selected)')
             self.enable_read()
         else:
             self.ui.selectDark.setEnabled(False)
             self.ui.dark_file.setText(
                 '(Using ' + str(self.ui.darkMode.currentText()) + ')')
             self.enable_read()
-            if 'dark_file' in self.state:
-                del self.state['dark_file']
+            self.state['dark_files'][self.idx] = None
 
     def detectors_changed(self):
         self.ui.detector.clear()
@@ -118,7 +128,7 @@ class LoadPanel(QObject):
         self.state['agg'] = self.ui.aggregation.currentIndex()
 
     def trans_changed(self):
-        self.state['trans'] = self.ui.transform.currentIndex()
+        self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
         if self.ui.subdirectories.isChecked():
@@ -130,6 +140,26 @@ class LoadPanel(QObject):
         self.dir_changed()
         self.ui.image_folder.setEnabled(checked)
         self.state['subdirs'] = checked
+
+    def config_changed(self):
+        self.detectors_changed()
+        self.ui.file_options.setRowCount(0)
+        self.reset_data()
+        self.enable_read()
+        HexrdConfig().load_panel_state = {}
+        self.state = self.setup_processing_options()
+
+    def switch_detector(self):
+        self.idx = self.ui.detector.currentIndex()
+        if not self.ui.all_detectors.isChecked():
+            self.ui.transform.setCurrentIndex(self.state['trans'][self.idx])
+            self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
+            self.dark_mode_changed()
+        self.create_table()
+
+    def apply_to_all_changed(self, checked):
+        if not checked:
+            self.switch_detector()
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
@@ -152,8 +182,8 @@ class LoadPanel(QObject):
             self.ui, caption, dir=self.parent_dir)
 
         if selected_file:
-            self.dark_file = selected_file[0]
-            self.state['dark_file'] = self.dark_file
+            self.dark_files[self.idx] = selected_file[0]
+            self.state['dark_files'][self.idx] = self.dark_files[self.idx]
             self.dark_mode_changed()
             self.enable_read()
 
@@ -196,7 +226,13 @@ class LoadPanel(QObject):
             f = os.path.split(img)[1]
             name = os.path.splitext(f)[0]
             if not self.ui.subdirectories.isChecked():
-                name = name.rsplit('_', 1)[0]
+                dets = HexrdConfig().get_detector_names()
+                ext = os.path.splitext(f)[1]
+                if ext.split('.')[1] not in dets:
+                    chunks = re.split(r'[_-]', name)
+                    for det in dets:
+                        if det in chunks:
+                            name = name.replace(det, '')
             if self.ext != '.yml':
                 tmp_ims.append(ImageFileManager().open_file(img))
 
@@ -297,38 +333,44 @@ class LoadPanel(QObject):
 
     def match_images(self, fnames):
         dets = HexrdConfig().get_detector_names()
-        self.files = [[] for x in range(len(dets))]
+        self.files = [[] for i in range(len(dets))]
         for item in os.scandir(self.parent_dir):
             file_name = os.path.splitext(item.name)[0]
-            instance = file_name.rsplit('_', 1)[0]
-            if instance == file_name:
+            ext = os.path.splitext(item.name)[1]
+            det = ext.split('.')[1] if len(ext.split('.')) > 1 else ''
+            if det not in dets:
+                chunks = re.split(r'[_-]', file_name)
+                for name in dets:
+                    if name in chunks:
+                        det = name
+                        file_name = file_name.replace(name, '')
+            if det not in dets:
                 continue
-            det = file_name.rsplit('_', 1)[1]
-            if os.path.isfile(item) and instance in fnames and det in dets:
-                self.files[dets.index(det)].append(item.path)
-        files_per_det = all(len(self.files[0]) == len(elem) for elem in self.files)
-        num_det = len(HexrdConfig().get_detector_names())
-        if len(self.files) != num_det or not files_per_det:
+            pos = dets.index(det)
+            if os.path.isfile(item) and file_name in fnames:
+                self.files[pos].append(item.path)
+        # Display error if equivalent files are not found for ea. detector
+        files_per_det = all(len(fnames) == len(elem) for elem in self.files)
+        if not files_per_det:
             msg = ('ERROR - There must be the same number of files for each detector.')
             QMessageBox.warning(None, 'HEXRD', msg)
             self.files = []
             return
 
-        self.files = sorted(self.files)[:len(self.files)]
 
     def match_dirs_images(self, fnames):
+        dets = HexrdConfig().get_detector_names()
+        self.files = [[] for i in range(len(dets))]
         # Find the images with the same name for the remaining detectors
-        for i in range(len(self.directories)):
-            self.files.append([])
-            for item in os.scandir(self.directories[i]):
+        for i, dir in enumerate(self.directories):
+            pos = dets.index(os.path.basename(dir))
+            for item in os.scandir(dir):
                 fname = os.path.splitext(item.name)[0]
                 if os.path.isfile(item) and fname in fnames:
-                    self.files[i].append(item.path)
+                    self.files[pos].append(item.path)
             # Display error if equivalent files are not found for ea. detector
-            if i > 0 and len(self.files[i]) != len(fnames):
-                diff = list(set(self.files[i]) - set(self.files[i-1]))
-                msg = ('ERROR - No equivalent file(s) found for '
-                        + str(diff)[1:-1] + ' in ' + self.directories[i])
+            if len(self.files[pos]) != len(fnames):
+                msg = ('ERROR - Could not find equivalent file(s) in ' + dir)
                 QMessageBox.warning(None, 'HEXRD', msg)
                 self.files = []
                 break
@@ -349,10 +391,10 @@ class LoadPanel(QObject):
     def enable_read(self):
         if (self.ext == '.tiff'
                 or '' not in self.omega_min and '' not in self.omega_max):
-            if self.state['dark'] == 4 and self.dark_file is not None:
+            if self.state['dark'][self.idx] == 4 and self.dark_files is not None:
                 self.ui.read.setEnabled(len(self.files))
                 return
-            elif self.state['dark'] != 4 and len(self.files):
+            elif self.state['dark'][self.idx] != 4 and len(self.files):
                 self.ui.read.setEnabled(True)
                 return
         self.ui.read.setEnabled(False)
@@ -369,7 +411,6 @@ class LoadPanel(QObject):
         else:
             table_files = self.files
 
-        self.idx = self.ui.detector.currentIndex()
         self.ui.file_options.setRowCount(
             len(table_files[self.idx]))
 
@@ -529,57 +570,59 @@ class LoadPanel(QObject):
 
     def apply_operations(self, ims_dict):
         # Apply the operations to the imageseries
-        for key in ims_dict.keys():
+        for idx, key in enumerate(ims_dict.keys()):
+            if self.ui.all_detectors.isChecked():
+                idx = self.idx
             ops = []
-            if self.state['dark'] != 5:
-                if not self.empty_frames and self.state['dark'] == 1:
+            if self.state['dark'][idx] != 5:
+                if not self.empty_frames and self.state['dark'][idx] == 1:
                     msg = ('ERROR: \n No empty frames set. '
                             + 'No dark subtracion will be performed.')
                     QMessageBox.warning(None, 'HEXRD', msg)
                     return
                 else:
-                    self.get_dark_op(ops, ims_dict[key])
+                    self.get_dark_op(ops, ims_dict[key], idx)
 
-            if self.state['trans']:
-                self.get_flip_op(ops)
+            if self.state['trans'][idx]:
+                self.get_flip_op(ops, idx)
 
             frames = self.get_range(ims_dict[key])
 
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
 
-    def get_dark_op(self, oplist, ims):
+    def get_dark_op(self, oplist, ims, idx):
         # Create or load the dark image if selected
-        if self.state['dark'] != 4:
+        if self.state['dark'][idx] != 4:
             frames = len(ims)
-            if self.state['dark'] == 0:
+            if self.state['dark'][idx] == 0:
                 darkimg = imageseries.stats.median(ims, frames)
-            elif self.state['dark'] == 1:
+            elif self.state['dark'][idx] == 1:
                 darkimg = imageseries.stats.average(ims, self.empty_frames)
-            elif self.state['dark'] == 2:
+            elif self.state['dark'][idx] == 2:
                 darkimg = imageseries.stats.average(ims, frames)
             else:
                 darkimg = imageseries.stats.max(ims, frames)
         else:
             darkimg = imageseries.stats.median(
-                ImageFileManager().open_file(self.dark_file))
+                ImageFileManager().open_file(self.dark_files[idx]))
 
         oplist.append(('dark', darkimg))
 
-    def get_flip_op(self, oplist):
+    def get_flip_op(self, oplist, idx):
         # Change the image orientation
-        if self.state['trans'] == 0:
+        if self.state['trans'][idx] == 0:
             return
 
-        if self.state['trans'] == 1:
+        if self.state['trans'][idx] == 1:
             key = 'v'
-        elif self.state['trans'] == 2:
+        elif self.state['trans'][idx] == 2:
             key = 'h'
-        elif self.state['trans'] == 3:
+        elif self.state['trans'][idx] == 3:
             key = 't'
-        elif self.state['trans'] == 4:
+        elif self.state['trans'][idx] == 4:
             key = 'r90'
-        elif self.state['trans'] == 5:
+        elif self.state['trans'][idx] == 5:
             key = 'r180'
         else:
             key = 'r270'
