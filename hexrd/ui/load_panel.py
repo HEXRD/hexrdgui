@@ -238,8 +238,8 @@ class LoadPanel(QObject):
                 if 'ostart' in data['meta'] or 'omega' in data['meta']:
                     self.get_yaml_omega_data(data)
                 else:
-                    self.omega_min = [''] * len(self.yml_files[0])
-                    self.omega_max = [''] * len(self.yml_files[0])
+                    self.omega_min = ['0'] * len(self.yml_files[0])
+                    self.omega_max = ['0.25'] * len(self.yml_files[0])
                     self.delta = [''] * len(self.yml_files[0])
                 self.empty_frames = data['options']['empty-frames']
         else:
@@ -249,8 +249,8 @@ class LoadPanel(QObject):
                 if has_omega:
                     self.get_omega_data(ims)
                 else:
-                    self.omega_min.append('')
-                    self.omega_max.append('')
+                    self.omega_min.append('0')
+                    self.omega_max.append('0.25')
                     self.delta.append('')
 
     def get_omega_data(self, ims):
