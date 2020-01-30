@@ -123,6 +123,11 @@ class InstrumentViewer:
         for name in materials_list:
             mat = HexrdConfig().material(name)
 
+            if not mat:
+                # FIXME: This shouldn't happen, but it is
+                # This is a quick fix...
+                continue
+
             rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
 
             self.ring_data[name] = {
