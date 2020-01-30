@@ -64,6 +64,7 @@ class ImageSeriesToolbar(QWidget):
     def update_range(self):
         self.ims = HexrdConfig().imageseries(self.name)
         self.set_range()
+        HexrdConfig().current_imageseries_idx = 0
 
     def set_visible(self, b=False):
         if self.show:
