@@ -76,10 +76,6 @@ class InstrumentViewer:
             # If it's empty, select all rings
             rings_to_use = list(range(len(all_tths)))
 
-        if HexrdConfig().limit_active_rings:
-            max_tth = HexrdConfig().rings_max_bragg_angle * 2.0
-            rings_to_use = [i for i in rings_to_use if all_tths[i] <= max_tth]
-
         if HexrdConfig().show_rings:
             # Update the tth list with the rings to use
             tth_list = [all_tths[i] for i in rings_to_use]
