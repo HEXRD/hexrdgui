@@ -19,14 +19,14 @@ if os.environ.get('CONDA_BUILD') != '1':
     install_reqs.append('pyside2')
 
 setup(
-    name='hexrd-gui',
+    name='hexrdgui',
     use_scm_version=True,
     setup_requires=['setuptools-scm'],
     description='',
     long_description='',
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
-    url='https://github.com/cryos/hexrdgui',
+    url='https://github.com/hexrd/hexrdgui',
     license='BSD',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -43,7 +43,7 @@ setup(
     install_requires=install_reqs,
     entry_points={
         'gui_scripts': [
-            'hexrd = hexrd.ui.main:main'
+            'hexrdgui = hexrd.ui.main:main'
         ]
     }
 )
