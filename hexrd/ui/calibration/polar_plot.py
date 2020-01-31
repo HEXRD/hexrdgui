@@ -121,8 +121,9 @@ class InstrumentViewer:
             mat = HexrdConfig().material(name)
 
             if not mat:
-                # FIXME: This shouldn't happen, but it is
-                # This is a quick fix...
+                # Print a warning, as this shouldn't happen
+                print('Warning in InstrumentViewer.add_rings():',
+                      name, 'is not a valid material')
                 continue
 
             rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
