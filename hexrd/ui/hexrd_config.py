@@ -883,15 +883,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
     visible_material_names = property(_visible_material_names,
                                       _set_visible_material_names)
 
-    def _selected_rings(self):
-        return self.config['materials'].get('selected_rings')
-
-    def _set_selected_rings(self, rings):
-        self.config['materials']['selected_rings'] = rings
-        self.ring_config_changed.emit()
-
-    selected_rings = property(_selected_rings, _set_selected_rings)
-
     def _active_material_tth_max(self):
         return self.active_material.planeData.tThMax
 

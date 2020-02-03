@@ -6,7 +6,6 @@ from .polarview import PolarView
 from .display_plane import DisplayPlane
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import select_merged_rings
 
 
 def polar_viewer():
@@ -71,27 +70,16 @@ class InstrumentViewer:
         rbnds = []
         rbnd_indices = []
 
-        all_tths = plane_data.getTTh()
-        rings_to_use = HexrdConfig().selected_rings
-        if not rings_to_use:
-            # If it's empty, select all rings
-            rings_to_use = list(range(len(all_tths)))
+        # If there are no rings, there is nothing to do
+        if len(plane_data.getTTh()) == 0:
+            return rings, rbnds, rbnd_indices
 
         if HexrdConfig().show_rings:
-            dp = self.dpanel
-
-            # Update the tth list with the rings to use
-            tth_list = [all_tths[i] for i in rings_to_use]
-
-            for tth in np.degrees(tth_list):
+            for tth in np.degrees(plane_data.getTTh()):
                 rings.append(np.array([[-180, tth], [180, tth]]))
 
         if HexrdConfig().show_ring_ranges:
             indices, ranges = plane_data.getMergedRanges()
-
-            # This ensures the correct ranges are selected
-            indices, ranges = select_merged_rings(rings_to_use, indices,
-                                                  ranges)
 
             for ind, r in zip(indices, np.degrees(ranges)):
                 rbnds.append(np.array([[-180, r[0]],
@@ -107,13 +95,7 @@ class InstrumentViewer:
     def add_rings(self):
         self.clear_rings()
 
-        materials_list = HexrdConfig().visible_material_names
-        if HexrdConfig().selected_rings:
-            # Only show the active material, if it is part of the list
-            active = HexrdConfig().active_material_name
-            materials_list = [active] if active in materials_list else []
-
-        for name in materials_list:
+        for name in HexrdConfig().visible_material_names:
             mat = HexrdConfig().material(name)
 
             if not mat:

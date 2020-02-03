@@ -61,19 +61,12 @@ def convert_tilt_convention(iconfig, old_convention,
         _set_tilt_array(tilts, np.array(rme.angles).tolist())
 
 
-def fix_exclusions(mat):
-    # The default is to exclude all hkl's after the 5th one.
-    # (See Material._newPdata() for more info)
-    # Let's not do this...
-    excl = [False] * len(mat.planeData.exclusions)
-    mat.planeData.exclusions = excl
-
-
 def make_new_pdata(mat):
     # This generates new PlaneData for a material
-    # It also fixes the exclusions (see fix_exclusions() for details)
+    # This also preserves the previous exclusions of the plane data
+    prev_exclusions = mat.planeData.exclusions
     mat._newPdata()
-    fix_exclusions(mat)
+    mat.planeData.exclusions = prev_exclusions
 
 
 def coords2index(im, x, y):
@@ -105,24 +98,6 @@ def coords2index(im, x, y):
              mtransforms.BboxTransformTo(array_extent))
 
     return trans.transform_point([y, x]).astype(int)
-
-
-def select_merged_rings(selected_rings, indices, ranges):
-    """Select indices and ranges for merged rings
-
-    This utility function filters the indices and ranges and returns
-    new (indices, ranges) that were selected in the selected_rings.
-    """
-    new_indices = []
-    new_ranges = []
-    for ring in selected_rings:
-        for i, entry in enumerate(indices):
-            if ring in entry:
-                new_indices.append(entry)
-                new_ranges.append(ranges[i])
-                break
-
-    return new_indices, new_ranges
 
 
 def snip_width_pixels():

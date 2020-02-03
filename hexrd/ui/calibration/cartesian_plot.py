@@ -6,7 +6,6 @@ from hexrd import instrument
 from hexrd.gridutil import cellIndices
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import select_merged_rings
 
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
@@ -70,29 +69,19 @@ class InstrumentViewer:
         rbnds = []
         rbnd_indices = []
 
-        all_tths = plane_data.getTTh()
-        rings_to_use = HexrdConfig().selected_rings
-        if not rings_to_use:
-            # If it's empty, select all rings
-            rings_to_use = list(range(len(all_tths)))
+        # If there are no rings, there is nothing to do
+        if len(plane_data.getTTh()) == 0:
+            return rings, rbnds, rbnd_indices
 
         if HexrdConfig().show_rings:
-            # Update the tth list with the rings to use
-            tth_list = [all_tths[i] for i in rings_to_use]
-
-            delta_tth = np.degrees(plane_data.tThWidth)
             ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                tth_list, delta_tth=delta_tth, delta_eta=1)
-
+                plane_data, delta_eta=1)
             for ring in ring_xys:
                 rings.append(self.dpanel.cartToPixel(ring))
 
         if HexrdConfig().show_ring_ranges:
+            delta_tth = np.degrees(plane_data.tThWidth)
             indices, ranges = plane_data.getMergedRanges()
-
-            # This function ensures the correct ranges are selected
-            indices, ranges = select_merged_rings(rings_to_use, indices,
-                                                  ranges)
 
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]
@@ -120,13 +109,7 @@ class InstrumentViewer:
         self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.make_dpanel()
 
-        materials_list = HexrdConfig().visible_material_names
-        if HexrdConfig().selected_rings:
-            # Only show the active material, if it is part of the list
-            active = HexrdConfig().active_material_name
-            materials_list = [active] if active in materials_list else []
-
-        for name in materials_list:
+        for name in HexrdConfig().visible_material_names:
             mat = HexrdConfig().material(name)
 
             if not mat:
