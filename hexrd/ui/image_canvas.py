@@ -208,18 +208,17 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def show_saturation(self):
+        self.clear_saturation()
+
         # Do not proceed without config approval
         if not HexrdConfig().show_saturation_level:
-            self.clear_saturation()
             return
 
         if not self.axes_images:
-            self.clear_saturation()
             return
 
         # Do not show the saturation in calibration mode
         if self.mode == 'cartesian' or self.mode == 'polar':
-            self.clear_saturation()
             return
 
         for img in self.axes_images:
