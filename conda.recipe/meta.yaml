@@ -8,7 +8,7 @@ source:
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   entry_points:
-    - hexrd = hexrd.ui.main:main
+    - hexrdgui = hexrd.ui.main:main
 
 requirements:
   build:
