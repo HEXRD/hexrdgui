@@ -59,10 +59,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when a detector's transform is modified"""
     detector_transform_modified = Signal(str)
 
+    """Emitted when detector borders need to be re-rendered"""
+    rerender_detector_borders = Signal()
+
     """Emitted for any config changes EXCEPT detector transform changes
 
     Indicates that the image needs to be re-drawn from scratch.
 
+    Note that this does not do anything if "Show Live Updates" is off.
     """
     rerender_needed = Signal()
 
@@ -1143,8 +1147,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['show_detector_borders']
 
     def set_show_detector_borders(self, v):
-        self.config['image']['show_detector_borders'] = v
-        self.rerender_needed.emit()
+        if v != self.show_detector_borders:
+            self.config['image']['show_detector_borders'] = v
+            self.rerender_detector_borders.emit()
 
     @property
     def colormap_min(self):

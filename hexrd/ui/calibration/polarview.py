@@ -115,6 +115,62 @@ class PolarView(object):
             + self.eta_min + 0.5 * np.radians(self.eta_pixel_size)
         return np.meshgrid(eta_vec, tth_vec, indexing='ij')
 
+    def detector_borders(self, det):
+        panel = self.detectors[det]
+
+        # TODO: PlanarDetector.pixel_angles() takes a long time.
+        # Is there a better way for us to get these borders?
+        # Note that we only use the first and last rows/columns
+        # from this output.
+        pixel_angles = panel.pixel_angles()
+
+        borders = ((pixel_angles[0][0, :], pixel_angles[1][0, :]),
+                   (pixel_angles[0][:, 0], pixel_angles[1][:, 0]),
+                   (pixel_angles[0][-1, :], pixel_angles[1][-1, :]),
+                   (pixel_angles[0][:, -1], pixel_angles[1][:, -1]))
+
+        # Convert to degrees. Keep as a list for easier modifications.
+        borders = np.degrees(borders).tolist()
+
+        # Here, we are going to remove points that are out-of-bounds,
+        # and we are going to insert None in between points that are far
+        # apart (in the y component), so that they are not connected in the
+        # plot. This happens for detectors that are wrapped in the image.
+        x_range = np.degrees((self.tth_min, self.tth_max))
+        y_range = np.degrees((self.eta_min, self.eta_max))
+
+        # "Far apart" is currently defined as half of the y range
+        max_y_distance = abs(y_range[1] - y_range[0]) / 2.0
+        for j in range(4):
+            border_x, border_y = borders[j][0], borders[j][1]
+            i = 0
+            # These should be the same length, but just in case...
+            while i < len(border_x) and i < len(border_y):
+                x, y = border_x[i], border_y[i]
+                if (not x_range[0] <= x <= x_range[1] or
+                        not y_range[0] <= y <= y_range[1]):
+                    # The point is out of bounds, remove it
+                    del border_x[i], border_y[i]
+                    continue
+
+                if i != 0 and abs(y - border_y[i - 1]) > max_y_distance:
+                    # Points are too far apart. Insert a None
+                    border_x.insert(i, None)
+                    border_y.insert(i, None)
+                    i += 1
+
+                i += 1
+
+        return borders
+
+    @property
+    def all_detector_borders(self):
+        borders = {}
+        for key in self.images_dict.keys():
+            borders[key] = self.detector_borders(key)
+
+        return borders
+
     def create_warp_image(self, det):
         angpts = self.angular_grid
         dummy_ome = np.zeros((self.ntth * self.neta))
@@ -123,27 +179,19 @@ class PolarView(object):
         panel = self.detectors[det]
         img = self.images_dict[det]
 
-        if HexrdConfig().show_detector_borders:
-            # Draw a border around the detector panel
-            max_int = np.percentile(img, 99.95)
-            # A large percentage such as 3% is needed for it to show up
-            pbuf = int(0.03 * np.mean(img.shape))
-            img[:, :pbuf] = max_int
-            img[:, -pbuf:] = max_int
-            img[:pbuf, :] = max_int
-            img[-pbuf:, :] = max_int
-
         gpts = anglesToGVec(
             np.vstack([
                 angpts[1].flatten(),
                 angpts[0].flatten(),
                 dummy_ome,
                 ]).T, bHat_l=panel.bvec)
+
         xypts = gvecToDetectorXY(
             gpts,
             panel.rmat, np.eye(3), np.eye(3),
             panel.tvec, self.tvec_s, tvec_c,
             beamVec=panel.bvec)
+
         if panel.distortion is not None:
             dfunc = panel.distortion[0]
             dparams = panel.distortion[1]
