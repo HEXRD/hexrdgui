@@ -74,7 +74,7 @@ def install_linux_script(base_path, package_path):
 
     # Now install a shell script to call the setuptools script
     hexrd_executable = str(package_path / 'bin' / 'hexrdgui')
-    shutil.copyfile(base_path / 'linux' / 'hexrd', hexrd_executable)
+    shutil.copyfile(base_path / 'linux' / 'hexrdgui', hexrd_executable)
     st = os.stat(hexrd_executable)
     os.chmod(hexrd_executable, st.st_mode | stat.S_IXUSR)
 
