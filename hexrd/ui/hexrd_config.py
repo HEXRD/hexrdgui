@@ -100,6 +100,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.load_panel_state = None
         self.polar_masks = []
         self.ring_styles = {}
+        self.backup_tth_maxes = {}
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
 
@@ -161,8 +162,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('ring_styles', self.ring_styles)
         settings.setValue('visible_material_names',
                           self.visible_material_names)
-        settings.setValue('rings_max_bragg_angle', self.rings_max_bragg_angle)
-        settings.setValue('limit_active_rings', self.limit_active_rings)
 
     def load_settings(self):
         settings = QSettings()
@@ -180,10 +179,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', None)
         self.ring_styles = settings.value('ring_styles', {})
-        self.rings_max_bragg_angle = float(
-            settings.value('rings_max_bragg_angle', 1.0))
-        self.limit_active_rings = bool(
-            settings.value('limit_active_rings', False) == 'true')
 
         # Set this manually since we don't have any materials yet
         key = 'visible_material_names'
@@ -807,10 +802,19 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def active_material_name(self):
         return self.config['materials'].get('active_material')
 
+    @property
+    def beam_energy(self):
+        cfg = self.config['instrument']
+        return cfg.get('beam', {}).get('energy', {}).get('value')
+
+    @property
+    def beam_wavelength(self):
+        energy = self.beam_energy
+        return constants.KEV_TO_WAVELENGTH / energy if energy else None
+
     def update_material_energy(self, mat):
         # This is a potentially expensive operation...
-        cfg = self.config['instrument']
-        energy = cfg.get('beam', {}).get('energy', {}).get('value')
+        energy = self.beam_energy
 
         # If the plane data energy already matches, skip it
         pd_wavelength = mat.planeData.get_wavelength()
@@ -879,43 +883,41 @@ class HexrdConfig(QObject, metaclass=Singleton):
     visible_material_names = property(_visible_material_names,
                                       _set_visible_material_names)
 
-    def _selected_rings(self):
-        return self.config['materials'].get('selected_rings')
+    def _active_material_tth_max(self):
+        return self.active_material.planeData.tThMax
 
-    def _set_selected_rings(self, rings):
-        self.config['materials']['selected_rings'] = rings
-        self.ring_config_changed.emit()
+    def _set_active_material_tth_max(self, v):
+        if v != self.active_material_tth_max:
+            if v is None:
+                self.backup_tth_max = self.active_material_tth_max
 
-    selected_rings = property(_selected_rings, _set_selected_rings)
-
-    def _rings_max_bragg_angle(self):
-        return self.config['materials'].setdefault('max_bragg_angle', 1.0)
-
-    def set_rings_max_bragg_angle(self, v):
-        if v != self.rings_max_bragg_angle:
-            self.config['materials']['max_bragg_angle'] = v
+            self.active_material.planeData.tThMax = v
             self.ring_config_changed.emit()
 
-    rings_max_bragg_angle = property(_rings_max_bragg_angle,
-                                     set_rings_max_bragg_angle)
+    active_material_tth_max = property(_active_material_tth_max,
+                                       _set_active_material_tth_max)
 
-    @property
-    def rings_min_d_spacing(self):
-        # This is a read-only property, as it is calculated from the
-        # max bragg angle.
-        # Any material should have an up-to-date wavelength.
-        wavelength = self.active_material.planeData.get_wavelength()
-        return wavelength / (2.0 * math.sin(self.rings_max_bragg_angle))
+    def _backup_tth_max(self):
+        return self.backup_tth_maxes.setdefault(self.active_material_name, 1.0)
+
+    def _set_backup_tth_max(self, v):
+        self.backup_tth_maxes[self.active_material_name] = v
+
+    backup_tth_max = property(_backup_tth_max, _set_backup_tth_max)
 
     def _limit_active_rings(self):
-        return self.config['materials'].setdefault('limit_active_rings', False)
+        return self.active_material_tth_max is not None
 
     def set_limit_active_rings(self, v):
+        # This will restore the backup of tth max, or set tth max to None
         if v != self.limit_active_rings:
-            self.config['materials']['limit_active_rings'] = v
-            self.ring_config_changed.emit()
+            if v:
+                self.active_material_tth_max = self.backup_tth_max
+            else:
+                self.active_material_tth_max = None
 
-    limit_active_rings = property(_limit_active_rings, set_limit_active_rings)
+    limit_active_rings = property(_limit_active_rings,
+                                  set_limit_active_rings)
 
     def _show_rings(self):
         return self.config['materials'].get('show_rings')
