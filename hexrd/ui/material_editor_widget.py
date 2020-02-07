@@ -4,7 +4,6 @@ from hexrd import spacegroup
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui import utils
 
 
 class MaterialEditorWidget(QObject):
@@ -20,7 +19,8 @@ class MaterialEditorWidget(QObject):
 
         self.setup_space_group_widgets()
 
-        self.material = material
+        self._material = material
+        self.update_gui_from_material()
 
         self.setup_connections()
 
@@ -149,7 +149,6 @@ class MaterialEditorWidget(QObject):
         # already equal before setting.
         if self.material.sgnum != sgid:
             self.material.sgnum = sgid
-            utils.fix_exclusions(self.material)
             self.material_modified.emit()
 
     def set_max_hkl(self):
@@ -158,7 +157,6 @@ class MaterialEditorWidget(QObject):
         val = self.ui.max_hkl.value()
         if self.material.hklMax != val:
             self.material.hklMax = val
-            utils.fix_exclusions(self.material)
             self.material_modified.emit()
 
     @property
@@ -167,5 +165,6 @@ class MaterialEditorWidget(QObject):
 
     @material.setter
     def material(self, m):
-        self._material = m
-        self.update_gui_from_material()
+        if m != self.material:
+            self._material = m
+            self.update_gui_from_material()

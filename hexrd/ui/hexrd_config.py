@@ -1,4 +1,5 @@
 import copy
+import math
 import pickle
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
@@ -75,6 +76,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """
     update_status_bar = Signal(str)
 
+    """Emitted when a new instrument configuration file has been loaded"""
+    instrument_config_loaded = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -95,11 +99,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = []
         self.load_panel_state = None
         self.polar_masks = []
+        self.ring_styles = {}
+        self.backup_tth_maxes = {}
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
-
-        if '--ignore-settings' not in QCoreApplication.arguments():
-            self.load_settings()
 
         # Load default configuration settings
         self.load_default_config()
@@ -107,6 +110,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['materials'] = copy.deepcopy(
             self.default_config['materials'])
         self.config['image'] = copy.deepcopy(self.default_config['image'])
+
+        if '--ignore-settings' not in QCoreApplication.arguments():
+            self.load_settings()
 
         if self.config.get('instrument') is None:
             # Load the default config['instrument'] settings
@@ -140,8 +146,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if mat is not None and mat in self.materials.keys():
             self.active_material = mat
 
-        self.update_plane_data_tth_width()
-        self.update_active_material_energy()
+        self.update_visible_material_energies()
 
     def save_settings(self):
         settings = QSettings()
@@ -151,9 +156,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
         settings.setValue('euler_angle_convention', self.euler_angle_convention)
-        settings.setValue('active_material', self.active_material_name())
+        settings.setValue('active_material', self.active_material_name)
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
+        settings.setValue('ring_styles', self.ring_styles)
+        settings.setValue('visible_material_names',
+                          self.visible_material_names)
 
     def load_settings(self):
         settings = QSettings()
@@ -170,6 +178,21 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', None)
+        self.ring_styles = settings.value('ring_styles', {})
+
+        # Set this manually since we don't have any materials yet
+        key = 'visible_material_names'
+        self.config['materials'][key] = settings.value(key, [])
+
+        # This will not be a list if only one material was on it
+        # Make sure it is a list
+        if not isinstance(self.config['materials'][key], list):
+            self.config['materials'][key] = [self.config['materials'][key]]
+
+        # Saving an empty list and then loading it results in [None]
+        # for some reason
+        if self.config['materials'][key] == [None]:
+            self.config['materials'][key] = []
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -203,7 +226,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                           new_eac)
 
         self.rerender_needed.emit()
-        self.update_active_material_energy()
+        self.update_visible_material_energies()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -304,7 +327,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Create a backup
         self.backup_instrument_config()
 
-        self.update_active_material_energy()
+        self.update_visible_material_energies()
+        self.instrument_config_loaded.emit()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
@@ -581,9 +605,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # If we are just modifying a status, we are done
             return
 
-        # If the beam energy was modified, update the active material
+        # If the beam energy was modified, update the visible materials
         if path == ['beam', 'energy', 'value']:
-            self.update_active_material_energy()
+            self.update_visible_material_energies()
             return
 
         if path[0] == 'detectors' and path[2] == 'transform':
@@ -688,6 +712,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             pd_wavelength = material.planeData.get_wavelength()
             material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
 
+        # Make sure all materials on the visible materials list exist
+        material_names = materials.keys()
+        self.visible_material_names = [
+            x for x in self.visible_material_names if x in material_names]
+
         self.materials = materials
 
     def add_material(self, name, material):
@@ -701,7 +730,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.config['materials']['materials'][old_name])
             self.config['materials']['materials'][new_name].name = new_name
 
-            if self.active_material_name() == old_name:
+            # Transfer the styles over as well
+            if old_name in self.ring_styles:
+                self.ring_styles[new_name] = self.ring_styles.pop(old_name)
+
+            if old_name in self.visible_material_names:
+                idx = self.visible_material_names.index(old_name)
+                self.visible_material_names[idx] = new_name
+
+            if self.active_material_name == old_name:
                 # Change the active material before removing the old one
                 self.active_material = new_name
 
@@ -712,7 +749,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         self.config['materials']['materials'][name] = material
 
-        if self.active_material_name() == name:
+        if self.material_is_visible(name):
             self.ring_config_changed.emit()
 
     def remove_material(self, name):
@@ -720,7 +757,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         del self.config['materials']['materials'][name]
 
-        if name == self.active_material_name():
+        if name in self.ring_styles:
+            del self.ring_styles[name]
+
+        if name in self.visible_material_names:
+            self.visible_material_names.remove(name)
+
+        if name == self.active_material_name:
             if self.materials.keys():
                 self.active_material = list(self.materials.keys())[0]
             else:
@@ -740,7 +783,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['materials']['materials'].get(name)
 
     def _active_material(self):
-        m = self.active_material_name()
+        m = self.active_material_name
         return self.material(m)
 
     def _set_active_material(self, name):
@@ -749,20 +792,29 @@ class HexrdConfig(QObject, metaclass=Singleton):
                             str(self.materials))
 
         self.config['materials']['active_material'] = name
-        self.update_plane_data_tth_width()
+        self.update_plane_data_tth_widths()
         self.update_active_material_energy()
         self.ring_config_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
+    @property
     def active_material_name(self):
         return self.config['materials'].get('active_material')
 
-    def update_active_material_energy(self):
-        # This is a potentially expensive operation...
+    @property
+    def beam_energy(self):
         cfg = self.config['instrument']
-        energy = cfg.get('beam', {}).get('energy', {}).get('value')
-        mat = self.active_material
+        return cfg.get('beam', {}).get('energy', {}).get('value')
+
+    @property
+    def beam_wavelength(self):
+        energy = self.beam_energy
+        return constants.KEV_TO_WAVELENGTH / energy if energy else None
+
+    def update_material_energy(self, mat):
+        # This is a potentially expensive operation...
+        energy = self.beam_energy
 
         # If the plane data energy already matches, skip it
         pd_wavelength = mat.planeData.get_wavelength()
@@ -777,23 +829,95 @@ class HexrdConfig(QObject, metaclass=Singleton):
         mat.beamEnergy = energy
         utils.make_new_pdata(mat)
 
-        self.update_plane_data_tth_width()
-
+    def update_active_material_energy(self):
+        self.update_material_energy(self.active_material)
+        self.update_plane_data_tth_widths()
         self.new_plane_data.emit()
         self.ring_config_changed.emit()
 
-    def update_plane_data_tth_width(self):
-        mat = self.active_material
-        mat.planeData.tThWidth = np.radians(self.ring_ranges)
+    def update_visible_material_energies(self):
+        for mat in self.visible_materials:
+            self.update_material_energy(mat)
 
-    def _selected_rings(self):
-        return self.config['materials'].get('selected_rings')
-
-    def _set_selected_rings(self, rings):
-        self.config['materials']['selected_rings'] = rings
+        self.update_plane_data_tth_widths()
+        self.new_plane_data.emit()
         self.ring_config_changed.emit()
 
-    selected_rings = property(_selected_rings, _set_selected_rings)
+    def update_plane_data_tth_widths(self):
+        for mat in self.visible_materials:
+            mat.planeData.tThWidth = np.radians(self.ring_ranges)
+
+    def material_is_visible(self, name):
+        return name in self.visible_material_names
+
+    def set_material_visibility(self, name, visible):
+        if visible and name not in self.visible_material_names:
+            self.visible_material_names.append(name)
+            self.update_visible_material_energies()
+            self.ring_config_changed.emit()
+        elif not visible and name in self.visible_material_names:
+            self.visible_material_names.remove(name)
+            self.update_visible_material_energies()
+            self.ring_config_changed.emit()
+
+    @property
+    def visible_materials(self):
+        mats = []
+        for name in self.visible_material_names:
+            # Confirm that it exists
+            if name in self.materials:
+                mats.append(self.materials[name])
+
+        return mats
+
+    def _visible_material_names(self):
+        return self.config['materials'].setdefault('visible_material_names',
+                                                   [])
+
+    def _set_visible_material_names(self, v):
+        if v != self.visible_material_names:
+            self.config['materials']['visible_material_names'] = v
+            self.update_visible_material_energies()
+            self.ring_config_changed.emit()
+
+    visible_material_names = property(_visible_material_names,
+                                      _set_visible_material_names)
+
+    def _active_material_tth_max(self):
+        return self.active_material.planeData.tThMax
+
+    def _set_active_material_tth_max(self, v):
+        if v != self.active_material_tth_max:
+            if v is None:
+                self.backup_tth_max = self.active_material_tth_max
+
+            self.active_material.planeData.tThMax = v
+            self.ring_config_changed.emit()
+
+    active_material_tth_max = property(_active_material_tth_max,
+                                       _set_active_material_tth_max)
+
+    def _backup_tth_max(self):
+        return self.backup_tth_maxes.setdefault(self.active_material_name, 1.0)
+
+    def _set_backup_tth_max(self, v):
+        self.backup_tth_maxes[self.active_material_name] = v
+
+    backup_tth_max = property(_backup_tth_max, _set_backup_tth_max)
+
+    def _limit_active_rings(self):
+        return self.active_material_tth_max is not None
+
+    def set_limit_active_rings(self, v):
+        # This will restore the backup of tth max, or set tth max to None
+        if v != self.limit_active_rings:
+            if v:
+                self.active_material_tth_max = self.backup_tth_max
+            else:
+                self.active_material_tth_max = None
+
+    limit_active_rings = property(_limit_active_rings,
+                                  set_limit_active_rings)
 
     def _show_rings(self):
         return self.config['materials'].get('show_rings')
@@ -818,10 +942,24 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_ring_ranges(self, r):
         self.config['materials']['ring_ranges'] = r
-        self.update_plane_data_tth_width()
+        self.update_plane_data_tth_widths()
         self.ring_config_changed.emit()
 
     ring_ranges = property(_ring_ranges, _set_ring_ranges)
+
+    def get_ring_style(self, name):
+        # This will set defaults if no settings have been created
+        style = self.ring_styles.setdefault(name, {})
+
+        # Make sure any missing entries get set to default
+        style.setdefault('ring_color', '#00ffff') # Cyan
+        style.setdefault('ring_linestyle', 'solid')
+        style.setdefault('ring_linewidth', 1.0)
+        style.setdefault('rbnd_color', '#00ff00') # Green
+        style.setdefault('rbnd_linestyle', 'dotted')
+        style.setdefault('rbnd_linewidth', 1.0)
+
+        return style
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']

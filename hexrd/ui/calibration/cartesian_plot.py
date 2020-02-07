@@ -6,7 +6,6 @@ from hexrd import instrument
 from hexrd.gridutil import cellIndices
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import select_merged_rings
 
 from skimage import transform as tf
 from skimage.exposure import equalize_adapthist
@@ -17,7 +16,6 @@ from .display_plane import DisplayPlane
 
 def cartesian_viewer():
     images_dict = HexrdConfig().current_images_dict()
-    plane_data = HexrdConfig().active_material.planeData
     pixel_size = HexrdConfig().cartesian_pixel_size
 
     # HEDMInstrument expects None Euler angle convention for the
@@ -34,16 +32,15 @@ def cartesian_viewer():
                'PanelIds: ' + str(list(instr._detectors.keys())))
         raise Exception(msg)
 
-    return InstrumentViewer(instr, images_dict, plane_data, pixel_size)
+    return InstrumentViewer(instr, images_dict, pixel_size)
 
 
 class InstrumentViewer:
 
-    def __init__(self, instr, images_dict, plane_data, pixel_size):
+    def __init__(self, instr, images_dict, pixel_size):
         self.type = 'cartesian'
         self.instr = instr
         self.images_dict = images_dict
-        self.plane_data = plane_data
         self.pixel_size = pixel_size
         self.warp_dict = {}
 
@@ -65,40 +62,26 @@ class InstrumentViewer:
                                                 self.pixel_size)
 
     def clear_rings(self):
-        self.ring_data = []
-        self.rbnd_data = []
-        self.rbnd_indices = []
+        self.ring_data = {}
 
-    def add_rings(self):
-        self.clear_rings()
-        selected_rings = HexrdConfig().selected_rings
-        delta_tth = np.degrees(self.plane_data.tThWidth)
+    def generate_rings(self, plane_data):
+        rings = []
+        rbnds = []
+        rbnd_indices = []
+
+        # If there are no rings, there is nothing to do
+        if len(plane_data.getTTh()) == 0:
+            return rings, rbnds, rbnd_indices
+
         if HexrdConfig().show_rings:
-            # must update self.dpanel from HexrdConfig
-            self.pixel_size = HexrdConfig().cartesian_pixel_size
-            self.make_dpanel()
-            if selected_rings:
-                # We should only get specific values
-                tth = self.plane_data.getTTh()
-                tth = [tth[i] for i in selected_rings]
-
-                ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                    tth, delta_tth=delta_tth, delta_eta=1)
-
-            else:
-                ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                    self.plane_data, delta_eta=1)
-
+            ring_angs, ring_xys = self.dpanel.make_powder_rings(
+                plane_data, delta_eta=1)
             for ring in ring_xys:
-                self.ring_data.append(self.dpanel.cartToPixel(ring))
+                rings.append(self.dpanel.cartToPixel(ring))
 
         if HexrdConfig().show_ring_ranges:
-            indices, ranges = self.plane_data.getMergedRanges()
-
-            if selected_rings:
-                # This ensures the correct ranges are selected
-                indices, ranges = select_merged_rings(selected_rings, indices,
-                                                      ranges)
+            delta_tth = np.degrees(plane_data.tThWidth)
+            indices, ranges = plane_data.getMergedRanges()
 
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]
@@ -107,12 +90,41 @@ class InstrumentViewer:
             u_angs, u_xyz = self.dpanel.make_powder_rings(
                 r_upper, delta_tth=delta_tth, delta_eta=1)
             for l, u in zip(l_xyz, u_xyz):
-                self.rbnd_data.append(self.dpanel.cartToPixel(l))
-                self.rbnd_data.append(self.dpanel.cartToPixel(u))
-            self.rbnd_indices = []
+                rbnds.append(self.dpanel.cartToPixel(l))
+                rbnds.append(self.dpanel.cartToPixel(u))
             for ind in indices:
-                self.rbnd_indices.append(ind)
-                self.rbnd_indices.append(ind)
+                rbnd_indices.append(ind)
+                rbnd_indices.append(ind)
+
+        return rings, rbnds, rbnd_indices
+
+    def add_rings(self):
+        self.clear_rings()
+
+        if not HexrdConfig().show_rings and not HexrdConfig().show_ring_ranges:
+            # Nothing to do
+            return self.ring_data
+
+        # must update self.dpanel from HexrdConfig
+        self.pixel_size = HexrdConfig().cartesian_pixel_size
+        self.make_dpanel()
+
+        for name in HexrdConfig().visible_material_names:
+            mat = HexrdConfig().material(name)
+
+            if not mat:
+                # Print a warning, as this shouldn't happen
+                print('Warning in InstrumentViewer.add_rings():',
+                      name, 'is not a valid material')
+                continue
+
+            rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
+
+            self.ring_data[name] = {
+                'ring_data': rings,
+                'rbnd_data': rbnds,
+                'rbnd_indices': rbnd_indices
+            }
 
         return self.ring_data
 

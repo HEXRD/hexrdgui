@@ -35,8 +35,8 @@ def patch_qt_config(base_path):
 
 def install_macos_script(base_path, package_path):
    # Add hexrd bash start script
-    executable_path = package_path / 'hexrd'
-    shutil.copyfile(base_path / 'darwin' / 'hexrd', executable_path)
+    executable_path = package_path / 'hexrdgui'
+    shutil.copyfile(base_path / 'darwin' / 'hexrdgui', executable_path)
     st = os.stat(executable_path)
     os.chmod(executable_path, st.st_mode | stat.S_IXUSR)
 
@@ -68,13 +68,13 @@ def install_linux_script(base_path, package_path):
     logger.info('Generating hexrd script.')
 
     # First we rename the setuptools script
-    hexrd_path = package_path / 'bin' / 'hexrd'
+    hexrd_path = package_path / 'bin' / 'hexrdgui'
     hexrdgui_path = package_path / 'bin' / 'hexrdgui.py'
     hexrd_path.rename(hexrdgui_path)
 
     # Now install a shell script to call the setuptools script
-    hexrd_executable = str(package_path / 'bin' / 'hexrd')
-    shutil.copyfile(base_path / 'linux' / 'hexrd', hexrd_executable)
+    hexrd_executable = str(package_path / 'bin' / 'hexrdgui')
+    shutil.copyfile(base_path / 'linux' / 'hexrdgui', hexrd_executable)
     st = os.stat(hexrd_executable)
     os.chmod(hexrd_executable, st.st_mode | stat.S_IXUSR)
 
@@ -96,7 +96,7 @@ def build_conda_pack(base_path, tmp):
     config = Config()
     config.channel = ['cjh1', 'conda-forge']
     config.channel_urls = ['cjh1', 'conda-forge']
-    logger.info('Building hexrd conda package.')
+    logger.info('Building hexrdgui conda package.')
     CondaBuild.build(recipe_path, config=config)
 
     logger.info('Creating new conda environment.')

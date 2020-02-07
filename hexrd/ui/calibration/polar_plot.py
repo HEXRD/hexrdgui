@@ -6,17 +6,15 @@ from .polarview import PolarView
 from .display_plane import DisplayPlane
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import select_merged_rings
 
 
 def polar_viewer():
     images_dict = HexrdConfig().current_images_dict()
-    plane_data = HexrdConfig().active_material.planeData
 
     # HEDMInstrument expects None Euler angle convention for the
     # config. Let's get it as such.
     iconfig = HexrdConfig().instrument_config_none_euler_convention
-    return InstrumentViewer(iconfig, images_dict, plane_data)
+    return InstrumentViewer(iconfig, images_dict)
 
 
 def load_instrument(config):
@@ -27,9 +25,8 @@ def load_instrument(config):
 
 class InstrumentViewer:
 
-    def __init__(self, config, images_dict, plane_data):
+    def __init__(self, config, images_dict):
         self.type = 'polar'
-        self.plane_data = plane_data
         self.instr = load_instrument(config)
         self.images_dict = images_dict
         self.dplane = DisplayPlane()
@@ -66,50 +63,54 @@ class InstrumentViewer:
         self.snip1d_background = self.pv.snip1d_background
 
     def clear_rings(self):
-        self.ring_data = []
-        self.rbnd_data = []
-        self.rbnd_indices = []
+        self.ring_data = {}
+
+    def generate_rings(self, plane_data):
+        rings = []
+        rbnds = []
+        rbnd_indices = []
+
+        # If there are no rings, there is nothing to do
+        if len(plane_data.getTTh()) == 0:
+            return rings, rbnds, rbnd_indices
+
+        if HexrdConfig().show_rings:
+            for tth in np.degrees(plane_data.getTTh()):
+                rings.append(np.array([[-180, tth], [180, tth]]))
+
+        if HexrdConfig().show_ring_ranges:
+            indices, ranges = plane_data.getMergedRanges()
+
+            for ind, r in zip(indices, np.degrees(ranges)):
+                rbnds.append(np.array([[-180, r[0]],
+                                       [180, r[0]]]))
+                rbnds.append(np.array([[-180, r[1]],
+                                       [180, r[1]]]))
+                # Append twice since we append to rbnd_data twice
+                rbnd_indices.append(ind)
+                rbnd_indices.append(ind)
+
+        return rings, rbnds, rbnd_indices
 
     def add_rings(self):
         self.clear_rings()
 
-        selected_rings = HexrdConfig().selected_rings
-        if HexrdConfig().show_rings:
-            dp = self.dpanel
+        for name in HexrdConfig().visible_material_names:
+            mat = HexrdConfig().material(name)
 
-            if selected_rings:
-                # We should only get specific values
-                tth_list = self.plane_data.getTTh()
-                tth_list = [tth_list[i] for i in selected_rings]
-                delta_tth = np.degrees(self.plane_data.tThWidth)
+            if not mat:
+                # Print a warning, as this shouldn't happen
+                print('Warning in InstrumentViewer.add_rings():',
+                      name, 'is not a valid material')
+                continue
 
-                ring_angs, ring_xys = dp.make_powder_rings(
-                    tth_list, delta_tth=delta_tth, delta_eta=1)
-            else:
-                ring_angs, ring_xys = dp.make_powder_rings(
-                    self.plane_data, delta_eta=1)
+            rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
 
-                tth_list = self.plane_data.getTTh()
-
-            for tth in np.degrees(tth_list):
-                self.ring_data.append(np.array([[-180, tth], [180, tth]]))
-
-        if HexrdConfig().show_ring_ranges:
-            indices, ranges = self.plane_data.getMergedRanges()
-
-            if selected_rings:
-                # This ensures the correct ranges are selected
-                indices, ranges = select_merged_rings(selected_rings, indices,
-                                                      ranges)
-
-            for ind, r in zip(indices, np.degrees(ranges)):
-                self.rbnd_data.append(np.array([[-180, r[0]],
-                                                [180, r[0]]]))
-                self.rbnd_data.append(np.array([[-180, r[1]],
-                                                [180, r[1]]]))
-                # Append twice since we append to rbnd_data twice
-                self.rbnd_indices.append(ind)
-                self.rbnd_indices.append(ind)
+            self.ring_data[name] = {
+                'ring_data': rings,
+                'rbnd_data': rbnds,
+                'rbnd_indices': rbnd_indices
+            }
 
         return self.ring_data
 
