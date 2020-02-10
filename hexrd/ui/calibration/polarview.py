@@ -4,14 +4,15 @@ from skimage.exposure import rescale_intensity
 
 from hexrd.transforms.xfcapi import \
      anglesToGVec, \
+     detectorXYToGvec, \
      gvecToDetectorXY
 
-from hexrd import constants as cnst
+from hexrd import constants as ct
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import run_snip1d, snip_width_pixels
 
-tvec_c = cnst.zeros_3
+tvec_c = ct.zeros_3
 
 
 def sqrt_scale_img(img):
@@ -118,16 +119,25 @@ class PolarView(object):
     def detector_borders(self, det):
         panel = self.detectors[det]
 
-        # TODO: PlanarDetector.pixel_angles() takes a long time.
-        # Is there a better way for us to get these borders?
-        # Note that we only use the first and last rows/columns
-        # from this output.
-        pixel_angles = panel.pixel_angles()
+        row_vec, col_vec = panel.row_pixel_vec, panel.col_pixel_vec
+        x_start, x_stop = row_vec[0], row_vec[-1]
+        y_start, y_stop = col_vec[0], col_vec[-1]
 
-        borders = ((pixel_angles[0][0, :], pixel_angles[1][0, :]),
-                   (pixel_angles[0][:, 0], pixel_angles[1][:, 0]),
-                   (pixel_angles[0][-1, :], pixel_angles[1][-1, :]),
-                   (pixel_angles[0][:, -1], pixel_angles[1][:, -1]))
+        # Create the borders in Cartesian
+        borders = [
+            [[x, y_start] for x in row_vec],
+            [[x, y_stop] for x in row_vec],
+            [[x_start, y] for y in col_vec],
+            [[x_stop, y] for y in col_vec]
+        ]
+
+        # Convert each border to angles
+        for i, border in enumerate(borders):
+            angles, _ = detectorXYToGvec(
+                border, panel.rmat, ct.identity_3x3,
+                panel.tvec, ct.zeros_3, ct.zeros_3,
+                beamVec=panel.bvec, etaVec=panel.evec)
+            borders[i] = angles
 
         # Convert to degrees. Keep as a list for easier modifications.
         borders = np.degrees(borders).tolist()
