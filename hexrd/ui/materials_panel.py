@@ -72,6 +72,7 @@ class MaterialsPanel(QObject):
             self.on_min_d_spacing_changed)
 
         self.ui.edit_style_button.pressed.connect(self.edit_overlay_style)
+        self.ui.hide_all.pressed.connect(self.hide_all_materials)
 
         self.ui.material_visible.toggled.connect(
             self.material_visibility_toggled)
@@ -326,3 +327,7 @@ class MaterialsPanel(QObject):
         visible = self.ui.material_visible.isChecked()
         name = self.current_material()
         HexrdConfig().set_material_visibility(name, visible)
+
+    def hide_all_materials(self):
+        # This clears the list
+        HexrdConfig().visible_material_names = []

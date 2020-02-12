@@ -342,6 +342,13 @@
        </property>
       </spacer>
      </item>
+     <item row="0" column="5">
+      <widget class="QPushButton" name="hide_all">
+       <property name="text">
+        <string>Hide All</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
@@ -352,6 +359,7 @@
   <tabstop>materials_table</tabstop>
   <tabstop>material_visible</tabstop>
   <tabstop>edit_style_button</tabstop>
+  <tabstop>hide_all</tabstop>
   <tabstop>show_rings</tabstop>
   <tabstop>show_ranges</tabstop>
   <tabstop>tth_ranges</tabstop>
