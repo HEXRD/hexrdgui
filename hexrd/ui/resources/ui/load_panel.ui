@@ -35,6 +35,44 @@
       <property name="spacing">
        <number>0</number>
       </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Aggregation:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="aggregation">
+        <item>
+         <property name="text">
+          <string>None</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Maximum</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Median</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Average</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Image Transform:</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="QComboBox" name="transform">
         <item>
@@ -95,27 +133,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="image_files">
-        <property name="text">
-         <string>Select Image Files</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Aggregation:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Image Transform:</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="QComboBox" name="darkMode">
         <item>
@@ -150,16 +167,6 @@
         </item>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QPushButton" name="read">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Read Files</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="2">
        <widget class="QPushButton" name="selectDark">
         <property name="enabled">
@@ -177,28 +184,28 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="aggregation">
-        <item>
-         <property name="text">
-          <string>None</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Maximum</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Median</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Average</string>
-         </property>
-        </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="image_files">
+        <property name="text">
+         <string>Select Image Files</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1" rowspan="2">
+       <widget class="QCheckBox" name="aps_imageseries">
+        <property name="text">
+         <string>Use APS ImageSeries</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2" rowspan="2">
+       <widget class="QPushButton" name="read">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Read Files</string>
+        </property>
        </widget>
       </item>
      </layout>
