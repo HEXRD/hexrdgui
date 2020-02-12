@@ -246,7 +246,7 @@ class LoadPanel(QObject):
         if self.ext == '.yml':
             for yf in self.yml_files[0]:
                 ims = ImageFileManager().open_file(yf)
-                self.total_frames.append(len(ims))
+                self.total_frames.append(len(ims) if len(ims) > 0 else 1)
 
             for f in self.files[0]:
                 with open(f, 'r') as raw_file:
@@ -261,7 +261,7 @@ class LoadPanel(QObject):
         else:
             for ims in tmp_ims:
                 has_omega = 'omega' in ims.metadata
-                self.total_frames.append(len(ims))
+                self.total_frames.append(len(ims) if len(ims) > 0 else 1)
                 if has_omega:
                     self.get_omega_data(ims)
                 else:
