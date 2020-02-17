@@ -309,6 +309,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
                                      **kwargs)
 
+    def clear_images(self):
+        self.imageseries_dict = {}
+        self.hdf5_path = None
+        self.load_panel_state = {}
+
     def load_instrument_config(self, yml_file):
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)

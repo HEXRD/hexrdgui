@@ -147,8 +147,9 @@ class LoadPanel(QObject):
         self.ui.file_options.setRowCount(0)
         self.reset_data()
         self.enable_read()
-        HexrdConfig().load_panel_state = {}
-        self.state = self.setup_processing_options()
+        HexrdConfig().clear_images()
+        self.setup_gui()
+        self.parent().image_tab_widget.load_images()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
