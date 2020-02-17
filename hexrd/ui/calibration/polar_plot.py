@@ -47,6 +47,10 @@ class InstrumentViewer:
                                                 self.pixel_size)
 
     @property
+    def all_detector_borders(self):
+        return self.pv.all_detector_borders
+
+    @property
     def angular_grid(self):
         return self.pv.angular_grid
 

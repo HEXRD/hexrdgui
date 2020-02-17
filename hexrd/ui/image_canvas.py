@@ -27,6 +27,7 @@ class ImageCanvas(FigureCanvas):
         self.axes_images = []
         self.cached_rings = []
         self.cached_rbnds = []
+        self.cached_detector_borders = []
         self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
@@ -61,6 +62,8 @@ class ImageCanvas(FigureCanvas):
             self.show_saturation)
         HexrdConfig().detector_transform_modified.connect(
             self.on_detector_transform_modified)
+        HexrdConfig().rerender_detector_borders.connect(
+            self.draw_detector_borders)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -182,13 +185,43 @@ class ImageCanvas(FigureCanvas):
 
         self.draw()
 
-    def extract_ring_coords(self, pr):
-        x, y = pr[:, 1], pr[:, 0]
-        if self.old_extent is None:
+    def clear_detector_borders(self):
+        while self.cached_detector_borders:
+            self.cached_detector_borders.pop(0).remove()
+
+    def draw_detector_borders(self):
+        self.clear_detector_borders()
+
+        # If there is no iviewer, we are not currently viewing a
+        # calibration. Just return.
+        if not self.iviewer:
+            self.draw()
+            return
+
+        # Make sure this is allowed by the configuration
+        if not HexrdConfig().show_detector_borders:
+            self.draw()
+            return
+
+        borders = self.iviewer.all_detector_borders
+        for border in borders.values():
+            # Draw each line in the border
+            for line in border:
+                # Make sure the data is rescaled to the current extents
+                x, y = self.rescale_points(line[0], line[1])
+                plot, = self.axis.plot(x, y, color='y', lw=2)
+                self.cached_detector_borders.append(plot)
+
+        self.draw()
+
+    def rescale_points(self, x, y):
+        # This takes the data, assumes it was in the old extents sytem,
+        # and it rescales it to the new extents system.
+        old_extent = self.old_extent
+        if old_extent is None:
+            # No rescaling needed
             return x, y
 
-        # Rescale ring coords to the new extent
-        old_extent = self.old_extent
         old_x_range = (old_extent[0], old_extent[1])
         old_y_range = (old_extent[3], old_extent[2])
 
@@ -200,6 +233,10 @@ class ImageCanvas(FigureCanvas):
         y = np.interp(y, old_y_range, new_y_range)
 
         return x, y
+
+    def extract_ring_coords(self, pr):
+        x, y = pr[:, 1], pr[:, 0]
+        return self.rescale_points(x, y)
 
     def clear_saturation(self):
         for t in self.saturation_texts:
@@ -294,6 +331,7 @@ class ImageCanvas(FigureCanvas):
             self.figure.tight_layout()
 
         self.redraw_rings()
+        self.draw_detector_borders()
 
         msg = 'Cartesian view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
@@ -399,6 +437,7 @@ class ImageCanvas(FigureCanvas):
             self.figure.tight_layout()
 
         self.redraw_rings()
+        self.draw_detector_borders()
 
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
@@ -421,7 +460,10 @@ class ImageCanvas(FigureCanvas):
 
         self.iviewer.update_detector(det)
         self.axes_images[0].set_data(self.iviewer.img)
-        self.draw()
+
+        # Update the detector borders if we are showing them
+        # This will call self.draw()
+        self.draw_detector_borders()
 
     def export_polar_plot(self, filename):
         if self.mode != 'polar':
