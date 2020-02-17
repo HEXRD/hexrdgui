@@ -567,9 +567,6 @@ class LoadPanel(QObject):
 
     def finish_processing_ims(self):
         # Display processed images on completion
-        # The setEnabled options will not be needed once the panel
-        # is complete - those dialogs will be removed.
-        self.parent().action_edit_angles.setEnabled(True)
         self.parent().image_tab_widget.load_images()
         self.new_images_loaded.emit()
 
