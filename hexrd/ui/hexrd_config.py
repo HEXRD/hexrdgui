@@ -315,6 +315,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.load_panel_state = {}
 
     def load_instrument_config(self, yml_file):
+        old_detectors = self.get_detector_names()
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -333,7 +334,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_instrument_config()
 
         self.update_visible_material_energies()
-        self.instrument_config_loaded.emit()
+
+        new_detectors = self.get_detector_names()
+        if old_detectors != new_detectors:
+            self.instrument_config_loaded.emit()
+
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
