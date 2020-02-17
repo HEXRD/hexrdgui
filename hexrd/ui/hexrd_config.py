@@ -304,8 +304,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         return ret
 
-    def save_imageseries(self, name, write_file, selected_format, **kwargs):
-        ims = self.imageseries(name)
+    def save_imageseries(self, ims, name, write_file, selected_format, **kwargs):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
                                      **kwargs)
 

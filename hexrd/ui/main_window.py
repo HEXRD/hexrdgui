@@ -262,9 +262,14 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        if len(HexrdConfig().imageseries_dict) > 1:
+        if self.load_widget.unaggregated_images:
+            ims_dict = self.load_widget.unaggregated_images
+        else:
+            ims_dict = HexrdConfig().imageseries_dict
+
+        if len(ims_dict) > 1:
             # Have the user choose an imageseries to save
-            names = list(HexrdConfig().imageseries_dict.keys())
+            names = list(ims_dict.keys())
             name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
                                             'Select ImageSeries', names, 0,
                                             False)
@@ -272,7 +277,7 @@ class MainWindow(QObject):
                 # User canceled...
                 return
         else:
-            name = list(HexrdConfig().imageseries_dict.keys())[0]
+            name = list(ims_dict.keys())[0]
 
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save ImageSeries', HexrdConfig().working_dir,
@@ -303,7 +308,7 @@ class MainWindow(QObject):
                 # to be the same as the file name...
                 kwargs['cache_file'] = selected_file
 
-            HexrdConfig().save_imageseries(name, selected_file,
+            HexrdConfig().save_imageseries(ims_dict.get(name), name, selected_file,
                                            selected_format, **kwargs)
 
     def on_action_save_materials_triggered(self):
