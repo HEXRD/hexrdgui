@@ -87,6 +87,8 @@ class MainWindow(QObject):
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
 
+        self.load_dummy_images()
+
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
@@ -123,6 +125,7 @@ class MainWindow(QObject):
             self.on_action_calibration_line_picker_triggered)
         self.load_widget.new_images_loaded.connect(self.new_images_loaded)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
@@ -164,9 +167,18 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
+            prev_detectors = HexrdConfig().get_detector_names()
+
             HexrdConfig().load_instrument_config(selected_file)
             self.update_config_gui()
-            self.update_all(clear_canvases=True)
+
+            new_detectors = HexrdConfig().get_detector_names()
+            if new_detectors != prev_detectors:
+                # Load the dummy images. The new config probably isn't
+                # for the current images.
+                self.load_dummy_images()
+            else:
+                self.update_all(clear_canvases=True)
 
     def on_action_save_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -175,6 +187,11 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_instrument_config(selected_file)
+
+    def load_dummy_images(self):
+        ImageFileManager().load_dummy_images()
+        self.update_all(clear_canvases=True)
+        self.new_images_loaded.emit()
 
     def open_image_file(self):
         images_dir = HexrdConfig().images_dir
