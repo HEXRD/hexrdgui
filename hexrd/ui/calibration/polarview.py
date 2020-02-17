@@ -137,10 +137,9 @@ class PolarView(object):
                 border, panel.rmat, ct.identity_3x3,
                 panel.tvec, ct.zeros_3, ct.zeros_3,
                 beamVec=panel.bvec, etaVec=panel.evec)
-            borders[i] = angles
-
-        # Convert to degrees. Keep as a list for easier modifications.
-        borders = np.degrees(borders).tolist()
+            # Convert to degrees, and keep them as lists for
+            # easier modification later
+            borders[i] = np.degrees(angles).tolist()
 
         # Here, we are going to remove points that are out-of-bounds,
         # and we are going to insert None in between points that are far
