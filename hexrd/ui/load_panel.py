@@ -89,7 +89,7 @@ class LoadPanel(QObject):
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
-        HexrdConfig().detectors_changed.connect(self.detectors_changed)
+        HexrdConfig().detectors_changed.connect(self.config_changed)
         HexrdConfig().instrument_config_loaded.connect(self.config_changed)
 
     def setup_processing_options(self):
