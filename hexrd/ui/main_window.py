@@ -82,7 +82,7 @@ class MainWindow(QObject):
 
         self.setup_connections()
 
-        self.calibration_config_widget.update_gui_from_config()
+        self.update_config_gui()
 
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
@@ -165,8 +165,7 @@ class MainWindow(QObject):
 
         if selected_file:
             HexrdConfig().load_instrument_config(selected_file)
-            self.cal_tree_view.rebuild_tree()
-            self.calibration_config_widget.update_gui_from_config()
+            self.update_config_gui()
             self.update_all(clear_canvases=True)
 
     def on_action_save_config_triggered(self):
