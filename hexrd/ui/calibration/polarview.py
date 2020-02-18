@@ -120,15 +120,15 @@ class PolarView(object):
         panel = self.detectors[det]
 
         row_vec, col_vec = panel.row_pixel_vec, panel.col_pixel_vec
-        x_start, x_stop = row_vec[0], row_vec[-1]
-        y_start, y_stop = col_vec[0], col_vec[-1]
+        x_start, x_stop = col_vec[0], col_vec[-1]
+        y_start, y_stop = row_vec[0], row_vec[-1]
 
         # Create the borders in Cartesian
         borders = [
-            [[x, y_start] for x in row_vec],
-            [[x, y_stop] for x in row_vec],
-            [[x_start, y] for y in col_vec],
-            [[x_stop, y] for y in col_vec]
+            [[x, y_start] for x in col_vec],
+            [[x, y_stop] for x in col_vec],
+            [[x_start, y] for y in row_vec],
+            [[x_stop, y] for y in row_vec]
         ]
 
         # Convert each border to angles
