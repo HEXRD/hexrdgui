@@ -148,7 +148,6 @@ class LoadPanel(QObject):
         self.enable_read()
         HexrdConfig().clear_images()
         self.setup_gui()
-        self.parent().image_tab_widget.load_images()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
