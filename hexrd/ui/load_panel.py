@@ -90,7 +90,6 @@ class LoadPanel(QObject):
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         HexrdConfig().detectors_changed.connect(self.config_changed)
-        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
 
     def setup_processing_options(self):
         num_dets = len(HexrdConfig().get_detector_names())

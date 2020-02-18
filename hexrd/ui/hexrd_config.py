@@ -76,9 +76,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """
     update_status_bar = Signal(str)
 
-    """Emitted when a new instrument configuration file has been loaded"""
-    instrument_config_loaded = Signal()
-
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -337,7 +334,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         new_detectors = self.get_detector_names()
         if old_detectors != new_detectors:
-            self.instrument_config_loaded.emit()
+            self.detectors_changed.emit()
 
         return self.config['instrument']
 
