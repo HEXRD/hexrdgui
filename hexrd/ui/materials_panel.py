@@ -29,8 +29,6 @@ class MaterialsPanel(QObject):
 
         self.update_gui_from_config()
 
-        self.update_enable_states()
-
     def add_tool_button_actions(self):
         b = self.ui.materials_tool_button
 
@@ -170,6 +168,7 @@ class MaterialsPanel(QObject):
 
         self.update_material_limits()
         self.update_table()
+        self.update_enable_states()
 
     def update_material_limits(self):
         # Display the backup if it is None
