@@ -122,7 +122,6 @@ class MainWindow(QObject):
         self.ui.action_calibration_line_picker.triggered.connect(
             self.on_action_calibration_line_picker_triggered)
         self.load_widget.new_images_loaded.connect(self.new_images_loaded)
-        self.new_images_loaded.connect(self.enable_editing_ims)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
@@ -222,8 +221,6 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageFileManager().load_images(detector_names, image_files)
-                self.ui.action_edit_ims.setEnabled(True)
-                self.ui.action_edit_angles.setEnabled(True)
                 self.update_all()
                 self.new_images_loaded.emit()
 
@@ -242,8 +239,6 @@ class MainWindow(QObject):
             images_dir = os.path.dirname(d)
 
         ImageFileManager().load_aps_imageseries(detector_names, selected_dirs)
-        self.ui.action_edit_ims.setEnabled(True)
-        self.ui.action_edit_angles.setEnabled(True)
         self.update_all()
         self.new_images_loaded.emit()
 
@@ -362,9 +357,6 @@ class MainWindow(QObject):
         print('Updating the GUI')
         self.update_config_gui()
         self.update_all()
-
-    def enable_editing_ims(self):
-        self.ui.action_edit_ims.setEnabled(HexrdConfig().has_images())
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [

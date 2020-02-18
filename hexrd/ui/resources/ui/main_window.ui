@@ -364,14 +364,6 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show the saturation percentages of the images when in &amp;quot;Image View&amp;quot; mode. The saturation percentages will appear as white text in the bottom left corners of the images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
-  <action name="action_edit_ims">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Process Image Series</string>
-   </property>
-  </action>
   <action name="action_save_materials">
    <property name="text">
     <string>&amp;Materials</string>
@@ -385,14 +377,6 @@
   <action name="action_edit_euler_angle_convention">
    <property name="text">
     <string>Euler Angle &amp;Convention</string>
-   </property>
-  </action>
-  <action name="action_edit_angles">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Edit Angles</string>
    </property>
   </action>
   <action name="action_open_aps_imageseries">
