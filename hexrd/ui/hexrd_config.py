@@ -80,9 +80,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """
     update_status_bar = Signal(str)
 
-    """Emitted when a new instrument configuration file has been loaded"""
-    instrument_config_loaded = Signal()
-
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -313,7 +310,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
                                      **kwargs)
 
+    def clear_images(self):
+        self.imageseries_dict = {}
+        self.hdf5_path = None
+        self.load_panel_state = {}
+
     def load_instrument_config(self, yml_file):
+        old_detectors = self.get_detector_names()
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -332,7 +335,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_instrument_config()
 
         self.update_visible_material_energies()
-        self.instrument_config_loaded.emit()
+
+        new_detectors = self.get_detector_names()
+        if old_detectors != new_detectors:
+            self.detectors_changed.emit()
+
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
