@@ -1,6 +1,6 @@
 import os
 
-from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal
+from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
     QVBoxLayout
@@ -87,7 +87,10 @@ class MainWindow(QObject):
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
 
-        self.load_dummy_images()
+        ImageFileManager().load_dummy_images()
+
+        # The dummy images will be drawn in MainWindow.show()
+        # See MainWindow.show() for more details.
 
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
@@ -143,6 +146,17 @@ class MainWindow(QObject):
             self.open_aps_imageseries)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
+
+    def show(self):
+        # Draw the contents of the canvas (probably will be dummy
+        # images). It is necessary to post this to the event loop
+        # in order to avoid a bug with the image tab widget
+        # (See https://github.com/HEXRD/hexrdgui/issues/261)
+        # 100 ms is used in an attempt to avoid a render flash
+        # TODO: call update_all() in the constructor if this bug
+        # gets fixed.
+        QTimer.singleShot(100, self.update_all)
+        self.ui.show()
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
