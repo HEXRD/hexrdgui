@@ -102,6 +102,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.polar_masks = []
         self.ring_styles = {}
         self.backup_tth_maxes = {}
+        self.backup_tth_widths = {}
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
 
@@ -803,7 +804,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
                             str(self.materials))
 
         self.config['materials']['active_material'] = name
-        self.update_plane_data_tth_widths()
         self.update_active_material_energy()
         self.ring_config_changed.emit()
 
@@ -842,7 +842,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def update_active_material_energy(self):
         self.update_material_energy(self.active_material)
-        self.update_plane_data_tth_widths()
         self.new_plane_data.emit()
         self.ring_config_changed.emit()
 
@@ -850,13 +849,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         for mat in self.visible_materials:
             self.update_material_energy(mat)
 
-        self.update_plane_data_tth_widths()
         self.new_plane_data.emit()
         self.ring_config_changed.emit()
-
-    def update_plane_data_tth_widths(self):
-        for mat in self.visible_materials:
-            mat.planeData.tThWidth = np.radians(self.ring_ranges)
 
     def material_is_visible(self, name):
         return name in self.visible_material_names
@@ -894,6 +888,43 @@ class HexrdConfig(QObject, metaclass=Singleton):
     visible_material_names = property(_visible_material_names,
                                       _set_visible_material_names)
 
+    def _active_material_tth_width(self):
+        return self.active_material.planeData.tThWidth
+
+    def set_active_material_tth_width(self, v):
+        if v != self.active_material_tth_width:
+            if v is None:
+                self.backup_tth_width = self.active_material_tth_width
+
+            self.active_material.planeData.tThWidth = v
+            self.ring_config_changed.emit()
+
+    active_material_tth_width = property(_active_material_tth_width,
+                                         set_active_material_tth_width)
+
+    def _backup_tth_width(self):
+        return self.backup_tth_widths.setdefault(self.active_material_name,
+                                                 0.002182)
+
+    def _set_backup_tth_width(self, v):
+        self.backup_tth_widths[self.active_material_name] = v
+
+    backup_tth_width = property(_backup_tth_width, _set_backup_tth_width)
+
+    def _tth_width_enabled(self):
+        return self.active_material_tth_width is not None
+
+    def set_tth_width_enabled(self, v):
+        # This will restore the backup of tth width, or set tth width to None
+        if v != self.tth_width_enabled:
+            if v:
+                self.active_material_tth_width = self.backup_tth_width
+            else:
+                self.active_material_tth_width = None
+
+    tth_width_enabled = property(_tth_width_enabled,
+                                 set_tth_width_enabled)
+
     def _active_material_tth_max(self):
         return self.active_material.planeData.tThMax
 
@@ -930,33 +961,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
     limit_active_rings = property(_limit_active_rings,
                                   set_limit_active_rings)
 
-    def _show_rings(self):
-        return self.config['materials'].get('show_rings')
+    def _show_overlays(self):
+        return self.config['materials'].get('show_overlays')
 
-    def _set_show_rings(self, b):
-        self.config['materials']['show_rings'] = b
+    def _set_show_overlays(self, b):
+        self.config['materials']['show_overlays'] = b
         self.ring_config_changed.emit()
 
-    show_rings = property(_show_rings, _set_show_rings)
-
-    def _show_ring_ranges(self):
-        return self.config['materials'].get('show_ring_ranges')
-
-    def _set_show_ring_ranges(self, b):
-        self.config['materials']['show_ring_ranges'] = b
-        self.ring_config_changed.emit()
-
-    show_ring_ranges = property(_show_ring_ranges, _set_show_ring_ranges)
-
-    def _ring_ranges(self):
-        return self.config['materials'].get('ring_ranges')
-
-    def _set_ring_ranges(self, r):
-        self.config['materials']['ring_ranges'] = r
-        self.update_plane_data_tth_widths()
-        self.ring_config_changed.emit()
-
-    ring_ranges = property(_ring_ranges, _set_ring_ranges)
+    show_overlays = property(_show_overlays, _set_show_overlays)
 
     def get_ring_style(self, name):
         # This will set defaults if no settings have been created

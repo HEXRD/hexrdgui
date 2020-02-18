@@ -167,14 +167,14 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="4" column="0">
+     <item row="5" column="0">
       <widget class="QCheckBox" name="limit_active">
        <property name="text">
         <string>Limit Active</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="9" column="1">
       <widget class="QLabel" name="min_d_spacing_label">
        <property name="enabled">
         <bool>false</bool>
@@ -184,31 +184,18 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QCheckBox" name="show_ranges">
+     <item row="4" column="0">
+      <widget class="QCheckBox" name="enable_width">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;show 2θ ranges for the selected HKLs for the active material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>Show Ranges</string>
+        <string>Enable Width</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QCheckBox" name="show_rings">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;show powder rings for the selected HKLs for the active material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Show Rings</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QDoubleSpinBox" name="tth_ranges">
+     <item row="4" column="1">
+      <widget class="QDoubleSpinBox" name="tth_width">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -218,8 +205,11 @@
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
        <property name="prefix">
-        <string>±</string>
+        <string/>
        </property>
        <property name="suffix">
         <string>°</string>
@@ -241,21 +231,21 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
+     <item row="1" column="0">
       <widget class="QCheckBox" name="material_visible">
        <property name="text">
         <string>Visible</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="1" column="1">
       <widget class="QPushButton" name="edit_style_button">
        <property name="text">
         <string>Edit Style...</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="5">
+     <item row="9" column="5">
       <widget class="QDoubleSpinBox" name="min_d_spacing">
        <property name="enabled">
         <bool>false</bool>
@@ -274,7 +264,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="5" column="1">
       <widget class="QLabel" name="max_bragg_angle_label">
        <property name="enabled">
         <bool>false</bool>
@@ -284,7 +274,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="5">
+     <item row="5" column="5">
       <widget class="QDoubleSpinBox" name="max_bragg_angle">
        <property name="enabled">
         <bool>false</bool>
@@ -303,7 +293,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="6">
+     <item row="5" column="6">
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -316,7 +306,7 @@
        </property>
       </spacer>
      </item>
-     <item row="3" column="5" colspan="2">
+     <item row="4" column="5" colspan="2">
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -329,7 +319,7 @@
        </property>
       </spacer>
      </item>
-     <item row="8" column="6">
+     <item row="9" column="6">
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -342,10 +332,23 @@
        </property>
       </spacer>
      </item>
-     <item row="0" column="5">
+     <item row="1" column="5">
       <widget class="QPushButton" name="hide_all">
        <property name="text">
         <string>Hide All</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="show_overlays">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;display overlays for the selected HKLs for each material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Show Overlays</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -357,12 +360,12 @@
   <tabstop>materials_combo</tabstop>
   <tabstop>materials_tool_button</tabstop>
   <tabstop>materials_table</tabstop>
+  <tabstop>show_overlays</tabstop>
   <tabstop>material_visible</tabstop>
   <tabstop>edit_style_button</tabstop>
   <tabstop>hide_all</tabstop>
-  <tabstop>show_rings</tabstop>
-  <tabstop>show_ranges</tabstop>
-  <tabstop>tth_ranges</tabstop>
+  <tabstop>enable_width</tabstop>
+  <tabstop>tth_width</tabstop>
   <tabstop>limit_active</tabstop>
   <tabstop>max_bragg_angle</tabstop>
   <tabstop>min_d_spacing</tabstop>
