@@ -89,8 +89,12 @@ class MainWindow(QObject):
 
         ImageFileManager().load_dummy_images()
 
-        # The dummy images will be drawn in MainWindow.show()
-        # See MainWindow.show() for more details.
+        # In order to avoid both a not very nice looking black window,
+        # and a bug with the tabbed view
+        # (see https://github.com/HEXRD/hexrdgui/issues/261),
+        # do not draw the images before the first paint event has
+        # occurred. The images will be drawn automatically after
+        # the first paint event has occurred (see MainWindow.eventFilter).
 
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
@@ -148,14 +152,6 @@ class MainWindow(QObject):
             self.ui.status_bar.showMessage)
 
     def show(self):
-        # Draw the contents of the canvas (probably will be dummy
-        # images). It is necessary to post this to the event loop
-        # in order to avoid a bug with the image tab widget
-        # (See https://github.com/HEXRD/hexrdgui/issues/261)
-        # 100 ms is used in an attempt to avoid a render flash
-        # TODO: call update_all() in the constructor if this bug
-        # gets fixed.
-        QTimer.singleShot(100, self.update_all)
         self.ui.show()
 
     def add_materials_panel(self):
@@ -510,6 +506,13 @@ class MainWindow(QObject):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
             # If the main window is closing, save the config settings
             HexrdConfig().save_settings()
+
+        if not hasattr(self, '_first_paint_occurred'):
+            if type(target) == QMainWindow and event.type() == QEvent.Paint:
+                # Draw the images for the first time after the first paint
+                # has occurred in order to avoid a black window.
+                QTimer.singleShot(0, self.update_all)
+                self._first_paint_occurred = True
 
         return False
 
