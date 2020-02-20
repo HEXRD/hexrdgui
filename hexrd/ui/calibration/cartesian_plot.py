@@ -71,16 +71,15 @@ class InstrumentViewer:
         rbnd_indices = []
 
         # If there are no rings, there is nothing to do
-        if len(plane_data.getTTh()) == 0:
+        if not HexrdConfig().show_overlays or len(plane_data.getTTh()) == 0:
             return rings, rbnds, rbnd_indices
 
-        if HexrdConfig().show_rings:
-            ring_angs, ring_xys = self.dpanel.make_powder_rings(
-                plane_data, delta_eta=1)
-            for ring in ring_xys:
-                rings.append(self.dpanel.cartToPixel(ring))
+        ring_angs, ring_xys = self.dpanel.make_powder_rings(
+            plane_data, delta_eta=1)
+        for ring in ring_xys:
+            rings.append(self.dpanel.cartToPixel(ring))
 
-        if HexrdConfig().show_ring_ranges:
+        if plane_data.tThWidth is not None:
             delta_tth = np.degrees(plane_data.tThWidth)
             indices, ranges = plane_data.getMergedRanges()
 
@@ -102,7 +101,7 @@ class InstrumentViewer:
     def add_rings(self):
         self.clear_rings()
 
-        if not HexrdConfig().show_rings and not HexrdConfig().show_ring_ranges:
+        if not HexrdConfig().show_overlays:
             # Nothing to do
             return self.ring_data
 
