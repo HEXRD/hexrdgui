@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import tempfile
 import yaml
 
@@ -31,6 +32,18 @@ class ImageFileManager(metaclass=Singleton):
 
         self.remember = True
         self.path = []
+
+    def load_dummy_images(self):
+        HexrdConfig().imageseries_dict.clear()
+        detectors = HexrdConfig().get_detector_names()
+        iconfig = HexrdConfig().instrument_config
+        for det in detectors:
+            cols = iconfig['detectors'][det]['pixels']['columns']
+            rows = iconfig['detectors'][det]['pixels']['rows']
+            shape = (rows, cols)
+            data = np.ones(shape, dtype=np.uint8)
+            ims = imageseries.open(None, 'array', data=data)
+            HexrdConfig().imageseries_dict[det] = ims
 
     def load_images(self, detectors, file_names):
         HexrdConfig().imageseries_dict.clear()

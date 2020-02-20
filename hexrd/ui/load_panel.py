@@ -35,7 +35,6 @@ class LoadPanel(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('load_panel.ui', parent)
 
-        self.ims = HexrdConfig().imageseries_dict
         self.parent_dir = HexrdConfig().images_dir
 
         self.files = []

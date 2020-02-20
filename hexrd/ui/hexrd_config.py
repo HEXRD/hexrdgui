@@ -311,9 +311,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                      **kwargs)
 
     def clear_images(self):
-        self.imageseries_dict = {}
+        self.imageseries_dict.clear()
         self.hdf5_path = None
-        self.load_panel_state = {}
+        if self.load_panel_state is not None:
+            self.load_panel_state.clear()
 
     def load_instrument_config(self, yml_file):
         old_detectors = self.get_detector_names()

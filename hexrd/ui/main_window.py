@@ -1,6 +1,6 @@
 import os
 
-from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal
+from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
     QVBoxLayout
@@ -82,10 +82,19 @@ class MainWindow(QObject):
 
         self.setup_connections()
 
-        self.calibration_config_widget.update_gui_from_config()
+        self.update_config_gui()
 
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
+
+        ImageFileManager().load_dummy_images()
+
+        # In order to avoid both a not very nice looking black window,
+        # and a bug with the tabbed view
+        # (see https://github.com/HEXRD/hexrdgui/issues/261),
+        # do not draw the images before the first paint event has
+        # occurred. The images will be drawn automatically after
+        # the first paint event has occurred (see MainWindow.eventFilter).
 
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
@@ -123,6 +132,7 @@ class MainWindow(QObject):
             self.on_action_calibration_line_picker_triggered)
         self.load_widget.new_images_loaded.connect(self.new_images_loaded)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
@@ -140,6 +150,9 @@ class MainWindow(QObject):
             self.open_aps_imageseries)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
+
+    def show(self):
+        self.ui.show()
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -164,10 +177,18 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
+            prev_detectors = HexrdConfig().get_detector_names()
+
             HexrdConfig().load_instrument_config(selected_file)
-            self.cal_tree_view.rebuild_tree()
-            self.calibration_config_widget.update_gui_from_config()
-            self.update_all(clear_canvases=True)
+            self.update_config_gui()
+
+            new_detectors = HexrdConfig().get_detector_names()
+            if new_detectors != prev_detectors:
+                # Load the dummy images. The new config probably isn't
+                # for the current images.
+                self.load_dummy_images()
+            else:
+                self.update_all(clear_canvases=True)
 
     def on_action_save_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -176,6 +197,11 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_instrument_config(selected_file)
+
+    def load_dummy_images(self):
+        ImageFileManager().load_dummy_images()
+        self.update_all(clear_canvases=True)
+        self.new_images_loaded.emit()
 
     def open_image_file(self):
         images_dir = HexrdConfig().images_dir
@@ -480,6 +506,13 @@ class MainWindow(QObject):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
             # If the main window is closing, save the config settings
             HexrdConfig().save_settings()
+
+        if not hasattr(self, '_first_paint_occurred'):
+            if type(target) == QMainWindow and event.type() == QEvent.Paint:
+                # Draw the images for the first time after the first paint
+                # has occurred in order to avoid a black window.
+                QTimer.singleShot(0, self.update_all)
+                self._first_paint_occurred = True
 
         return False
 
