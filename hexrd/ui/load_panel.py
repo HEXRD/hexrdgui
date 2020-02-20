@@ -3,6 +3,7 @@ import yaml
 import glob
 import re
 import numpy as np
+import copy
 
 from hexrd import imageseries
 
@@ -35,7 +36,9 @@ class LoadPanel(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('load_panel.ui', parent)
 
-        self.parent_dir = HexrdConfig().images_dir
+        self.ims = HexrdConfig().imageseries_dict
+        self.parent_dir = HexrdConfig().images_dir if HexrdConfig().images_dir else ''
+        self.unaggregated_images = None
 
         self.files = []
         self.omega_min = []
@@ -125,6 +128,8 @@ class LoadPanel(QObject):
 
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
+        if self.ui.aggregation.currentIndex() == 0:
+            self.unaggregated_images = None
 
     def trans_changed(self):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
@@ -638,6 +643,9 @@ class LoadPanel(QObject):
             return range(self.empty_frames, len(ims))
 
     def display_aggregation(self, ims_dict):
+        # Remember unaggregated images
+        self.unaggregated_images = copy.copy(ims_dict)
+
         # Display aggregated image from imageseries
         for key in ims_dict.keys():
             if self.state['agg'] == 1:
