@@ -1,5 +1,6 @@
 import copy
 import math
+import numpy as np
 
 from PySide2.QtCore import QItemSelectionModel, QObject, Qt
 from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
@@ -29,8 +30,6 @@ class MaterialsPanel(QObject):
 
         self.update_gui_from_config()
 
-        self.update_enable_states()
-
     def add_tool_button_actions(self):
         b = self.ui.materials_tool_button
 
@@ -59,10 +58,12 @@ class MaterialsPanel(QObject):
         self.ui.materials_table.selectionModel().selectionChanged.connect(
             self.update_ring_selection)
 
-        self.ui.show_rings.toggled.connect(HexrdConfig()._set_show_rings)
-        self.ui.show_ranges.toggled.connect(
-            HexrdConfig()._set_show_ring_ranges)
-        self.ui.tth_ranges.valueChanged.connect(HexrdConfig()._set_ring_ranges)
+        self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
+        self.ui.enable_width.toggled.connect(
+            HexrdConfig().set_tth_width_enabled)
+        self.ui.tth_width.valueChanged.connect(
+            lambda v: HexrdConfig().set_active_material_tth_width(
+                np.radians(v)))
 
         self.ui.limit_active.toggled.connect(
             HexrdConfig().set_limit_active_rings)
@@ -79,14 +80,14 @@ class MaterialsPanel(QObject):
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
-        self.ui.show_ranges.toggled.connect(self.update_enable_states)
+        self.ui.enable_width.toggled.connect(self.update_enable_states)
         self.ui.limit_active.toggled.connect(self.update_enable_states)
         self.ui.limit_active.toggled.connect(self.update_material_limits)
         self.ui.limit_active.toggled.connect(self.update_table)
 
     def update_enable_states(self):
-        show_ranges = self.ui.show_ranges.isChecked()
-        self.ui.tth_ranges.setEnabled(show_ranges)
+        enable_width = self.ui.enable_width.isChecked()
+        self.ui.tth_width.setEnabled(enable_width)
 
         limit_active = self.ui.limit_active.isChecked()
         self.ui.max_bragg_angle.setEnabled(limit_active)
@@ -132,9 +133,9 @@ class MaterialsPanel(QObject):
         block_list = [
             self.material_editor_widget,
             self.ui.materials_combo,
-            self.ui.show_rings,
-            self.ui.show_ranges,
-            self.ui.tth_ranges,
+            self.ui.show_overlays,
+            self.ui.enable_width,
+            self.ui.tth_width,
             self.ui.material_visible,
             self.ui.min_d_spacing,
             self.ui.max_bragg_angle,
@@ -158,9 +159,13 @@ class MaterialsPanel(QObject):
             self.material_editor_widget.material = HexrdConfig().active_material
             self.ui.materials_combo.setCurrentIndex(
                 materials_keys.index(HexrdConfig().active_material_name))
-            self.ui.show_rings.setChecked(HexrdConfig().show_rings)
-            self.ui.show_ranges.setChecked(HexrdConfig().show_ring_ranges)
-            self.ui.tth_ranges.setValue(HexrdConfig().ring_ranges)
+            self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
+            self.ui.enable_width.setChecked(HexrdConfig().tth_width_enabled)
+
+            width = HexrdConfig().active_material_tth_width
+            width = width if width else HexrdConfig().backup_tth_width
+            self.ui.tth_width.setValue(np.degrees(width))
+
             self.ui.material_visible.setChecked(
                 HexrdConfig().material_is_visible(self.current_material()))
             self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
@@ -170,6 +175,7 @@ class MaterialsPanel(QObject):
 
         self.update_material_limits()
         self.update_table()
+        self.update_enable_states()
 
     def update_material_limits(self):
         # Display the backup if it is None

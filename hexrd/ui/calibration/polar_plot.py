@@ -47,6 +47,10 @@ class InstrumentViewer:
                                                 self.pixel_size)
 
     @property
+    def all_detector_borders(self):
+        return self.pv.all_detector_borders
+
+    @property
     def angular_grid(self):
         return self.pv.angular_grid
 
@@ -71,14 +75,13 @@ class InstrumentViewer:
         rbnd_indices = []
 
         # If there are no rings, there is nothing to do
-        if len(plane_data.getTTh()) == 0:
+        if not HexrdConfig().show_overlays or len(plane_data.getTTh()) == 0:
             return rings, rbnds, rbnd_indices
 
-        if HexrdConfig().show_rings:
-            for tth in np.degrees(plane_data.getTTh()):
-                rings.append(np.array([[-180, tth], [180, tth]]))
+        for tth in np.degrees(plane_data.getTTh()):
+            rings.append(np.array([[-180, tth], [180, tth]]))
 
-        if HexrdConfig().show_ring_ranges:
+        if plane_data.tThWidth is not None:
             indices, ranges = plane_data.getMergedRanges()
 
             for ind, r in zip(indices, np.degrees(ranges)):

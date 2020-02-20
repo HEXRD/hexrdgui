@@ -91,8 +91,7 @@ class LoadPanel(QObject):
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
-        HexrdConfig().detectors_changed.connect(self.detectors_changed)
-        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
+        HexrdConfig().detectors_changed.connect(self.config_changed)
 
     def setup_processing_options(self):
         num_dets = len(HexrdConfig().get_detector_names())
@@ -151,8 +150,8 @@ class LoadPanel(QObject):
         self.ui.file_options.setRowCount(0)
         self.reset_data()
         self.enable_read()
-        HexrdConfig().load_panel_state = {}
-        self.state = self.setup_processing_options()
+        HexrdConfig().clear_images()
+        self.setup_gui()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
@@ -571,9 +570,6 @@ class LoadPanel(QObject):
 
     def finish_processing_ims(self):
         # Display processed images on completion
-        # The setEnabled options will not be needed once the panel
-        # is complete - those dialogs will be removed.
-        self.parent().action_edit_angles.setEnabled(True)
         self.parent().image_tab_widget.load_images()
         self.new_images_loaded.emit()
 
