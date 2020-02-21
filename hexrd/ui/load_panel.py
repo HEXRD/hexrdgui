@@ -52,7 +52,7 @@ class LoadPanel(QObject):
     # Setup GUI
 
     def setup_gui(self):
-        self.state = self.setup_processing_options()
+        self.setup_processing_options()
 
         if 'subdirs' in self.state:
             self.ui.subdirectories.setChecked(self.state['subdirs'])
@@ -91,7 +91,6 @@ class LoadPanel(QObject):
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
-        HexrdConfig().detectors_changed.connect(self.config_changed)
 
     def setup_processing_options(self):
         num_dets = len(HexrdConfig().get_detector_names())
@@ -103,7 +102,7 @@ class LoadPanel(QObject):
                 'dark': [0 for x in range(num_dets)],
                 'dark_files': [None for x in range(num_dets)]}
 
-        return HexrdConfig().load_panel_state
+        self.state = HexrdConfig().load_panel_state
 
     # Handle GUI changes
 
@@ -146,11 +145,11 @@ class LoadPanel(QObject):
         self.state['subdirs'] = checked
 
     def config_changed(self):
+        self.setup_processing_options()
         self.detectors_changed()
         self.ui.file_options.setRowCount(0)
         self.reset_data()
         self.enable_read()
-        HexrdConfig().clear_images()
         self.setup_gui()
 
     def switch_detector(self):

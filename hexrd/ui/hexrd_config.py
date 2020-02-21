@@ -70,6 +70,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """
     rerender_needed = Signal()
 
+    """Emitted for any changes that need a re-render from scratch
+
+    This causes all canvases to be cleared and re-rendered.
+    """
+    deep_rerender_needed = Signal()
+
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
@@ -227,7 +233,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             utils.convert_tilt_convention(self.config['instrument'], old_eac,
                                           new_eac)
 
-        self.rerender_needed.emit()
+        self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
 
     def set_images_dir(self, images_dir):
@@ -340,6 +346,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         new_detectors = self.get_detector_names()
         if old_detectors != new_detectors:
             self.detectors_changed.emit()
+        else:
+            # Still need a deep rerender
+            self.deep_rerender_needed.emit()
 
         return self.config['instrument']
 

@@ -150,6 +150,10 @@ class MainWindow(QObject):
             self.open_aps_imageseries)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
+        HexrdConfig().detectors_changed.connect(
+            self.on_detectors_changed)
+        HexrdConfig().deep_rerender_needed.connect(
+            lambda: self.update_all(clear_canvases=True))
 
     def show(self):
         self.ui.show()
@@ -177,18 +181,8 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
-            prev_detectors = HexrdConfig().get_detector_names()
-
             HexrdConfig().load_instrument_config(selected_file)
             self.update_config_gui()
-
-            new_detectors = HexrdConfig().get_detector_names()
-            if new_detectors != prev_detectors:
-                # Load the dummy images. The new config probably isn't
-                # for the current images.
-                self.load_dummy_images()
-            else:
-                self.update_all(clear_canvases=True)
 
     def on_action_save_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -197,6 +191,11 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_instrument_config(selected_file)
+
+    def on_detectors_changed(self):
+        self.load_dummy_images()
+        # Update the load widget
+        self.load_widget.config_changed()
 
     def load_dummy_images(self):
         ImageFileManager().load_dummy_images()
