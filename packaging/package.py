@@ -94,8 +94,8 @@ def build_conda_pack(base_path, tmp):
     # First build the hexrdgui package
     recipe_path = str(base_path / '..' / 'conda.recipe')
     config = Config()
-    config.channel = ['cjh1', 'conda-forge']
-    config.channel_urls = ['cjh1', 'conda-forge']
+    config.channel = ['HEXRD', 'cjh1', 'conda-forge']
+    config.channel_urls = ['HEXRD', 'cjh1', 'conda-forge']
     logger.info('Building hexrdgui conda package.')
     CondaBuild.build(recipe_path, config=config)
 
@@ -113,6 +113,7 @@ def build_conda_pack(base_path, tmp):
     params = [
         Conda.Commands.INSTALL,
         '--prefix', env_prefix,
+        '--channel', 'HEXRD',
         '--channel', 'cjh1',
         '--channel', 'conda-forge',
         '--use-local', 'hexrdgui'
