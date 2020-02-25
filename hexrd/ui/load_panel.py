@@ -12,7 +12,7 @@ from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Sign
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
-from hexrd.ui.cal_progress_dialog import CalProgressDialog
+from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.ui_loader import UiLoader
@@ -527,8 +527,9 @@ class LoadPanel(QObject):
 
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent())
-        progress_dialog = CalProgressDialog(self.parent())
+        progress_dialog = ProgressDialog(self.parent())
         progress_dialog.setWindowTitle('Loading Processed Imageseries')
+        progress_dialog.setRange(0, 0)
 
         # Start processing in background
         worker = AsyncWorker(self.process_ims)

@@ -2,16 +2,14 @@ from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QProgressDialog
 
 
-class CalProgressDialog(QProgressDialog):
+class ProgressDialog(QProgressDialog):
 
     def __init__(self, parent=None):
-        super(CalProgressDialog, self).__init__(parent)
+        super(ProgressDialog, self).__init__(parent)
 
-        self.setWindowTitle('Calibration Running')
+        # Some default window title and text
+        self.setWindowTitle('Hexrd')
         self.setLabelText('Please wait...')
-
-        # Indeterminate state
-        self.setRange(0, 0)
 
         # No cancel button
         self.setCancelButton(None)
@@ -27,4 +25,4 @@ class CalProgressDialog(QProgressDialog):
     def keyPressEvent(self, e):
         # Do not let the user close the dialog by pressing escape
         if e.key() != Qt.Key_Escape:
-            super(CalProgressDialog, self).keyPressEvent(e)
+            super(ProgressDialog, self).keyPressEvent(e)
