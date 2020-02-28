@@ -53,10 +53,12 @@ class ImageSeriesToolbar(QWidget):
             elif size and not self.show and current_tab:
                 self.show = True
             self.widget.setVisible(self.show)
-            self.slider.setMaximum(size)
             self.slider.setMinimumWidth(self.parent().width()/2)
-            self.frame.setMaximum(size)
-            self.slider.setValue(HexrdConfig().current_imageseries_idx)
+            if not size == self.slider.maximum():
+                self.slider.setMaximum(size)
+                self.frame.setMaximum(size)
+                HexrdConfig().current_imageseries_idx = 0
+                self.slider.setValue(HexrdConfig().current_imageseries_idx)
         else:
             self.show = False
             self.widget.setVisible(self.show)
