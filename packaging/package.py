@@ -1,6 +1,7 @@
 import tempfile
 from pathlib import Path
 import tarfile
+import zipfile
 import logging
 import shutil
 import sys
@@ -26,6 +27,8 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 package_env_name = 'hexrd_package_env'
+
+archive_format = 'zip' if platform.system() == 'Windows' else 'tar'
 
 def patch_qt_config(base_path):
     logger.info('Patching qt.conf.')
@@ -123,15 +126,15 @@ def build_conda_pack(base_path, tmp):
     Conda.run_command(*params)
 
     logger.info('Generating tar from environment using conda-pack.')
-    # Now use conda-pack to great relocatable tar
-    tar_path = str(tmp / 'hexrdgui.tar')
+    # Now use conda-pack to great relocatable archive
+    archive_path = str(tmp / ('hexrdgui.%s' % archive_format))
     CondaPack.pack(
         prefix=env_prefix,
-        output=tar_path,
-        format='tar'
+        output=archive_path,
+        format=archive_format
     )
 
-    return tar_path
+    return archive_path
 
 # We install a script that ensure the current working directory in
 # the bin directory.
@@ -153,14 +156,19 @@ def patch_qt_config_windows(base_path):
         fp.write('TargetSpec = win32-msvc\n')
         fp.write('HostSpec = win32-msvc\n')
 
-def build_windows_package_dir(base_path, tar_path):
-    logger.info('Extracting tar into package/ directory.')
-    # Now extract the tar into to packge directory so it ready for cpack.
+def build_windows_package_dir(base_path, archive_path):
+    logger.info('Extracting %s into package/ directory.' % archive_format)
+    # Now extract the archive into to packge directory so it ready for cpack.
     package_path = base_path / 'package'
     package_path.mkdir(parents=True, exist_ok=True)
-    tar = tarfile.open(tar_path)
-    tar.extractall(path=package_path)
-    tar.close()
+    if archive_format == 'tar':
+        tar = tarfile.open(archive_path)
+        tar.extractall(path=package_path)
+        tar.close()
+    else:
+        zip_file = zipfile.ZipFile(archive_path)
+        zip_file.extractall(path=package_path)
+        zip_file.close()
 
     patch_qt_config_windows(package_path)
     install_windows_script(base_path, package_path)
