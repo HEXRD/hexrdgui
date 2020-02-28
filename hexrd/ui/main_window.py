@@ -184,9 +184,11 @@ class MainWindow(QObject):
 
             new_detectors = HexrdConfig().get_detector_names()
             if new_detectors != prev_detectors:
+                HexrdConfig().current_imageseries_idx = 0
                 # Load the dummy images. The new config probably isn't
                 # for the current images.
                 self.load_dummy_images()
+                self.ui.image_tab_widget.switch_toolbar(0)
             else:
                 self.update_all(clear_canvases=True)
 

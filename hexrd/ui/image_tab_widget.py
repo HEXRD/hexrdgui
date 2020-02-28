@@ -65,6 +65,7 @@ class ImageTabWidget(QTabWidget):
     def load_images_tabbed(self):
         self.clear()
         self.allocate_canvases()
+        self.allocate_toolbars()
         for i, name in enumerate(self.image_names):
             self.image_canvases[i].load_images(image_names=[name])
             self.addTab(self.image_canvases[i], name)
@@ -78,6 +79,7 @@ class ImageTabWidget(QTabWidget):
         self.clear()
         self.image_canvases[0].load_images(
             image_names=self.image_names)
+        self.allocate_toolbars()
         self.addTab(self.image_canvases[0], '')
 
         self.update_canvas_cmaps()
