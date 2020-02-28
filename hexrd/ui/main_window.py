@@ -65,7 +65,6 @@ class MainWindow(QObject):
         self.load_widget = LoadPanel(self.ui)
         self.ui.load_page.setLayout(QVBoxLayout())
         self.ui.load_page.layout().addWidget(self.load_widget.ui)
-        # self.ui.load_page = self.load_widget
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
