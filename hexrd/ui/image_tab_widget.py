@@ -46,7 +46,7 @@ class ImageTabWidget(QTabWidget):
         self.setup_connections()
 
     def setup_connections(self):
-        self.currentChanged.connect(self.switch_toolbar)
+        self.tabBarClicked.connect(self.switch_toolbar)
         HexrdConfig().tab_images_changed.connect(self.load_images)
 
     def allocate_canvases(self):
@@ -131,20 +131,18 @@ class ImageTabWidget(QTabWidget):
             parent.layout().setAlignment(toolbar, Qt.AlignCenter)
             self.toolbars.append({'tb': tb, 'sb': sb})
 
-    def switch_toolbar(self):
-        idx = self.currentIndex()
+    def switch_toolbar(self, idx):
         if idx < 0:
             return
 
         self.current_index = idx
 
         # None should be visible except the current one
-        for toolbar in self.toolbars:
-            toolbar['tb'].setVisible(False)
-            toolbar['sb'].set_visible(False)
-
-        self.toolbars[idx]['tb'].setVisible(self.toolbar_visible)
-        self.toolbars[idx]['sb'].set_visible(self.toolbar_visible)
+        for i, toolbar in enumerate(self.toolbars):
+            status = self.toolbar_visible if idx == i else False
+            toolbar['tb'].setVisible(status)
+            toolbar['sb'].set_visible(status)
+        self.update_ims_toolbar()
 
     def update_ims_toolbar(self):
         idx = self.current_index
