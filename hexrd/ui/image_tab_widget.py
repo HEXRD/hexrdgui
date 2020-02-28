@@ -35,6 +35,7 @@ class ImageTabWidget(QTabWidget):
         self.mpl_connections = [cid]
 
         self.image_names = []
+        self.current_index = 0
 
         # These will get set later
         self.cmap = None
@@ -71,6 +72,7 @@ class ImageTabWidget(QTabWidget):
         self.update_canvas_cmaps()
         self.update_canvas_norms()
         self.tabBar().show()
+        self.setCurrentIndex(self.current_index)
 
     def load_images_untabbed(self):
         self.clear()
@@ -94,7 +96,7 @@ class ImageTabWidget(QTabWidget):
         else:
             self.load_images_untabbed()
 
-        self.update_ims_toolbar()
+        self.switch_toolbar(self.current_index)
 
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
@@ -104,12 +106,11 @@ class ImageTabWidget(QTabWidget):
     def show_toolbar(self, b):
         self.toolbar_visible = b
 
-        idx = self.currentIndex()
-        if idx < 0 or not self.toolbars:
+        if self.current_index < 0 or not self.toolbars:
             return
 
-        self.toolbars[idx]['tb'].setVisible(b)
-        self.toolbars[idx]['sb'].set_visible(b)
+        self.toolbars[self.current_index]['tb'].setVisible(b)
+        self.toolbars[self.current_index]['sb'].set_visible(b)
 
     def allocate_toolbars(self):
         parent = self.parent()
@@ -135,8 +136,7 @@ class ImageTabWidget(QTabWidget):
         if idx < 0:
             return
 
-        # Make sure all the toolbars are present and accounted for
-        self.allocate_toolbars()
+        self.current_index = idx
 
         # None should be visible except the current one
         for toolbar in self.toolbars:
