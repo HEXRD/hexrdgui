@@ -147,8 +147,10 @@ class ImageTabWidget(QTabWidget):
         self.toolbars[idx]['sb'].set_visible(self.toolbar_visible)
 
     def update_ims_toolbar(self):
-        for toolbar in self.toolbars:
-            toolbar['sb'].update_range()
+        idx = self.current_index
+        if self.toolbars:
+            self.toolbars[idx]['sb'].update_name(self.image_names[idx])
+            self.toolbars[idx]['sb'].update_range(True)
 
     def show_cartesian(self):
         self.update_image_names()
