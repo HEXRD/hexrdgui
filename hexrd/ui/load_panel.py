@@ -56,6 +56,8 @@ class LoadPanel(QObject):
 
         if 'subdirs' in self.state:
             self.ui.subdirectories.setChecked(self.state['subdirs'])
+        if 'apply_to_all' in self.state:
+            self.ui.all_detectors.setChecked(self.state['apply_to_all'])
         self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'][0])
@@ -162,6 +164,7 @@ class LoadPanel(QObject):
         self.create_table()
 
     def apply_to_all_changed(self, checked):
+        self.state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
 
