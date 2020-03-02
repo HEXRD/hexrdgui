@@ -74,8 +74,17 @@ class InstrumentViewer:
         if not HexrdConfig().show_overlays or len(plane_data.getTTh()) == 0:
             return rings, rbnds, rbnd_indices
 
+        # A delta_tth is needed here, even if the plane data tThWidth
+        # is None. Default to 0.125 degrees if tThWidth is None.
+        # I don't see a difference in the output if different values for
+        # delta_tth are chosen here.
+        if plane_data.tThWidth:
+            delta_tth = np.degrees(plane_data.tThWidth)
+        else:
+            delta_tth = 0.125
         ring_angs, ring_xys = self.dpanel.make_powder_rings(
-            plane_data, delta_eta=1)
+            plane_data, delta_tth=delta_tth, delta_eta=1)
+
         for ring in ring_xys:
             rings.append(self.dpanel.cartToPixel(ring))
 
