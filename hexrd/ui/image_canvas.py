@@ -398,8 +398,7 @@ class ImageCanvas(FigureCanvas):
                 self.azimuthal_integral_axis = axis
             else:
                 axis = self.azimuthal_integral_axis
-                axis.clear()
-                axis.plot(tth, np.sum(img, axis=0))
+                self.update_azimuthal_integral_plot()
 
             # These need to be set every time for some reason
             self.axis.label_outer()
@@ -454,12 +453,34 @@ class ImageCanvas(FigureCanvas):
             axes_image.set_norm(norm)
         self.draw()
 
+    def update_azimuthal_integral_plot(self):
+        if self.mode != 'polar':
+            # Nothing to do. Just return.
+            return
+
+        axis = self.azimuthal_integral_axis
+        if axis is None:
+            # Nothing to do. Just return.
+            return
+
+        img = self.iviewer.img
+
+        # Get the "tth" vector
+        angular_grid = self.iviewer.angular_grid
+        tth = np.degrees(angular_grid[1][0])
+
+        axis.clear()
+        axis.plot(tth, np.sum(img, axis=0))
+
     def on_detector_transform_modified(self, det):
         if not self.iviewer:
             return
 
         self.iviewer.update_detector(det)
         self.axes_images[0].set_data(self.iviewer.img)
+
+        # This will only run if we are in polar mode
+        self.update_azimuthal_integral_plot()
 
         # Update the detector borders if we are showing them
         # This will call self.draw()
