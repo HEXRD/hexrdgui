@@ -1,3 +1,5 @@
+import h5py
+import os
 import numpy as np
 
 from hexrd import instrument
@@ -122,8 +124,27 @@ class InstrumentViewer:
         self.img = self.pv.img
 
     def write_image(self, filename='polar_image.npz'):
-        np.savez(filename,
-                 tth_coordinates=self.angular_grid[1],
-                 eta_coordinates=self.angular_grid[0],
-                 intensities=self.img,
-                 extent=np.radians(self._extent))
+        # Prepare the data to write out
+        data = {
+            'tth_coordinates': self.angular_grid[1],
+            'eta_coordinates': self.angular_grid[0],
+            'intensities': self.img,
+            'extent': np.radians(self._extent)
+        }
+
+        # Delete the file if it already exists
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        # Check the file extension
+        _, ext = os.path.splitext(filename)
+        ext = ext.lower()
+
+        if ext == '.npz':
+            # If it looks like npz, save as npz
+            np.savez(filename, **data)
+        else:
+            # Default to HDF5 format
+            f = h5py.File(filename, 'w')
+            for key, value in data.items():
+                f.create_dataset(key, data=value)

@@ -356,7 +356,7 @@ class MainWindow(QObject):
     def on_action_export_polar_plot_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Polar Image', HexrdConfig().working_dir,
-            'NPZ files (*.npz)')
+            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
 
         if selected_file:
             return self.ui.image_tab_widget.export_polar_plot(selected_file)
