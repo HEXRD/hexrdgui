@@ -1,6 +1,7 @@
 import os
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
+from PySide2.QtGui import QIcon, QPixmap
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
     QVBoxLayout
@@ -30,6 +31,8 @@ from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui import resource_loader
+import hexrd.ui.resources.icons
 
 
 class MainWindow(QObject):
@@ -42,6 +45,9 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
+
+        # Load the icon
+        self.load_icon()
 
         self.thread_pool = QThreadPool(self)
         self.cal_progress_dialog = CalProgressDialog(self.ui)
@@ -150,6 +156,13 @@ class MainWindow(QObject):
             self.open_aps_imageseries)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
+
+    def load_icon(self):
+        icon = resource_loader.load_resource(hexrd.ui.resources.icons,
+                                             'hexrd.ico', binary=True)
+        pixmap = QPixmap()
+        pixmap.loadFromData(icon, 'ico')
+        self.ui.setWindowIcon(QIcon(pixmap))
 
     def show(self):
         self.ui.show()
