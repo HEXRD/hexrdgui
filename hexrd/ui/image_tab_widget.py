@@ -98,7 +98,7 @@ class ImageTabWidget(QTabWidget):
         else:
             self.load_images_untabbed()
 
-        self.switch_toolbar(self.current_index)
+        self.switch_toolbar(self.currentIndex())
 
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
