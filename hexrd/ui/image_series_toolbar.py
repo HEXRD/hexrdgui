@@ -67,6 +67,9 @@ class ImageSeriesToolbar(QWidget):
         self.ims = HexrdConfig().imageseries(self.name)
         self.set_range(current_tab)
 
+        if self.slider.value() != HexrdConfig().current_imageseries_idx:
+            self.val_changed(self.slider.value())
+
     def update_name(self, name):
         if not name == self.name:
             self.name = name
