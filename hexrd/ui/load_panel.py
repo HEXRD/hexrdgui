@@ -77,6 +77,9 @@ class LoadPanel(QObject):
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):
+        HexrdConfig().load_panel_state_reset.connect(
+            self.setup_processing_options)
+
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)

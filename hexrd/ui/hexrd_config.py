@@ -86,6 +86,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """
     update_status_bar = Signal(str)
 
+    """Emitted when the load_panel_state has been cleared"""
+    load_panel_state_reset = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -321,6 +324,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.hdf5_path = None
         if self.load_panel_state is not None:
             self.load_panel_state.clear()
+            self.load_panel_state_reset.emit()
 
     def load_instrument_config(self, yml_file):
         old_detectors = self.get_detector_names()
