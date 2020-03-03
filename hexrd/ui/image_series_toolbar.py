@@ -57,8 +57,8 @@ class ImageSeriesToolbar(QWidget):
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setMaximum(size)
-                HexrdConfig().current_imageseries_idx = 0
-                self.slider.setValue(HexrdConfig().current_imageseries_idx)
+                self.slider.setValue(min(HexrdConfig().current_imageseries_idx, size))
+                self.frame.setValue(self.slider.value())
         else:
             self.show = False
             self.widget.setVisible(self.show)
