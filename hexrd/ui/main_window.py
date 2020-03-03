@@ -1,6 +1,7 @@
 import os
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
+from PySide2.QtGui import QIcon, QPixmap
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
     QVBoxLayout
@@ -30,6 +31,8 @@ from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui import resource_loader
+import hexrd.ui.resources.icons
 
 
 class MainWindow(QObject):
@@ -42,6 +45,9 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
+
+        # Load the icon
+        self.load_icon()
 
         self.thread_pool = QThreadPool(self)
         self.cal_progress_dialog = CalProgressDialog(self.ui)
@@ -149,6 +155,17 @@ class MainWindow(QObject):
             self.open_aps_imageseries)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
+        HexrdConfig().detectors_changed.connect(
+            self.on_detectors_changed)
+        HexrdConfig().deep_rerender_needed.connect(
+            lambda: self.update_all(clear_canvases=True))
+
+    def load_icon(self):
+        icon = resource_loader.load_resource(hexrd.ui.resources.icons,
+                                             'hexrd.ico', binary=True)
+        pixmap = QPixmap()
+        pixmap.loadFromData(icon, 'ico')
+        self.ui.setWindowIcon(QIcon(pixmap))
 
     def show(self):
         self.ui.show()
@@ -176,20 +193,8 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
-            prev_detectors = HexrdConfig().get_detector_names()
-
             HexrdConfig().load_instrument_config(selected_file)
             self.update_config_gui()
-
-            new_detectors = HexrdConfig().get_detector_names()
-            if new_detectors != prev_detectors:
-                HexrdConfig().current_imageseries_idx = 0
-                # Load the dummy images. The new config probably isn't
-                # for the current images.
-                self.load_dummy_images()
-                self.ui.image_tab_widget.switch_toolbar(0)
-            else:
-                self.update_all(clear_canvases=True)
 
     def on_action_save_config_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -198,6 +203,13 @@ class MainWindow(QObject):
 
         if selected_file:
             return HexrdConfig().save_instrument_config(selected_file)
+
+    def on_detectors_changed(self):
+        HexrdConfig().current_imageseries_idx = 0
+        self.load_dummy_images()
+        self.ui.image_tab_widget.switch_toolbar(0)
+        # Update the load widget
+        self.load_widget.config_changed()
 
     def load_dummy_images(self):
         ImageFileManager().load_dummy_images()
@@ -344,7 +356,7 @@ class MainWindow(QObject):
     def on_action_export_polar_plot_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Polar Image', HexrdConfig().working_dir,
-            'NPZ files (*.npz)')
+            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
 
         if selected_file:
             return self.ui.image_tab_widget.export_polar_plot(selected_file)

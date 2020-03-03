@@ -52,10 +52,12 @@ class LoadPanel(QObject):
     # Setup GUI
 
     def setup_gui(self):
-        self.state = self.setup_processing_options()
+        self.setup_processing_options()
 
         if 'subdirs' in self.state:
             self.ui.subdirectories.setChecked(self.state['subdirs'])
+        if 'apply_to_all' in self.state:
+            self.ui.all_detectors.setChecked(self.state['apply_to_all'])
         self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'][0])
@@ -75,6 +77,9 @@ class LoadPanel(QObject):
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):
+        HexrdConfig().load_panel_state_reset.connect(
+            self.setup_processing_options)
+
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
@@ -91,7 +96,6 @@ class LoadPanel(QObject):
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
-        HexrdConfig().detectors_changed.connect(self.config_changed)
 
     def setup_processing_options(self):
         num_dets = len(HexrdConfig().get_detector_names())
@@ -103,7 +107,7 @@ class LoadPanel(QObject):
                 'dark': [0 for x in range(num_dets)],
                 'dark_files': [None for x in range(num_dets)]}
 
-        return HexrdConfig().load_panel_state
+        self.state = HexrdConfig().load_panel_state
 
     # Handle GUI changes
 
@@ -146,11 +150,11 @@ class LoadPanel(QObject):
         self.state['subdirs'] = checked
 
     def config_changed(self):
+        self.setup_processing_options()
         self.detectors_changed()
         self.ui.file_options.setRowCount(0)
         self.reset_data()
         self.enable_read()
-        HexrdConfig().clear_images()
         self.setup_gui()
 
     def switch_detector(self):
@@ -162,6 +166,7 @@ class LoadPanel(QObject):
         self.create_table()
 
     def apply_to_all_changed(self, checked):
+        self.state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
 

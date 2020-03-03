@@ -190,7 +190,7 @@
      <item row="4" column="0">
       <widget class="QCheckBox" name="enable_width">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the selected HKLs of the currently selected material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the currently selected material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Enable Width</string>
