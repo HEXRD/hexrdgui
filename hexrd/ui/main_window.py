@@ -71,7 +71,6 @@ class MainWindow(QObject):
         self.load_widget = LoadPanel(self.ui)
         self.ui.load_page.setLayout(QVBoxLayout())
         self.ui.load_page.layout().addWidget(self.load_widget.ui)
-        # self.ui.load_page = self.load_widget
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
@@ -206,7 +205,9 @@ class MainWindow(QObject):
             return HexrdConfig().save_instrument_config(selected_file)
 
     def on_detectors_changed(self):
+        HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
+        self.ui.image_tab_widget.switch_toolbar(0)
         # Update the load widget
         self.load_widget.config_changed()
 

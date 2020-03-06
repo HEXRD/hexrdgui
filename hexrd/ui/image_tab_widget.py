@@ -35,6 +35,7 @@ class ImageTabWidget(QTabWidget):
         self.mpl_connections = [cid]
 
         self.image_names = []
+        self.current_index = 0
 
         # These will get set later
         self.cmap = None
@@ -45,7 +46,7 @@ class ImageTabWidget(QTabWidget):
         self.setup_connections()
 
     def setup_connections(self):
-        self.currentChanged.connect(self.switch_toolbar)
+        self.tabBarClicked.connect(self.switch_toolbar)
         HexrdConfig().tab_images_changed.connect(self.load_images)
 
     def allocate_canvases(self):
@@ -64,6 +65,7 @@ class ImageTabWidget(QTabWidget):
     def load_images_tabbed(self):
         self.clear()
         self.allocate_canvases()
+        self.allocate_toolbars()
         for i, name in enumerate(self.image_names):
             self.image_canvases[i].load_images(image_names=[name])
             self.addTab(self.image_canvases[i], name)
@@ -71,11 +73,13 @@ class ImageTabWidget(QTabWidget):
         self.update_canvas_cmaps()
         self.update_canvas_norms()
         self.tabBar().show()
+        self.setCurrentIndex(self.current_index)
 
     def load_images_untabbed(self):
         self.clear()
         self.image_canvases[0].load_images(
             image_names=self.image_names)
+        self.allocate_toolbars()
         self.addTab(self.image_canvases[0], '')
 
         self.update_canvas_cmaps()
@@ -94,7 +98,7 @@ class ImageTabWidget(QTabWidget):
         else:
             self.load_images_untabbed()
 
-        self.update_ims_toolbar()
+        self.switch_toolbar(self.currentIndex())
 
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
@@ -104,12 +108,11 @@ class ImageTabWidget(QTabWidget):
     def show_toolbar(self, b):
         self.toolbar_visible = b
 
-        idx = self.currentIndex()
-        if idx < 0 or not self.toolbars:
+        if self.current_index < 0 or not self.toolbars:
             return
 
-        self.toolbars[idx]['tb'].setVisible(b)
-        self.toolbars[idx]['sb'].set_visible(b)
+        self.toolbars[self.current_index]['tb'].setVisible(b)
+        self.toolbars[self.current_index]['sb'].set_visible(b)
 
     def allocate_toolbars(self):
         parent = self.parent()
@@ -130,25 +133,24 @@ class ImageTabWidget(QTabWidget):
             parent.layout().setAlignment(toolbar, Qt.AlignCenter)
             self.toolbars.append({'tb': tb, 'sb': sb})
 
-    def switch_toolbar(self):
-        idx = self.currentIndex()
+    def switch_toolbar(self, idx):
         if idx < 0:
             return
 
-        # Make sure all the toolbars are present and accounted for
-        self.allocate_toolbars()
+        self.current_index = idx
 
         # None should be visible except the current one
-        for toolbar in self.toolbars:
-            toolbar['tb'].setVisible(False)
-            toolbar['sb'].set_visible(False)
-
-        self.toolbars[idx]['tb'].setVisible(self.toolbar_visible)
-        self.toolbars[idx]['sb'].set_visible(self.toolbar_visible)
+        for i, toolbar in enumerate(self.toolbars):
+            status = self.toolbar_visible if idx == i else False
+            toolbar['tb'].setVisible(status)
+            toolbar['sb'].set_visible(status)
+        self.update_ims_toolbar()
 
     def update_ims_toolbar(self):
-        for toolbar in self.toolbars:
-            toolbar['sb'].update_range()
+        idx = self.current_index
+        if self.toolbars:
+            self.toolbars[idx]['sb'].update_name(self.image_names[idx])
+            self.toolbars[idx]['sb'].update_range(True)
 
     def show_cartesian(self):
         self.update_image_names()

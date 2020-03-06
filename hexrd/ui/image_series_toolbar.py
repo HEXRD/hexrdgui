@@ -45,30 +45,37 @@ class ImageSeriesToolbar(QWidget):
             self.show = True
         self.widget.setVisible(self.show)
 
-    def set_range(self):
+    def set_range(self, current_tab=False):
         if self.ims:
             size = len(self.ims) - 1
-            if not size and self.show:
+            if (not size or not current_tab) and self.show:
                 self.show = False
-            elif size and not self.show:
+            elif size and not self.show and current_tab:
                 self.show = True
             self.widget.setVisible(self.show)
-            self.slider.setMaximum(size)
             self.slider.setMinimumWidth(self.parent().width()/2)
-            self.frame.setMaximum(size)
-            self.slider.setValue(HexrdConfig().current_imageseries_idx)
+            if not size == self.slider.maximum():
+                self.slider.setMaximum(size)
+                self.frame.setMaximum(size)
+                self.slider.setValue(min(HexrdConfig().current_imageseries_idx, size))
+                self.frame.setValue(self.slider.value())
         else:
             self.show = False
             self.widget.setVisible(self.show)
 
-    def update_range(self):
+    def update_range(self, current_tab):
         self.ims = HexrdConfig().imageseries(self.name)
-        self.set_range()
-        HexrdConfig().current_imageseries_idx = 0
+        self.set_range(current_tab)
+
+        if self.slider.value() != HexrdConfig().current_imageseries_idx:
+            self.val_changed(self.slider.value())
+
+    def update_name(self, name):
+        if not name == self.name:
+            self.name = name
 
     def set_visible(self, b=False):
-        if self.show:
-            self.widget.setVisible(b)
+        self.widget.setVisible(b)
 
     def val_changed(self, pos):
         self.parent().change_ims_image(pos)
