@@ -241,14 +241,6 @@ class LoadPanel(QObject):
         for img in selected_files:
             f = os.path.split(img)[1]
             name = os.path.splitext(f)[0]
-            if not self.ui.subdirectories.isChecked():
-                dets = HexrdConfig().get_detector_names()
-                ext = os.path.splitext(f)[1]
-                if ext.split('.')[1] not in dets:
-                    chunks = re.split(r'[_-]', name)
-                    for det in dets:
-                        if det in chunks:
-                            name = name.replace(det, '')
             if self.ext != '.yml':
                 tmp_ims.append(ImageFileManager().open_file(img))
 
@@ -347,21 +339,17 @@ class LoadPanel(QObject):
     def match_images(self, fnames):
         dets = HexrdConfig().get_detector_names()
         self.files = [[] for i in range(len(dets))]
+        for det in dets:
+            if det in fnames[0]:
+                core_name = fnames[0].replace(det, '')
         for item in os.scandir(self.parent_dir):
-            file_name = os.path.splitext(item.name)[0]
-            ext = os.path.splitext(item.name)[1]
-            det = ext.split('.')[1] if len(ext.split('.')) > 1 else ''
-            if det not in dets:
-                chunks = re.split(r'[_-]', file_name)
-                for name in dets:
-                    if name in chunks:
-                        det = name
-                        file_name = file_name.replace(name, '')
-            if det not in dets:
-                continue
-            pos = dets.index(det)
-            if os.path.isfile(item) and file_name in fnames:
-                self.files[pos].append(item.path)
+            if os.path.isfile(item):
+                file_name = os.path.splitext(item.name)[0]
+                ext = os.path.splitext(item.name)[1]
+                for det in dets:
+                    if (det in file_name) and (core_name == file_name.replace(det, '')):
+                        pos = dets.index(det)
+                        self.files[pos].append(item.path)
         # Display error if equivalent files are not found for ea. detector
         files_per_det = all(len(fnames) == len(elem) for elem in self.files)
         if not files_per_det:
