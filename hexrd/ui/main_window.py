@@ -139,6 +139,7 @@ class MainWindow(QObject):
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
+        self.load_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(

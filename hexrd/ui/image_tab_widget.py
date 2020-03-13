@@ -92,13 +92,12 @@ class ImageTabWidget(QTabWidget):
 
     def load_images(self):
         self.update_image_names()
+        self.switch_toolbar(self.currentIndex())
 
         if HexrdConfig().tab_images:
             self.load_images_tabbed()
         else:
             self.load_images_untabbed()
-
-        self.switch_toolbar(self.currentIndex())
 
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
@@ -154,6 +153,7 @@ class ImageTabWidget(QTabWidget):
 
     def show_cartesian(self):
         self.update_image_names()
+        self.switch_toolbar(self.currentIndex())
 
         # Make sure we actually have images
         if len(self.image_names) == 0:
@@ -168,6 +168,7 @@ class ImageTabWidget(QTabWidget):
 
     def show_polar(self):
         self.update_image_names()
+        self.switch_toolbar(self.currentIndex())
 
         # Make sure we actually have images
         if len(self.image_names) == 0:

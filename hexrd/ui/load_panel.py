@@ -28,6 +28,7 @@ from hexrd.ui.ui_loader import UiLoader
 class LoadPanel(QObject):
 
     # Emitted when new images are loaded
+    update_needed = Signal()
     new_images_loaded = Signal()
 
     def __init__(self, parent=None):
