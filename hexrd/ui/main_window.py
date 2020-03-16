@@ -14,7 +14,7 @@ from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
-from hexrd.ui.cal_progress_dialog import CalProgressDialog
+from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.line_picker_dialog import LinePickerDialog
@@ -50,7 +50,8 @@ class MainWindow(QObject):
         self.load_icon()
 
         self.thread_pool = QThreadPool(self)
-        self.cal_progress_dialog = CalProgressDialog(self.ui)
+        self.progress_dialog = ProgressDialog(self.ui)
+        self.progress_dialog.setWindowTitle('Calibration Running')
 
         # Let the left dock widget take up the whole left side
         self.ui.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
@@ -383,13 +384,17 @@ class MainWindow(QObject):
         worker = AsyncWorker(run_line_picked_calibration, line_data)
         self.thread_pool.start(worker)
 
+        # We currently don't have any progress updates, so make the
+        # progress bar indeterminate.
+        self.progress_dialog.setRange(0, 0)
+
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_line_picked_calibration)
-        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        worker.signals.finished.connect(self.progress_dialog.accept)
         msg = 'Powder calibration finished!'
         f = lambda: HexrdConfig().emit_update_status_bar(msg)
         worker.signals.finished.connect(f)
-        self.cal_progress_dialog.exec_()
+        self.progress_dialog.exec_()
 
     def finish_line_picked_calibration(self, res):
         print('Received result from line picked calibration')
@@ -499,13 +504,17 @@ class MainWindow(QObject):
         worker = AsyncWorker(run_powder_calibration)
         self.thread_pool.start(worker)
 
+        # We currently don't have any progress updates, so make the
+        # progress bar indeterminate.
+        self.progress_dialog.setRange(0, 0)
+
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_powder_calibration)
-        worker.signals.finished.connect(self.cal_progress_dialog.accept)
+        worker.signals.finished.connect(self.progress_dialog.accept)
         msg = 'Powder calibration finished!'
         f = lambda: HexrdConfig().emit_update_status_bar(msg)
         worker.signals.finished.connect(f)
-        self.cal_progress_dialog.exec_()
+        self.progress_dialog.exec_()
 
     def finish_powder_calibration(self):
         self.update_config_gui()
