@@ -1,4 +1,5 @@
-from PySide2.QtCore import QObject, Signal, QTimer
+from PySide2.QtCore import QObject, Qt, QTimer, Signal
+from PySide2.QtGui import QKeyEvent
 from PySide2.QtWidgets import (
     QAbstractSpinBox, QComboBox, QLineEdit, QMessageBox, QPushButton
 )
@@ -30,6 +31,7 @@ class CalibrationConfigWidget(QObject):
         self.timer = None
 
     def setup_connections(self):
+        self.ui.cal_det_current.installEventFilter(self)
         self.ui.cal_energy.valueChanged.connect(self.on_energy_changed)
         self.ui.cal_energy_wavelength.valueChanged.connect(
             self.on_energy_wavelength_changed)
@@ -321,3 +323,22 @@ class CalibrationConfigWidget(QObject):
             enable = (num_params > i)
             widget.setEnabled(enable)
             widget.setVisible(enable)
+
+    def eventFilter(self, target, event):
+        # Unfortunately, when a user modifies the name in the editable
+        # QComboBox 'cal_det_current', and then they press enter, it does
+        # not emit QLineEdit.editingFinished(), but instead emits
+        # QComboBox.currentIndexChanged(). This behavior is a little odd.
+        # We need QLineEdit.editingFinished() so that the name gets updated.
+        # If we call QLineEdit.editingFinished() here explicitly, it gets
+        # emitted twice: once in this function, and once when the focus
+        # gets cleared. Rather than calling it twice, let's just clear the
+        # focus here so it gets called only once.
+        if type(target) == QComboBox:
+            if target.objectName() == 'cal_det_current':
+                enter_keys = [Qt.Key_Return, Qt.Key_Enter]
+                if type(event) == QKeyEvent and event.key() in enter_keys:
+                    self.ui.cal_det_current.lineEdit().clearFocus()
+                    return True
+
+        return False
