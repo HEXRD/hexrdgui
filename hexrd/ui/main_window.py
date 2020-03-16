@@ -25,6 +25,7 @@ from hexrd.ui.calibration.line_picked_calibration import (
 from hexrd.ui.create_polar_mask import create_polar_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
+from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.materials_panel import MaterialsPanel
@@ -135,7 +136,6 @@ class MainWindow(QObject):
             self.start_powder_calibration)
         self.ui.action_calibration_line_picker.triggered.connect(
             self.on_action_calibration_line_picker_triggered)
-        self.load_widget.new_images_loaded.connect(self.new_images_loaded)
         self.new_images_loaded.connect(self.color_map_editor.update_bounds)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
@@ -159,6 +159,9 @@ class MainWindow(QObject):
             self.on_detectors_changed)
         HexrdConfig().deep_rerender_needed.connect(
             lambda: self.update_all(clear_canvases=True))
+
+        ImageLoadManager().update_needed.connect(self.update_all)
+        ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
 
     def load_icon(self):
         icon = resource_loader.load_resource(hexrd.ui.resources.icons,
@@ -240,12 +243,17 @@ class MainWindow(QObject):
             # Save the chosen dir
             HexrdConfig().set_images_dir(selected_files[0])
 
-            # Make sure the number of files and number of detectors match
+            # Make sure the names and number of files and
+            # names and number of detectors match
             num_detectors = len(HexrdConfig().get_detector_names())
             if len(selected_files) != num_detectors:
                 msg = ('Number of files must match number of detectors: ' +
                        str(num_detectors))
                 QMessageBox.warning(self.ui, 'HEXRD', msg)
+                return
+
+            files = ImageLoadManager().check_images(selected_files)
+            if not files:
                 return
 
             # If it is a hdf5 file allow the user to select the path
@@ -259,9 +267,7 @@ class MainWindow(QObject):
 
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
-                ImageFileManager().load_images(detector_names, image_files)
-                self.update_all()
-                self.new_images_loaded.emit()
+                ImageLoadManager().read_data(files, parent=self.ui)
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
@@ -296,8 +302,8 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        if self.load_widget.unaggregated_images:
-            ims_dict = self.load_widget.unaggregated_images
+        if ImageLoadManager().unaggregated_images:
+            ims_dict = ImageLoadManager().unaggregated_images
         else:
             ims_dict = HexrdConfig().imageseries_dict
 
