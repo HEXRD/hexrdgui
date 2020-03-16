@@ -1,5 +1,5 @@
 from PySide2.QtCore import QObject, Qt, QTimer, Signal
-from PySide2.QtGui import QKeyEvent
+from PySide2.QtGui import QFocusEvent, QKeyEvent
 from PySide2.QtWidgets import (
     QAbstractSpinBox, QComboBox, QLineEdit, QMessageBox, QPushButton
 )
@@ -193,6 +193,7 @@ class CalibrationConfigWidget(QObject):
         previously_blocked = self.block_all_signals()
 
         try:
+            combo_widget = self.ui.cal_det_current
             detector_names = self.cfg.get_detector_names()
             if not detector_names:
                 # Disable detector widgets if there is no valid detector
@@ -205,8 +206,8 @@ class CalibrationConfigWidget(QObject):
                 self.enable_detector_widgets(enable=True)
 
             cur_detector = detector_names[0]
-            if self.ui.cal_det_current.currentText() in detector_names:
-                cur_detector = self.ui.cal_det_current.currentText()
+            if combo_widget.currentText() in detector_names:
+                cur_detector = combo_widget.currentText()
 
             gui_yaml_paths = self.cfg.get_gui_yaml_paths(['detectors',
                                                           'detector_name'])
@@ -230,11 +231,10 @@ class CalibrationConfigWidget(QObject):
                 self._set_gui_value(gui_var, config_val, status_val)
 
             combo_items = []
-            for i in range(self.ui.cal_det_current.count()):
-                combo_items.append(self.ui.cal_det_current.itemText(i))
+            for i in range(combo_widget.count()):
+                combo_items.append(combo_widget.itemText(i))
 
             if combo_items != detector_names:
-                combo_widget = self.ui.cal_det_current
                 combo_widget.clear()
                 combo_widget.addItems(detector_names)
                 new_ind = combo_widget.findText(cur_detector)
@@ -336,9 +336,25 @@ class CalibrationConfigWidget(QObject):
         # focus here so it gets called only once.
         if type(target) == QComboBox:
             if target.objectName() == 'cal_det_current':
+                widget = self.ui.cal_det_current
                 enter_keys = [Qt.Key_Return, Qt.Key_Enter]
                 if type(event) == QKeyEvent and event.key() in enter_keys:
-                    self.ui.cal_det_current.lineEdit().clearFocus()
+                    widget.lineEdit().clearFocus()
                     return True
+
+                if type(event) == QFocusEvent and event.lostFocus():
+                    # This happens either if enter is pressed, or if the
+                    # user tabs out.
+                    items = [widget.itemText(i) for i in range(widget.count())]
+                    text = widget.currentText()
+                    idx = widget.currentIndex()
+                    if text in items and widget.itemText(idx) != text:
+                        # Prevent the QComboBox from automatically changing
+                        # the index to be that of the other item in the list.
+                        # This is confusing behavior, and it's not what we
+                        # want here.
+                        widget.setCurrentIndex(idx)
+                        # Let the widget lose focus
+                        return False
 
         return False
