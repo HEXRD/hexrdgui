@@ -1,20 +1,15 @@
 import os
 import yaml
 import glob
-import re
 import numpy as np
-import copy
-
-from hexrd import imageseries
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Signal, QDir
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
-from hexrd.ui.async_worker import AsyncWorker
-from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
+from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ui_loader import UiLoader
 
 """
@@ -27,9 +22,6 @@ from hexrd.ui.ui_loader import UiLoader
 
 class LoadPanel(QObject):
 
-    # Emitted when new images are loaded
-    new_images_loaded = Signal()
-
     def __init__(self, parent=None):
         super(LoadPanel, self).__init__(parent)
 
@@ -38,7 +30,6 @@ class LoadPanel(QObject):
 
         self.ims = HexrdConfig().imageseries_dict
         self.parent_dir = HexrdConfig().images_dir if HexrdConfig().images_dir else ''
-        self.unaggregated_images = None
 
         self.files = []
         self.omega_min = []
@@ -119,8 +110,10 @@ class LoadPanel(QObject):
 
         if self.state['dark'][self.idx] == 4:
             self.ui.selectDark.setEnabled(True)
-            self.ui.dark_file.setText(
-                self.dark_files[self.idx] if self.dark_files[self.idx] else '(No File Selected)')
+            if self.dark_files[self.idx]:
+                self.ui.dark_file.setText(self.dark_files[self.idx])
+            else:
+                self.ui.dark_file.setText('(No File Selected)')
             self.enable_read()
         else:
             self.ui.selectDark.setEnabled(False)
@@ -136,7 +129,7 @@ class LoadPanel(QObject):
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
         if self.ui.aggregation.currentIndex() == 0:
-            self.unaggregated_images = None
+            ImageLoadManager().reset_unagg_imgs()
 
     def trans_changed(self):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
@@ -206,7 +199,10 @@ class LoadPanel(QObject):
     def select_images(self):
         # This takes one or more images for a single detector.
         if self.ui.aps_imageseries.isChecked():
-            selected_files = QDir(self.parent_dir).entryList(QDir.Files)
+            files = QDir(self.parent_dir).entryInfoList(QDir.Files)
+            selected_files = []
+            for file in files:
+                selected_files.append(file.absoluteFilePath())
         else:
             caption = HexrdConfig().images_dirtion = 'Select image file(s)'
             selected_files, selected_filter = QFileDialog.getOpenFileNames(
@@ -293,8 +289,9 @@ class LoadPanel(QObject):
         if 'ostart' in data['meta']:
             self.omega_min.append(data['meta']['ostart'])
             self.omega_max.append(data['meta']['ostop'])
-            wedge = (data['meta']['ostop'] - data['meta']['ostart']) / self.total_frames[0]
-            self.delta.append(wedge)
+            num = data['meta']['ostop'] - data['meta']['ostart']
+            denom = self.total_frames[0]
+            self.delta.append(num / denom)
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
@@ -311,9 +308,9 @@ class LoadPanel(QObject):
     def find_images(self, fnames):
         if (self.ui.subdirectories.isChecked()):
             self.find_directories()
-            self.match_dirs_images(fnames)
+            self.files = ImageLoadManager().match_dirs_images(fnames, self.directories)
         else:
-            self.match_images(fnames)
+            self.files = ImageLoadManager().match_images(fnames)
 
         if self.files and self.ext == '.yml':
             self.get_yml_files()
@@ -329,7 +326,7 @@ class LoadPanel(QObject):
         if len(self.directories) != num_det:
             dir_names = []
             if len(self.directories) > 0:
-                for path in dirs:
+                for path in self.directories:
                     dir_names.append(os.path.basename(path))
             diff = list(
                 set(HexrdConfig().get_detector_names()) - set(dir_names))
@@ -338,46 +335,6 @@ class LoadPanel(QObject):
                 + str(diff)[1:-1])
             QMessageBox.warning(None, 'HEXRD', msg)
             return
-
-    def match_images(self, fnames):
-        dets = HexrdConfig().get_detector_names()
-        self.files = [[] for i in range(len(dets))]
-        for det in dets:
-            if det in fnames[0]:
-                core_name = fnames[0].replace(det, '')
-        for item in os.scandir(self.parent_dir):
-            if os.path.isfile(item):
-                file_name = os.path.splitext(item.name)[0]
-                ext = os.path.splitext(item.name)[1]
-                for det in dets:
-                    if (det in file_name) and (core_name == file_name.replace(det, '')):
-                        pos = dets.index(det)
-                        self.files[pos].append(item.path)
-        # Display error if equivalent files are not found for ea. detector
-        files_per_det = all(len(fnames) == len(elem) for elem in self.files)
-        if not files_per_det:
-            msg = ('ERROR - There must be the same number of files for each detector.')
-            QMessageBox.warning(None, 'HEXRD', msg)
-            self.files = []
-            return
-
-
-    def match_dirs_images(self, fnames):
-        dets = HexrdConfig().get_detector_names()
-        self.files = [[] for i in range(len(dets))]
-        # Find the images with the same name for the remaining detectors
-        for i, dir in enumerate(self.directories):
-            pos = dets.index(os.path.basename(dir))
-            for item in os.scandir(dir):
-                fname = os.path.splitext(item.name)[0]
-                if os.path.isfile(item) and fname in fnames:
-                    self.files[pos].append(item.path)
-            # Display error if equivalent files are not found for ea. detector
-            if len(self.files[pos]) != len(fnames):
-                msg = ('ERROR - Could not find equivalent file(s) in ' + dir)
-                QMessageBox.warning(None, 'HEXRD', msg)
-                self.files = []
-                break
 
     def get_yml_files(self):
         self.yml_files = []
@@ -449,7 +406,6 @@ class LoadPanel(QObject):
             # If raw data offset can only be changed in YAML file
             if self.ext == '.yml':
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
-
 
         self.ui.file_options.resizeColumnsToContents()
 
@@ -524,222 +480,16 @@ class LoadPanel(QObject):
     # Process files
 
     def read_data(self):
-        # When this is pressed read in a complete set of data for all detectors.
-        # Run the imageseries processing in a background thread and display a
-        # loading dialog
-
-        # Create threads and loading dialog
-        thread_pool = QThreadPool(self.parent())
-        progress_dialog = ProgressDialog(self.parent())
-        progress_dialog.setWindowTitle('Loading Processed Imageseries')
-        self.progress_dialog = progress_dialog
-
-        # Start processing in background
-        worker = AsyncWorker(self.process_ims)
-        thread_pool.start(worker)
-
-        worker.signals.progress.connect(progress_dialog.setValue)
-        # On completion load imageseries nd close loading dialog
-        worker.signals.result.connect(self.finish_processing_ims)
-        worker.signals.finished.connect(progress_dialog.accept)
-        progress_dialog.exec_()
-
-    def process_ims(self, update_progress):
-        self.update_progress = update_progress
-        self.update_progress(0)
-
-        # Open selected images as imageseries
-        det_names = HexrdConfig().get_detector_names()
-
-        if len(self.files[0]) > 1:
-            for i, det in enumerate(det_names):
-                if self.directories:
-                    dirs = self.directories[i]
-                else:
-                    dirs = self.parent_dir
-                ims = ImageFileManager().open_directory(dirs, self.files[i])
-                HexrdConfig().imageseries_dict[det] = ims
-        else:
-            ImageFileManager().load_images(det_names, self.files)
-
-        # Now that self.state is set, setup the progress variables
-        self.setup_progress_variables()
-
-        # Process the imageseries
-        self.apply_operations(HexrdConfig().imageseries_dict)
-        if self.state['agg']:
-            self.display_aggregation(HexrdConfig().imageseries_dict)
-        elif '' not in self.omega_min:
-            self.add_omega_metadata(HexrdConfig().imageseries_dict)
-
-        self.update_progress(100)
-
-    def finish_processing_ims(self):
-        # Display processed images on completion
-        self.parent().image_tab_widget.load_images()
-        self.new_images_loaded.emit()
-
-    def apply_operations(self, ims_dict):
-        # Apply the operations to the imageseries
-        for idx, key in enumerate(ims_dict.keys()):
-            if self.ui.all_detectors.isChecked():
-                idx = self.idx
-            ops = []
-            if self.state['dark'][idx] != 5:
-                if not self.empty_frames and self.state['dark'][idx] == 1:
-                    msg = ('ERROR: \n No empty frames set. '
-                            + 'No dark subtracion will be performed.')
-                    QMessageBox.warning(None, 'HEXRD', msg)
-                    return
-                else:
-                    self.get_dark_op(ops, ims_dict[key], idx)
-
-            if self.state['trans'][idx]:
-                self.get_flip_op(ops, idx)
-
-            frames = self.get_range(ims_dict[key])
-
-            ims_dict[key] = imageseries.process.ProcessedImageSeries(
-                ims_dict[key], ops, frame_list=frames)
-
-    def get_dark_op(self, oplist, ims, idx):
-        dark_idx = self.state['dark'][idx]
-        if dark_idx == 4:
-            ims = ImageFileManager().open_file(self.dark_files[idx])
-
-        # Create or load the dark image if selected
-        frames = len(ims)
-        if dark_idx != 4 and frames > 120:
-            frames = 120
-
-        if dark_idx == 0:
-            f = imageseries.stats.median_iter
-        elif dark_idx == 1:
-            f = imageseries.stats.average_iter
-            frames = self.empty_frames
-        elif dark_idx == 2:
-            f = imageseries.stats.average_iter
-        elif dark_idx == 3:
-            f = imageseries.stats.max_iter
-        else:
-            f = imageseries.stats.median_iter
-
-        self.update_progress_text('Aggregating dark images...')
-
-        step = int(frames * len(HexrdConfig().imageseries_dict) / 100)
-        step = step if step > 2 else 2
-        nchunk = int(frames / step)
-        if nchunk > frames or nchunk < 1:
-            # One last sanity check
-            nchunk = frames
-
-        for i, darkimg in enumerate(f(ims, nchunk, nframes=frames)):
-            progress = self.calculate_progress(i, nchunk)
-            self.update_progress(progress)
-
-        self.increment_progress_step()
-
-        oplist.append(('dark', darkimg))
-
-    def get_flip_op(self, oplist, idx):
-        # Change the image orientation
-        if self.state['trans'][idx] == 0:
-            return
-
-        if self.state['trans'][idx] == 1:
-            key = 'v'
-        elif self.state['trans'][idx] == 2:
-            key = 'h'
-        elif self.state['trans'][idx] == 3:
-            key = 't'
-        elif self.state['trans'][idx] == 4:
-            key = 'r90'
-        elif self.state['trans'][idx] == 5:
-            key = 'r180'
-        else:
-            key = 'r270'
-
-        oplist.append(('flip', key))
-
-    def get_range(self, ims):
+        data = {
+            'omega_min': self.omega_min,
+            'omega_max': self.omega_max,
+            'empty_frames': self.empty_frames,
+            'total_frames': self.total_frames,
+            'directories': self.directories,
+            }
+        if self.ui.all_detectors.isChecked():
+            data['idx'] = self.idx
         if self.ext == '.yml':
-            return range(len(ims))
-        else:
-            return range(self.empty_frames, len(ims))
+            data['yml_files'] = self.yml_files
 
-    def display_aggregation(self, ims_dict):
-        self.update_progress_text('Aggregating images...')
-        # Remember unaggregated images
-        self.unaggregated_images = copy.copy(ims_dict)
-        # Display aggregated image from imageseries
-        for key, ims in ims_dict.items():
-            frames = len(ims)
-            step = int(frames * len(ims_dict) / 100)
-            step = step if step > 2 else 2
-            nchunk = int(frames / step)
-            if nchunk > frames or nchunk < 1:
-                # One last sanity check
-                nchunk = frames
-
-            if self.state['agg'] == 1:
-                f = imageseries.stats.max_iter
-            elif self.state['agg'] == 2:
-                f = imageseries.stats.median_iter
-            else:
-                f = imageseries.stats.average_iter
-
-            for i, img in enumerate(f(ims, nchunk)):
-                progress = self.calculate_progress(i, nchunk)
-                self.update_progress(progress)
-
-            self.increment_progress_step()
-            ims_dict[key] = [img]
-
-    def add_omega_metadata(self, ims_dict):
-        # Add on the omega metadata if there is any
-        files = self.yml_files if self.ext == '.yml' else self.files
-        for key in ims_dict.keys():
-            nframes = len(ims_dict[key])
-            omw = imageseries.omega.OmegaWedges(nframes)
-            for i in range(len(files[0])):
-                nsteps = self.total_frames[i] - self.empty_frames
-                start = self.omega_min[i]
-                stop = self.omega_max[i]
-
-                # Don't add wedges if defaults are unchanged
-                if not (start - stop):
-                    return
-
-                omw.addwedge(start, stop, nsteps)
-
-            ims_dict[key].metadata['omega'] = omw.omegas
-
-    def setup_progress_variables(self):
-        self.current_progress_step = 0
-
-        ims_dict = HexrdConfig().imageseries_dict
-        num_ims = len(ims_dict)
-
-        progress_macro_steps = 0
-        for idx in range(num_ims):
-            if self.ui.all_detectors.isChecked():
-                idx = self.idx
-
-            if self.state['dark'][idx] != 5:
-                progress_macro_steps += 1
-
-        if self.state['agg']:
-            progress_macro_steps += num_ims
-
-        self.progress_macro_steps = progress_macro_steps
-
-    def calculate_progress(self, i, nchunk):
-        numerator = self.current_progress_step + i / nchunk
-        return numerator / self.progress_macro_steps * 100
-
-    def increment_progress_step(self):
-        self.current_progress_step += 1
-
-    def update_progress_text(self, text):
-        if self.progress_dialog is not None:
-            self.progress_dialog.setLabelText(text)
+        ImageLoadManager().read_data(self.files, data, self.parent())

@@ -48,6 +48,10 @@ class ImageTabWidget(QTabWidget):
     def setup_connections(self):
         self.tabBarClicked.connect(self.switch_toolbar)
         HexrdConfig().tab_images_changed.connect(self.load_images)
+        HexrdConfig().detectors_changed.connect(self.reset_index)
+
+    def reset_index(self):
+        self.current_index = 0
 
     def allocate_canvases(self):
         while len(self.image_canvases) < len(self.image_names):
@@ -92,6 +96,7 @@ class ImageTabWidget(QTabWidget):
 
     def load_images(self):
         self.update_image_names()
+        self.update_ims_toolbar()
 
         if HexrdConfig().tab_images:
             self.load_images_tabbed()
@@ -154,6 +159,7 @@ class ImageTabWidget(QTabWidget):
 
     def show_cartesian(self):
         self.update_image_names()
+        self.update_ims_toolbar()
 
         # Make sure we actually have images
         if len(self.image_names) == 0:
@@ -165,9 +171,11 @@ class ImageTabWidget(QTabWidget):
         self.image_canvases[0].show_cartesian()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
+        self.switch_toolbar(self.currentIndex())
 
     def show_polar(self):
         self.update_image_names()
+        self.update_ims_toolbar()
 
         # Make sure we actually have images
         if len(self.image_names) == 0:
@@ -179,6 +187,7 @@ class ImageTabWidget(QTabWidget):
         self.image_canvases[0].show_polar()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
+        self.switch_toolbar(self.currentIndex())
 
     def active_canvases(self):
         """Get the canvases that are actively being used"""
