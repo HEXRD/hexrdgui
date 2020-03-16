@@ -1,6 +1,6 @@
 from PySide2.QtCore import QObject, Signal, QTimer
 from PySide2.QtWidgets import (
-    QAbstractSpinBox, QComboBox, QLineEdit, QPushButton
+    QAbstractSpinBox, QComboBox, QLineEdit, QMessageBox, QPushButton
 )
 
 import numpy as np
@@ -112,6 +112,11 @@ class CalibrationConfigWidget(QObject):
         self.cfg.rename_detector(old_name, new_name)
 
     def on_detector_remove_clicked(self):
+        if self.ui.cal_det_current.count() <= 1:
+            msg = 'Cannot remove last detector'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
         current_detector = self.get_current_detector()
         idx = self.ui.cal_det_current.currentIndex()
 
