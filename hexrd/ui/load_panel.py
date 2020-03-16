@@ -1,18 +1,12 @@
 import os
 import yaml
 import glob
-import re
 import numpy as np
-import copy
-
-from hexrd import imageseries
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QThreadPool, Signal, QDir
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
-from hexrd.ui.async_worker import AsyncWorker
-from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -113,8 +107,10 @@ class LoadPanel(QObject):
 
         if self.state['dark'][self.idx] == 4:
             self.ui.selectDark.setEnabled(True)
-            self.ui.dark_file.setText(
-                self.dark_files[self.idx] if self.dark_files[self.idx] else '(No File Selected)')
+            if self.dark_files[self.idx]:
+                self.ui.dark_file.setText(self.dark_files[self.idx])
+            else:
+                self.ui.dark_file.setText('(No File Selected)')
             self.enable_read()
         else:
             self.ui.selectDark.setEnabled(False)
@@ -290,8 +286,9 @@ class LoadPanel(QObject):
         if 'ostart' in data['meta']:
             self.omega_min.append(data['meta']['ostart'])
             self.omega_max.append(data['meta']['ostop'])
-            wedge = (data['meta']['ostop'] - data['meta']['ostart']) / self.total_frames[0]
-            self.delta.append(wedge)
+            num = data['meta']['ostop'] - data['meta']['ostart']
+            denom = self.total_frames[0]
+            self.delta.append(num / denom)
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
