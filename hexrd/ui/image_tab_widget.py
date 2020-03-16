@@ -48,6 +48,10 @@ class ImageTabWidget(QTabWidget):
     def setup_connections(self):
         self.tabBarClicked.connect(self.switch_toolbar)
         HexrdConfig().tab_images_changed.connect(self.load_images)
+        HexrdConfig().detectors_changed.connect(self.reset_index)
+
+    def reset_index(self):
+        self.current_index = 0
 
     def allocate_canvases(self):
         while len(self.image_canvases) < len(self.image_names):
