@@ -3,6 +3,7 @@
 
 from PySide2.QtCore import QObject, QRunnable, Signal, Slot
 
+import inspect
 import traceback
 import sys
 
@@ -56,9 +57,10 @@ class AsyncWorker(QRunnable):
         self.kwargs = kwargs
         self.signals = AsyncWorkerSignals()
 
-        # Add the callback to our kwargs
-        if 'progress_callback' in self.kwargs:
-            self.kwargs['progress_callback'] = self.signals.progress
+        # If the function signature accepts an 'update_progress'
+        # function, set it to emit the progress signal.
+        if 'update_progress' in inspect.getfullargspec(self.fn)[0]:
+            self.kwargs['update_progress'] = self.signals.progress.emit
 
     @Slot()
     def run(self):

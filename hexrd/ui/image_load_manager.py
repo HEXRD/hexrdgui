@@ -7,9 +7,9 @@ from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
-from hexrd.ui.cal_progress_dialog import CalProgressDialog
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
+from hexrd.ui.progress_dialog import ProgressDialog
 
 
 class Singleton(type(QObject)):
@@ -110,19 +110,24 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent)
-        progress_dialog = CalProgressDialog(self.parent)
+        progress_dialog = ProgressDialog(self.parent)
         progress_dialog.setWindowTitle('Loading Processed Imageseries')
+        self.progress_dialog = progress_dialog
 
         # Start processing in background
         worker = AsyncWorker(self.process_ims)
         thread_pool.start(worker)
 
+        worker.signals.progress.connect(progress_dialog.setValue)
         # On completion load imageseries nd close loading dialog
         worker.signals.result.connect(self.finish_processing_ims)
         worker.signals.finished.connect(progress_dialog.accept)
         progress_dialog.exec_()
 
-    def process_ims(self):
+    def process_ims(self, update_progress):
+        self.update_progress = update_progress
+        self.update_progress(0)
+
         # Open selected images as imageseries
         self.parent_dir = HexrdConfig().images_dir
         det_names = HexrdConfig().get_detector_names()
@@ -139,6 +144,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         else:
             ImageFileManager().load_images(det_names, self.files)
 
+        # Now that self.state is set, setup the progress variables
+        self.setup_progress_variables()
+
         # Process the imageseries
         if self.data:
             self.apply_operations(HexrdConfig().imageseries_dict)
@@ -146,6 +154,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 self.display_aggregation(HexrdConfig().imageseries_dict)
             else:
                 self.add_omega_metadata(HexrdConfig().imageseries_dict)
+
+        self.update_progress(100)
 
     def finish_processing_ims(self):
         # Display processed images on completion
@@ -178,20 +188,32 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 ims_dict[key], ops, frame_list=frames)
 
     def display_aggregation(self, ims_dict):
+        self.update_progress_text('Aggregating images...')
         # Remember unaggregated images
         self.unaggregated_images = copy.copy(ims_dict)
-
         # Display aggregated image from imageseries
-        for key in ims_dict.keys():
+        for key, ims in ims_dict.items():
+            frames = len(ims)
+            step = int(frames * len(ims_dict) / 100)
+            step = step if step > 2 else 2
+            nchunk = int(frames / step)
+            if nchunk > frames or nchunk < 1:
+                # One last sanity check
+                nchunk = frames
+
             if self.state['agg'] == 1:
-                ims_dict[key] = [imageseries.stats.max(
-                    ims_dict[key], len(ims_dict[key]))]
+                f = imageseries.stats.max_iter
             elif self.state['agg'] == 2:
-                ims_dict[key] = [imageseries.stats.median(
-                    ims_dict[key], len(ims_dict[key]))]
+                f = imageseries.stats.median_iter
             else:
-                ims_dict[key] = [imageseries.stats.average(
-                    ims_dict[key], len(ims_dict[key]))]
+                f = imageseries.stats.average_iter
+
+            for i, img in enumerate(f(ims, nchunk)):
+                progress = self.calculate_progress(i, nchunk)
+                self.update_progress(progress)
+
+            self.increment_progress_step()
+            ims_dict[key] = [img]
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
@@ -239,24 +261,73 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         oplist.append(('flip', key))
 
     def get_dark_op(self, oplist, ims, idx):
+        dark_idx = self.state['dark'][idx]
+        if dark_idx == 4:
+            ims = ImageFileManager().open_file(self.dark_files[idx])
+
         # Create or load the dark image if selected
-        if self.state['dark'][idx] != 4:
-            frames = len(ims)
-            if frames > 120:
-                frames = 120
-            if self.state['dark'][idx] == 0:
-                darkimg = imageseries.stats.median(ims, frames)
-            elif self.state['dark'][idx] == 1:
-                darkimg = imageseries.stats.average(ims, self.empty_frames)
-            elif self.state['dark'][idx] == 2:
-                darkimg = imageseries.stats.average(ims, frames)
-            else:
-                darkimg = imageseries.stats.max(ims, frames)
+        frames = len(ims)
+        if dark_idx != 4 and frames > 120:
+            frames = 120
+
+        if dark_idx == 0:
+            f = imageseries.stats.median_iter
+        elif dark_idx == 1:
+            f = imageseries.stats.average_iter
+            frames = self.empty_frames
+        elif dark_idx == 2:
+            f = imageseries.stats.average_iter
+        elif dark_idx == 3:
+            f = imageseries.stats.max_iter
         else:
-            darkimg = imageseries.stats.median(
-                ImageFileManager().open_file(self.state['dark_files'][idx]))
+            f = imageseries.stats.median_iter
+
+        self.update_progress_text('Aggregating dark images...')
+
+        step = int(frames * len(HexrdConfig().imageseries_dict) / 100)
+        step = step if step > 2 else 2
+        nchunk = int(frames / step)
+        if nchunk > frames or nchunk < 1:
+            # One last sanity check
+            nchunk = frames
+
+        for i, darkimg in enumerate(f(ims, nchunk, nframes=frames)):
+            progress = self.calculate_progress(i, nchunk)
+            self.update_progress(progress)
+
+        self.increment_progress_step()
 
         oplist.append(('dark', darkimg))
 
     def reset_unagg_imgs(self):
         self.unaggregated_images = None
+
+    def setup_progress_variables(self):
+        self.current_progress_step = 0
+
+        ims_dict = HexrdConfig().imageseries_dict
+        num_ims = len(ims_dict)
+
+        progress_macro_steps = 0
+        for idx in range(num_ims):
+            if self.data and 'idx' in self.data:
+                idx = self.data['idx']
+
+            if self.state['dark'][idx] != 5:
+                progress_macro_steps += 1
+
+        if self.state['agg']:
+            progress_macro_steps += num_ims
+
+        self.progress_macro_steps = progress_macro_steps
+
+    def calculate_progress(self, i, nchunk):
+        numerator = self.current_progress_step + i / nchunk
+        return numerator / self.progress_macro_steps * 100
+
+    def increment_progress_step(self):
+        self.current_progress_step += 1
+
+    def update_progress_text(self, text):
+        if self.progress_dialog is not None:
+            self.progress_dialog.setLabelText(text)
