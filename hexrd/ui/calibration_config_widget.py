@@ -122,6 +122,7 @@ class CalibrationConfigWidget(QObject):
             self.update_detector_from_config()
 
     def on_detector_add_clicked(self):
+        combo = self.ui.cal_det_current
         current_detector = self.get_current_detector()
         detector_names = self.cfg.get_detector_names()
         new_detector_name_base = 'detector_'
@@ -130,7 +131,8 @@ class CalibrationConfigWidget(QObject):
             if new_detector_name not in detector_names:
                 self.cfg.add_detector(new_detector_name, current_detector)
                 self.update_detector_from_config()
-                self.ui.cal_det_current.setCurrentText(new_detector_name)
+                new_ind = combo.findText(new_detector_name)
+                combo.setCurrentIndex(new_ind)
                 return
 
     def update_config_from_gui(self):
@@ -225,9 +227,11 @@ class CalibrationConfigWidget(QObject):
                 combo_items.append(self.ui.cal_det_current.itemText(i))
 
             if combo_items != detector_names:
-                self.ui.cal_det_current.clear()
-                self.ui.cal_det_current.addItems(detector_names)
-                self.ui.cal_det_current.setCurrentText(cur_detector)
+                combo_widget = self.ui.cal_det_current
+                combo_widget.clear()
+                combo_widget.addItems(detector_names)
+                new_ind = combo_widget.findText(cur_detector)
+                combo_widget.setCurrentIndex(new_ind)
 
         finally:
             self.unblock_all_signals(previously_blocked)
