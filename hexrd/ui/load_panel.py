@@ -36,6 +36,9 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.idx = 0
         self.ext = ''
+        self.progress_dialog = None
+        self.current_progress_step = 0
+        self.progress_macro_steps = 0
 
         self.setup_gui()
         self.setup_connections()
