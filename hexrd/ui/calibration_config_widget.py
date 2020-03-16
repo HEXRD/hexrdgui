@@ -36,7 +36,7 @@ class CalibrationConfigWidget(QObject):
 
         self.ui.cal_det_current.currentIndexChanged.connect(
             self.on_detector_changed)
-        self.ui.cal_det_current.editTextChanged.connect(
+        self.ui.cal_det_current.lineEdit().editingFinished.connect(
             self.on_detector_name_edited)
         self.ui.cal_det_remove.clicked.connect(self.on_detector_remove_clicked)
         self.ui.cal_det_add.clicked.connect(self.on_detector_add_clicked)
