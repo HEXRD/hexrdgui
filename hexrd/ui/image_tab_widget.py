@@ -92,12 +92,14 @@ class ImageTabWidget(QTabWidget):
 
     def load_images(self):
         self.update_image_names()
-        self.switch_toolbar(self.currentIndex())
+        self.update_ims_toolbar()
 
         if HexrdConfig().tab_images:
             self.load_images_tabbed()
         else:
             self.load_images_untabbed()
+
+        self.switch_toolbar(self.currentIndex())
 
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
@@ -153,7 +155,7 @@ class ImageTabWidget(QTabWidget):
 
     def show_cartesian(self):
         self.update_image_names()
-        self.switch_toolbar(self.currentIndex())
+        self.update_ims_toolbar()
 
         # Make sure we actually have images
         if len(self.image_names) == 0:
@@ -165,10 +167,11 @@ class ImageTabWidget(QTabWidget):
         self.image_canvases[0].show_cartesian()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
+        self.switch_toolbar(self.currentIndex())
 
     def show_polar(self):
         self.update_image_names()
-        self.switch_toolbar(self.currentIndex())
+        self.update_ims_toolbar()
 
         # Make sure we actually have images
         if len(self.image_names) == 0:
@@ -180,6 +183,7 @@ class ImageTabWidget(QTabWidget):
         self.image_canvases[0].show_polar()
         self.addTab(self.image_canvases[0], '')
         self.tabBar().hide()
+        self.switch_toolbar(self.currentIndex())
 
     def active_canvases(self):
         """Get the canvases that are actively being used"""
