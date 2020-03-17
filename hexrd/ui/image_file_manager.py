@@ -33,8 +33,8 @@ class ImageFileManager(metaclass=Singleton):
         self.remember = True
         self.path = []
 
-    def load_dummy_images(self):
-        HexrdConfig().clear_images()
+    def load_dummy_images(self, initial=False):
+        HexrdConfig().clear_images(initial)
         detectors = HexrdConfig().get_detector_names()
         iconfig = HexrdConfig().instrument_config
         for det in detectors:
