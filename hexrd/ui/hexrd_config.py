@@ -319,10 +319,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
                                      **kwargs)
 
-    def clear_images(self):
+    def clear_images(self, initial_load=False):
         self.imageseries_dict.clear()
         self.hdf5_path = None
-        if self.load_panel_state is not None:
+        if self.load_panel_state is not None and not initial_load:
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
 
