@@ -94,7 +94,7 @@ class MainWindow(QObject):
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
 
-        ImageFileManager().load_dummy_images()
+        ImageFileManager().load_dummy_images(True)
 
         # In order to avoid both a not very nice looking black window,
         # and a bug with the tabbed view
