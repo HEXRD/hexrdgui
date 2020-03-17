@@ -228,13 +228,25 @@ class LoadPanel(QObject):
         self.files = []
 
     def enable_aggregations(self, row, column):
-        if column == 1 or column == 2:
-            enable = True
-            total_frames = np.sum(self.total_frames)
-            if total_frames - self.empty_frames < 2:
-                enable = False
-            self.ui.darkMode.setEnabled(enable)
-            self.ui.aggregation.setEnabled(enable)
+        if not (column == 1 or column == 2):
+            return
+
+        enable = True
+        total_frames = np.sum(self.total_frames)
+        if total_frames - self.empty_frames < 2:
+            enable = False
+        self.ui.darkMode.setEnabled(enable)
+        self.ui.aggregation.setEnabled(enable)
+
+        if not enable:
+            # Update dark mode settings
+            self.ui.all_detectors.setChecked(True)
+            num_dets = len(HexrdConfig().get_detector_names())
+            self.state['dark'] = [5 for x in range(num_dets)]
+            self.ui.darkMode.setCurrentIndex(5)
+            # Update aggregation settings
+            self.state['agg'] = 0
+            self.ui.aggregation.setCurrentIndex(0)
 
     def load_image_data(self, selected_files):
         self.ext = os.path.splitext(selected_files[0])[1]
