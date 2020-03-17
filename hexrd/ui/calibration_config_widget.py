@@ -26,6 +26,9 @@ class CalibrationConfigWidget(QObject):
 
         self.detector_widgets_disabled = False
 
+        # Turn off autocomplete for the QComboBox
+        self.ui.cal_det_current.setCompleter(None)
+
         self.setup_connections()
 
         self.timer = None
