@@ -91,6 +91,8 @@ class LoadPanel(QObject):
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
 
+        self.ui.file_options.cellChanged.connect(self.enable_aggregations)
+
     def setup_processing_options(self):
         num_dets = len(HexrdConfig().get_detector_names())
         if (not HexrdConfig().load_panel_state
@@ -224,6 +226,15 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.delta = []
         self.files = []
+
+    def enable_aggregations(self, row, column):
+        if column == 1 or column == 2:
+            enable = True
+            total_frames = np.sum(self.total_frames)
+            if total_frames - self.empty_frames < 2:
+                enable = False
+            self.ui.darkMode.setEnabled(enable)
+            self.ui.aggregation.setEnabled(enable)
 
     def load_image_data(self, selected_files):
         self.ext = os.path.splitext(selected_files[0])[1]
