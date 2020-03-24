@@ -389,6 +389,9 @@ class ImageCanvas(FigureCanvas):
                 axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
                 axis.plot(tth, np.sum(img, axis=0))
 
+                # Let the axes rescale one time
+                axis.autoscale_view()
+
                 # Turn off autoscale so modifying the rings does not
                 # rescale the y axis.
                 axis.autoscale(False)
