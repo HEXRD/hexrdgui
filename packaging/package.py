@@ -64,6 +64,9 @@ def build_mac_app_bundle(base_path, tar_path):
     tar.extractall(path=hexrd_app_contents_resources)
     tar.close()
 
+    # Add icon
+    shutil.copyfile(base_path / 'darwin' / 'hexrdgui.icns', hexrd_app_contents_resources / 'hexrdgui.icns')
+
     patch_qt_config(hexrd_app_contents_resources)
     install_macos_script(base_path, hexrd_app_contents_macos)
 
