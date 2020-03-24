@@ -102,6 +102,7 @@ def build_conda_pack(base_path, tmp):
     config = Config()
     config.channel = ['HEXRD', 'cjh1', 'conda-forge']
     config.channel_urls = ['HEXRD', 'cjh1', 'conda-forge']
+    config.CONDA_PY = '38'
     logger.info('Building hexrdgui conda package.')
     CondaBuild.build(recipe_path, config=config)
 
@@ -111,7 +112,7 @@ def build_conda_pack(base_path, tmp):
     Conda.run_command(
         Conda.Commands.CREATE,
         '--prefix', env_prefix ,
-        'python=3.7'
+        'python=3.8'
     )
 
     logger.info('Installing hexrdgui into new environment.')
