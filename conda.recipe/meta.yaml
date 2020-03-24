@@ -25,6 +25,7 @@ requirements:
     - fabio
     - pyyaml
     - hexrd
+    - libopenblas==0.3.7
 
 test:
   imports:
