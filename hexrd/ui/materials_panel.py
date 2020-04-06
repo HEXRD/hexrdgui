@@ -67,8 +67,7 @@ class MaterialsPanel(QObject):
 
         self.ui.limit_active.toggled.connect(
             HexrdConfig().set_limit_active_rings)
-        self.ui.max_bragg_angle.valueChanged.connect(
-            self.on_max_bragg_angle_changed)
+        self.ui.max_tth.valueChanged.connect(self.on_max_tth_changed)
         self.ui.min_d_spacing.valueChanged.connect(
             self.on_min_d_spacing_changed)
 
@@ -90,43 +89,44 @@ class MaterialsPanel(QObject):
         self.ui.tth_width.setEnabled(enable_width)
 
         limit_active = self.ui.limit_active.isChecked()
-        self.ui.max_bragg_angle.setEnabled(limit_active)
+        self.ui.max_tth.setEnabled(limit_active)
         self.ui.min_d_spacing.setEnabled(limit_active)
         self.ui.min_d_spacing_label.setEnabled(limit_active)
-        self.ui.max_bragg_angle_label.setEnabled(limit_active)
+        self.ui.max_tth_label.setEnabled(limit_active)
 
-    def on_max_bragg_angle_changed(self):
-        max_bragg = math.radians(self.ui.max_bragg_angle.value())
+    def on_max_tth_changed(self):
+        max_tth = math.radians(self.ui.max_tth.value())
         wavelength = HexrdConfig().beam_wavelength
 
         w = self.ui.min_d_spacing
         block_signals = w.blockSignals(True)
         try:
             # Bragg's law
+            max_bragg = max_tth / 2.0
             d = wavelength / (2.0 * math.sin(max_bragg))
             w.setValue(d)
         finally:
             w.blockSignals(block_signals)
 
         # Update the config
-        HexrdConfig().active_material_tth_max = max_bragg * 2.0
+        HexrdConfig().active_material_tth_max = max_tth
         self.update_table()
 
     def on_min_d_spacing_changed(self):
         min_d = self.ui.min_d_spacing.value()
         wavelength = HexrdConfig().beam_wavelength
 
-        w = self.ui.max_bragg_angle
+        w = self.ui.max_tth
         block_signals = w.blockSignals(True)
         try:
             # Bragg's law
             theta = math.degrees(math.asin(wavelength / 2.0 / min_d))
-            w.setValue(theta)
+            w.setValue(theta * 2.0)
         finally:
             w.blockSignals(block_signals)
 
         # Update the config
-        HexrdConfig().active_material_tth_max = math.radians(theta) * 2.0
+        HexrdConfig().active_material_tth_max = math.radians(theta * 2.0)
         self.update_table()
 
     def update_gui_from_config(self):
@@ -138,7 +138,7 @@ class MaterialsPanel(QObject):
             self.ui.tth_width,
             self.ui.material_visible,
             self.ui.min_d_spacing,
-            self.ui.max_bragg_angle,
+            self.ui.max_tth,
             self.ui.limit_active
         ]
 
@@ -178,23 +178,24 @@ class MaterialsPanel(QObject):
         self.update_enable_states()
 
     def update_material_limits(self):
-        # Display the backup if it is None
-        max_bragg_angle = HexrdConfig().backup_tth_max / 2.0
         max_tth = HexrdConfig().active_material_tth_max
-        if max_tth is not None:
-            max_bragg_angle = max_tth / 2.0
+        if max_tth is None:
+            # Display the backup if it is None
+            max_tth = HexrdConfig().backup_tth_max
+
+        max_bragg = max_tth / 2.0
 
         # Bragg's law
         min_d_spacing = HexrdConfig().beam_wavelength / (
-            2.0 * math.sin(max_bragg_angle))
+            2.0 * math.sin(max_bragg))
 
         block_list = [
             self.ui.min_d_spacing,
-            self.ui.max_bragg_angle
+            self.ui.max_tth
         ]
         block_signals = [item.blockSignals(True) for item in block_list]
         try:
-            self.ui.max_bragg_angle.setValue(math.degrees(max_bragg_angle))
+            self.ui.max_tth.setValue(math.degrees(max_tth))
             self.ui.min_d_spacing.setValue(min_d_spacing)
         finally:
             for b, item in zip(block_signals, block_list):
