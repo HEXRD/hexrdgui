@@ -39,7 +39,7 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
     def format_float(value):
         """Modified form of the 'g' format specifier."""
 
-        string = '{:g}'.format(value).replace('e+', 'e')
+        string = '{:.10g}'.format(value).replace('e+', 'e')
         string = re.sub('e(-?)0*(\d+)', r'e\1\2', string)
 
         return string
@@ -68,7 +68,7 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
         groups = FLOAT_REGEX.search(text).groups()
         decimal = float(groups[1])
         decimal += steps
-        new_string = '{:g}'.format(decimal) + (groups[3] if groups[3] else '')
+        new_string = '{:.10g}'.format(decimal) + (groups[3] if groups[3] else '')
 
         # Set the value so that signals get emitted properly
         self.setValue(self.valueFromText(new_string))
