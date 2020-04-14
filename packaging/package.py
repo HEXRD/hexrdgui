@@ -146,8 +146,8 @@ def install_windows_script(base_path, package_path):
     logger.info('Patch hexrd script.')
 
     # Now install a shell script to call the setuptools script
-    hexrd_script = str(package_path / 'Scripts' / 'hexrd-script.py')
-    shutil.copyfile(base_path / 'windows' / 'hexrd-script.py', hexrd_script)
+    hexrdgui_script = str(package_path / 'Scripts' / 'hexrdgui-script.py')
+    shutil.copyfile(base_path / 'windows' / 'hexrdgui-script.py', hexrdgui_script)
 
 def patch_qt_config_windows(base_path):
     logger.info('Patching qt.conf.')

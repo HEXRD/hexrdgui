@@ -19,7 +19,7 @@ if (APPLE)
   set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/darwin/CMakeDMGSetup.scpt")
   set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_CURRENT_LIST_DIR}/darwin/CMakeDMGBackground.tif")
 elseif(WIN32)
-  set(CPACK_GENERATOR "WIX")
+  set(CPACK_GENERATOR "WIX;ZIP")
   set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "https://github.com/hexrd/hexrdgui")
 
   set(CPACK_WIX_PROPERTY_ARPCONTACT "hexrd@kitware.com")
@@ -42,8 +42,7 @@ elseif(WIN32)
 
   set(CPACK_WIX_UPGRADE_GUID "5F369ED0-05D7-4CBA-B533-D1A1B3F445C3")
   set(CPACK_WIX_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/windows/WIX.template.in")
-  #set(CPACK_WIX_EXTRA_SOURCES "${CMAKE_CURRENT_LIST_DIR}/windows/shortcuts.wxs")
-    # We set this because it normally defaults to CMAKE_SIZEOF_VOID_P, but we aren't
+  # We set this because it normally defaults to CMAKE_SIZEOF_VOID_P, but we aren't
   # running CMake here!
   set(CPACK_WIX_SIZEOF_VOID_P 8)
   set(CPACK_PACKAGE_INSTALL_DIRECTORY "HEXRD")

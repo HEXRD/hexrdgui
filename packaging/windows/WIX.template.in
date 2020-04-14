@@ -43,10 +43,19 @@
                         Value="[INSTALL_ROOT]" KeyPath="yes"/>
                  </RegistryKey>
             </Component>
+            <Directory Id="ProgramMenuFolder"/>
         </DirectoryRef>
+
+        <DirectoryRef Id="ProgramMenuFolder">
+	        <Component Id="CM_SHORTCUT_HEXRD" Guid="$(var.CPACK_WIX_PRODUCT_GUID)">
+                <Shortcut Id="HexrdGuiShortcut" Name="HEXRD" Target="[#CM_FP_Scripts.hexrdgui.exe]" WorkingDirectory="CM_DP_Library.bin" Show='minimized'/>
+                <RegistryValue Root="HKCU" Key="Software\Kitware\hexrd" Name="HEXRD_installed" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+	    </DirectoryRef>
 
         <FeatureRef Id="ProductFeature">
             <ComponentRef Id="hexrdRegistry"/>
+            <ComponentRef Id="CM_SHORTCUT_HEXRD"/>
         </FeatureRef>
 
         <UIRef Id="$(var.CPACK_WIX_UI_REF)" />
