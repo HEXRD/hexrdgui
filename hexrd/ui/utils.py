@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.transforms as mtransforms
 
 from hexrd import imageutil
+from hexrd import instrument
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 
@@ -131,3 +132,15 @@ def remove_none_distortions(iconfig):
     for det in iconfig['detectors'].values():
         if det.get('distortion', {}).get('function_name', '').lower() == 'none':
             del det['distortion']
+
+
+def create_hedm_instrument():
+    # Takes the current config and creates an HEDMInstrument from it
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    # HEDMInstrument expects None Euler angle convention for the
+    # config. Let's get it as such.
+    iconfig = HexrdConfig().instrument_config_none_euler_convention
+    rme = HexrdConfig().rotation_matrix_euler()
+    return instrument.HEDMInstrument(instrument_config=iconfig,
+                                     tilt_calibration_mapping=rme)
