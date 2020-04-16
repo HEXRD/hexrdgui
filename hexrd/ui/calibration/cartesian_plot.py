@@ -72,7 +72,7 @@ class InstrumentViewer:
         # A delta_tth is needed here, even if the plane data tThWidth
         # is None. Default to 0.125 degrees if tThWidth is None.
         # I don't see a difference in the output if different values for
-        # delta_tth are chosen here.
+        # delta_tth are chosen here, when plane_data.tThWidth is None.
         if plane_data.tThWidth:
             delta_tth = np.degrees(plane_data.tThWidth)
         else:
