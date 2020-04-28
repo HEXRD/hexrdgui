@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>382</width>
-    <height>574</height>
+    <height>221</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -109,65 +109,8 @@
     </layout>
    </item>
    <item>
-    <widget class="QTableWidget" name="materials_table">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;left click a row to activate the hkl&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="dragDropOverwriteMode">
-      <bool>false</bool>
-     </property>
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <property name="rowCount">
-      <number>5</number>
-     </property>
-     <attribute name="horizontalHeaderCascadingSectionResizes">
-      <bool>true</bool>
-     </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>85</number>
-     </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>70</number>
-     </attribute>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
-     <row/>
-     <row/>
-     <row/>
-     <row/>
-     <row/>
-     <column>
-      <property name="text">
-       <string>{hkl}</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>d-spacing (Å)</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>2θ (°)</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-   <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="5" column="0">
+     <item row="4" column="0">
       <widget class="QCheckBox" name="limit_active">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max 2θ or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -177,7 +120,7 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
+     <item row="5" column="1">
       <widget class="QLabel" name="min_d_spacing_label">
        <property name="enabled">
         <bool>false</bool>
@@ -187,7 +130,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="3" column="0">
       <widget class="QCheckBox" name="enable_width">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the currently selected material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -197,7 +140,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="3" column="1">
       <widget class="QDoubleSpinBox" name="tth_width">
        <property name="enabled">
         <bool>false</bool>
@@ -234,7 +177,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
+     <item row="2" column="0">
       <widget class="QCheckBox" name="material_visible">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Make the currently selected material visible&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -244,7 +187,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="2" column="1">
       <widget class="QPushButton" name="edit_style_button">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit the overlay styles of the currently selected material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -254,7 +197,7 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="5">
+     <item row="5" column="2">
       <widget class="QDoubleSpinBox" name="min_d_spacing">
        <property name="enabled">
         <bool>false</bool>
@@ -276,7 +219,7 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
+     <item row="4" column="1">
       <widget class="QLabel" name="max_tth_label">
        <property name="enabled">
         <bool>false</bool>
@@ -286,7 +229,7 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="5">
+     <item row="4" column="2">
       <widget class="QDoubleSpinBox" name="max_tth">
        <property name="enabled">
         <bool>false</bool>
@@ -308,7 +251,7 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="6">
+     <item row="4" column="3">
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -321,7 +264,7 @@
        </property>
       </spacer>
      </item>
-     <item row="4" column="5" colspan="2">
+     <item row="3" column="2" colspan="2">
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -334,7 +277,7 @@
        </property>
       </spacer>
      </item>
-     <item row="9" column="6">
+     <item row="5" column="3">
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -347,7 +290,7 @@
        </property>
       </spacer>
      </item>
-     <item row="1" column="5">
+     <item row="2" column="2">
       <widget class="QPushButton" name="hide_all">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hide all material overlays&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -357,7 +300,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
+     <item row="1" column="0">
       <widget class="QCheckBox" name="show_overlays">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display overlays in the canvas for each material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -370,6 +313,13 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="0" colspan="4">
+      <widget class="QPushButton" name="show_materials_table">
+       <property name="text">
+        <string>Show Materials Table</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
@@ -377,7 +327,7 @@
  <tabstops>
   <tabstop>materials_combo</tabstop>
   <tabstop>materials_tool_button</tabstop>
-  <tabstop>materials_table</tabstop>
+  <tabstop>show_materials_table</tabstop>
   <tabstop>show_overlays</tabstop>
   <tabstop>material_visible</tabstop>
   <tabstop>edit_style_button</tabstop>

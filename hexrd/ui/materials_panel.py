@@ -2,10 +2,11 @@ import copy
 import math
 import numpy as np
 
-from PySide2.QtCore import QItemSelectionModel, QObject, Qt
-from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
+from PySide2.QtCore import QObject, QSignalBlocker
+from PySide2.QtWidgets import QMenu, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
 from hexrd.ui.overlay_style_picker import OverlayStylePicker
 from hexrd.ui.ui_loader import UiLoader
@@ -21,6 +22,7 @@ class MaterialsPanel(QObject):
 
         m = HexrdConfig().active_material
         self.material_editor_widget = MaterialEditorWidget(m, self.ui)
+        self.materials_table = MaterialsTable(self.ui)
 
         self.ui.layout().insertWidget(2, self.material_editor_widget.ui)
 
@@ -53,10 +55,10 @@ class MaterialsPanel(QObject):
         self.ui.materials_combo.lineEdit().textEdited.connect(
             self.modify_material_name)
 
-        self.material_editor_widget.material_modified.connect(self.update_table)
+        self.material_editor_widget.material_modified.connect(
+            self.update_table)
 
-        self.ui.materials_table.selectionModel().selectionChanged.connect(
-            self.update_ring_selection)
+        self.ui.show_materials_table.pressed.connect(self.show_materials_table)
 
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
         self.ui.enable_width.toggled.connect(
@@ -141,37 +143,34 @@ class MaterialsPanel(QObject):
             self.ui.max_tth,
             self.ui.limit_active
         ]
+        blockers = [QSignalBlocker(x) for x in block_list]
 
-        block_signals = []
-        for item in block_list:
-            block_signals.append(item.blockSignals(True))
+        current_items = sorted(
+            [self.ui.materials_combo.itemText(x) for x in
+             range(self.ui.materials_combo.count())])
+        materials_keys = sorted(list(HexrdConfig().materials.keys()))
 
-        try:
-            current_items = sorted([self.ui.materials_combo.itemText(x) for x in
-                range(self.ui.materials_combo.count())])
-            materials_keys = sorted(list(HexrdConfig().materials.keys()))
+        # If the materials in the config have changed, re-build the list
+        if current_items != materials_keys:
+            self.ui.materials_combo.clear()
+            self.ui.materials_combo.addItems(materials_keys)
 
-            # If the materials in the config have changed, re-build the list
-            if current_items != materials_keys:
-                self.ui.materials_combo.clear()
-                self.ui.materials_combo.addItems(materials_keys)
+        self.material_editor_widget.material = HexrdConfig().active_material
+        self.ui.materials_combo.setCurrentIndex(
+            materials_keys.index(HexrdConfig().active_material_name))
+        self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
+        self.ui.enable_width.setChecked(HexrdConfig().tth_width_enabled)
 
-            self.material_editor_widget.material = HexrdConfig().active_material
-            self.ui.materials_combo.setCurrentIndex(
-                materials_keys.index(HexrdConfig().active_material_name))
-            self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
-            self.ui.enable_width.setChecked(HexrdConfig().tth_width_enabled)
+        width = HexrdConfig().active_material_tth_width
+        width = width if width else HexrdConfig().backup_tth_width
+        self.ui.tth_width.setValue(np.degrees(width))
 
-            width = HexrdConfig().active_material_tth_width
-            width = width if width else HexrdConfig().backup_tth_width
-            self.ui.tth_width.setValue(np.degrees(width))
+        self.ui.material_visible.setChecked(
+            HexrdConfig().material_is_visible(self.current_material()))
+        self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
 
-            self.ui.material_visible.setChecked(
-                HexrdConfig().material_is_visible(self.current_material()))
-            self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
-        finally:
-            for b, item in zip(block_signals, block_list):
-                item.blockSignals(b)
+        # Unblock the signal blockers before proceeding
+        del blockers
 
         self.update_material_limits()
         self.update_table()
@@ -200,80 +199,6 @@ class MaterialsPanel(QObject):
         finally:
             for b, item in zip(block_signals, block_list):
                 item.blockSignals(b)
-
-    def update_table(self):
-        material = HexrdConfig().active_material
-
-        block_list = [
-            self.ui.materials_table,
-            self.ui.materials_table.selectionModel()
-        ]
-        previously_blocked = [w.blockSignals(True) for w in block_list]
-        try:
-            plane_data = material.planeData
-
-            # For the table, we will turn off exclusions so that all
-            # rows are displayed, even the excluded ones. The user
-            # picks the exclusions by selecting the rows.
-            previous_exclusions = plane_data.exclusions
-            plane_data.exclusions = [False] * len(plane_data.exclusions)
-
-            hkls = plane_data.getHKLs(asStr=True)
-            d_spacings = plane_data.getPlaneSpacings()
-            tth = plane_data.getTTh()
-
-            # Restore the previous exclusions
-            plane_data.exclusions = previous_exclusions
-
-            self.ui.materials_table.clearContents()
-            self.ui.materials_table.setRowCount(len(hkls))
-            for i, hkl in enumerate(hkls):
-                table_item = QTableWidgetItem(hkl)
-                table_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.materials_table.setItem(i, 0, table_item)
-
-                table_item = QTableWidgetItem('%.2f' % d_spacings[i])
-                table_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.materials_table.setItem(i, 1, table_item)
-
-                table_item = QTableWidgetItem('%.2f' % math.degrees(tth[i]))
-                table_item.setTextAlignment(Qt.AlignCenter)
-                self.ui.materials_table.setItem(i, 2, table_item)
-        finally:
-            for block, w in zip(previously_blocked, block_list):
-                w.blockSignals(block)
-
-        self.update_table_selections()
-
-    def update_table_selections(self):
-        # This updates the table selections based on the exclusions
-        material = HexrdConfig().active_material
-        selection_model = self.ui.materials_table.selectionModel()
-        block = selection_model.blockSignals(True)
-        try:
-            selection_model.clear()
-            plane_data = material.planeData
-            for i, exclude in enumerate(plane_data.exclusions):
-                if exclude:
-                    continue
-
-                # Add the row to the selections
-                model_index = selection_model.model().index(i, 0)
-                command = QItemSelectionModel.Select | QItemSelectionModel.Rows
-                selection_model.select(model_index, command)
-        finally:
-            selection_model.blockSignals(block)
-
-    def update_ring_selection(self):
-        # This updates the exclusions based upon the table selections
-        plane_data = HexrdConfig().active_material.planeData
-        selection_model = self.ui.materials_table.selectionModel()
-        selected_rows = [x.row() for x in selection_model.selectedRows()]
-
-        indices = range(len(plane_data.exclusions))
-        exclusions = [i not in selected_rows for i in indices]
-        plane_data.exclusions = exclusions
-        HexrdConfig().ring_config_changed.emit()
 
     def set_active_material(self):
         HexrdConfig().active_material = self.current_material()
@@ -338,3 +263,9 @@ class MaterialsPanel(QObject):
     def hide_all_materials(self):
         # This clears the list
         HexrdConfig().visible_material_names = []
+
+    def show_materials_table(self):
+        self.materials_table.show()
+
+    def update_table(self):
+        self.materials_table.update_table()
