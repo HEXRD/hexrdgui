@@ -148,8 +148,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.setup_progress_variables()
 
         # Process the imageseries
+        self.apply_operations(HexrdConfig().imageseries_dict)
         if self.data:
-            self.apply_operations(HexrdConfig().imageseries_dict)
             if self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
             else:
@@ -165,10 +165,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def apply_operations(self, ims_dict):
         # Apply the operations to the imageseries
         for idx, key in enumerate(ims_dict.keys()):
+            ops = []
             if self.data:
                 if 'idx' in self.data:
                     idx = self.data['idx']
-                ops = []
                 if self.state['dark'][idx] != 5:
                     if (self.state['dark'][idx] == 1
                             and self.empty_frames == 0):

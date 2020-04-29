@@ -1,7 +1,7 @@
 from collections import Counter  # To compare two lists' contents
 import re
 
-from PySide2.QtWidgets import QMessageBox, QTableWidgetItem
+from PySide2.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -52,8 +52,15 @@ class LoadImagesDialog:
             d = QTableWidgetItem(self.detectors[i])
             table.setItem(i, 0, d)
 
+            cb = QComboBox()
+            options = ["None", "Flip Vertically", "Flip Horizontally",
+                "Transpose", "Rotate 90°", "Rotate 180°", "Rotate 270°"]
+            cb.addItems(options)
+            cb.setCurrentIndex(HexrdConfig().load_panel_state['trans'][i])
+            table.setCellWidget(i, 1, cb)
+
             f = QTableWidgetItem(self.image_files[i])
-            table.setItem(i, 1, f)
+            table.setItem(i, 2, f)
 
     def update_combo_state(self):
         enable = len(self.ui.regex_line_edit.text()) == 0
@@ -72,7 +79,7 @@ class LoadImagesDialog:
 
         for i in range(len(detectors)):
             f = QTableWidgetItem(image_files[i])
-            table.setItem(i, 1, f)
+            table.setItem(i, 2, f)
 
     def results(self):
         table = self.ui.match_detectors_table
@@ -80,7 +87,8 @@ class LoadImagesDialog:
         image_files = []
         for i in range(table.rowCount()):
             detectors.append(table.item(i, 0).text())
-            image_files.append(table.item(i, 1).text())
+            image_files.append(table.item(i, 2).text())
+            HexrdConfig().load_panel_state['trans'][i] = table.cellWidget(i, 1).currentIndex()
 
         return detectors, image_files
 
