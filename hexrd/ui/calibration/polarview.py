@@ -10,7 +10,7 @@ from hexrd.transforms.xfcapi import \
 from hexrd import constants as ct
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import run_snip1d, snip_width_pixels
+from hexrd.ui.utils import run_snip1d
 
 tvec_c = ct.zeros_3
 

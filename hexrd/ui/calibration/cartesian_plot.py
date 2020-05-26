@@ -1,47 +1,34 @@
-import warnings
-
 import numpy as np
 
-from hexrd import instrument
 from hexrd.gridutil import cellIndices
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 
 from skimage import transform as tf
-from skimage.exposure import equalize_adapthist
-from skimage.exposure import rescale_intensity
 
 from .display_plane import DisplayPlane
 
 
 def cartesian_viewer():
-    images_dict = HexrdConfig().current_images_dict()
-    pixel_size = HexrdConfig().cartesian_pixel_size
-
-    # HEDMInstrument expects None Euler angle convention for the
-    # config. Let's get it as such.
-    iconfig = HexrdConfig().instrument_config_none_euler_convention
-    rme = HexrdConfig().rotation_matrix_euler()
-    instr = instrument.HEDMInstrument(instrument_config=iconfig,
-                                      tilt_calibration_mapping=rme)
-
-    # Make sure each key in the image dict is in the panel_ids
-    if images_dict.keys() != instr._detectors.keys():
-        msg = ('Images do not match the panel ids!\n' +
-               'Images: ' + str(list(images_dict.keys())) + '\n' +
-               'PanelIds: ' + str(list(instr._detectors.keys())))
-        raise Exception(msg)
-
-    return InstrumentViewer(instr, images_dict, pixel_size)
+    return InstrumentViewer()
 
 
 class InstrumentViewer:
 
-    def __init__(self, instr, images_dict, pixel_size):
+    def __init__(self):
         self.type = 'cartesian'
-        self.instr = instr
-        self.images_dict = images_dict
-        self.pixel_size = pixel_size
+        self.instr = create_hedm_instrument()
+        self.images_dict = HexrdConfig().current_images_dict()
+
+        # Make sure each key in the image dict is in the panel_ids
+        if self.images_dict.keys() != self.instr._detectors.keys():
+            msg = ('Images do not match the panel ids!\n' +
+                   'Images: ' + str(list(self.images_dict.keys())) + '\n' +
+                   'PanelIds: ' + str(list(self.instr._detectors.keys())))
+            raise Exception(msg)
+
+        self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.warp_dict = {}
         self.detector_corners = {}
 
@@ -77,7 +64,7 @@ class InstrumentViewer:
         # A delta_tth is needed here, even if the plane data tThWidth
         # is None. Default to 0.125 degrees if tThWidth is None.
         # I don't see a difference in the output if different values for
-        # delta_tth are chosen here.
+        # delta_tth are chosen here, when plane_data.tThWidth is None.
         if plane_data.tThWidth:
             delta_tth = np.degrees(plane_data.tThWidth)
         else:

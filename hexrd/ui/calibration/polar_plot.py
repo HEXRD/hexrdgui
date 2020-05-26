@@ -2,35 +2,24 @@ import h5py
 import os
 import numpy as np
 
-from hexrd import instrument
 from .polarview import PolarView
 
 from .display_plane import DisplayPlane
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
 def polar_viewer():
-    images_dict = HexrdConfig().current_images_dict()
-
-    # HEDMInstrument expects None Euler angle convention for the
-    # config. Let's get it as such.
-    iconfig = HexrdConfig().instrument_config_none_euler_convention
-    return InstrumentViewer(iconfig, images_dict)
-
-
-def load_instrument(config):
-    rme = HexrdConfig().rotation_matrix_euler()
-    return instrument.HEDMInstrument(instrument_config=config,
-                                     tilt_calibration_mapping=rme)
+    return InstrumentViewer()
 
 
 class InstrumentViewer:
 
-    def __init__(self, config, images_dict):
+    def __init__(self):
         self.type = 'polar'
-        self.instr = load_instrument(config)
-        self.images_dict = images_dict
+        self.instr = create_hedm_instrument()
+        self.images_dict = HexrdConfig().current_images_dict()
         self.dplane = DisplayPlane()
 
         # Resolution settings

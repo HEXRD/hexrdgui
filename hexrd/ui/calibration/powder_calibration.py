@@ -5,7 +5,6 @@ from scipy.optimize import leastsq, least_squares
 from hexrd import instrument
 from hexrd.matrixutil import findDuplicateVectors
 from hexrd.fitting import fitpeak
-from hexrd.rotations import RotMatEuler
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import convert_tilt_convention
