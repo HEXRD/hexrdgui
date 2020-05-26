@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 
 from hexrd.gridutil import cellIndices
@@ -8,8 +6,6 @@ from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 
 from skimage import transform as tf
-from skimage.exposure import equalize_adapthist
-from skimage.exposure import rescale_intensity
 
 from .display_plane import DisplayPlane
 
