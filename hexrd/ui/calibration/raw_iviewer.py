@@ -1,7 +1,7 @@
 import numpy as np
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui import utils
 
 
 def raw_iviewer():
@@ -12,7 +12,7 @@ class InstrumentViewer:
 
     def __init__(self):
         self.type = 'images'
-        self.instr = utils.create_hedm_instrument()
+        self.instr = create_hedm_instrument()
 
         # Callers should set this to indicate the detectors for which they
         # would like to generate ring data

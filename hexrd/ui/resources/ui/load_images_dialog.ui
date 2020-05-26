@@ -53,6 +53,9 @@
      <property name="rowCount">
       <number>2</number>
      </property>
+     <attribute name="horizontalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
      <attribute name="horizontalHeaderMinimumSectionSize">
       <number>100</number>
      </attribute>
@@ -79,6 +82,11 @@
      <column>
       <property name="text">
        <string>Detector</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Transform</string>
       </property>
      </column>
      <column>

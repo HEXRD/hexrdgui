@@ -6,8 +6,8 @@ from .polarview import PolarView
 
 from .display_plane import DisplayPlane
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui import utils
 
 
 def polar_viewer():
@@ -18,7 +18,8 @@ class InstrumentViewer:
 
     def __init__(self):
         self.type = 'polar'
-        self.instr = utils.create_hedm_instrument()
+        self.instr = create_hedm_instrument()
+        self.images_dict = HexrdConfig().current_images_dict()
         self.dplane = DisplayPlane()
 
         # Resolution settings

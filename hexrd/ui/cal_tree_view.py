@@ -1,10 +1,12 @@
 from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
 from PySide2.QtWidgets import (
-    QMessageBox, QTreeView, QMenu, QCheckBox, QStyledItemDelegate
+    QCheckBox, QItemDelegate, QItemEditorFactory, QMenu, QMessageBox,
+    QStyledItemDelegate, QTreeView
 )
 from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 
 
 class TreeItem:
@@ -295,6 +297,8 @@ class CalTreeView(QTreeView):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
         self.setItemDelegateForColumn(
+            VALUE_COL, ValueColumnDelegate(self))
+        self.setItemDelegateForColumn(
             STATUS_COL, CheckBoxDelegate(self))
 
         self.blockSignals(True)
@@ -419,6 +423,32 @@ class CalTreeView(QTreeView):
         # Show the checkbox
         editor_idx = self.model().index(row, STATUS_COL, parent)
         self.openPersistentEditor(editor_idx)
+
+
+class ValueColumnEditorFactory(QItemEditorFactory):
+    def __init__(self, parent=None):
+        super().__init__(self, parent)
+
+    def createEditor(self, user_type, parent):
+        # Normally in Qt, we'd use QVariant (like QVariant::Double) to compare
+        # with the user_type integer. However, QVariant is not available in
+        # PySide2, making us use roundabout methods to get the integer like
+        # below.
+        float_type = (
+            ScientificDoubleSpinBox.staticMetaObject.userProperty().userType()
+        )
+        if user_type == float_type:
+            return ScientificDoubleSpinBox(parent)
+
+        return super().createEditor(user_type, parent)
+
+
+class ValueColumnDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        editor_factory = ValueColumnEditorFactory(parent)
+        self.setItemEditorFactory(editor_factory)
 
 
 def _is_int(s):

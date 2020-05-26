@@ -170,7 +170,7 @@
      <item row="5" column="0">
       <widget class="QCheckBox" name="limit_active">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max Bragg angle or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max 2θ or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Limit Active</string>
@@ -277,22 +277,22 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QLabel" name="max_bragg_angle_label">
+      <widget class="QLabel" name="max_tth_label">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Max Bragg Angle:</string>
+        <string>Max 2θ:</string>
        </property>
       </widget>
      </item>
      <item row="5" column="5">
-      <widget class="QDoubleSpinBox" name="max_bragg_angle">
+      <widget class="QDoubleSpinBox" name="max_tth">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The max Bragg angle, θ, for the HKLs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The max 2θ for the HKLs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -385,7 +385,7 @@
   <tabstop>enable_width</tabstop>
   <tabstop>tth_width</tabstop>
   <tabstop>limit_active</tabstop>
-  <tabstop>max_bragg_angle</tabstop>
+  <tabstop>max_tth</tabstop>
   <tabstop>min_d_spacing</tabstop>
  </tabstops>
  <resources/>

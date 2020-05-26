@@ -3,7 +3,8 @@ import math
 import numpy as np
 
 from PySide2.QtCore import QItemSelectionModel, QObject, Qt
-from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
+from PySide2.QtGui import QFocusEvent, QKeyEvent
+from PySide2.QtWidgets import QComboBox, QMenu, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
@@ -24,6 +25,9 @@ class MaterialsPanel(QObject):
 
         self.ui.layout().insertWidget(2, self.material_editor_widget.ui)
 
+        # Turn off autocomplete for the QComboBox
+        self.ui.materials_combo.setCompleter(None)
+
         self.add_tool_button_actions()
 
         self.setup_connections()
@@ -42,6 +46,7 @@ class MaterialsPanel(QObject):
         b.setMenu(m)
 
     def setup_connections(self):
+        self.ui.materials_combo.installEventFilter(self)
         self.add_material_action.triggered.connect(self.add_material)
         self.delete_material_action.triggered.connect(
             self.remove_current_material)
@@ -50,7 +55,7 @@ class MaterialsPanel(QObject):
         self.ui.materials_combo.currentIndexChanged.connect(
             self.update_enable_states)
         self.ui.materials_combo.currentIndexChanged.connect(self.update_table)
-        self.ui.materials_combo.lineEdit().textEdited.connect(
+        self.ui.materials_combo.lineEdit().editingFinished.connect(
             self.modify_material_name)
 
         self.material_editor_widget.material_modified.connect(self.update_table)
@@ -67,8 +72,7 @@ class MaterialsPanel(QObject):
 
         self.ui.limit_active.toggled.connect(
             HexrdConfig().set_limit_active_rings)
-        self.ui.max_bragg_angle.valueChanged.connect(
-            self.on_max_bragg_angle_changed)
+        self.ui.max_tth.valueChanged.connect(self.on_max_tth_changed)
         self.ui.min_d_spacing.valueChanged.connect(
             self.on_min_d_spacing_changed)
 
@@ -90,43 +94,44 @@ class MaterialsPanel(QObject):
         self.ui.tth_width.setEnabled(enable_width)
 
         limit_active = self.ui.limit_active.isChecked()
-        self.ui.max_bragg_angle.setEnabled(limit_active)
+        self.ui.max_tth.setEnabled(limit_active)
         self.ui.min_d_spacing.setEnabled(limit_active)
         self.ui.min_d_spacing_label.setEnabled(limit_active)
-        self.ui.max_bragg_angle_label.setEnabled(limit_active)
+        self.ui.max_tth_label.setEnabled(limit_active)
 
-    def on_max_bragg_angle_changed(self):
-        max_bragg = math.radians(self.ui.max_bragg_angle.value())
+    def on_max_tth_changed(self):
+        max_tth = math.radians(self.ui.max_tth.value())
         wavelength = HexrdConfig().beam_wavelength
 
         w = self.ui.min_d_spacing
         block_signals = w.blockSignals(True)
         try:
             # Bragg's law
+            max_bragg = max_tth / 2.0
             d = wavelength / (2.0 * math.sin(max_bragg))
             w.setValue(d)
         finally:
             w.blockSignals(block_signals)
 
         # Update the config
-        HexrdConfig().active_material_tth_max = max_bragg * 2.0
+        HexrdConfig().active_material_tth_max = max_tth
         self.update_table()
 
     def on_min_d_spacing_changed(self):
         min_d = self.ui.min_d_spacing.value()
         wavelength = HexrdConfig().beam_wavelength
 
-        w = self.ui.max_bragg_angle
+        w = self.ui.max_tth
         block_signals = w.blockSignals(True)
         try:
             # Bragg's law
             theta = math.degrees(math.asin(wavelength / 2.0 / min_d))
-            w.setValue(theta)
+            w.setValue(theta * 2.0)
         finally:
             w.blockSignals(block_signals)
 
         # Update the config
-        HexrdConfig().active_material_tth_max = math.radians(theta) * 2.0
+        HexrdConfig().active_material_tth_max = math.radians(theta * 2.0)
         self.update_table()
 
     def update_gui_from_config(self):
@@ -138,7 +143,7 @@ class MaterialsPanel(QObject):
             self.ui.tth_width,
             self.ui.material_visible,
             self.ui.min_d_spacing,
-            self.ui.max_bragg_angle,
+            self.ui.max_tth,
             self.ui.limit_active
         ]
 
@@ -178,23 +183,24 @@ class MaterialsPanel(QObject):
         self.update_enable_states()
 
     def update_material_limits(self):
-        # Display the backup if it is None
-        max_bragg_angle = HexrdConfig().backup_tth_max / 2.0
         max_tth = HexrdConfig().active_material_tth_max
-        if max_tth is not None:
-            max_bragg_angle = max_tth / 2.0
+        if max_tth is None:
+            # Display the backup if it is None
+            max_tth = HexrdConfig().backup_tth_max
+
+        max_bragg = max_tth / 2.0
 
         # Bragg's law
         min_d_spacing = HexrdConfig().beam_wavelength / (
-            2.0 * math.sin(max_bragg_angle))
+            2.0 * math.sin(max_bragg))
 
         block_list = [
             self.ui.min_d_spacing,
-            self.ui.max_bragg_angle
+            self.ui.max_tth
         ]
         block_signals = [item.blockSignals(True) for item in block_list]
         try:
-            self.ui.max_bragg_angle.setValue(math.degrees(max_bragg_angle))
+            self.ui.max_tth.setValue(math.degrees(max_tth))
             self.ui.min_d_spacing.setValue(min_d_spacing)
         finally:
             for b, item in zip(block_signals, block_list):
@@ -311,7 +317,8 @@ class MaterialsPanel(QObject):
         self.material_editor_widget.material = HexrdConfig().active_material
         self.update_gui_from_config()
 
-    def modify_material_name(self, new_name):
+    def modify_material_name(self):
+        new_name = self.ui.materials_combo.currentText()
         names = HexrdConfig().materials.keys()
 
         if new_name in names:
@@ -337,3 +344,32 @@ class MaterialsPanel(QObject):
     def hide_all_materials(self):
         # This clears the list
         HexrdConfig().visible_material_names = []
+
+    def eventFilter(self, target, event):
+        # This is almost identical to CalibrationConfigWidget.eventFilter
+        # The logic is explained there.
+        # We should keep this and CalibrationConfigWidget.eventFilter similar.
+        if type(target) == QComboBox:
+            if target.objectName() == 'materials_combo':
+                widget = self.ui.materials_combo
+                enter_keys = [Qt.Key_Return, Qt.Key_Enter]
+                if type(event) == QKeyEvent and event.key() in enter_keys:
+                    widget.lineEdit().clearFocus()
+                    return True
+
+                if type(event) == QFocusEvent and event.lostFocus():
+                    # This happens either if enter is pressed, or if the
+                    # user tabs out.
+                    items = [widget.itemText(i) for i in range(widget.count())]
+                    text = widget.currentText()
+                    idx = widget.currentIndex()
+                    if text in items and widget.itemText(idx) != text:
+                        # Prevent the QComboBox from automatically changing
+                        # the index to be that of the other item in the list.
+                        # This is confusing behavior, and it's not what we
+                        # want here.
+                        widget.setCurrentIndex(idx)
+                        # Let the widget lose focus
+                        return False
+
+        return False

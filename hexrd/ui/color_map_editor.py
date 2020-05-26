@@ -110,6 +110,8 @@ class ColorMapEditor:
         HexrdConfig().set_colormap_min(min)
 
         if self.ui.log_scale.isChecked():
+            # The min cannot be 0 here, or this will raise an exception
+            min = 1.e-8 if min < 1.e-8 else min
             norm = matplotlib.colors.LogNorm(vmin=min, vmax=max)
         else:
             norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
