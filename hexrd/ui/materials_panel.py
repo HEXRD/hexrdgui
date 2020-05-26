@@ -3,7 +3,8 @@ import math
 import numpy as np
 
 from PySide2.QtCore import QItemSelectionModel, QObject, Qt
-from PySide2.QtWidgets import QMenu, QMessageBox, QTableWidgetItem
+from PySide2.QtGui import QFocusEvent, QKeyEvent
+from PySide2.QtWidgets import QComboBox, QMenu, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
@@ -24,6 +25,9 @@ class MaterialsPanel(QObject):
 
         self.ui.layout().insertWidget(2, self.material_editor_widget.ui)
 
+        # Turn off autocomplete for the QComboBox
+        self.ui.materials_combo.setCompleter(None)
+
         self.add_tool_button_actions()
 
         self.setup_connections()
@@ -42,6 +46,7 @@ class MaterialsPanel(QObject):
         b.setMenu(m)
 
     def setup_connections(self):
+        self.ui.materials_combo.installEventFilter(self)
         self.add_material_action.triggered.connect(self.add_material)
         self.delete_material_action.triggered.connect(
             self.remove_current_material)
@@ -50,7 +55,7 @@ class MaterialsPanel(QObject):
         self.ui.materials_combo.currentIndexChanged.connect(
             self.update_enable_states)
         self.ui.materials_combo.currentIndexChanged.connect(self.update_table)
-        self.ui.materials_combo.lineEdit().textEdited.connect(
+        self.ui.materials_combo.lineEdit().editingFinished.connect(
             self.modify_material_name)
 
         self.material_editor_widget.material_modified.connect(self.update_table)
@@ -312,7 +317,8 @@ class MaterialsPanel(QObject):
         self.material_editor_widget.material = HexrdConfig().active_material
         self.update_gui_from_config()
 
-    def modify_material_name(self, new_name):
+    def modify_material_name(self):
+        new_name = self.ui.materials_combo.currentText()
         names = HexrdConfig().materials.keys()
 
         if new_name in names:
@@ -338,3 +344,32 @@ class MaterialsPanel(QObject):
     def hide_all_materials(self):
         # This clears the list
         HexrdConfig().visible_material_names = []
+
+    def eventFilter(self, target, event):
+        # This is almost identical to CalibrationConfigWidget.eventFilter
+        # The logic is explained there.
+        # We should keep this and CalibrationConfigWidget.eventFilter similar.
+        if type(target) == QComboBox:
+            if target.objectName() == 'materials_combo':
+                widget = self.ui.materials_combo
+                enter_keys = [Qt.Key_Return, Qt.Key_Enter]
+                if type(event) == QKeyEvent and event.key() in enter_keys:
+                    widget.lineEdit().clearFocus()
+                    return True
+
+                if type(event) == QFocusEvent and event.lostFocus():
+                    # This happens either if enter is pressed, or if the
+                    # user tabs out.
+                    items = [widget.itemText(i) for i in range(widget.count())]
+                    text = widget.currentText()
+                    idx = widget.currentIndex()
+                    if text in items and widget.itemText(idx) != text:
+                        # Prevent the QComboBox from automatically changing
+                        # the index to be that of the other item in the list.
+                        # This is confusing behavior, and it's not what we
+                        # want here.
+                        widget.setCurrentIndex(idx)
+                        # Let the widget lose focus
+                        return False
+
+        return False
