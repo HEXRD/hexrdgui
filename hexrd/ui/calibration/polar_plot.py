@@ -11,17 +11,15 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 
 def polar_viewer():
-    instr = create_hedm_instrument()
-    images_dict = HexrdConfig().current_images_dict()
-    return InstrumentViewer(instr, images_dict)
+    return InstrumentViewer()
 
 
 class InstrumentViewer:
 
-    def __init__(self, instr, images_dict):
+    def __init__(self):
         self.type = 'polar'
-        self.instr = instr
-        self.images_dict = images_dict
+        self.instr = create_hedm_instrument()
+        self.images_dict = HexrdConfig().current_images_dict()
         self.dplane = DisplayPlane()
 
         # Resolution settings

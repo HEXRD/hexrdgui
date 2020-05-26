@@ -1,4 +1,3 @@
-import copy
 import math
 
 from PySide2.QtCore import QThreadPool
@@ -13,8 +12,9 @@ import numpy as np
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
+from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import run_snip1d
+from hexrd.ui import utils
 import hexrd.ui.constants
 
 
@@ -24,6 +24,7 @@ class ImageCanvas(FigureCanvas):
         self.figure = Figure()
         super(ImageCanvas, self).__init__(self.figure)
 
+        self.raw_axes = []  # only used for raw currently
         self.axes_images = []
         self.cached_rings = []
         self.cached_rbnds = []
@@ -72,6 +73,7 @@ class ImageCanvas(FigureCanvas):
     def clear(self):
         self.iviewer = None
         self.figure.clear()
+        self.raw_axes.clear()
         self.axes_images.clear()
         self.clear_rings()
         self.azimuthal_integral_axis = None
@@ -100,6 +102,7 @@ class ImageCanvas(FigureCanvas):
                 axis.set_title(name)
                 self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                                     norm=self.norm))
+                self.raw_axes.append(axis)
 
             self.figure.tight_layout()
         else:
@@ -111,6 +114,12 @@ class ImageCanvas(FigureCanvas):
         # This will call self.draw()
         self.show_saturation()
 
+        # This will be used for drawing the rings
+        self.iviewer = raw_iviewer()
+        # Set the detectors to draw
+        self.iviewer.detectors = [x.get_title() for x in self.raw_axes]
+        self.redraw_rings()
+
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
@@ -121,67 +130,77 @@ class ImageCanvas(FigureCanvas):
         while self.cached_rbnds:
             self.cached_rbnds.pop(0).remove()
 
+    def draw_rings_on_axis(self, axis, ring_data, style):
+        ring_color = style['ring_color']
+        ring_linestyle = style['ring_linestyle']
+        ring_linewidth = style['ring_linewidth']
+        rbnd_color = style['rbnd_color']
+        rbnd_linestyle = style['rbnd_linestyle']
+        rbnd_linewidth = style['rbnd_linewidth']
+
+        rings = ring_data['ring_data']
+        rbnds = ring_data['rbnd_data']
+        rbnd_indices = ring_data['rbnd_indices']
+
+        for pr in rings:
+            x, y = self.extract_ring_coords(pr)
+            ring, = axis.plot(x, y, color=ring_color,
+                              linestyle=ring_linestyle,
+                              lw=ring_linewidth)
+            self.cached_rings.append(ring)
+
+        # Add the rbnds too
+        for ind, pr in zip(rbnd_indices, rbnds):
+            x, y = self.extract_ring_coords(pr)
+            color = rbnd_color
+            if len(ind) > 1:
+                # If rbnds are combined, override the color to red
+                color = 'r'
+            rbnd, = axis.plot(x, y, color=color,
+                              linestyle=rbnd_linestyle,
+                              lw=rbnd_linewidth)
+            self.cached_rbnds.append(rbnd)
+
+        if self.azimuthal_integral_axis is not None:
+            az_axis = self.azimuthal_integral_axis
+            yrange = az_axis.get_ylim()
+            for pr in rings:
+                ring, = az_axis.plot(pr[:, 1], yrange, color=ring_color,
+                                     linestyle=ring_linestyle,
+                                     lw=ring_linewidth)
+                self.cached_rings.append(ring)
+
+            # Add the rbnds too
+            for ind, pr in zip(rbnd_indices, rbnds):
+                color = rbnd_color
+                if len(ind) > 1:
+                    # If rbnds are combined, override the color to red
+                    color = 'r'
+                rbnd, = az_axis.plot(pr[:, 1], yrange, color=color,
+                                     linestyle=rbnd_linestyle,
+                                     lw=rbnd_linewidth)
+                self.cached_rbnds.append(rbnd)
+
     def redraw_rings(self):
-        # If there is no iviewer, we are not currently viewing a
-        # calibration. Just return.
+        # iviewer is required for drawing rings
         if not self.iviewer:
             return
 
         self.clear_rings()
 
         ring_data = self.iviewer.add_rings()
-
         for mat_name in ring_data.keys():
             style = HexrdConfig().get_ring_style(mat_name)
-            ring_color = style['ring_color']
-            ring_linestyle = style['ring_linestyle']
-            ring_linewidth = style['ring_linewidth']
-            rbnd_color = style['rbnd_color']
-            rbnd_linestyle = style['rbnd_linestyle']
-            rbnd_linewidth = style['rbnd_linewidth']
-
-            rings = ring_data[mat_name]['ring_data']
-            rbnds = ring_data[mat_name]['rbnd_data']
-            rbnd_indices = ring_data[mat_name]['rbnd_indices']
-
-            for pr in rings:
-                x, y = self.extract_ring_coords(pr)
-                ring, = self.axis.plot(x, y, color=ring_color,
-                                       linestyle=ring_linestyle,
-                                       lw=ring_linewidth)
-                self.cached_rings.append(ring)
-
-            # Add the rbnds too
-            for ind, pr in zip(rbnd_indices, rbnds):
-                x, y = self.extract_ring_coords(pr)
-                color = rbnd_color
-                if len(ind) > 1:
-                    # If rbnds are combined, override the color to red
-                    color = 'r'
-                rbnd, = self.axis.plot(x, y, color=color,
-                                       linestyle=rbnd_linestyle,
-                                       lw=rbnd_linewidth)
-                self.cached_rbnds.append(rbnd)
-
-            if self.azimuthal_integral_axis is not None:
-                axis = self.azimuthal_integral_axis
-                yrange = axis.get_ylim()
-                for pr in rings:
-                    ring, = axis.plot(pr[:, 1], yrange, color=ring_color,
-                                      linestyle=ring_linestyle,
-                                      lw=ring_linewidth)
-                    self.cached_rings.append(ring)
-
-                # Add the rbnds too
-                for ind, pr in zip(rbnd_indices, rbnds):
-                    color = rbnd_color
-                    if len(ind) > 1:
-                        # If rbnds are combined, override the color to red
-                        color = 'r'
-                    rbnd, = axis.plot(pr[:, 1], yrange, color=color,
-                                      linestyle=rbnd_linestyle,
-                                      lw=rbnd_linewidth)
-                    self.cached_rbnds.append(rbnd)
+            if self.mode == 'images':
+                # We have to draw once for each detector
+                for axis in self.raw_axes:
+                    det_name = axis.get_title()
+                    self.draw_rings_on_axis(axis,
+                                            ring_data[mat_name][det_name],
+                                            style)
+            else:
+                # Just draw for the main axis
+                self.draw_rings_on_axis(self.axis, ring_data[mat_name], style)
 
         self.draw()
 
@@ -312,8 +331,8 @@ class ImageCanvas(FigureCanvas):
             self.axis = self.figure.add_subplot(111)
             self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
                                                      norm=self.norm,
-                                                     vmin = None, vmax = None,
-                                                     interpolation = "none"))
+                                                     vmin=None, vmax=None,
+                                                     interpolation="none"))
             self.axis.set_xlabel(r'x (mm)')
             self.axis.set_ylabel(r'y (mm)')
         else:
@@ -370,7 +389,8 @@ class ImageCanvas(FigureCanvas):
             # The top image will have 2x the height of the bottom image
             grid = plt.GridSpec(3, 1)
 
-            # It is important to persist the plot so that we don't reset the scale.
+            # It is important to persist the plot so that we don't reset the
+            # scale.
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(grid[:2, 0])
                 self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
@@ -543,7 +563,7 @@ class ImageCanvas(FigureCanvas):
         else:
             # We have to run it ourselves...
             # It should not have already been applied to the image
-            background = run_snip1d(self.iviewer.img)
+            background = utils.run_snip1d(self.iviewer.img)
 
         im = ax.imshow(background)
 
