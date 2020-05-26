@@ -2,9 +2,9 @@ import warnings
 
 import numpy as np
 
-from hexrd import instrument
 from hexrd.gridutil import cellIndices
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 
 from skimage import transform as tf
@@ -15,15 +15,9 @@ from .display_plane import DisplayPlane
 
 
 def cartesian_viewer():
+    instr = create_hedm_instrument()
     images_dict = HexrdConfig().current_images_dict()
     pixel_size = HexrdConfig().cartesian_pixel_size
-
-    # HEDMInstrument expects None Euler angle convention for the
-    # config. Let's get it as such.
-    iconfig = HexrdConfig().instrument_config_none_euler_convention
-    rme = HexrdConfig().rotation_matrix_euler()
-    instr = instrument.HEDMInstrument(instrument_config=iconfig,
-                                      tilt_calibration_mapping=rme)
 
     # Make sure each key in the image dict is in the panel_ids
     if images_dict.keys() != instr._detectors.keys():
