@@ -1,13 +1,15 @@
 import numpy as np
 
-eta_range_DFLT = 
+from hexrd import constants
+
+
 class MonoRotationSeriesSpotOverlay(object):
     def __init__(self, plane_data, instr,
                  crystal_params=None,
                  eta_ranges=None,
-                 
-                                 ome_ranges=[(-np.pi, np.pi), ],
-                                 ome_period=(-np.pi, np.pi)
+                 ome_ranges=None,
+                 ome_period=None,
+                 aggregation_mode=None
                  ):
         self._plane_data = plane_data
         self._instrument = instr
@@ -41,6 +43,8 @@ class MonoRotationSeriesSpotOverlay(object):
             self._ome_period = self._ome_ranges[0][0] + np.r_[0., 2*np.pi]
         else:
             self._ome_period = ome_period
+            
+        self._aggregation_mode = aggregation_mode
 
     @property
     def plane_data(self):
@@ -80,10 +84,46 @@ class MonoRotationSeriesSpotOverlay(object):
     def ome_period(self):
         return self._ome_ranges[0][0] + np.r_[0., 2*np.pi]
     
+    @property
+    def aggregation_mode(self):
+        return self._aggregation_mode
+    
+    @aggregation_mode.setter
+    def aggregation_mode(self, x):
+        assert x in ['Maximum', 'Median', 'Average', 'None']
+        if x == 'None':
+            self._aggregation_mode = None
+        else:
+            self._aggregation_mode = x
+ 
     def overlay(self, display_mode='raw', frame_aggregateion_mode=None):
+        """
+        Returns appropriate point groups for displaying bragg reflection
+        locations for a monochromatic rotation series.
+
+        Parameters
+        ----------
+        display_mode : TYPE, optional
+            DESCRIPTION. The default is 'raw'.
+        frame_aggregateion_mode : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Raises
+        ------
+        NotImplementedError
+            Don't have the 3-d case for plotting on un-aggregated imageseries
+            yet.
+            TODO: bin omega output as frames; functions exist in
+            imageseries.omega
+
+        Returns
+        -------
+        point_groups : TYPE
+            DESCRIPTION.
+
+        """
         sim_data = self.instrument.simulate_rotation_series(
-            self.plane_data,
-            grain_params=[self.crystal_params, ],
+            self.plane_data, [self.crystal_params, ],
             eta_ranges=self.eta_ranges,
             ome_ranges=self.ome_ranges,
             ome_period=self.ome_period
@@ -92,13 +132,13 @@ class MonoRotationSeriesSpotOverlay(object):
         for det_key, psim in sim_data.items():
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
             if display_mode == 'polar':
-                if self.aggregation mode is None:
+                if self.aggregation_mode is None:
                     raise NotImplementedError
                 else:
-                    point_groups[det_key] = valid_angs
+                    point_groups[det_key] = valid_angs[0]
             elif display_mode in ['raw', 'cartesian']:
-                if self.aggregation mode is None:
+                if self.aggregation_mode is None:
                     raise NotImplementedError
                 else:
-                    point_groups[det_key] = valid_xys
+                    point_groups[det_key] = valid_xys[0]
         return point_groups
