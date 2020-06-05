@@ -20,7 +20,7 @@ pip install -e hexrdgui
 
 ```bash
 # Install deps using conda package
-conda install -c cjh1 -c conda-forge hexrdgui
+conda install -c cjh1 -c anaconda -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
 pip install --no-deps -U -e hexrd
 CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
