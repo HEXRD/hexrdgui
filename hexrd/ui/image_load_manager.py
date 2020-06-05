@@ -258,9 +258,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Remember unaggregated images
         self.unaggregated_images = copy.copy(ims_dict)
 
-        if self.state['agg'] == 1:
+        if self.state['agg'] == UI_AGG_INDEX_MAXIMUM:
             agg_func = imageseries.stats.max_iter
-        elif self.state['agg'] == 2:
+        elif self.state['agg'] == UI_AGG_INDEX_MEDIAN:
             agg_func = imageseries.stats.median_iter
         else:
             agg_func = imageseries.stats.average_iter
