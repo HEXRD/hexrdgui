@@ -25,6 +25,11 @@ jobs:
     - name: Install CMake
       uses: lukka/get-cmake@v3.17.2
 
+    - name: Install conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        python-version: 3.8
+
     # Runs a single command using the runners shell
     - name:
       run: cpack --version
