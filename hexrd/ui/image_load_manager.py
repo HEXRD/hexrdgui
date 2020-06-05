@@ -297,18 +297,18 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def get_flip_op(self, oplist, idx):
         # Change the image orientation
-        if self.state['trans'][idx] == 0:
+        if self.state['trans'][idx] == UI_TRANS_INDEX_NONE:
             return
 
-        if self.state['trans'][idx] == 1:
+        if self.state['trans'][idx] == UI_TRANS_INDEX_FLIP_VERTICALLY:
             key = 'v'
-        elif self.state['trans'][idx] == 2:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_FLIP_HORIZONTALLY:
             key = 'h'
-        elif self.state['trans'][idx] == 3:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_TRANSPOSE:
             key = 't'
-        elif self.state['trans'][idx] == 4:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_ROTATE_90:
             key = 'r90'
-        elif self.state['trans'][idx] == 5:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_ROTATE_180:
             key = 'r180'
         else:
             key = 'r270'
