@@ -33,6 +33,9 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Version
+      run: conda --version
+
     - name: Create conda packaging environment
       run: conda env create -f environment.yml
 
