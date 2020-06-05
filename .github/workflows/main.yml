@@ -39,3 +39,9 @@ jobs:
     - name: Build the package
       run: cpack
 
+    - name: Upload install output
+      uses: actions/upload-artifact@v2
+      with:
+        name: install-output
+        path: /home/runner/work/hexrdgui/hexrdgui/packaging/_CPack_Packages/TGZ/InstallOutput.log
+      if: always()
