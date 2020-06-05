@@ -31,7 +31,6 @@ class Singleton(type(QObject)):
 class NoEmptyFramesException(Exception):
     pass
 
-
 class ImageLoadManager(QObject, metaclass=Singleton):
 
     # Emitted when new images are loaded
@@ -221,7 +220,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                         ops[key] = op
 
         return ops
-
 
     def apply_operations(self, ims_dict):
         # First perform dark aggregation if we need to
