@@ -33,6 +33,9 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Create conda packaging environment
+      run: conda env create -f environment.yml
+
     # Runs a single command using the runners shell
     - name:
       run: cpack --version
