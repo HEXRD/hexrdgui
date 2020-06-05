@@ -37,7 +37,9 @@ jobs:
       run: conda env create -f environment.yml
 
     - name: Build the package
-      run: cpack
+      run: |
+        conda activate hexrdgui-package
+        cpack
 
     - name: Upload install output
       uses: actions/upload-artifact@v2
