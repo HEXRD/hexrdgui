@@ -36,7 +36,6 @@ jobs:
     - name: Create conda packaging environment
       run: conda env create -f environment.yml
 
-    # Runs a single command using the runners shell
-    - name:
-      run: cpack --version
+    - name: Build the package
+      run: cpack
 
