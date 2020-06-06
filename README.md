@@ -1,6 +1,6 @@
 # Develop
 
-Requires Python 3.6+
+Requires Python 3.8+
 
 ```bash
 git clone git@github.com:/HEXRD/hexrd.git
