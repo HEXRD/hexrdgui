@@ -29,5 +29,5 @@ CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
 # Run
 
 ```bash
-hexrd
+hexrdgui
 ```
