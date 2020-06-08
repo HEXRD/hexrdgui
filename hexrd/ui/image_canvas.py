@@ -36,6 +36,7 @@ class ImageCanvas(FigureCanvas):
         # a calibration.
         self.iviewer = None
         self.azimuthal_integral_axis = None
+        self.azimuthal_line_artist = None
 
         # If not None, used to rescale the ring data to the new extent
         self.old_extent = None
@@ -77,6 +78,7 @@ class ImageCanvas(FigureCanvas):
         self.axes_images.clear()
         self.clear_rings()
         self.azimuthal_integral_axis = None
+        self.azimuthal_line_artist = None
         self.mode = None
         self.old_extent = None
 
@@ -142,7 +144,6 @@ class ImageCanvas(FigureCanvas):
         rbnds = ring_data['rbnd_data']
         rbnd_indices = ring_data['rbnd_indices']
 
-        # All rings are currently in a single nan-delimited list
         for pr in rings:
             x, y = self.reformat_overlays(pr)
             ring, = axis.plot(x, y, color=ring_color,
@@ -166,26 +167,29 @@ class ImageCanvas(FigureCanvas):
             az_axis = self.azimuthal_integral_axis
             for pr in rings:
                 x, _ = self.reformat_overlays(pr)
-                # Use the whole y extents for each overlay
-                y = [*az_axis.get_ylim()] * int(len(x) / 2)
-                ring, = az_axis.plot(x, y, color=ring_color,
-                                     linestyle=ring_linestyle, lw=ring_linewidth)
-                self.cached_rings.append(ring)
+                # Don't plot duplicate vertical lines
+                x = np.unique(x.round(3))
+                for val in x:
+                    ring = az_axis.axvline(val, c=ring_color,
+                                           ls=ring_linestyle,
+                                           lw=ring_linewidth)
+                    self.cached_rings.append(ring)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
                 x, _ = self.reformat_overlays(pr)
-                # Use the whole y extents for each overlay
-                y = [*az_axis.get_ylim()] * int(len(x) / 2)
+                # Don't plot duplicate vertical lines
+                x = np.unique(x.round(3))
+
                 color = rbnd_color
                 if len(ind) > 1:
                     # If rbnds are combined, override the color to red
                     color = 'r'
 
-                rbnd, = az_axis.plot(x, y, color=color,
-                                     linestyle=rbnd_linestyle,
-                                     lw=rbnd_linewidth)
-                self.cached_rbnds.append(rbnd)
+                for val in x:
+                    rbnd = az_axis.axvline(val, c=color, ls=rbnd_linestyle,
+                                           lw=rbnd_linewidth)
+                    self.cached_rbnds.append(rbnd)
 
     def redraw_rings(self):
         # iviewer is required for drawing rings
@@ -436,7 +440,8 @@ class ImageCanvas(FigureCanvas):
 
             if self.azimuthal_integral_axis is None:
                 axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
-                axis.plot(tth, np.sum(img, axis=0))
+                self.azimuthal_line_artist, = axis.plot(tth,
+                                                        np.sum(img, axis=0))
 
                 # Let the axes rescale one time
                 axis.autoscale_view()
@@ -449,8 +454,8 @@ class ImageCanvas(FigureCanvas):
 
                 self.azimuthal_integral_axis = axis
             else:
-                axis = self.azimuthal_integral_axis
                 self.update_azimuthal_integral_plot()
+                axis = self.azimuthal_integral_axis
 
             # These need to be set every time for some reason
             self.axis.label_outer()
@@ -511,18 +516,22 @@ class ImageCanvas(FigureCanvas):
             return
 
         axis = self.azimuthal_integral_axis
-        if axis is None:
+        line = self.azimuthal_line_artist
+        if any([x is None for x in [axis, line]]):
             # Nothing to do. Just return.
             return
 
-        img = self.iviewer.img
-
         # Get the "tth" vector
-        angular_grid = self.iviewer.angular_grid
-        tth = np.degrees(angular_grid[1][0])
+        tth = np.degrees(self.iviewer.angular_grid[1][0])
 
-        axis.clear()
-        axis.plot(tth, np.sum(img, axis=0))
+        # Set the new data
+        line.set_data(tth, np.sum(self.iviewer.img, axis=0))
+
+        # Rescale the axes for the new data
+        # All three of these are required
+        axis.relim()
+        axis.autoscale_view()
+        axis.axis('auto')
 
     def on_detector_transform_modified(self, det):
         if not self.iviewer:
