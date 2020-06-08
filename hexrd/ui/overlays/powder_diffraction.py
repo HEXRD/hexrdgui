@@ -32,45 +32,75 @@ class PowderLineOverlay(object):
         return 360./float(self.eta_steps)
 
     def overlay(self, display_mode='raw'):
-        """
-        """
         tths = self.plane_data.getTTh()
-
         etas = np.radians(
             self.delta_eta*np.linspace(
                 0., self.eta_steps, num=self.eta_steps + 1
             )
         )
-        point_groups = dict.fromkeys(self.instrument.detectors)
+
+        if self.plane_data.tThWidth is not None:
+            # Need to get width data as well
+            indices, ranges = self.plane_data.getMergedRanges()
+            r_lower = [r[0] for r in ranges]
+            r_upper = [r[1] for r in ranges]
+
+        point_groups = {}
         for det_key, panel in self.instrument.detectors.items():
-            ring_pts = []
-            for tth in tths:
-                ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
-                if display_mode == 'polar':
-                    ring_pts.append(np.vstack([ang_crds, nans_row]))
-                elif display_mode in ['raw', 'cartesian']:
-                    xys_full = panel.angles_to_cart(ang_crds)
-                    xys, on_panel = panel.clip_to_panel(
-                        xys_full, buffer_edges=False
-                    )
-                    diff_tol = np.radians(self.delta_eta) + 1e-4
-                    ring_breaks = np.where(
-                        np.abs(np.diff(etas[on_panel])) > diff_tol
-                    )[0] + 1
-                    n_segments = len(ring_breaks) + 1
-                    if n_segments == 1:
-                        ring_pts.append(np.vstack([xys, nans_row]))
-                    else:
-                        src_len = sum(on_panel)
-                        dst_len = src_len + len(ring_breaks)
-                        nxys = np.nan*np.ones((dst_len, 2))
-                        ii = 0
-                        for i in range(n_segments - 1):
-                            jj = ring_breaks[i]
-                            nxys[ii + i:jj + i, :] = xys[ii:jj, :]
-                            ii = jj
-                        i = n_segments - 1
-                        nxys[ii + i:, :] = xys[ii:, :]
-                        ring_pts.append(np.vstack([nxys, nans_row]))
-            point_groups[det_key] = np.vstack(ring_pts)
+            keys = ['ring_data', 'rbnd_data', 'rbnd_indices']
+            point_groups[det_key] = {key: [] for key in keys}
+            ring_pts = self.generate_ring_points(tths, etas, panel,
+                                                 display_mode)
+            point_groups[det_key]['ring_data'] = ring_pts
+
+            if self.plane_data.tThWidth is not None:
+                # Generate the ranges too
+                lower_pts = self.generate_ring_points(r_lower, etas, panel,
+                                                      display_mode)
+                upper_pts = self.generate_ring_points(r_upper, etas, panel,
+                                                      display_mode)
+                for l, u in zip(lower_pts, upper_pts):
+                    point_groups[det_key]['rbnd_data'] += [l, u]
+                for ind in indices:
+                    point_groups[det_key]['rbnd_indices'] += [ind, ind]
+
         return point_groups
+
+    def generate_ring_points(self, tths, etas, panel, display_mode):
+        ring_pts = []
+        for tth in tths:
+            ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
+            if display_mode == 'polar':
+                ring_pts.append(np.vstack([ang_crds, nans_row]))
+            elif display_mode in ['raw', 'cartesian']:
+                xys_full = panel.angles_to_cart(ang_crds)
+                xys, on_panel = panel.clip_to_panel(
+                    xys_full, buffer_edges=False
+                )
+
+                if display_mode == 'raw':
+                    # Convert to pixel coordinates
+                    xys = panel.cartToPixel(xys)
+
+                diff_tol = np.radians(self.delta_eta) + 1e-4
+                ring_breaks = np.where(
+                    np.abs(np.diff(etas[on_panel])) > diff_tol
+                )[0] + 1
+                n_segments = len(ring_breaks) + 1
+
+                if n_segments == 1:
+                    ring_pts.append(np.vstack([xys, nans_row]))
+                else:
+                    src_len = sum(on_panel)
+                    dst_len = src_len + len(ring_breaks)
+                    nxys = np.nan*np.ones((dst_len, 2))
+                    ii = 0
+                    for i in range(n_segments - 1):
+                        jj = ring_breaks[i]
+                        nxys[ii + i:jj + i, :] = xys[ii:jj, :]
+                        ii = jj
+                    i = n_segments - 1
+                    nxys[ii + i:, :] = xys[ii:, :]
+                    ring_pts.append(np.vstack([nxys, nans_row]))
+
+        return ring_pts
