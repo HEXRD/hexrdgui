@@ -142,8 +142,9 @@ class ImageCanvas(FigureCanvas):
         rbnds = ring_data['rbnd_data']
         rbnd_indices = ring_data['rbnd_indices']
 
+        # All rings are currently in a single nan-delimited list
         for pr in rings:
-            x, y = self.extract_ring_coords(pr)
+            x, y = self.reformat_overlays(pr)
             ring, = axis.plot(x, y, color=ring_color,
                               linestyle=ring_linestyle,
                               lw=ring_linewidth)
@@ -151,7 +152,7 @@ class ImageCanvas(FigureCanvas):
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
-            x, y = self.extract_ring_coords(pr)
+            x, y = self.reformat_overlays(pr)
             color = rbnd_color
             if len(ind) > 1:
                 # If rbnds are combined, override the color to red
@@ -163,20 +164,25 @@ class ImageCanvas(FigureCanvas):
 
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
-            yrange = az_axis.get_ylim()
             for pr in rings:
-                ring, = az_axis.plot(pr[:, 1], yrange, color=ring_color,
-                                     linestyle=ring_linestyle,
-                                     lw=ring_linewidth)
+                x, _ = self.reformat_overlays(pr)
+                # Use the whole y extents for each overlay
+                y = [*az_axis.get_ylim()] * int(len(x) / 2)
+                ring, = az_axis.plot(x, y, color=ring_color,
+                                     linestyle=ring_linestyle, lw=ring_linewidth)
                 self.cached_rings.append(ring)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
+                x, _ = self.reformat_overlays(pr)
+                # Use the whole y extents for each overlay
+                y = [*az_axis.get_ylim()] * int(len(x) / 2)
                 color = rbnd_color
                 if len(ind) > 1:
                     # If rbnds are combined, override the color to red
                     color = 'r'
-                rbnd, = az_axis.plot(pr[:, 1], yrange, color=color,
+
+                rbnd, = az_axis.plot(x, y, color=color,
                                      linestyle=rbnd_linestyle,
                                      lw=rbnd_linewidth)
                 self.cached_rbnds.append(rbnd)
@@ -194,13 +200,18 @@ class ImageCanvas(FigureCanvas):
             if self.mode == 'images':
                 # We have to draw once for each detector
                 for axis in self.raw_axes:
-                    det_name = axis.get_title()
-                    self.draw_rings_on_axis(axis,
-                                            ring_data[mat_name][det_name],
-                                            style)
-            else:
-                # Just draw for the main axis
-                self.draw_rings_on_axis(self.axis, ring_data[mat_name], style)
+                    # The title name is the detector name
+                    data = ring_data[mat_name][axis.get_title()]
+                    self.draw_rings_on_axis(axis, data, style)
+            elif ring_data[mat_name]:
+                # For both the Cartesian and Polar views, we only need to
+                # draw the first detector.
+                # For Cartesian, a fake single detector is used, so there
+                # should only be one.
+                # For Polar, the overlays are drawn on the entire view for
+                # each detector, so only one detector is needed.
+                first = next(iter(ring_data[mat_name].values()))
+                self.draw_rings_on_axis(self.axis, first, style)
 
         self.draw()
 
@@ -233,6 +244,28 @@ class ImageCanvas(FigureCanvas):
 
         self.draw()
 
+    def reformat_overlays(self, data):
+        x, y = data[:, 1], data[:, 0]
+        if self.mode == 'cartesian':
+            # It's centered on (0, 0). Recenter it in place.
+            self.recenter_points((0, 0), x, y)
+        elif self.mode == 'polar':
+            # Swap axes and convert to degrees.
+            x, y = np.degrees(y), np.degrees(x)
+            # It's centered on 180. Recenter on 0.
+            y -= 180.0
+
+        return x, y
+
+    def recenter_points(self, old_center, x, y):
+        # Recenters the points in place
+        new_extent = self.axes_images[0].get_extent()
+        new_center = ((new_extent[1] + new_extent[0]) / 2.0,
+                      (new_extent[3] + new_extent[2]) / 2.0)
+
+        x += new_center[0] - old_center[0]
+        y += new_center[1] - old_center[1]
+
     def rescale_points(self, x, y):
         # This takes the data, assumes it was in the old extents sytem,
         # and it rescales it to the new extents system.
@@ -252,10 +285,6 @@ class ImageCanvas(FigureCanvas):
         y = np.interp(y, old_y_range, new_y_range)
 
         return x, y
-
-    def extract_ring_coords(self, pr):
-        x, y = pr[:, 1], pr[:, 0]
-        return self.rescale_points(x, y)
 
     def clear_saturation(self):
         for t in self.saturation_texts:
