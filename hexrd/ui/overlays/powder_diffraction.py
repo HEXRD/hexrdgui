@@ -72,7 +72,7 @@ class PowderLineOverlay(object):
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
             if display_mode == 'polar':
                 # Swap columns, convert to degrees
-                ang_crds[:,[0, 1]] = np.degrees(ang_crds[:,[1, 0]])
+                ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in ['raw', 'cartesian']:
                 xys_full = panel.angles_to_cart(ang_crds)
@@ -80,9 +80,8 @@ class PowderLineOverlay(object):
                     xys_full, buffer_edges=False
                 )
 
-                if display_mode == 'raw':
-                    # Convert to pixel coordinates
-                    xys = panel.cartToPixel(xys)
+                # Convert to pixel coordinates
+                xys = panel.cartToPixel(xys)
 
                 diff_tol = np.radians(self.delta_eta) + 1e-4
                 ring_breaks = np.where(

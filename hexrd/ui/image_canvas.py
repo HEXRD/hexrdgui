@@ -251,19 +251,11 @@ class ImageCanvas(FigureCanvas):
     def reformat_overlays(self, data):
         x, y = data[:, 1], data[:, 0]
         if self.mode == 'cartesian':
-            # It's centered on (0, 0). Recenter it in place.
-            self.recenter_points((0, 0), x, y)
+            # The Cartesian image is rescaled to be in mm units
+            # Rescale our overlays as well to match it
+            x, y = self.rescale_points(x, y)
 
         return x, y
-
-    def recenter_points(self, old_center, x, y):
-        # Recenters the points in place
-        new_extent = self.axes_images[0].get_extent()
-        new_center = ((new_extent[1] + new_extent[0]) / 2.0,
-                      (new_extent[3] + new_extent[2]) / 2.0)
-
-        x += new_center[0] - old_center[0]
-        y += new_center[1] - old_center[1]
 
     def rescale_points(self, x, y):
         # This takes the data, assumes it was in the old extents sytem,
