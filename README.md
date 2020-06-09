@@ -1,6 +1,6 @@
 # Develop
 
-Requires Python 3.6+
+Requires Python 3.8+
 
 ```bash
 git clone git@github.com:/HEXRD/hexrd.git
@@ -19,6 +19,9 @@ pip install -e hexrdgui
 ## conda
 
 ```bash
+# First, make sure python3.8+ is installed.
+# If it is not, run the following command:
+conda install -c anaconda python=3.8
 # Install deps using conda package
 conda install -c cjh1 -c anaconda -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
@@ -29,5 +32,5 @@ CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
 # Run
 
 ```bash
-hexrd
+hexrdgui
 ```

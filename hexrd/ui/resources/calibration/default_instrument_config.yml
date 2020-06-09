@@ -11,6 +11,7 @@ detectors:
       columns: 2048
       rows: 2048
       size: [1.0, 1.0]
+    buffer: 0.5
     saturation_level: 14000.0
     transform:
       translation: [0.0, 0.0, 0.0]
@@ -24,6 +25,7 @@ detectors:
       columns: 2048
       rows: 2048
       size: [1.0, 1.0]
+    buffer: 0.5
     saturation_level: 14000.0
     transform:
       translation: [0.0, 0.0, 0.0]
