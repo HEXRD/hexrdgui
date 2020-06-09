@@ -253,11 +253,6 @@ class ImageCanvas(FigureCanvas):
         if self.mode == 'cartesian':
             # It's centered on (0, 0). Recenter it in place.
             self.recenter_points((0, 0), x, y)
-        elif self.mode == 'polar':
-            # Swap axes and convert to degrees.
-            x, y = np.degrees(y), np.degrees(x)
-            # It's centered on 180. Recenter on 0.
-            y -= 180.0
 
         return x, y
 

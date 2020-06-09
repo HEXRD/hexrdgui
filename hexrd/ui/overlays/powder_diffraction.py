@@ -34,8 +34,8 @@ class PowderLineOverlay(object):
     def overlay(self, display_mode='raw'):
         tths = self.plane_data.getTTh()
         etas = np.radians(
-            self.delta_eta*np.linspace(
-                0., self.eta_steps, num=self.eta_steps + 1
+            np.linspace(
+                -180., 180., num=self.eta_steps + 1
             )
         )
 
@@ -71,6 +71,8 @@ class PowderLineOverlay(object):
         for tth in tths:
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
             if display_mode == 'polar':
+                # Swap columns, convert to degrees
+                ang_crds[:,[0, 1]] = np.degrees(ang_crds[:,[1, 0]])
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in ['raw', 'cartesian']:
                 xys_full = panel.angles_to_cart(ang_crds)
