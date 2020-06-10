@@ -230,7 +230,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         # Now run the dark aggregation
         self.update_progress_text('Aggregating dark images...')
-        dark_ims = {}
+        dark_images = {}
         if dark_aggr_ops:
             dark_images = self.aggregate_dark_multithread(dark_aggr_ops, ims_dict)
 
