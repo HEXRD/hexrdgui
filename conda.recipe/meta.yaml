@@ -31,7 +31,7 @@ test:
     - hexrd.ui
 
 about:
-  home: https://github.com/cryos/hexrdgui
+  home: https://github.com/HEXRD/hexrdgui
   license: BSD
   license_family: BSD
   summary: "Qt5 PySide2 based HEXRD GUI"
