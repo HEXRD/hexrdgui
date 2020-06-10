@@ -1,5 +1,8 @@
 import copy
+import functools
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 from hexrd import imageseries
 
@@ -10,6 +13,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.progress_dialog import ProgressDialog
+from hexrd.ui.constants import *
 
 
 class Singleton(type(QObject)):
@@ -22,6 +26,8 @@ class Singleton(type(QObject)):
 
         return cls._instance
 
+class NoEmptyFramesException(Exception):
+    pass
 
 class ImageLoadManager(QObject, metaclass=Singleton):
 
@@ -162,22 +168,78 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.update_needed.emit()
         self.new_images_loaded.emit()
 
-    def apply_operations(self, ims_dict):
-        # Apply the operations to the imageseries
+    def get_dark_aggr_op(self, ims, idx):
+        """
+        Returns a tuple of the form (function, frames), where func is the
+        function to be applied and frames is the number of frames to aggregate.
+        """
+        dark_idx = self.state['dark'][idx]
+        if dark_idx == UI_DARK_INDEX_FILE:
+            ims = ImageFileManager().open_file(self.dark_files[idx])
+
+        # Create or load the dark image if selected
+        frames = len(ims)
+        if dark_idx != UI_DARK_INDEX_FILE and frames > 120:
+            frames = 120
+
+        if dark_idx == UI_DARK_INDEX_MEDIAN:
+            f = imageseries.stats.median_iter
+        elif dark_idx == UI_DARK_INDEX_EMPTY_FRAMES:
+            f = imageseries.stats.average_iter
+            frames = self.empty_frames
+        elif dark_idx == UI_DARK_INDEX_AVERAGE:
+            f = imageseries.stats.average_iter
+        elif dark_idx == UI_DARK_INDEX_MAXIMUM:
+            f = imageseries.stats.max_iter
+        else:
+            f = imageseries.stats.median_iter
+
+        return (f, frames)
+
+    def get_dark_aggr_ops(self, ims_dict):
+        """
+        Returns a dict of tuples of the form (function, frames), where func is the
+        function to be applied and frames is the number of frames to aggregate.
+        The key is the detector name.
+        """
+        ops = {}
         for idx, key in enumerate(ims_dict.keys()):
-            ops = []
             if self.data:
                 if 'idx' in self.data:
                     idx = self.data['idx']
-                if self.state['dark'][idx] != 5:
-                    if (self.state['dark'][idx] == 1
+                if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
+                    if (self.state['dark'][idx] == UI_DARK_INDEX_EMPTY_FRAMES
                             and self.empty_frames == 0):
                         msg = ('ERROR: \n No empty frames set. '
                                + 'No dark subtracion will be performed.')
-                        QMessageBox.warning(None, 'HEXRD', msg)
-                        return
+                        raise NoEmptyFramesException(msg)
                     else:
-                        self.get_dark_op(ops, ims_dict[key], idx)
+                        op = self.get_dark_aggr_op(ims_dict[key], idx)
+                        ops[key] = op
+
+        return ops
+
+    def apply_operations(self, ims_dict):
+        # First perform dark aggregation if we need to
+        dark_aggr_ops = {}
+        try:
+            dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
+        except NoEmptyFramesException as ex:
+            QMessageBox.warning(None, 'HEXRD', str(ex))
+            return
+
+        # Now run the dark aggregation
+        self.update_progress_text('Aggregating dark images...')
+        dark_images = {}
+        if dark_aggr_ops:
+            dark_images = self.aggregate_dark_multithread(dark_aggr_ops, ims_dict)
+
+        # Apply the operations to the imageseries
+        for idx, key in enumerate(ims_dict.keys()):
+            ops = []
+            # Apply dark subtraction
+            if key in dark_images:
+                self.get_dark_op(ops, dark_images[key])
 
             if self.state['trans'][idx]:
                 self.get_flip_op(ops, idx)
@@ -191,29 +253,18 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.update_progress_text('Aggregating images...')
         # Remember unaggregated images
         self.unaggregated_images = copy.copy(ims_dict)
-        # Display aggregated image from imageseries
-        for key, ims in ims_dict.items():
-            frames = len(ims)
-            step = int(frames * len(ims_dict) / 100)
-            step = step if step > 2 else 2
-            nchunk = int(frames / step)
-            if nchunk > frames or nchunk < 1:
-                # One last sanity check
-                nchunk = frames
 
-            if self.state['agg'] == 1:
-                f = imageseries.stats.max_iter
-            elif self.state['agg'] == 2:
-                f = imageseries.stats.median_iter
-            else:
-                f = imageseries.stats.average_iter
+        if self.state['agg'] == UI_AGG_INDEX_MAXIMUM:
+            agg_func = imageseries.stats.max_iter
+        elif self.state['agg'] == UI_AGG_INDEX_MEDIAN:
+            agg_func = imageseries.stats.median_iter
+        else:
+            agg_func = imageseries.stats.average_iter
 
-            for i, img in enumerate(f(ims, nchunk)):
-                progress = self.calculate_progress(i, nchunk)
-                self.update_progress(progress)
+        f = functools.partial(self.aggregate_images, agg_func=agg_func)
 
-            self.increment_progress_step()
-            ims_dict[key] = [img]
+        for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
+            ims_dict[key] = aggr_img
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
@@ -242,62 +293,26 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def get_flip_op(self, oplist, idx):
         # Change the image orientation
-        if self.state['trans'][idx] == 0:
+        if self.state['trans'][idx] == UI_TRANS_INDEX_NONE:
             return
 
-        if self.state['trans'][idx] == 1:
+        if self.state['trans'][idx] == UI_TRANS_INDEX_FLIP_VERTICALLY:
             key = 'v'
-        elif self.state['trans'][idx] == 2:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_FLIP_HORIZONTALLY:
             key = 'h'
-        elif self.state['trans'][idx] == 3:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_TRANSPOSE:
             key = 't'
-        elif self.state['trans'][idx] == 4:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_ROTATE_90:
             key = 'r90'
-        elif self.state['trans'][idx] == 5:
+        elif self.state['trans'][idx] == UI_TRANS_INDEX_ROTATE_180:
             key = 'r180'
         else:
             key = 'r270'
 
         oplist.append(('flip', key))
 
-    def get_dark_op(self, oplist, ims, idx):
-        dark_idx = self.state['dark'][idx]
-        if dark_idx == 4:
-            ims = ImageFileManager().open_file(self.dark_files[idx])
-
-        # Create or load the dark image if selected
-        frames = len(ims)
-        if dark_idx != 4 and frames > 120:
-            frames = 120
-
-        if dark_idx == 0:
-            f = imageseries.stats.median_iter
-        elif dark_idx == 1:
-            f = imageseries.stats.average_iter
-            frames = self.empty_frames
-        elif dark_idx == 2:
-            f = imageseries.stats.average_iter
-        elif dark_idx == 3:
-            f = imageseries.stats.max_iter
-        else:
-            f = imageseries.stats.median_iter
-
-        self.update_progress_text('Aggregating dark images...')
-
-        step = int(frames * len(HexrdConfig().imageseries_dict) / 100)
-        step = step if step > 2 else 2
-        nchunk = int(frames / step)
-        if nchunk > frames or nchunk < 1:
-            # One last sanity check
-            nchunk = frames
-
-        for i, darkimg in enumerate(f(ims, nchunk, nframes=frames)):
-            progress = self.calculate_progress(i, nchunk)
-            self.update_progress(progress)
-
-        self.increment_progress_step()
-
-        oplist.append(('dark', darkimg))
+    def get_dark_op(self, oplist, dark):
+        oplist.append(('dark', dark))
 
     def reset_unagg_imgs(self):
         self.unaggregated_images = None
@@ -313,7 +328,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             if self.data and 'idx' in self.data:
                 idx = self.data['idx']
 
-            if self.state['dark'][idx] != 5:
+            if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
                 progress_macro_steps += 1
 
         if self.state['agg']:
@@ -321,13 +336,104 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         self.progress_macro_steps = progress_macro_steps
 
-    def calculate_progress(self, i, nchunk):
-        numerator = self.current_progress_step + i / nchunk
-        return numerator / self.progress_macro_steps * 100
-
     def increment_progress_step(self):
         self.current_progress_step += 1
 
     def update_progress_text(self, text):
         if self.progress_dialog is not None:
             self.progress_dialog.setLabelText(text)
+
+    def calculate_nchunk(self, num_ims, frames):
+        """
+        Calculate the number of chunks
+
+         :param num_ims: The number of image series.
+         :param frames: The number of frames being processed.
+        """
+        step = int(frames * num_ims / 100)
+        step = step if step > 2 else 2
+        nchunk = int(frames / step)
+        if nchunk > frames or nchunk < 1:
+            # One last sanity check
+            nchunk = frames
+
+        return nchunk
+
+    def aggregate_images(self, key, ims, agg_func, progress_dict):
+        frames = len(ims)
+        num_ims = len(progress_dict)
+        nchunk = self.calculate_nchunk(num_ims, frames)
+
+        for i, img in enumerate(agg_func(ims, nchunk)):
+            progress_dict[key] = (i + 1) / nchunk
+
+        return [img]
+
+    def wait_with_progress(self, futures, progress_dict):
+        """
+        Wait for futures to be resolved and update progress using the progress
+        dict.
+        """
+        n_macro_steps = self.progress_macro_steps
+        orig_progress = self.progress_dialog.value()
+        while not all([f.done() for f in futures]):
+            total = sum([v for v in progress_dict.values()])
+            progress = total * 100 / n_macro_steps
+            self.update_progress(orig_progress + progress)
+            time.sleep(0.1)
+
+    def aggregate_images_multithread(self, f, ims_dict):
+        """
+        Use ThreadPoolExecutor to aggregate images
+
+        :param f: The aggregation function
+        :param ims_dict: The imageseries to aggregate
+        """
+        futures = []
+        progress_dict = {key: 0.0 for key in ims_dict.keys()}
+        with ThreadPoolExecutor() as tp:
+            for (key, ims) in ims_dict.items():
+                futures.append(tp.submit(f, key, ims, progress_dict=progress_dict))
+
+            self.wait_with_progress(futures, progress_dict)
+
+        return [f.result() for f in futures]
+
+    def aggregate_dark(self, key, func, ims, frames, progress_dict):
+        """
+        Generate aggregated dark image.
+
+        :param key: The detector
+        :param func: The aggregation function
+        :param ims: The imageseries
+        :param frames: The number of frames to use
+        :param progress_dict: Dict for progress reporting
+        """
+        nchunk = self.calculate_nchunk(len(HexrdConfig().imageseries_dict), frames)
+
+        for i, darkimg in enumerate(func(ims, nchunk, nframes=frames)):
+            progress_dict[key] = (i + 1) / nchunk
+
+        return (key, darkimg)
+
+
+    def aggregate_dark_multithread(self, aggr_op_dict, ims_dict):
+        """
+        Use ThreadPoolExecutor to dark aggregation. Returns a dict mapping the
+        detector name to dark image.
+
+        :param aggr_op_dict: A dict mapping the detector name to a tuple of the form
+                            (func, frames), where func is the function to use to do
+                            the aggregation and frames is number of images to aggregate.
+        :param ims_dict: The dict of image series
+        """
+        futures = []
+        progress_dict = {key: 0.0 for key in ims_dict.keys()}
+        with ThreadPoolExecutor() as tp:
+            for (key, (op, frames)) in aggr_op_dict.items():
+                futures.append(tp.submit(self.aggregate_dark, key, op, ims_dict[key], frames, progress_dict))
+
+            self.wait_with_progress(futures, progress_dict)
+
+        return {f.result()[0]: f.result()[1] for f in futures}
+
