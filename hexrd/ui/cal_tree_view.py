@@ -407,7 +407,7 @@ class CalTreeView(QTreeView):
             return
 
         # If the key is blacklisted, return
-        blacklisted_keys = ['saturation_level']
+        blacklisted_keys = ['saturation_level', 'buffer']
         if item.data(KEY_COL) in blacklisted_keys:
             return
 
