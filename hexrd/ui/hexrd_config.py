@@ -872,11 +872,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if visible and name not in self.visible_material_names:
             self.visible_material_names.append(name)
             self.update_visible_material_energies()
-            self.ring_config_changed.emit()
         elif not visible and name in self.visible_material_names:
             self.visible_material_names.remove(name)
             self.update_visible_material_energies()
-            self.ring_config_changed.emit()
 
     @property
     def visible_materials(self):
