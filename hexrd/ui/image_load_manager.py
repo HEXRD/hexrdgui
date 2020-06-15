@@ -108,7 +108,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Run the imageseries processing in a background thread and display a
         # loading dialog
         self.parent_dir = HexrdConfig().images_dir
-        self.state = HexrdConfig().load_panel_state
+        self.set_state()
         self.parent = parent
         self.files = files
         self.data = data
@@ -129,6 +129,12 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         worker.signals.result.connect(self.finish_processing_ims)
         worker.signals.finished.connect(progress_dialog.accept)
         progress_dialog.exec_()
+
+    def set_state(self, state=None):
+        if state is None:
+            self.state = HexrdConfig().load_panel_state
+        else:
+            self.state = state
 
     def process_ims(self, update_progress):
         self.update_progress = update_progress
@@ -222,11 +228,12 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def apply_operations(self, ims_dict):
         # First perform dark aggregation if we need to
         dark_aggr_ops = {}
-        try:
-            dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
-        except NoEmptyFramesException as ex:
-            QMessageBox.warning(None, 'HEXRD', str(ex))
-            return
+        if 'dark' in self.state:
+            try:
+                dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
+            except NoEmptyFramesException as ex:
+                QMessageBox.warning(None, 'HEXRD', str(ex))
+                return
 
         # Now run the dark aggregation
         self.update_progress_text('Aggregating dark images...')
@@ -240,12 +247,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             # Apply dark subtraction
             if key in dark_images:
                 self.get_dark_op(ops, dark_images[key])
-
-            if self.state['trans'][idx]:
+            if 'trans' in self.state and self.state['trans'][idx]:
                 self.get_flip_op(ops, idx)
 
             frames = self.get_range(ims_dict[key])
-
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
 
@@ -331,7 +336,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
                 progress_macro_steps += 1
 
-        if self.state['agg']:
+        if 'agg' in self.state and self.state['agg']:
             progress_macro_steps += num_ims
 
         self.progress_macro_steps = progress_macro_steps
