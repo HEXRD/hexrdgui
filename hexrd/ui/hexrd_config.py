@@ -1069,8 +1069,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['pixel_size']
 
     def _set_cartesian_pixel_size(self, v):
-        self.config['image']['cartesian']['pixel_size'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_pixel_size:
+            self.config['image']['cartesian']['pixel_size'] = v
+            self.rerender_needed.emit()
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
@@ -1079,8 +1080,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['virtual_plane_distance']
 
     def set_cartesian_virtual_plane_distance(self, v):
-        self.config['image']['cartesian']['virtual_plane_distance'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_virtual_plane_distance:
+            self.config['image']['cartesian']['virtual_plane_distance'] = v
+            self.rerender_needed.emit()
 
     cartesian_virtual_plane_distance = property(
         _cartesian_virtual_plane_distance,
@@ -1090,8 +1092,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['plane_normal_rotate_x']
 
     def set_cartesian_plane_normal_rotate_x(self, v):
-        self.config['image']['cartesian']['plane_normal_rotate_x'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_plane_normal_rotate_x:
+            self.config['image']['cartesian']['plane_normal_rotate_x'] = v
+            self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_x = property(
         _cartesian_plane_normal_rotate_x,
@@ -1101,8 +1104,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['plane_normal_rotate_y']
 
     def set_cartesian_plane_normal_rotate_y(self, v):
-        self.config['image']['cartesian']['plane_normal_rotate_y'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_plane_normal_rotate_y:
+            self.config['image']['cartesian']['plane_normal_rotate_y'] = v
+            self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_y = property(
         _cartesian_plane_normal_rotate_y,
