@@ -284,7 +284,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
         default = self.get_default_detector()
-        for name in self.get_detector_names():
+        for name in self.detector_names:
             self._recursive_set_defaults(self.get_detector(name), default)
 
     def _recursive_set_defaults(self, current, default):
@@ -327,7 +327,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.load_panel_state_reset.emit()
 
     def load_instrument_config(self, yml_file):
-        old_detectors = self.get_detector_names()
+        old_detectors = self.detector_names
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -347,7 +347,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.update_visible_material_energies()
 
-        new_detectors = self.get_detector_names()
+        new_detectors = self.detector_names
         if old_detectors != new_detectors:
             self.detectors_changed.emit()
         else:
@@ -450,8 +450,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 statuses.append(status)
 
         # Get the detector flags
-        det_names = self.get_detector_names()
-        for name in det_names:
+        for name in self.detector_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
@@ -526,8 +525,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 cur_ind += 1
 
         # Set the detector flags
-        det_names = self.get_detector_names()
-        for name in det_names:
+        for name in self.detector_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
 
@@ -692,7 +690,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         res += self.get_gui_yaml_paths(['detectors'])
         return [x[0] for x in res]
 
-    def get_detector_names(self):
+    @property
+    def detector_names(self):
         return list(self.config['instrument'].get('detectors', {}).keys())
 
     def get_default_detector(self):

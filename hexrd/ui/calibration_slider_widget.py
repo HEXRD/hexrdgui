@@ -175,7 +175,7 @@ class CalibrationSliderWidget(QObject):
 
         old_detector = self.current_detector()
         old_detectors = [widget.itemText(x) for x in range(widget.count())]
-        detectors = HexrdConfig().get_detector_names()
+        detectors = HexrdConfig().detector_names
 
         if old_detectors == detectors:
             # The detectors didn't change. Nothing to update
