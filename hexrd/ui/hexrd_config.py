@@ -285,7 +285,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Find missing keys under detectors and set defaults for them
         default = self.get_default_detector()
         for name in self.detector_names:
-            self._recursive_set_defaults(self.get_detector(name), default)
+            self._recursive_set_defaults(self.detector(name), default)
 
     def _recursive_set_defaults(self, current, default):
         for key in default.keys():
@@ -698,12 +698,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return copy.deepcopy(
             self.default_config['instrument']['detectors']['ge1'])
 
-    def get_detector(self, detector_name):
+    def detector(self, detector_name):
         return self.config['instrument']['detectors'][detector_name]
 
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
-            new_detector = copy.deepcopy(self.get_detector(detector_to_copy))
+            new_detector = copy.deepcopy(self.detector(detector_to_copy))
         else:
             new_detector = self.get_default_detector()
 

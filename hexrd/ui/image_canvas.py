@@ -303,7 +303,7 @@ class ImageCanvas(FigureCanvas):
             # our method for getting the saturation level as well.
             ax = img.axes
             detector_name = ax.get_title()
-            detector = HexrdConfig().get_detector(detector_name)
+            detector = HexrdConfig().detector(detector_name)
             saturation_level = detector['saturation_level']['value']
 
             array = img.get_array()

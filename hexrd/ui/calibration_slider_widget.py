@@ -65,7 +65,7 @@ class CalibrationSliderWidget(QObject):
         return self.ui.detector.currentText()
 
     def current_detector_dict(self):
-        return HexrdConfig().get_detector(self.current_detector())
+        return HexrdConfig().detector(self.current_detector())
 
     def translation_widgets(self):
         # Let's take advantage of the naming scheme
