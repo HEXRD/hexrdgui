@@ -50,6 +50,8 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_snip1d_width)
         self.ui.polar_snip1d_numiter.valueChanged.connect(
             HexrdConfig().set_polar_snip1d_numiter)
+        HexrdConfig().instrument_config_loaded.connect(
+            self.auto_generate_cartesian_params)
 
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
@@ -103,3 +105,26 @@ class ImageModeWidget(QObject):
             HexrdConfig().polar_snip1d_width)
         self.ui.polar_snip1d_numiter.setValue(
             HexrdConfig().polar_snip1d_numiter)
+
+    def auto_generate_cartesian_params(self):
+        # This will automatically generate and set values for the
+        # Cartesian pixel size and virtual plane distance based upon
+        # values in the instrument config
+        detectors = list(HexrdConfig().detectors.values())
+        distances = [
+            x['transform']['translation']['value'][2] for x in detectors
+        ]
+        sizes = [x['pixels']['size']['value'] for x in detectors]
+
+        average_dist = sum(distances) / len(distances)
+        average_size = sum([x[0] + x[1] for x in sizes]) / (2 * len(sizes))
+
+        # Set one of these without triggerring a re-render, so we will only
+        # re-render one time.
+        HexrdConfig().config['image']['cartesian']['pixel_size'] = (
+            5 * average_size
+        )
+        HexrdConfig().cartesian_virtual_plane_distance = abs(average_dist)
+
+        # Get the GUI to update with the new values
+        self.update_gui_from_config()

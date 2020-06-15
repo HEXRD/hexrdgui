@@ -79,6 +79,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
+    """Emitted when an instrument config has been loaded"""
+    instrument_config_loaded = Signal()
+
     """Convenience signal to update the main window's status bar
 
     Arguments are: message (str)
@@ -238,6 +241,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
+        self.instrument_config_loaded.emit()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -354,6 +358,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Still need a deep rerender
             self.deep_rerender_needed.emit()
 
+        self.instrument_config_loaded.emit()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
@@ -695,12 +700,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return list(self.config['instrument'].get('detectors', {}).keys())
 
     @property
-    def default_detector(self):
-        return copy.deepcopy(
-            self.default_config['instrument']['detectors']['ge1'])
+    def detectors(self):
+        return self.config['instrument'].get('detectors', {})
 
     def detector(self, detector_name):
         return self.config['instrument']['detectors'][detector_name]
+
+    @property
+    def default_detector(self):
+        return copy.deepcopy(
+            self.default_config['instrument']['detectors']['ge1'])
 
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
