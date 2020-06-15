@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -79,41 +79,27 @@ class ImageModeWidget(QObject):
 
         return widgets
 
-    def block_widgets(self):
-        previous = []
-        for widget in self.all_widgets():
-            previous.append(widget.blockSignals(True))
-
-        return previous
-
-    def unblock_widgets(self, previous):
-        for widget, block in zip(self.all_widgets(), previous):
-            widget.blockSignals(block)
-
     def update_gui_from_config(self):
-        block_list = self.block_widgets()
-        try:
-            self.ui.cartesian_pixel_size.setValue(
-                HexrdConfig().cartesian_pixel_size)
-            self.ui.cartesian_virtual_plane_distance.setValue(
-                HexrdConfig().cartesian_virtual_plane_distance)
-            self.ui.cartesian_plane_normal_rotate_x.setValue(
-                HexrdConfig().cartesian_plane_normal_rotate_x)
-            self.ui.cartesian_plane_normal_rotate_y.setValue(
-                HexrdConfig().cartesian_plane_normal_rotate_y)
-            self.ui.polar_pixel_size_tth.setValue(
-                HexrdConfig().polar_pixel_size_tth)
-            self.ui.polar_pixel_size_eta.setValue(
-                HexrdConfig().polar_pixel_size_eta)
-            self.ui.polar_res_tth_min.setValue(
-                HexrdConfig().polar_res_tth_min)
-            self.ui.polar_res_tth_max.setValue(
-                HexrdConfig().polar_res_tth_max)
-            self.ui.polar_apply_snip1d.setChecked(
-                HexrdConfig().polar_apply_snip1d)
-            self.ui.polar_snip1d_width.setValue(
-                HexrdConfig().polar_snip1d_width)
-            self.ui.polar_snip1d_numiter.setValue(
-                HexrdConfig().polar_snip1d_numiter)
-        finally:
-            self.unblock_widgets(block_list)
+        blocked = [QSignalBlocker(x) for x in self.all_widgets()]  # noqa: F841
+        self.ui.cartesian_pixel_size.setValue(
+            HexrdConfig().cartesian_pixel_size)
+        self.ui.cartesian_virtual_plane_distance.setValue(
+            HexrdConfig().cartesian_virtual_plane_distance)
+        self.ui.cartesian_plane_normal_rotate_x.setValue(
+            HexrdConfig().cartesian_plane_normal_rotate_x)
+        self.ui.cartesian_plane_normal_rotate_y.setValue(
+            HexrdConfig().cartesian_plane_normal_rotate_y)
+        self.ui.polar_pixel_size_tth.setValue(
+            HexrdConfig().polar_pixel_size_tth)
+        self.ui.polar_pixel_size_eta.setValue(
+            HexrdConfig().polar_pixel_size_eta)
+        self.ui.polar_res_tth_min.setValue(
+            HexrdConfig().polar_res_tth_min)
+        self.ui.polar_res_tth_max.setValue(
+            HexrdConfig().polar_res_tth_max)
+        self.ui.polar_apply_snip1d.setChecked(
+            HexrdConfig().polar_apply_snip1d)
+        self.ui.polar_snip1d_width.setValue(
+            HexrdConfig().polar_snip1d_width)
+        self.ui.polar_snip1d_numiter.setValue(
+            HexrdConfig().polar_snip1d_numiter)
