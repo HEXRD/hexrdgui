@@ -80,5 +80,7 @@ class LaueSpotOverlay(object):
             if display_mode == 'polar':
                 point_groups[det_key] = angles[idx, :]
             elif display_mode in ['raw', 'cartesian']:
-                point_groups[det_key] = xy_det[idx, :]
+                # Convert to pixel coordinates
+                panel = self.instrument.detectors[det_key]
+                point_groups[det_key] = panel.cartToPixel(xy_det[idx, :])
         return point_groups
