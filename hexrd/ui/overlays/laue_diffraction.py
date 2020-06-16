@@ -39,6 +39,7 @@ class LaueSpotOverlay(object):
     @crystal_params.setter
     def crystal_params(self, x):
         assert len(x) == 12, 'input must be array-like with length 12'
+        self._crystal_params = np.array(x)
 
     @property
     def min_energy(self):
