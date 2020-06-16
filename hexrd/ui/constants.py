@@ -45,5 +45,5 @@ DEFAULT_POWDER_STYLE = {
 DEFAULT_LAUE_STYLE = {
     'c': '#00ffff',  # Cyan
     'marker': 'o',
-    'ms': 1.0
+    's': 2.0
 }
