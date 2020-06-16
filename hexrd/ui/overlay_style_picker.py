@@ -1,6 +1,6 @@
 import copy
 
-from PySide2.QtCore import QObject
+from PySide2.QtCore import QObject, QSignalBlocker
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QColorDialog
 
@@ -54,14 +54,6 @@ class OverlayStylePicker(QObject):
             self.ui.range_linewidth
         ]
 
-    def block_signals(self):
-        # Returns the list of previous block states
-        return [w.blockSignals(True) for w in self.all_widgets]
-
-    def unblock_signals(self, previously_blocked):
-        for block, w in zip(previously_blocked, self.all_widgets):
-            w.blockSignals(block)
-
     def reset_style(self):
         styles = HexrdConfig().ring_styles
         styles[self.material_name] = copy.deepcopy(self.original_style)
@@ -70,16 +62,17 @@ class OverlayStylePicker(QObject):
 
     def update_gui_from_config(self):
         style = self.ring_style
-        previously_blocked = self.block_signals()
-        try:
-            self.ui.ring_color.setText(style['ring_color'])
-            self.ui.ring_linestyle.setCurrentText(style['ring_linestyle'])
-            self.ui.ring_linewidth.setValue(style['ring_linewidth'])
-            self.ui.range_color.setText(style['rbnd_color'])
-            self.ui.range_linestyle.setCurrentText(style['rbnd_linestyle'])
-            self.ui.range_linewidth.setValue(style['rbnd_linewidth'])
-        finally:
-            self.unblock_signals(previously_blocked)
+
+        blocker_list = [QSignalBlocker(x) for x in self.all_widgets]
+        self.ui.ring_color.setText(style['ring_color'])
+        self.ui.ring_linestyle.setCurrentText(style['ring_linestyle'])
+        self.ui.ring_linewidth.setValue(style['ring_linewidth'])
+        self.ui.range_color.setText(style['rbnd_color'])
+        self.ui.range_linestyle.setCurrentText(style['rbnd_linestyle'])
+        self.ui.range_linewidth.setValue(style['rbnd_linewidth'])
+
+        # Unblock
+        del blocker_list
 
         self.update_button_colors()
 
