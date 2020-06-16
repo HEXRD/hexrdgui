@@ -19,7 +19,7 @@ class OverlayStylePicker(QObject):
         self.material_name = material_name
         self.ui.material_name.setText(material_name)
 
-        self.original_style = copy.deepcopy(self.ring_style)
+        self.original_styles = copy.deepcopy(self.styles)
 
         self.setup_connections()
         self.update_gui_from_config()
@@ -40,8 +40,8 @@ class OverlayStylePicker(QObject):
         self.ui.rejected.connect(self.reset_style)
 
     @property
-    def ring_style(self):
-        return HexrdConfig().get_ring_style(self.material_name)
+    def styles(self):
+        return HexrdConfig().overlay_styles[self.material_name]
 
     @property
     def all_widgets(self):
@@ -55,21 +55,22 @@ class OverlayStylePicker(QObject):
         ]
 
     def reset_style(self):
-        styles = HexrdConfig().ring_styles
-        styles[self.material_name] = copy.deepcopy(self.original_style)
+        styles = HexrdConfig().overlay_styles
+        styles[self.material_name] = copy.deepcopy(self.original_styles)
         self.update_gui_from_config()
         HexrdConfig().ring_config_changed.emit()
 
     def update_gui_from_config(self):
-        style = self.ring_style
+        rings = self.styles['powder']['rings']
+        rbnds = self.styles['powder']['rbnds']
 
         blocker_list = [QSignalBlocker(x) for x in self.all_widgets]
-        self.ui.ring_color.setText(style['ring_color'])
-        self.ui.ring_linestyle.setCurrentText(style['ring_linestyle'])
-        self.ui.ring_linewidth.setValue(style['ring_linewidth'])
-        self.ui.range_color.setText(style['rbnd_color'])
-        self.ui.range_linestyle.setCurrentText(style['rbnd_linestyle'])
-        self.ui.range_linewidth.setValue(style['rbnd_linewidth'])
+        self.ui.ring_color.setText(rings['c'])
+        self.ui.ring_linestyle.setCurrentText(rings['ls'])
+        self.ui.ring_linewidth.setValue(rings['lw'])
+        self.ui.range_color.setText(rbnds['c'])
+        self.ui.range_linestyle.setCurrentText(rbnds['ls'])
+        self.ui.range_linewidth.setValue(rbnds['lw'])
 
         # Unblock
         del blocker_list
@@ -77,13 +78,15 @@ class OverlayStylePicker(QObject):
         self.update_button_colors()
 
     def update_config_from_gui(self):
-        style = self.ring_style
-        style['ring_color'] = self.ui.ring_color.text()
-        style['ring_linestyle'] = self.ui.ring_linestyle.currentText()
-        style['ring_linewidth'] = self.ui.ring_linewidth.value()
-        style['rbnd_color'] = self.ui.range_color.text()
-        style['rbnd_linestyle'] = self.ui.range_linestyle.currentText()
-        style['rbnd_linewidth'] = self.ui.range_linewidth.value()
+        rings = self.styles['powder']['rings']
+        rbnds = self.styles['powder']['rbnds']
+
+        rings['c'] = self.ui.ring_color.text()
+        rings['ls'] = self.ui.ring_linestyle.currentText()
+        rings['lw'] = self.ui.ring_linewidth.value()
+        rbnds['c'] = self.ui.range_color.text()
+        rbnds['ls'] = self.ui.range_linestyle.currentText()
+        rbnds['lw'] = self.ui.range_linewidth.value()
         HexrdConfig().ring_config_changed.emit()
 
     def pick_color(self):

@@ -1,3 +1,4 @@
+import copy
 import math
 
 from PySide2.QtCore import QThreadPool
@@ -130,12 +131,8 @@ class ImageCanvas(FigureCanvas):
             self.cached_rbnds.pop(0).remove()
 
     def draw_rings_on_axis(self, axis, ring_data, style):
-        ring_color = style['ring_color']
-        ring_linestyle = style['ring_linestyle']
-        ring_linewidth = style['ring_linewidth']
-        rbnd_color = style['rbnd_color']
-        rbnd_linestyle = style['rbnd_linestyle']
-        rbnd_linewidth = style['rbnd_linewidth']
+        ring_styles = style['powder']['rings']
+        rbnd_styles = style['powder']['rbnds']
 
         rings = ring_data['ring_data']
         rbnds = ring_data['rbnd_data']
@@ -143,21 +140,17 @@ class ImageCanvas(FigureCanvas):
 
         for pr in rings:
             x, y = self.extract_ring_coords(pr)
-            ring, = axis.plot(x, y, color=ring_color,
-                              linestyle=ring_linestyle,
-                              lw=ring_linewidth)
+            ring, = axis.plot(x, y, **ring_styles)
             self.cached_rings.append(ring)
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
             x, y = self.extract_ring_coords(pr)
-            color = rbnd_color
+            current_styles = copy.deepcopy(rbnd_styles)
             if len(ind) > 1:
                 # If rbnds are combined, override the color to red
-                color = 'r'
-            rbnd, = axis.plot(x, y, color=color,
-                              linestyle=rbnd_linestyle,
-                              lw=rbnd_linewidth)
+                current_styles['c'] = 'r'
+            rbnd, = axis.plot(x, y, **current_styles)
             self.cached_rbnds.append(rbnd)
 
         if self.azimuthal_integral_axis is not None:
@@ -167,9 +160,7 @@ class ImageCanvas(FigureCanvas):
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
                 for val in x:
-                    ring = az_axis.axvline(val, c=ring_color,
-                                           ls=ring_linestyle,
-                                           lw=ring_linewidth)
+                    ring = az_axis.axvline(val, **ring_styles)
                     self.cached_rings.append(ring)
 
             # Add the rbnds too
@@ -178,14 +169,13 @@ class ImageCanvas(FigureCanvas):
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
 
-                color = rbnd_color
+                current_styles = copy.deepcopy(rbnd_styles)
                 if len(ind) > 1:
                     # If rbnds are combined, override the color to red
-                    color = 'r'
+                    current_styles['c'] = 'r'
 
                 for val in x:
-                    rbnd = az_axis.axvline(val, c=color, ls=rbnd_linestyle,
-                                           lw=rbnd_linewidth)
+                    rbnd = az_axis.axvline(val, **current_styles)
                     self.cached_rbnds.append(rbnd)
 
     def redraw_rings(self):
@@ -197,7 +187,7 @@ class ImageCanvas(FigureCanvas):
 
         ring_data = self.iviewer.add_rings()
         for mat_name in ring_data.keys():
-            style = HexrdConfig().get_ring_style(mat_name)
+            style = HexrdConfig().overlay_styles[mat_name]
             if self.mode == 'images':
                 # We have to draw once for each detector
                 for axis in self.raw_axes:

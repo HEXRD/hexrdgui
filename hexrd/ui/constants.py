@@ -28,3 +28,22 @@ UI_AGG_INDEX_AVERAGE = 3
 
 UI_ETA_MIN_DEGREES = -180.0
 UI_ETA_MAX_DEGREES = 180.0
+
+DEFAULT_POWDER_STYLE = {
+    'rings': {
+        'c': '#00ffff',  # Cyan
+        'ls': 'solid',
+        'lw': 1.0
+    },
+    'rbnds': {
+        'c': '#00ff00',  # Green
+        'ls': 'dotted',
+        'lw': 1.0
+    }
+}
+
+DEFAULT_LAUE_STYLE = {
+    'c': '#00ffff',  # Cyan
+    'marker': 'o',
+    'ms': 1.0
+}

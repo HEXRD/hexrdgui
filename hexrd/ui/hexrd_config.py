@@ -117,7 +117,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.load_panel_state = {}
         self.polar_masks = []
         self.polar_masks_line_data = []
-        self.ring_styles = {}
+        self._overlay_styles = {}
         self.backup_tth_maxes = {}
         self.backup_tth_widths = {}
 
@@ -150,6 +150,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Load the default materials
         self.load_default_materials()
 
+        # Load default styles for the materials
+        self.set_overlay_styles_defaults()
+
         # Re-load the previous active material if available
         mat = self.previous_active_material
         if mat is not None and mat in self.materials.keys():
@@ -169,7 +172,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('active_material', self.active_material_name)
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
-        settings.setValue('ring_styles', self.ring_styles)
+        settings.setValue('overlay_styles', self.overlay_styles)
         settings.setValue('visible_material_names',
                           self.visible_material_names)
 
@@ -189,7 +192,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', {})
-        self.ring_styles = settings.value('ring_styles', {})
+        self.overlay_styles = settings.value('overlay_styles', {})
 
         # Set this manually since we don't have any materials yet
         key = 'visible_material_names'
@@ -772,6 +775,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if name in self.materials:
             raise Exception(name + ' is already in materials list!')
         self.config['materials']['materials'][name] = material
+        self.set_overlay_styles_defaults()
 
     def rename_material(self, old_name, new_name):
         if old_name != new_name:
@@ -780,8 +784,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.config['materials']['materials'][new_name].name = new_name
 
             # Transfer the styles over as well
-            if old_name in self.ring_styles:
-                self.ring_styles[new_name] = self.ring_styles.pop(old_name)
+            if old_name in self.overlay_styles:
+                self.overlay_styles[new_name] = self.overlay_styles.pop(old_name)
 
             if old_name in self.visible_material_names:
                 idx = self.visible_material_names.index(old_name)
@@ -806,8 +810,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         del self.config['materials']['materials'][name]
 
-        if name in self.ring_styles:
-            del self.ring_styles[name]
+        if name in self.overlay_styles:
+            del self.overlay_styles[name]
 
         if name in self.visible_material_names:
             self.visible_material_names.remove(name)
@@ -825,6 +829,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['materials']['materials'] = materials
         if materials.keys():
             self.active_material = list(materials.keys())[0]
+            self.set_overlay_styles_defaults()
 
     materials = property(_materials, _set_materials)
 
@@ -1005,19 +1010,31 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     show_overlays = property(_show_overlays, _set_show_overlays)
 
-    def get_ring_style(self, name):
-        # This will set defaults if no settings have been created
-        style = self.ring_styles.setdefault(name, {})
+    def set_overlay_styles_defaults(self):
+        def recursive_set_defaults(a, b):
+            for key, val in b.items():
+                if key not in a:
+                    a[key] = copy.deepcopy(val)
+                elif isinstance(val, dict):
+                    recursive_set_defaults(a[key], val)
 
-        # Make sure any missing entries get set to default
-        style.setdefault('ring_color', '#00ffff') # Cyan
-        style.setdefault('ring_linestyle', 'solid')
-        style.setdefault('ring_linewidth', 1.0)
-        style.setdefault('rbnd_color', '#00ff00') # Green
-        style.setdefault('rbnd_linestyle', 'dotted')
-        style.setdefault('rbnd_linewidth', 1.0)
+        defaults = {
+            'powder': constants.DEFAULT_POWDER_STYLE,
+            'laue': constants.DEFAULT_LAUE_STYLE
+        }
+        for name in self.materials:
+            styles = self._overlay_styles.setdefault(name, {})
+            recursive_set_defaults(styles, defaults)
 
-        return style
+    @property
+    def overlay_styles(self):
+        return self._overlay_styles
+
+    @overlay_styles.setter
+    def overlay_styles(self, v):
+        self._overlay_styles = v
+        # Set all defaults if any are missing
+        self.set_overlay_styles_defaults()
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
