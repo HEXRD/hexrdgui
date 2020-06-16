@@ -35,7 +35,7 @@ class ImageFileManager(metaclass=Singleton):
 
     def load_dummy_images(self, initial=False):
         HexrdConfig().clear_images(initial)
-        detectors = HexrdConfig().get_detector_names()
+        detectors = HexrdConfig().detector_names
         iconfig = HexrdConfig().instrument_config
         for det in detectors:
             cols = iconfig['detectors'][det]['pixels']['columns']
