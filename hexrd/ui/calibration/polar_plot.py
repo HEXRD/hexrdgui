@@ -4,8 +4,6 @@ import numpy as np
 
 from .polarview import PolarView
 
-from .display_plane import DisplayPlane
-
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import PowderLineOverlay
@@ -21,22 +19,14 @@ class InstrumentViewer:
         self.type = 'polar'
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
-        self.dplane = DisplayPlane()
 
         # Resolution settings
         # As far as I can tell, self.pixel_size won't actually change
         # anything for a polar plot, so just hard-code it.
         self.pixel_size = 0.5
 
-        self._make_dpanel()
-
         self.draw_polar()
         self.add_rings()
-
-    def _make_dpanel(self):
-        self.dpanel_sizes = self.dplane.panel_size(self.instr)
-        self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
-                                                self.pixel_size)
 
     @property
     def all_detector_borders(self):
