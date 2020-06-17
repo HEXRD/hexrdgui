@@ -184,7 +184,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
-        self.live_update = bool(settings.value('live_update', True) == 'true')
+        self.live_update = settings.value('live_update', 'true') == 'true'
 
         conv = settings.value('euler_angle_convention', ('xyz', True))
         self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)
