@@ -585,6 +585,8 @@ class MainWindow(QObject):
 
         if enabled:
             HexrdConfig().rerender_needed.connect(self.update_all)
+            # Go ahead and trigger an update as well
+            self.update_all()
         # Only disconnect if we were previously enabled. i.e. the signal was connected
         elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)
