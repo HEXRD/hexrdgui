@@ -50,6 +50,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when ring configuration has changed"""
     ring_config_changed = Signal()
 
+    """Emitted when beam vector has changed"""
+    beam_vector_changed = Signal()
+
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
@@ -636,6 +639,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # If the beam energy was modified, update the visible materials
         if path == ['beam', 'energy', 'value']:
             self.update_visible_material_energies()
+            return
+
+        if path[:2] == ['beam', 'vector']:
+            # Beam vector has been modified. Indicate so.
+            self.beam_vector_changed.emit()
             return
 
         if path[0] == 'detectors' and path[2] == 'transform':

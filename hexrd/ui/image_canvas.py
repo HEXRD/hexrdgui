@@ -66,6 +66,7 @@ class ImageCanvas(FigureCanvas):
             self.on_detector_transform_modified)
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
+        HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -318,6 +319,14 @@ class ImageCanvas(FigureCanvas):
             self.saturation_texts.append(t)
 
         self.draw()
+
+    def beam_vector_changed(self):
+        if not self.iviewer or not hasattr(self.iviewer, 'instr'):
+            return
+
+        bvec = HexrdConfig().instrument_config['beam']['vector']
+        self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
+        self.redraw_rings()
 
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')

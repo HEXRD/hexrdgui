@@ -226,9 +226,11 @@ class CalibrationSliderWidget(QObject):
                 HexrdConfig().update_visible_material_energies()
             elif key == 'polar':
                 iconfig['beam']['vector']['polar_angle']['value'] = val
+                HexrdConfig().beam_vector_changed.emit()
                 self.emit_update_if_polar()
             else:
                 iconfig['beam']['vector'][key]['value'] = val
+                HexrdConfig().beam_vector_changed.emit()
                 self.emit_update_if_polar()
 
     def update_widget_value(self, widget):
