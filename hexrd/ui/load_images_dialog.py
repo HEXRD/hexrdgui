@@ -10,7 +10,7 @@ from hexrd.ui.ui_loader import UiLoader
 class LoadImagesDialog:
 
     def __init__(self, image_files, parent=None):
-        self.detectors = HexrdConfig().get_detector_names()
+        self.detectors = HexrdConfig().detector_names
         self.image_files = image_files
 
         loader = UiLoader()

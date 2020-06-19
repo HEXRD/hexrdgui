@@ -79,6 +79,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
+    """Emitted when an instrument config has been loaded"""
+    instrument_config_loaded = Signal()
+
     """Convenience signal to update the main window's status bar
 
     Arguments are: message (str)
@@ -181,7 +184,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
-        self.live_update = bool(settings.value('live_update', True) == 'true')
+        self.live_update = settings.value('live_update', 'true') == 'true'
 
         conv = settings.value('euler_angle_convention', ('xyz', True))
         self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)
@@ -238,6 +241,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
+        self.instrument_config_loaded.emit()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -283,9 +287,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
-        default = self.get_default_detector()
-        for name in self.get_detector_names():
-            self._recursive_set_defaults(self.get_detector(name), default)
+        default = self.default_detector
+        for name in self.detector_names:
+            self._recursive_set_defaults(self.detector(name), default)
 
     def _recursive_set_defaults(self, current, default):
         for key in default.keys():
@@ -327,7 +331,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.load_panel_state_reset.emit()
 
     def load_instrument_config(self, yml_file):
-        old_detectors = self.get_detector_names()
+        old_detectors = self.detector_names
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -347,13 +351,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.update_visible_material_energies()
 
-        new_detectors = self.get_detector_names()
+        new_detectors = self.detector_names
         if old_detectors != new_detectors:
             self.detectors_changed.emit()
         else:
             # Still need a deep rerender
             self.deep_rerender_needed.emit()
 
+        self.instrument_config_loaded.emit()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
@@ -450,8 +455,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 statuses.append(status)
 
         # Get the detector flags
-        det_names = self.get_detector_names()
-        for name in det_names:
+        for name in self.detector_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
@@ -526,8 +530,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 cur_ind += 1
 
         # Set the detector flags
-        det_names = self.get_detector_names()
-        for name in det_names:
+        for name in self.detector_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
 
@@ -692,21 +695,27 @@ class HexrdConfig(QObject, metaclass=Singleton):
         res += self.get_gui_yaml_paths(['detectors'])
         return [x[0] for x in res]
 
-    def get_detector_names(self):
+    @property
+    def detector_names(self):
         return list(self.config['instrument'].get('detectors', {}).keys())
 
-    def get_default_detector(self):
+    @property
+    def detectors(self):
+        return self.config['instrument'].get('detectors', {})
+
+    def detector(self, detector_name):
+        return self.config['instrument']['detectors'][detector_name]
+
+    @property
+    def default_detector(self):
         return copy.deepcopy(
             self.default_config['instrument']['detectors']['ge1'])
 
-    def get_detector(self, detector_name):
-        return self.config['instrument']['detectors'][detector_name]
-
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
-            new_detector = copy.deepcopy(self.get_detector(detector_to_copy))
+            new_detector = copy.deepcopy(self.detector(detector_to_copy))
         else:
-            new_detector = self.get_default_detector()
+            new_detector = self.default_detector
 
         self.config['instrument']['detectors'][detector_name] = new_detector
         self.detectors_changed.emit()
@@ -1069,8 +1078,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['pixel_size']
 
     def _set_cartesian_pixel_size(self, v):
-        self.config['image']['cartesian']['pixel_size'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_pixel_size:
+            self.config['image']['cartesian']['pixel_size'] = v
+            self.rerender_needed.emit()
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
@@ -1079,8 +1089,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['virtual_plane_distance']
 
     def set_cartesian_virtual_plane_distance(self, v):
-        self.config['image']['cartesian']['virtual_plane_distance'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_virtual_plane_distance:
+            self.config['image']['cartesian']['virtual_plane_distance'] = v
+            self.rerender_needed.emit()
 
     cartesian_virtual_plane_distance = property(
         _cartesian_virtual_plane_distance,
@@ -1090,8 +1101,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['plane_normal_rotate_x']
 
     def set_cartesian_plane_normal_rotate_x(self, v):
-        self.config['image']['cartesian']['plane_normal_rotate_x'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_plane_normal_rotate_x:
+            self.config['image']['cartesian']['plane_normal_rotate_x'] = v
+            self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_x = property(
         _cartesian_plane_normal_rotate_x,
@@ -1101,8 +1113,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['plane_normal_rotate_y']
 
     def set_cartesian_plane_normal_rotate_y(self, v):
-        self.config['image']['cartesian']['plane_normal_rotate_y'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_plane_normal_rotate_y:
+            self.config['image']['cartesian']['plane_normal_rotate_y'] = v
+            self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_y = property(
         _cartesian_plane_normal_rotate_y,

@@ -65,7 +65,7 @@ class CalibrationSliderWidget(QObject):
         return self.ui.detector.currentText()
 
     def current_detector_dict(self):
-        return HexrdConfig().get_detector(self.current_detector())
+        return HexrdConfig().detector(self.current_detector())
 
     def translation_widgets(self):
         # Let's take advantage of the naming scheme
@@ -175,7 +175,7 @@ class CalibrationSliderWidget(QObject):
 
         old_detector = self.current_detector()
         old_detectors = [widget.itemText(x) for x in range(widget.count())]
-        detectors = HexrdConfig().get_detector_names()
+        detectors = HexrdConfig().detector_names
 
         if old_detectors == detectors:
             # The detectors didn't change. Nothing to update

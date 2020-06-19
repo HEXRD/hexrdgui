@@ -97,7 +97,7 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
-        num_dets = len(HexrdConfig().get_detector_names())
+        num_dets = len(HexrdConfig().detector_names)
         if (not HexrdConfig().load_panel_state
                 or not isinstance(HexrdConfig().load_panel_state['trans'], list)):
             HexrdConfig().load_panel_state = {
@@ -129,7 +129,7 @@ class LoadPanel(QObject):
 
     def detectors_changed(self):
         self.ui.detector.clear()
-        self.ui.detector.addItems(HexrdConfig().get_detector_names())
+        self.ui.detector.addItems(HexrdConfig().detector_names)
 
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
@@ -244,7 +244,7 @@ class LoadPanel(QObject):
         if not enable:
             # Update dark mode settings
             self.ui.all_detectors.setChecked(True)
-            num_dets = len(HexrdConfig().get_detector_names())
+            num_dets = len(HexrdConfig().detector_names)
             self.state['dark'] = [5 for x in range(num_dets)]
             self.ui.darkMode.setCurrentIndex(5)
             # Update aggregation settings
@@ -343,10 +343,10 @@ class LoadPanel(QObject):
 
     def find_directories(self):
         # Find all detector directories
-        num_det = len(HexrdConfig().get_detector_names())
+        num_det = len(HexrdConfig().detector_names)
         for sub_dir in os.scandir(os.path.dirname(self.parent_dir)):
             if (os.path.isdir(sub_dir)
-                    and sub_dir.name in HexrdConfig().get_detector_names()):
+                    and sub_dir.name in HexrdConfig().detector_names):
                 self.directories.append(sub_dir.path)
         # Show error if expected detector directories are not found
         if len(self.directories) != num_det:
@@ -355,7 +355,7 @@ class LoadPanel(QObject):
                 for path in self.directories:
                     dir_names.append(os.path.basename(path))
             diff = list(
-                set(HexrdConfig().get_detector_names()) - set(dir_names))
+                set(HexrdConfig().detector_names) - set(dir_names))
             msg = (
                 'ERROR - No directory found for the following detectors: \n'
                 + str(diff)[1:-1])
