@@ -4,7 +4,7 @@ import glob
 import numpy as np
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -21,6 +21,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 class LoadPanel(QObject):
+
+    # Emitted when images are loaded
+    images_loaded = Signal()
 
     def __init__(self, parent=None):
         super(LoadPanel, self).__init__(parent)
@@ -516,3 +519,4 @@ class LoadPanel(QObject):
             data['yml_files'] = self.yml_files
 
         ImageLoadManager().read_data(self.files, data, self.parent())
+        self.images_loaded.emit()

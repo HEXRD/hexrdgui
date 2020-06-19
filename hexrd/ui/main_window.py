@@ -149,6 +149,7 @@ class MainWindow(QObject):
             self.ui.status_bar.clearMessage)
         self.calibration_slider_widget.update_if_mode_matches.connect(
             self.update_if_mode_matches)
+        self.load_widget.images_loaded.connect(self.images_loaded)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -273,7 +274,10 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageLoadManager().read_data(files, parent=self.ui)
-                self.ui.action_transform_detectors.setEnabled(True)
+                self.images_loaded()
+
+    def images_loaded(self):
+        self.ui.action_transform_detectors.setEnabled(True)
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
