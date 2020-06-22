@@ -97,23 +97,19 @@ def build_linux_package_dir(base_path, tar_path):
     patch_qt_config(package_path)
     install_linux_script(base_path, package_path)
 
-def build_conda_pack(base_path, tmp, hexrd_package_path, hexrdgui_output_folder):
+def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_folder):
     # First build the hexrdgui package
     recipe_path = str(base_path / '..' / 'conda.recipe')
     config = Config()
-    config.channel = ['HEXRD', 'cjh1', 'anaconda', 'conda-forge']
-    config.channel_urls = ['HEXRD', 'cjh1', 'anaconda', 'conda-forge']
+    config.channel = ['cjh1', 'anaconda', 'conda-forge']
+    config.channel_urls = ['cjh1', 'anaconda', 'conda-forge']
 
     if hexrdgui_output_folder is not None:
         config.output_folder = hexrdgui_output_folder
 
-    if hexrd_package_path is not None:
-        with open('out.log', 'w') as fp:
-            print("using local package", file=fp)
-
-            print(hexrd_package_path, file=fp)
-            config.channel.insert(0, 'local-hexrd')
-            config.channel_urls.insert(0, hexrd_package_path)
+    if hexrd_package_channel is not None:
+        config.channel.insert(0, 'hexrd-channel')
+        config.channel_urls.insert(0, hexrd_package_channel)
 
     config.CONDA_PY = '38'
     logger.info('Building hexrdgui conda package.')
@@ -128,7 +124,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_path, hexrdgui_output_folder)
         'python=3.8'
     )
 
-    hexrdgui_output_folder_uri = Path(hexrd_package_path).absolute().as_uri()
+    hexrdgui_output_folder_uri = Path(hexrdgui_output_folder).absolute().as_uri()
 
     logger.info('Installing hexrdgui into new environment.')
     # Install hexrdgui into new environment
@@ -136,7 +132,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_path, hexrdgui_output_folder)
         Conda.Commands.INSTALL,
         '--prefix', env_prefix,
         '--channel', hexrdgui_output_folder_uri,
-        '--channel', 'HEXRD',
+        '--channel', hexrd_package_channel,
         '--channel', 'cjh1',
         '--channel', 'anaconda',
         '--channel', 'conda-forge',
@@ -194,15 +190,15 @@ def build_windows_package_dir(base_path, archive_path):
 
 
 @click.command()
-@click.option('-h', '--hexrd-package-path', type=click.Path(exists=True), help='the path to a local hexrd package to use.')
+@click.option('-h', '--hexrd-package-channel', help='the channel to use for HEXRD.')
 @click.option('-o', '--hexrdgui-output-folder', type=click.Path(exists=True), help='the path to generate the package into.')
-def build_package(hexrd_package_path, hexrdgui_output_folder):
+def build_package(hexrd_package_channel, hexrdgui_output_folder):
     tmpdir = None
     try:
         tmp_dir = tempfile.mkdtemp()
         tmp = Path(tmp_dir)
         base_path = Path(__file__).parent
-        tar_path = build_conda_pack(base_path, tmp, hexrd_package_path, hexrdgui_output_folder)
+        tar_path = build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_folder)
 
         package_path = base_path / 'package'
         # Remove first so we start fresh

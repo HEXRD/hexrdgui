@@ -40,14 +40,6 @@ jobs:
         fetch-depth: 0
         path: hexrdgui
 
-    - name: Checkout HEXRD master for local build ( PRs only )
-      if: github.ref != 'refs/heads/master'
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        repository: HEXRD/hexrd
-        path: hexrd
-
     - name: Install conda
       uses: goanpeca/setup-miniconda@v1
       with:
@@ -60,58 +52,6 @@ jobs:
       id: hexrdgui_describe
       run: echo "::set-output name=version::$(git describe --tag)"
 
-    - name: Conda environment to build HEXRD master ( PRs only )
-      if: github.ref != 'refs/heads/master'
-      #working-directory: hexrd
-      run: |
-          conda create --name hexrd python=3.8
-      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
-      # command works.
-      shell: bash -l {0}
-
-    - name: Install build requirements for HEXRD ( PRs only )
-      if: github.ref != 'refs/heads/master'
-      #working-directory: hexrd
-      run: |
-          conda activate hexrd
-          conda install anaconda conda-build
-      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
-      # command works.
-      shell: bash -l {0}
-
-    - name: Build the HEXRD conda package ( PRs only )
-      if: github.ref != 'refs/heads/master'
-      working-directory: hexrd
-      run: |
-          conda activate hexrd
-          mkdir output
-          conda build --output-folder output/ conda.recipe/
-      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
-      # command works.
-      shell: bash -l {0}
-
-    - name: Get HEXRD version using git describe ( PRs only )
-      if: github.ref != 'refs/heads/master'
-      working-directory: hexrd
-      id: hexrd_describe
-      run: echo "::set-output name=version::$(git describe --tag)"
-
-    - name: Upload the HEXRD conda package ( PRs only )
-      if: github.ref != 'refs/heads/master'
-      #working-directory: hexrd
-      uses: actions/upload-artifact@v2
-      with:
-        name: HEXRD-${{ matrix.config.name }}-${{ steps.hexrd_describe.outputs.version }}.tar.bz2
-        path: ${{ github.workspace }}/hexrd/output/**/*.tar.bz2
-
-    - name: Conda environment to build HEXRDGUI
-      working-directory: hexrdgui
-      run: |
-          conda env create -f packaging/environment.yml
-      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
-      # command works.
-      shell: bash -l {0}
-
     - name: Set version environment variables used by CPack
       working-directory: hexrdgui
       run: |
@@ -120,12 +60,24 @@ jobs:
           python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} minor
           python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} patch
 
+    - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
+      run: |
+          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "::set-env name=HEXRD_PACKAGE_CHANNEL::HEXRD" || echo "::set-env name=HEXRD_PACKAGE_CHANNEL::HEXRD/label/hexrd-prerelease"
+
+    - name: Create conda environment to build HEXRDGUI
+      working-directory: hexrdgui
+      run: |
+          conda env create -f packaging/environment.yml
+      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
+      # command works.
+      shell: bash -l {0}
+
     - name: Build the package using CPack
       working-directory: hexrdgui/packaging
       run: |
           conda activate hexrdgui-package
           mkdir output
-          HEXRD_PACKAGE_PATH=../../hexrd/output/ HEXRDGUI_OUTPUT_FOLDER=output/ cpack
+          HEXRD_PACKAGE_CHANNEL=${HEXRD_PACKAGE_CHANNEL} HEXRDGUI_OUTPUT_FOLDER=output/ cpack
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
       # command works.
       shell: bash -l {0}
