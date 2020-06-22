@@ -86,34 +86,34 @@ jobs:
 
     - name: Upload InstallOutput.log
       if: ${{ failure() }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2-preview
       with:
         name: InstallOutput.log
         path: ${{ github.workspace }}/hexrdgui/packaging/_CPack_Packages/*/InstallOutput.log
 
     - name: Upload WIX log ( Windows only )
       if: ${{ failure() && matrix.config.os == 'windows-latest'}}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2-preview
       with:
         name: wix.log
         path: ${{ github.workspace }}/hexrdgui/packaging/_CPack_Packages/WIX/wix.log
 
     - name: Upload installer package
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2-preview
       with:
         name: HEXRDGUI-v${{env.VERSION}}.${{ matrix.config.package }}
         path: ${{ github.workspace }}/hexrdgui/packaging/HEXRDGUI-${{env.VERSION}}.${{ matrix.config.package }}
 
     - name: Upload installer package Zip ( Windows only )
       if: ${{ matrix.config.os == 'windows-latest'}}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2-preview
       with:
         name: HEXRDGUI-v${{env.VERSION}}.zip
         path: ${{ github.workspace }}/hexrdgui/packaging/HEXRDGUI-${{env.VERSION}}.zip
 
     - name: Upload the HEXRDGUI conda package ( PRs only )
       if: github.ref != 'refs/heads/master'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2-preview
       with:
         name: HEXRDGUI-${{ matrix.config.name }}-${{ steps.hexrdgui_describe.outputs.version }}.tar.bz2
         path: ${{ github.workspace }}/hexrdgui/packaging/output/**/*.tar.bz2
