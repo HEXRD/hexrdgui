@@ -19,7 +19,7 @@ class TransformDialog:
         options = [
             '(None)', 'Flip Vertically', 'Flip Horizontally', 'Transpose',
             'Rotate 90°', 'Rotate 180°', 'Rotate 270°']
-        for i, det in enumerate(HexrdConfig().get_detector_names()):
+        for i, det in enumerate(HexrdConfig().detector_names):
             hbox = QHBoxLayout()
             # Add label
             label = QLabel(det)
@@ -54,7 +54,7 @@ class TransformDialog:
             cbox.setEnabled(not enabled)
 
     def apply_transforms(self):
-        num_dets = len(HexrdConfig().get_detector_names())
+        num_dets = len(HexrdConfig().detector_names)
         trans = []
         if self.ui.update_all.isChecked():
             idx = self.ui.transform_all_menu.currentIndex()
