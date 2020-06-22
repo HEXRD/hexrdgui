@@ -63,6 +63,6 @@ class TransformDialog:
             for combo in self.det_cboxes:
                 trans.append(combo.currentIndex())
         ilm = ImageLoadManager()
-        ilm.set_state({ 'trans': trans })
-        ilm.apply_operations(HexrdConfig().imageseries_dict)
-        ilm.finish_processing_ims()
+        state = HexrdConfig().load_panel_state
+        ilm.set_state({ 'trans': trans , 'agg': state.get('agg', 0) })
+        ilm.begin_processing(postprocess=True)

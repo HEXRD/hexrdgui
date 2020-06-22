@@ -114,6 +114,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.data = data
         self.empty_frames = data['empty_frames'] if data else 0
 
+        self.begin_processing()
+
+    def begin_processing(self, postprocess=False):
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent)
         progress_dialog = ProgressDialog(self.parent)
@@ -121,7 +124,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.progress_dialog = progress_dialog
 
         # Start processing in background
-        worker = AsyncWorker(self.process_ims)
+        worker = AsyncWorker(self.process_ims, postprocess)
         thread_pool.start(worker)
 
         worker.signals.progress.connect(progress_dialog.setValue)
@@ -136,25 +139,29 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         else:
             self.state = state
 
-    def process_ims(self, update_progress):
+    def process_ims(self, postprocess, update_progress):
         self.update_progress = update_progress
         self.update_progress(0)
 
-        # Open selected images as imageseries
-        self.parent_dir = HexrdConfig().images_dir
-        det_names = HexrdConfig().detector_names
+        if not postprocess:
+            # Open selected images as imageseries
+            self.parent_dir = HexrdConfig().images_dir
+            det_names = HexrdConfig().detector_names
 
-        if len(self.files[0]) > 1:
-            for i, det in enumerate(det_names):
-                if self.data is None:
-                    dirs = self.parent_dir
-                elif 'directories' in self.data:
-                    dirs = self.data['directories'][i]
+            if len(self.files[0]) > 1:
+                for i, det in enumerate(det_names):
+                    if self.data is None:
+                        dirs = self.parent_dir
+                    elif 'directories' in self.data:
+                        dirs = self.data['directories'][i]
 
-                ims = ImageFileManager().open_directory(dirs, self.files[i])
-                HexrdConfig().imageseries_dict[det] = ims
-        else:
-            ImageFileManager().load_images(det_names, self.files)
+                    ims = ImageFileManager().open_directory(dirs, self.files[i])
+                    HexrdConfig().imageseries_dict[det] = ims
+            else:
+                ImageFileManager().load_images(det_names, self.files)
+        elif self.unaggregated_images is not None:
+            HexrdConfig().imageseries_dict = copy.copy(self.unaggregated_images)
+            self.reset_unagg_imgs()
 
         # Now that self.state is set, setup the progress variables
         self.setup_progress_variables()
