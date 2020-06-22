@@ -40,7 +40,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.unaggregated_images = None
 
     def check_images(self, fnames):
-        dets = HexrdConfig().get_detector_names()
+        dets = HexrdConfig().detector_names
         files = [[] for i in range(len(dets))]
         core_name = os.path.split(fnames[0])[1]
         for det in dets:
@@ -63,7 +63,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             return files
 
     def match_images(self, fnames):
-        dets = HexrdConfig().get_detector_names()
+        dets = HexrdConfig().detector_names
         files = [[] for i in range(len(dets))]
         core_name = fnames[0]
         for det in dets:
@@ -86,7 +86,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             return files
 
     def match_dirs_images(self, fnames, directories):
-        dets = HexrdConfig().get_detector_names()
+        dets = HexrdConfig().detector_names
         files = [[] for i in range(len(dets))]
         # Find the images with the same name for the remaining detectors
         for i, dir in enumerate(directories):
@@ -142,7 +142,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         # Open selected images as imageseries
         self.parent_dir = HexrdConfig().images_dir
-        det_names = HexrdConfig().get_detector_names()
+        det_names = HexrdConfig().detector_names
 
         if len(self.files[0]) > 1:
             for i, det in enumerate(det_names):

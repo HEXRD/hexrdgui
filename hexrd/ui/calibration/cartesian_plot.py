@@ -66,6 +66,13 @@ class InstrumentViewer:
         self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.make_dpanel()
 
+        # The overlays for the Cartesian view are made via a fake
+        # instrument with a single detector.
+        # Make a copy of the instrument and modify.
+        temp_instr = copy.deepcopy(self.instr)
+        temp_instr._detectors.clear()
+        temp_instr._detectors['dpanel'] = self.dpanel
+
         for name in HexrdConfig().visible_material_names:
             mat = HexrdConfig().material(name)
 
@@ -74,13 +81,6 @@ class InstrumentViewer:
                 print('Warning in InstrumentViewer.add_rings():',
                       name, 'is not a valid material')
                 continue
-
-            # The overlays for the Cartesian view are made via a fake
-            # instrument with a single detector.
-            # Make a copy of the instrument and modify.
-            temp_instr = copy.deepcopy(self.instr)
-            temp_instr._detectors.clear()
-            temp_instr._detectors['dpanel'] = self.dpanel
 
             overlay = PowderLineOverlay(mat.planeData, temp_instr)
             self.ring_data[name] = overlay.overlay('cartesian')

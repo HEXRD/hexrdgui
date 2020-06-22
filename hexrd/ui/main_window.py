@@ -251,7 +251,7 @@ class MainWindow(QObject):
 
             # Make sure the names and number of files and
             # names and number of detectors match
-            num_detectors = len(HexrdConfig().get_detector_names())
+            num_detectors = len(HexrdConfig().detector_names)
             if len(selected_files) != num_detectors:
                 msg = ('Number of files must match number of detectors: ' +
                        str(num_detectors))
@@ -282,7 +282,7 @@ class MainWindow(QObject):
     def open_aps_imageseries(self):
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
-        detector_names = HexrdConfig().get_detector_names()
+        detector_names = HexrdConfig().detector_names
         selected_dirs = []
         for name in detector_names:
             caption = 'Select directory for detector: ' + name
@@ -594,6 +594,8 @@ class MainWindow(QObject):
 
         if enabled:
             HexrdConfig().rerender_needed.connect(self.update_all)
+            # Go ahead and trigger an update as well
+            self.update_all()
         # Only disconnect if we were previously enabled. i.e. the signal was connected
         elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)

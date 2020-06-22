@@ -103,7 +103,7 @@ class CalibrationConfigWidget(QObject):
 
     def on_detector_name_edited(self):
         new_name = self.ui.cal_det_current.currentText()
-        detector_names = self.cfg.get_detector_names()
+        detector_names = self.cfg.detector_names
 
         # Ignore it if there is already a detector with this name
         if new_name in detector_names:
@@ -134,7 +134,7 @@ class CalibrationConfigWidget(QObject):
     def on_detector_add_clicked(self):
         combo = self.ui.cal_det_current
         current_detector = self.get_current_detector()
-        detector_names = self.cfg.get_detector_names()
+        detector_names = self.cfg.detector_names
         new_detector_name_base = 'detector_'
         for i in range(1000000):
             new_detector_name = new_detector_name_base + str(i + 1)
@@ -197,7 +197,7 @@ class CalibrationConfigWidget(QObject):
 
         try:
             combo_widget = self.ui.cal_det_current
-            detector_names = self.cfg.get_detector_names()
+            detector_names = self.cfg.detector_names
             if not detector_names:
                 # Disable detector widgets if there is no valid detector
                 if not self.detector_widgets_disabled:
