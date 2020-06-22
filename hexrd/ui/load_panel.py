@@ -183,7 +183,7 @@ class LoadPanel(QObject):
                 self.ui, caption, dir=self.parent_dir)
 
         # Only update if a new directory is selected
-        if new_dir and new_dir != self.parent_dir:
+        if new_dir and new_dir != HexrdConfig().images_dir:
             self.ui.image_files.setEnabled(True)
             HexrdConfig().set_images_dir(new_dir)
             self.parent_dir = new_dir
