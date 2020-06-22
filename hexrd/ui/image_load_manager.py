@@ -108,12 +108,15 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Run the imageseries processing in a background thread and display a
         # loading dialog
         self.parent_dir = HexrdConfig().images_dir
-        self.state = HexrdConfig().load_panel_state
+        self.set_state()
         self.parent = parent
         self.files = files
         self.data = data
         self.empty_frames = data['empty_frames'] if data else 0
 
+        self.begin_processing()
+
+    def begin_processing(self, postprocess=False):
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent)
         progress_dialog = ProgressDialog(self.parent)
@@ -121,7 +124,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.progress_dialog = progress_dialog
 
         # Start processing in background
-        worker = AsyncWorker(self.process_ims)
+        worker = AsyncWorker(self.process_ims, postprocess)
         thread_pool.start(worker)
 
         worker.signals.progress.connect(progress_dialog.setValue)
@@ -130,25 +133,35 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         worker.signals.finished.connect(progress_dialog.accept)
         progress_dialog.exec_()
 
-    def process_ims(self, update_progress):
+    def set_state(self, state=None):
+        if state is None:
+            self.state = HexrdConfig().load_panel_state
+        else:
+            self.state = state
+
+    def process_ims(self, postprocess, update_progress):
         self.update_progress = update_progress
         self.update_progress(0)
 
-        # Open selected images as imageseries
-        self.parent_dir = HexrdConfig().images_dir
-        det_names = HexrdConfig().detector_names
+        if not postprocess:
+            # Open selected images as imageseries
+            self.parent_dir = HexrdConfig().images_dir
+            det_names = HexrdConfig().detector_names
 
-        if len(self.files[0]) > 1:
-            for i, det in enumerate(det_names):
-                if self.data is None:
-                    dirs = self.parent_dir
-                elif 'directories' in self.data:
-                    dirs = self.data['directories'][i]
+            if len(self.files[0]) > 1:
+                for i, det in enumerate(det_names):
+                    if self.data is None:
+                        dirs = self.parent_dir
+                    elif 'directories' in self.data:
+                        dirs = self.data['directories'][i]
 
-                ims = ImageFileManager().open_directory(dirs, self.files[i])
-                HexrdConfig().imageseries_dict[det] = ims
-        else:
-            ImageFileManager().load_images(det_names, self.files)
+                    ims = ImageFileManager().open_directory(dirs, self.files[i])
+                    HexrdConfig().imageseries_dict[det] = ims
+            else:
+                ImageFileManager().load_images(det_names, self.files)
+        elif self.unaggregated_images is not None:
+            HexrdConfig().imageseries_dict = copy.copy(self.unaggregated_images)
+            self.reset_unagg_imgs()
 
         # Now that self.state is set, setup the progress variables
         self.setup_progress_variables()
@@ -156,7 +169,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
         if self.data:
-            if self.state['agg']:
+            if 'agg' in self.state and self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
             else:
                 self.add_omega_metadata(HexrdConfig().imageseries_dict)
@@ -222,11 +235,12 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def apply_operations(self, ims_dict):
         # First perform dark aggregation if we need to
         dark_aggr_ops = {}
-        try:
-            dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
-        except NoEmptyFramesException as ex:
-            QMessageBox.warning(None, 'HEXRD', str(ex))
-            return
+        if 'dark' in self.state:
+            try:
+                dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
+            except NoEmptyFramesException as ex:
+                QMessageBox.warning(None, 'HEXRD', str(ex))
+                return
 
         # Now run the dark aggregation
         self.update_progress_text('Aggregating dark images...')
@@ -240,12 +254,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             # Apply dark subtraction
             if key in dark_images:
                 self.get_dark_op(ops, dark_images[key])
-
-            if self.state['trans'][idx]:
+            if 'trans' in self.state and self.state['trans'][idx]:
                 self.get_flip_op(ops, idx)
 
             frames = self.get_range(ims_dict[key])
-
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
 
@@ -328,10 +340,11 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             if self.data and 'idx' in self.data:
                 idx = self.data['idx']
 
-            if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
+            if ('dark' in self.state and
+                    self.state['dark'][idx] != UI_DARK_INDEX_NONE):
                 progress_macro_steps += 1
 
-        if self.state['agg']:
+        if 'agg' in self.state and self.state['agg']:
             progress_macro_steps += num_ims
 
         self.progress_macro_steps = progress_macro_steps

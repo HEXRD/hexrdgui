@@ -30,6 +30,7 @@ from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
+from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import resource_loader
@@ -126,6 +127,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_polar_mask_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
+        self.ui.action_transform_detectors.triggered.connect(
+            self.on_action_transform_detectors_triggered)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
@@ -146,6 +149,7 @@ class MainWindow(QObject):
             self.ui.status_bar.clearMessage)
         self.calibration_slider_widget.update_if_mode_matches.connect(
             self.update_if_mode_matches)
+        self.load_widget.images_loaded.connect(self.images_loaded)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -218,6 +222,7 @@ class MainWindow(QObject):
     def load_dummy_images(self):
         ImageFileManager().load_dummy_images()
         self.update_all(clear_canvases=True)
+        self.ui.action_transform_detectors.setEnabled(False)
         self.new_images_loaded.emit()
 
     def open_image_file(self):
@@ -269,6 +274,10 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageLoadManager().read_data(files, parent=self.ui)
+                self.images_loaded()
+
+    def images_loaded(self):
+        self.ui.action_transform_detectors.setEnabled(True)
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
@@ -609,3 +618,6 @@ class MainWindow(QObject):
 
         msg = delimiter.join(labels)
         self.ui.status_bar.showMessage(msg)
+
+    def on_action_transform_detectors_triggered(self):
+        td = TransformDialog(self.ui).exec_()

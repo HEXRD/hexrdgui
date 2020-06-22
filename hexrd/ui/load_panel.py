@@ -1,10 +1,11 @@
+import copy
 import os
 import yaml
 import glob
 import numpy as np
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -21,6 +22,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 class LoadPanel(QObject):
+
+    # Emitted when images are loaded
+    images_loaded = Signal()
 
     def __init__(self, parent=None):
         super(LoadPanel, self).__init__(parent)
@@ -48,10 +52,8 @@ class LoadPanel(QObject):
     def setup_gui(self):
         self.setup_processing_options()
 
-        if 'subdirs' in self.state:
-            self.ui.subdirectories.setChecked(self.state['subdirs'])
-        if 'apply_to_all' in self.state:
-            self.ui.all_detectors.setChecked(self.state['apply_to_all'])
+        self.ui.subdirectories.setChecked(self.state.get('subdirs', False))
+        self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
         self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'][0])
@@ -94,16 +96,12 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
+        self.state = copy.copy(HexrdConfig().load_panel_state)
         num_dets = len(HexrdConfig().detector_names)
-        if (not HexrdConfig().load_panel_state
-                or not isinstance(HexrdConfig().load_panel_state['trans'], list)):
-            HexrdConfig().load_panel_state = {
-                'agg': 0,
-                'trans': [0 for x in range(num_dets)],
-                'dark': [0 for x in range(num_dets)],
-                'dark_files': [None for x in range(num_dets)]}
-
-        self.state = HexrdConfig().load_panel_state
+        self.state.setdefault('agg', 0)
+        self.state.setdefault('trans', [0 for x in range(num_dets)])
+        self.state.setdefault('dark', [0 for x in range(num_dets)])
+        self.state.setdefault('dark_files', [None for x in range(num_dets)])
 
     # Handle GUI changes
 
@@ -180,7 +178,7 @@ class LoadPanel(QObject):
                 self.ui, caption, dir=self.parent_dir)
 
         # Only update if a new directory is selected
-        if new_dir and new_dir != self.parent_dir:
+        if new_dir and new_dir != HexrdConfig().images_dir:
             self.ui.image_files.setEnabled(True)
             HexrdConfig().set_images_dir(new_dir)
             self.parent_dir = new_dir
@@ -514,5 +512,6 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext == '.yml':
             data['yml_files'] = self.yml_files
-
+        HexrdConfig().load_panel_state = copy.copy(self.state)
         ImageLoadManager().read_data(self.files, data, self.parent())
+        self.images_loaded.emit()
