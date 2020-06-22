@@ -162,7 +162,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
         if self.data:
-            if self.state['agg']:
+            if 'agg' in self.state and self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
             else:
                 self.add_omega_metadata(HexrdConfig().imageseries_dict)
@@ -333,7 +333,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             if self.data and 'idx' in self.data:
                 idx = self.data['idx']
 
-            if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
+            if ('dark' in self.state and
+                    self.state['dark'][idx] != UI_DARK_INDEX_NONE):
                 progress_macro_steps += 1
 
         if 'agg' in self.state and self.state['agg']:

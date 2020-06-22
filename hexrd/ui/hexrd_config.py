@@ -110,7 +110,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self._tab_images = False
         self.previous_active_material = None
         self.collapsed_state = []
-        self.load_panel_state = None
+        self.load_panel_state = {}
         self.polar_masks = []
         self.ring_styles = {}
         self.backup_tth_maxes = {}
@@ -191,7 +191,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
-        self.load_panel_state = settings.value('load_panel_state', None)
+        self.load_panel_state = settings.value('load_panel_state', {})
         self.ring_styles = settings.value('ring_styles', {})
 
         # Set this manually since we don't have any materials yet

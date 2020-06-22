@@ -17,7 +17,7 @@ class LoadImagesDialog:
         self.ui = loader.load_file('load_images_dialog.ui', parent)
 
         self.setup_connections()
-
+        self.setup_state()
         self.setup_table()
         self.update_table()
 
@@ -44,6 +44,12 @@ class LoadImagesDialog:
             else:
                 return False
 
+    def setup_state(self):
+        if 'trans' not in HexrdConfig().load_panel_state:
+            num_dets = len(HexrdConfig().detector_names)
+            HexrdConfig().load_panel_state = {
+                'trans': [0 for x in range(num_dets)]}
+
     def setup_table(self):
         table = self.ui.match_detectors_table
         table.clearContents()
@@ -56,7 +62,10 @@ class LoadImagesDialog:
             options = ["None", "Flip Vertically", "Flip Horizontally",
                 "Transpose", "Rotate 90°", "Rotate 180°", "Rotate 270°"]
             cb.addItems(options)
-            cb.setCurrentIndex(HexrdConfig().load_panel_state['trans'][i])
+            idx = 0
+            if 'trans' in HexrdConfig().load_panel_state:
+                idx = HexrdConfig().load_panel_state['trans'][i]
+            cb.setCurrentIndex(idx)
             table.setCellWidget(i, 1, cb)
 
             f = QTableWidgetItem(self.image_files[i])
