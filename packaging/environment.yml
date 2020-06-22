@@ -8,3 +8,4 @@ dependencies:
   - cmake
   - conda-build
   - conda-pack
+  - click
