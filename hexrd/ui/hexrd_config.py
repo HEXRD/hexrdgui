@@ -242,9 +242,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             utils.convert_tilt_convention(self.config['instrument'], old_eac,
                                           new_eac)
 
+        self.instrument_config_loaded.emit()
         self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
-        self.instrument_config_loaded.emit()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -354,6 +354,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.update_visible_material_energies()
 
+        self.instrument_config_loaded.emit()
+
         new_detectors = self.detector_names
         if old_detectors != new_detectors:
             self.detectors_changed.emit()
@@ -361,7 +363,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
             # Still need a deep rerender
             self.deep_rerender_needed.emit()
 
-        self.instrument_config_loaded.emit()
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):

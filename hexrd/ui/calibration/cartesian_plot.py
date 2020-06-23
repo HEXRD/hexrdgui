@@ -53,6 +53,14 @@ class InstrumentViewer:
                                                 self.pixel_size,
                                                 self.instr.beam_vector)
 
+    @property
+    def extent(self):
+        # We might want to use self.dpanel.col_edge_vec and
+        # self.dpanel.row_edge_vec here instead.
+        x_lim = self.dpanel.col_dim / 2
+        y_lim = self.dpanel.row_dim / 2
+        return -x_lim, x_lim, y_lim, -y_lim
+
     def clear_rings(self):
         self.ring_data = {}
 
@@ -103,8 +111,15 @@ class InstrumentViewer:
 
     def detector_borders(self, det):
         corners = self.detector_corners.get(det, [])
+
+        # These corners are in pixel coordinates. Convert to Cartesian.
+        # Swap x and y first.
+        corners = [[y, x] for x, y in corners]
+        corners = self.dpanel.pixelToCart(corners)
+
+        # y is negative for some reason. I am not sure why right now.
         x_vals = [x[0] for x in corners]
-        y_vals = [x[1] for x in corners]
+        y_vals = [-x[1] for x in corners]
 
         if x_vals and y_vals:
             # Double each set of points.
@@ -119,8 +134,9 @@ class InstrumentViewer:
 
             # Make sure all points are inside the frame.
             # If there are points outside the frame, move them inside.
-            x_range = (0, self.dpanel.cols)
-            y_range = (0, self.dpanel.rows)
+            extent = self.extent
+            x_range = (extent[0], extent[1])
+            y_range = (extent[3], extent[2])
 
             def out_of_frame(p):
                 # Check if point p is out of the frame
@@ -206,6 +222,8 @@ class InstrumentViewer:
         i_row = cellIndices(row_edges, mp[:, 1])
 
         src = np.vstack([j_col, i_row]).T
+
+        # Save detector corners in pixel coordinates
         self.detector_corners[detector_id] = src
 
         dst = panel.cartToPixel(corners, pixels=True)

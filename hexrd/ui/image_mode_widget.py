@@ -109,7 +109,9 @@ class ImageModeWidget(QObject):
     def auto_generate_cartesian_params(self):
         # This will automatically generate and set values for the
         # Cartesian pixel size and virtual plane distance based upon
-        # values in the instrument config
+        # values in the instrument config.
+        # The calling function should ensure a re-render occurs. This function
+        # will not perform a re-render.
         detectors = list(HexrdConfig().detectors.values())
         distances = [
             x['transform']['translation']['value'][2] for x in detectors
@@ -119,12 +121,12 @@ class ImageModeWidget(QObject):
         average_dist = sum(distances) / len(distances)
         average_size = sum([x[0] + x[1] for x in sizes]) / (2 * len(sizes))
 
-        # Set one of these without triggerring a re-render, so we will only
-        # re-render one time.
         HexrdConfig().config['image']['cartesian']['pixel_size'] = (
             5 * average_size
         )
-        HexrdConfig().cartesian_virtual_plane_distance = abs(average_dist)
+        HexrdConfig().config['image']['cartesian']['virtual_plane_distance'] = (
+            abs(average_dist)
+        )
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
