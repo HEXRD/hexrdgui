@@ -80,8 +80,9 @@ class PowderLineOverlay(object):
                     xys_full, buffer_edges=False
                 )
 
-                # Convert to pixel coordinates
-                xys = panel.cartToPixel(xys)
+                if display_mode == 'raw':
+                    # Convert to pixel coordinates
+                    xys = panel.cartToPixel(xys)
 
                 diff_tol = np.radians(self.delta_eta) + 1e-4
                 ring_breaks = np.where(

@@ -38,9 +38,6 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
 
-        # If not None, used to rescale the ring data to the new extent
-        self.old_extent = None
-
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
 
@@ -81,7 +78,6 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.mode = None
-        self.old_extent = None
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -146,7 +142,7 @@ class ImageCanvas(FigureCanvas):
         rbnd_indices = ring_data['rbnd_indices']
 
         for pr in rings:
-            x, y = self.reformat_overlays(pr)
+            x, y = self.extract_ring_coords(pr)
             ring, = axis.plot(x, y, color=ring_color,
                               linestyle=ring_linestyle,
                               lw=ring_linewidth)
@@ -154,7 +150,7 @@ class ImageCanvas(FigureCanvas):
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
-            x, y = self.reformat_overlays(pr)
+            x, y = self.extract_ring_coords(pr)
             color = rbnd_color
             if len(ind) > 1:
                 # If rbnds are combined, override the color to red
@@ -167,7 +163,7 @@ class ImageCanvas(FigureCanvas):
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
             for pr in rings:
-                x, _ = self.reformat_overlays(pr)
+                x, _ = self.extract_ring_coords(pr)
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
                 for val in x:
@@ -178,7 +174,7 @@ class ImageCanvas(FigureCanvas):
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
-                x, _ = self.reformat_overlays(pr)
+                x, _ = self.extract_ring_coords(pr)
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
 
@@ -242,41 +238,17 @@ class ImageCanvas(FigureCanvas):
         for border in borders.values():
             # Draw each line in the border
             for line in border:
-                # Make sure the data is rescaled to the current extents
-                x, y = self.rescale_points(line[0], line[1])
-                plot, = self.axis.plot(x, y, color='y', lw=2)
+                plot, = self.axis.plot(*line, color='y', lw=2)
                 self.cached_detector_borders.append(plot)
 
         self.draw()
 
-    def reformat_overlays(self, data):
-        x, y = data[:, 1], data[:, 0]
+    def extract_ring_coords(self, data):
         if self.mode == 'cartesian':
-            # The Cartesian image is rescaled to be in mm units
-            # Rescale our overlays as well to match it
-            x, y = self.rescale_points(x, y)
+            # These are in x, y coordinates. Do not swap them.
+            return data[:, 0], data[:, 1]
 
-        return x, y
-
-    def rescale_points(self, x, y):
-        # This takes the data, assumes it was in the old extents sytem,
-        # and it rescales it to the new extents system.
-        old_extent = self.old_extent
-        if old_extent is None:
-            # No rescaling needed
-            return x, y
-
-        old_x_range = (old_extent[0], old_extent[1])
-        old_y_range = (old_extent[3], old_extent[2])
-
-        new_extent = self.axes_images[0].get_extent()
-        new_x_range = (new_extent[0], new_extent[1])
-        new_y_range = (new_extent[3], new_extent[2])
-
-        x = np.interp(x, old_x_range, new_x_range)
-        y = np.interp(y, old_y_range, new_y_range)
-
-        return x, y
+        return data[:, 1], data[:, 0]
 
     def clear_saturation(self):
         for t in self.saturation_texts:
@@ -370,10 +342,7 @@ class ImageCanvas(FigureCanvas):
 
         # We must adjust the extent of the image
         if rescale_image:
-            self.old_extent = self.axes_images[0].get_extent()
-            sizes = iviewer.dpanel_sizes
-            extent = (0., sizes[0], sizes[1], 0.)
-            self.axes_images[0].set_extent(extent)
+            self.axes_images[0].set_extent(iviewer.extent)
             self.axis.relim()
             self.axis.autoscale_view()
             self.figure.tight_layout()
