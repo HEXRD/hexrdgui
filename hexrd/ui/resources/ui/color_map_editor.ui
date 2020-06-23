@@ -225,7 +225,13 @@
  </widget>
  <tabstops>
   <tabstop>color_map</tabstop>
+  <tabstop>reverse</tabstop>
   <tabstop>minimum</tabstop>
+  <tabstop>show_under</tabstop>
+  <tabstop>maximum</tabstop>
+  <tabstop>show_over</tabstop>
+  <tabstop>reset_range</tabstop>
+  <tabstop>log_scale</tabstop>
  </tabstops>
  <resources/>
  <connections/>
