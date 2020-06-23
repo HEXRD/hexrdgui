@@ -15,6 +15,7 @@ from hexrd.ui import resource_loader
 from hexrd.ui import utils
 
 import hexrd.ui.resources.calibration
+import hexrd.ui.resources.indexing
 import hexrd.ui.resources.materials
 
 
@@ -131,16 +132,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
 
-        if self.config.get('instrument') is None:
-            # Load the default config['instrument'] settings
-            self.config['instrument'] = copy.deepcopy(
-                self.default_config['instrument'])
-
-        if self.config.get('calibration') is None:
-            self.config['calibration'] = copy.deepcopy(
-                self.default_config['calibration'])
-
-        # Set required defaults if any are missing
         self.set_defaults_if_missing()
 
         # Add the statuses to the config
@@ -215,6 +206,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         """Convenience signal to update the main window's status bar"""
         self.update_status_bar.emit(msg)
 
+    @property
+    def indexing_config(self):
+        return self.config['indexing']
+
     # This is here for backward compatibility
     @property
     def instrument_config(self):
@@ -265,6 +260,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.default_config['instrument'] = yaml.load(text,
                                                       Loader=yaml.FullLoader)
 
+        text = resource_loader.load_resource(hexrd.ui.resources.indexing,
+                                             'default_indexing_config.yml')
+        self.default_config['indexing'] = yaml.load(text,
+                                                    Loader=yaml.FullLoader)
+
         yml = resource_loader.load_resource(hexrd.ui.resources.materials,
                                             'materials_panel_defaults.yml')
         self.default_config['materials'] = yaml.load(yml,
@@ -281,9 +281,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_defaults_if_missing(self):
         # Find missing required keys and set defaults for them.
-        to_do_keys = ['instrument', 'calibration', 'image']
+        to_do_keys = ['indexing', 'instrument', 'calibration', 'image']
         for key in to_do_keys:
-            self._recursive_set_defaults(self.config[key],
+            self._recursive_set_defaults(self.config.setdefault(key, {}),
                                          self.default_config[key])
 
         self.set_detector_defaults_if_missing()

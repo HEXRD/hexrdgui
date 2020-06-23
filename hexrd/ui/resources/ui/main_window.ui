@@ -101,6 +101,7 @@
     </property>
     <addaction name="action_run_powder_calibration"/>
     <addaction name="action_calibration_line_picker"/>
+    <addaction name="action_run_indexing"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
@@ -444,6 +445,11 @@
    </property>
    <property name="text">
     <string>Transform Detectors</string>
+   </property>
+  </action>
+  <action name="action_run_indexing">
+   <property name="text">
+    <string>Indexing</string>
    </property>
   </action>
  </widget>
