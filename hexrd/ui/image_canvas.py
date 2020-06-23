@@ -345,6 +345,7 @@ class ImageCanvas(FigureCanvas):
             self.axes_images[0].set_extent(iviewer.extent)
             self.axis.relim()
             self.axis.autoscale_view()
+            self.axis.autoscale(False)
             self.figure.tight_layout()
 
         self.redraw_rings()
