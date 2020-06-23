@@ -122,7 +122,7 @@ jobs:
       if: github.ref == 'refs/heads/master'
       working-directory: hexrdgui/packaging
       run: |
-          conda activate hexrd-package
+          conda activate hexrdgui-package
           conda install anaconda
           anaconda --token ${{ secrets.ANACONDA_TOKEN }} upload --user HEXRD output/**/*.tar.bz2
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
