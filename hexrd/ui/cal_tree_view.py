@@ -1,78 +1,31 @@
-from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
+from PySide2.QtCore import QModelIndex, Qt
 from PySide2.QtWidgets import (
-    QCheckBox, QItemDelegate, QItemEditorFactory, QMenu, QMessageBox,
-    QStyledItemDelegate, QTreeView
+    QCheckBox, QMenu, QMessageBox, QStyledItemDelegate, QTreeView
 )
 from PySide2.QtGui import QCursor
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
-
-
-class TreeItem:
-    # A simple TreeItem class to be used with QTreeView...
-
-    def __init__(self, data_list, parent_item=None):
-        self.data_list = data_list
-        self.parent_item = parent_item
-        self.child_items = []
-        if self.parent_item:
-            # Add itself automatically to its parent's children...
-            self.parent_item.append_child(self)
-
-    def append_child(self, child):
-        self.child_items.append(child)
-
-    def child(self, row):
-        if row < 0 or row >= len(self.child_items):
-            return None
-
-        return self.child_items[row]
-
-    def child_count(self):
-        return len(self.child_items)
-
-    def clear_children(self):
-        self.child_items.clear()
-
-    def column_count(self):
-        return len(self.data_list)
-
-    def data(self, column):
-        if column < 0 or column >= len(self.data_list):
-            return None
-        return self.data_list[column]
-
-    def set_data(self, column, val):
-        if column < 0 or column >= len(self.data_list):
-            return
-        self.data_list[column] = val
-
-    def row(self):
-        if self.parent_item:
-            return self.parent_item.child_items.index(self)
-        return 0
+from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
+from hexrd.ui.tree_views.tree_item import TreeItem
+from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
 
 
 # Global constants
 REFINED = 0
 FIXED = 1
 
-KEY_COL = 0
-VALUE_COL = 1
-STATUS_COL = 2
+KEY_COL = BaseTreeItemModel.KEY_COL
+VALUE_COL = BaseTreeItemModel.VALUE_COL
+STATUS_COL = VALUE_COL + 1
 
 
-class CalTreeItemModel(QAbstractItemModel):
+class CalTreeItemModel(BaseTreeItemModel):
 
     def __init__(self, parent=None):
         super(CalTreeItemModel, self).__init__(parent)
         self.root_item = TreeItem(['key', 'value', 'fixed'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
-
-    def columnCount(self, parent):
-        return self.root_item.column_count()
 
     def data(self, index, role):
         if not index.isValid():
@@ -133,54 +86,10 @@ class CalTreeItemModel(QAbstractItemModel):
 
         return flags
 
-    def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.root_item.data(section)
-
-        return None
-
-    def index(self, row, column, parent):
-        if not self.hasIndex(row, column, parent):
-            return QModelIndex()
-
-        parent_item = self.get_item(parent)
-        child_item = parent_item.child(row)
-        if not child_item:
-            return QModelIndex()
-
-        return self.createIndex(row, column, child_item)
-
-    def parent(self, index):
-        if not index.isValid():
-            return QModelIndex()
-
-        child_item = self.get_item(index)
-        parent_item = child_item.parent_item
-        if not parent_item or parent_item is self.root_item:
-            return QModelIndex()
-
-        return self.createIndex(parent_item.row(), KEY_COL, parent_item)
-
-    def rowCount(self, parent=QModelIndex()):
-        parent_item = self.get_item(parent)
-        return parent_item.child_count()
-
-    def get_item(self, index):
-        # If the index is valid and the internal pointer is valid,
-        # return the item. Otherwise, return the root item.
-        if index.isValid():
-            item = index.internalPointer()
-            if item:
-                return item
-
-        return self.root_item
-
-    def clear(self):
-        # Remove all of the root item children. That clears it.
-        root = self.root_item
-        self.beginRemoveRows(QModelIndex(), KEY_COL, root.child_count() - 1)
-        root.clear_children()
-        self.endRemoveRows()
+    def add_tree_item(self, key, value, status, parent):
+        data = [key, value, status]
+        tree_item = TreeItem(data, parent)
+        return tree_item
 
     def rebuild_tree(self):
         # Rebuild the tree from scratch
@@ -190,21 +99,6 @@ class CalTreeItemModel(QAbstractItemModel):
             self.recursive_add_tree_items(
                 self.cfg.internal_instrument_config[key], tree_item)
             self.update_parent_status(tree_item)
-
-    def add_tree_item(self, key, value, status, parent):
-        data = [key, value, status]
-        tree_item = TreeItem(data, parent)
-        return tree_item
-
-    def set_value(self, key, cur_config, cur_tree_item):
-        if isinstance(cur_config, list):
-            children = cur_tree_item.child_items
-            for child in children:
-                value = cur_config[child.data(KEY_COL)]
-                child.set_data(VALUE_COL, value)
-        else:
-            cur_tree_item.set_data(VALUE_COL, cur_config)
-        return
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         if isinstance(cur_config, dict):
@@ -423,32 +317,6 @@ class CalTreeView(QTreeView):
         # Show the checkbox
         editor_idx = self.model().index(row, STATUS_COL, parent)
         self.openPersistentEditor(editor_idx)
-
-
-class ValueColumnEditorFactory(QItemEditorFactory):
-    def __init__(self, parent=None):
-        super().__init__(self, parent)
-
-    def createEditor(self, user_type, parent):
-        # Normally in Qt, we'd use QVariant (like QVariant::Double) to compare
-        # with the user_type integer. However, QVariant is not available in
-        # PySide2, making us use roundabout methods to get the integer like
-        # below.
-        float_type = (
-            ScientificDoubleSpinBox.staticMetaObject.userProperty().userType()
-        )
-        if user_type == float_type:
-            return ScientificDoubleSpinBox(parent)
-
-        return super().createEditor(user_type, parent)
-
-
-class ValueColumnDelegate(QItemDelegate):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        editor_factory = ValueColumnEditorFactory(parent)
-        self.setItemEditorFactory(editor_factory)
 
 
 def _is_int(s):
