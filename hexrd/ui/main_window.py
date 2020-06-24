@@ -18,7 +18,7 @@ from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.line_picker_dialog import LinePickerDialog
-from hexrd.ui.indexing.indexing_dialog import IndexingDialog
+from hexrd.ui.indexing.dialog import IndexingDialog
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
