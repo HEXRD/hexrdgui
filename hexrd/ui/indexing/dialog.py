@@ -1,6 +1,10 @@
-from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.indexing.indexing_tree_view import IndexingTreeView
+from hexrd.cli.find_orientations import write_results
+from hexrd.findorientations import find_orientations
+
 from hexrd.ui.ui_loader import UiLoader
+
+from hexrd.ui.indexing.tree_view import IndexingTreeView
+from hexrd.ui.indexing.create_config import create_indexing_config
 
 
 class IndexingDialog:
@@ -15,7 +19,15 @@ class IndexingDialog:
         self.setup_connections()
 
     def setup_connections(self):
-        pass
+        self.ui.button_box.accepted.connect(self.run_indexing)
 
     def exec_(self):
         self.ui.exec_()
+
+    def run_indexing(self):
+        config = create_indexing_config()
+        res = find_orientations(config)
+        print('Finished! result is:', res)
+
+        # For now, write out the data (won't do this in the future)
+        write_results(res, config)
