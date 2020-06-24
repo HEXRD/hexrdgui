@@ -19,7 +19,8 @@ find_orientations:
 
     # "all", or a list of hkl orders used to find orientations
     # defaults to all orders listed in the material definition
-    active_hkls: [0,1,2,3,4,5]
+    # *** These are set automatically by hexrdgui based on the materials table
+    # active_hkls: [0,1,2,3,4,5]
 
   # either search full quaternion grid, or seed search based on sparse
   # orientation maps.  For input search space:
@@ -101,10 +102,10 @@ fit_grains:
   tth_max: false # true, false, or a non-negative value, defaults to true
 
 
-##########################################
-# Unneeded Section (already in hexrdgui) #
-##########################################
 
+####################################################
+# Unneeded Section (set automatically by hexrdgui) #
+####################################################
 
 # material:
 #   definitions: materials.hexrd
