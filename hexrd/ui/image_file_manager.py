@@ -61,8 +61,6 @@ class ImageFileManager(metaclass=Singleton):
 
         # Save the path if it should be remembered
         if self.remember:
-            self.path = HexrdConfig().hdf5_path
-        else:
             HexrdConfig().hdf5_path = self.path
 
     def load_aps_imageseries(self, detectors, directory_names):
@@ -80,8 +78,8 @@ class ImageFileManager(metaclass=Singleton):
         ext = os.path.splitext(f)[1]
         if self.is_hdf5(ext):
             ims = imageseries.open(f, 'hdf5',
-                path=HexrdConfig().hdf5_path[0],
-                dataname=HexrdConfig().hdf5_path[1])
+                path=self.path[0],
+                dataname=self.path[1])
         elif ext == '.npz':
             ims = imageseries.open(f, 'frame-cache')
         elif ext == '.yml':
@@ -147,8 +145,9 @@ class ImageFileManager(metaclass=Singleton):
 
     def path_exists(self, f):
         try:
-            imageseries.open(f, 'hdf5', path=HexrdConfig().hdf5_path[0],
-                dataname=HexrdConfig().hdf5_path[1])
+            path, dataname = HexrdConfig().hdf5_path
+            imageseries.open(f, 'hdf5', path=path, dataname=dataname)
+            self.path = HexrdConfig().hdf5_path
             return True
         except:
             return False
@@ -157,7 +156,7 @@ class ImageFileManager(metaclass=Singleton):
         path_dialog = LoadHDF5Dialog(f)
         if path_dialog.ui.exec_():
             group, data, remember = path_dialog.results()
-            HexrdConfig().hdf5_path = [group, data]
+            self.path = [group, data]
             self.remember = remember
         else:
             return False
