@@ -163,7 +163,7 @@ class LoadPanel(QObject):
         self.create_table()
 
     def apply_to_all_changed(self, checked):
-        self.state['apply_to_all'] = checked
+        HexrdConfig().load_panel_state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
 
@@ -512,6 +512,6 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext == '.yml':
             data['yml_files'] = self.yml_files
-        HexrdConfig().load_panel_state = copy.copy(self.state)
+        HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
         self.images_loaded.emit()
