@@ -157,8 +157,9 @@ class LoadPanel(QObject):
         self.idx = self.ui.detector.currentIndex()
         if not self.ui.all_detectors.isChecked():
             self.ui.transform.setCurrentIndex(self.state['trans'][self.idx])
-            self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
-            self.dark_mode_changed()
+            if self.ui.darkMode.isEnabled():
+                self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
+                self.dark_mode_changed()
         self.create_table()
 
     def apply_to_all_changed(self, checked):
@@ -238,7 +239,6 @@ class LoadPanel(QObject):
 
         if not enable:
             # Update dark mode settings
-            self.ui.all_detectors.setChecked(True)
             num_dets = len(HexrdConfig().detector_names)
             self.state['dark'] = [5 for x in range(num_dets)]
             self.ui.darkMode.setCurrentIndex(5)
