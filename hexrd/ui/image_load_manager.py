@@ -254,7 +254,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             # Apply dark subtraction
             if key in dark_images:
                 self.get_dark_op(ops, dark_images[key])
-            if 'trans' in self.state and self.state['trans'][idx]:
+            if 'trans' in self.state:
                 self.get_flip_op(ops, idx)
 
             frames = self.get_range(ims_dict[key])
@@ -304,6 +304,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             return range(self.empty_frames, len(ims))
 
     def get_flip_op(self, oplist, idx):
+        if self.data:
+            idx = self.data.get('idx', idx)
         # Change the image orientation
         if self.state['trans'][idx] == UI_TRANS_INDEX_NONE:
             return
