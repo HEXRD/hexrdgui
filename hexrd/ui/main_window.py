@@ -18,6 +18,7 @@ from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.line_picker_dialog import LinePickerDialog
+from hexrd.ui.indexing.dialog import IndexingDialog
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
@@ -140,7 +141,9 @@ class MainWindow(QObject):
             self.start_powder_calibration)
         self.ui.action_calibration_line_picker.triggered.connect(
             self.on_action_calibration_line_picker_triggered)
-        self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.ui.action_run_indexing.triggered.connect(
+            self.on_action_run_indexing_triggered)
+        self.new_images_loaded.connect(self.update_color_map_bounds)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
@@ -421,6 +424,14 @@ class MainWindow(QObject):
         print('Updating the GUI')
         self.update_config_gui()
         self.update_all()
+
+    def on_action_run_indexing_triggered(self):
+        self._indexing_dialog = IndexingDialog(self.ui)
+        self._indexing_dialog.exec_()
+
+    def update_color_map_bounds(self):
+        self.color_map_editor.update_bounds(
+            HexrdConfig().current_images_dict())
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
