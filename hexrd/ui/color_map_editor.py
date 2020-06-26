@@ -15,9 +15,7 @@ class ColorMapEditor:
         # The image_object can be any object with the following functions:
         # 1. set_cmap: a function to set the cmap on the image
         # 2. set_norm: a function to set the norm on the image
-        # 3. image_data: a property to get the image data
 
-        # The image data can be a dict, list, tuple, or single array
         self.image_object = image_object
 
         loader = UiLoader()
@@ -57,8 +55,8 @@ class ColorMapEditor:
         self.ui.maximum.setMinimum(self.ui.minimum.value())
         self.ui.minimum.setMaximum(self.ui.maximum.value())
 
-    def update_bounds(self):
-        bounds = self.percentile_range()
+    def update_bounds(self, data):
+        bounds = self.percentile_range(data)
         self.ui.minimum.setValue(bounds[0])
         self.ui.minimum.setToolTip('Min: ' + str(bounds[0]))
         self.ui.maximum.setValue(bounds[1])
@@ -66,12 +64,12 @@ class ColorMapEditor:
 
         self.bounds = bounds
 
-    def percentile_range(self, low=69.0, high=99.9):
-        d = self.image_object.image_data
-        if isinstance(d, dict):
-            values = d.values()
-        elif not isinstance(d, (list, tuple)):
-            values = [d]
+    @staticmethod
+    def percentile_range(data, low=69.0, high=99.9):
+        if isinstance(data, dict):
+            values = data.values()
+        elif not isinstance(data, (list, tuple)):
+            values = [data]
 
         l = min([np.nanpercentile(v, low) for v in values])
         h = min([np.nanpercentile(v, high) for v in values])

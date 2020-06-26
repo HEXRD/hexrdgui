@@ -212,10 +212,6 @@ class ImageTabWidget(QTabWidget):
         self.norm = norm
         self.update_canvas_norms()
 
-    @property
-    def image_data(self):
-        return HexrdConfig().current_images_dict()
-
     def on_motion_notify_event(self, event):
         # Clear the info if the mouse leaves a plot
         if event.inaxes is None:

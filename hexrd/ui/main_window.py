@@ -143,7 +143,7 @@ class MainWindow(QObject):
             self.on_action_calibration_line_picker_triggered)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
-        self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.new_images_loaded.connect(self.update_color_map_bounds)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
@@ -428,6 +428,10 @@ class MainWindow(QObject):
     def on_action_run_indexing_triggered(self):
         self._indexing_dialog = IndexingDialog(self.ui)
         self._indexing_dialog.exec_()
+
+    def update_color_map_bounds(self):
+        self.color_map_editor.update_bounds(
+            HexrdConfig().current_images_dict())
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
