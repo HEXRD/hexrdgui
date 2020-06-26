@@ -1203,13 +1203,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.config['image']['show_detector_borders'] = v
             self.rerender_detector_borders.emit()
 
-    @property
-    def colormap_min(self):
-        return self.config['image']['colormap']['min']
-
-    def set_colormap_min(self, v):
-        self.config['image']['colormap']['min'] = v
-
     @staticmethod
     def num_distortion_parameters(func_name):
         if func_name == 'None':
