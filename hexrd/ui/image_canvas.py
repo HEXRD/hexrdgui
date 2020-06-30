@@ -5,7 +5,7 @@ from PySide2.QtCore import QThreadPool
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 import numpy as np
 
@@ -14,6 +14,7 @@ from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.interactive_templates import InteractiveTemplate
 from hexrd.ui import utils
 import hexrd.ui.constants
 
@@ -80,7 +81,7 @@ class ImageCanvas(FigureCanvas):
         self.mode = None
         self.old_extent = None
 
-    def load_images(self, image_names):
+    def load_images(self, image_names, template):
         HexrdConfig().emit_update_status_bar('Loading image view...')
         if self.mode != 'images' or len(image_names) != len(self.axes_images):
             # Either we weren't in image mode before, or we have a different
@@ -99,7 +100,10 @@ class ImageCanvas(FigureCanvas):
                 img = HexrdConfig().image(name, idx)
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
-                axis.set_title(name)
+                if template:
+                    axis.set_axis_off()
+                else:
+                    axis.set_title(name)
                 self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                                     norm=self.norm))
                 self.raw_axes.append(axis)

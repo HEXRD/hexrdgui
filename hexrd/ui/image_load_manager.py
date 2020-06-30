@@ -27,6 +27,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     # Emitted when new images are loaded
     update_needed = Signal()
+    template_update_needed = Signal()
     new_images_loaded = Signal()
 
     def __init__(self):
@@ -97,7 +98,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 break
         return files
 
-    def read_data(self, files, data=None, parent=None):
+    def read_data(self, files, data=None, parent=None, template=False):
         # When this is pressed read in a complete set of data for all detectors.
         # Run the imageseries processing in a background thread and display a
         # loading dialog
@@ -107,6 +108,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.files = files
         self.data = data
         self.empty_frames = data['empty_frames'] if data else 0
+        self.template_dialog = template
 
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent)
@@ -159,7 +161,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def finish_processing_ims(self):
         # Display processed images on completion
-        self.update_needed.emit()
+        if self.template_dialog:
+            self.template_update_needed.emit()
+        else:
+            self.update_needed.emit()
         self.new_images_loaded.emit()
 
     def apply_operations(self, ims_dict):

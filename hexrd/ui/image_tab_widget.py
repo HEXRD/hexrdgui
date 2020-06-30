@@ -15,6 +15,8 @@ class ImageTabWidget(QTabWidget):
 
     # Tell the main window that an update is needed
     update_needed = Signal()
+    # Tell the template dialog widow that an update is needed
+    template_update_needed = Signal()
 
     # Emitted when the mouse is moving on the canvas, but outside
     # an image/plot. Intended to clear the status bar.
@@ -71,7 +73,8 @@ class ImageTabWidget(QTabWidget):
         self.allocate_canvases()
         self.allocate_toolbars()
         for i, name in enumerate(self.image_names):
-            self.image_canvases[i].load_images(image_names=[name])
+            self.image_canvases[i].load_images(
+                image_names=[name], template=self.template_canvas)
             self.addTab(self.image_canvases[i], name)
 
         self.update_canvas_cmaps()
@@ -82,7 +85,7 @@ class ImageTabWidget(QTabWidget):
     def load_images_untabbed(self):
         self.clear()
         self.image_canvases[0].load_images(
-            image_names=self.image_names)
+            image_names=self.image_names, template=self.template_canvas)
         self.allocate_toolbars()
         self.addTab(self.image_canvases[0], '')
 
@@ -94,7 +97,8 @@ class ImageTabWidget(QTabWidget):
         if self.image_names != list(HexrdConfig().imageseries_dict.keys()):
             self.image_names = list(HexrdConfig().imageseries_dict.keys())
 
-    def load_images(self):
+    def load_images(self, template=False):
+        self.template_canvas = template
         self.update_image_names()
         self.update_ims_toolbar()
 
@@ -107,7 +111,10 @@ class ImageTabWidget(QTabWidget):
 
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
-        self.update_needed.emit()
+        if self.template_canvas:
+            self.template_update_needed.emit()
+        else:
+            self.update_needed.emit()
 
     @Slot(bool)
     def show_toolbar(self, b):

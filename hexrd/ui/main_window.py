@@ -33,6 +33,7 @@ from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import resource_loader
+from hexrd.ui.template_dialog import TemplateDialog
 import hexrd.ui.resources.icons
 
 
@@ -154,6 +155,8 @@ class MainWindow(QObject):
             self.open_image_files)
         self.ui.action_open_aps_imageseries.triggered.connect(
             self.open_aps_imageseries)
+        self.ui.action_open_template_dialog.triggered.connect(
+            self.open_template_dialog)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
@@ -287,6 +290,11 @@ class MainWindow(QObject):
         ImageFileManager().load_aps_imageseries(detector_names, selected_dirs)
         self.update_all()
         self.new_images_loaded.emit()
+
+    def open_template_dialog(self):
+        if not hasattr(self, 'template_dialog'):
+            self.template_dialog = TemplateDialog(self.ui)
+        self.template_dialog.exec_()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
