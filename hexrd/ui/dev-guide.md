@@ -2,7 +2,7 @@ Developer's Guide
 =================
 
 This document is written with the intention of providing an explanation
-and a guide to some of the code infrastructure of hexrd-gui.
+and a guide to some of the code infrastructure of hexrdgui.
 
 Singleton Configuration
 -----------------------
@@ -17,43 +17,45 @@ python dictionary, but most of it is designed to be accessed as
 properties. For example, if you wish to see if the canvas is to show
 rings, you can check:
 ```
-b = HexrdConfig().show_rings
+b = HexrdConfig().show_overlays
 ```
 
 Since the `HexrdConfig` is a `QObject` as well, it can emit signals to
 inform the GUI that something needs updating. Setting some of the
 properties results in `HexrdConfig()` emitting a signal. For instance,
 ```
-HexrdConfig().show_rings = b
+HexrdConfig().show_overlays = b
 ```
 will emit a `ring_config_changed` signal. The canvas is connected to
 this signal, and when it receives the signal, it re-draws the rings.
 
-The properties' underlying functions are named with an underscore
-at the beginning, and they are present so that widgets can directly
-connect to them. For instance:
+The properties' underlying functions are sometimes named with an
+underscore at the beginning, and they are present so that widgets can
+directly connect to them. For instance:
 ```
-show_rings_checkbox.toggled.connect(HexrdConfig()._set_show_rings)
+self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
 ```
 
 The singleton configuration also makes saving and loading settings
 easy, because an entire dictionary can be saved with
-`QSettings().setValue()`. This is currently done for the instrument
-configuration, but not many other parts.
+`QSettings().setValue()`. This is currently being done for a few of the
+different configuration keys.
 
-Currently, there are three main keys for the configuration:
+Currently, there are a few main keys for the configuration:
 ```
 instrument: contains the instrument config used by hexrd
 materials: contains materials settings and the loaded materials
 image: contains image settings
+calibration: contains settings used for calibration
+indexing: contains settings used for indexing
 ```
 
-No additional keys should be added to `instrument`, because it is
-supposed to be exactly what is passed to the `hexrd` source code.
+No additional keys should be added to `instrument`, and `indexing`,
+because they are based upon config settings in the `hexrd` repository.
 
-However, additional keys can be added to `materials` and `image`
-as needed. Additional main keys can be added as well, when more
-generic categories are needed.
+However, additional keys can be added to `materials`, `image`, and
+`calibration` as needed. Additional main keys can be added as well,
+when more generic categories are needed.
 
 UI Files
 --------
@@ -75,7 +77,7 @@ class SomeWidget:
         self.ui = loader.load_file('some_widget.ui', parent)
 ```
 
-If some events need to be overridden, QObject.installEventFilter() can
+If some events need to be overridden, `QObject.installEventFilter()` can
 be used.
 
 If your class needs to emit signals, two things must be done:
