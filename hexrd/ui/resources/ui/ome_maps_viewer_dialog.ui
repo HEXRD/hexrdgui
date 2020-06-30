@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>635</width>
+    <width>1200</width>
     <height>697</height>
    </rect>
   </property>
@@ -274,7 +274,7 @@
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="blog_log_tab">
+           <widget class="QWidget" name="blob_log_tab">
             <attribute name="title">
              <string>Blob Log</string>
             </attribute>

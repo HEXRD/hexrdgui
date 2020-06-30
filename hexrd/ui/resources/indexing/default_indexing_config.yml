@@ -74,7 +74,7 @@ find_orientations:
   clustering:
     # algorithm choices are
     #   sph-dbscan
-    #   ort-dbscn
+    #   ort-dbscan
     #   dbscan <default>
     #   fclusterdata; this is a fallback and won't work for large problems
     radius: 1.0
