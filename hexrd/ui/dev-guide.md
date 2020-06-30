@@ -78,6 +78,55 @@ class SomeWidget:
 If some events need to be overridden, QObject.installEventFilter() can
 be used.
 
+If your class needs to emit signals, two things must be done:
+
+1. Your class needs to inherit from `QObject`.
+2. You need to run `super().__init__(parent)`. If you don't do this, you
+   will encounter incomprehensible errors.
+
+A UI class that emits signals needs to be set up like the following:
+```
+from PySide2.QtCore import Signal, QObject
+
+from hexrd.ui.ui_loader import UiLoader
+
+class SomeWidget(QObject):
+
+    the_signal = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        loader = UiLoader()
+        self.ui = loader.load_file('some_widget.ui', parent)
+
+    def emit_signal(self):
+        self.the_signal.emit()
+```
+
+For updating the GUI with internal config, the design pattern we typically
+use is as follows:
+```
+    @property
+    def all_widgets(self):
+        return [
+            self.ui.widget1,
+            self.ui.widget2,
+            ...
+        ]
+
+    def update_gui(self):
+        blockers = [QSignalBlocker(x) for x in self.all_widgets]  # noqa: F841
+        self.ui.widget1.setValue(...)
+        ...
+```
+
+We need to block the widget signals when we are updating the values, so that
+they do not modify the config as well. The reason we use a list of
+QSignalBlockers is so that if an exception is raised, they will be unblocked
+automatically. `# noqa: F841` is necessary to tell `flake8` to ignore the
+fact that we don't use `blockers` (it is only being used in an RAII fashion).
+
 Resources
 ---------
 
@@ -169,3 +218,11 @@ thread_pool.start(worker)
 
 worker.signals.result.connect(finish_func)
 ```
+
+Formatting
+----------
+
+Generally, we try to adhere to pep8 rules. It is highly recommended that
+you run `flake8` on the file you have worked on, and fix any errors.
+This has not always been enforced, so there are some files that do not
+adhere to pep8.
