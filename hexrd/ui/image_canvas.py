@@ -5,7 +5,6 @@ from PySide2.QtCore import QThreadPool
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
-import matplotlib.patches as patches
 
 import numpy as np
 
@@ -14,7 +13,6 @@ from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.interactive_templates import InteractiveTemplate
 from hexrd.ui import utils
 import hexrd.ui.constants
 
@@ -579,3 +577,9 @@ class ImageCanvas(FigureCanvas):
 
         fig.canvas.draw()
         fig.show()
+
+    def add_template(self, patch):
+        ax = self.axes_images[0].axes
+        if not hasattr(self, 'patch'):
+            self.patch = []
+        self.patch.append(ax.add_patch(patch))

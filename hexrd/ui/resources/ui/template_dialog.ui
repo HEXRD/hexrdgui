@@ -60,33 +60,48 @@
              </widget>
             </item>
             <item>
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
+             <layout class="QVBoxLayout" name="verticalLayout_1">
+              <item>
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Select Template</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="template_menu">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>(None)</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>TARDIS_IMAGE-PLATE-2</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>TARDIS_IMAGE-PLATE-3</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>TARDIS_IMAGE-PLATE-4</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Draw</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
             </item>
-           </layout>
-          </item>
-         </layout>
-        </item>
-        <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_4">
-          <item>
-           <widget class="QComboBox" name="color_map">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
              <spacer name="horizontalSpacer_3">
               <property name="orientation">
@@ -101,12 +116,12 @@
              </spacer>
             </item>
             <item>
-             <widget class="QCheckBox" name="log_scale">
+             <widget class="QPushButton" name="add_mask">
               <property name="enabled">
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>log scale</string>
+               <string>Add Mask</string>
               </property>
              </widget>
             </item>
