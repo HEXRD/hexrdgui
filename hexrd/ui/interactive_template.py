@@ -41,11 +41,51 @@ class InteractiveTemplate:
                 if not val.startswith('#') and val:
                     vert = val.split('\t')
                     verts.append([float(vert[0])/0.1+centerx, float(vert[1])/0.1+centery])
+            # print('verts: ', verts)
             self.shape = patches.Polygon(verts, fill=False, lw=1)
+            print('verts: ', self.shape.get_path().vertices)
             self.parent.show()
 
     def get_shape(self):
         return self.shape
+
+    def get_mask(self):
+        return self.mask
+
+    def create_mask(self):
+        h, w = self.img.shape
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+        coords = np.vstack((x.flatten(), y.flatten())).T
+        transformed_paths = self.get_paths()
+        self.mask = np.zeros(self.img.shape)
+        for path in transformed_paths:
+            points = path.contains_points(coords)
+            grid = points.reshape(h, w)
+            self.mask = (self.mask != grid)
+        result = np.ma.masked_where(self.mask, self.img)
+
+    def get_paths(self):
+        all_paths = []
+        verts = self.shape.get_patch_transform().transform(
+            self.shape.get_path().vertices)
+        if hasattr(self, 'affine2d'):
+            verts = self.affine2d.transform(verts)
+        print('mask verts: ', verts)
+        points = []
+        codes = []
+        for coords in verts:
+            if np.isnan(coords).any():
+                codes[0] = Path.MOVETO
+                all_paths.append(Path(points, codes))
+                codes = []
+                points = []
+            else:
+                codes.append(Path.LINETO)
+                points.append(coords)
+        codes[0] = Path.MOVETO
+        all_paths.append(Path(points, codes))
+
+        return all_paths
 
     def connect(self):
         self.button_press_cid = self.parent.mpl_connect(

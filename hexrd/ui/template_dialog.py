@@ -25,6 +25,7 @@ class TemplateDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('template_dialog.ui', parent)
         self.it = []
+        self.masks = []
 
         self.load_cmaps()
 
@@ -33,6 +34,7 @@ class TemplateDialog(QObject):
     def setup_connections(self):
         self.ui.load_image.clicked.connect(self.open_image_files)
         self.ui.template_menu.currentIndexChanged.connect(self.load_template)
+        self.ui.add_mask.clicked.connect(self.add_mask)
 
         self.ui.image_tab_widget.template_update_needed.connect(self.update_image)
         ImageLoadManager().template_update_needed.connect(self.update_image)
@@ -66,8 +68,10 @@ class TemplateDialog(QObject):
         val = HexrdConfig().current_images_dict().values()
         self.img = list(val)[0]
         self.ui.file_name.setText(file_name)
+        self.ui.template_menu.setEnabled(True)
+        self.ui.add_mask.setEnabled(True)
 
-    def update_image(self, clear_canvases=False):
+    def update_image(self):
         # If there are no images loaded, skip the request
         if not HexrdConfig().has_images():
             return
@@ -82,3 +86,27 @@ class TemplateDialog(QObject):
             self.current_shape = InteractiveTemplate(self.img, self.ui.image_tab_widget, selection)
             self.it.append(self.current_shape)
             self.ui.image_tab_widget.add_template(self.current_shape.get_shape())
+
+    def add_mask(self):
+        self.current_shape.create_mask()
+        self.masks.append(self.current_shape.get_mask())
+        result = None
+        for mask in self.masks:
+            if result is None:
+                result = mask
+            else:
+                result = np.logical_and(result, mask)
+        master_mask = np.ma.masked_where(result, self.img)
+        axis = self.ui.image_tab_widget.image_canvases[0].raw_axes[0]
+        self.ui.image_tab_widget.image_canvases[0].axes_images.append(
+            axis.imshow(master_mask, cmap=plt.cm.binary, alpha=1.0))
+        self.ui.image_tab_widget.image_canvases[0].draw()
+        self.reset_settings()
+
+    def reset_settings(self):
+        self.ui.blockSignals(True)
+        self.ui.template_menu.setCurrentIndex(0)
+        self.ui.threshold_select.setChecked(False)
+        self.ui.comparator.setCurrentIndex(0)
+        self.ui.threshold.setValue(0.00)
+        self.ui.blockSignals(False)
