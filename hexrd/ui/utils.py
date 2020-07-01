@@ -63,10 +63,13 @@ def convert_tilt_convention(iconfig, old_convention,
 
 def make_new_pdata(mat):
     # This generates new PlaneData for a material
-    # This also preserves the previous exclusions of the plane data
+    # This also preserves the previous exclusions of the plane data,
+    # and the previous tthWidth
     prev_exclusions = mat.planeData.exclusions
+    prev_tThWidth = mat.planeData.tThWidth
     mat._newPdata()
     mat.planeData.exclusions = prev_exclusions
+    mat.planeData.tThWidth = prev_tThWidth
 
 
 def coords2index(im, x, y):

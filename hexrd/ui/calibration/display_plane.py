@@ -43,7 +43,7 @@ class DisplayPlane:
 
         return (del_x, del_y)
 
-    def display_panel(self, sizes, mps):
+    def display_panel(self, sizes, mps, bvec=None):
 
         del_x = sizes[0]
         del_y = sizes[1]
@@ -54,6 +54,7 @@ class DisplayPlane:
         display_panel = instrument.PlanarDetector(
             rows=nrows_map, cols=ncols_map,
             pixel_size=(mps, mps),
-            tvec=self.tvec, tilt=self.tilt)
+            tvec=self.tvec, tilt=self.tilt,
+            bvec=bvec)
 
         return display_panel

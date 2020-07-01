@@ -2,7 +2,7 @@ Developer's Guide
 =================
 
 This document is written with the intention of providing an explanation
-and a guide to some of the code infrastructure of hexrd-gui.
+and a guide to some of the code infrastructure of hexrdgui.
 
 Singleton Configuration
 -----------------------
@@ -17,43 +17,45 @@ python dictionary, but most of it is designed to be accessed as
 properties. For example, if you wish to see if the canvas is to show
 rings, you can check:
 ```
-b = HexrdConfig().show_rings
+b = HexrdConfig().show_overlays
 ```
 
 Since the `HexrdConfig` is a `QObject` as well, it can emit signals to
 inform the GUI that something needs updating. Setting some of the
 properties results in `HexrdConfig()` emitting a signal. For instance,
 ```
-HexrdConfig().show_rings = b
+HexrdConfig().show_overlays = b
 ```
 will emit a `ring_config_changed` signal. The canvas is connected to
 this signal, and when it receives the signal, it re-draws the rings.
 
-The properties' underlying functions are named with an underscore
-at the beginning, and they are present so that widgets can directly
-connect to them. For instance:
+The properties' underlying functions are sometimes named with an
+underscore at the beginning, and they are present so that widgets can
+directly connect to them. For instance:
 ```
-show_rings_checkbox.toggled.connect(HexrdConfig()._set_show_rings)
+self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
 ```
 
 The singleton configuration also makes saving and loading settings
 easy, because an entire dictionary can be saved with
-`QSettings().setValue()`. This is currently done for the instrument
-configuration, but not many other parts.
+`QSettings().setValue()`. This is currently being done for a few of the
+different configuration keys.
 
-Currently, there are three main keys for the configuration:
+Currently, there are a few main keys for the configuration:
 ```
 instrument: contains the instrument config used by hexrd
 materials: contains materials settings and the loaded materials
 image: contains image settings
+calibration: contains settings used for calibration
+indexing: contains settings used for indexing
 ```
 
-No additional keys should be added to `instrument`, because it is
-supposed to be exactly what is passed to the `hexrd` source code.
+No additional keys should be added to `instrument`, and `indexing`,
+because they are based upon config settings in the `hexrd` repository.
 
-However, additional keys can be added to `materials` and `image`
-as needed. Additional main keys can be added as well, when more
-generic categories are needed.
+However, additional keys can be added to `materials`, `image`, and
+`calibration` as needed. Additional main keys can be added as well,
+when more generic categories are needed.
 
 UI Files
 --------
@@ -75,8 +77,57 @@ class SomeWidget:
         self.ui = loader.load_file('some_widget.ui', parent)
 ```
 
-If some events need to be overridden, QObject.installEventFilter() can
+If some events need to be overridden, `QObject.installEventFilter()` can
 be used.
+
+If your class needs to emit signals, two things must be done:
+
+1. Your class needs to inherit from `QObject`.
+2. You need to run `super().__init__(parent)`. If you don't do this, you
+   will encounter incomprehensible errors.
+
+A UI class that emits signals needs to be set up like the following:
+```
+from PySide2.QtCore import Signal, QObject
+
+from hexrd.ui.ui_loader import UiLoader
+
+class SomeWidget(QObject):
+
+    the_signal = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        loader = UiLoader()
+        self.ui = loader.load_file('some_widget.ui', parent)
+
+    def emit_signal(self):
+        self.the_signal.emit()
+```
+
+For updating the GUI with internal config, the design pattern we typically
+use is as follows:
+```
+    @property
+    def all_widgets(self):
+        return [
+            self.ui.widget1,
+            self.ui.widget2,
+            ...
+        ]
+
+    def update_gui(self):
+        blockers = [QSignalBlocker(x) for x in self.all_widgets]  # noqa: F841
+        self.ui.widget1.setValue(...)
+        ...
+```
+
+We need to block the widget signals when we are updating the values, so that
+they do not modify the config as well. The reason we use a list of
+QSignalBlockers is so that if an exception is raised, they will be unblocked
+automatically. `# noqa: F841` is necessary to tell `flake8` to ignore the
+fact that we don't use `blockers` (it is only being used in an RAII fashion).
 
 Resources
 ---------
@@ -169,3 +220,11 @@ thread_pool.start(worker)
 
 worker.signals.result.connect(finish_func)
 ```
+
+Formatting
+----------
+
+Generally, we try to adhere to pep8 rules. It is highly recommended that
+you run `flake8` on the file you have worked on, and fix any errors.
+This has not always been enforced, so there are some files that do not
+adhere to pep8.

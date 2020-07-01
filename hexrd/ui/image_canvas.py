@@ -36,9 +36,7 @@ class ImageCanvas(FigureCanvas):
         # a calibration.
         self.iviewer = None
         self.azimuthal_integral_axis = None
-
-        # If not None, used to rescale the ring data to the new extent
-        self.old_extent = None
+        self.azimuthal_line_artist = None
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -65,6 +63,7 @@ class ImageCanvas(FigureCanvas):
             self.on_detector_transform_modified)
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
+        HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -77,8 +76,8 @@ class ImageCanvas(FigureCanvas):
         self.axes_images.clear()
         self.clear_rings()
         self.azimuthal_integral_axis = None
+        self.azimuthal_line_artist = None
         self.mode = None
-        self.old_extent = None
         self.patches.clear()
 
     def load_images(self, image_names, template):
@@ -167,23 +166,31 @@ class ImageCanvas(FigureCanvas):
 
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
-            yrange = az_axis.get_ylim()
             for pr in rings:
-                ring, = az_axis.plot(pr[:, 1], yrange, color=ring_color,
-                                     linestyle=ring_linestyle,
-                                     lw=ring_linewidth)
-                self.cached_rings.append(ring)
+                x, _ = self.extract_ring_coords(pr)
+                # Don't plot duplicate vertical lines
+                x = np.unique(x.round(3))
+                for val in x:
+                    ring = az_axis.axvline(val, c=ring_color,
+                                           ls=ring_linestyle,
+                                           lw=ring_linewidth)
+                    self.cached_rings.append(ring)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
+                x, _ = self.extract_ring_coords(pr)
+                # Don't plot duplicate vertical lines
+                x = np.unique(x.round(3))
+
                 color = rbnd_color
                 if len(ind) > 1:
                     # If rbnds are combined, override the color to red
                     color = 'r'
-                rbnd, = az_axis.plot(pr[:, 1], yrange, color=color,
-                                     linestyle=rbnd_linestyle,
-                                     lw=rbnd_linewidth)
-                self.cached_rbnds.append(rbnd)
+
+                for val in x:
+                    rbnd = az_axis.axvline(val, c=color, ls=rbnd_linestyle,
+                                           lw=rbnd_linewidth)
+                    self.cached_rbnds.append(rbnd)
 
     def redraw_rings(self):
         # iviewer is required for drawing rings
@@ -198,13 +205,18 @@ class ImageCanvas(FigureCanvas):
             if self.mode == 'images':
                 # We have to draw once for each detector
                 for axis in self.raw_axes:
-                    det_name = axis.get_title()
-                    self.draw_rings_on_axis(axis,
-                                            ring_data[mat_name][det_name],
-                                            style)
-            else:
-                # Just draw for the main axis
-                self.draw_rings_on_axis(self.axis, ring_data[mat_name], style)
+                    # The title name is the detector name
+                    data = ring_data[mat_name][axis.get_title()]
+                    self.draw_rings_on_axis(axis, data, style)
+            elif ring_data[mat_name]:
+                # For both the Cartesian and Polar views, we only need to
+                # draw the first detector.
+                # For Cartesian, a fake single detector is used, so there
+                # should only be one.
+                # For Polar, the overlays are drawn on the entire view for
+                # each detector, so only one detector is needed.
+                first = next(iter(ring_data[mat_name].values()))
+                self.draw_rings_on_axis(self.axis, first, style)
 
         self.draw()
 
@@ -230,36 +242,17 @@ class ImageCanvas(FigureCanvas):
         for border in borders.values():
             # Draw each line in the border
             for line in border:
-                # Make sure the data is rescaled to the current extents
-                x, y = self.rescale_points(line[0], line[1])
-                plot, = self.axis.plot(x, y, color='y', lw=2)
+                plot, = self.axis.plot(*line, color='y', lw=2)
                 self.cached_detector_borders.append(plot)
 
         self.draw()
 
-    def rescale_points(self, x, y):
-        # This takes the data, assumes it was in the old extents sytem,
-        # and it rescales it to the new extents system.
-        old_extent = self.old_extent
-        if old_extent is None:
-            # No rescaling needed
-            return x, y
+    def extract_ring_coords(self, data):
+        if self.mode == 'cartesian':
+            # These are in x, y coordinates. Do not swap them.
+            return data[:, 0], data[:, 1]
 
-        old_x_range = (old_extent[0], old_extent[1])
-        old_y_range = (old_extent[3], old_extent[2])
-
-        new_extent = self.axes_images[0].get_extent()
-        new_x_range = (new_extent[0], new_extent[1])
-        new_y_range = (new_extent[3], new_extent[2])
-
-        x = np.interp(x, old_x_range, new_x_range)
-        y = np.interp(y, old_y_range, new_y_range)
-
-        return x, y
-
-    def extract_ring_coords(self, pr):
-        x, y = pr[:, 1], pr[:, 0]
-        return self.rescale_points(x, y)
+        return data[:, 1], data[:, 0]
 
     def clear_saturation(self):
         for t in self.saturation_texts:
@@ -287,7 +280,7 @@ class ImageCanvas(FigureCanvas):
             # our method for getting the saturation level as well.
             ax = img.axes
             detector_name = ax.get_title()
-            detector = HexrdConfig().get_detector(detector_name)
+            detector = HexrdConfig().detector(detector_name)
             saturation_level = detector['saturation_level']['value']
 
             array = img.get_array()
@@ -302,6 +295,14 @@ class ImageCanvas(FigureCanvas):
             self.saturation_texts.append(t)
 
         self.draw()
+
+    def beam_vector_changed(self):
+        if not self.iviewer or not hasattr(self.iviewer, 'instr'):
+            return
+
+        bvec = HexrdConfig().instrument_config['beam']['vector']
+        self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
+        self.redraw_rings()
 
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
@@ -345,12 +346,10 @@ class ImageCanvas(FigureCanvas):
 
         # We must adjust the extent of the image
         if rescale_image:
-            self.old_extent = self.axes_images[0].get_extent()
-            sizes = iviewer.dpanel_sizes
-            extent = (0., sizes[0], sizes[1], 0.)
-            self.axes_images[0].set_extent(extent)
+            self.axes_images[0].set_extent(iviewer.extent)
             self.axis.relim()
             self.axis.autoscale_view()
+            self.axis.autoscale(False)
             self.figure.tight_layout()
 
         self.redraw_rings()
@@ -411,7 +410,8 @@ class ImageCanvas(FigureCanvas):
 
             if self.azimuthal_integral_axis is None:
                 axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
-                axis.plot(tth, np.sum(img, axis=0))
+                self.azimuthal_line_artist, = axis.plot(tth,
+                                                        np.sum(img, axis=0))
 
                 # Let the axes rescale one time
                 axis.autoscale_view()
@@ -424,8 +424,8 @@ class ImageCanvas(FigureCanvas):
 
                 self.azimuthal_integral_axis = axis
             else:
-                axis = self.azimuthal_integral_axis
                 self.update_azimuthal_integral_plot()
+                axis = self.azimuthal_integral_axis
 
             # These need to be set every time for some reason
             self.axis.label_outer()
@@ -486,18 +486,22 @@ class ImageCanvas(FigureCanvas):
             return
 
         axis = self.azimuthal_integral_axis
-        if axis is None:
+        line = self.azimuthal_line_artist
+        if any([x is None for x in [axis, line]]):
             # Nothing to do. Just return.
             return
 
-        img = self.iviewer.img
-
         # Get the "tth" vector
-        angular_grid = self.iviewer.angular_grid
-        tth = np.degrees(angular_grid[1][0])
+        tth = np.degrees(self.iviewer.angular_grid[1][0])
 
-        axis.clear()
-        axis.plot(tth, np.sum(img, axis=0))
+        # Set the new data
+        line.set_data(tth, np.sum(self.iviewer.img, axis=0))
+
+        # Rescale the axes for the new data
+        # All three of these are required
+        axis.relim()
+        axis.autoscale_view()
+        axis.axis('auto')
 
     def on_detector_transform_modified(self, det):
         if not self.iviewer:

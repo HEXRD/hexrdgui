@@ -4,10 +4,9 @@ import numpy as np
 
 from .polarview import PolarView
 
-from .display_plane import DisplayPlane
-
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays import PowderLineOverlay
 
 
 def polar_viewer():
@@ -20,22 +19,14 @@ class InstrumentViewer:
         self.type = 'polar'
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
-        self.dplane = DisplayPlane()
 
         # Resolution settings
         # As far as I can tell, self.pixel_size won't actually change
         # anything for a polar plot, so just hard-code it.
         self.pixel_size = 0.5
 
-        self._make_dpanel()
-
         self.draw_polar()
         self.add_rings()
-
-    def _make_dpanel(self):
-        self.dpanel_sizes = self.dplane.panel_size(self.instr)
-        self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
-                                                self.pixel_size)
 
     @property
     def all_detector_borders(self):
@@ -60,32 +51,6 @@ class InstrumentViewer:
     def clear_rings(self):
         self.ring_data = {}
 
-    def generate_rings(self, plane_data):
-        rings = []
-        rbnds = []
-        rbnd_indices = []
-
-        # If there are no rings, there is nothing to do
-        if not HexrdConfig().show_overlays or len(plane_data.getTTh()) == 0:
-            return rings, rbnds, rbnd_indices
-
-        for tth in np.degrees(plane_data.getTTh()):
-            rings.append(np.array([[-180, tth], [180, tth]]))
-
-        if plane_data.tThWidth is not None:
-            indices, ranges = plane_data.getMergedRanges()
-
-            for ind, r in zip(indices, np.degrees(ranges)):
-                rbnds.append(np.array([[-180, r[0]],
-                                       [180, r[0]]]))
-                rbnds.append(np.array([[-180, r[1]],
-                                       [180, r[1]]]))
-                # Append twice since we append to rbnd_data twice
-                rbnd_indices.append(ind)
-                rbnd_indices.append(ind)
-
-        return rings, rbnds, rbnd_indices
-
     def add_rings(self):
         self.clear_rings()
 
@@ -98,13 +63,8 @@ class InstrumentViewer:
                       name, 'is not a valid material')
                 continue
 
-            rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
-
-            self.ring_data[name] = {
-                'ring_data': rings,
-                'rbnd_data': rbnds,
-                'rbnd_indices': rbnd_indices
-            }
+            overlay = PowderLineOverlay(mat.planeData, self.instr)
+            self.ring_data[name] = overlay.overlay('polar')
 
         return self.ring_data
 

@@ -25,14 +25,13 @@ requirements:
     - fabio
     - pyyaml
     - hexrd
-    - libopenblas==0.3.7
 
 test:
   imports:
     - hexrd.ui
 
 about:
-  home: https://github.com/cryos/hexrdgui
+  home: https://github.com/HEXRD/hexrdgui
   license: BSD
   license_family: BSD
   summary: "Qt5 PySide2 based HEXRD GUI"

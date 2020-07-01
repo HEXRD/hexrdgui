@@ -1,0 +1,134 @@
+name: package
+
+on:
+  push:
+    branches: [ master ]
+    tags: ["*"]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-package:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Linux",
+            os: ubuntu-latest,
+            package: 'tar.gz'
+          }
+        - {
+            name: "MacOSX",
+            os: macos-latest,
+            package: 'dmg'
+          }
+        - {
+            name: "Windows",
+            os: windows-latest,
+            package: 'msi'
+          }
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        path: hexrdgui
+
+    - name: Install conda
+      uses: goanpeca/setup-miniconda@v1
+      with:
+        auto-update-conda: true
+        python-version: 3.8
+        auto-activate-base: false
+
+    - name: Get version using git describe
+      working-directory: hexrdgui
+      id: hexrdgui_describe
+      run: echo "::set-output name=version::$(git describe --tag)"
+
+    - name: Set version environment variables used by CPack
+      working-directory: hexrdgui
+      run: |
+          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} full
+          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} major
+          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} minor
+          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} patch
+
+    - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
+      run: |
+          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "::set-env name=HEXRD_PACKAGE_CHANNEL::HEXRD" || echo "::set-env name=HEXRD_PACKAGE_CHANNEL::HEXRD/label/hexrd-prerelease"
+
+    - name: Create conda environment to build HEXRDGUI
+      working-directory: hexrdgui
+      run: |
+          conda env create -f packaging/environment.yml
+      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
+      # command works.
+      shell: bash -l {0}
+
+    - name: Build the package using CPack
+      working-directory: hexrdgui/packaging
+      run: |
+          conda activate hexrdgui-package
+          mkdir output
+          HEXRD_PACKAGE_CHANNEL=${HEXRD_PACKAGE_CHANNEL} HEXRDGUI_OUTPUT_FOLDER=output/ cpack
+      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
+      # command works.
+      shell: bash -l {0}
+      env:
+        CPACK_OSX_SYSROOT: "/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk"
+
+    - name: Upload InstallOutput.log
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: InstallOutput.log
+        path: ${{ github.workspace }}/hexrdgui/packaging/_CPack_Packages/*/InstallOutput.log
+
+    - name: Upload WIX log ( Windows only )
+      if: ${{ failure() && matrix.config.os == 'windows-latest'}}
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: wix.log
+        path: ${{ github.workspace }}/hexrdgui/packaging/_CPack_Packages/WIX/wix.log
+
+    - name: Upload installer package
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: HEXRDGUI-v${{env.VERSION}}.${{ matrix.config.package }}
+        path: ${{ github.workspace }}/hexrdgui/packaging/HEXRDGUI-${{env.VERSION}}.${{ matrix.config.package }}
+
+    - name: Upload installer package Zip ( Windows only )
+      if: ${{ matrix.config.os == 'windows-latest'}}
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: HEXRDGUI-v${{env.VERSION}}.zip
+        path: ${{ github.workspace }}/hexrdgui/packaging/HEXRDGUI-${{env.VERSION}}.zip
+
+    - name: Upload the HEXRDGUI conda package ( PRs only )
+      if: github.ref != 'refs/heads/master'
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: HEXRDGUI-${{ matrix.config.name }}-${{ steps.hexrdgui_describe.outputs.version }}.tar.bz2
+        path: ${{ github.workspace }}/hexrdgui/packaging/output/**/*.tar.bz2
+
+    - name: Set label ( main or hexrdgui-prerelease )
+      run: |
+          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "::set-env name=HEXRDGUI_PACKAGE_LABEL::hexrdgui-prerelease" || echo "::set-env name=HEXRDGUI_PACKAGE_LABEL::main"
+
+    - name: Upload the package to anaconda channel (only on master)
+      if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/')
+      working-directory: hexrdgui/packaging
+      run: |
+          conda activate hexrdgui-package
+          conda install anaconda
+          anaconda --token ${{ secrets.ANACONDA_TOKEN }} upload --user HEXRD --label ${HEXRDGUI_PACKAGE_LABEL} output/**/*.tar.bz2
+      # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
+      # command works.
+      shell: bash -l {0}

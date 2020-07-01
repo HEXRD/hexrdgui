@@ -15,6 +15,7 @@ from hexrd.ui import resource_loader
 from hexrd.ui import utils
 
 import hexrd.ui.resources.calibration
+import hexrd.ui.resources.indexing
 import hexrd.ui.resources.materials
 
 
@@ -50,6 +51,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when ring configuration has changed"""
     ring_config_changed = Signal()
 
+    """Emitted when beam vector has changed"""
+    beam_vector_changed = Signal()
+
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
@@ -79,6 +83,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
+    """Emitted when an instrument config has been loaded"""
+    instrument_config_loaded = Signal()
+
     """Convenience signal to update the main window's status bar
 
     Arguments are: message (str)
@@ -107,7 +114,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self._tab_images = False
         self.previous_active_material = None
         self.collapsed_state = []
-        self.load_panel_state = None
+        self.load_panel_state = {}
         self.polar_masks = []
         self.ring_styles = {}
         self.backup_tth_maxes = {}
@@ -125,16 +132,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
 
-        if self.config.get('instrument') is None:
-            # Load the default config['instrument'] settings
-            self.config['instrument'] = copy.deepcopy(
-                self.default_config['instrument'])
-
-        if self.config.get('calibration') is None:
-            self.config['calibration'] = copy.deepcopy(
-                self.default_config['calibration'])
-
-        # Set required defaults if any are missing
         self.set_defaults_if_missing()
 
         # Add the statuses to the config
@@ -181,14 +178,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
-        self.live_update = bool(settings.value('live_update', True) == 'true')
+        self.live_update = settings.value('live_update', 'true') == 'true'
 
         conv = settings.value('euler_angle_convention', ('xyz', True))
         self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)
 
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
-        self.load_panel_state = settings.value('load_panel_state', None)
+        self.load_panel_state = settings.value('load_panel_state', {})
         self.ring_styles = settings.value('ring_styles', {})
 
         # Set this manually since we don't have any materials yet
@@ -208,6 +205,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
         self.update_status_bar.emit(msg)
+
+    @property
+    def indexing_config(self):
+        return self.config['indexing']
 
     # This is here for backward compatibility
     @property
@@ -236,6 +237,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             utils.convert_tilt_convention(self.config['instrument'], old_eac,
                                           new_eac)
 
+        self.instrument_config_loaded.emit()
         self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
 
@@ -258,6 +260,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.default_config['instrument'] = yaml.load(text,
                                                       Loader=yaml.FullLoader)
 
+        text = resource_loader.load_resource(hexrd.ui.resources.indexing,
+                                             'default_indexing_config.yml')
+        self.default_config['indexing'] = yaml.load(text,
+                                                    Loader=yaml.FullLoader)
+
         yml = resource_loader.load_resource(hexrd.ui.resources.materials,
                                             'materials_panel_defaults.yml')
         self.default_config['materials'] = yaml.load(yml,
@@ -274,8 +281,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_defaults_if_missing(self):
         # Find missing required keys and set defaults for them.
-        to_do_keys = ['instrument', 'calibration', 'image']
+        to_do_keys = ['indexing', 'instrument', 'calibration', 'image']
         for key in to_do_keys:
+            if self.config.get(key) is None:
+                self.config[key] = copy.deepcopy(self.default_config[key])
+                continue
+
             self._recursive_set_defaults(self.config[key],
                                          self.default_config[key])
 
@@ -283,9 +294,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
-        default = self.get_default_detector()
-        for name in self.get_detector_names():
-            self._recursive_set_defaults(self.get_detector(name), default)
+        default = self.default_detector
+        for name in self.detector_names:
+            self._recursive_set_defaults(self.detector(name), default)
 
     def _recursive_set_defaults(self, current, default):
         for key in default.keys():
@@ -321,13 +332,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def clear_images(self, initial_load=False):
         self.imageseries_dict.clear()
-        self.hdf5_path = None
         if self.load_panel_state is not None and not initial_load:
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
 
     def load_instrument_config(self, yml_file):
-        old_detectors = self.get_detector_names()
+        old_detectors = self.detector_names
         with open(yml_file, 'r') as f:
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -347,7 +357,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.update_visible_material_energies()
 
-        new_detectors = self.get_detector_names()
+        self.instrument_config_loaded.emit()
+
+        new_detectors = self.detector_names
         if old_detectors != new_detectors:
             self.detectors_changed.emit()
         else:
@@ -450,8 +462,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 statuses.append(status)
 
         # Get the detector flags
-        det_names = self.get_detector_names()
-        for name in det_names:
+        for name in self.detector_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
@@ -526,8 +537,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 cur_ind += 1
 
         # Set the detector flags
-        det_names = self.get_detector_names()
-        for name in det_names:
+        for name in self.detector_names:
             for path in dflags_order:
                 full_path = ['detectors', name] + path
 
@@ -635,6 +645,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.update_visible_material_energies()
             return
 
+        if path[:2] == ['beam', 'vector']:
+            # Beam vector has been modified. Indicate so.
+            self.beam_vector_changed.emit()
+            return
+
         if path[0] == 'detectors' and path[2] == 'transform':
             # If a detector transform was modified, send a signal
             # indicating so
@@ -692,21 +707,27 @@ class HexrdConfig(QObject, metaclass=Singleton):
         res += self.get_gui_yaml_paths(['detectors'])
         return [x[0] for x in res]
 
-    def get_detector_names(self):
+    @property
+    def detector_names(self):
         return list(self.config['instrument'].get('detectors', {}).keys())
 
-    def get_default_detector(self):
+    @property
+    def detectors(self):
+        return self.config['instrument'].get('detectors', {})
+
+    def detector(self, detector_name):
+        return self.config['instrument']['detectors'][detector_name]
+
+    @property
+    def default_detector(self):
         return copy.deepcopy(
             self.default_config['instrument']['detectors']['ge1'])
 
-    def get_detector(self, detector_name):
-        return self.config['instrument']['detectors'][detector_name]
-
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
-            new_detector = copy.deepcopy(self.get_detector(detector_to_copy))
+            new_detector = copy.deepcopy(self.detector(detector_to_copy))
         else:
-            new_detector = self.get_default_detector()
+            new_detector = self.default_detector
 
         self.config['instrument']['detectors'][detector_name] = new_detector
         self.detectors_changed.emit()
@@ -872,11 +893,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if visible and name not in self.visible_material_names:
             self.visible_material_names.append(name)
             self.update_visible_material_energies()
-            self.ring_config_changed.emit()
         elif not visible and name in self.visible_material_names:
             self.visible_material_names.remove(name)
             self.update_visible_material_energies()
-            self.ring_config_changed.emit()
 
     @property
     def visible_materials(self):
@@ -1071,8 +1090,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['pixel_size']
 
     def _set_cartesian_pixel_size(self, v):
-        self.config['image']['cartesian']['pixel_size'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_pixel_size:
+            self.config['image']['cartesian']['pixel_size'] = v
+            self.rerender_needed.emit()
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
@@ -1081,8 +1101,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['virtual_plane_distance']
 
     def set_cartesian_virtual_plane_distance(self, v):
-        self.config['image']['cartesian']['virtual_plane_distance'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_virtual_plane_distance:
+            self.config['image']['cartesian']['virtual_plane_distance'] = v
+            self.rerender_needed.emit()
 
     cartesian_virtual_plane_distance = property(
         _cartesian_virtual_plane_distance,
@@ -1092,8 +1113,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['plane_normal_rotate_x']
 
     def set_cartesian_plane_normal_rotate_x(self, v):
-        self.config['image']['cartesian']['plane_normal_rotate_x'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_plane_normal_rotate_x:
+            self.config['image']['cartesian']['plane_normal_rotate_x'] = v
+            self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_x = property(
         _cartesian_plane_normal_rotate_x,
@@ -1103,8 +1125,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['image']['cartesian']['plane_normal_rotate_y']
 
     def set_cartesian_plane_normal_rotate_y(self, v):
-        self.config['image']['cartesian']['plane_normal_rotate_y'] = v
-        self.rerender_needed.emit()
+        if v != self.cartesian_plane_normal_rotate_y:
+            self.config['image']['cartesian']['plane_normal_rotate_y'] = v
+            self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_y = property(
         _cartesian_plane_normal_rotate_y,
@@ -1182,13 +1205,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if v != self.show_detector_borders:
             self.config['image']['show_detector_borders'] = v
             self.rerender_detector_borders.emit()
-
-    @property
-    def colormap_min(self):
-        return self.config['image']['colormap']['min']
-
-    def set_colormap_min(self, v):
-        self.config['image']['colormap']['min'] = v
 
     @staticmethod
     def num_distortion_parameters(func_name):

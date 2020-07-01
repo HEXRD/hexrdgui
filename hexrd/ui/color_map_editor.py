@@ -6,14 +6,17 @@ import matplotlib.colors
 import numpy as np
 
 import hexrd.ui.constants
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 
 class ColorMapEditor:
 
-    def __init__(self, image_tab_widget, parent=None):
-        self.image_tab_widget = image_tab_widget
+    def __init__(self, image_object, parent=None):
+        # The image_object can be any object with the following functions:
+        # 1. set_cmap: a function to set the cmap on the image
+        # 2. set_norm: a function to set the norm on the image
+
+        self.image_object = image_object
 
         loader = UiLoader()
         self.ui = loader.load_file('color_map_editor.ui', parent)
@@ -52,8 +55,8 @@ class ColorMapEditor:
         self.ui.maximum.setMinimum(self.ui.minimum.value())
         self.ui.minimum.setMaximum(self.ui.maximum.value())
 
-    def update_bounds(self):
-        bounds = self.percentile_range()
+    def update_bounds(self, data):
+        bounds = self.percentile_range(data)
         self.ui.minimum.setValue(bounds[0])
         self.ui.minimum.setToolTip('Min: ' + str(bounds[0]))
         self.ui.maximum.setValue(bounds[1])
@@ -61,16 +64,20 @@ class ColorMapEditor:
 
         self.bounds = bounds
 
-    def percentile_range(self, low = 69.0, high = 99.9):
-        d = HexrdConfig().current_images_dict()
-        l = min([np.percentile(d[key], low) for key in d.keys()])
-        h = min([np.percentile(d[key], high) for key in d.keys()])
+    @staticmethod
+    def percentile_range(data, low=69.0, high=99.9):
+        if isinstance(data, dict):
+            values = data.values()
+        elif not isinstance(data, (list, tuple)):
+            values = [data]
+
+        l = min([np.nanpercentile(v, low) for v in values])
+        h = min([np.nanpercentile(v, high) for v in values])
 
         if h - l < 5:
             h = l + 5
 
-        # This debug is useful for now, keeping it in for sanity...
-        print("Range to be used: ", l, " -> ", h)
+        print('Range to be used: ', l, ' -> ', h)
 
         return l, h
 
@@ -99,15 +106,11 @@ class ColorMapEditor:
         if self.ui.show_over.isChecked():
             cmap.set_over('r')
 
-        self.image_tab_widget.set_cmap(cmap)
+        self.image_object.set_cmap(cmap)
 
     def update_norm(self):
         min = self.ui.minimum.value()
         max = self.ui.maximum.value()
-
-        # Set the min in the config, which is the only one we are
-        # currently keeping track of...
-        HexrdConfig().set_colormap_min(min)
 
         if self.ui.log_scale.isChecked():
             # The min cannot be 0 here, or this will raise an exception
@@ -116,4 +119,4 @@ class ColorMapEditor:
         else:
             norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
 
-        self.image_tab_widget.set_norm(norm)
+        self.image_object.set_norm(norm)

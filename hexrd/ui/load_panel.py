@@ -1,10 +1,11 @@
+import copy
 import os
 import yaml
 import glob
 import numpy as np
 
 from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir
+from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -21,6 +22,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 class LoadPanel(QObject):
+
+    # Emitted when images are loaded
+    images_loaded = Signal()
 
     def __init__(self, parent=None):
         super(LoadPanel, self).__init__(parent)
@@ -48,10 +52,8 @@ class LoadPanel(QObject):
     def setup_gui(self):
         self.setup_processing_options()
 
-        if 'subdirs' in self.state:
-            self.ui.subdirectories.setChecked(self.state['subdirs'])
-        if 'apply_to_all' in self.state:
-            self.ui.all_detectors.setChecked(self.state['apply_to_all'])
+        self.ui.subdirectories.setChecked(self.state.get('subdirs', False))
+        self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
         self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'][0])
@@ -94,16 +96,12 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
-        num_dets = len(HexrdConfig().get_detector_names())
-        if (not HexrdConfig().load_panel_state
-                or not isinstance(HexrdConfig().load_panel_state['trans'], list)):
-            HexrdConfig().load_panel_state = {
-                'agg': 0,
-                'trans': [0 for x in range(num_dets)],
-                'dark': [0 for x in range(num_dets)],
-                'dark_files': [None for x in range(num_dets)]}
-
-        self.state = HexrdConfig().load_panel_state
+        self.state = copy.copy(HexrdConfig().load_panel_state)
+        num_dets = len(HexrdConfig().detector_names)
+        self.state.setdefault('agg', 0)
+        self.state.setdefault('trans', [0 for x in range(num_dets)])
+        self.state.setdefault('dark', [0 for x in range(num_dets)])
+        self.state.setdefault('dark_files', [None for x in range(num_dets)])
 
     # Handle GUI changes
 
@@ -126,7 +124,7 @@ class LoadPanel(QObject):
 
     def detectors_changed(self):
         self.ui.detector.clear()
-        self.ui.detector.addItems(HexrdConfig().get_detector_names())
+        self.ui.detector.addItems(HexrdConfig().detector_names)
 
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
@@ -159,12 +157,13 @@ class LoadPanel(QObject):
         self.idx = self.ui.detector.currentIndex()
         if not self.ui.all_detectors.isChecked():
             self.ui.transform.setCurrentIndex(self.state['trans'][self.idx])
-            self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
-            self.dark_mode_changed()
+            if self.ui.darkMode.isEnabled():
+                self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
+                self.dark_mode_changed()
         self.create_table()
 
     def apply_to_all_changed(self, checked):
-        self.state['apply_to_all'] = checked
+        HexrdConfig().load_panel_state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
 
@@ -180,7 +179,7 @@ class LoadPanel(QObject):
                 self.ui, caption, dir=self.parent_dir)
 
         # Only update if a new directory is selected
-        if new_dir and new_dir != self.parent_dir:
+        if new_dir and new_dir != HexrdConfig().images_dir:
             self.ui.image_files.setEnabled(True)
             HexrdConfig().set_images_dir(new_dir)
             self.parent_dir = new_dir
@@ -240,8 +239,7 @@ class LoadPanel(QObject):
 
         if not enable:
             # Update dark mode settings
-            self.ui.all_detectors.setChecked(True)
-            num_dets = len(HexrdConfig().get_detector_names())
+            num_dets = len(HexrdConfig().detector_names)
             self.state['dark'] = [5 for x in range(num_dets)]
             self.ui.darkMode.setCurrentIndex(5)
             # Update aggregation settings
@@ -340,10 +338,10 @@ class LoadPanel(QObject):
 
     def find_directories(self):
         # Find all detector directories
-        num_det = len(HexrdConfig().get_detector_names())
+        num_det = len(HexrdConfig().detector_names)
         for sub_dir in os.scandir(os.path.dirname(self.parent_dir)):
             if (os.path.isdir(sub_dir)
-                    and sub_dir.name in HexrdConfig().get_detector_names()):
+                    and sub_dir.name in HexrdConfig().detector_names):
                 self.directories.append(sub_dir.path)
         # Show error if expected detector directories are not found
         if len(self.directories) != num_det:
@@ -352,7 +350,7 @@ class LoadPanel(QObject):
                 for path in self.directories:
                     dir_names.append(os.path.basename(path))
             diff = list(
-                set(HexrdConfig().get_detector_names()) - set(dir_names))
+                set(HexrdConfig().detector_names) - set(dir_names))
             msg = (
                 'ERROR - No directory found for the following detectors: \n'
                 + str(diff)[1:-1])
@@ -514,5 +512,6 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext == '.yml':
             data['yml_files'] = self.yml_files
-
+        HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
+        self.images_loaded.emit()

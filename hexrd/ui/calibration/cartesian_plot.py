@@ -1,9 +1,12 @@
+import copy
+
 import numpy as np
 
 from hexrd.gridutil import cellIndices
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays import PowderLineOverlay
 
 from skimage import transform as tf
 
@@ -47,52 +50,19 @@ class InstrumentViewer:
     def make_dpanel(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
         self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
-                                                self.pixel_size)
+                                                self.pixel_size,
+                                                self.instr.beam_vector)
+
+    @property
+    def extent(self):
+        # We might want to use self.dpanel.col_edge_vec and
+        # self.dpanel.row_edge_vec here instead.
+        x_lim = self.dpanel.col_dim / 2
+        y_lim = self.dpanel.row_dim / 2
+        return -x_lim, x_lim, y_lim, -y_lim
 
     def clear_rings(self):
         self.ring_data = {}
-
-    def generate_rings(self, plane_data):
-        rings = []
-        rbnds = []
-        rbnd_indices = []
-
-        # If there are no rings, there is nothing to do
-        if not HexrdConfig().show_overlays or len(plane_data.getTTh()) == 0:
-            return rings, rbnds, rbnd_indices
-
-        # A delta_tth is needed here, even if the plane data tThWidth
-        # is None. Default to 0.125 degrees if tThWidth is None.
-        # I don't see a difference in the output if different values for
-        # delta_tth are chosen here, when plane_data.tThWidth is None.
-        if plane_data.tThWidth:
-            delta_tth = np.degrees(plane_data.tThWidth)
-        else:
-            delta_tth = 0.125
-        ring_angs, ring_xys = self.dpanel.make_powder_rings(
-            plane_data, delta_tth=delta_tth, delta_eta=1)
-
-        for ring in ring_xys:
-            rings.append(self.dpanel.cartToPixel(ring))
-
-        if plane_data.tThWidth is not None:
-            delta_tth = np.degrees(plane_data.tThWidth)
-            indices, ranges = plane_data.getMergedRanges()
-
-            r_lower = [r[0] for r in ranges]
-            r_upper = [r[1] for r in ranges]
-            l_angs, l_xyz = self.dpanel.make_powder_rings(
-                r_lower, delta_tth=delta_tth, delta_eta=1)
-            u_angs, u_xyz = self.dpanel.make_powder_rings(
-                r_upper, delta_tth=delta_tth, delta_eta=1)
-            for l, u in zip(l_xyz, u_xyz):
-                rbnds.append(self.dpanel.cartToPixel(l))
-                rbnds.append(self.dpanel.cartToPixel(u))
-            for ind in indices:
-                rbnd_indices.append(ind)
-                rbnd_indices.append(ind)
-
-        return rings, rbnds, rbnd_indices
 
     def add_rings(self):
         self.clear_rings()
@@ -105,6 +75,13 @@ class InstrumentViewer:
         self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.make_dpanel()
 
+        # The overlays for the Cartesian view are made via a fake
+        # instrument with a single detector.
+        # Make a copy of the instrument and modify.
+        temp_instr = copy.deepcopy(self.instr)
+        temp_instr._detectors.clear()
+        temp_instr._detectors['dpanel'] = self.dpanel
+
         for name in HexrdConfig().visible_material_names:
             mat = HexrdConfig().material(name)
 
@@ -114,13 +91,8 @@ class InstrumentViewer:
                       name, 'is not a valid material')
                 continue
 
-            rings, rbnds, rbnd_indices = self.generate_rings(mat.planeData)
-
-            self.ring_data[name] = {
-                'ring_data': rings,
-                'rbnd_data': rbnds,
-                'rbnd_indices': rbnd_indices
-            }
+            overlay = PowderLineOverlay(mat.planeData, temp_instr)
+            self.ring_data[name] = overlay.overlay('cartesian')
 
         return self.ring_data
 
@@ -139,8 +111,15 @@ class InstrumentViewer:
 
     def detector_borders(self, det):
         corners = self.detector_corners.get(det, [])
+
+        # These corners are in pixel coordinates. Convert to Cartesian.
+        # Swap x and y first.
+        corners = [[y, x] for x, y in corners]
+        corners = self.dpanel.pixelToCart(corners)
+
+        # y is negative for some reason. I am not sure why right now.
         x_vals = [x[0] for x in corners]
-        y_vals = [x[1] for x in corners]
+        y_vals = [-x[1] for x in corners]
 
         if x_vals and y_vals:
             # Double each set of points.
@@ -155,8 +134,9 @@ class InstrumentViewer:
 
             # Make sure all points are inside the frame.
             # If there are points outside the frame, move them inside.
-            x_range = (0, self.dpanel.cols)
-            y_range = (0, self.dpanel.rows)
+            extent = self.extent
+            x_range = (extent[0], extent[1])
+            y_range = (extent[3], extent[2])
 
             def out_of_frame(p):
                 # Check if point p is out of the frame
@@ -242,6 +222,8 @@ class InstrumentViewer:
         i_row = cellIndices(row_edges, mp[:, 1])
 
         src = np.vstack([j_col, i_row]).T
+
+        # Save detector corners in pixel coordinates
         self.detector_corners[detector_id] = src
 
         dst = panel.cartToPixel(corners, pixels=True)

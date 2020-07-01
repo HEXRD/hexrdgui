@@ -18,6 +18,7 @@ from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.line_picker_dialog import LinePickerDialog
+from hexrd.ui.indexing.dialog import IndexingDialog
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
@@ -30,6 +31,7 @@ from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
+from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import resource_loader
@@ -127,6 +129,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_polar_mask_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
+        self.ui.action_transform_detectors.triggered.connect(
+            self.on_action_transform_detectors_triggered)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
@@ -138,7 +142,9 @@ class MainWindow(QObject):
             self.start_powder_calibration)
         self.ui.action_calibration_line_picker.triggered.connect(
             self.on_action_calibration_line_picker_triggered)
-        self.new_images_loaded.connect(self.color_map_editor.update_bounds)
+        self.ui.action_run_indexing.triggered.connect(
+            self.on_action_run_indexing_triggered)
+        self.new_images_loaded.connect(self.update_color_map_bounds)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
@@ -147,6 +153,7 @@ class MainWindow(QObject):
             self.ui.status_bar.clearMessage)
         self.calibration_slider_widget.update_if_mode_matches.connect(
             self.update_if_mode_matches)
+        self.load_widget.images_loaded.connect(self.images_loaded)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -221,6 +228,7 @@ class MainWindow(QObject):
     def load_dummy_images(self):
         ImageFileManager().load_dummy_images()
         self.update_all(clear_canvases=True)
+        self.ui.action_transform_detectors.setEnabled(False)
         self.new_images_loaded.emit()
 
     def open_image_file(self):
@@ -249,7 +257,7 @@ class MainWindow(QObject):
 
             # Make sure the names and number of files and
             # names and number of detectors match
-            num_detectors = len(HexrdConfig().get_detector_names())
+            num_detectors = len(HexrdConfig().detector_names)
             if len(selected_files) != num_detectors:
                 msg = ('Number of files must match number of detectors: ' +
                        str(num_detectors))
@@ -272,11 +280,15 @@ class MainWindow(QObject):
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
                 ImageLoadManager().read_data(files, parent=self.ui)
+                self.images_loaded()
+
+    def images_loaded(self):
+        self.ui.action_transform_detectors.setEnabled(True)
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
         images_dir = HexrdConfig().images_dir
-        detector_names = HexrdConfig().get_detector_names()
+        detector_names = HexrdConfig().detector_names
         selected_dirs = []
         for name in detector_names:
             caption = 'Select directory for detector: ' + name
@@ -418,6 +430,14 @@ class MainWindow(QObject):
         print('Updating the GUI')
         self.update_config_gui()
         self.update_all()
+
+    def on_action_run_indexing_triggered(self):
+        self._indexing_dialog = IndexingDialog(self.ui)
+        self._indexing_dialog.exec_()
+
+    def update_color_map_bounds(self):
+        self.color_map_editor.update_bounds(
+            HexrdConfig().current_images_dict())
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
@@ -591,6 +611,8 @@ class MainWindow(QObject):
 
         if enabled:
             HexrdConfig().rerender_needed.connect(self.update_all)
+            # Go ahead and trigger an update as well
+            self.update_all()
         # Only disconnect if we were previously enabled. i.e. the signal was connected
         elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)
@@ -613,3 +635,6 @@ class MainWindow(QObject):
 
         msg = delimiter.join(labels)
         self.ui.status_bar.showMessage(msg)
+
+    def on_action_transform_detectors_triggered(self):
+        td = TransformDialog(self.ui).exec_()
