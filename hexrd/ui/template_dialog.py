@@ -41,6 +41,8 @@ class TemplateDialog(QObject):
 
     def setup_connections(self):
         self.ui.load_image.clicked.connect(self.open_image_files)
+        self.ui.dialog_buttons.rejected.connect(self.warn_before_close)
+        self.ui.dialog_buttons.accepted.connect(self.save)
         self.ui.template_menu.currentIndexChanged.connect(self.load_template)
         self.ui.add_mask.clicked.connect(self.add_mask)
         self.ui.threshold_select.toggled.connect(self.set_threshold)
@@ -85,7 +87,14 @@ class TemplateDialog(QObject):
         self.img = list(val)[0]
         self.ui.file_name.setText(file_name)
         self.ui.template_menu.setEnabled(True)
-        self.ui.add_mask.setEnabled(True)
+
+    def warn_before_close(self):
+        ret = QMessageBox.warning(
+                self.ui, 'HEXRD',
+                'All changes will be lost. Do you want to quit anyway?',
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if ret == QMessageBox.Yes:
+            self.ui.reject()
 
     def update_image(self):
         # If there are no images loaded, skip the request
@@ -137,3 +146,15 @@ class TemplateDialog(QObject):
         self.ui.comparator.setCurrentIndex(0)
         self.ui.threshold.setValue(0.00)
         self.ui.blockSignals(False)
+
+    def save(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Mask', HexrdConfig().working_dir,
+            'NPZ files (*.npz)')
+        result = self.masks[0]
+        for mask in self.masks[1:]:
+            result = np.logical_and(result, mask)
+        # print('list: ', result.tolist(False))
+        # lst = result.tolist()
+        # print('result: ', result)
+        np.savez(selected_file, result)
