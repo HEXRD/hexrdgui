@@ -318,6 +318,10 @@ class OmeMapsViewerDialog(QObject):
 
     @threshold.setter
     def threshold(self, v):
+        if self.color_map_editor.ui.maximum.value() <= v:
+            # Move the maximum so we can set the minimum also
+            self.color_map_editor.ui.maximum.setValue(v + 1)
+
         self.color_map_editor.ui.minimum.setValue(v)
 
     @property
