@@ -59,10 +59,13 @@ class OmeMapsViewerDialog(QObject):
     def setup_connections(self):
         self.ui.active_hkl.currentIndexChanged.connect(self.clear_spots)
         self.ui.active_hkl.currentIndexChanged.connect(self.update_plot)
-        self.ui.label_spots_button.pressed.connect(self.label_spots)
+        self.ui.label_spots.toggled.connect(self.update_spots)
         self.ui.export_button.pressed.connect(self.on_export_button_pressed)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
+
+        self.color_map_editor.ui.minimum.valueChanged.connect(
+            self.update_spots)
 
     def show(self):
         self.ui.show()
@@ -135,6 +138,9 @@ class OmeMapsViewerDialog(QObject):
         self.ui.grid_layout.addWidget(self.color_map_editor.ui, 0, 0, -1, 1)
         self.update_cmap_bounds()
 
+        # Set the initial max as 20
+        self.color_map_editor.ui.maximum.setValue(20)
+
     def exec_(self):
         self.update_plot()
         self.ui.exec_()
@@ -159,13 +165,17 @@ class OmeMapsViewerDialog(QObject):
     def update_extent(self):
         etas = np.degrees(self.data.etas)
         omes = np.degrees(self.data.omegas)
-        self.extent = (etas[0], etas[-1], omes[0], omes[-1])
+        self.extent = (etas[0], etas[-1], omes[-1], omes[0])
 
     def update_cmap_bounds(self):
         if not hasattr(self, 'color_map_editor'):
             return
 
         self.color_map_editor.update_bounds(self.image_data)
+
+    @property
+    def display_spots(self):
+        return self.ui.label_spots.isChecked()
 
     def clear_spots(self):
         self.clear_spot_lines()
@@ -176,8 +186,18 @@ class OmeMapsViewerDialog(QObject):
             self._spot_lines.remove()
             del self._spot_lines
 
+    def update_spots(self):
+        self.clear_spot_lines()
+        if not self.display_spots:
+            self.draw()
+            return
+
+        self.create_spots()
+        self._spot_lines = self.ax.scatter(self.spots[:, 1], self.spots[:, 0],
+                                           18, 'm', '+')
+        self.draw()
+
     def update_plot(self):
-        fig = self.fig
         ax = self.ax
 
         data = self.image_data
@@ -189,14 +209,12 @@ class OmeMapsViewerDialog(QObject):
         if not hasattr(self, 'im'):
             im = ax.imshow(data)
             self.im = im
+            self.original_extent = im.get_extent()
         else:
             im = self.im
             im.set_data(data)
 
-        self.clear_spot_lines()
-        if self.spots is not None:
-            self._spot_lines = ax.scatter(self.spots[:, 1], self.spots[:, 0],
-                                          18, 'm', '+')
+        self.update_spots()
 
         im.set_cmap(self.cmap)
         im.set_norm(self.norm)
@@ -206,7 +224,10 @@ class OmeMapsViewerDialog(QObject):
         ax.autoscale_view()
         ax.axis('auto')
 
-        fig.canvas.draw()
+        self.draw()
+
+    def draw(self):
+        self.fig.canvas.draw()
 
     @property
     def current_hkl_index(self):
@@ -220,10 +241,9 @@ class OmeMapsViewerDialog(QObject):
         self.norm = norm
         self.update_plot()
 
-    def label_spots(self):
+    def create_spots(self):
         # Make a deep copy to modify
         data = copy.deepcopy(self.image_data)
-        shape = data.shape
 
         # Get rid of nans to make our work easier
         data[np.isnan(data)] = 0
@@ -236,16 +256,16 @@ class OmeMapsViewerDialog(QObject):
         spots = np.array(spots)
 
         # Rescale the points to match the extents
-        x_length = self.extent[1] - self.extent[0]
-        y_length = self.extent[3] - self.extent[2]
-        spots[:, 1] *= x_length / shape[1]
-        spots[:, 1] += self.extent[0]
-        spots[:, 0] *= y_length / shape[0]
-        spots[:, 0] -= self.extent[2]
+        old_extent = self.original_extent
+        old_x_range = (old_extent[0], old_extent[1])
+        old_y_range = (old_extent[3], old_extent[2])
+        new_x_range = (self.extent[0], self.extent[1])
+        new_y_range = (self.extent[3], self.extent[2])
+
+        spots[:, 1] = np.interp(spots[:, 1], old_x_range, new_x_range)
+        spots[:, 0] = np.interp(spots[:, 0], old_y_range, new_y_range)
 
         self.spots = spots
-
-        self.update_plot()
 
     def on_export_button_pressed(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(

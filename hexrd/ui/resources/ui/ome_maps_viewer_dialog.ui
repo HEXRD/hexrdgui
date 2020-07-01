@@ -111,7 +111,7 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="label_tab">
             <attribute name="title">
@@ -530,10 +530,27 @@
    </item>
    <item row="0" column="2" rowspan="2">
     <layout class="QGridLayout" name="grid_layout">
+     <item row="0" column="2">
+      <widget class="QComboBox" name="active_hkl">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="1">
       <widget class="QLabel" name="active_hkl_label">
        <property name="text">
         <string>hkl</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QPushButton" name="export_button">
+       <property name="text">
+        <string>Export</string>
        </property>
       </widget>
      </item>
@@ -553,27 +570,13 @@
        </property>
       </spacer>
      </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="export_button">
-       <property name="text">
-        <string>Export</string>
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="label_spots">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
        </property>
-      </widget>
-     </item>
-     <item row="4" column="2">
-      <widget class="QPushButton" name="label_spots_button">
        <property name="text">
         <string>Label Spots</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QComboBox" name="active_hkl">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
        </property>
       </widget>
      </item>
@@ -603,8 +606,8 @@
   <tabstop>clustering_completeness</tabstop>
   <tabstop>clustering_algorithm</tabstop>
   <tabstop>active_hkl</tabstop>
+  <tabstop>label_spots</tabstop>
   <tabstop>export_button</tabstop>
-  <tabstop>label_spots_button</tabstop>
  </tabstops>
  <resources/>
  <connections>
