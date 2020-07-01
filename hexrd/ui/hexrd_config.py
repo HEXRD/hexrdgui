@@ -283,7 +283,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Find missing required keys and set defaults for them.
         to_do_keys = ['indexing', 'instrument', 'calibration', 'image']
         for key in to_do_keys:
-            self._recursive_set_defaults(self.config.setdefault(key, {}),
+            if self.config.get(key) is None:
+                self.config[key] = copy.deepcopy(self.default_config[key])
+                continue
+
+            self._recursive_set_defaults(self.config[key],
                                          self.default_config[key])
 
         self.set_detector_defaults_if_missing()
