@@ -292,9 +292,7 @@ class MainWindow(QObject):
         self.new_images_loaded.emit()
 
     def open_template_dialog(self):
-        if not hasattr(self, 'template_dialog'):
-            self.template_dialog = TemplateDialog(self.ui)
-        self.template_dialog.exec_()
+        TemplateDialog(self.ui).exec_()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
