@@ -17,6 +17,10 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.interactive_template import InteractiveTemplate
 
+LESS_THAN = 0
+GREATER_THAN = 1
+NOT_EQUAL_TO = 2
+EQUAL_TO = 3
 
 class TemplateDialog(QObject):
 
@@ -39,6 +43,8 @@ class TemplateDialog(QObject):
         self.ui.load_image.clicked.connect(self.open_image_files)
         self.ui.template_menu.currentIndexChanged.connect(self.load_template)
         self.ui.add_mask.clicked.connect(self.add_mask)
+        self.ui.threshold_select.toggled.connect(self.set_threshold)
+        self.ui.threshold_select.toggled.connect(self.ui.comparator.setEnabled)
 
         self.ui.image_tab_widget.template_update_needed.connect(self.update_image)
         ImageLoadManager().template_update_needed.connect(self.update_image)
@@ -89,6 +95,7 @@ class TemplateDialog(QObject):
         self.ui.image_tab_widget.image_canvases[0].draw()
 
     def load_template(self, idx):
+        self.ui.template_menu.setDisabled(bool(idx))
         if idx == 0:
             return
         else:
@@ -99,21 +106,29 @@ class TemplateDialog(QObject):
             self.ui.image_tab_widget.add_template(self.current_template.get_shape())
             self.ui.image_tab_widget.image_canvases[0].draw()
 
+    def set_threshold(self, checked):
+          self.ui.threshold.setEnabled(checked)
+
     def add_mask(self):
-        self.current_shape.create_mask()
-        self.masks.append(self.current_shape.get_mask())
-        result = None
-        for mask in self.masks:
-            if result is None:
-                result = mask
-            else:
-                result = np.logical_and(result, mask)
-        master_mask = np.ma.masked_where(result, self.img)
-        axis = self.ui.image_tab_widget.image_canvases[0].raw_axes[0]
-        self.ui.image_tab_widget.image_canvases[0].axes_images.append(
-            axis.imshow(master_mask, cmap=plt.cm.binary, alpha=1.0))
-        self.ui.image_tab_widget.image_canvases[0].draw()
+        if self.ui.threshold_select.isChecked():
+            self.create_threshold_mask(
+                self.ui.threshold.value(),
+                self.ui.comparator.currentIndex())
+        else:
+            self.current_template.create_mask()
+            self.masks.append(self.current_template.get_mask())
+            self.current_template.disconnect()
         self.reset_settings()
+
+    def create_threshold_mask(self, val, comparator):
+        if comparator == LESS_THAN:
+            self.masks.append(self.img > val)
+        elif comparator == GREATER_THAN:
+            self.masks.append(self.img < val)
+        elif comparator == NOT_EQUAL_TO:
+            self.masks.append(self.img != val)
+        elif comparator == EQUAL_TO:
+            self.masks.append(self.img == val)
 
     def reset_settings(self):
         self.ui.blockSignals(True)
