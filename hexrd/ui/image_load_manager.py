@@ -32,6 +32,7 @@ class NoEmptyFramesException(Exception):
 class ImageLoadManager(QObject, metaclass=Singleton):
 
     # Emitted when new images are loaded
+    progress_text = Signal(str)
     update_needed = Signal()
     new_images_loaded = Signal()
 
@@ -121,6 +122,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         thread_pool = QThreadPool(self.parent)
         progress_dialog = ProgressDialog(self.parent)
         progress_dialog.setWindowTitle('Loading Processed Imageseries')
+        self.progress_text.connect(progress_dialog.setLabelText)
         self.progress_dialog = progress_dialog
 
         # Start processing in background
@@ -355,8 +357,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.current_progress_step += 1
 
     def update_progress_text(self, text):
-        if self.progress_dialog is not None:
-            self.progress_dialog.setLabelText(text)
+        self.progress_text.emit(text)
 
     def calculate_nchunk(self, num_ims, frames):
         """
