@@ -47,8 +47,9 @@ class TemplateDialog(QObject):
         self.ui.add_mask.clicked.connect(self.add_mask)
         self.ui.threshold_select.toggled.connect(self.set_threshold)
         self.ui.threshold_select.toggled.connect(self.ui.comparator.setEnabled)
+        self.ui.discard_mask.clicked.connect(self.discard_mask)
+        self.ui.view_masks.toggled.connect(self.display_mask)
 
-        self.ui.image_tab_widget.template_update_needed.connect(self.update_image)
         ImageLoadManager().template_update_needed.connect(self.update_image)
         ImageLoadManager().new_images_loaded.connect(
             self.color_map_editor.update_bounds)
@@ -70,6 +71,7 @@ class TemplateDialog(QObject):
             self.ui, dir=images_dir)
 
         if selected_file:
+            self.clear()
             HexrdConfig().set_images_dir(selected_file)
 
             # If it is a hdf5 file allow the user to select the path
@@ -104,8 +106,12 @@ class TemplateDialog(QObject):
         self.ui.image_tab_widget.image_canvases[0].draw()
 
     def load_template(self, idx):
+        self.ui.add_mask.setEnabled(bool(idx))
+        self.ui.discard_mask.setEnabled(bool(idx))
         self.ui.template_menu.setDisabled(bool(idx))
         if idx == 0:
+            if self.masks:
+                self.ui.view_masks.setEnabled(True)
             return
         else:
             selection = self.ui.template_menu.currentText()
@@ -117,6 +123,9 @@ class TemplateDialog(QObject):
 
     def set_threshold(self, checked):
           self.ui.threshold.setEnabled(checked)
+          self.ui.add_mask.setEnabled(checked)
+          self.ui.discard_mask.setEnabled(checked)
+          self.ui.view_masks.setDisabled(checked)
 
     def add_mask(self):
         if self.ui.threshold_select.isChecked():
@@ -127,6 +136,40 @@ class TemplateDialog(QObject):
             self.current_template.create_mask()
             self.masks.append(self.current_template.get_mask())
             self.current_template.disconnect()
+        self.reset_settings()
+
+    def display_mask(self, toggled_on):
+        self.ui.select_image_group.setDisabled(toggled_on)
+        self.ui.template_menu.setDisabled(toggled_on)
+        self.ui.threshold_select.setDisabled(toggled_on)
+        if toggled_on:
+            result = self.masks[0]
+            for mask in self.masks[1:]:
+                result = np.logical_and(result, mask)
+            master_mask = np.ma.masked_where(result, self.img)
+            axis = self.ui.image_tab_widget.image_canvases[0].raw_axes[0] 
+            self.ui.image_tab_widget.image_canvases[0].axes_images.append(
+                axis.imshow(master_mask, cmap=plt.cm.binary, alpha=1.0))
+            self.ui.image_tab_widget.image_canvases[0].draw()
+        else:
+            mask = self.ui.image_tab_widget.image_canvases[0].axes_images.pop()
+            axis = self.ui.image_tab_widget.image_canvases[0].raw_axes[0]
+            axis.images.remove(mask)
+            self.ui.image_tab_widget.image_canvases[0].draw()
+
+    def discard_mask(self):
+        if not self.ui.threshold_select.isChecked():
+            self.ui.image_tab_widget.remove_template(self.current_template.get_shape())
+            self.ui.image_tab_widget.image_canvases[0].draw()
+
+        self.reset_settings()
+
+    def clear(self):
+        loaded_images = len(self.ui.image_tab_widget.image_canvases[0].axes_images)
+        if loaded_images:
+            self.ui.image_tab_widget.image_canvases[0].axes_images.pop()
+        self.it = []
+        self.masks = []
         self.reset_settings()
 
     def create_threshold_mask(self, val, comparator):

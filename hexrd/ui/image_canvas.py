@@ -31,6 +31,7 @@ class ImageCanvas(FigureCanvas):
         self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
+        self.patches = []
         # The presence of an iviewer indicates we are currently viewing
         # a calibration.
         self.iviewer = None
@@ -78,6 +79,7 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_integral_axis = None
         self.mode = None
         self.old_extent = None
+        self.patches.clear()
 
     def load_images(self, image_names, template):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -580,6 +582,8 @@ class ImageCanvas(FigureCanvas):
 
     def add_template(self, patch):
         ax = self.axes_images[0].axes
-        if not hasattr(self, 'patch'):
-            self.patch = []
-        self.patch.append(ax.add_patch(patch))
+        self.patches.append(ax.add_patch(patch))
+
+    def remove_template(self, patch):
+        ax = self.axes_images[0].axes
+        ax.patches.remove(patch)

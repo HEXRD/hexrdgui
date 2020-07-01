@@ -113,6 +113,10 @@ class ImageTabWidget(QTabWidget):
         self.image_canvases[0].add_template(patch)
         self.template_update_needed.emit()
 
+    def remove_template(self, template):
+        self.image_canvases[0].remove_template(template)
+        self.template_update_needed.emit()
+
     def change_ims_image(self, pos):
         HexrdConfig().current_imageseries_idx = pos
         if self.template_canvas:
