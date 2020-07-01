@@ -29,11 +29,12 @@ class TemplateDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('template_dialog.ui', parent)
+        self.img_widget = self.ui.image_tab_widget
+        self.img_canvas = self.img_widget.image_canvases[0]
         self.it = []
         self.masks = []
 
-        self.color_map_editor = ColorMapEditor(self.ui.image_tab_widget,
-                                               self.ui)
+        self.color_map_editor = ColorMapEditor(self.img_widget, self.ui)
         self.ui.select_image_group.layout().addWidget(self.color_map_editor.ui)
 
         self.setup_connections()
@@ -102,24 +103,25 @@ class TemplateDialog(QObject):
         # If there are no images loaded, skip the request
         if not HexrdConfig().has_images():
             return
-        self.ui.image_tab_widget.load_images(template=True)
-        self.ui.image_tab_widget.image_canvases[0].draw()
+        self.img_widget.load_images(template=True)
+        self.img_canvas.draw()
 
     def load_template(self, idx):
         self.ui.add_mask.setEnabled(bool(idx))
         self.ui.discard_mask.setEnabled(bool(idx))
         self.ui.template_menu.setDisabled(bool(idx))
+        self.ui.threshold_select.setDisabled(bool(idx))
         if idx == 0:
             if self.masks:
                 self.ui.view_masks.setEnabled(True)
             return
         else:
             selection = self.ui.template_menu.currentText()
-            self.current_template = InteractiveTemplate(self.img, self.ui.image_tab_widget)
+            self.current_template = InteractiveTemplate(self.img, self.img_widget)
             self.current_template.create_shape(selection, self.pixel_size)
             self.it.append(self.current_template)
-            self.ui.image_tab_widget.add_template(self.current_template.get_shape())
-            self.ui.image_tab_widget.image_canvases[0].draw()
+            self.img_widget.add_template(self.current_template.get_shape())
+            self.img_canvas.draw()
 
     def set_threshold(self, checked):
           self.ui.threshold.setEnabled(checked)
@@ -142,32 +144,33 @@ class TemplateDialog(QObject):
         self.ui.select_image_group.setDisabled(toggled_on)
         self.ui.template_menu.setDisabled(toggled_on)
         self.ui.threshold_select.setDisabled(toggled_on)
+
+        axis = self.img_canvas.raw_axes[0]
         if toggled_on:
             result = self.masks[0]
             for mask in self.masks[1:]:
                 result = np.logical_and(result, mask)
             master_mask = np.ma.masked_where(result, self.img)
-            axis = self.ui.image_tab_widget.image_canvases[0].raw_axes[0] 
-            self.ui.image_tab_widget.image_canvases[0].axes_images.append(
-                axis.imshow(master_mask, cmap=plt.cm.binary, alpha=1.0))
-            self.ui.image_tab_widget.image_canvases[0].draw()
+            original = self.img_canvas.axes_images[0]
+            self.original_image = original.get_array()
+            self.img[~result] = 0
+            original.set_array(self.img)
         else:
-            mask = self.ui.image_tab_widget.image_canvases[0].axes_images.pop()
-            axis = self.ui.image_tab_widget.image_canvases[0].raw_axes[0]
-            axis.images.remove(mask)
-            self.ui.image_tab_widget.image_canvases[0].draw()
+            masked = self.img_canvas.axes_images[0]
+            masked.set_array(self.original_image)
+        self.img_canvas.draw()
 
     def discard_mask(self):
         if not self.ui.threshold_select.isChecked():
-            self.ui.image_tab_widget.remove_template(self.current_template.get_shape())
-            self.ui.image_tab_widget.image_canvases[0].draw()
+            self.img_widget.remove_template(self.current_template.get_shape())
+            self.img_canvas.draw()
 
         self.reset_settings()
 
     def clear(self):
-        loaded_images = len(self.ui.image_tab_widget.image_canvases[0].axes_images)
+        loaded_images = len(self.img_canvas.axes_images)
         if loaded_images:
-            self.ui.image_tab_widget.image_canvases[0].axes_images.pop()
+            self.img_canvas.axes_images.pop()
         self.it = []
         self.masks = []
         self.reset_settings()
