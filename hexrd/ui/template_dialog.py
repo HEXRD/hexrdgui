@@ -11,6 +11,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 import hexrd.ui.constants
 from hexrd.ui.ui_loader import UiLoader
 
+from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -27,7 +28,9 @@ class TemplateDialog(QObject):
         self.it = []
         self.masks = []
 
-        self.load_cmaps()
+        self.color_map_editor = ColorMapEditor(self.ui.image_tab_widget,
+                                               self.ui)
+        self.ui.select_image_group.layout().addWidget(self.color_map_editor.ui)
 
         self.setup_connections()
         self.list_detectors()
