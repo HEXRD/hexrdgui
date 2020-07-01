@@ -11,9 +11,7 @@ import hexrd.ui.resources.templates
 
 
 class InteractiveTemplate:
-    def __init__(self, img, parent=None, selection=None):
-        self.selection = selection
-        self.draw = bool(self.selection is None)
+    def __init__(self, img, parent=None):
         self.parent = parent.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.transform = self.ax.axes.transData
@@ -21,29 +19,25 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
 
-        if not self.draw:
-            self.create_shape()
-            self.connect()
-
-    def create_shape(self):
-        if self.draw:
+    def create_shape(self, selection, pixel_size):
+        if selection == 'Draw':
             return
         else:
+            xsize, ysize = pixel_size
             l, r, t, b = self.ax.get_extent()
-            centerx = (r-l)/2
-            centery = (t-b)/2
-            self.dx = (r-l)/2
-            self.dy = (t-b)/2
+            midx = r-(r+l)/2
+            midy = t-(t+b)/2
             text = resource_loader.load_resource(
-                hexrd.ui.resources.templates, self.selection + '.txt')
+                hexrd.ui.resources.templates, selection + '.txt')
             verts = []
             for val in text.split('\n'):
                 if not val.startswith('#') and val:
                     vert = val.split('\t')
-                    verts.append([float(vert[0])/0.1+centerx, float(vert[1])/0.1+centery])
-            # print('verts: ', verts)
+                    x = float(vert[0])/xsize+midx
+                    y = float(vert[1])/ysize+midy
+                    verts.append([x, y])
             self.shape = patches.Polygon(verts, fill=False, lw=1)
-            print('verts: ', self.shape.get_path().vertices)
+            self.connect()
             self.parent.show()
 
     def get_shape(self):
@@ -70,7 +64,6 @@ class InteractiveTemplate:
             self.shape.get_path().vertices)
         if hasattr(self, 'affine2d'):
             verts = self.affine2d.transform(verts)
-        print('mask verts: ', verts)
         points = []
         codes = []
         for coords in verts:

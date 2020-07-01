@@ -30,6 +30,7 @@ class TemplateDialog(QObject):
         self.load_cmaps()
 
         self.setup_connections()
+        self.list_detectors()
 
     def setup_connections(self):
         self.ui.load_image.clicked.connect(self.open_image_files)
@@ -42,6 +43,12 @@ class TemplateDialog(QObject):
             self.color_map_editor.update_bounds)
         ImageLoadManager().new_images_loaded.connect(
             self.color_map_editor.reset_range)
+
+    def list_detectors(self):
+        self.ui.detectors.clear()
+        self.ui.detectors.addItems(HexrdConfig().get_detector_names())
+        det = HexrdConfig().get_detector(self.ui.detectors.currentText())
+        self.pixel_size = det['pixels']['size']['value']
 
     def exec_(self):
         return self.ui.exec_()
@@ -83,9 +90,11 @@ class TemplateDialog(QObject):
             return
         else:
             selection = self.ui.template_menu.currentText()
-            self.current_shape = InteractiveTemplate(self.img, self.ui.image_tab_widget, selection)
-            self.it.append(self.current_shape)
-            self.ui.image_tab_widget.add_template(self.current_shape.get_shape())
+            self.current_template = InteractiveTemplate(self.img, self.ui.image_tab_widget)
+            self.current_template.create_shape(selection, self.pixel_size)
+            self.it.append(self.current_template)
+            self.ui.image_tab_widget.add_template(self.current_template.get_shape())
+            self.ui.image_tab_widget.image_canvases[0].draw()
 
     def add_mask(self):
         self.current_shape.create_mask()
