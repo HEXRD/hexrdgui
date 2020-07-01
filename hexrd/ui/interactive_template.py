@@ -1,8 +1,6 @@
-from copy import copy
 import numpy as np
 
-from matplotlib.transforms import Affine2D, TransformedPatchPath
-import matplotlib.pyplot as plt
+from matplotlib.transforms import Affine2D
 import matplotlib.patches as patches
 from matplotlib.path import Path
 
@@ -56,7 +54,6 @@ class InteractiveTemplate:
             points = path.contains_points(coords)
             grid = points.reshape(h, w)
             self.mask = (self.mask != grid)
-        result = np.ma.masked_where(self.mask, self.img)
 
     def get_paths(self):
         all_paths = []
@@ -119,8 +116,6 @@ class InteractiveTemplate:
         xpress, ypress = self.press
         dx = event.xdata - xpress
         dy = event.ydata - ypress
-        self.dx += dx
-        self.dy += dy
         self.press = None
         self.affine2d = Affine2D().translate(dx, dy)
         self.transform = self.affine2d + self.transform

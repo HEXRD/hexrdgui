@@ -1,14 +1,9 @@
 import os
 import numpy as np
 
-from matplotlib import cm
-import matplotlib.pyplot as plt
-import matplotlib.colors
-
 from PySide2.QtCore import QObject
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
-import hexrd.ui.constants
 from hexrd.ui.ui_loader import UiLoader
 
 from hexrd.ui.color_map_editor import ColorMapEditor
@@ -21,6 +16,7 @@ LESS_THAN = 0
 GREATER_THAN = 1
 NOT_EQUAL_TO = 2
 EQUAL_TO = 3
+
 
 class TemplateDialog(QObject):
 
@@ -82,7 +78,8 @@ class TemplateDialog(QObject):
 
                 ImageFileManager().path_prompt(selected_file)
 
-            ImageLoadManager().read_data([[selected_file]], parent=self.ui, template=True)
+            ImageLoadManager().read_data(
+                [[selected_file]], parent=self.ui, template=True)
             self.images_loaded(os.path.split(selected_file)[1])
 
     def images_loaded(self, file_name):
@@ -117,17 +114,18 @@ class TemplateDialog(QObject):
             return
         else:
             selection = self.ui.template_menu.currentText()
-            self.current_template = InteractiveTemplate(self.img, self.img_widget)
+            self.current_template = InteractiveTemplate(
+                self.img, self.img_widget)
             self.current_template.create_shape(selection, self.pixel_size)
             self.it.append(self.current_template)
             self.img_widget.add_template(self.current_template.get_shape())
             self.img_canvas.draw()
 
     def set_threshold(self, checked):
-          self.ui.threshold.setEnabled(checked)
-          self.ui.add_mask.setEnabled(checked)
-          self.ui.discard_mask.setEnabled(checked)
-          self.ui.view_masks.setDisabled(checked)
+        self.ui.threshold.setEnabled(checked)
+        self.ui.add_mask.setEnabled(checked)
+        self.ui.discard_mask.setEnabled(checked)
+        self.ui.view_masks.setDisabled(checked)
 
     def add_mask(self):
         if self.ui.threshold_select.isChecked():
@@ -145,12 +143,10 @@ class TemplateDialog(QObject):
         self.ui.template_menu.setDisabled(toggled_on)
         self.ui.threshold_select.setDisabled(toggled_on)
 
-        axis = self.img_canvas.raw_axes[0]
         if toggled_on:
             result = self.masks[0]
             for mask in self.masks[1:]:
                 result = np.logical_and(result, mask)
-            master_mask = np.ma.masked_where(result, self.img)
             original = self.img_canvas.axes_images[0]
             self.original_image = original.get_array()
             self.img[~result] = 0
