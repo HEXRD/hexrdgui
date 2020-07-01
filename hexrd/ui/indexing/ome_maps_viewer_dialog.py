@@ -52,8 +52,7 @@ class OmeMapsViewerDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.active_hkl.currentIndexChanged.connect(self.clear_spots)
-        self.ui.active_hkl.currentIndexChanged.connect(self.update_plot)
+        self.ui.active_hkl.currentIndexChanged.connect(self.reset_plot)
         self.ui.label_spots.toggled.connect(self.update_spots)
         self.ui.export_button.pressed.connect(self.on_export_button_pressed)
         self.ui.accepted.connect(self.on_accepted)
@@ -62,6 +61,9 @@ class OmeMapsViewerDialog(QObject):
         self.ui.method.currentIndexChanged.connect(self.update_method_tab)
         self.color_map_editor.ui.minimum.valueChanged.connect(
             self.update_spots)
+
+        # A plot reset is needed for log scale to handle the NaN values
+        self.color_map_editor.ui.log_scale.toggled.connect(self.reset_plot)
 
     def setup_combo_box_item_data(self):
         # Set the item data for the combo boxes to be the names we want
@@ -83,6 +85,7 @@ class OmeMapsViewerDialog(QObject):
             self.ui.clustering_algorithm.setItemData(i, data)
 
     def show(self):
+        self.reset_plot()
         self.ui.show()
 
     def on_accepted(self):
@@ -175,10 +178,6 @@ class OmeMapsViewerDialog(QObject):
         # Set the initial max as 20
         self.color_map_editor.ui.maximum.setValue(20)
 
-    def exec_(self):
-        self.update_plot()
-        self.ui.exec_()
-
     @property
     def data(self):
         return self._data
@@ -211,10 +210,6 @@ class OmeMapsViewerDialog(QObject):
     def display_spots(self):
         return self.ui.label_spots.isChecked()
 
-    def clear_spots(self):
-        self.clear_spot_lines()
-        self.spots = None
-
     def clear_spot_lines(self):
         if hasattr(self, '_spot_lines'):
             self._spot_lines.remove()
@@ -231,7 +226,7 @@ class OmeMapsViewerDialog(QObject):
                                            18, 'm', '+')
         self.draw()
 
-    def update_plot(self):
+    def reset_plot(self):
         ax = self.ax
 
         data = self.image_data
@@ -248,12 +243,13 @@ class OmeMapsViewerDialog(QObject):
             im = self.im
             im.set_data(data)
 
-        self.update_spots()
-
         im.set_cmap(self.cmap)
         im.set_norm(self.norm)
 
+        self.update_spots()
+
         im.set_extent(self.extent)
+
         ax.relim()
         ax.autoscale_view()
         ax.axis('auto')
@@ -269,11 +265,15 @@ class OmeMapsViewerDialog(QObject):
 
     def set_cmap(self, cmap):
         self.cmap = cmap
-        self.update_plot()
+        if hasattr(self, 'im'):
+            self.im.set_cmap(cmap)
+            self.draw()
 
     def set_norm(self, norm):
         self.norm = norm
-        self.update_plot()
+        if hasattr(self, 'im'):
+            self.im.set_norm(norm)
+            self.draw()
 
     def create_spots(self):
         # Make a deep copy to modify
