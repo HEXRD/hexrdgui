@@ -45,7 +45,7 @@ class IndexingRunner:
         if dialog is None:
             return
 
-        if dialog.mode == 'load':
+        if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
         else:
             # Create a full indexing config

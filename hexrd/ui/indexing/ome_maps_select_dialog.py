@@ -17,21 +17,34 @@ class OmeMapsSelectDialog(QObject):
         self.ui = loader.load_file('ome_maps_select_dialog.ui', parent)
         self.ui.setWindowTitle('Load/Generate Eta Omega Maps')
 
+        # Hide the tab bar. It gets selected by changes to the combo box.
+        self.ui.tab_widget.tabBar().hide()
+        self.setup_combo_box_data()
+
         self.update_gui()
 
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.select_file_button.pressed.connect(self.select_file)
+        self.ui.method.currentIndexChanged.connect(self.update_method_tab)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
+
+    def setup_combo_box_data(self):
+        item_data = [
+            'load',
+            'generate'
+        ]
+        for i, data in enumerate(item_data):
+            self.ui.method.setItemData(i, data)
 
     def show(self):
         self.ui.show()
 
     def on_accepted(self):
         # Validate
-        if self.mode == 'load' and self.file_name == '':
+        if self.method_name == 'load' and self.file_name == '':
             msg = 'Please select a file'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             self.show()
@@ -52,16 +65,6 @@ class OmeMapsSelectDialog(QObject):
 
         if selected_file:
             self.ui.file_name.setText(selected_file)
-
-    @property
-    def mode(self):
-        i = self.ui.tab_widget.currentIndex()
-        if i == 0:
-            return 'load'
-        elif i == 1:
-            return 'generate'
-
-        raise Exception('Unknown index mode: ' + str(i))
 
     @property
     def file_name(self):
@@ -102,3 +105,24 @@ class OmeMapsSelectDialog(QObject):
         self.ui.file_name.setText(file_name)
         self.ui.threshold.setValue(maps_config['threshold'])
         self.ui.bin_frames.setValue(maps_config['bin_frames'])
+
+        self.update_method_tab()
+
+    @property
+    def method_name(self):
+        return self.ui.method.currentData()
+
+    @method_name.setter
+    def method_name(self, v):
+        w = self.ui.method
+        for i in range(w.count()):
+            if v == w.itemData(i):
+                w.setCurrentIndex(i)
+                return
+
+        raise Exception(f'Unable to set method: {v}')
+
+    def update_method_tab(self):
+        # Take advantage of the naming scheme...
+        method_tab = getattr(self.ui, self.method_name + '_tab')
+        self.ui.tab_widget.setCurrentWidget(method_tab)
