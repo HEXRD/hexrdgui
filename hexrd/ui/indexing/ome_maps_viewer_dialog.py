@@ -39,15 +39,10 @@ class OmeMapsViewerDialog(QObject):
 
         self.setup_widget_paths()
 
-        # Set the item data for the combo box to be the names we want
-        item_data = [
-            'dbscan',
-            'sph-dbscan',
-            'ort-dbscan',
-            'fclusterdata'
-        ]
-        for i, data in enumerate(item_data):
-            self.ui.clustering_algorithm.setItemData(i, data)
+        self.setup_combo_box_item_data()
+
+        # Hide the method tab bar. The user selects it via the combo box.
+        self.ui.tab_widget.tabBar().hide()
 
         self.setup_plot()
         self.setup_color_map()
@@ -64,8 +59,28 @@ class OmeMapsViewerDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
+        self.ui.method.currentIndexChanged.connect(self.update_method_tab)
         self.color_map_editor.ui.minimum.valueChanged.connect(
             self.update_spots)
+
+    def setup_combo_box_item_data(self):
+        # Set the item data for the combo boxes to be the names we want
+        item_data = [
+            'label',
+            'blob_dog',
+            'blob_log'
+        ]
+        for i, data in enumerate(item_data):
+            self.ui.method.setItemData(i, data)
+
+        item_data = [
+            'dbscan',
+            'sph-dbscan',
+            'ort-dbscan',
+            'fclusterdata'
+        ]
+        for i, data in enumerate(item_data):
+            self.ui.clustering_algorithm.setItemData(i, data)
 
     def show(self):
         self.ui.show()
@@ -97,6 +112,25 @@ class OmeMapsViewerDialog(QObject):
         initial_path = []
         recursive_get_paths(self.gui_config_maps, initial_path)
         self.widget_paths = paths
+
+    @property
+    def method_name(self):
+        return self.ui.method.currentData()
+
+    @method_name.setter
+    def method_name(self, v):
+        w = self.ui.method
+        for i in range(w.count()):
+            if v == w.itemData(i):
+                w.setCurrentIndex(i)
+                return
+
+        raise Exception(f'Unable to set method: {v}')
+
+    def update_method_tab(self):
+        # Take advantage of the naming scheme...
+        method_tab = getattr(self.ui, self.method_name + '_tab')
+        self.ui.tab_widget.setCurrentWidget(method_tab)
 
     def update_hkl_options(self):
         # This won't trigger a re-draw. Can change in the future if needed.
@@ -293,8 +327,9 @@ class OmeMapsViewerDialog(QObject):
     @property
     def all_widgets(self):
         return self.yaml_widgets + [
-          self.ui.tab_widget,
-          self.ui.active_hkl
+            self.ui.method,
+            self.ui.tab_widget,
+            self.ui.active_hkl
         ]
 
     def update_gui(self):
@@ -325,12 +360,10 @@ class OmeMapsViewerDialog(QObject):
             w = getattr(self.ui, w)
             set_val(w, path)
 
-        # Change the tab to the last used tab
-        # Take advantage of common naming...
+        # Update the method name
         method = config['find_orientations']['seed_search']['method']
-        method_name = next(iter(method))
-        method_widget = getattr(self.ui, method_name + '_tab')
-        self.ui.tab_widget.setCurrentWidget(method_widget)
+        self.method_name = next(iter(method))
+        self.update_method_tab()
 
         # Also set the color map minimum to the threshold value...
         self.threshold = config['find_orientations']['threshold']
@@ -344,8 +377,7 @@ class OmeMapsViewerDialog(QObject):
         method.clear()
 
         # Give it some dummy contents so the setter below will run
-        method_name = self.ui.tab_widget.currentWidget().objectName()
-        method_name = method_name.replace('_tab', '')
+        method_name = self.method_name
         dummy_method = (
             self.gui_config_maps['find_orientations']['seed_search']['method'])
         method[method_name] = copy.deepcopy(dummy_method[method_name])
