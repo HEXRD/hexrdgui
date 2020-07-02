@@ -6,7 +6,6 @@ from hexrd.gridutil import cellIndices
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays import PowderLineOverlay
 
 from skimage import transform as tf
 
@@ -61,15 +60,12 @@ class InstrumentViewer:
         y_lim = self.dpanel.row_dim / 2
         return -x_lim, x_lim, y_lim, -y_lim
 
-    def clear_rings(self):
-        self.ring_data = {}
-
-    def add_rings(self):
-        self.clear_rings()
+    def update_overlay_data(self):
+        HexrdConfig().clear_overlay_data()
 
         if not HexrdConfig().show_overlays:
             # Nothing to do
-            return self.ring_data
+            return
 
         # must update self.dpanel from HexrdConfig
         self.pixel_size = HexrdConfig().cartesian_pixel_size
@@ -82,19 +78,31 @@ class InstrumentViewer:
         temp_instr._detectors.clear()
         temp_instr._detectors['dpanel'] = self.dpanel
 
-        for name in HexrdConfig().visible_material_names:
-            mat = HexrdConfig().material(name)
+        for overlay in HexrdConfig().overlays:
+            overlay['data'].clear()
+            if not overlay['visible']:
+                # Skip over invisible overlays
+                continue
+
+            mat_name = overlay['material']
+            mat = HexrdConfig().material(mat_name)
 
             if not mat:
                 # Print a warning, as this shouldn't happen
-                print('Warning in InstrumentViewer.add_rings():',
-                      name, 'is not a valid material')
+                print('Warning in InstrumentViewer.update_overlay_data():',
+                      f'{mat_name} is not a valid material')
                 continue
 
-            overlay = PowderLineOverlay(mat.planeData, temp_instr)
-            self.ring_data[name] = overlay.overlay('cartesian')
+            kwargs = {
+                'plane_data': mat.planeData,
+                'instr': temp_instr
+            }
+            if overlay['type'] == 'laue':
+                # Modify kwargs here
+                pass
 
-        return self.ring_data
+            generator = overlay['generator'](**kwargs)
+            overlay['data'] = generator.overlay('cartesian')
 
     def plot_dplane(self):
         # Cache the image max and min for later use

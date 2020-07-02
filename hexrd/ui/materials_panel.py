@@ -79,7 +79,7 @@ class MaterialsPanel(QObject):
             self.on_min_d_spacing_changed)
 
         self.ui.edit_style_button.pressed.connect(self.edit_overlay_style)
-        self.ui.hide_all.pressed.connect(self.hide_all_materials)
+        self.ui.hide_all.pressed.connect(self.hide_all_overlays)
 
         self.ui.material_visible.toggled.connect(
             self.material_visibility_toggled)
@@ -257,18 +257,29 @@ class MaterialsPanel(QObject):
     def edit_overlay_style(self):
         material_name = self.current_material()
 
-        # The overlay style picker will modify the HexrdConfig() itself
-        picker = OverlayStylePicker(material_name, self.ui)
-        picker.ui.exec_()
+        # This will be done differently with the image manager...
+        for overlay in HexrdConfig().overlays:
+            if overlay['material'] == material_name:
+                picker = OverlayStylePicker(overlay, self.ui)
+                picker.ui.exec_()
+                break
 
     def material_visibility_toggled(self):
         visible = self.ui.material_visible.isChecked()
         name = self.current_material()
-        HexrdConfig().set_material_visibility(name, visible)
+        if visible:
+            HexrdConfig().append_overlay(name, 'powder')
+        else:
+            HexrdConfig().overlays = [
+                x for x in HexrdConfig().overlays if x['material'] != name]
+            HexrdConfig().overlay_config_changed.emit()
 
-    def hide_all_materials(self):
-        # This clears the list
-        HexrdConfig().visible_material_names = []
+    def hide_all_overlays(self):
+        for overlay in HexrdConfig().overlays:
+            overlay['visible'] = False
+
+        self.update_gui_from_config()
+        HexrdConfig().overlay_config_changed.emit()
 
     def show_materials_table(self):
         self.materials_table.show()

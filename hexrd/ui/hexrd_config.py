@@ -1,5 +1,4 @@
 import copy
-import math
 import pickle
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
@@ -11,6 +10,7 @@ import hexrd.imageseries.save
 from hexrd.rotations import RotMatEuler
 
 from hexrd.ui import constants
+from hexrd.ui import overlays
 from hexrd.ui import resource_loader
 from hexrd.ui import utils
 
@@ -48,8 +48,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when new plane data is generated for the active material"""
     new_plane_data = Signal()
 
-    """Emitted when ring configuration has changed"""
-    ring_config_changed = Signal()
+    """Emitted when overlay configuration has changed"""
+    overlay_config_changed = Signal()
 
     """Emitted when beam vector has changed"""
     beam_vector_changed = Signal()
@@ -117,9 +117,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.load_panel_state = {}
         self.polar_masks = []
         self.polar_masks_line_data = []
-        self._overlay_styles = {}
         self.backup_tth_maxes = {}
         self.backup_tth_widths = {}
+        self.overlays = []
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
 
@@ -150,9 +150,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Load the default materials
         self.load_default_materials()
 
-        # Load default styles for the materials
-        self.set_overlay_styles_defaults()
-
         # Re-load the previous active material if available
         mat = self.previous_active_material
         if mat is not None and mat in self.materials.keys():
@@ -172,9 +169,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('active_material', self.active_material_name)
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
-        settings.setValue('overlay_styles', self.overlay_styles)
-        settings.setValue('visible_material_names',
-                          self.visible_material_names)
 
     def load_settings(self):
         settings = QSettings()
@@ -192,21 +186,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', {})
-        self.overlay_styles = settings.value('overlay_styles', {})
-
-        # Set this manually since we don't have any materials yet
-        key = 'visible_material_names'
-        self.config['materials'][key] = settings.value(key, [])
-
-        # This will not be a list if only one material was on it
-        # Make sure it is a list
-        if not isinstance(self.config['materials'][key], list):
-            self.config['materials'][key] = [self.config['materials'][key]]
-
-        # Saving an empty list and then loading it results in [None]
-        # for some reason
-        if self.config['materials'][key] == [None]:
-            self.config['materials'][key] = []
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -764,18 +743,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
             pd_wavelength = material.planeData.get_wavelength()
             material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
 
-        # Make sure all materials on the visible materials list exist
-        material_names = materials.keys()
-        self.visible_material_names = [
-            x for x in self.visible_material_names if x in material_names]
-
         self.materials = materials
 
     def add_material(self, name, material):
         if name in self.materials:
             raise Exception(name + ' is already in materials list!')
         self.config['materials']['materials'][name] = material
-        self.set_overlay_styles_defaults()
 
     def rename_material(self, old_name, new_name):
         if old_name != new_name:
@@ -783,13 +756,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.config['materials']['materials'][old_name])
             self.config['materials']['materials'][new_name].name = new_name
 
-            # Transfer the styles over as well
-            if old_name in self.overlay_styles:
-                self.overlay_styles[new_name] = self.overlay_styles.pop(old_name)
-
-            if old_name in self.visible_material_names:
-                idx = self.visible_material_names.index(old_name)
-                self.visible_material_names[idx] = new_name
+            # Rename any overlays as well
+            for overlay in self.overlays:
+                if overlay['material'] == old_name:
+                    overlay['material'] = new_name
 
             if self.active_material_name == old_name:
                 # Change the active material before removing the old one
@@ -803,18 +773,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['materials']['materials'][name] = material
 
         if self.material_is_visible(name):
-            self.ring_config_changed.emit()
+            self.overlay_config_changed.emit()
 
     def remove_material(self, name):
         if name not in self.materials:
             raise Exception(name + ' is not in materials list!')
         del self.config['materials']['materials'][name]
-
-        if name in self.overlay_styles:
-            del self.overlay_styles[name]
-
-        if name in self.visible_material_names:
-            self.visible_material_names.remove(name)
+        self.prune_overlays()
 
         if name == self.active_material_name:
             if self.materials.keys():
@@ -829,7 +794,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['materials']['materials'] = materials
         if materials.keys():
             self.active_material = list(materials.keys())[0]
-            self.set_overlay_styles_defaults()
+
+        self.prune_overlays()
 
     materials = property(_materials, _set_materials)
 
@@ -847,7 +813,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
-        self.ring_config_changed.emit()
+        self.overlay_config_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
@@ -885,48 +851,29 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def update_active_material_energy(self):
         self.update_material_energy(self.active_material)
         self.new_plane_data.emit()
-        self.ring_config_changed.emit()
+        self.overlay_config_changed.emit()
 
     def update_visible_material_energies(self):
         for mat in self.visible_materials:
             self.update_material_energy(mat)
 
         self.new_plane_data.emit()
-        self.ring_config_changed.emit()
+        self.overlay_config_changed.emit()
 
     def material_is_visible(self, name):
         return name in self.visible_material_names
 
-    def set_material_visibility(self, name, visible):
-        if visible and name not in self.visible_material_names:
-            self.visible_material_names.append(name)
-            self.update_visible_material_energies()
-        elif not visible and name in self.visible_material_names:
-            self.visible_material_names.remove(name)
-            self.update_visible_material_energies()
-
     @property
     def visible_materials(self):
-        mats = []
-        for name in self.visible_material_names:
-            # Confirm that it exists
-            if name in self.materials:
-                mats.append(self.materials[name])
+        names = self.visible_material_names
+        return [v for k, v in self.materials.items() if k in names]
 
-        return mats
+    @property
+    def visible_material_names(self):
+        if not self.show_overlays:
+            return []
 
-    def _visible_material_names(self):
-        return self.config['materials'].setdefault('visible_material_names',
-                                                   [])
-
-    def _set_visible_material_names(self, v):
-        if v != self.visible_material_names:
-            self.config['materials']['visible_material_names'] = v
-            self.update_visible_material_energies()
-            self.ring_config_changed.emit()
-
-    visible_material_names = property(_visible_material_names,
-                                      _set_visible_material_names)
+        return list({x['material'] for x in self.overlays if x['visible']})
 
     def _active_material_tth_width(self):
         return self.active_material.planeData.tThWidth
@@ -937,7 +884,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.backup_tth_width = self.active_material_tth_width
 
             self.active_material.planeData.tThWidth = v
-            self.ring_config_changed.emit()
+            self.overlay_config_changed.emit()
 
     active_material_tth_width = property(_active_material_tth_width,
                                          set_active_material_tth_width)
@@ -974,7 +921,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.backup_tth_max = self.active_material_tth_max
 
             self.active_material.planeData.tThMax = v
-            self.ring_config_changed.emit()
+            self.overlay_config_changed.emit()
 
     active_material_tth_max = property(_active_material_tth_max,
                                        _set_active_material_tth_max)
@@ -1006,35 +953,34 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def _set_show_overlays(self, b):
         self.config['materials']['show_overlays'] = b
-        self.ring_config_changed.emit()
+        self.overlay_config_changed.emit()
 
     show_overlays = property(_show_overlays, _set_show_overlays)
 
-    def set_overlay_styles_defaults(self):
-        def recursive_set_defaults(a, b):
-            for key, val in b.items():
-                if key not in a:
-                    a[key] = copy.deepcopy(val)
-                elif isinstance(val, dict):
-                    recursive_set_defaults(a[key], val)
+    def prune_overlays(self):
+        # Removes overlays for which we do not have a material
+        mats = list(self.materials.keys())
+        self.overlays = [x for x in self.overlays if x['material'] in mats]
+        self.overlay_config_changed.emit()
 
-        defaults = {
-            'powder': constants.DEFAULT_POWDER_STYLE,
-            'laue': constants.DEFAULT_LAUE_STYLE
+    def append_overlay(self, material_name, type, style=None, visible=True):
+        if style is None:
+            style = overlays.default_overlay_style(type)
+
+        overlay = {
+            'material': material_name,
+            'type': type,
+            'generator': overlays.overlay_generator(type),
+            'style': style,
+            'visible': visible,
+            'data': {}
         }
-        for name in self.materials:
-            styles = self._overlay_styles.setdefault(name, {})
-            recursive_set_defaults(styles, defaults)
+        self.overlays.append(overlay)
+        self.overlay_config_changed.emit()
 
-    @property
-    def overlay_styles(self):
-        return self._overlay_styles
-
-    @overlay_styles.setter
-    def overlay_styles(self, v):
-        self._overlay_styles = v
-        # Set all defaults if any are missing
-        self.set_overlay_styles_defaults()
+    def clear_overlay_data(self):
+        for overlay in self.overlays:
+            overlay['data'].clear()
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
