@@ -12,6 +12,8 @@ class MaterialsTable:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('materials_table.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
         self.setup_connections()
 
     def setup_connections(self):

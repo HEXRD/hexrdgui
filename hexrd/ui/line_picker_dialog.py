@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import Qt, QObject, Signal
 
 from itertools import cycle
 
@@ -21,6 +21,8 @@ class LinePickerDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('line_picker_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.canvas = canvas
         self.ring_data = []
