@@ -48,15 +48,17 @@ class TemplateDialog(QObject):
         self.ui.view_masks.toggled.connect(self.display_mask)
 
         ImageLoadManager().template_update_needed.connect(self.update_image)
-        ImageLoadManager().new_images_loaded.connect(
-            self.color_map_editor.update_bounds)
-        ImageLoadManager().new_images_loaded.connect(
-            self.color_map_editor.reset_range)
+        ImageLoadManager().new_images_loaded.connect(self.update_color_map)
+
+    def update_color_map(self):
+        self.color_map_editor.update_bounds(
+            HexrdConfig().current_images_dict())
+        self.color_map_editor.reset_range
 
     def list_detectors(self):
         self.ui.detectors.clear()
-        self.ui.detectors.addItems(HexrdConfig().get_detector_names())
-        det = HexrdConfig().get_detector(self.ui.detectors.currentText())
+        self.ui.detectors.addItems(HexrdConfig().detector_names)
+        det = HexrdConfig().detector(self.ui.detectors.currentText())
         self.pixel_size = det['pixels']['size']['value']
 
     def exec_(self):
