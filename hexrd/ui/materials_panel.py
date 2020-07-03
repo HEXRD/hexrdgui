@@ -9,7 +9,7 @@ from PySide2.QtWidgets import QComboBox, QMenu, QMessageBox
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
-from hexrd.ui.overlay_style_picker import OverlayStylePicker
+from hexrd.ui.overlay_manager import OverlayManager
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -64,6 +64,7 @@ class MaterialsPanel(QObject):
             self.update_table)
 
         self.ui.show_materials_table.pressed.connect(self.show_materials_table)
+        self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
 
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
         self.ui.enable_width.toggled.connect(
@@ -78,11 +79,7 @@ class MaterialsPanel(QObject):
         self.ui.min_d_spacing.valueChanged.connect(
             self.on_min_d_spacing_changed)
 
-        self.ui.edit_style_button.pressed.connect(self.edit_overlay_style)
         self.ui.hide_all.pressed.connect(self.hide_all_overlays)
-
-        self.ui.material_visible.toggled.connect(
-            self.material_visibility_toggled)
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
@@ -143,7 +140,6 @@ class MaterialsPanel(QObject):
             self.ui.show_overlays,
             self.ui.enable_width,
             self.ui.tth_width,
-            self.ui.material_visible,
             self.ui.min_d_spacing,
             self.ui.max_tth,
             self.ui.limit_active
@@ -170,8 +166,6 @@ class MaterialsPanel(QObject):
         width = width if width else HexrdConfig().backup_tth_width
         self.ui.tth_width.setValue(np.degrees(width))
 
-        self.ui.material_visible.setChecked(
-            HexrdConfig().material_is_visible(self.current_material()))
         self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
 
         # Unblock the signal blockers before proceeding
@@ -254,35 +248,27 @@ class MaterialsPanel(QObject):
         HexrdConfig().rename_material(old_name, new_name)
         self.update_gui_from_config()
 
-    def edit_overlay_style(self):
-        material_name = self.current_material()
-
-        # This will be done differently with the image manager...
-        for overlay in HexrdConfig().overlays:
-            if overlay['material'] == material_name:
-                picker = OverlayStylePicker(overlay, self.ui)
-                picker.ui.exec_()
-                break
-
-    def material_visibility_toggled(self):
-        visible = self.ui.material_visible.isChecked()
-        name = self.current_material()
-        if visible:
-            HexrdConfig().append_overlay(name, 'powder')
-        else:
-            HexrdConfig().overlays = [
-                x for x in HexrdConfig().overlays if x['material'] != name]
-            HexrdConfig().overlay_config_changed.emit()
-
     def hide_all_overlays(self):
         for overlay in HexrdConfig().overlays:
             overlay['visible'] = False
+
+        # If there's an overlay manager, update it
+        if hasattr(self, '_overlay_manager'):
+            self._overlay_manager.update_table()
 
         self.update_gui_from_config()
         HexrdConfig().overlay_config_changed.emit()
 
     def show_materials_table(self):
         self.materials_table.show()
+
+    def show_overlay_manager(self):
+        if hasattr(self, '_overlay_manager'):
+            self._overlay_manager.ui.reject()
+            del self._overlay_manager
+
+        self._overlay_manager = OverlayManager(self.ui)
+        self._overlay_manager.show()
 
     def update_table(self):
         self.materials_table.update_table()

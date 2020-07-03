@@ -170,6 +170,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
 
+        # Clear the overlay data and save the overlays as well
+        HexrdConfig().clear_overlay_data()
+        settings.setValue('overlays', self.overlays)
+
     def load_settings(self):
         settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
@@ -186,6 +190,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', {})
+
+        self.overlays = settings.value('overlays', [])
+        self.overlays = self.overlays if self.overlays is not None else []
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -744,6 +751,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
 
         self.materials = materials
+        self.prune_overlays()
 
     def add_material(self, name, material):
         if name in self.materials:

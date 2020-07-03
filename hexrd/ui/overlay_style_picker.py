@@ -16,10 +16,9 @@ class OverlayStylePicker(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('overlay_style_picker.ui', parent)
 
+        self.original_style = copy.deepcopy(overlay['style'])
         self.overlay = overlay
         self.ui.material_name.setText(overlay['material'])
-
-        self.original_style = copy.deepcopy(self.overlay['style'])
 
         self.setup_connections()
         self.update_gui_from_config()
