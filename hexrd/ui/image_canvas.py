@@ -583,11 +583,3 @@ class ImageCanvas(FigureCanvas):
 
         fig.canvas.draw()
         fig.show()
-
-    def add_template(self, patch):
-        ax = self.axes_images[0].axes
-        self.patches.append(ax.add_patch(patch))
-
-    def remove_template(self, patch):
-        ax = self.axes_images[0].axes
-        ax.patches.remove(patch)

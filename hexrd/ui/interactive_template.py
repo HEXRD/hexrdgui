@@ -1,7 +1,7 @@
 import numpy as np
 
 from matplotlib.transforms import Affine2D
-import matplotlib.patches as patches
+from matplotlib import lines, patches
 from matplotlib.path import Path
 
 from hexrd.ui import resource_loader
@@ -16,6 +16,7 @@ class InteractiveTemplate:
         self.img = img
         self.shape = None
         self.press = None
+        self.verts = []
 
     def create_shape(self, selection, pixel_size):
         if selection == 'Draw':
@@ -35,7 +36,7 @@ class InteractiveTemplate:
                     y = float(vert[1])/ysize+midy
                     verts.append([x, y])
             self.shape = patches.Polygon(verts, fill=False, lw=1)
-            self.connect()
+            self.connect_template()
             self.parent.show()
 
     def get_shape(self):
@@ -43,6 +44,17 @@ class InteractiveTemplate:
 
     def get_mask(self):
         return self.mask
+
+    def create_drawn_mask(self):
+        self.shape = patches.Polygon(self.verts, fill=False, lw=1)
+        self.parent.draw()
+        h, w = self.img.shape
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+        coords = np.vstack((x.flatten(), y.flatten())).T
+        self.mask = np.ones(self.img.shape)
+        points = self.shape.get_path().contains_points(coords)
+        grid = points.reshape(h, w)
+        self.mask = (self.mask != grid)
 
     def create_mask(self):
         h, w = self.img.shape
@@ -77,13 +89,32 @@ class InteractiveTemplate:
 
         return all_paths
 
-    def connect(self):
+    def connect_draw(self):
+        self.button_click_cid = self.parent.mpl_connect(
+            'button_release_event', self.on_click)
+
+    def connect_template(self):
         self.button_press_cid = self.parent.mpl_connect(
             'button_press_event', self.on_press)
         self.button_release_cid = self.parent.mpl_connect(
             'button_release_event', self.on_release)
         self.motion_cid = self.parent.mpl_connect(
             'motion_notify_event', self.on_motion)
+
+    def on_click(self, event):
+        self.verts.append([event.xdata, event.ydata])
+        if self.shape is None:
+            self.shape = lines.Line2D(
+                [event.xdata],
+                [event.ydata],
+                marker='.',
+                color='black',
+                ls='None')
+            self.parent.raw_axes[0].add_line(self.shape)
+        else:
+            self.shape.set_xdata([vert[0] for vert in self.verts])
+            self.shape.set_ydata([vert[1] for vert in self.verts])
+        self.parent.draw()
 
     def on_press(self, event):
         if event.inaxes != self.shape.axes:
@@ -122,7 +153,10 @@ class InteractiveTemplate:
         self.shape.set_transform(self.transform)
         self.parent.draw()
 
-    def disconnect(self):
+    def disconnect_draw(self):
+        self.parent.mpl_disconnect(self.button_click_cid)
+
+    def disconnect_template(self):
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
         self.parent.mpl_disconnect(self.motion_cid)
