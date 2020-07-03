@@ -42,8 +42,9 @@ class TemplateDialog(QObject):
         self.ui.dialog_buttons.accepted.connect(self.save)
         self.ui.template_menu.currentIndexChanged.connect(self.load_template)
         self.ui.add_mask.clicked.connect(self.add_mask)
+        self.ui.select_template.toggled.connect(self.ui.template_menu.setEnabled)
         self.ui.threshold_select.toggled.connect(self.set_threshold)
-        self.ui.threshold_select.toggled.connect(self.ui.comparator.setEnabled)
+        # self.ui.draw_mask.toggled.connect(self.start_drawing)
         self.ui.discard_mask.clicked.connect(self.discard_mask)
         self.ui.view_masks.toggled.connect(self.display_mask)
 
@@ -89,6 +90,7 @@ class TemplateDialog(QObject):
         self.img = list(val)[0]
         self.ui.file_name.setText(file_name)
         self.ui.template_menu.setEnabled(True)
+        self.ui.mask_image_group.setEnabled(True)
 
     def warn_before_close(self):
         ret = QMessageBox.warning(
@@ -106,15 +108,11 @@ class TemplateDialog(QObject):
         self.img_canvas.draw()
 
     def load_template(self, idx):
-        self.ui.add_mask.setEnabled(bool(idx))
-        self.ui.discard_mask.setEnabled(bool(idx))
-        self.ui.template_menu.setDisabled(bool(idx))
-        self.ui.threshold_select.setDisabled(bool(idx))
+        self.masking(bool(idx))
         if idx == 0:
-            if self.masks:
-                self.ui.view_masks.setEnabled(True)
             return
         else:
+            self.ui.threshold_select.setDisabled(True)
             selection = self.ui.template_menu.currentText()
             self.current_template = InteractiveTemplate(
                 self.img, self.img_widget)
@@ -123,11 +121,19 @@ class TemplateDialog(QObject):
             self.img_widget.add_template(self.current_template.get_shape())
             self.img_canvas.draw()
 
+    def masking(self, in_progress):
+        self.ui.add_mask.setEnabled(in_progress)
+        self.ui.discard_mask.setEnabled(in_progress)
+        self.ui.template_menu.setDisabled(in_progress)
+        self.ui.select_template.setChecked(not in_progress)
+        if self.masks:
+            self.ui.view_masks.setDisabled(in_progress)
+
     def set_threshold(self, checked):
         self.ui.threshold.setEnabled(checked)
-        self.ui.add_mask.setEnabled(checked)
-        self.ui.discard_mask.setEnabled(checked)
-        self.ui.view_masks.setDisabled(checked)
+        self.ui.comparator.setEnabled(checked)
+        self.ui.select_template.setDisabled(True)
+        self.masking(checked)
 
     def add_mask(self):
         if self.ui.threshold_select.isChecked():
@@ -185,6 +191,9 @@ class TemplateDialog(QObject):
 
     def reset_settings(self):
         self.ui.blockSignals(True)
+        self.ui.select_template.setChecked(True)
+        self.ui.select_template.setEnabled(True)
+        self.ui.threshold_select.setEnabled(True)
         self.ui.template_menu.setCurrentIndex(0)
         self.ui.threshold_select.setChecked(False)
         self.ui.comparator.setCurrentIndex(0)

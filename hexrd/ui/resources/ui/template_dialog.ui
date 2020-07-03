@@ -80,7 +80,7 @@
               </property>
              </widget>
             </item>
-            <item>
+            <item alignment="Qt::AlignHCenter">
              <widget class="QLabel" name="file_name">
               <property name="text">
                <string>(No File Selected)</string>
@@ -101,23 +101,29 @@
          </item>
          <item>
           <widget class="QGroupBox" name="mask_image_group">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="title">
             <string>Mask Image</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_1">
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
-               <widget class="QLabel" name="label">
+               <widget class="QRadioButton" name="select_template">
                 <property name="text">
                  <string>Select Template</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QComboBox" name="template_menu">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <item>
                  <property name="text">
@@ -139,11 +145,6 @@
                   <string>TARDIS_IMAGE-PLATE-4</string>
                  </property>
                 </item>
-                <item>
-                 <property name="text">
-                  <string>Draw</string>
-                 </property>
-                </item>
                </widget>
               </item>
              </layout>
@@ -151,7 +152,7 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
-               <widget class="QCheckBox" name="threshold_select">
+               <widget class="QRadioButton" name="threshold_select">
                 <property name="text">
                  <string>Set Threshold</string>
                 </property>
@@ -200,6 +201,16 @@
              </layout>
             </item>
             <item>
+             <widget class="QRadioButton" name="draw_mask">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Draw Mask</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
                <widget class="QPushButton" name="discard_mask">
@@ -225,6 +236,9 @@
             </item>
             <item alignment="Qt::AlignHCenter">
              <widget class="QCheckBox" name="view_masks">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Preview Masks</string>
               </property>
