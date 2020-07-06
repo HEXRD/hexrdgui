@@ -39,6 +39,9 @@ class OverlayEditor(QObject):
         self.ui.type.currentIndexChanged.connect(self.update_config)
         self.ui.edit_style.pressed.connect(self.edit_style)
 
+        self.ui.laue_min_energy.editingFinished.connect(self.update_config)
+        self.ui.laue_max_energy.editingFinished.connect(self.update_config)
+
     def show(self):
         self.ui.show()
 
@@ -121,7 +124,9 @@ class OverlayEditor(QObject):
             self.ui.tab_widget,
             self.ui.powder_tab,
             self.ui.laue_tab,
-            self.ui.mono_rotation_series_tab
+            self.ui.mono_rotation_series_tab,
+            self.ui.laue_min_energy,
+            self.ui.laue_max_energy
         ]
 
     def update_gui(self):
@@ -133,10 +138,23 @@ class OverlayEditor(QObject):
         self.selected_type = overlay['type']
         self.update_type_tab()
 
+        options = overlay.get('options', {})
+        if overlay['type'] == 'laue':
+            if 'min_energy' in options:
+                self.ui.laue_min_energy.setValue(options['min_energy'])
+            if 'max_energy' in options:
+                self.ui.laue_max_energy.setValue(options['max_energy'])
+
     def update_config(self):
         overlay = self.overlay
         overlay['material'] = self.selected_material
         overlay['type'] = self.selected_type
 
         self.update_manager_gui.emit()
+
+        options = overlay.setdefault('options', {})
+        if overlay['type'] == 'laue':
+            options['min_energy'] = self.ui.laue_min_energy.value()
+            options['max_energy'] = self.ui.laue_max_energy.value()
+
         HexrdConfig().overlay_config_changed.emit()

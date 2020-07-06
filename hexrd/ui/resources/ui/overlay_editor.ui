@@ -18,12 +18,8 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
-    <widget class="QLabel" name="type_label">
-     <property name="text">
-      <string>Type:</string>
-     </property>
-    </widget>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="material"/>
    </item>
    <item row="2" column="1">
     <widget class="QPushButton" name="edit_style">
@@ -32,39 +28,17 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="material_label">
-     <property name="text">
-      <string>Material:</string>
+   <item row="4" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
     </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="type">
-     <item>
-      <property name="text">
-       <string>Powder</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Laue</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Mono Rotation Series</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QComboBox" name="material"/>
    </item>
    <item row="3" column="0" colspan="2">
     <widget class="QTabWidget" name="tab_widget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="powder_tab">
       <attribute name="title">
@@ -87,6 +61,48 @@
       <attribute name="title">
        <string>Laue</string>
       </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="QLabel" name="laue_min_energy_label">
+         <property name="text">
+          <string>Min Energy:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="laue_min_energy">
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <double>10000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="laue_max_energy_label">
+         <property name="text">
+          <string>Max Energy:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="laue_max_energy">
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <double>10000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>35.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="mono_rotation_series_tab">
       <attribute name="title">
@@ -95,10 +111,36 @@
      </widget>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="type">
+     <item>
+      <property name="text">
+       <string>Powder</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Laue</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Mono Rotation Series</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="type_label">
+     <property name="text">
+      <string>Type:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="material_label">
+     <property name="text">
+      <string>Material:</string>
      </property>
     </widget>
    </item>
@@ -109,6 +151,8 @@
   <tabstop>type</tabstop>
   <tabstop>edit_style</tabstop>
   <tabstop>tab_widget</tabstop>
+  <tabstop>laue_min_energy</tabstop>
+  <tabstop>laue_max_energy</tabstop>
  </tabstops>
  <resources/>
  <connections>

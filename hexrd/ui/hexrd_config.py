@@ -980,6 +980,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             'type': type,
             'style': style,
             'visible': visible,
+            'options': {},
             'data': {}
         }
         self.overlays.append(overlay)
