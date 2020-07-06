@@ -39,9 +39,6 @@ class LinePickerDialog(QObject):
 
         self.setup_connections()
 
-    def __del__(self):
-        self.clear()
-
     def setup_connections(self):
         self.ui.accepted.connect(self.accepted)
         self.ui.rejected.connect(self.rejected)
