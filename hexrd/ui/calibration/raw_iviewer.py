@@ -1,5 +1,6 @@
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays import overlay_generator
 
 
 def raw_iviewer():
@@ -33,13 +34,14 @@ class InstrumentViewer:
                       f'{mat_name} is not a valid material')
                 continue
 
+            type = overlay['type']
             kwargs = {
                 'plane_data': mat.planeData,
                 'instr': self.instr
             }
-            if overlay['type'] == 'laue':
+            if type == 'laue':
                 # Modify kwargs here
                 pass
 
-            generator = overlay['generator'](**kwargs)
+            generator = overlay_generator(type)(**kwargs)
             overlay['data'] = generator.overlay('raw')

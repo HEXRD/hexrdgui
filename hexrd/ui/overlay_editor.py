@@ -4,7 +4,6 @@ from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlay_style_picker import OverlayStylePicker
-from hexrd.ui.overlays import overlay_generator
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -138,7 +137,6 @@ class OverlayEditor(QObject):
         overlay = self.overlay
         overlay['material'] = self.selected_material
         overlay['type'] = self.selected_type
-        overlay['generator'] = overlay_generator(self.selected_type)
 
         self.update_manager_gui.emit()
         HexrdConfig().overlay_config_changed.emit()

@@ -978,7 +978,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         overlay = {
             'material': material_name,
             'type': type,
-            'generator': overlays.overlay_generator(type),
             'style': style,
             'visible': visible,
             'data': {}
