@@ -18,7 +18,7 @@ from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.line_picker_dialog import LinePickerDialog
-from hexrd.ui.indexing.dialog import IndexingDialog
+from hexrd.ui.indexing.run import IndexingRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
@@ -426,8 +426,8 @@ class MainWindow(QObject):
         self.update_all()
 
     def on_action_run_indexing_triggered(self):
-        self._indexing_dialog = IndexingDialog(self.ui)
-        self._indexing_dialog.exec_()
+        self._indexing_runner = IndexingRunner(self.ui)
+        self._indexing_runner.run()
 
     def update_color_map_bounds(self):
         self.color_map_editor.update_bounds(

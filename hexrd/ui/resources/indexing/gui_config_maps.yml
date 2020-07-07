@@ -1,0 +1,34 @@
+find_orientations:
+  seed_search:
+    fiber_step: 'fiber_step'
+
+    method:
+      label:
+        filter_radius: 'filter_radius'
+        threshold: 'label_threshold'
+
+      blob_dog:
+        min_sigma: 'bd_min_sigma'
+        max_sigma: 'bd_max_sigma'
+        sigma_ratio: 'bd_sigma_ratio'
+        threshold: 'bd_threshold'
+        overlap: 'bd_overlap'
+
+      blob_log:
+        min_sigma: 'bl_min_sigma'
+        max_sigma: 'bl_max_sigma'
+        num_sigma: 'bl_num_sigma'
+        threshold: 'bl_threshold'
+        overlap: 'bl_overlap'
+
+  omega:
+    tolerance: 'omega_tolerance'
+
+  eta:
+    tolerance: 'eta_tolerance'
+    mask: 'eta_mask'
+
+  clustering:
+    radius: 'clustering_radius'
+    completeness: 'clustering_completeness'
+    algorithm: 'clustering_algorithm'

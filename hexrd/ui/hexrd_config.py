@@ -160,6 +160,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings()
         settings.setValue('config_instrument', self.config['instrument'])
         settings.setValue('config_calibration', self.config['calibration'])
+        settings.setValue('config_indexing', self.indexing_config)
         settings.setValue('images_dir', self.images_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
@@ -175,6 +176,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
         self.config['calibration'] = settings.value('config_calibration', None)
+        self.config['indexing'] = settings.value('config_indexing', None)
         self.images_dir = settings.value('images_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
