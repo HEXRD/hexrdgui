@@ -1,8 +1,9 @@
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
-from PySide2.QtWidgets import QCheckBox, QHBoxLayout, QTableWidgetItem, QWidget
+from PySide2.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QWidget
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlay_editor import OverlayEditor
+from hexrd.ui.overlay_style_picker import OverlayStylePicker
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -18,18 +19,27 @@ class OverlayManager:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('overlay_manager.ui', parent)
-        self.check_boxes = []
+
+        self.overlay_editor = OverlayEditor(self.ui)
+        self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
+        self.overlay_editor.ui.hide()
+
+        self.material_combos = []
+        self.type_combos = []
+        self.visibility_boxes = []
+
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.table.selectionModel().selectionChanged.connect(
-            self.update_enable_states)
+            self.selection_changed)
         self.ui.add_button.pressed.connect(self.add)
-        self.ui.edit_button.pressed.connect(self.edit)
         self.ui.remove_button.pressed.connect(self.remove)
+        self.ui.edit_style_button.pressed.connect(self.edit_style)
 
     def show(self):
         if not hasattr(self, 'already_shown'):
+            # Move the dialog to the left the first time it is shown...
             self.already_shown = True
             self.move_dialog_to_left()
 
@@ -49,6 +59,62 @@ class OverlayManager:
 
         return types[type]
 
+    def create_materials_combo(self, v):
+        materials = list(HexrdConfig().materials.keys())
+
+        if v not in materials:
+            raise Exception(f'Unknown material: {v}')
+
+        cb = QComboBox(self.ui.table)
+        for mat in materials:
+            cb.addItem(mat, mat)
+
+        cb.setCurrentIndex(materials.index(v))
+        cb.currentIndexChanged.connect(self.update_config_materials)
+        self.material_combos.append(cb)
+        return self.create_table_widget(cb)
+
+    def create_type_combo(self, v):
+        types = [
+            'powder',
+            'laue',
+            'mono_rotation_series'
+        ]
+
+        if v not in types:
+            raise Exception(f'Unknown type: {v}')
+
+        cb = QComboBox(self.ui.table)
+        for type in types:
+            cb.addItem(self.format_type(type), type)
+
+        cb.setCurrentIndex(types.index(v))
+        cb.currentIndexChanged.connect(self.update_config_types)
+        self.type_combos.append(cb)
+        return self.create_table_widget(cb)
+
+    def create_visibility_checkbox(self, v):
+        cb = QCheckBox(self.ui.table)
+        cb.setChecked(v)
+        cb.toggled.connect(self.update_config_visibilities)
+        self.visibility_boxes.append(cb)
+        return self.create_table_widget(cb)
+
+    def create_table_widget(self, w):
+        # These are required to center the widget...
+        tw = QWidget(self.ui.table)
+        layout = QHBoxLayout(tw)
+        layout.addWidget(w)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        return tw
+
+    def clear_table(self):
+        self.material_combos.clear()
+        self.type_combos.clear()
+        self.visibility_boxes.clear()
+        self.ui.table.clearContents()
+
     def update_table(self):
         block_list = [
             self.ui.table,
@@ -59,29 +125,16 @@ class OverlayManager:
         prev_selected = self.selected_row
 
         overlays = HexrdConfig().overlays
-        self.check_boxes.clear()
-        self.ui.table.clearContents()
+        self.clear_table()
         self.ui.table.setRowCount(len(overlays))
         for i, overlay in enumerate(overlays):
-            table_item = QTableWidgetItem(overlay['material'])
-            table_item.setTextAlignment(Qt.AlignCenter)
-            self.ui.table.setItem(i, COLUMNS['material'], table_item)
+            w = self.create_materials_combo(overlay['material'])
+            self.ui.table.setCellWidget(i, COLUMNS['material'], w)
 
-            table_item = QTableWidgetItem(self.format_type(overlay['type']))
-            table_item.setTextAlignment(Qt.AlignCenter)
-            self.ui.table.setItem(i, COLUMNS['type'], table_item)
+            w = self.create_type_combo(overlay['type'])
+            self.ui.table.setCellWidget(i, COLUMNS['type'], w)
 
-            cb = QCheckBox(self.ui.table)
-            cb.setChecked(overlay['visible'])
-            cb.toggled.connect(self.update_config_visibilities)
-            self.check_boxes.append(cb)
-
-            # This is required to center the checkbox...
-            w = QWidget(self.ui.table)
-            layout = QHBoxLayout(w)
-            layout.addWidget(cb)
-            layout.setAlignment(Qt.AlignCenter)
-            layout.setContentsMargins(0, 0, 0, 0)
+            w = self.create_visibility_checkbox(overlay['visible'])
             self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
 
         if prev_selected is not None:
@@ -89,7 +142,8 @@ class OverlayManager:
                           else len(overlays) - 1)
             self.select_row(select_row)
 
-        self.update_enable_states()
+        # Just in case the selection actually changed...
+        self.selection_changed()
 
     def select_row(self, i):
         if i is None or i >= self.ui.table.rowCount():
@@ -109,14 +163,48 @@ class OverlayManager:
         selected = self.ui.table.selectionModel().selectedRows()
         return selected[0].row() if selected else None
 
+    def selection_changed(self):
+        self.update_enable_states()
+        self.update_overlay_editor()
+
     def update_enable_states(self):
         row_selected = self.selected_row is not None
-        self.ui.edit_button.setEnabled(row_selected)
         self.ui.remove_button.setEnabled(row_selected)
+        self.ui.edit_style_button.setEnabled(row_selected)
+
+    def update_overlay_editor(self):
+        overlay = self.active_overlay
+        if overlay is None:
+            # Just hide the editor and return
+            self.overlay_editor.ui.hide()
+            return
+
+        self.overlay_editor.overlay = overlay
+        if overlay['type'] == 'powder':
+            # Hide the editor. There aren't any options.
+            self.overlay_editor.ui.hide()
+            return
+
+        self.overlay_editor.ui.show()
+
+    def update_config_materials(self):
+        for i in range(self.ui.table.rowCount()):
+            w = self.material_combos[i]
+            HexrdConfig().overlays[i]['material'] = w.currentData()
+
+        HexrdConfig().overlay_config_changed.emit()
+
+    def update_config_types(self):
+        for i in range(self.ui.table.rowCount()):
+            w = self.type_combos[i]
+            HexrdConfig().overlays[i]['type'] = w.currentData()
+
+        HexrdConfig().overlay_config_changed.emit()
+        self.update_overlay_editor()
 
     def update_config_visibilities(self):
         for i in range(self.ui.table.rowCount()):
-            w = self.check_boxes[i]
+            w = self.visibility_boxes[i]
             HexrdConfig().overlays[i]['visible'] = w.isChecked()
 
         HexrdConfig().overlay_config_changed.emit()
@@ -125,29 +213,24 @@ class OverlayManager:
     def active_material_name(self):
         return HexrdConfig().active_material_name
 
+    @property
+    def active_overlay(self):
+        i = self.selected_row
+        return HexrdConfig().overlays[i] if i is not None else None
+
     def add(self):
         HexrdConfig().append_overlay(self.active_material_name, 'powder')
         self.update_table()
         self.select_row(len(HexrdConfig().overlays) - 1)
 
-    def close_overlay_editor(self):
-        if hasattr(self, '_overlay_editor'):
-            self._overlay_editor.ui.reject()
-            del self._overlay_editor
-
-    def edit(self):
-        overlay = HexrdConfig().overlays[self.selected_row]
-
-        self.close_overlay_editor()
-        self._overlay_editor = OverlayEditor(overlay)
-        self._overlay_editor.update_manager_gui.connect(self.update_table)
-        self._overlay_editor.show()
-
     def remove(self):
-        self.close_overlay_editor()
         HexrdConfig().overlays.pop(self.selected_row)
         HexrdConfig().overlay_config_changed.emit()
         self.update_table()
+
+    def edit_style(self):
+        self._style_picker = OverlayStylePicker(self.active_overlay, self.ui)
+        self._style_picker.ui.exec_()
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
