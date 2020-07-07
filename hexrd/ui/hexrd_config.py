@@ -986,6 +986,20 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.overlays.append(overlay)
         self.overlay_config_changed.emit()
 
+    def change_overlay_type(self, i, type):
+        if not 0 <= i < len(self.overlays):
+            # Out of range
+            return
+
+        overlay = self.overlays[i]
+        if overlay['type'] == type:
+            # No change needed
+            return
+
+        overlay['type'] = type
+        overlay['style'] = overlays.default_overlay_style(type)
+        overlay['options'].clear()
+
     def clear_overlay_data(self):
         for overlay in self.overlays:
             overlay['data'].clear()
