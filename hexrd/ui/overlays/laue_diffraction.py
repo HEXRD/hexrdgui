@@ -17,12 +17,14 @@ class LaueSpotOverlay(object):
                  constants.identity_6x1]
             )
         else:
-            assert len(crystal_params) == 12, \
-                "crystal parameters must have length 12"
+            self.crystal_params = crystal_params
+
         self._min_energy = min_energy
         self._max_energy = max_energy
         if sample_rmat is None:
             self._sample_rmat = constants.identity_3x3
+        else:
+            self.sample_rmat = sample_rmat
 
     @property
     def plane_data(self):
@@ -66,6 +68,7 @@ class LaueSpotOverlay(object):
     @sample_rmat.setter
     def sample_rmat(self, x):
         assert isinstance(x, np.ndarray), 'input must be a (3, 3) array'
+        self._sample_rmat = x
 
     def overlay(self, display_mode='raw'):
         sim_data = self.instrument.simulate_laue_pattern(
