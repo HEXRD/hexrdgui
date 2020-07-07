@@ -4,7 +4,7 @@ import numpy as np
 nans_row = np.nan*np.ones((1, 2))
 
 
-class PowderLineOverlay(object):
+class PowderLineOverlay:
     def __init__(self, plane_data, instr, eta_steps=360):
         self._plane_data = plane_data
         self._instrument = instr

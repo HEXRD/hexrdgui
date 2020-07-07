@@ -3,7 +3,7 @@ import numpy as np
 from hexrd import constants
 
 
-class LaueSpotOverlay(object):
+class LaueSpotOverlay:
     def __init__(self, plane_data, instr,
                  crystal_params=None, sample_rmat=None,
                  min_energy=5., max_energy=35.,
