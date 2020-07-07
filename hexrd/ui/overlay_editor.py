@@ -50,6 +50,9 @@ class OverlayEditor:
                 self.ui.laue_min_energy.setValue(options['min_energy'])
             if 'max_energy' in options:
                 self.ui.laue_max_energy.setValue(options['max_energy'])
+            if 'crystal_params' in options:
+                for i, w in enumerate(self.laue_cc_widgets):
+                    w.setValue(options['crystal_params'][i])
 
     def update_config(self):
         options = self.overlay.setdefault('options', {})
