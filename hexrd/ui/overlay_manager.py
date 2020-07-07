@@ -197,7 +197,10 @@ class OverlayManager:
     def update_config_types(self):
         for i in range(self.ui.table.rowCount()):
             w = self.type_combos[i]
-            HexrdConfig().overlays[i]['type'] = w.currentData()
+            if HexrdConfig().overlays[i]['type'] != w.currentData():
+                # Clear the options and update the type
+                HexrdConfig().overlays[i]['options'].clear()
+                HexrdConfig().overlays[i]['type'] = w.currentData()
 
         HexrdConfig().overlay_config_changed.emit()
         self.update_overlay_editor()

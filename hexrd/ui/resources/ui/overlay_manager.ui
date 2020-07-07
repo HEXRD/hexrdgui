@@ -7,21 +7,27 @@
     <x>0</x>
     <y>0</y>
     <width>494</width>
-    <height>204</height>
+    <height>220</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="topMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="rightMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="bottomMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <item row="2" column="1">
     <widget class="QPushButton" name="remove_button">
@@ -30,16 +36,6 @@
      </property>
      <property name="text">
       <string>Remove</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QPushButton" name="edit_style_button">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Edit Style</string>
      </property>
     </widget>
    </item>
@@ -52,6 +48,12 @@
    </item>
    <item row="1" column="0" colspan="2">
     <widget class="QTableWidget" name="table">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>150</height>
+      </size>
+     </property>
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select row to edit&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
@@ -71,7 +73,7 @@
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
      <property name="rowCount">
-      <number>5</number>
+      <number>4</number>
      </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
@@ -85,7 +87,6 @@
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
      </attribute>
-     <row/>
      <row/>
      <row/>
      <row/>
@@ -109,6 +110,16 @@
    </item>
    <item row="4" column="0" colspan="2">
     <layout class="QVBoxLayout" name="overlay_editor_layout"/>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QPushButton" name="edit_style_button">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Edit Style</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

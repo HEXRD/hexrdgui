@@ -17,8 +17,8 @@ class OverlayEditor:
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.laue_min_energy.editingFinished.connect(self.update_config)
-        self.ui.laue_max_energy.editingFinished.connect(self.update_config)
+        for w in self.laue_widgets:
+            w.editingFinished.connect(self.update_config)
 
     @property
     def overlay(self):
@@ -39,17 +39,6 @@ class OverlayEditor:
         w = getattr(self.ui, self.type + '_tab')
         self.ui.tab_widget.setCurrentWidget(w)
 
-    @property
-    def all_widgets(self):
-        return [
-            self.ui.tab_widget,
-            self.ui.powder_tab,
-            self.ui.laue_tab,
-            self.ui.mono_rotation_series_tab,
-            self.ui.laue_min_energy,
-            self.ui.laue_max_energy
-        ]
-
     def update_gui(self):
         blockers = [QSignalBlocker(w) for w in self.all_widgets]  # noqa: F841
 
@@ -67,5 +56,50 @@ class OverlayEditor:
         if self.type == 'laue':
             options['min_energy'] = self.ui.laue_min_energy.value()
             options['max_energy'] = self.ui.laue_max_energy.value()
+            options['crystal_params'] = self.laue_crystal_params
 
-        HexrdConfig().overlay_config_changed.emit()
+        if self.overlay['visible']:
+            # Only cause a re-render if the overlay is visible
+            HexrdConfig().overlay_config_changed.emit()
+
+    @property
+    def laue_crystal_params(self):
+        return [x.value() for x in self.laue_cc_widgets]
+
+    @property
+    def powder_widgets(self):
+        return []
+
+    @property
+    def laue_cc_widgets(self):
+        # Take advantage of the naming scheme
+        return [getattr(self.ui, f'laue_cc_{i}') for i in range(12)]
+
+    @property
+    def laue_widgets(self):
+        return [
+            self.ui.laue_min_energy,
+            self.ui.laue_max_energy
+        ] + self.laue_cc_widgets
+
+    @property
+    def mono_rotation_series_widgets(self):
+        return []
+
+    @property
+    def tab_widgets(self):
+        return [
+            self.ui.tab_widget,
+            self.ui.powder_tab,
+            self.ui.laue_tab,
+            self.ui.mono_rotation_series_tab,
+        ]
+
+    @property
+    def all_widgets(self):
+        return (
+            self.powder_widgets +
+            self.laue_widgets +
+            self.mono_rotation_series_widgets +
+            self.tab_widgets
+        )
