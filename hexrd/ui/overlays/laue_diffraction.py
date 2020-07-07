@@ -77,14 +77,18 @@ class LaueSpotOverlay:
             maxEnergy=self.max_energy,
             rmat_s=self.sample_rmat,
             grain_params=[self.crystal_params, ])
-        point_groups = dict.fromkeys(sim_data)
+
+        point_groups = {}
+        keys = ['spots', 'ranges']
         for det_key, psim in sim_data.items():
+            point_groups[det_key] = {key: [] for key in keys}
             xy_det, hkls_in, angles, dspacing, energy = psim
             idx = ~np.isnan(energy)
             if display_mode == 'polar':
-                point_groups[det_key] = angles[idx, :]
+                point_groups[det_key]['spots'] = angles[idx, :]
             elif display_mode in ['raw', 'cartesian']:
                 # Convert to pixel coordinates
                 panel = self.instrument.detectors[det_key]
-                point_groups[det_key] = panel.cartToPixel(xy_det[idx, :])
+                point_groups[det_key]['spots'] = panel.cartToPixel(
+                    xy_det[idx, :])
         return point_groups
