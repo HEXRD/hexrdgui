@@ -20,23 +20,62 @@ class OverlayStylePicker(QObject):
         self.overlay = overlay
         self.ui.material_name.setText(overlay['material'])
 
+        self.setup_labels()
+        self.setup_combo_boxes()
         self.setup_connections()
-        self.update_gui_from_config()
+        self.update_gui()
 
     def setup_connections(self):
         self.ui.data_color.pressed.connect(self.pick_color)
         self.ui.range_color.pressed.connect(self.pick_color)
-        self.ui.data_linestyle.currentIndexChanged.connect(
-            self.update_config_from_gui)
-        self.ui.range_linestyle.currentIndexChanged.connect(
-            self.update_config_from_gui)
-        self.ui.data_linewidth.valueChanged.connect(
-            self.update_config_from_gui)
-        self.ui.range_linewidth.valueChanged.connect(
-            self.update_config_from_gui)
+        self.ui.data_style.currentIndexChanged.connect(self.update_config)
+        self.ui.range_style.currentIndexChanged.connect(self.update_config)
+        self.ui.data_size.valueChanged.connect(self.update_config)
+        self.ui.range_size.valueChanged.connect(self.update_config)
 
         # Reset the style if the dialog is rejected
         self.ui.rejected.connect(self.reset_style)
+
+    def setup_labels(self):
+        # Override some of the labels, depending on our type
+        for k, v in self.labels.items():
+            # Take advantage of the naming scheme
+            w = getattr(self.ui, k + '_label')
+            w.setText(v)
+
+    def setup_combo_boxes(self):
+        type = self.overlay['type']
+
+        line_styles = [
+            'solid',
+            'dotted',
+            'dashed',
+            'dashdot'
+        ]
+
+        marker_styles = [
+            '.',
+            'o',
+            '^',
+            's',
+            'x',
+            'D'
+        ]
+
+        if type == 'laue':
+            data_styles = marker_styles
+        else:
+            data_styles = line_styles
+
+        w = self.ui.data_style
+        w.clear()
+        for s in data_styles:
+            w.addItem(s, s)
+
+        w = self.ui.range_style
+        w.clear()
+        for s in line_styles:
+            w.addItem(s, s)
 
     @property
     def style(self):
@@ -46,45 +85,47 @@ class OverlayStylePicker(QObject):
     def all_widgets(self):
         return [
             self.ui.data_color,
-            self.ui.data_linestyle,
-            self.ui.data_linewidth,
+            self.ui.data_style,
+            self.ui.data_size,
             self.ui.range_color,
-            self.ui.range_linestyle,
-            self.ui.range_linewidth
+            self.ui.range_style,
+            self.ui.range_size
         ]
 
     def reset_style(self):
         self.overlay['style'] = copy.deepcopy(self.original_style)
-        self.update_gui_from_config()
+        self.update_gui()
         HexrdConfig().overlay_config_changed.emit()
 
-    def update_gui_from_config(self):
+    def update_gui(self):
         data = self.style['data']
         ranges = self.style['ranges']
+        keys = self.keys
 
         blockers = [QSignalBlocker(x) for x in self.all_widgets]
-        self.ui.data_color.setText(data['c'])
-        self.ui.data_linestyle.setCurrentText(data['ls'])
-        self.ui.data_linewidth.setValue(data['lw'])
-        self.ui.range_color.setText(ranges['c'])
-        self.ui.range_linestyle.setCurrentText(ranges['ls'])
-        self.ui.range_linewidth.setValue(ranges['lw'])
+        self.ui.data_color.setText(data[keys['data_color']])
+        self.ui.data_style.setCurrentText(data[keys['data_style']])
+        self.ui.data_size.setValue(data[keys['data_size']])
+        self.ui.range_color.setText(ranges[keys['range_color']])
+        self.ui.range_style.setCurrentText(ranges[keys['range_style']])
+        self.ui.range_size.setValue(ranges[keys['range_size']])
 
         # Unblock
         del blockers
 
         self.update_button_colors()
 
-    def update_config_from_gui(self):
+    def update_config(self):
         data = self.style['data']
         ranges = self.style['ranges']
+        keys = self.keys
 
-        data['c'] = self.ui.data_color.text()
-        data['ls'] = self.ui.data_linestyle.currentText()
-        data['lw'] = self.ui.data_linewidth.value()
-        ranges['c'] = self.ui.range_color.text()
-        ranges['ls'] = self.ui.range_linestyle.currentText()
-        ranges['lw'] = self.ui.range_linewidth.value()
+        data[keys['data_color']] = self.ui.data_color.text()
+        data[keys['data_style']] = self.ui.data_style.currentData()
+        data[keys['data_size']] = self.ui.data_size.value()
+        ranges[keys['range_color']] = self.ui.range_color.text()
+        ranges[keys['range_style']] = self.ui.range_style.currentData()
+        ranges[keys['range_size']] = self.ui.range_size.value()
         HexrdConfig().overlay_config_changed.emit()
 
     def pick_color(self):
@@ -97,9 +138,89 @@ class OverlayStylePicker(QObject):
         if dialog.exec_():
             sender.setText(dialog.selectedColor().name())
             self.update_button_colors()
-            self.update_config_from_gui()
+            self.update_config()
 
     def update_button_colors(self):
         buttons = [self.ui.data_color, self.ui.range_color]
         for b in buttons:
             b.setStyleSheet('QPushButton {background-color: %s}' % b.text())
+
+    @property
+    def keys(self):
+        if not hasattr(self, '_keys'):
+            self._keys = {
+                'powder': self.powder_keys,
+                'laue': self.laue_keys,
+                'mono_rotation_series': self.mono_rotation_series_keys
+            }
+
+        type = self.overlay['type']
+        if type not in self._keys:
+            raise Exception(f'Unknown type: {type}')
+
+        return self._keys[type]
+
+    @property
+    def powder_keys(self):
+        return {
+            'data_color': 'c',
+            'data_style': 'ls',
+            'data_size': 'lw',
+            'range_color': 'c',
+            'range_style': 'ls',
+            'range_size': 'lw'
+        }
+
+    @property
+    def laue_keys(self):
+        return {
+            'data_color': 'c',
+            'data_style': 'marker',
+            'data_size': 's',
+            'range_color': 'c',
+            'range_style': 'ls',
+            'range_size': 'lw'
+        }
+
+    @property
+    def mono_rotation_series_keys(self):
+        return {
+            'data_color': 'c',
+            'data_style': 'ls',
+            'data_size': 'lw',
+            'range_color': 'c',
+            'range_style': 'ls',
+            'range_size': 'lw'
+        }
+
+    @property
+    def labels(self):
+        if not hasattr(self, '_labels'):
+            self._labels = {
+                'powder': self.powder_labels,
+                'laue': self.laue_labels,
+                'mono_rotation_series': self.mono_rotation_series_labels
+            }
+
+        type = self.overlay['type']
+        if type not in self._labels:
+            raise Exception(f'Unknown type: {type}')
+
+        return self._labels[type]
+
+    @property
+    def powder_labels(self):
+        # No labels to override
+        return {}
+
+    @property
+    def laue_labels(self):
+        return {
+            'data_style': 'Marker Style:',
+            'data_size': 'Marker Size:'
+        }
+
+    @property
+    def mono_rotation_series_labels(self):
+        # No labels to override
+        return {}
