@@ -1,8 +1,10 @@
 import copy
+import numpy as np
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
 from hexrd.ui.constants import UI_RAW, UI_CARTESIAN, UI_POLAR
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_raw_mask, remove_raw_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -70,6 +72,8 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_snip1d_numiter)
         HexrdConfig().instrument_config_loaded.connect(
             self.auto_generate_cartesian_params)
+        HexrdConfig().instrument_config_loaded.connect(
+            self.auto_generate_polar_params)
 
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
@@ -142,8 +146,7 @@ class ImageModeWidget(QObject):
         # This will automatically generate and set values for the
         # Cartesian pixel size and virtual plane distance based upon
         # values in the instrument config.
-        # The calling function should ensure a re-render occurs. This function
-        # will not perform a re-render.
+        # This function does not invoke a re-render.
         detectors = list(HexrdConfig().detectors.values())
         distances = [
             x['transform']['translation']['value'][2] for x in detectors
@@ -153,12 +156,35 @@ class ImageModeWidget(QObject):
         average_dist = sum(distances) / len(distances)
         average_size = sum([x[0] + x[1] for x in sizes]) / (2 * len(sizes))
 
-        HexrdConfig().config['image']['cartesian']['pixel_size'] = (
-            5 * average_size
-        )
-        HexrdConfig().config['image']['cartesian']['virtual_plane_distance'] = (
-            abs(average_dist)
-        )
+        cart_config = HexrdConfig().config['image']['cartesian']
+        cart_config['pixel_size'] = average_size * 5
+        cart_config['virtual_plane_distance'] = abs(average_dist)
+
+        # Get the GUI to update with the new values
+        self.update_gui_from_config()
+
+    def auto_generate_polar_params(self):
+        # This will automatically generate and set values for the polar
+        # pixel values based upon the config.
+        # This function does not invoke a re-render.
+
+        # FIXME: can we do this without creating an instrument?
+        instr = create_hedm_instrument()
+        ang_px_all = []
+        for v in instr.detectors.values():
+            X, Y = np.meshgrid(v.col_pixel_vec, v.row_pixel_vec)
+            ang_px_all.append(
+                v.angularPixelSize(np.vstack([X.flatten(), Y.flatten()]).T)
+            )
+        ang_px_all = np.vstack(ang_px_all)
+        max_px = np.degrees(np.max(ang_px_all, axis=0))
+
+        tth_pixel_size, eta_pixel_size = max_px
+
+        # Set these manually so no rerender signals are fired
+        polar_config = HexrdConfig().config['image']['polar']
+        polar_config['pixel_size_tth'] = tth_pixel_size * 10
+        polar_config['pixel_size_eta'] = eta_pixel_size * 0.8
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
