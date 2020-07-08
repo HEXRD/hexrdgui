@@ -6,7 +6,7 @@ from .polarview import PolarView
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays import PowderLineOverlay
+from hexrd.ui.overlays import overlay_generator
 
 
 def polar_viewer():
@@ -26,7 +26,6 @@ class InstrumentViewer:
         self.pixel_size = 0.5
 
         self.draw_polar()
-        self.add_rings()
 
     @property
     def all_detector_borders(self):
@@ -48,25 +47,37 @@ class InstrumentViewer:
         self.img = self.pv.img
         self.snip1d_background = self.pv.snip1d_background
 
-    def clear_rings(self):
-        self.ring_data = {}
+    def update_overlay_data(self):
+        HexrdConfig().clear_overlay_data()
 
-    def add_rings(self):
-        self.clear_rings()
+        if not HexrdConfig().show_overlays:
+            # Nothing to do
+            return
 
-        for name in HexrdConfig().visible_material_names:
-            mat = HexrdConfig().material(name)
+        for overlay in HexrdConfig().overlays:
+            if not overlay['visible']:
+                # Skip over invisible overlays
+                continue
+
+            mat_name = overlay['material']
+            mat = HexrdConfig().material(mat_name)
 
             if not mat:
                 # Print a warning, as this shouldn't happen
-                print('Warning in InstrumentViewer.add_rings():',
-                      name, 'is not a valid material')
+                print('Warning in InstrumentViewer.update_overlay_data():',
+                      f'{mat_name} is not a valid material')
                 continue
 
-            overlay = PowderLineOverlay(mat.planeData, self.instr)
-            self.ring_data[name] = overlay.overlay('polar')
+            type = overlay['type']
+            kwargs = {
+                'plane_data': mat.planeData,
+                'instr': self.instr
+            }
+            # Add any options
+            kwargs.update(overlay.get('options', {}))
 
-        return self.ring_data
+            generator = overlay_generator(type)(**kwargs)
+            overlay['data'] = generator.overlay('polar')
 
     def update_detector(self, det):
         self.pv.update_detector(det)

@@ -1,3 +1,4 @@
+import copy
 import math
 
 from PySide2.QtCore import QThreadPool
@@ -26,8 +27,7 @@ class ImageCanvas(FigureCanvas):
 
         self.raw_axes = []  # only used for raw currently
         self.axes_images = []
-        self.cached_rings = []
-        self.cached_rbnds = []
+        self.overlay_artists = []
         self.cached_detector_borders = []
         self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
@@ -56,7 +56,7 @@ class ImageCanvas(FigureCanvas):
         self.setup_connections()
 
     def setup_connections(self):
-        HexrdConfig().ring_config_changed.connect(self.redraw_rings)
+        HexrdConfig().overlay_config_changed.connect(self.update_overlays)
         HexrdConfig().show_saturation_level_changed.connect(
             self.show_saturation)
         HexrdConfig().detector_transform_modified.connect(
@@ -74,7 +74,7 @@ class ImageCanvas(FigureCanvas):
         self.figure.clear()
         self.raw_axes.clear()
         self.axes_images.clear()
-        self.clear_rings()
+        self.clear_overlays()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.mode = None
@@ -117,48 +117,68 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = raw_iviewer()
         # Set the detectors to draw
         self.iviewer.detectors = [x.get_title() for x in self.raw_axes]
-        self.redraw_rings()
+        self.update_overlays()
 
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def clear_rings(self):
-        while self.cached_rings:
-            self.cached_rings.pop(0).remove()
+    def clear_overlays(self):
+        while self.overlay_artists:
+            self.overlay_artists.pop(0).remove()
 
-        while self.cached_rbnds:
-            self.cached_rbnds.pop(0).remove()
+    def overlay_axes_data(self, overlay):
+        # Return the axes and data for drawing the overlay
+        if not overlay['data']:
+            return []
 
-    def draw_rings_on_axis(self, axis, ring_data, style):
-        ring_color = style['ring_color']
-        ring_linestyle = style['ring_linestyle']
-        ring_linewidth = style['ring_linewidth']
-        rbnd_color = style['rbnd_color']
-        rbnd_linestyle = style['rbnd_linestyle']
-        rbnd_linewidth = style['rbnd_linewidth']
+        if self.mode in ['cartesian', 'polar']:
+            # If it's cartesian or polar, there is only one axis
+            return [(self.axis, next(iter(overlay['data'].values())))]
 
-        rings = ring_data['ring_data']
-        rbnds = ring_data['rbnd_data']
-        rbnd_indices = ring_data['rbnd_indices']
+        # If it's raw, there is data for each axis.
+        # The title of each axis should match the data key.
+        return [(x, overlay['data'][x.get_title()]) for x in self.raw_axes]
+
+    def overlay_draw_func(self, type):
+        overlay_funcs = {
+            'powder': self.draw_powder_overlay,
+            'laue': self.draw_laue_overlay,
+            'mono_rotation_series': self.draw_mono_rotation_series_overlay
+        }
+
+        if type not in overlay_funcs:
+            raise Exception(f'Unknown overlay type: {type}')
+
+        return overlay_funcs[type]
+
+    def draw_overlay(self, overlay):
+        type = overlay['type']
+        style = overlay['style']
+        for axis, data in self.overlay_axes_data(overlay):
+            self.overlay_draw_func(type)(axis, data, style)
+
+    def draw_powder_overlay(self, axis, data, style):
+        rings = data['rings']
+        rbnds = data['rbnds']
+        rbnd_indices = data['rbnd_indices']
+
+        data_style = style['data']
+        ranges_style = style['ranges']
 
         for pr in rings:
             x, y = self.extract_ring_coords(pr)
-            ring, = axis.plot(x, y, color=ring_color,
-                              linestyle=ring_linestyle,
-                              lw=ring_linewidth)
-            self.cached_rings.append(ring)
+            artist, = axis.plot(x, y, **data_style)
+            self.overlay_artists.append(artist)
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
             x, y = self.extract_ring_coords(pr)
-            color = rbnd_color
+            current_style = copy.deepcopy(ranges_style)
             if len(ind) > 1:
-                # If rbnds are combined, override the color to red
-                color = 'r'
-            rbnd, = axis.plot(x, y, color=color,
-                              linestyle=rbnd_linestyle,
-                              lw=rbnd_linewidth)
-            self.cached_rbnds.append(rbnd)
+                # If ranges are combined, override the color to red
+                current_style['c'] = 'r'
+            artist, = axis.plot(x, y, **current_style)
+            self.overlay_artists.append(artist)
 
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
@@ -167,10 +187,8 @@ class ImageCanvas(FigureCanvas):
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
                 for val in x:
-                    ring = az_axis.axvline(val, c=ring_color,
-                                           ls=ring_linestyle,
-                                           lw=ring_linewidth)
-                    self.cached_rings.append(ring)
+                    ring = az_axis.axvline(val, **data_style)
+                    self.overlay_artists.append(ring)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
@@ -178,41 +196,43 @@ class ImageCanvas(FigureCanvas):
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
 
-                color = rbnd_color
+                current_style = copy.deepcopy(ranges_style)
                 if len(ind) > 1:
                     # If rbnds are combined, override the color to red
-                    color = 'r'
+                    current_style['c'] = 'r'
 
                 for val in x:
-                    rbnd = az_axis.axvline(val, c=color, ls=rbnd_linestyle,
-                                           lw=rbnd_linewidth)
-                    self.cached_rbnds.append(rbnd)
+                    artist = az_axis.axvline(val, **current_style)
+                    self.overlay_artists.append(artist)
 
-    def redraw_rings(self):
+    def draw_laue_overlay(self, axis, data, style):
+        spots = data['spots']
+
+        # FIXME: plot this when we start to generate it
+        ranges = data['ranges']  # noqa: F841
+
+        data_style = style['data']
+
+        # FIXME: plot this when we start to generate it
+        ranges_style = style['ranges']  # noqa: F841
+
+        for x, y in spots:
+            artist = axis.scatter(x, y, **data_style)
+            self.overlay_artists.append(artist)
+
+    def draw_mono_rotation_series_overlay(self, axis, data, style):
+        pass
+
+    def update_overlays(self):
         # iviewer is required for drawing rings
         if not self.iviewer:
             return
 
-        self.clear_rings()
+        self.clear_overlays()
+        self.iviewer.update_overlay_data()
 
-        ring_data = self.iviewer.add_rings()
-        for mat_name in ring_data.keys():
-            style = HexrdConfig().get_ring_style(mat_name)
-            if self.mode == 'images':
-                # We have to draw once for each detector
-                for axis in self.raw_axes:
-                    # The title name is the detector name
-                    data = ring_data[mat_name][axis.get_title()]
-                    self.draw_rings_on_axis(axis, data, style)
-            elif ring_data[mat_name]:
-                # For both the Cartesian and Polar views, we only need to
-                # draw the first detector.
-                # For Cartesian, a fake single detector is used, so there
-                # should only be one.
-                # For Polar, the overlays are drawn on the entire view for
-                # each detector, so only one detector is needed.
-                first = next(iter(ring_data[mat_name].values()))
-                self.draw_rings_on_axis(self.axis, first, style)
+        for overlay in HexrdConfig().overlays:
+            self.draw_overlay(overlay)
 
         self.draw()
 
@@ -298,7 +318,7 @@ class ImageCanvas(FigureCanvas):
 
         bvec = HexrdConfig().instrument_config['beam']['vector']
         self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
-        self.redraw_rings()
+        self.update_overlays()
 
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
@@ -348,7 +368,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.autoscale(False)
             self.figure.tight_layout()
 
-        self.redraw_rings()
+        self.update_overlays()
         self.draw_detector_borders()
 
         msg = 'Cartesian view loaded!'
@@ -458,7 +478,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.axis('auto')
             self.figure.tight_layout()
 
-        self.redraw_rings()
+        self.update_overlays()
         self.draw_detector_borders()
 
         msg = 'Polar view loaded!'

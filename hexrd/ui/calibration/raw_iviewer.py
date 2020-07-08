@@ -1,6 +1,6 @@
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays import PowderLineOverlay
+from hexrd.ui.overlays import overlay_generator
 
 
 def raw_iviewer():
@@ -13,31 +13,35 @@ class InstrumentViewer:
         self.type = 'images'
         self.instr = create_hedm_instrument()
 
-        # Callers should set this to indicate the detectors for which they
-        # would like to generate ring data
-        self.detectors = []
+    def update_overlay_data(self):
+        HexrdConfig().clear_overlay_data()
 
-    def clear_rings(self):
-        self.ring_data = {}
-
-    def add_rings(self):
-        self.clear_rings()
-
-        if not HexrdConfig().show_overlays or not self.detectors:
+        if not HexrdConfig().show_overlays:
             # Nothing to do
-            return self.ring_data
+            return
 
-        for mat_name in HexrdConfig().visible_material_names:
+        for overlay in HexrdConfig().overlays:
+            if not overlay['visible']:
+                # Skip over invisible overlays
+                continue
+
+            mat_name = overlay['material']
             mat = HexrdConfig().material(mat_name)
-            self.ring_data[mat_name] = {}
 
             if not mat:
                 # Print a warning, as this shouldn't happen
-                print('Warning in InstrumentViewer.add_rings():',
-                      mat_name, 'is not a valid material')
+                print('Warning in InstrumentViewer.update_overlay_data():',
+                      f'{mat_name} is not a valid material')
                 continue
 
-            overlay = PowderLineOverlay(mat.planeData, self.instr)
-            self.ring_data[mat_name] = overlay.overlay('raw')
+            type = overlay['type']
+            kwargs = {
+                'plane_data': mat.planeData,
+                'instr': self.instr
+            }
+            if type == 'laue':
+                # Modify kwargs here
+                pass
 
-        return self.ring_data
+            generator = overlay_generator(type)(**kwargs)
+            overlay['data'] = generator.overlay('raw')

@@ -28,3 +28,42 @@ UI_AGG_INDEX_AVERAGE = 3
 
 UI_ETA_MIN_DEGREES = -180.0
 UI_ETA_MAX_DEGREES = 180.0
+
+DEFAULT_POWDER_STYLE = {
+    'data': {
+        'c': '#00ffff',  # Cyan
+        'ls': 'solid',
+        'lw': 1.0
+    },
+    'ranges': {
+        'c': '#00ff00',  # Green
+        'ls': 'dotted',
+        'lw': 1.0
+    }
+}
+
+DEFAULT_LAUE_STYLE = {
+    'data': {
+        'c': '#00ffff',  # Cyan
+        'marker': 'o',
+        's': 2.0
+    },
+    'ranges': {
+        'c': '#00ff00',  # Green
+        'ls': 'dotted',
+        'lw': 1.0
+    }
+}
+
+DEFAULT_MONO_ROTATION_SERIES_STYLE = {
+    'data': {
+        'c': '#00ffff',  # Cyan
+        'marker': 'o',
+        's': 2.0
+    },
+    'ranges': {
+        'c': '#00ff00',  # Green
+        'ls': 'dotted',
+        'lw': 1.0
+    }
+}

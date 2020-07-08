@@ -15,7 +15,7 @@ map configuration, which may also be added in the future).
 All of the configuration in the `HexrdConfig` singleton is stored as a
 python dictionary, but most of it is designed to be accessed as
 properties. For example, if you wish to see if the canvas is to show
-rings, you can check:
+overlays, you can check:
 ```
 b = HexrdConfig().show_overlays
 ```
@@ -26,8 +26,8 @@ properties results in `HexrdConfig()` emitting a signal. For instance,
 ```
 HexrdConfig().show_overlays = b
 ```
-will emit a `ring_config_changed` signal. The canvas is connected to
-this signal, and when it receives the signal, it re-draws the rings.
+will emit a `overlay_config_changed` signal. The canvas is connected to
+this signal, and when it receives the signal, it re-draws the overlays.
 
 The properties' underlying functions are sometimes named with an
 underscore at the beginning, and they are present so that widgets can

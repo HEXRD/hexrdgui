@@ -35,7 +35,8 @@ class MaterialEditorWidget(QObject):
         self.ui.max_hkl.valueChanged.connect(self.set_max_hkl)
 
         # Emit that the ring config changed when the material is modified
-        self.material_modified.connect(HexrdConfig().ring_config_changed.emit)
+        self.material_modified.connect(
+            HexrdConfig().overlay_config_changed.emit)
 
     def setup_space_group_widgets(self):
         for k in spacegroup.sgid_to_hall:
