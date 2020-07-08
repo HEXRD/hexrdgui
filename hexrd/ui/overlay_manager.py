@@ -37,11 +37,6 @@ class OverlayManager:
         self.ui.edit_style_button.pressed.connect(self.edit_style)
 
     def show(self):
-        if not hasattr(self, 'already_shown'):
-            # Move the dialog to the left the first time it is shown...
-            self.already_shown = True
-            self.move_dialog_to_left()
-
         self.update_table()
         self.ui.show()
 
@@ -219,16 +214,3 @@ class OverlayManager:
     def edit_style(self):
         self._style_picker = OverlayStylePicker(self.active_overlay, self.ui)
         self._style_picker.ui.exec_()
-
-    def move_dialog_to_left(self):
-        # This moves the dialog to the left border of the parent
-        parent = self.ui.parent()
-        if not parent:
-            return
-
-        ph = parent.geometry().height()
-        px = parent.geometry().x()
-        py = parent.geometry().y()
-        dw = self.ui.width()
-        dh = self.ui.height()
-        self.ui.setGeometry(px, py + (ph - dh) / 2.0, dw, dh)
