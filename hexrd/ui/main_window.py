@@ -486,10 +486,7 @@ class MainWindow(QObject):
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, line_data):
-        canvas = self.ui.image_tab_widget.image_canvases[0]
-        rsimg = canvas.iviewer.img
-        pv = canvas.iviewer.pv
-        create_polar_mask(line_data, rsimg, pv)
+        HexrdConfig().polar_masks_line_data.append(line_data.copy())
         self.update_all()
 
     def on_action_edit_reset_instrument_config(self):
@@ -593,6 +590,10 @@ class MainWindow(QObject):
         if self.image_mode == 'cartesian':
             self.ui.image_tab_widget.show_cartesian()
         elif self.image_mode == 'polar':
+            # Rebuild polar masks
+            del HexrdConfig().polar_masks[:]
+            for line_data in HexrdConfig().polar_masks_line_data:
+                create_polar_mask(line_data)
             self.ui.image_tab_widget.show_polar()
         else:
             self.ui.image_tab_widget.load_images()

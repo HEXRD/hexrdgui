@@ -116,6 +116,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = []
         self.load_panel_state = {}
         self.polar_masks = []
+        self.polar_masks_line_data = []
         self.ring_styles = {}
         self.backup_tth_maxes = {}
         self.backup_tth_widths = {}
