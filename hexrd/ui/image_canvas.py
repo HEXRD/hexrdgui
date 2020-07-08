@@ -206,7 +206,19 @@ class ImageCanvas(FigureCanvas):
                     self.overlay_artists.append(artist)
 
     def draw_laue_overlay(self, axis, data, style):
-        pass
+        spots = data['spots']
+
+        # FIXME: plot this when we start to generate it
+        ranges = data['ranges']  # noqa: F841
+
+        data_style = style['data']
+
+        # FIXME: plot this when we start to generate it
+        ranges_style = style['ranges']  # noqa: F841
+
+        for x, y in spots:
+            artist = axis.scatter(x, y, **data_style)
+            self.overlay_artists.append(artist)
 
     def draw_mono_rotation_series_overlay(self, axis, data, style):
         pass
