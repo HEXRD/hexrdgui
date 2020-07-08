@@ -11,6 +11,7 @@ class OverlayEditor:
         self.ui = loader.load_file('overlay_editor.ui', parent)
 
         self._overlay = None
+        self.update_type_tab()
 
         self.ui.tab_widget.tabBar().hide()
 
@@ -29,14 +30,20 @@ class OverlayEditor:
         self._overlay = v
         if self.overlay is not None:
             self.update_gui()
+        else:
+            self.update_type_tab()
 
     @property
     def type(self):
-        return self.overlay['type']
+        return self.overlay['type'] if self.overlay else None
 
     def update_type_tab(self):
-        # Take advantage of the naming scheme...
-        w = getattr(self.ui, self.type + '_tab')
+        if self.type is None:
+            w = getattr(self.ui, 'blank_tab')
+        else:
+            # Take advantage of the naming scheme...
+            w = getattr(self.ui, self.type + '_tab')
+
         self.ui.tab_widget.setCurrentWidget(w)
 
     def update_gui(self):
@@ -96,6 +103,7 @@ class OverlayEditor:
             self.ui.powder_tab,
             self.ui.laue_tab,
             self.ui.mono_rotation_series_tab,
+            self.ui.blank_tab
         ]
 
     @property

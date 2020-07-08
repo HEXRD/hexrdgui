@@ -22,7 +22,6 @@ class OverlayManager:
 
         self.overlay_editor = OverlayEditor(self.ui)
         self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
-        self.overlay_editor.ui.hide()
 
         self.material_combos = []
         self.type_combos = []
@@ -173,19 +172,7 @@ class OverlayManager:
         self.ui.edit_style_button.setEnabled(row_selected)
 
     def update_overlay_editor(self):
-        overlay = self.active_overlay
-        if overlay is None:
-            # Just hide the editor and return
-            self.overlay_editor.ui.hide()
-            return
-
-        self.overlay_editor.overlay = overlay
-        if overlay['type'] == 'powder':
-            # Hide the editor. There aren't any options.
-            self.overlay_editor.ui.hide()
-            return
-
-        self.overlay_editor.ui.show()
+        self.overlay_editor.overlay = self.active_overlay
 
     def update_config_materials(self):
         for i in range(self.ui.table.rowCount()):

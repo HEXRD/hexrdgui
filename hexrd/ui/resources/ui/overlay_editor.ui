@@ -33,7 +33,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="powder_tab">
       <attribute name="title">
@@ -435,6 +435,11 @@
      <widget class="QWidget" name="mono_rotation_series_tab">
       <attribute name="title">
        <string>Mono Rotation Series</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="blank_tab">
+      <attribute name="title">
+       <string>Blank</string>
       </attribute>
      </widget>
     </widget>
