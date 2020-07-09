@@ -120,6 +120,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.ring_styles = {}
         self.backup_tth_maxes = {}
         self.backup_tth_widths = {}
+        self._threshold_data = {}
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
 
@@ -1217,3 +1218,34 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return 6
 
         raise Exception('Unknown distortion function: ' + func_name)
+
+    def threshold_comparison(self):
+        if 'comparison' not in self._threshold_data:
+            self._threshold_data['comparison'] = 0
+        return self._threshold_data['comparison']
+
+    def threshold_value(self):
+        if 'value' not in self._threshold_data:
+            self._threshold_data['value'] = 0.0
+        return self._threshold_data['value']
+
+    def threshold_mask(self):
+        if 'mask' not in self._threshold_data:
+            self._threshold_data['mask'] = False
+        return self._threshold_data['mask']
+
+    def set_threshold_comparison(self, v):
+        self._threshold_data['comparison'] = v
+
+    def set_threshold_value(self, v):
+        self._threshold_data['value'] = v
+
+    def set_threshold_mask(self, v):
+        self._threshold_data['mask'] = v
+
+    threshold_comparison = property(threshold_comparison,
+                                    set_threshold_comparison)
+    threshold_value = property(threshold_value,
+                               set_threshold_value)
+    threshold_mask = property(threshold_mask,
+                              set_threshold_mask)
