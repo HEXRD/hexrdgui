@@ -483,6 +483,9 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="suffix">
              <string>°</string>
             </property>
@@ -500,6 +503,9 @@
           <item row="2" column="2">
            <widget class="QDoubleSpinBox" name="laue_eta_width">
             <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="keyboardTracking">
              <bool>false</bool>
             </property>
             <property name="suffix">
