@@ -165,7 +165,6 @@ class ImageModeWidget(QObject):
         self.ui.raw_threshold_comparison.setEnabled(checked)
         self.ui.raw_threshold_value.setEnabled(checked)
         if not hasattr(self, 'ims_copy') or self.ims_copy is None:
-            print('origninal ims: ', HexrdConfig().imageseries_dict)
             self.ims_copy = copy.copy(HexrdConfig().imageseries_dict)
         self.update_mask(checked)
 

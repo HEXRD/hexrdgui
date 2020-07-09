@@ -20,7 +20,6 @@ def apply_raw_mask(imageseries):
 
 def remove_raw_mask(ims_dict_copy):
     HexrdConfig().imageseries_dict = copy.copy(ims_dict_copy)
-    return None
 
 
 def _create_raw_mask(img, comparison, value):
