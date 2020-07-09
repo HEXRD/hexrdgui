@@ -90,7 +90,6 @@
      <string>E&amp;dit</string>
     </property>
     <addaction name="action_edit_euler_angle_convention"/>
-    <addaction name="action_edit_calibration_crystal"/>
     <addaction name="action_edit_apply_polar_mask"/>
     <addaction name="action_edit_reset_instrument_config"/>
     <addaction name="action_transform_detectors"/>

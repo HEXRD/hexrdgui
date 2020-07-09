@@ -4,7 +4,7 @@ import numpy as np
 nans_row = np.nan*np.ones((1, 2))
 
 
-class PowderLineOverlay(object):
+class PowderLineOverlay:
     def __init__(self, plane_data, instr, eta_steps=360):
         self._plane_data = plane_data
         self._instrument = instr
@@ -47,11 +47,11 @@ class PowderLineOverlay(object):
 
         point_groups = {}
         for det_key, panel in self.instrument.detectors.items():
-            keys = ['ring_data', 'rbnd_data', 'rbnd_indices']
+            keys = ['rings', 'rbnds', 'rbnd_indices']
             point_groups[det_key] = {key: [] for key in keys}
             ring_pts = self.generate_ring_points(tths, etas, panel,
                                                  display_mode)
-            point_groups[det_key]['ring_data'] = ring_pts
+            point_groups[det_key]['rings'] = ring_pts
 
             if self.plane_data.tThWidth is not None:
                 # Generate the ranges too
@@ -60,7 +60,7 @@ class PowderLineOverlay(object):
                 upper_pts = self.generate_ring_points(r_upper, etas, panel,
                                                       display_mode)
                 for l, u in zip(lower_pts, upper_pts):
-                    point_groups[det_key]['rbnd_data'] += [l, u]
+                    point_groups[det_key]['rbnds'] += [l, u]
                 for ind in indices:
                     point_groups[det_key]['rbnd_indices'] += [ind, ind]
 

@@ -16,7 +16,6 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
-from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.indexing.run import IndexingRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
@@ -122,8 +121,6 @@ class MainWindow(QObject):
             self.on_action_export_polar_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
-        self.ui.action_edit_calibration_crystal.triggered.connect(
-            self.on_action_edit_calibration_crystal)
         self.ui.action_edit_apply_polar_mask.triggered.connect(
             self.on_action_edit_apply_polar_mask_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
@@ -469,15 +466,6 @@ class MainWindow(QObject):
 
         self.update_all()
         self.update_config_gui()
-
-    def on_action_edit_calibration_crystal(self):
-        if not hasattr(self, 'calibration_crystal_editor'):
-            self.calibration_crystal_editor = CalibrationCrystalEditor(self.ui)
-        else:
-            # Update the GUI in case it needs updating
-            self.calibration_crystal_editor.update_gui_from_config()
-
-        self.calibration_crystal_editor.exec_()
 
     def on_action_edit_apply_polar_mask_triggered(self):
         # Make the dialog

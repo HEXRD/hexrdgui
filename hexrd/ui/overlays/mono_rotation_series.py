@@ -3,7 +3,7 @@ import numpy as np
 from hexrd import constants
 
 
-class MonoRotationSeriesSpotOverlay(object):
+class MonoRotationSeriesSpotOverlay:
     def __init__(self, plane_data, instr,
                  crystal_params=None,
                  eta_ranges=None,
@@ -43,7 +43,7 @@ class MonoRotationSeriesSpotOverlay(object):
             self._ome_period = self._ome_ranges[0][0] + np.r_[0., 2*np.pi]
         else:
             self._ome_period = ome_period
-            
+
         self._aggregation_mode = aggregation_mode
 
     @property
@@ -83,11 +83,11 @@ class MonoRotationSeriesSpotOverlay(object):
     @property
     def ome_period(self):
         return self._ome_ranges[0][0] + np.r_[0., 2*np.pi]
-    
+
     @property
     def aggregation_mode(self):
         return self._aggregation_mode
-    
+
     @aggregation_mode.setter
     def aggregation_mode(self, x):
         assert x in ['Maximum', 'Median', 'Average', 'None']
@@ -95,7 +95,7 @@ class MonoRotationSeriesSpotOverlay(object):
             self._aggregation_mode = None
         else:
             self._aggregation_mode = x
- 
+
     def overlay(self, display_mode='raw', frame_aggregateion_mode=None):
         """
         Returns appropriate point groups for displaying bragg reflection
