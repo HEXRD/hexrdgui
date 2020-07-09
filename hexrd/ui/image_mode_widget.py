@@ -177,3 +177,6 @@ class ImageModeWidget(QObject):
             remove_raw_mask(self.ims_copy)
             self.ims_copy = None
         self.mask_applied.emit()
+
+    def reset_masking(self, checked=False):
+        self.ui.raw_threshold_mask.setChecked(checked)
