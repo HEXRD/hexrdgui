@@ -23,7 +23,7 @@ class OverlayEditor:
     def setup_connections(self):
         for w in self.laue_widgets:
             if isinstance(w, QDoubleSpinBox):
-                w.editingFinished.connect(self.update_config)
+                w.valueChanged.connect(self.update_config)
             elif isinstance(w, QCheckBox):
                 w.toggled.connect(self.update_config)
 
