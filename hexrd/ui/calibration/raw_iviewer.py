@@ -39,9 +39,8 @@ class InstrumentViewer:
                 'plane_data': mat.planeData,
                 'instr': self.instr
             }
-            if type == 'laue':
-                # Modify kwargs here
-                pass
+            # Add any options
+            kwargs.update(overlay.get('options', {}))
 
             generator = overlay_generator(type)(**kwargs)
             overlay['data'] = generator.overlay('raw')
