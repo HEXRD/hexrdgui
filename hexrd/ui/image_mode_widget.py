@@ -1,5 +1,8 @@
+import copy
+
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
+from hexrd.ui.create_raw_mask import apply_raw_mask, remove_raw_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -11,6 +14,9 @@ class ImageModeWidget(QObject):
 
     # Tell the image canvas to show the snip1d
     polar_show_snip1d = Signal()
+
+    # Mask has been applied
+    mask_applied = Signal()
 
     def __init__(self, parent=None):
         super(ImageModeWidget, self).__init__(parent)
@@ -37,6 +43,8 @@ class ImageModeWidget(QObject):
             self.update_mask)
         self.ui.raw_threshold_value.valueChanged.connect(
             HexrdConfig().set_threshold_value)
+        self.ui.raw_threshold_value.valueChanged.connect(
+            self.update_mask)
         self.ui.cartesian_pixel_size.valueChanged.connect(
             HexrdConfig()._set_cartesian_pixel_size)
         self.ui.cartesian_virtual_plane_distance.valueChanged.connect(
@@ -148,3 +156,24 @@ class ImageModeWidget(QObject):
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
+
+    def raw_masking(self, checked):
+        # Toggle threshold masking on or off
+        # Creates a copy of the ImageSeries dict so that the images can
+        # easily be reverted to their original state if the mask is
+        # toggled off.
+        self.ui.raw_threshold_comparison.setEnabled(checked)
+        self.ui.raw_threshold_value.setEnabled(checked)
+        if not hasattr(self, 'ims_copy') or self.ims_copy is None:
+            print('origninal ims: ', HexrdConfig().imageseries_dict)
+            self.ims_copy = copy.copy(HexrdConfig().imageseries_dict)
+        self.update_mask(checked)
+
+    def update_mask(self, masking):
+        # Add or remove the mask. This will cause a re-render
+        if not isinstance(masking, bool) or masking:
+            apply_raw_mask(self.ims_copy)
+        else:
+            remove_raw_mask(self.ims_copy)
+            self.ims_copy = None
+        self.mask_applied.emit()

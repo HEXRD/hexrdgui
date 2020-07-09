@@ -137,6 +137,7 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
+        self.image_mode_widget.mask_applied.connect(self.update_all)
         self.ui.action_run_powder_calibration.triggered.connect(
             self.start_powder_calibration)
         self.ui.action_calibration_line_picker.triggered.connect(
