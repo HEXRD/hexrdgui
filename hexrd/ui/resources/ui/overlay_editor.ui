@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>548</width>
-    <height>299</height>
+    <height>468</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -29,7 +29,7 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>275</height>
+       <height>380</height>
       </size>
      </property>
      <property name="currentIndex">
@@ -57,33 +57,6 @@
        <string>Laue</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="laue_max_energy">
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="maximum">
-          <double>10000.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>35.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="laue_min_energy_label">
-         <property name="text">
-          <string>Min Energy:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="laue_max_energy_label">
-         <property name="text">
-          <string>Max Energy:</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QDoubleSpinBox" name="laue_min_energy">
          <property name="keyboardTracking">
@@ -97,7 +70,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0" colspan="2">
+       <item row="3" column="0" colspan="2">
         <widget class="QGroupBox" name="calibration_crystal_group_box">
          <property name="title">
           <string>Calibration Crystal</string>
@@ -430,6 +403,113 @@
          </layout>
         </widget>
        </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="laue_max_energy">
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <double>10000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>35.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="laue_max_energy_label">
+         <property name="text">
+          <string>Max Energy:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="laue_min_energy_label">
+         <property name="text">
+          <string>Min Energy:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QGroupBox" name="ranges_group_box">
+         <property name="title">
+          <string>Widths</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="2" column="1">
+           <widget class="QLabel" name="laue_eta_width_label">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>η</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="laue_tth_width_label">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>2θ</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="laue_enable_widths">
+            <property name="text">
+             <string>Enable Widths</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QDoubleSpinBox" name="laue_tth_width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>180.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.050000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QDoubleSpinBox" name="laue_eta_width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="decimals">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <double>180.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>5.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="mono_rotation_series_tab">
@@ -463,6 +543,9 @@
   <tabstop>tab_widget</tabstop>
   <tabstop>laue_min_energy</tabstop>
   <tabstop>laue_max_energy</tabstop>
+  <tabstop>laue_enable_widths</tabstop>
+  <tabstop>laue_tth_width</tabstop>
+  <tabstop>laue_eta_width</tabstop>
   <tabstop>laue_cc_0</tabstop>
   <tabstop>laue_cc_1</tabstop>
   <tabstop>laue_cc_2</tabstop>
