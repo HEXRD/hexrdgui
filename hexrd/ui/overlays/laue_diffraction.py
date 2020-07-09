@@ -85,7 +85,7 @@ class LaueSpotOverlay:
             xy_det, hkls_in, angles, dspacing, energy = psim
             idx = ~np.isnan(energy)
             if display_mode == 'polar':
-                point_groups[det_key]['spots'] = angles[idx, :]
+                point_groups[det_key]['spots'] = np.degrees(angles[idx, :])
             elif display_mode in ['raw', 'cartesian']:
                 panel = self.instrument.detectors[det_key]
 
