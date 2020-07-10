@@ -126,7 +126,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.workflow = None
         self._threshold_data = {}
 
-        self.set_euler_angle_convention('xyz', True, convert_config=False)
+        default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
+        self.set_euler_angle_convention(default_conv, convert_config=False)
 
         # Load default configuration settings
         self.load_default_config()
@@ -196,8 +197,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # All QSettings come back as strings.
         self.live_update = settings.value('live_update', 'true') == 'true'
 
-        conv = settings.value('euler_angle_convention', ('xyz', True))
-        self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)
+        default_convention = constants.DEFAULT_EULER_ANGLE_CONVENTION
+        conv = settings.value('euler_angle_convention', default_convention)
+        if isinstance(conv, tuple):
+            # Convert to our new method of storing it
+            conv = {'axes_order': conv[0], 'extrinsic': conv[1]}
+
+        self.set_euler_angle_convention(conv, convert_config=False)
 
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
@@ -348,11 +354,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
         eac = self.euler_angle_convention
-        if eac != (None, None):
+        if eac is not None:
             # Convert it to whatever convention we are using
-            old_conv = (None, None)
-            utils.convert_tilt_convention(self.config['instrument'], old_conv,
-                                          eac)
+            utils.convert_tilt_convention(self.config['instrument'], None, eac)
 
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
@@ -377,10 +381,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def save_instrument_config(self, output_file):
         default = self.filter_instrument_config(self.config['instrument'])
         eac = self.euler_angle_convention
-        if eac != (None, None):
+        if eac is not None:
             # Convert it to None convention before saving
-            new_conv = (None, None)
-            utils.convert_tilt_convention(default, eac, new_conv)
+            utils.convert_tilt_convention(default, eac, None)
 
         with open(output_file, 'w') as f:
             yaml.dump(default, f)
@@ -1156,21 +1159,25 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     tab_images = property(tab_images, set_tab_images)
 
-    def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True,
-                                   convert_config=True):
+    def set_euler_angle_convention(self, new_conv, convert_config=True):
 
-        new_conv = (axes_order, extrinsic)
-
-        allowed_combinations = [
-            ('xyz', True),
-            ('zxz', False),
-            (None, None)
+        allowed_conventions = [
+            {
+                'axes_order': 'xyz',
+                'extrinsic': True
+            },
+            {
+                'axes_order': 'zxz',
+                'extrinsic': False
+            },
+            None
         ]
 
-        if new_conv not in allowed_combinations:
+        if new_conv not in allowed_conventions:
+            default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
             print('Warning: Euler angle convention not allowed:', new_conv)
-            print('Setting the default instead:', allowed_combinations[0])
-            new_conv = allowed_combinations[0]
+            print('Setting the default instead:', default_conv)
+            new_conv = default_conv
 
         if convert_config:
             # First, convert all the tilt angles
@@ -1179,13 +1186,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                           new_conv)
 
         # Set the variable
-        self._euler_angle_convention = new_conv
+        self._euler_angle_convention = copy.deepcopy(new_conv)
 
     @property
     def instrument_config_none_euler_convention(self):
         iconfig = self.instrument_config
         eac = self.euler_angle_convention
-        utils.convert_tilt_convention(iconfig, eac, (None, None))
+        utils.convert_tilt_convention(iconfig, eac, None)
         return iconfig
 
     @property
@@ -1193,11 +1200,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self._euler_angle_convention
 
     def rotation_matrix_euler(self):
-        axes, extrinsic = self.euler_angle_convention
-        if axes is None or extrinsic is None:
+        convention = self.euler_angle_convention
+        if convention is None:
             return None
 
-        return RotMatEuler(np.zeros(3), axes, extrinsic)
+        return RotMatEuler(np.zeros(3), **convention)
 
     @property
     def show_detector_borders(self):

@@ -34,25 +34,22 @@ def convert_tilt_convention(iconfig, old_convention,
             data.clear()
             data.extend(val)
 
-    old_axes, old_extrinsic = old_convention
-    new_axes, new_extrinsic = new_convention
-
     det_keys = iconfig['detectors'].keys()
-    if old_axes is not None and old_extrinsic is not None:
+    if old_convention is not None:
         # First, convert these to the matrix invariants
-        rme = RotMatEuler(np.zeros(3), old_axes, old_extrinsic)
+        rme = RotMatEuler(np.zeros(3), **old_convention)
         for key in det_keys:
             tilts = iconfig['detectors'][key]['transform']['tilt']
             rme.angles = np.array(_get_tilt_array(tilts))
             phi, n = angleAxisOfRotMat(rme.rmat)
             _set_tilt_array(tilts, (phi * n.flatten()).tolist())
 
-        if new_axes is None or new_extrinsic is None:
+        if new_convention is None:
             # We are done
             return
 
     # Update to the new mapping
-    rme = RotMatEuler(np.zeros(3), new_axes, new_extrinsic)
+    rme = RotMatEuler(np.zeros(3), **new_convention)
     for key in det_keys:
         tilts = iconfig['detectors'][key]['transform']['tilt']
         tilt = np.array(_get_tilt_array(tilts))

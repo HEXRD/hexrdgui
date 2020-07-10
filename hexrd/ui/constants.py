@@ -33,6 +33,11 @@ UI_THRESHOLD_LESS_THAN = 0
 UI_THRESHOLD_GREATER_THAN = 1
 UI_THRESHOLD_EQUAL_TO = 2
 
+DEFAULT_EULER_ANGLE_CONVENTION = {
+    'axes_order': 'xyz',
+    'extrinsic': True
+}
+
 DEFAULT_POWDER_STYLE = {
     'data': {
         'c': '#00ffff',  # Cyan
