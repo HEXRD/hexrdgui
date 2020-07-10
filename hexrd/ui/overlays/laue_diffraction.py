@@ -103,6 +103,8 @@ class LaueSpotOverlay:
                 if display_mode == 'raw':
                     # Convert to pixel coordinates
                     data = panel.cartToPixel(data)
+                    # Swap x and y, they are flipped
+                    data[:, [0, 1]] = data[:, [1, 0]]
 
                 point_groups[det_key]['spots'] = data
         return point_groups
