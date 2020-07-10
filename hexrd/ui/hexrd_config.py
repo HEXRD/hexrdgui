@@ -99,6 +99,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the workflow has been changed"""
     workflow_changed = Signal()
 
+    """Emitted when the Euler angle convention changes"""
+    euler_angle_convention_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -1187,6 +1190,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         # Set the variable
         self._euler_angle_convention = copy.deepcopy(new_conv)
+        self.euler_angle_convention_changed.emit()
 
     @property
     def instrument_config_none_euler_convention(self):

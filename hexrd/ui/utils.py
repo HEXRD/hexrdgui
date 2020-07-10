@@ -58,6 +58,24 @@ def convert_tilt_convention(iconfig, old_convention,
         _set_tilt_array(tilts, np.array(rme.angles).tolist())
 
 
+def convert_angle_convention(angles, old_convention, new_convention):
+    if old_convention is not None:
+        # First, convert these to the matrix invariants
+        rme = RotMatEuler(np.zeros(3), **old_convention)
+        rme.angles = np.array(angles)
+        phi, n = angleAxisOfRotMat(rme.rmat)
+        angles = (phi * n.flatten()).tolist()
+
+        if new_convention is None:
+            # We are done
+            return angles
+
+    # Update to the new mapping
+    rme = RotMatEuler(np.zeros(3), **new_convention)
+    rme.rmat = makeRotMatOfExpMap(np.array(angles))
+    return np.array(rme.angles).tolist()
+
+
 def make_new_pdata(mat):
     # This generates new PlaneData for a material
     # This also preserves the previous exclusions of the plane data,
@@ -129,5 +147,6 @@ def remove_none_distortions(iconfig):
     # parameters that are set to None
     # This also assumes an iconfig without statuses
     for det in iconfig['detectors'].values():
-        if det.get('distortion', {}).get('function_name', '').lower() == 'none':
+        function_name = det.get('distortion', {}).get('function_name', '')
+        if function_name.lower() == 'none':
             del det['distortion']
