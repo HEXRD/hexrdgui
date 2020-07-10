@@ -88,8 +88,6 @@ fit_grains:
 
   npdiv: 4 # number of polar pixel grid subdivisions, defaults to 2
 
-  panel_buffer: 2 # don't fit spots within this many mm from edge
-
   threshold: 25
 
   tolerance:
