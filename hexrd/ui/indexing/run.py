@@ -2,7 +2,8 @@ import numpy as np
 
 from hexrd import indexer
 from hexrd.findorientations import (
-    generate_eta_ome_maps, generate_orientation_fibers
+    create_clustering_parameters, generate_eta_ome_maps,
+    generate_orientation_fibers, run_cluster
 )
 from hexrd.xrdutil import EtaOmeMaps
 
@@ -94,4 +95,37 @@ class IndexingRunner:
             nCPUs=ncpus
             )
         self.completeness = np.array(completeness)
-        print('Done!')
+        print('Indexing complete')
+
+        self.run_grain_fitting()
+
+    def run_grain_fitting(self):
+        # FIXME: here, I believe, the user should be able to choose
+        # options for the grain fitting via a dialog. These options should
+        # modify the settings under the
+        # `HexrdConfig().indexing_config['fit_grains']` key. Then, the
+        # following config object will automatically have those settings set.
+
+        print('Running grain fitting...')
+
+        # Create a full indexing config
+        config = create_indexing_config()
+
+        min_samples, mean_rpg = create_clustering_parameters(config,
+                                                             self.ome_maps)
+
+        kwargs = {
+            'compl': self.completeness,
+            'qfib': self.qfib,
+            'qsym': config.material.plane_data.getQSym(),
+            'cfg': config,
+            'min_samples': min_samples,
+            'compl_thresh': config.find_orientations.clustering.completeness,
+            'radius': config.find_orientations.clustering.radius
+        }
+        qbar, cl = run_cluster(**kwargs)
+
+        self.qbar = qbar
+        self.cl = cl
+        print('Grain fitting is complete!')
+        print(f'{self.qbar.shape[1]} grains were found')
