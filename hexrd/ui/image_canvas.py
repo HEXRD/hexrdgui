@@ -133,7 +133,8 @@ class ImageCanvas(FigureCanvas):
 
         if self.mode in ['cartesian', 'polar']:
             # If it's cartesian or polar, there is only one axis
-            return [(self.axis, next(iter(overlay['data'].values())))]
+            # Use the same axis for all of the data
+            return [(self.axis, x) for x in overlay['data'].values()]
 
         # If it's raw, there is data for each axis.
         # The title of each axis should match the data key.
