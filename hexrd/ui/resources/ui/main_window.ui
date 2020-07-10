@@ -447,6 +447,9 @@
    </property>
   </action>
   <action name="action_run_indexing">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Indexing</string>
    </property>

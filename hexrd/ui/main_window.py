@@ -142,6 +142,7 @@ class MainWindow(QObject):
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
         self.new_images_loaded.connect(self.update_color_map_bounds)
+        self.new_images_loaded.connect(self.update_indexing_menu)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.new_images_loaded.connect(self.image_mode_widget.reset_masking)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
@@ -626,3 +627,13 @@ class MainWindow(QObject):
         self.image_mode_widget.reset_masking()
         td = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
+
+    def update_indexing_menu(self):
+        enabled = False
+        image_series_dict = ImageLoadManager().unaggregated_images
+        image_series_dict = HexrdConfig().imageseries_dict if image_series_dict is None else image_series_dict
+        if image_series_dict:
+            # Check length of first series
+            series = next(iter(image_series_dict.values()))
+            enabled = len(series) > 1
+        self.ui.action_run_indexing.setEnabled(enabled)
