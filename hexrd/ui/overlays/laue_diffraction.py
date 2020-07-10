@@ -105,6 +105,10 @@ class LaueSpotOverlay:
                     data = panel.cartToPixel(data)
                     # Swap x and y, they are flipped
                     data[:, [0, 1]] = data[:, [1, 0]]
+                else:
+                    # I'm not sure why, but the y axis is flipped for
+                    # Cartesian...
+                    data[:, 1] = -data[:, 1]
 
                 point_groups[det_key]['spots'] = data
         return point_groups
