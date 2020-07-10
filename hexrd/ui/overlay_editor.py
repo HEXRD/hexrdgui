@@ -73,9 +73,9 @@ class OverlayEditor:
             for i, w in enumerate(self.laue_cc_widgets):
                 w.setValue(options['crystal_params'][i])
 
-        if 'tth_width' in options:
+        if options.get('tth_width') is not None:
             self.ui.laue_tth_width.setValue(np.degrees(options['tth_width']))
-        if 'eta_width' in options:
+        if options.get('eta_width') is not None:
             self.ui.laue_eta_width.setValue(np.degrees(options['eta_width']))
 
         widths = ['tth_width', 'eta_width']
