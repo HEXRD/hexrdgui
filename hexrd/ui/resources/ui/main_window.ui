@@ -157,7 +157,7 @@
      <item>
       <widget class="QToolBox" name="config_tool_box">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="materials_page">
         <property name="geometry">
@@ -165,7 +165,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>677</height>
          </rect>
         </property>
         <attribute name="label">
@@ -178,11 +178,16 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>677</height>
          </rect>
         </property>
         <attribute name="label">
          <string>Load Data</string>
+        </attribute>
+       </widget>
+       <widget class="QWidget" name="import_page">
+        <attribute name="label">
+         <string>Import Data</string>
         </attribute>
        </widget>
        <widget class="QWidget" name="instrument_calibration_page">
@@ -191,7 +196,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>677</height>
          </rect>
         </property>
         <attribute name="label">

@@ -26,6 +26,7 @@ from hexrd.ui.create_polar_mask import create_polar_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.materials_panel import MaterialsPanel
@@ -74,6 +75,10 @@ class MainWindow(QObject):
         self.load_widget = LoadPanel(self.ui)
         self.ui.load_page.setLayout(QVBoxLayout())
         self.ui.load_page.layout().addWidget(self.load_widget.ui)
+
+        self.import_data_widget = ImportDataPanel(self.ui)
+        self.ui.import_page.setLayout(QVBoxLayout())
+        self.ui.import_page.layout().addWidget(self.import_data_widget.ui)
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
