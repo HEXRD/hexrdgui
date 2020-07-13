@@ -44,4 +44,4 @@ class InstrumentViewer:
             kwargs.update(overlay.get('options', {}))
 
             generator = overlay_generator(type)(**kwargs)
-            overlay['data'] = generator.overlay('raw')
+            overlay['data'] = generator.overlay(UI_RAW)

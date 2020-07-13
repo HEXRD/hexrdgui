@@ -78,7 +78,7 @@ class InstrumentViewer:
             kwargs.update(overlay.get('options', {}))
 
             generator = overlay_generator(type)(**kwargs)
-            overlay['data'] = generator.overlay('polar')
+            overlay['data'] = generator.overlay(UI_POLAR)
 
     def update_detector(self, det):
         self.pv.update_detector(det)
