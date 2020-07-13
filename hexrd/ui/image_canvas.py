@@ -101,6 +101,7 @@ class ImageCanvas(FigureCanvas):
                 axis.set_title(name)
                 self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                                     norm=self.norm))
+                axis.autoscale(False)
                 self.raw_axes.append(axis)
 
             self.figure.tight_layout()
