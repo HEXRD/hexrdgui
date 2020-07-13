@@ -445,14 +445,19 @@ class MainWindow(QObject):
             'Extrinsic XYZ',
             'Intrinsic ZXZ'
         ]
+        corresponding_values = [
+            None,
+            {
+                'axes_order': 'xyz',
+                'extrinsic': True
+            },
+            {
+                'axes_order': 'zxz',
+                'extrinsic': False
+            }
+        ]
         current = HexrdConfig().euler_angle_convention
-        ind = 0
-        if current[0] is not None and current[1] is not None:
-            for i, convention in enumerate(allowed_conventions):
-                is_extr = 'Extrinsic' in convention
-                if current[0].upper() in convention and current[1] == is_extr:
-                    ind = i
-                    break
+        ind = corresponding_values.index(current)
 
         name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
                                         'Select Euler Angle Convention',
@@ -462,14 +467,8 @@ class MainWindow(QObject):
             # User canceled...
             return
 
-        if name == 'None':
-            chosen = None
-            extrinsic = None
-        else:
-            chosen = name.split()[1].lower()
-            extrinsic = 'Extrinsic' in name
-
-        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
+        chosen = corresponding_values[allowed_conventions.index(name)]
+        HexrdConfig().set_euler_angle_convention(chosen)
 
         self.update_all()
         self.update_config_gui()

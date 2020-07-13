@@ -310,9 +310,8 @@ def run_powder_calibration():
 
     # Convert back to whatever convention we were using before
     eac = HexrdConfig().euler_angle_convention
-    if eac != (None, None):
-        old_conv = (None, None)
-        convert_tilt_convention(output_dict, old_conv, eac)
+    if eac is not None:
+        convert_tilt_convention(output_dict, None, eac)
 
     # Add the saturation levels, as they seem to be missing
     sl = 'saturation_level'
