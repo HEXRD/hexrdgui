@@ -36,8 +36,13 @@ def create_indexing_config():
     mconfig.materials = HexrdConfig().materials
     config.material = mconfig
 
-    # Set the image series dict
-    ims_dict = HexrdConfig().imageseries_dict
+    # Use unaggregated images if possible
+    ims_dict = ImageLoadManager().unaggregated_images
+    if ims_dict is None:
+        # This probably means the image series was never aggregated.
+        # Try using the imageseries dict.
+        ims_dict = HexrdConfig().imageseries_dict
+
     # Load omega data if it is missing
     load_omegas_dict = {
         k: ims for k, ims in ims_dict.items() if 'omega' not in ims.metadata

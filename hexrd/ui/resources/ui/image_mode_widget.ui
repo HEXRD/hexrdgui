@@ -59,20 +59,73 @@
       <attribute name="title">
        <string>Raw</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QCheckBox" name="raw_tabbed_view">
-         <property name="text">
-          <string>Tabbed View</string>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QCheckBox" name="raw_tabbed_view">
+           <property name="text">
+            <string>Tabbed View</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="raw_show_saturation">
+           <property name="text">
+            <string>Show Saturation</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="raw_show_saturation">
-         <property name="text">
-          <string>Show Saturation</string>
-         </property>
-        </widget>
+        <layout class="QFormLayout" name="formLayout">
+         <item row="0" column="0" colspan="2">
+          <widget class="QCheckBox" name="raw_threshold_mask">
+           <property name="text">
+            <string>Set Threshold Mask</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QComboBox" name="raw_threshold_comparison">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <item>
+            <property name="text">
+             <string>less than</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>greater than</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>eqaul to</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="raw_threshold_value">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="minimum">
+            <double>-99999.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>99999.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>

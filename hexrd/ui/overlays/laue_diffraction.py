@@ -7,7 +7,7 @@ class LaueSpotOverlay:
     def __init__(self, plane_data, instr,
                  crystal_params=None, sample_rmat=None,
                  min_energy=5., max_energy=35.,
-                 ):
+                 tth_width=None, eta_width=None):
         self._plane_data = plane_data
         self._instrument = instr
         if crystal_params is None:
@@ -25,6 +25,9 @@ class LaueSpotOverlay:
             self._sample_rmat = constants.identity_3x3
         else:
             self.sample_rmat = sample_rmat
+
+        self.tth_width = tth_width
+        self.eta_width = eta_width
 
     @property
     def plane_data(self):
@@ -70,6 +73,11 @@ class LaueSpotOverlay:
         assert isinstance(x, np.ndarray), 'input must be a (3, 3) array'
         self._sample_rmat = x
 
+    @property
+    def widths_enabled(self):
+        widths = ['tth_width', 'eta_width']
+        return all(getattr(self, x) is not None for x in widths)
+
     def overlay(self, display_mode='raw'):
         sim_data = self.instrument.simulate_laue_pattern(
             self.plane_data,
@@ -85,7 +93,9 @@ class LaueSpotOverlay:
             xy_det, hkls_in, angles, dspacing, energy = psim
             idx = ~np.isnan(energy)
             if display_mode == 'polar':
-                point_groups[det_key]['spots'] = angles[idx, :]
+                spots = np.degrees(angles[idx, :])
+                point_groups[det_key]['spots'] = spots
+                point_groups[det_key]['ranges'] = self.polar_ranges(spots)
             elif display_mode in ['raw', 'cartesian']:
                 panel = self.instrument.detectors[det_key]
 
@@ -93,6 +103,31 @@ class LaueSpotOverlay:
                 if display_mode == 'raw':
                     # Convert to pixel coordinates
                     data = panel.cartToPixel(data)
+                    # Swap x and y, they are flipped
+                    data[:, [0, 1]] = data[:, [1, 0]]
+                else:
+                    # I'm not sure why, but the y axis is flipped for
+                    # Cartesian...
+                    data[:, 1] = -data[:, 1]
 
                 point_groups[det_key]['spots'] = data
         return point_groups
+
+    def polar_ranges(self, spots):
+        # spots should be in degrees
+        if not self.widths_enabled:
+            return []
+
+        widths = np.degrees([self.tth_width, self.eta_width])
+        ranges = []
+        for spot in spots:
+            corners = [
+               (spot[0] + widths[0], spot[1] + widths[1]),
+               (spot[0] + widths[0], spot[1] - widths[1]),
+               (spot[0] - widths[0], spot[1] - widths[1]),
+               (spot[0] - widths[0], spot[1] + widths[1])
+            ]
+            # Put the first point at the end to complete the square
+            corners.append(corners[0])
+            ranges.append(corners)
+        return ranges

@@ -64,6 +64,12 @@ class PowderLineOverlay:
                 for ind in indices:
                     point_groups[det_key]['rbnd_indices'] += [ind, ind]
 
+            # Currently, the polar mode draws lines over the whole image.
+            # Thus, we only need data from one detector.
+            # This can be changed in the future if needed.
+            if display_mode == 'polar':
+                break
+
         return point_groups
 
     def generate_ring_points(self, tths, etas, panel, display_mode):

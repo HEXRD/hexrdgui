@@ -22,6 +22,8 @@ class OverlayManager:
 
         self.overlay_editor = OverlayEditor(self.ui)
         self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.material_combos = []
         self.type_combos = []
