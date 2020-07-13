@@ -522,7 +522,7 @@ class ImageCanvas(FigureCanvas):
         axis.axis('auto')
 
     def on_detector_transform_modified(self, det):
-        if not self.iviewer:
+        if self.mode not in ['cartesian', 'polar']:
             return
 
         self.iviewer.update_detector(det)
