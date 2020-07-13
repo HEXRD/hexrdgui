@@ -92,13 +92,13 @@ class LaueSpotOverlay:
             point_groups[det_key] = {key: [] for key in keys}
             xy_det, hkls_in, angles, dspacing, energy = psim
             idx = ~np.isnan(energy)
+            angles = angles[idx, :]
+            range_corners = self.range_corners(angles)
             if display_mode == 'polar':
-                spots = np.degrees(angles[idx, :])
-                point_groups[det_key]['spots'] = spots
-                point_groups[det_key]['ranges'] = self.polar_ranges(spots)
+                point_groups[det_key]['spots'] = np.degrees(angles)
+                point_groups[det_key]['ranges'] = np.degrees(range_corners)
             elif display_mode in ['raw', 'cartesian']:
                 panel = self.instrument.detectors[det_key]
-
                 data = xy_det[idx, :]
                 if display_mode == 'raw':
                     # Convert to pixel coordinates
@@ -111,14 +111,17 @@ class LaueSpotOverlay:
                     data[:, 1] = -data[:, 1]
 
                 point_groups[det_key]['spots'] = data
+                point_groups[det_key]['ranges'] = self.range_data(
+                    range_corners, display_mode, panel)
+
         return point_groups
 
-    def polar_ranges(self, spots):
+    def range_corners(self, spots):
         # spots should be in degrees
         if not self.widths_enabled:
             return []
 
-        widths = np.degrees([self.tth_width, self.eta_width])
+        widths = (self.tth_width, self.eta_width)
         ranges = []
         for spot in spots:
             corners = [
@@ -130,4 +133,31 @@ class LaueSpotOverlay:
             # Put the first point at the end to complete the square
             corners.append(corners[0])
             ranges.append(corners)
+
         return ranges
+
+    @staticmethod
+    def range_data(range_corners, display_mode, panel):
+        # This function is only for raw and cartesian views
+        if not range_corners:
+            return []
+
+        # The range data is curved for raw and cartesian.
+        # Get more intermediate points so the data reflects this.
+        results = []
+        for corners in range_corners:
+            data = []
+            for i in range(len(corners) - 1):
+                tmp = np.linspace(corners[i], corners[i + 1])
+                data.extend(panel.angles_to_cart(tmp))
+
+            data = np.array(data)
+            if display_mode == 'raw':
+                data = panel.cartToPixel(data)
+                data[:, [0, 1]] = data[:, [1, 0]]
+            elif display_mode == 'cartesian':
+                data[:, 1] = -data[:, 1]
+
+            results.append(data)
+
+        return results
