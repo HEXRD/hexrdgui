@@ -93,6 +93,7 @@
     <addaction name="action_edit_apply_polar_mask"/>
     <addaction name="action_edit_reset_instrument_config"/>
     <addaction name="action_transform_detectors"/>
+    <addaction name="action_switch_workflow"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -452,6 +453,11 @@
    </property>
    <property name="text">
     <string>Indexing</string>
+   </property>
+  </action>
+  <action name="action_switch_workflow">
+   <property name="text">
+    <string>Switch Workflow</string>
    </property>
   </action>
  </widget>

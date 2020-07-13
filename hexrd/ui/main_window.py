@@ -34,6 +34,7 @@ from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import resource_loader
+from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
 import hexrd.ui.resources.icons
 
 
@@ -104,6 +105,8 @@ class MainWindow(QObject):
         # occurred. The images will be drawn automatically after
         # the first paint event has occurred (see MainWindow.eventFilter).
 
+        self.workflow_selection_dialog = WorkflowSelectionDialog(self.ui)
+
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
@@ -170,6 +173,9 @@ class MainWindow(QObject):
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
+
+        self.ui.action_switch_workflow.triggered.connect(
+            self.on_action_switch_workflow_triggered)
 
     def load_icon(self):
         icon = resource_loader.load_resource(hexrd.ui.resources.icons,
@@ -589,6 +595,10 @@ class MainWindow(QObject):
         else:
             self.ui.image_tab_widget.load_images()
 
+        # Only ask if have haven't asked before
+        if HexrdConfig().workflow is None:
+            self.workflow_selection_dialog.show()
+
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
     def live_update(self, enabled):
@@ -627,6 +637,10 @@ class MainWindow(QObject):
         self.image_mode_widget.reset_masking()
         td = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
+
+    def on_action_switch_workflow_triggered(self):
+        self.workflow_selection_dialog.show()
+
 
     def update_indexing_menu(self):
         enabled = False

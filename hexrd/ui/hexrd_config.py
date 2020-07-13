@@ -96,6 +96,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the load_panel_state has been cleared"""
     load_panel_state_reset = Signal()
 
+    """Emitted when the workflow has been changed"""
+    workflow_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -120,6 +123,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_tth_maxes = {}
         self.backup_tth_widths = {}
         self.overlays = []
+        self.workflow = None
         self._threshold_data = {}
 
         self.set_euler_angle_convention('xyz', True, convert_config=False)
@@ -175,6 +179,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
         HexrdConfig().clear_overlay_data()
         settings.setValue('overlays', self.overlays)
 
+    def save_workflow(self):
+        settings = QSettings()
+        old_workflow = settings.value('workflow', None)
+        if old_workflow != self.workflow:
+            settings.setValue('workflow', self.workflow)
+            self.workflow_changed.emit()
+
     def load_settings(self):
         settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
@@ -194,6 +205,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []
+
+        self.workflow = settings.value('workflow', None)
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
