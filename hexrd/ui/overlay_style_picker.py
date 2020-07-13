@@ -93,7 +93,12 @@ class OverlayStylePicker(QObject):
         ]
 
     def reset_style(self):
+        if self.overlay['style'] == self.original_style:
+            # Nothing really to do...
+            return
+
         self.overlay['style'] = copy.deepcopy(self.original_style)
+        self.overlay['update_needed'] = True
         self.update_gui()
         HexrdConfig().overlay_config_changed.emit()
 
@@ -126,6 +131,7 @@ class OverlayStylePicker(QObject):
         ranges[keys['range_color']] = self.ui.range_color.text()
         ranges[keys['range_style']] = self.ui.range_style.currentData()
         ranges[keys['range_size']] = self.ui.range_size.value()
+        self.overlay['update_needed'] = True
         HexrdConfig().overlay_config_changed.emit()
 
     def pick_color(self):

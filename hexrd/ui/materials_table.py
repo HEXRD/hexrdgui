@@ -39,6 +39,7 @@ class MaterialsTable:
         indices = range(len(plane_data.exclusions))
         exclusions = [i not in selected_rows for i in indices]
         plane_data.exclusions = exclusions
+        HexrdConfig().flag_overlay_updates_for_active_material()
         HexrdConfig().overlay_config_changed.emit()
 
     def update_table_selections(self):

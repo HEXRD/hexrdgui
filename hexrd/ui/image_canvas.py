@@ -80,6 +80,9 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_line_artist = None
         self.mode = None
 
+        # Force a re-draw of the overlays
+        HexrdConfig().clear_overlay_data()
+
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
         if self.mode != UI_RAW or len(image_names) != len(self.axes_images):
@@ -233,10 +236,15 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.clear_overlays()
+        if not HexrdConfig().show_overlays:
+            self.draw()
+            return
+
         self.iviewer.update_overlay_data()
 
         for overlay in HexrdConfig().overlays:
-            self.draw_overlay(overlay)
+            if overlay['visible']:
+                self.draw_overlay(overlay)
 
         self.draw()
 
@@ -319,6 +327,9 @@ class ImageCanvas(FigureCanvas):
     def beam_vector_changed(self):
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
             return
+
+        # Re-draw all overlays from scratch
+        HexrdConfig().clear_overlay_data()
 
         bvec = HexrdConfig().instrument_config['beam']['vector']
         self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])

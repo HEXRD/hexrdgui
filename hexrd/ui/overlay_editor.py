@@ -105,9 +105,8 @@ class OverlayEditor:
         if self.type == 'laue':
             self.update_config_laue()
 
-        if self.overlay['visible']:
-            # Only cause a re-render if the overlay is visible
-            HexrdConfig().overlay_config_changed.emit()
+        self.overlay['update_needed'] = True
+        HexrdConfig().overlay_config_changed.emit()
 
     def update_config_laue(self):
         options = self.overlay.setdefault('options', {})
