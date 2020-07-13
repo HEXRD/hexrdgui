@@ -104,7 +104,7 @@ class InstrumentViewer:
             kwargs.update(overlay.get('options', {}))
 
             generator = overlay_generator(type)(**kwargs)
-            overlay['data'] = generator.overlay('cartesian')
+            overlay['data'] = generator.overlay(UI_CARTESIAN)
 
     def plot_dplane(self):
         # Cache the image max and min for later use

@@ -2,6 +2,8 @@ import numpy as np
 
 from hexrd import constants
 
+from hexrd.ui.constants import UI_RAW, UI_CARTESIAN, UI_POLAR
+
 
 class MonoRotationSeriesSpotOverlay:
     def __init__(self, plane_data, instr,
@@ -96,7 +98,7 @@ class MonoRotationSeriesSpotOverlay:
         else:
             self._aggregation_mode = x
 
-    def overlay(self, display_mode='raw', frame_aggregateion_mode=None):
+    def overlay(self, display_mode=UI_RAW, frame_aggregateion_mode=None):
         """
         Returns appropriate point groups for displaying bragg reflection
         locations for a monochromatic rotation series.
@@ -104,7 +106,7 @@ class MonoRotationSeriesSpotOverlay:
         Parameters
         ----------
         display_mode : TYPE, optional
-            DESCRIPTION. The default is 'raw'.
+            DESCRIPTION. The default is UI_RAW.
         frame_aggregateion_mode : TYPE, optional
             DESCRIPTION. The default is None.
 
@@ -131,12 +133,12 @@ class MonoRotationSeriesSpotOverlay:
         point_groups = dict.fromkeys(sim_data)
         for det_key, psim in sim_data.items():
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
-            if display_mode == 'polar':
+            if display_mode == UI_POLAR:
                 if self.aggregation_mode is None:
                     raise NotImplementedError
                 else:
                     point_groups[det_key] = valid_angs[0]
-            elif display_mode in ['raw', 'cartesian']:
+            elif display_mode in [UI_RAW, UI_CARTESIAN]:
                 if self.aggregation_mode is None:
                     raise NotImplementedError
                 else:
