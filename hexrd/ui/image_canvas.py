@@ -28,7 +28,7 @@ class ImageCanvas(FigureCanvas):
 
         self.raw_axes = []  # only used for raw currently
         self.axes_images = []
-        self.overlay_artists = []
+        self.overlay_artists = {}
         self.cached_detector_borders = []
         self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
@@ -75,13 +75,10 @@ class ImageCanvas(FigureCanvas):
         self.figure.clear()
         self.raw_axes.clear()
         self.axes_images.clear()
-        self.clear_overlays()
+        self.remove_all_overlay_artists()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.mode = None
-
-        # Force a re-draw of the overlays
-        HexrdConfig().clear_overlay_data()
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -127,9 +124,16 @@ class ImageCanvas(FigureCanvas):
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def clear_overlays(self):
+    def remove_all_overlay_artists(self):
         while self.overlay_artists:
-            self.overlay_artists.pop(0).remove()
+            key = next(iter(self.overlay_artists))
+            self.remove_overlay_artists(key)
+
+    def remove_overlay_artists(self, key):
+        artists = self.overlay_artists[key]
+        while artists:
+            artists.pop(0).remove()
+        del self.overlay_artists[key]
 
     def overlay_axes_data(self, overlay):
         # Return the axes and data for drawing the overlay
@@ -158,12 +162,20 @@ class ImageCanvas(FigureCanvas):
         return overlay_funcs[type]
 
     def draw_overlay(self, overlay):
+        if not overlay['visible']:
+            return
+
         type = overlay['type']
         style = overlay['style']
         for axis, data in self.overlay_axes_data(overlay):
+            if id(data) in self.overlay_artists:
+                # It's already present. Skip it.
+                continue
+
             self.overlay_draw_func(type)(axis, data, style)
 
     def draw_powder_overlay(self, axis, data, style):
+        print('Drawing powder...')
         rings = data['rings']
         rbnds = data['rbnds']
         rbnd_indices = data['rbnd_indices']
@@ -171,10 +183,12 @@ class ImageCanvas(FigureCanvas):
         data_style = style['data']
         ranges_style = style['ranges']
 
+        artists = []
+        self.overlay_artists[id(data)] = artists
         for pr in rings:
             x, y = self.extract_ring_coords(pr)
             artist, = axis.plot(x, y, **data_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
@@ -184,7 +198,7 @@ class ImageCanvas(FigureCanvas):
                 # If ranges are combined, override the color to red
                 current_style['c'] = 'r'
             artist, = axis.plot(x, y, **current_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
@@ -193,8 +207,8 @@ class ImageCanvas(FigureCanvas):
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
                 for val in x:
-                    ring = az_axis.axvline(val, **data_style)
-                    self.overlay_artists.append(ring)
+                    artist = az_axis.axvline(val, **data_style)
+                    artists.append(artist)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
@@ -209,25 +223,28 @@ class ImageCanvas(FigureCanvas):
 
                 for val in x:
                     artist = az_axis.axvline(val, **current_style)
-                    self.overlay_artists.append(artist)
+                    artists.append(artist)
 
     def draw_laue_overlay(self, axis, data, style):
+        print('Drawing laue...')
         spots = data['spots']
         ranges = data['ranges']
 
         data_style = style['data']
         ranges_style = style['ranges']
 
+        artists = []
+        self.overlay_artists[id(data)] = artists
         for x, y in spots:
             artist = axis.scatter(x, y, **data_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
         for range in ranges:
             x, y = zip(*range)
             artist, = axis.plot(x, y, **ranges_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
-    def draw_mono_rotation_series_overlay(self, axis, data, style):
+    def draw_mono_rotation_series_overlay(self, id, axis, data, style):
         pass
 
     def update_overlays(self):
@@ -235,16 +252,37 @@ class ImageCanvas(FigureCanvas):
         if not self.iviewer:
             return
 
-        self.clear_overlays()
         if not HexrdConfig().show_overlays:
+            self.remove_all_overlay_artists()
             self.draw()
             return
+
+        def overlay_with_data_id(data_id):
+            for overlay in HexrdConfig().overlays:
+                if any([data_id == id(x) for x in overlay['data'].values()]):
+                    return overlay
+
+            return None
+
+        # Remove any artists that:
+        # 1. Are no longer in the list of overlays
+        # 2. Are not visible
+        # 3. Need updating
+        for key in list(self.overlay_artists.keys()):
+            overlay = overlay_with_data_id(key)
+            if overlay is None:
+                # This artist is no longer a part of the overlays
+                self.remove_overlay_artists(key)
+                continue
+
+            if overlay.get('update_needed', True) or not overlay['visible']:
+                self.remove_overlay_artists(key)
+                continue
 
         self.iviewer.update_overlay_data()
 
         for overlay in HexrdConfig().overlays:
-            if overlay['visible']:
-                self.draw_overlay(overlay)
+            self.draw_overlay(overlay)
 
         self.draw()
 
