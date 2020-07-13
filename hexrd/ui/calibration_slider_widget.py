@@ -2,13 +2,14 @@ from PySide2.QtCore import QObject, QTimer, Signal
 
 import numpy as np
 
+from hexrd.ui.constants import UI_POLAR
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 
 class CalibrationSliderWidget(QObject):
 
-    update_if_mode_matches = Signal(str)
+    update_if_mode_matches = Signal(int)
 
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10
@@ -280,7 +281,7 @@ class CalibrationSliderWidget(QObject):
             self._update_if_polar_timer = QTimer()
             self._update_if_polar_timer.setSingleShot(True)
             self._update_if_polar_timer.timeout.connect(
-                lambda: self.update_if_mode_matches.emit('polar'))
+                lambda: self.update_if_mode_matches.emit(UI_POLAR))
 
         self._update_if_polar_timer.start(500)
 

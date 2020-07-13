@@ -4,6 +4,7 @@ import numpy as np
 
 from hexrd.gridutil import cellIndices
 
+from hexrd.ui.constants import UI_CARTESIAN
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import overlay_generator
@@ -20,7 +21,7 @@ def cartesian_viewer():
 class InstrumentViewer:
 
     def __init__(self):
-        self.type = 'cartesian'
+        self.type = UI_CARTESIAN
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
 
