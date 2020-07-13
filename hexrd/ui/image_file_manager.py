@@ -2,6 +2,7 @@ import os
 import numpy as np
 import tempfile
 import yaml
+import h5py
 
 from PySide2.QtWidgets import QMessageBox
 
@@ -51,7 +52,6 @@ class ImageFileManager(metaclass=Singleton):
             try:
                 if isinstance(f, list):
                     f = f[0]
-
                 ims = self.open_file(f)
                 HexrdConfig().imageseries_dict[name] = ims
             except (Exception, IOError) as error:
@@ -77,9 +77,17 @@ class ImageFileManager(metaclass=Singleton):
     def open_file(self, f):
         ext = os.path.splitext(f)[1]
         if self.is_hdf5(ext):
-            ims = imageseries.open(f, 'hdf5',
-                path=self.path[0],
-                dataname=self.path[1])
+            data = h5py.File(f, 'r')
+            dset = data['/'.join(self.path)][()]
+            if dset.ndim < 3:
+                # Handle raw two dimesional data
+                x, y = dset.shape
+                ims = imageseries.open(None, 'array', data=dset)
+            else:
+                data.close()
+                ims = imageseries.open(f, 'hdf5',
+                    path=self.path[0],
+                    dataname=self.path[1])
         elif ext == '.npz':
             ims = imageseries.open(f, 'frame-cache')
         elif ext == '.yml':
