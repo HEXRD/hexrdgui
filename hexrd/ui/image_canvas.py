@@ -14,6 +14,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
+from hexrd.ui.constants import UI_RAW, UI_CARTESIAN, UI_POLAR
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import utils
 import hexrd.ui.constants
@@ -81,11 +82,11 @@ class ImageCanvas(FigureCanvas):
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
-        if self.mode != 'images' or len(image_names) != len(self.axes_images):
+        if self.mode != UI_RAW or len(image_names) != len(self.axes_images):
             # Either we weren't in image mode before, or we have a different
             # number of images. Clear and re-draw.
             self.clear()
-            self.mode = 'images'
+            self.mode = UI_RAW
 
             cols = 1
             if len(image_names) > 1:
@@ -101,6 +102,7 @@ class ImageCanvas(FigureCanvas):
                 axis.set_title(name)
                 self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                                     norm=self.norm))
+                axis.autoscale(False)
                 self.raw_axes.append(axis)
 
             self.figure.tight_layout()
@@ -131,7 +133,7 @@ class ImageCanvas(FigureCanvas):
         if not overlay['data']:
             return []
 
-        if self.mode in ['cartesian', 'polar']:
+        if self.mode in [UI_CARTESIAN, UI_POLAR]:
             # If it's cartesian or polar, there is only one axis
             # Use the same axis for all of the data
             return [(self.axis, x) for x in overlay['data'].values()]
@@ -266,7 +268,7 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def extract_ring_coords(self, data):
-        if self.mode == 'cartesian':
+        if self.mode == UI_CARTESIAN:
             # These are in x, y coordinates. Do not swap them.
             return data[:, 0], data[:, 1]
 
@@ -289,7 +291,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         # Do not show the saturation in calibration mode
-        if self.mode == 'cartesian' or self.mode == 'polar':
+        if self.mode != UI_RAW:
             return
 
         for img in self.axes_images:
@@ -324,9 +326,9 @@ class ImageCanvas(FigureCanvas):
 
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
-        if self.mode != 'cartesian':
+        if self.mode != UI_CARTESIAN:
             self.clear()
-            self.mode = 'cartesian'
+            self.mode = UI_CARTESIAN
 
         # Force a redraw when the pixel size changes.
         if (self.cartesian_res_config !=
@@ -378,15 +380,15 @@ class ImageCanvas(FigureCanvas):
 
     def show_polar(self):
         HexrdConfig().emit_update_status_bar('Loading polar view...')
-        if self.mode != 'polar':
+        if self.mode != UI_POLAR:
             self.clear()
-            self.mode = 'polar'
+            self.mode = UI_POLAR
 
         polar_res_config = HexrdConfig().config['image']['polar']
         if self._polar_reset_needed(polar_res_config):
             # Reset the whole image when certain config items change
             self.clear()
-            self.mode = 'polar'
+            self.mode = UI_POLAR
 
         self.polar_res_config = polar_res_config.copy()
 
@@ -478,6 +480,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.relim()
             self.axis.autoscale_view()
             self.axis.axis('auto')
+            self.axis.autoscale(False)
             self.figure.tight_layout()
 
         self.update_overlays()
@@ -499,7 +502,7 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def update_azimuthal_integral_plot(self):
-        if self.mode != 'polar':
+        if self.mode != UI_POLAR:
             # Nothing to do. Just return.
             return
 
@@ -522,7 +525,7 @@ class ImageCanvas(FigureCanvas):
         axis.axis('auto')
 
     def on_detector_transform_modified(self, det):
-        if not self.iviewer:
+        if self.mode not in [UI_CARTESIAN, UI_POLAR]:
             return
 
         self.iviewer.update_detector(det)
@@ -536,7 +539,7 @@ class ImageCanvas(FigureCanvas):
         self.draw_detector_borders()
 
     def export_polar_plot(self, filename):
-        if self.mode != 'polar':
+        if self.mode != UI_POLAR:
             raise Exception('Not in polar mode. Cannot export polar plot')
 
         if not self.iviewer:
@@ -560,7 +563,7 @@ class ImageCanvas(FigureCanvas):
         return False
 
     def polar_show_snip1d(self):
-        if self.mode != 'polar':
+        if self.mode != UI_POLAR:
             print('snip1d may only be shown in polar mode!')
             return
 

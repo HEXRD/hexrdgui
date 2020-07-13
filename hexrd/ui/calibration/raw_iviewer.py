@@ -1,3 +1,4 @@
+from hexrd.ui.constants import UI_RAW
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import overlay_generator
@@ -10,7 +11,7 @@ def raw_iviewer():
 class InstrumentViewer:
 
     def __init__(self):
-        self.type = 'images'
+        self.type = UI_RAW
         self.instr = create_hedm_instrument()
 
     def update_overlay_data(self):

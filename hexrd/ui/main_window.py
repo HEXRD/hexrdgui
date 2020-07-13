@@ -23,6 +23,7 @@ from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
 from hexrd.ui.create_polar_mask import create_polar_mask
+from hexrd.ui.constants import UI_RAW, UI_CARTESIAN, UI_POLAR
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -65,7 +66,7 @@ class MainWindow(QObject):
         self.ui.color_map_dock_widgets.layout().addWidget(
             self.color_map_editor.ui)
 
-        self.image_mode = 'raw'
+        self.image_mode = UI_RAW
         self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
         self.ui.image_mode_dock_widgets.layout().addWidget(
             self.image_mode_widget.ui)
@@ -489,16 +490,16 @@ class MainWindow(QObject):
         HexrdConfig().restore_instrument_config_backup()
         self.update_config_gui()
 
-    def change_image_mode(self, text):
-        self.image_mode = text.lower()
+    def change_image_mode(self, mode):
+        self.image_mode = mode
         self.update_image_mode_enable_states()
         self.update_all()
 
     def update_image_mode_enable_states(self):
         # This is for enable states that depend on the image mode
-        is_raw = self.image_mode == 'raw'
-        is_cartesian = self.image_mode == 'cartesian'
-        is_polar = self.image_mode == 'polar'
+        is_raw = self.image_mode == UI_RAW
+        is_cartesian = self.image_mode == UI_CARTESIAN
+        is_polar = self.image_mode == UI_POLAR
 
         has_images = HexrdConfig().has_images()
 
@@ -583,9 +584,9 @@ class MainWindow(QObject):
             for canvas in self.ui.image_tab_widget.image_canvases:
                 canvas.clear()
 
-        if self.image_mode == 'cartesian':
+        if self.image_mode == UI_CARTESIAN:
             self.ui.image_tab_widget.show_cartesian()
-        elif self.image_mode == 'polar':
+        elif self.image_mode == UI_POLAR:
             # Rebuild polar masks
             del HexrdConfig().polar_masks[:]
             for line_data in HexrdConfig().polar_masks_line_data:
@@ -622,7 +623,7 @@ class MainWindow(QObject):
         if intensity is not None:
             labels.append('value = {:8.3f}'.format(info['intensity']))
 
-            if info['mode'] in ['cartesian', 'polar']:
+            if info['mode'] in [UI_CARTESIAN, UI_POLAR]:
                 labels.append('tth = {:8.3f}'.format(info['tth']))
                 labels.append('eta = {:8.3f}'.format(info['eta']))
                 labels.append('dsp = {:8.3f}'.format(info['dsp']))

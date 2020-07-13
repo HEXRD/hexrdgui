@@ -4,6 +4,7 @@ import numpy as np
 
 from .polarview import PolarView
 
+from hexrd.ui.constants import UI_POLAR
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import overlay_generator
@@ -16,7 +17,7 @@ def polar_viewer():
 class InstrumentViewer:
 
     def __init__(self):
-        self.type = 'polar'
+        self.type = UI_POLAR
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
 
