@@ -478,6 +478,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.relim()
             self.axis.autoscale_view()
             self.axis.axis('auto')
+            self.axis.autoscale(False)
             self.figure.tight_layout()
 
         self.update_overlays()
