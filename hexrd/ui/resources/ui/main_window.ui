@@ -89,12 +89,18 @@
     <property name="title">
      <string>E&amp;dit</string>
     </property>
+    <widget class="QMenu" name="menu_masks">
+     <property name="title">
+      <string>Masks</string>
+     </property>
+     <addaction name="action_edit_apply_polar_mask"/>
+     <addaction name="action_edit_apply_laue_mask_to_polar"/>
+    </widget>
     <addaction name="action_edit_euler_angle_convention"/>
-    <addaction name="action_edit_apply_polar_mask"/>
     <addaction name="action_edit_reset_instrument_config"/>
+    <addaction name="menu_masks"/>
     <addaction name="action_transform_detectors"/>
     <addaction name="action_switch_workflow"/>
-    <addaction name="action_edit_apply_laue_mask_to_polar"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -427,14 +433,6 @@
     <string>Calibration Line Picker</string>
    </property>
   </action>
-  <action name="action_edit_apply_polar_mask">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Apply Mask to Polar</string>
-   </property>
-  </action>
   <action name="action_edit_reset_instrument_config">
    <property name="text">
     <string>Reset Instrument Config</string>
@@ -461,12 +459,20 @@
     <string>Switch Workflow</string>
    </property>
   </action>
+  <action name="action_edit_apply_polar_mask">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply Mask to Polar</string>
+   </property>
+  </action>
   <action name="action_edit_apply_laue_mask_to_polar">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Apply Laue Masks to Polar</string>
+    <string>Apply Laue Mask to Polar</string>
    </property>
   </action>
  </widget>
