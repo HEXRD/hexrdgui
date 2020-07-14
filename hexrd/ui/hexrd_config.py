@@ -368,7 +368,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Create a backup
         self.backup_instrument_config()
 
+        # Temporarily turn off overlays. They will be updated later.
+        self.clear_overlay_data()
+        prev = self.show_overlays
+        self.config['materials']['show_overlays'] = False
         self.update_visible_material_energies()
+        self.config['materials']['show_overlays'] = prev
 
         self.instrument_config_loaded.emit()
 
@@ -982,8 +987,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['materials'].get('show_overlays')
 
     def _set_show_overlays(self, b):
-        self.config['materials']['show_overlays'] = b
-        self.overlay_config_changed.emit()
+        if b != self.show_overlays:
+            self.config['materials']['show_overlays'] = b
+            self.overlay_config_changed.emit()
 
     show_overlays = property(_show_overlays, _set_show_overlays)
 

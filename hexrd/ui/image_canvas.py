@@ -175,7 +175,6 @@ class ImageCanvas(FigureCanvas):
             self.overlay_draw_func(type)(axis, data, style)
 
     def draw_powder_overlay(self, axis, data, style):
-        print('Drawing powder...')
         rings = data['rings']
         rbnds = data['rbnds']
         rbnd_indices = data['rbnd_indices']
@@ -226,7 +225,6 @@ class ImageCanvas(FigureCanvas):
                     artists.append(artist)
 
     def draw_laue_overlay(self, axis, data, style):
-        print('Drawing laue...')
         spots = data['spots']
         ranges = data['ranges']
 
