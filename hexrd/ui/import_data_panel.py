@@ -25,6 +25,8 @@ class ImportDataPanel(QObject):
         self.ui.load.clicked.connect(self.load_images)
         self.ui.instruments.currentIndexChanged.connect(self.instrument_selected)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
+        self.ui.trans.clicked.connect(self.setup_translate)
+        self.ui.rotate.clicked.connect(self.setup_rotate)
     
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
@@ -80,3 +82,13 @@ class ImportDataPanel(QObject):
             return
         self.it.clear()
         self.it = None
+
+    def setup_translate(self):
+        if self.it is not None:
+            self.it.disconnect_rotate()
+            self.it.connect_translate()
+
+    def setup_rotate(self):
+        if self.it is not None:
+            self.it.disconnect_translate()
+            self.it.connect_rotate()
