@@ -6,6 +6,7 @@ from PySide2.QtWidgets import QFileDialog
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -16,11 +17,14 @@ class ImportDataPanel(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('import_data_panel.ui', parent)
+        self.it = None
 
         self.setup_connections()
     
     def setup_connections(self):
         self.ui.load.clicked.connect(self.load_images)
+        self.ui.instruments.currentIndexChanged.connect(self.instrument_selected)
+        self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
     
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
@@ -39,3 +43,40 @@ class ImportDataPanel(QObject):
             selected_files = [[x] for x in selected_files]
             ImageLoadManager().read_data(
                 selected_files, parent=self.ui)
+
+            files = [os.path.split(f[0])[1] for f in selected_files]
+            self.ui.files_label.setText(','.join(files))
+            self.ui.instruments.setEnabled(True)
+            self.ui.instrument_label.setEnabled(True)
+
+    def instrument_selected(self, idx):
+        TARDIS = ['None', 'IP2', 'IP3', 'IP4']
+        PXRDIP = ['None']
+        BBXRD = ['None']
+        dets = [TARDIS, PXRDIP, BBXRD]
+
+        self.ui.detectors.clear()
+        self.ui.detectors.insertItems(0, dets[idx])
+        self.ui.detector_label.setEnabled(True)
+        self.ui.detectors.setEnabled(True)
+        self.clear_boundry()
+
+    def detector_selected(self, selected):
+        self.ui.trans.setEnabled(selected)
+        self.ui.rotate.setEnabled(selected)
+        self.ui.button_box.setEnabled(selected)
+        if selected > 0:
+            instr = self.ui.instruments.currentText()
+            det = self.ui.detectors.currentText()
+            if not self.it is None:
+                self.clear_boundry()
+            self.it = InteractiveTemplate(HexrdConfig().image(det, 0), self.parent())
+            self.it.create_shape(file_name=instr+'_'+det)
+        else:
+            self.clear_boundry()
+
+    def clear_boundry(self):
+        if self.it is None:
+            return
+        self.it.clear()
+        self.it = None
