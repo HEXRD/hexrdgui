@@ -1,8 +1,7 @@
 import numpy as np
 
 from matplotlib.transforms import Affine2D
-from matplotlib import lines, patches
-from matplotlib.path import Path
+from matplotlib import patches
 
 from hexrd.ui import resource_loader
 import hexrd.ui.resources.templates
@@ -141,7 +140,7 @@ class InteractiveTemplate:
         v1 = np.array(self.mouse_position(e)) - np.array(self.center)
         v0_u = v0/np.linalg.norm(v0)
         v1_u = v1/np.linalg.norm(v1)
-        angle = np.arctan2(np.linalg.det([v0_u, v1_u]), np.dot(v0_u,v1_u))
+        angle = np.arctan2(np.linalg.det([v0_u, v1_u]), np.dot(v0_u, v1_u))
         return angle
 
     def on_rotate_release(self, event):

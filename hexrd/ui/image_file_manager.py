@@ -85,9 +85,8 @@ class ImageFileManager(metaclass=Singleton):
                 ims = imageseries.open(None, 'array', data=dset)
             else:
                 data.close()
-                ims = imageseries.open(f, 'hdf5',
-                    path=self.path[0],
-                    dataname=self.path[1])
+                ims = imageseries.open(
+                    f, 'hdf5', path=self.path[0], dataname=self.path[1])
         elif ext == '.npz':
             ims = imageseries.open(f, 'frame-cache')
         elif ext == '.yml':

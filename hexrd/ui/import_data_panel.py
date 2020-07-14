@@ -23,7 +23,8 @@ class ImportDataPanel(QObject):
     
     def setup_connections(self):
         self.ui.load.clicked.connect(self.load_images)
-        self.ui.instruments.currentIndexChanged.connect(self.instrument_selected)
+        self.ui.instruments.currentIndexChanged.connect(
+            self.instrument_selected)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
@@ -70,9 +71,10 @@ class ImportDataPanel(QObject):
         if selected > 0:
             instr = self.ui.instruments.currentText()
             det = self.ui.detectors.currentText()
-            if not self.it is None:
+            if self.it is not None:
                 self.clear_boundry()
-            self.it = InteractiveTemplate(HexrdConfig().image(det, 0), self.parent())
+            self.it = InteractiveTemplate(
+                HexrdConfig().image(det, 0), self.parent())
             self.it.create_shape(file_name=instr+'_'+det)
         else:
             self.clear_boundry()
