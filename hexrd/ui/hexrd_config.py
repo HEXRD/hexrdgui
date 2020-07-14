@@ -738,7 +738,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     @property
     def default_detector(self):
         return copy.deepcopy(
-            self.default_config['instrument']['detectors']['ge1'])
+            self.default_config['instrument']['detectors']['detector_1'])
 
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
