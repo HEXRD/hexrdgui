@@ -169,8 +169,7 @@ class MainWindow(QObject):
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
-        HexrdConfig().deep_rerender_needed.connect(
-            lambda: self.update_all(clear_canvases=True))
+        HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -223,6 +222,7 @@ class MainWindow(QObject):
             return HexrdConfig().save_instrument_config(selected_file)
 
     def on_detectors_changed(self):
+        HexrdConfig().clear_overlay_data()
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
@@ -493,6 +493,10 @@ class MainWindow(QObject):
     def change_image_mode(self, mode):
         self.image_mode = mode
         self.update_image_mode_enable_states()
+
+        # Clear the overlays
+        HexrdConfig().clear_overlay_data()
+
         self.update_all()
 
     def update_image_mode_enable_states(self):
@@ -566,6 +570,13 @@ class MainWindow(QObject):
     def update_if_mode_matches(self, mode):
         if self.image_mode == mode:
             self.update_all()
+
+    def deep_rerender(self):
+        # Clear all overlays
+        HexrdConfig().clear_overlay_data()
+
+        # Update all and clear the canvases
+        self.update_all(clear_canvases=True)
 
     def update_all(self, clear_canvases=False):
         # If there are no images loaded, skip the request

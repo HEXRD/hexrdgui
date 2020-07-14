@@ -368,7 +368,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Create a backup
         self.backup_instrument_config()
 
+        # Temporarily turn off overlays. They will be updated later.
+        self.clear_overlay_data()
+        prev = self.show_overlays
+        self.config['materials']['show_overlays'] = False
         self.update_visible_material_energies()
+        self.config['materials']['show_overlays'] = prev
 
         self.instrument_config_loaded.emit()
 
@@ -800,8 +805,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         self.config['materials']['materials'][name] = material
 
-        if self.material_is_visible(name):
-            self.overlay_config_changed.emit()
+        self.flag_overlay_updates_for_material(name)
+        self.overlay_config_changed.emit()
 
     def remove_material(self, name):
         if name not in self.materials:
@@ -841,7 +846,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
-        self.overlay_config_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
@@ -875,6 +879,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         mat.beamEnergy = energy
         utils.make_new_pdata(mat)
+        self.flag_overlay_updates_for_material(mat.name)
 
     def update_active_material_energy(self):
         self.update_material_energy(self.active_material)
@@ -912,6 +917,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.backup_tth_width = self.active_material_tth_width
 
             self.active_material.planeData.tThWidth = v
+            self.flag_overlay_updates_for_active_material()
             self.overlay_config_changed.emit()
 
     active_material_tth_width = property(_active_material_tth_width,
@@ -949,6 +955,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.backup_tth_max = self.active_material_tth_max
 
             self.active_material.planeData.tThMax = v
+            self.flag_overlay_updates_for_active_material()
             self.overlay_config_changed.emit()
 
     active_material_tth_max = property(_active_material_tth_max,
@@ -980,8 +987,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['materials'].get('show_overlays')
 
     def _set_show_overlays(self, b):
-        self.config['materials']['show_overlays'] = b
-        self.overlay_config_changed.emit()
+        if b != self.show_overlays:
+            self.config['materials']['show_overlays'] = b
+            self.overlay_config_changed.emit()
 
     show_overlays = property(_show_overlays, _set_show_overlays)
 
@@ -1019,10 +1027,21 @@ class HexrdConfig(QObject, metaclass=Singleton):
         overlay['type'] = type
         overlay['style'] = overlays.default_overlay_style(type)
         overlay['options'].clear()
+        overlay['update_needed'] = True
 
     def clear_overlay_data(self):
         for overlay in self.overlays:
             overlay['data'].clear()
+            if 'update_needed' in overlay:
+                del overlay['update_needed']
+
+    def flag_overlay_updates_for_active_material(self):
+        self.flag_overlay_updates_for_material(self.active_material_name)
+
+    def flag_overlay_updates_for_material(self, material_name):
+        for overlay in self.overlays:
+            if overlay['material'] == material_name:
+                overlay['update_needed'] = True
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
