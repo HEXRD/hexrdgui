@@ -94,6 +94,7 @@
     <addaction name="action_edit_reset_instrument_config"/>
     <addaction name="action_transform_detectors"/>
     <addaction name="action_switch_workflow"/>
+    <addaction name="action_edit_apply_laue_mask_to_polar"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -458,6 +459,14 @@
   <action name="action_switch_workflow">
    <property name="text">
     <string>Switch Workflow</string>
+   </property>
+  </action>
+  <action name="action_edit_apply_laue_mask_to_polar">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Apply Laue Masks to Polar</string>
    </property>
   </action>
  </widget>

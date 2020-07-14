@@ -127,6 +127,8 @@ class MainWindow(QObject):
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_apply_polar_mask.triggered.connect(
             self.on_action_edit_apply_polar_mask_triggered)
+        self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
+            self.on_action_edit_apply_laue_mask_to_polar_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
@@ -486,6 +488,34 @@ class MainWindow(QObject):
         HexrdConfig().polar_masks_line_data.append(line_data.copy())
         self.update_all()
 
+    def on_action_edit_apply_laue_mask_to_polar_triggered(self):
+        if not HexrdConfig().show_overlays:
+            msg = 'Overlays are not displayed'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        all_overlays = HexrdConfig().overlays
+        laue_overlays = [x for x in all_overlays if x['type'] == 'laue']
+        laue_overlays = [x for x in laue_overlays if x['visible']]
+        if not laue_overlays:
+            msg = 'No Laue overlays found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        data = []
+        for overlay in laue_overlays:
+            for det, val in overlay['data'].items():
+                for ranges in val['ranges']:
+                    data.append(ranges)
+
+        if not data:
+            msg = 'No Laue overlay ranges found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        HexrdConfig().polar_masks_line_data.append(data)
+        self.update_all()
+
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
         self.update_config_gui()
@@ -507,6 +537,7 @@ class MainWindow(QObject):
         self.ui.action_calibration_line_picker.setEnabled(
             is_polar and has_images)
         self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and has_images)
+        self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():
