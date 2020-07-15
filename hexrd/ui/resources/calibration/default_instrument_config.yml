@@ -1,16 +1,12 @@
 beam:
-  energy: 55.6180
+  energy: 71.6764
   vector: {azimuth: 90.0, polar_angle: 90.0}
 detectors:
   detector_1:
-    distortion:
-      function_name: None
-      parameters: [0.0, 0.0, 0.0,
-        2.0, 2.0, 2.0]
     pixels:
       columns: 2048
       rows: 2048
-      size: [1.0, 1.0]
+      size: [0.2, 0.2]
     saturation_level: 14000.0
     transform:
       translation: [0.0, 0.0, -1000.0]
