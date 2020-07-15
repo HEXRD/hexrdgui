@@ -1,4 +1,4 @@
-from PySide2.QtCore import QModelIndex, Qt
+from PySide2.QtCore import QObject, QModelIndex, Qt
 from PySide2.QtWidgets import (
     QCheckBox, QMenu, QMessageBox, QStyledItemDelegate, QTreeView
 )
@@ -69,6 +69,10 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         if item.child_count() == 0:
             self.cfg.set_instrument_config_val(path, value)
+            dist_func_path = ['distortion', 'function_name', 'value']
+            if len(path) > 4 and path[2:5] == dist_func_path:
+                # Rebuild the tree if the distortion function changed
+                QObject.parent(self).rebuild_tree()
 
         return True
 

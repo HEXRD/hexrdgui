@@ -148,5 +148,7 @@ def remove_none_distortions(iconfig):
     # This also assumes an iconfig without statuses
     for det in iconfig['detectors'].values():
         function_name = det.get('distortion', {}).get('function_name', '')
+        if isinstance(function_name, dict):
+            function_name = function_name['value']
         if function_name.lower() == 'none':
             del det['distortion']
