@@ -73,8 +73,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         for item in os.scandir(HexrdConfig().images_dir):
             if os.path.isfile(item):
                 file_name = os.path.splitext(item.name)[0]
+                ext = os.path.splitext(item.name)[1]
                 for det in dets:
-                    if (det in file_name) and (core_name == file_name.replace(det, '')):
+                    if (det in file_name or det in ext) and (core_name == file_name.replace(det, '')):
                         pos = dets.index(det)
                         files[pos].append(item.path)
         # Display error if equivalent files are not found for ea. detector
