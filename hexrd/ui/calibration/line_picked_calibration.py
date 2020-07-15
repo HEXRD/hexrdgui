@@ -7,7 +7,6 @@ from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import convert_tilt_convention
-from hexrd.ui.utils import remove_none_distortions
 
 # =============================================================================
 # %% Functions and parameters
@@ -148,7 +147,6 @@ def run_line_picked_calibration(line_data):
 
     # Set up the instrument
     iconfig = HexrdConfig().instrument_config_none_euler_convention
-    remove_none_distortions(iconfig)
     instr = instrument.HEDMInstrument(instrument_config=iconfig,
                                       tilt_calibration_mapping=rme)
 

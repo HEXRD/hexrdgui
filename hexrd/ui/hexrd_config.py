@@ -144,6 +144,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.set_defaults_if_missing()
 
+        # Remove any 'None' distortion dicts from the detectors
+        utils.remove_none_distortions(self.config['instrument'])
+
         # Add the statuses to the config
         self.create_internal_config(self.config['instrument'])
 
@@ -365,6 +368,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
+
+        # Remove any 'None' distortion dicts from the detectors
+        utils.remove_none_distortions(self.config['instrument'])
+
         self.create_internal_config(self.config['instrument'])
 
         # Create a backup
@@ -645,6 +652,25 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_instrument_config_val(self, path, value):
         """This sets a value from a path list."""
         cur_val = self.config['instrument']
+
+        # Special case for distortion:
+        # If it is None, remove the distortion dict
+        # If it is not None, then create the distortion dict if not present
+        dist_func_path = ['distortion', 'function_name', 'value']
+        if len(path) > 4 and path[2:5] == dist_func_path:
+            cur_val = cur_val[path[0]][path[1]]
+            if value == 'None' and 'distortion' in cur_val:
+                del cur_val['distortion']
+            elif value != 'None':
+                cur_val['distortion'] = {
+                    'function_name': value,
+                    'parameters': (
+                        [0.] * self.num_distortion_parameters(value)
+                    )
+                }
+                self.add_status(cur_val['distortion'])
+            return
+
         try:
             for val in path[:-1]:
                 cur_val = cur_val[val]
@@ -687,6 +713,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         """
         cur_val = self.config['instrument']
+
+        # Special case for distortion:
+        # If no distortion is specified, return 'None'
+        dist_func_path = ['distortion', 'function_name']
+        if len(path) > 3 and path[2:4] == dist_func_path:
+            for val in path:
+                if val not in cur_val:
+                    return 'None' if path[-1] == 'value' else 1
+                cur_val = cur_val[val]
+            return cur_val
+
         try:
             for val in path:
                 cur_val = cur_val[val]
