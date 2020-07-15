@@ -210,6 +210,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_instrument_config(selected_file)
             self.update_config_gui()
 
@@ -219,6 +220,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             return HexrdConfig().save_instrument_config(selected_file)
 
     def on_detectors_changed(self):
@@ -313,6 +315,7 @@ class MainWindow(QObject):
             'HEXRD files (*.hexrd)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_materials(selected_file)
             self.materials_panel.update_gui_from_config()
 
@@ -344,6 +347,7 @@ class MainWindow(QObject):
             'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             if selected_filter.startswith('HDF5'):
                 selected_format = 'hdf5'
             elif selected_filter.startswith('NPZ'):
@@ -377,6 +381,7 @@ class MainWindow(QObject):
             'HEXRD files (*.hexrd)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_export_polar_plot_triggered(self):
@@ -385,6 +390,7 @@ class MainWindow(QObject):
             'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_polar_plot(selected_file)
 
     def on_action_calibration_line_picker_triggered(self):
