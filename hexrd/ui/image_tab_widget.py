@@ -50,6 +50,21 @@ class ImageTabWidget(QTabWidget):
         HexrdConfig().tab_images_changed.connect(self.load_images)
         HexrdConfig().detectors_changed.connect(self.reset_index)
 
+    def clear(self):
+        # This removes all canvases except the first one,
+        # and it calls super().clear()
+
+        for canvas, cid in zip(self.image_canvases[1:],
+                               self.mpl_connections[1:]):
+            canvas.mpl_disconnect(cid)
+            canvas.deleteLater()
+
+        del self.image_canvases[1:]
+        del self.toolbars[1:]
+        del self.mpl_connections[1:]
+
+        super().clear()
+
     def reset_index(self):
         self.current_index = 0
 
