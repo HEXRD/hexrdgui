@@ -38,7 +38,7 @@ class InstrumentViewer:
 
     def draw_polar(self):
         """show polar view of rings"""
-        self.pv = PolarView(self.instr, eta_min=-180., eta_max=180.)
+        self.pv = PolarView(self.instr)
         self.pv.warp_all_images()
 
         tth_min = HexrdConfig().polar_res_tth_min
