@@ -9,9 +9,11 @@ from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
+from hexrd.ui.indexing.fit_grains_dialog import FitGrainsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 
+DEBUG = True
 
 class IndexingRunner:
     def __init__(self, parent=None):
@@ -100,6 +102,16 @@ class IndexingRunner:
         self.run_grain_fitting()
 
     def run_grain_fitting(self):
+        if DEBUG:
+            import importlib
+            import hexrd.ui.indexing.fit_grains_dialog
+            importlib.reload(hexrd.ui.indexing.fit_grains_dialog)
+            from hexrd.ui.indexing.fit_grains_dialog import FitGrainsDialog
+
+        dialog = FitGrainsDialog(self.parent)
+        print('TODO - Run grain fitting')
+        return
+
         # FIXME: here, I believe, the user should be able to choose
         # options for the grain fitting via a dialog. These options should
         # modify the settings under the

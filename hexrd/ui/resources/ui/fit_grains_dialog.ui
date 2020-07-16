@@ -159,74 +159,16 @@
     </widget>
    </item>
    <item>
-    <widget class="QTableWidget" name="tolerances_table">
-     <attribute name="horizontalHeaderCascadingSectionResizes">
+    <widget class="QTableView" name="tolerances_view">
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>26</number>
+     </attribute>
+     <attribute name="horizontalHeaderHighlightSections">
       <bool>false</bool>
      </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>120</number>
-     </attribute>
-     <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+     <attribute name="verticalHeaderVisible">
       <bool>true</bool>
      </attribute>
-     <row>
-      <property name="text">
-       <string>1</string>
-      </property>
-     </row>
-     <row>
-      <property name="text">
-       <string>2</string>
-      </property>
-     </row>
-     <column>
-      <property name="text">
-       <string>tth</string>
-      </property>
-      <property name="textAlignment">
-       <set>AlignCenter</set>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>eta</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>omega</string>
-      </property>
-     </column>
-     <item row="0" column="0">
-      <property name="text">
-       <string>0.25</string>
-      </property>
-     </item>
-     <item row="0" column="1">
-      <property name="text">
-       <string>3.0</string>
-      </property>
-     </item>
-     <item row="0" column="2">
-      <property name="text">
-       <string>2.0</string>
-      </property>
-     </item>
-     <item row="1" column="0">
-      <property name="text">
-       <string>0.2</string>
-      </property>
-     </item>
-     <item row="1" column="1">
-      <property name="text">
-       <string>2.0</string>
-      </property>
-     </item>
-     <item row="1" column="2">
-      <property name="text">
-       <string>1.0</string>
-      </property>
-     </item>
     </widget>
    </item>
    <item>
@@ -322,7 +264,7 @@
   <tabstop>tth_max_instrument</tabstop>
   <tabstop>tth_max_specify</tabstop>
   <tabstop>tth_max_value</tabstop>
-  <tabstop>tolerances_table</tabstop>
+  <tabstop>tolerances_view</tabstop>
   <tabstop>add_row</tabstop>
   <tabstop>delete_row</tabstop>
   <tabstop>move_up</tabstop>

@@ -4,32 +4,43 @@ from PySide2.QtWidgets import QHeaderView
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
+from hexrd.ui.indexing.fit_grains_tolerances_model import FitGrainsToleranceModel
+
+DEBUG = False
 
 class FitGrainsDialog(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
         config = HexrdConfig().indexing_config['fit_grains']
-        print('config:', config)
         if config.get('do_fit') == False:
             return
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_dialog.ui', parent)
         self.ui.setWindowTitle('Fit Grains')
-        num_cols = self.ui.tolerances_table.columnCount()
-        for i in range(num_cols):
-            self.ui.tolerances_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
+        if DEBUG:
+            import importlib
+            import hexrd.ui.indexing.fit_grains_tolerances_model
+            importlib.reload(hexrd.ui.indexing.fit_grains_tolerances_model)
+            from hexrd.ui.indexing.fit_grains_tolerances_model import FitGrainsToleranceModel
+
+        self.tolerances_model = FitGrainsToleranceModel(self.ui)
         self.update_gui_from_config(config)
+        self.ui.tolerances_view.setModel(self.tolerances_model)
+
+        # Stretch columns to fill the available horizontal space
+        num_cols = self.tolerances_model.columnCount()
+        for i in range(num_cols):
+            self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
         # self.setup_connections()
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
         self.ui.tth_max_specify.toggled.connect(self.on_tth_specify_toggled)
 
         result = self.ui.exec()
-        print('result:', result)
-
 
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
@@ -37,7 +48,7 @@ class FitGrainsDialog(QObject):
             self.ui.npdiv,
             self.ui.refit_ome_step_scale,
             self.ui.refit_pixel_scale,
-            self.ui.tolerances_table,
+            self.ui.tolerances_view,
             self.ui.threshold,
             self.ui.tth_max_enable,
             self.ui.tth_max_instrument,
@@ -87,5 +98,4 @@ class FitGrainsDialog(QObject):
         self.ui.tth_max_value.setValue(value)
 
         tolerances = config.get('tolerance')
-        self.ui.tolerances_table.clear()
-        # Todo tolerance model/view
+        self.tolerances_model.update_from_config(tolerances)
