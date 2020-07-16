@@ -1,4 +1,6 @@
 import copy
+from functools import partial
+import multiprocessing
 import numpy as np
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
@@ -167,24 +169,28 @@ class ImageModeWidget(QObject):
         # This will automatically generate and set values for the polar
         # pixel values based upon the config.
         # This function does not invoke a re-render.
+        manager = multiprocessing.Manager()
+        keys = ['max_tth_ps', 'max_eta_ps', 'min_tth', 'max_tth']
+        results = {key: manager.list() for key in keys}
 
-        # FIXME: can we do this without creating an instrument?
+        f = partial(compute_polar_params, **results)
         instr = create_hedm_instrument()
-        ang_px_all = []
-        for v in instr.detectors.values():
-            X, Y = np.meshgrid(v.col_pixel_vec, v.row_pixel_vec)
-            ang_px_all.append(
-                v.angularPixelSize(np.vstack([X.flatten(), Y.flatten()]).T)
-            )
-        ang_px_all = np.vstack(ang_px_all)
-        max_px = np.degrees(np.max(ang_px_all, axis=0))
-
-        tth_pixel_size, eta_pixel_size = max_px
+        with multiprocessing.Pool() as pool:
+            pool.map(f, instr.detectors.values())
 
         # Set these manually so no rerender signals are fired
-        polar_config = HexrdConfig().config['image']['polar']
-        polar_config['pixel_size_tth'] = tth_pixel_size * 10
-        polar_config['pixel_size_eta'] = eta_pixel_size * 0.8
+        params = {
+            'pixel_size_tth': 10 * np.degrees(max(results['max_tth_ps'])),
+            'pixel_size_eta': 2 * np.degrees(max(results['max_eta_ps'])),
+            'tth_min': np.degrees(min(results['min_tth'])),
+            'tth_max': np.degrees(max(results['max_tth']))
+        }
+
+        # Sometimes, this is too big. Bring it down if it is.
+        px_eta = params['pixel_size_eta']
+        params['pixel_size_eta'] = px_eta if px_eta < 90 else 5
+
+        HexrdConfig().config['image']['polar'].update(params)
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
@@ -211,3 +217,18 @@ class ImageModeWidget(QObject):
 
     def reset_masking(self, checked=False):
         self.ui.raw_threshold_mask.setChecked(checked)
+
+
+def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
+    # Other than panel, all arguments are lists for appending results
+    # pixel sizes
+    ang_ps = panel.angularPixelSize(
+        np.vstack([i.flatten() for i in panel.pixel_coords]).T
+    )
+    max_tth_ps.append(np.max(ang_ps[:, 0]))
+    max_eta_ps.append(np.max(ang_ps[:, 1]))
+
+    # tth ranges
+    ptth, peta = panel.pixel_angles()
+    min_tth.append(np.min(ptth))
+    max_tth.append(np.max(ptth))
