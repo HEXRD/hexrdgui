@@ -4,6 +4,8 @@ from numpy.linalg import LinAlgError
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
+from hexrd import matrixutil
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
@@ -156,27 +158,14 @@ class CalibrationCrystalEditor(QObject):
             w.setValue(v[i])
 
     @property
-    def matrix_scaling(self):
-        scaling = np.array([np.sqrt(2)] * 9)
-        diagonal_indices = [0, 4, 8]
-        for i in diagonal_indices:
-            scaling[i] = 1
-
-        return scaling
-
-    @property
     def inverse_stretch(self):
-        m = (self.stretch_matrix * self.matrix_scaling).reshape(3, 3)
-        m = np.linalg.inv(m).flatten()
-        indices = [0, 4, 8, 5, 2, 1]
-        return [m[i] for i in indices]
+        m = np.array(self.stretch_matrix).reshape(3, 3)
+        return matrixutil.symmToVecMV(np.linalg.inv(m), scale=True)
 
     @inverse_stretch.setter
     def inverse_stretch(self, v):
-        indices = [0, 5, 4, 5, 1, 3, 4, 3, 2]
-        m = np.array([v[i] for i in indices]).reshape(3, 3)
-        m = np.linalg.inv(m).flatten()
-        self.stretch_matrix = m / self.matrix_scaling
+        m = matrixutil.vecMVToSymm(v, scale=True)
+        self.stretch_matrix = np.linalg.inv(m).flatten()
 
     @property
     def stretch_matrix(self):
