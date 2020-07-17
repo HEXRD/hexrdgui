@@ -40,6 +40,12 @@ class ViewType:
     polar = 'polar'
 
 
+class OverlayType(Enum):
+    powder = 'powder'
+    laue = 'laue'
+    mono_rotation_series = 'mono_rotation_series'
+
+
 DEFAULT_EULER_ANGLE_CONVENTION = {
     'axes_order': 'xyz',
     'extrinsic': True

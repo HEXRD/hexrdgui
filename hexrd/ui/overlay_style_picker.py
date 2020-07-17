@@ -4,6 +4,7 @@ from PySide2.QtCore import QObject, QSignalBlocker
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QColorDialog
 
+from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -62,7 +63,7 @@ class OverlayStylePicker(QObject):
             'D'
         ]
 
-        if type == 'laue':
+        if type == OverlayType.laue:
             data_styles = marker_styles
         else:
             data_styles = line_styles
@@ -155,9 +156,10 @@ class OverlayStylePicker(QObject):
     def keys(self):
         if not hasattr(self, '_keys'):
             self._keys = {
-                'powder': self.powder_keys,
-                'laue': self.laue_keys,
-                'mono_rotation_series': self.mono_rotation_series_keys
+                OverlayType.powder: self.powder_keys,
+                OverlayType.laue: self.laue_keys,
+                OverlayType.mono_rotation_series: (
+                    self.mono_rotation_series_keys)
             }
 
         type = self.overlay['type']
@@ -203,9 +205,10 @@ class OverlayStylePicker(QObject):
     def labels(self):
         if not hasattr(self, '_labels'):
             self._labels = {
-                'powder': self.powder_labels,
-                'laue': self.laue_labels,
-                'mono_rotation_series': self.mono_rotation_series_labels
+                OverlayType.powder: self.powder_labels,
+                OverlayType.laue: self.laue_labels,
+                OverlayType.mono_rotation_series: (
+                    self.mono_rotation_series_labels)
             }
 
         type = self.overlay['type']

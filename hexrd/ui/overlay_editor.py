@@ -5,6 +5,7 @@ from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
+from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -59,14 +60,14 @@ class OverlayEditor:
             w = getattr(self.ui, 'blank_tab')
         else:
             # Take advantage of the naming scheme...
-            w = getattr(self.ui, self.type + '_tab')
+            w = getattr(self.ui, self.type.value + '_tab')
 
         self.ui.tab_widget.setCurrentWidget(w)
 
     def update_gui(self):
         self.update_type_tab()
 
-        if self.type == 'laue':
+        if self.type == OverlayType.laue:
             self.update_gui_laue()
 
     def update_gui_laue(self):
@@ -113,7 +114,7 @@ class OverlayEditor:
         self.laue_crystal_editor.params = v
 
     def update_config(self):
-        if self.type == 'laue':
+        if self.type == OverlayType.laue:
             self.update_config_laue()
 
         self.overlay['update_needed'] = True

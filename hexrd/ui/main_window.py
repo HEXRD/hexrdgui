@@ -23,7 +23,7 @@ from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
 from hexrd.ui.create_polar_mask import create_polar_mask
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -496,8 +496,8 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        all_overlays = HexrdConfig().overlays
-        laue_overlays = [x for x in all_overlays if x['type'] == 'laue']
+        overlays = HexrdConfig().overlays
+        laue_overlays = [x for x in overlays if x['type'] == OverlayType.laue]
         laue_overlays = [x for x in laue_overlays if x['visible']]
         if not laue_overlays:
             msg = 'No Laue overlays found'
