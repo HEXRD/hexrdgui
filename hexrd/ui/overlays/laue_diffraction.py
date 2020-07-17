@@ -2,7 +2,7 @@ import numpy as np
 
 from hexrd import constants
 
-from hexrd.ui.constants import UI_RAW, UI_CARTESIAN, UI_POLAR
+from hexrd.ui.constants import ViewType
 
 
 class LaueSpotOverlay:
@@ -80,7 +80,7 @@ class LaueSpotOverlay:
         widths = ['tth_width', 'eta_width']
         return all(getattr(self, x) is not None for x in widths)
 
-    def overlay(self, display_mode=UI_RAW):
+    def overlay(self, display_mode=ViewType.raw):
         sim_data = self.instrument.simulate_laue_pattern(
             self.plane_data,
             minEnergy=self.min_energy,
@@ -96,13 +96,13 @@ class LaueSpotOverlay:
             idx = ~np.isnan(energy)
             angles = angles[idx, :]
             range_corners = self.range_corners(angles)
-            if display_mode == UI_POLAR:
+            if display_mode == ViewType.polar:
                 point_groups[det_key]['spots'] = np.degrees(angles)
                 point_groups[det_key]['ranges'] = np.degrees(range_corners)
-            elif display_mode in [UI_RAW, UI_CARTESIAN]:
+            elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 panel = self.instrument.detectors[det_key]
                 data = xy_det[idx, :]
-                if display_mode == UI_RAW:
+                if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
                     data = panel.cartToPixel(data)
                     # Swap x and y, they are flipped
@@ -154,10 +154,10 @@ class LaueSpotOverlay:
                 data.extend(panel.angles_to_cart(tmp))
 
             data = np.array(data)
-            if display_mode == UI_RAW:
+            if display_mode == ViewType.raw:
                 data = panel.cartToPixel(data)
                 data[:, [0, 1]] = data[:, [1, 0]]
-            elif display_mode == UI_CARTESIAN:
+            elif display_mode == ViewType.cartesian:
                 data[:, 1] = -data[:, 1]
 
             results.append(data)

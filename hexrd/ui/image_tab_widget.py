@@ -3,7 +3,7 @@ from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 import numpy as np
 
-from hexrd.ui.constants import UI_CARTESIAN, UI_POLAR
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
@@ -264,11 +264,12 @@ class ImageTabWidget(QTabWidget):
 
         # intensity being None implies here that the mouse is on top of the
         # azimuthal integration plot in the polar view.
-        if mode in [UI_CARTESIAN, UI_POLAR] and intensity is not None:
+        if (mode in [ViewType.cartesian, ViewType.polar] and
+                intensity is not None):
 
             iviewer = self.image_canvases[0].iviewer
 
-            if mode == UI_CARTESIAN:
+            if mode == ViewType.cartesian:
                 xy_data = iviewer.dpanel.pixelToCart(np.vstack([i, j]).T)
                 ang_data, gvec = iviewer.dpanel.cart_to_angles(xy_data)
                 tth = ang_data[:, 0][0]

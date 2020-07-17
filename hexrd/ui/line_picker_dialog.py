@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 
-from hexrd.ui.constants import UI_POLAR
+from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.zoom_canvas import ZoomCanvas
 
@@ -84,7 +84,7 @@ class LinePickerDialog(QObject):
         self.zoom_canvas.render()
 
     def start(self):
-        if self.canvas.mode != UI_POLAR:
+        if self.canvas.mode != ViewType.polar:
             print('line picker only works in polar mode!')
             return
 
