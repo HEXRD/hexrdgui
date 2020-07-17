@@ -58,8 +58,8 @@ class CalibrationCrystalEditor(QObject):
             self.update_duplicate(sender)
             try:
                 self.params[6:] = self.inverse_stretch
-            except LinAlgError:
-                self.set_matrix_invalid()
+            except LinAlgError as e:
+                self.set_matrix_invalid(str(e))
                 return
 
             self.set_matrix_valid()
@@ -113,13 +113,19 @@ class CalibrationCrystalEditor(QObject):
 
     def set_matrix_valid(self):
         self.set_matrix_style_sheet('background-color: white')
+        self.set_matrix_tooltips('')
 
-    def set_matrix_invalid(self):
+    def set_matrix_invalid(self, msg=''):
         self.set_matrix_style_sheet('background-color: red')
+        self.set_matrix_tooltips(msg)
 
     def set_matrix_style_sheet(self, s):
         for w in self.stretch_matrix_widgets:
             w.setStyleSheet(s)
+
+    def set_matrix_tooltips(self, s):
+        for w in self.stretch_matrix_widgets:
+            w.setToolTip(s)
 
     @staticmethod
     def convert_angle_convention(values, old_conv, new_conv):
