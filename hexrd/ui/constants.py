@@ -1,3 +1,5 @@
+from enum import Enum
+
 from hexrd import constants
 
 # Wavelength to kilo electron volt conversion
@@ -33,9 +35,12 @@ UI_THRESHOLD_LESS_THAN = 0
 UI_THRESHOLD_GREATER_THAN = 1
 UI_THRESHOLD_EQUAL_TO = 2
 
-UI_RAW = 0
-UI_CARTESIAN = 1
-UI_POLAR = 2
+
+class ViewType(Enum):
+    raw = 'raw'
+    cartesian = 'cartesian'
+    polar = 'polar'
+
 
 DEFAULT_EULER_ANGLE_CONVENTION = {
     'axes_order': 'xyz',

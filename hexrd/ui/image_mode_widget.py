@@ -5,7 +5,7 @@ import numpy as np
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
-from hexrd.ui.constants import UI_RAW, UI_CARTESIAN, UI_POLAR
+from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_raw_mask, remove_raw_mask
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -15,7 +15,7 @@ from hexrd.ui.ui_loader import UiLoader
 class ImageModeWidget(QObject):
 
     # The string indicates which tab was selected
-    tab_changed = Signal(int)
+    tab_changed = Signal(ViewType)
 
     # Tell the image canvas to show the snip1d
     polar_show_snip1d = Signal()
@@ -83,9 +83,9 @@ class ImageModeWidget(QObject):
 
     def currentChanged(self, index):
         modes = {
-            0: UI_RAW,
-            1: UI_CARTESIAN,
-            2: UI_POLAR
+            0: ViewType.raw,
+            1: ViewType.cartesian,
+            2: ViewType.polar
         }
         ind = self.ui.tab_widget.currentIndex()
         self.tab_changed.emit(modes[ind])
