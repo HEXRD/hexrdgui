@@ -9,6 +9,7 @@ from hexrd.ui.indexing.fit_grains_tolerances_model import FitGrainsToleranceMode
 DEBUG = True
 
 class FitGrainsDialog(QObject):
+    finished = Signal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -20,6 +21,8 @@ class FitGrainsDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_dialog.ui', parent)
         self.ui.setWindowTitle('Fit Grains')
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         if DEBUG:
             import importlib
@@ -37,6 +40,7 @@ class FitGrainsDialog(QObject):
             self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
         # self.setup_connections()
+        self.ui.finished.connect(self.finished)
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
         self.ui.tth_max_specify.toggled.connect(self.on_tth_specify_toggled)
         self.ui.tolerances_view.selectionModel().selectionChanged.connect(self.on_tolerances_select)
@@ -44,8 +48,6 @@ class FitGrainsDialog(QObject):
         self.ui.delete_row.clicked.connect(self.on_tolerances_delete_row)
         self.ui.move_up.clicked.connect(self.on_tolerances_move_up)
         self.ui.move_down.clicked.connect(self.on_tolerances_move_down)
-
-        result = self.ui.exec()
 
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
@@ -163,6 +165,9 @@ class FitGrainsDialog(QObject):
 
         tolerances = config.get('tolerance')
         self.tolerances_model.update_from_config(tolerances)
+
+    def run(self):
+        self.ui.show()
 
     def _get_selected_rows(self):
         """Returns list of selected rows

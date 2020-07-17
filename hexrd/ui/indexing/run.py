@@ -108,8 +108,12 @@ class IndexingRunner:
             importlib.reload(hexrd.ui.indexing.fit_grains_dialog)
             from hexrd.ui.indexing.fit_grains_dialog import FitGrainsDialog
 
+        # Run dialog for user options
         dialog = FitGrainsDialog(self.parent)
-        print('TODO - Run grain fitting')
+        dialog.finished.connect(self.fit_grains_config_finished)
+        dialog.run()
+
+        # print('TODO - Run grain fitting')
         return
 
         # FIXME: here, I believe, the user should be able to choose
@@ -141,3 +145,9 @@ class IndexingRunner:
         self.cl = cl
         print('Grain fitting is complete!')
         print(f'{self.qbar.shape[1]} grains were found')
+
+    def fit_grains_config_finished(self, result):
+        # result 0 == rejected, 1 == accepted
+        if result == 1:
+            from PySide2.QtWidgets import QMessageBox
+            QMessageBox.information(None, "Todo", "Sorry, Fit Grains not yet implemented")
