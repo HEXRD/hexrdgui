@@ -6,6 +6,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
 
     Organizes one column for each tolerance type (tth, eta, omega)
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.tth_tolerances = list()
@@ -25,7 +26,8 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         if row < 0 or row >= len(self.tth_tolerances):
             return None
 
-        table = [self.tth_tolerances, self.eta_tolerances, self.omega_tolerances]
+        table = [self.tth_tolerances,
+                 self.eta_tolerances, self.omega_tolerances]
         column = model_index.column()
         if column < 0 or column >= len(table):
             return None
@@ -79,8 +81,10 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         destination = first + delta
         # Qt's destination depends on the direction of the move
         offset = 1 if delta > 0 else 0
-        self.beginMoveRows(sourceIndex, first, last, sourceIndex, destination + offset)
-        table = [self.tth_tolerances, self.eta_tolerances, self.omega_tolerances]
+        self.beginMoveRows(sourceIndex, first, last,
+                           sourceIndex, destination + offset)
+        table = [self.tth_tolerances,
+                 self.eta_tolerances, self.omega_tolerances]
         for i in range(len(table)):
             data = table[i]
             moving_section = data[first:last+1]
@@ -92,8 +96,9 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.endMoveRows()
 
     def update_from_config(self, config):
-        # This method should generally be called *before* the instance is assigned to
-        # a view, but just in case, we emit the internal signals to notify views.
+        # This method should generally be called *before* the instance
+        # is assigned to a view, but just in case, we emit the internal
+        # signals to notify views.
         self.beginResetModel()
 
         del self.tth_tolerances[:]

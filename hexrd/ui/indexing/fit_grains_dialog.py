@@ -1,12 +1,15 @@
-from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal, Slot
+from PySide2.QtCore import (
+    QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal, Slot)
 from PySide2.QtWidgets import QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
-from hexrd.ui.indexing.fit_grains_tolerances_model import FitGrainsToleranceModel
+from hexrd.ui.indexing.fit_grains_tolerances_model import (
+    FitGrainsToleranceModel)
 
 DEBUG = True
+
 
 class FitGrainsDialog(QObject):
     finished = Signal(int)
@@ -15,7 +18,7 @@ class FitGrainsDialog(QObject):
         super().__init__(parent)
 
         config = HexrdConfig().indexing_config['fit_grains']
-        if config.get('do_fit') == False:
+        if config.get('do_fit') is False:
             return
 
         loader = UiLoader()
@@ -28,7 +31,8 @@ class FitGrainsDialog(QObject):
             import importlib
             import hexrd.ui.indexing.fit_grains_tolerances_model
             importlib.reload(hexrd.ui.indexing.fit_grains_tolerances_model)
-            from hexrd.ui.indexing.fit_grains_tolerances_model import FitGrainsToleranceModel
+            from hexrd.ui.indexing.fit_grains_tolerances_model import (
+                FitGrainsToleranceModel)
 
         self.tolerances_model = FitGrainsToleranceModel(self.ui)
         self.update_gui_from_config(config)
@@ -37,13 +41,15 @@ class FitGrainsDialog(QObject):
         # Stretch columns to fill the available horizontal space
         num_cols = self.tolerances_model.columnCount()
         for i in range(num_cols):
-            self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+            self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(
+                i, QHeaderView.Stretch)
 
-        # self.setup_connections()
+        # Setup connections
         self.ui.finished.connect(self.finished)
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
         self.ui.tth_max_specify.toggled.connect(self.on_tth_specify_toggled)
-        self.ui.tolerances_view.selectionModel().selectionChanged.connect(self.on_tolerances_select)
+        self.ui.tolerances_view.selectionModel().selectionChanged.connect(
+            self.on_tolerances_select)
         self.ui.add_row.clicked.connect(self.on_tolerances_add_row)
         self.ui.delete_row.clicked.connect(self.on_tolerances_delete_row)
         self.ui.move_up.clicked.connect(self.on_tolerances_move_up)
@@ -113,7 +119,8 @@ class FitGrainsDialog(QObject):
 
             # Are selected rows contiguous?
             num_selected = len(selected_rows)
-            is_contiguous = num_selected == selected_rows[-1] - selected_rows[0] + 1
+            span = selected_rows[-1] - selected_rows[0] + 1
+            is_contiguous = num_selected == span
             if is_contiguous:
                 up_enable = selected_rows[0] > 0
                 last_row = self.tolerances_model.rowCount() - 1

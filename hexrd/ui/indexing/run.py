@@ -15,6 +15,7 @@ from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 
 DEBUG = True
 
+
 class IndexingRunner:
     def __init__(self, parent=None):
         self.parent = parent
@@ -95,7 +96,7 @@ class IndexingRunner:
             threshold=config.find_orientations.threshold,
             doMultiProc=ncpus > 1,
             nCPUs=ncpus
-            )
+        )
         self.completeness = np.array(completeness)
         print('Indexing complete')
 
@@ -150,4 +151,5 @@ class IndexingRunner:
         # result 0 == rejected, 1 == accepted
         if result == 1:
             from PySide2.QtWidgets import QMessageBox
-            QMessageBox.information(None, "Todo", "Sorry, Fit Grains not yet implemented")
+            QMessageBox.information(
+                None, "Todo", "Sorry, Fit Grains not yet implemented")
