@@ -1129,6 +1129,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_res_tth_max = property(_polar_res_tth_max,
                                  set_polar_res_tth_max)
 
+    @property
+    def polar_res_eta_min(self):
+        # This is constant for now...
+        return constants.UI_ETA_MIN_DEGREES
+
+    @property
+    def polar_res_eta_max(self):
+        # This is constant for now...
+        return constants.UI_ETA_MAX_DEGREES
+
     def _polar_apply_snip1d(self):
         return self.config['image']['polar']['apply_snip1d']
 

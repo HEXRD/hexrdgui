@@ -27,14 +27,10 @@ def log_scale_img(img):
     return np.log(fimg)
 
 
-class PolarView(object):
+class PolarView:
     """Create (two-theta, eta) plot of detectors
     """
-    def __init__(self, instrument, eta_min=0., eta_max=360.):
-
-        # etas
-        self._eta_min = np.radians(eta_min)
-        self._eta_max = np.radians(eta_max)
+    def __init__(self, instrument):
 
         self.instr = instrument
 
@@ -76,11 +72,11 @@ class PolarView(object):
 
     @property
     def eta_min(self):
-        return self._eta_min
+        return np.radians(HexrdConfig().polar_res_eta_min)
 
     @property
     def eta_max(self):
-        return self._eta_max
+        return np.radians(HexrdConfig().polar_res_eta_max)
 
     @property
     def eta_range(self):
@@ -98,11 +94,11 @@ class PolarView(object):
 
     @property
     def ntth(self):
-        return int(np.ceil(np.degrees(self.tth_range) / self.tth_pixel_size))
+        return int(np.degrees(self.tth_range) / self.tth_pixel_size)
 
     @property
     def neta(self):
-        return int(np.ceil(np.degrees(self.eta_range) / self.eta_pixel_size))
+        return int(np.degrees(self.eta_range) / self.eta_pixel_size)
 
     @property
     def shape(self):
