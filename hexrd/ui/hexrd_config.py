@@ -490,18 +490,25 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Get the detector flags
         for name in self.detector_names:
             for path in dflags_order:
-                full_path = ['detectors', name] + path
-                status = self.get_instrument_config_val(full_path)
-
                 if path[0] == 'distortion':
                     # Special case for distortion parameters
                     func_path = ['detectors', name, 'distortion',
                                  'function_name', 'value']
                     func_name = self.get_instrument_config_val(func_path)
+                    if func_name == 'None':
+                        # There is no distortion. Just continue.
+                        continue
+
+                    full_path = ['detectors', name] + path
+                    status = self.get_instrument_config_val(full_path)
+
                     num_params = self.num_distortion_parameters(func_name)
                     for i in range(num_params):
                         statuses.append(status[i])
                     continue
+
+                full_path = ['detectors', name] + path
+                status = self.get_instrument_config_val(full_path)
 
                 # If it is a list, loop through the values
                 if isinstance(status, list):
