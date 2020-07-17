@@ -188,6 +188,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="delete_row">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -197,10 +200,16 @@
        <property name="text">
         <string>Delete</string>
        </property>
+       <property name="checkable">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="move_up">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -214,6 +223,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="move_down">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>

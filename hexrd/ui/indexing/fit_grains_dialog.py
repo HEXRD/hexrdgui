@@ -6,7 +6,7 @@ from hexrd.ui.ui_loader import UiLoader
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import FitGrainsToleranceModel
 
-DEBUG = False
+DEBUG = True
 
 class FitGrainsDialog(QObject):
 
@@ -39,6 +39,7 @@ class FitGrainsDialog(QObject):
         # self.setup_connections()
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
         self.ui.tth_max_specify.toggled.connect(self.on_tth_specify_toggled)
+        self.ui.tolerances_view.selectionModel().selectionChanged.connect(self.on_tolerances_select)
 
         result = self.ui.exec()
 
@@ -56,6 +57,42 @@ class FitGrainsDialog(QObject):
             self.ui.tth_max_value,
         ]
         return widgets
+
+    @Slot()
+    def on_tolerances_select(self):
+        """Sets button enable states based on current selection"""
+        delete_enable = False
+        up_enable = False
+        down_enable = False
+
+        # Make list of selected rows from the full selection
+        selection_model = self.ui.tolerances_view.selectionModel()
+        selection = selection_model.selection()
+        num_rows = self.tolerances_model.rowCount()
+        selected_rows = list()
+        for row in range(num_rows):
+            if selection_model.isRowSelected(row):
+                selected_rows.append(row)
+            elif selection_model.selectedColumns(row):
+                # Partial row selected - dont enable delete, up, down
+                selected_rows = None
+                break
+
+        if selected_rows:
+            delete_enable = True
+
+            # Are selected rows contiguous?
+            num_selected = len(selected_rows)
+            is_contiguous = num_selected == selected_rows[-1] - selected_rows[0] + 1
+            if is_contiguous:
+                up_enable = selected_rows[0] > 0
+                last_row = num_rows - 1
+                down_enable = selected_rows[-1] < last_row
+                print('  ', up_enable, last_row, down_enable)
+
+        self.ui.delete_row.setEnabled(delete_enable)
+        self.ui.move_up.setEnabled(up_enable)
+        self.ui.move_down.setEnabled(down_enable)
 
     @Slot(bool)
     def on_tth_max_toggled(self, checked):
