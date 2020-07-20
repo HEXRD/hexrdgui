@@ -1,6 +1,6 @@
 from PySide2.QtCore import (
     QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal, Slot)
-from PySide2.QtWidgets import QHeaderView
+from PySide2.QtWidgets import QDialogButtonBox, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -26,6 +26,9 @@ class FitGrainsDialog(QObject):
         self.ui.setWindowTitle('Fit Grains')
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
+        ok_button.setText('Fit Grains')
 
         if DEBUG:
             import importlib
