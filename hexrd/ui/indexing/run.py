@@ -1,10 +1,13 @@
 import numpy as np
 
-from hexrd import indexer
+from PySide2.QtWidgets import QMessageBox
+
+from hexrd import indexer, fitgrains
 from hexrd.findorientations import (
     create_clustering_parameters, generate_eta_ome_maps,
     generate_orientation_fibers, run_cluster
 )
+from hexrd.fitgrains import fit_grains
 from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -13,20 +16,20 @@ from hexrd.ui.indexing.fit_grains_dialog import FitGrainsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 
-DEBUG = True
-
 
 class IndexingRunner:
     def __init__(self, parent=None):
         self.parent = parent
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
+        self.fit_grains_dialog = None
 
         self.ome_maps = None
 
     def clear(self):
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
+        self.fit_grains_dialog = None
 
         self.ome_maps = None
 
@@ -103,26 +106,14 @@ class IndexingRunner:
         self.run_grain_fitting()
 
     def run_grain_fitting(self):
-        if DEBUG:
-            import importlib
-            import hexrd.ui.indexing.fit_grains_dialog
-            importlib.reload(hexrd.ui.indexing.fit_grains_dialog)
-            from hexrd.ui.indexing.fit_grains_dialog import FitGrainsDialog
-
         # Run dialog for user options
         dialog = FitGrainsDialog(self.parent)
-        dialog.finished.connect(self.fit_grains_config_finished)
-        dialog.run()
+        dialog.accepted.connect(self.fit_grains_config_accepted)
+        dialog.rejected.connect(self.clear)
+        self.fit_grains_dialog = dialog
+        dialog.show()
 
-        # print('TODO - Run grain fitting')
-        return
-
-        # FIXME: here, I believe, the user should be able to choose
-        # options for the grain fitting via a dialog. These options should
-        # modify the settings under the
-        # `HexrdConfig().indexing_config['fit_grains']` key. Then, the
-        # following config object will automatically have those settings set.
-
+    def fit_grains_config_accepted(self):
         print('Running grain fitting...')
 
         # Create a full indexing config
@@ -141,15 +132,15 @@ class IndexingRunner:
             'radius': config.find_orientations.clustering.radius
         }
         qbar, cl = run_cluster(**kwargs)
+        print('qbar:', qbar.shape)
+        print(qbar)
+        print('cl:', cl.shape)
+        print(cl)
 
         self.qbar = qbar
         self.cl = cl
         print('Grain fitting is complete!')
         print(f'{self.qbar.shape[1]} grains were found')
 
-    def fit_grains_config_finished(self, result):
-        # result 0 == rejected, 1 == accepted
-        if result == 1:
-            from PySide2.QtWidgets import QMessageBox
-            QMessageBox.information(
-                None, "Todo", "Sorry, Fit Grains not yet implemented")
+        QMessageBox.information(
+            None, 'Grain fitting is complete', f'{self.qbar.shape[1]} grains were found')

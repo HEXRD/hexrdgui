@@ -8,11 +8,10 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
 
-DEBUG = True
-
 
 class FitGrainsDialog(QObject):
-    finished = Signal(int)
+    accepted = Signal()
+    rejected = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -30,13 +29,6 @@ class FitGrainsDialog(QObject):
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')
 
-        if DEBUG:
-            import importlib
-            import hexrd.ui.indexing.fit_grains_tolerances_model
-            importlib.reload(hexrd.ui.indexing.fit_grains_tolerances_model)
-            from hexrd.ui.indexing.fit_grains_tolerances_model import (
-                FitGrainsToleranceModel)
-
         self.tolerances_model = FitGrainsToleranceModel(self.ui)
         self.update_gui_from_config(config)
         self.ui.tolerances_view.setModel(self.tolerances_model)
@@ -48,7 +40,8 @@ class FitGrainsDialog(QObject):
                 i, QHeaderView.Stretch)
 
         # Setup connections
-        self.ui.finished.connect(self.finished)
+        self.ui.accepted.connect(self.on_accepted)
+        self.ui.rejected.connect(self.rejected)
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
         self.ui.tth_max_specify.toggled.connect(self.on_tth_specify_toggled)
         self.ui.tolerances_view.selectionModel().selectionChanged.connect(
@@ -72,6 +65,15 @@ class FitGrainsDialog(QObject):
             self.ui.tth_max_value,
         ]
         return widgets
+
+    def show(self):
+        self.ui.show()
+
+    @Slot()
+    def on_accepted(self):
+        # Save the selected options on the config
+        self.update_config()
+        self.accepted.emit()
 
     @Slot()
     def on_tolerances_add_row(self):
@@ -118,7 +120,9 @@ class FitGrainsDialog(QObject):
         # Get list of selected rows
         selected_rows = self._get_selected_rows()
         if selected_rows:
-            delete_enable = True
+            # Enable delete if more than 1 row
+            num_rows = self.tolerances_model.rowCount()
+            delete_enable = num_rows > 1
 
             # Are selected rows contiguous?
             num_selected = len(selected_rows)
@@ -145,11 +149,27 @@ class FitGrainsDialog(QObject):
     def on_tth_specify_toggled(self, checked):
         self.ui.tth_max_value.setEnabled(checked)
 
+    def update_config(self):
+        # Set the new config options on the internal config
+        config = HexrdConfig().indexing_config['fit_grains']
+        config['npdiv'] = self.ui.npdiv.value()
+        config['refit'][0] = self.ui.refit_pixel_scale.value()
+        config['refit'][1] = self.ui.refit_ome_step_scale.value()
+        config['threshold'] = self.ui.threshold.value()
+        if not self.ui.tth_max_enable.isChecked():
+            config['tth_max'] = False
+        elif self.ui.tth_max_instrument.isChecked():
+            config['tth_max'] = True
+        else:
+            config['tth_max'] = self.ui.tth_max_value.value()
+
+        self.tolerances_model.copy_to_config(config)
+
     def update_gui_from_config(self, config):
         blocked = [QSignalBlocker(x) for x in self.all_widgets()]
         self.ui.npdiv.setValue(config.get('npdiv'))
-        self.ui.refit_ome_step_scale.setValue(config.get('refit')[1])
         self.ui.refit_pixel_scale.setValue(config.get('refit')[0])
+        self.ui.refit_ome_step_scale.setValue(config.get('refit')[1])
         self.ui.threshold.setValue(config.get('threshold'))
 
         tth_max = config.get('tth_max')

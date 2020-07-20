@@ -95,6 +95,11 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.tth_tolerances, self.eta_tolerances, self.omega_tolerances = table
         self.endMoveRows()
 
+    def copy_to_config(self, config):
+        config['tth_tolerances'] = self.tth_tolerances
+        config['eta_tolerances'] = self.eta_tolerances
+        config['omega_tolerances'] = self.omega_tolerances
+
     def update_from_config(self, config):
         # This method should generally be called *before* the instance
         # is assigned to a view, but just in case, we emit the internal
