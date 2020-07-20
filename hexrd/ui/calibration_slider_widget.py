@@ -9,7 +9,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 class CalibrationSliderWidget(QObject):
 
-    update_if_mode_matches = Signal(int)
+    # Using string argument instead of ViewType to workaround segfault on
+    # conda/macos
+    update_if_mode_matches = Signal(str)
 
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10

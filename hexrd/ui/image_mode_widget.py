@@ -14,8 +14,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 class ImageModeWidget(QObject):
 
-    # The string indicates which tab was selected
-    tab_changed = Signal(ViewType)
+    # Using string argument instead of ViewType to workaround segfault on
+    # conda/macos
+    tab_changed = Signal(str)
 
     # Tell the image canvas to show the snip1d
     polar_show_snip1d = Signal()
