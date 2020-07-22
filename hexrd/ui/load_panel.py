@@ -234,14 +234,11 @@ class LoadPanel(QObject):
         total_frames = np.sum(self.total_frames)
         if total_frames - self.empty_frames < 2:
             enable = False
-        self.ui.darkMode.setEnabled(enable)
         self.ui.aggregation.setEnabled(enable)
 
         if not enable:
             # Update dark mode settings
             num_dets = len(HexrdConfig().detector_names)
-            self.state['dark'] = [5 for x in range(num_dets)]
-            self.ui.darkMode.setCurrentIndex(5)
             # Update aggregation settings
             self.state['agg'] = 0
             self.ui.aggregation.setCurrentIndex(0)
