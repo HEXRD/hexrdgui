@@ -1,13 +1,18 @@
+import os
+
 import numpy as np
 
 from PySide2.QtWidgets import QMessageBox
 
-from hexrd import indexer, fitgrains
+from hexrd import constants as const
+from hexrd import fitgrains, indexer, instrument
 from hexrd.findorientations import (
-    create_clustering_parameters, generate_eta_ome_maps,
-    generate_orientation_fibers, run_cluster
+    create_clustering_parameters, find_orientations,
+    generate_eta_ome_maps, generate_orientation_fibers,
+    run_cluster
 )
 from hexrd.fitgrains import fit_grains
+from hexrd.transforms import xfcapi
 from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -114,8 +119,6 @@ class IndexingRunner:
         dialog.show()
 
     def fit_grains_config_accepted(self):
-        print('Running grain fitting...')
-
         # Create a full indexing config
         config = create_indexing_config()
 
@@ -131,16 +134,47 @@ class IndexingRunner:
             'compl_thresh': config.find_orientations.clustering.completeness,
             'radius': config.find_orientations.clustering.radius
         }
+        print('Running clustering')
         qbar, cl = run_cluster(**kwargs)
-        print('qbar:', qbar.shape)
-        print(qbar)
-        print('cl:', cl.shape)
-        print(cl)
+        # print('qbar:', qbar.shape)
+        # print(qbar)
+        # print('cl:', cl.shape)
+        # print(cl)
 
-        self.qbar = qbar
-        self.cl = cl
-        print('Grain fitting is complete!')
-        print(f'{self.qbar.shape[1]} grains were found')
+        quats_f = os.path.join(
+            config.analysis_dir,
+            'accepted_orientations_%s.dat' % config.analysis_id
+            )
+        if not os.path.exists(quats_f):
+            print('Running find_orientations()')
+            results = find_orientations(config)
+            self.write_orientation_results(results, config)
 
+        print('Running fit_grains()')
+        result = fit_grains(config, force=True)
+
+        msg = f'Fit Grains results written to {config.analysis_dir}'
         QMessageBox.information(
-            None, 'Grain fitting is complete', f'{self.qbar.shape[1]} grains were found')
+            None, 'Grain fitting is complete', msg)
+
+    def write_orientation_results(self, results, config):
+        np.savez_compressed(
+            '_'.join(['scored_orientations', config.analysis_id]),
+            **results['scored_orientations']
+        )
+
+        if not os.path.exists(config.analysis_dir):
+            os.makedirs(config.analysis_dir)
+        qbar_filename = 'accepted_orientations_' + config.analysis_id + '.dat'
+        np.savetxt(qbar_filename, results['qbar'].T,
+                fmt='%.18e', delimiter='\t')
+
+        gw = instrument.GrainDataWriter(
+            os.path.join(config.analysis_dir, 'grains.out')
+        )
+        for gid, q in enumerate(results['qbar'].T):
+            phi = 2*np.arccos(q[0])
+            n = xfcapi.unitRowVector(q[1:])
+            grain_params = np.hstack([phi*n, const.zeros_3, const.identity_6x1])
+            gw.dump_grain(gid, 1., 0., grain_params)
+        gw.close()
