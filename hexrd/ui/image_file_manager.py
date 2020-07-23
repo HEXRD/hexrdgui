@@ -75,13 +75,14 @@ class ImageFileManager(metaclass=Singleton):
                 return
 
     def open_file(self, f):
-        ext = os.path.splitext(f)[1]
-        if self.is_hdf5(ext):
+        ext = os.path.splitext(f)[1] if isinstance(f, str) else None
+        if ext is None:
+            ims = imageseries.open(None, 'array', data=f)
+        elif self.is_hdf5(ext):
             data = h5py.File(f, 'r')
             dset = data['/'.join(self.path)][()]
             if dset.ndim < 3:
                 # Handle raw two dimesional data
-                x, y = dset.shape
                 ims = imageseries.open(None, 'array', data=dset)
             else:
                 data.close()
