@@ -13,8 +13,8 @@ def load_resource(module, name, binary=False):
 
     return importlib_resources.read_text(module, name)
 
-def get_contents(module):
+def module_contents(module):
     return importlib_resources.contents(module)
 
-def get_module(name):
+def import_dynamic_module(name):
     return import_module(name)

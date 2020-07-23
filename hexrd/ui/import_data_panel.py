@@ -39,9 +39,9 @@ class ImportDataPanel(QObject):
         self.ui.detectors.setEnabled(True)
 
     def get_instrument_detectors(self, instrument):
-        self.mod = resource_loader.get_module(
+        self.mod = resource_loader.import_dynamic_module(
             'hexrd.ui.resources.templates.' + instrument)
-        contents = resource_loader.get_contents(self.mod)
+        contents = resource_loader.module_contents(self.mod)
         dets = ['None']
         for content in contents:
             if isinstance(content, str) and not content.startswith('__'):
@@ -49,19 +49,8 @@ class ImportDataPanel(QObject):
         return dets
 
     def detector_selected(self, selected):
-        self.ui.trans.setEnabled(selected)
-        self.ui.rotate.setEnabled(selected)
-        self.ui.button_box.setEnabled(selected)
-        if selected > 0:
-            instr = self.ui.instruments.currentText()
-            det = self.ui.detectors.currentText()
-            if self.it is not None:
-                self.clear_boundry()
-            self.it = InteractiveTemplate(
-                HexrdConfig().image(det, 0), self.parent())
-            self.it.create_shape(file_name=instr+'_'+det)
-        else:
-            self.clear_boundry()
+        self.ui.data.setEnabled(selected)
+        self.ui.instruments.setDisabled(selected)
 
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
