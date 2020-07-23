@@ -27,6 +27,7 @@ class ImportDataPanel(QObject):
             self.instrument_selected)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
         self.ui.load.clicked.connect(self.load_images)
+        self.ui.add_template.clicked.connect(self.add_template)
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
 
@@ -74,6 +75,17 @@ class ImportDataPanel(QObject):
             self.ui.outline.setEnabled(True)
             self.ui.detectors.setDisabled(True)
             self.ui.load.setDisabled(True)
+
+    def add_template(self):
+        det = self.ui.detectors.currentText()
+        self.it = InteractiveTemplate(
+            HexrdConfig().image('detector', 0), self.parent())
+        self.it.create_shape(module=self.mod, file_name=det + '.txt')
+        self.ui.add_template.setDisabled(True)
+        self.ui.trans.setEnabled(True)
+        self.ui.rotate.setEnabled(True)
+        self.ui.button_box.setEnabled(True)
+        self.ui.save.setEnabled(True)
 
     def setup_translate(self):
         if self.it is not None:
