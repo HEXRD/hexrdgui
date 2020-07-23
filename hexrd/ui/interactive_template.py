@@ -2,6 +2,7 @@ import numpy as np
 
 from matplotlib.transforms import Affine2D
 from matplotlib import patches
+from matplotlib.path import Path
 
 from hexrd.ui import resource_loader
 import hexrd.ui.resources.templates
@@ -34,9 +35,54 @@ class InteractiveTemplate:
     def get_shape(self):
         return self.shape
 
+    def get_mask(self):
+        self.mask()
+        return self.img
+
     def clear(self):
         self.raw_axes.patches.remove(self.shape)
         self.parent.draw()
+
+    def mask(self):
+        h, w = self.img.shape
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+        coords = np.vstack((x.flatten(), y.flatten())).T
+        transformed_paths = self.get_paths()
+        self.mask = np.zeros(self.img.shape)
+        for path in transformed_paths:
+            points = path.contains_points(coords)
+            grid = points.reshape(h, w)
+            self.mask = (self.mask != grid)
+        self.original = self.ax.get_array()
+        self.img[~self.mask] = 0
+
+    def get_paths(self):
+        all_paths = []
+        verts = self.shape.get_patch_transform().transform(
+            self.shape.get_path().vertices)
+        if hasattr(self, 'rotate'):
+            self.rotate.transform(verts)
+        points = []
+        codes = []
+        for coords in verts:
+            if np.isnan(coords).any():
+                codes[0] = Path.MOVETO
+                all_paths.append(Path(points, codes))
+                codes = []
+                points = []
+            else:
+                codes.append(Path.LINETO)
+                points.append(coords)
+        codes[0] = Path.MOVETO
+        all_paths.append(Path(points, codes))
+
+        return all_paths
+
+    def crop(self):
+        l, r, b, t = self.ax.get_extent()
+        x0, y0 = np.nanmin(self.shape.xy, axis=0)
+        x1, y1 = np.nanmax(self.shape.xy, axis=0)
+        return np.floor(y0), np.ceil(y1), np.floor(x0), np.ceil(x1)
 
     def connect_translate(self):
         self.button_press_cid = self.parent.mpl_connect(

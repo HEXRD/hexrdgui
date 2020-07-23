@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 from PySide2.QtCore import QObject
 from PySide2.QtWidgets import QFileDialog
@@ -21,7 +22,7 @@ class ImportDataPanel(QObject):
         self.it = None
 
         self.setup_connections()
-    
+
     def setup_connections(self):
         self.ui.instruments.currentIndexChanged.connect(
             self.instrument_selected)
@@ -30,6 +31,7 @@ class ImportDataPanel(QObject):
         self.ui.add_template.clicked.connect(self.add_template)
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
+        self.ui.button_box.accepted.connect(self.crop_and_mask)
 
     def instrument_selected(self, idx):
         instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
@@ -102,3 +104,27 @@ class ImportDataPanel(QObject):
             return
         self.it.clear()
         self.it = None
+
+    def crop_and_mask(self):
+        if self.ui.trans.isChecked():
+            self.it.disconnect_translate()
+        else:
+            self.it.disconnect_rotate()
+        img = self.it.get_mask()
+        bounds = np.array([int(val) for val in self.it.crop()]).reshape(2, 2)
+        self.finalize(img, bounds)
+        self.ui.trans.setDisabled(True)
+        self.ui.rotate.setDisabled(True)
+        self.ui.button_box.setDisabled(True)
+        self.ui.add_template.setDisabled(True)
+        self.ui.detectors.setEnabled(True)
+        self.ui.load.setEnabled(True)
+
+    def finalize(self, img, bounds):
+        ImageLoadManager().read_data([[img]], parent=self.ui)
+        ilm = ImageLoadManager()
+        ilm.set_state({'rect': [bounds]})
+        ilm.begin_processing()
+        det = self.ui.detectors.currentText()
+        self.it.redraw()
+        self.clear_boundry()
