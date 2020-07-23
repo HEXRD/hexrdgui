@@ -52,9 +52,7 @@ class LoadPanel(QObject):
     def setup_gui(self):
         self.setup_processing_options()
 
-        self.ui.subdirectories.setChecked(self.state.get('subdirs', False))
         self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
-        self.ui.image_folder.setEnabled(self.ui.subdirectories.isChecked())
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(self.state['trans'][0])
         self.ui.darkMode.setCurrentIndex(self.state['dark'][0])
@@ -64,10 +62,7 @@ class LoadPanel(QObject):
         if not self.parent_dir:
             self.ui.img_directory.setText('No directory set')
         else:
-            if self.ui.subdirectories.isChecked():
-                self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
-            else:
-                self.ui.img_directory.setText(self.parent_dir)
+            self.ui.img_directory.setText(self.parent_dir)
 
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
@@ -80,8 +75,6 @@ class LoadPanel(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
-        self.ui.aps_imageseries.toggled.connect(self.munge_data)
-        self.ui.subdirectories.toggled.connect(self.subdirs_changed)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.switch_detector)
@@ -135,10 +128,7 @@ class LoadPanel(QObject):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
-        if self.ui.subdirectories.isChecked():
-            self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
-        else:
-            self.ui.img_directory.setText(self.parent_dir)
+        self.ui.img_directory.setText(self.parent_dir)
 
     def subdirs_changed(self, checked):
         self.dir_changed()
@@ -166,10 +156,6 @@ class LoadPanel(QObject):
         HexrdConfig().load_panel_state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
-
-    def munge_data(self, state):
-        self.ui.subdirectories.setChecked(state)
-        self.ui.subdirectories.setDisabled(state)
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
@@ -210,15 +196,12 @@ class LoadPanel(QObject):
                 self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
-            if self.parent_dir is None or not self.ui.subdirectories.isChecked():
-                self.select_folder(os.path.dirname(selected_files[0]))
             self.reset_data()
             self.load_image_data(selected_files)
             self.create_table()
             self.enable_read()
 
     def reset_data(self):
-        self.directories = []
         self.empty_frames = 0
         self.total_frames = []
         self.omega_min = []
@@ -322,35 +305,10 @@ class LoadPanel(QObject):
                 self.delta.append((vals[1] - vals[0]) / self.total_frames[idx])
 
     def find_images(self, fnames):
-        if (self.ui.subdirectories.isChecked()):
-            self.find_directories()
-            self.files = ImageLoadManager().match_dirs_images(fnames, self.directories)
-        else:
-            self.files, manual = ImageLoadManager().load_images(fnames)
+        self.files, manual = ImageLoadManager().load_images(fnames)
 
         if self.files and self.ext == '.yml':
             self.get_yml_files()
-
-    def find_directories(self):
-        # Find all detector directories
-        num_det = len(HexrdConfig().detector_names)
-        for sub_dir in os.scandir(os.path.dirname(self.parent_dir)):
-            if (os.path.isdir(sub_dir)
-                    and sub_dir.name in HexrdConfig().detector_names):
-                self.directories.append(sub_dir.path)
-        # Show error if expected detector directories are not found
-        if len(self.directories) != num_det:
-            dir_names = []
-            if len(self.directories) > 0:
-                for path in self.directories:
-                    dir_names.append(os.path.basename(path))
-            diff = list(
-                set(HexrdConfig().detector_names) - set(dir_names))
-            msg = (
-                'ERROR - No directory found for the following detectors: \n'
-                + str(diff)[1:-1])
-            QMessageBox.warning(None, 'HEXRD', msg)
-            return
 
     def get_yml_files(self):
         self.yml_files = []
@@ -446,13 +404,9 @@ class LoadPanel(QObject):
             if self.ui.file_options.rowCount():
                 for i in range(len(self.files)):
                     self.files[i] = []
-
                 for row in range(self.ui.file_options.rowCount()):
                     f = self.ui.file_options.item(row, 0).text()
-                    for i in range(len(self.files)):
-                        self.files[i].append(self.directories[i] + f)
             else:
-                self.directories = []
                 self.files = []
         self.enable_read()
 
@@ -501,7 +455,6 @@ class LoadPanel(QObject):
             'omega_max': self.omega_max,
             'empty_frames': self.empty_frames,
             'total_frames': self.total_frames,
-            'directories': self.directories,
             }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
