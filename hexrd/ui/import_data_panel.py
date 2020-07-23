@@ -54,26 +54,26 @@ class ImportDataPanel(QObject):
 
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
-        selected_files, selected_filter = QFileDialog.getOpenFileNames(
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, caption, dir=HexrdConfig().images_dir)
-        if selected_files:
-            HexrdConfig().set_images_dir(selected_files[0])
+        if selected_file:
+            HexrdConfig().set_images_dir(selected_file)
 
             # If it is a hdf5 file allow the user to select the path
-            ext = os.path.splitext(selected_files[0])[1]
+            ext = os.path.splitext(selected_file)[1]
             if (ImageFileManager().is_hdf5(ext) and not
-                    ImageFileManager().path_exists(selected_files[0])):
+                    ImageFileManager().path_exists(selected_file)):
+                ImageFileManager().path_prompt(selected_file)
 
-                ImageFileManager().path_prompt(selected_files[0])
-
-            selected_files = [[x] for x in selected_files]
+            selected_files = [[selected_file]]
             ImageLoadManager().read_data(
                 selected_files, parent=self.ui)
 
             files = [os.path.split(f[0])[1] for f in selected_files]
             self.ui.files_label.setText(','.join(files))
-            self.ui.instruments.setEnabled(True)
-            self.ui.instrument_label.setEnabled(True)
+            self.ui.outline.setEnabled(True)
+            self.ui.detectors.setDisabled(True)
+            self.ui.load.setDisabled(True)
 
     def setup_translate(self):
         if self.it is not None:
