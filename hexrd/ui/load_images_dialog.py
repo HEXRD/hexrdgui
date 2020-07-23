@@ -1,5 +1,6 @@
 from collections import Counter  # To compare two lists' contents
 import re
+import os
 
 from PySide2.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
 
@@ -9,9 +10,8 @@ from hexrd.ui.ui_loader import UiLoader
 
 class LoadImagesDialog:
 
-    def __init__(self, image_files, parent=None):
-        self.detectors = HexrdConfig().detector_names
-        self.image_files = image_files
+    def __init__(self, image_files, manual_assign=False, parent=None):
+        self.setup_vars(image_files)
 
         loader = UiLoader()
         self.ui = loader.load_file('load_images_dialog.ui', parent)
@@ -20,6 +20,15 @@ class LoadImagesDialog:
         self.setup_state()
         self.setup_table()
         self.update_table()
+
+    def setup_vars(self, image_files):
+        # Flatten out the array of selected images
+        self.image_files = [os.path.basename(img) for imgs in image_files for img in imgs]
+        # Create a list of detectors to match the number of files
+        # This is neccessary to check validity of file/detector association
+        # when the association is set manually
+        multiple = int(len(self.image_files)/len(HexrdConfig().detector_names))
+        self.detectors = [det for det in HexrdConfig().detector_names for i in range(multiple)]
 
     def setup_connections(self):
         self.ui.regex_combo.currentIndexChanged.connect(self.update_table)

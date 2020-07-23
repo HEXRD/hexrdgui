@@ -2,6 +2,7 @@ import copy
 import functools
 import os
 import time
+import glob
 from concurrent.futures import ThreadPoolExecutor
 
 from hexrd import imageseries
@@ -45,7 +46,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         manual = False
         if not files:
             files = self.match_files(fnames)
-            print('match files: ', files)
             matched = self.check_success(files)
             if not matched:
                 manual = True
@@ -78,7 +78,41 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         return self.check_success(files)
 
     def match_files(self, fnames):
-        return
+        dets = HexrdConfig().detector_names
+        # Look for files that match everything except detector name
+        # ex: /home/user/images/Ruby_line_ff_000017_ge1.npz becomes
+        # /home/user/images/Ruby_line_ff_000017_*.npz
+        search = []
+        for f in fnames:
+            files = [det for det in dets if det in f]
+            if not files:
+                search.append(f)
+            else:
+                for d in dets:
+                    search.append(d.join(f.rsplit(files[0], 1)))
+        files = self.match_selected_files(fnames, search)
+        if not self.check_success(files):
+            # Look in sibling directories if the matching files were not
+            # found in the current directory.
+            revised_search = []
+            for s in search:
+                fname = os.path.basename(os.path.dirname(s))
+                revised_search.append('*'.join(s.split(fname, 1)))
+            files = self.match_selected_files(fnames, revised_search)
+        return files
+
+    def match_selected_files(self, fnames, search):
+        dets = HexrdConfig().detector_names
+        files = [[] for i in range(len(dets))]
+        results = [f for f in search if glob.glob(f, recursive=True)]
+        results = [glob.glob(f, recursive=True) for f in results]
+        if results:
+            for fname in [r[0] for r in results]:
+                matches = [i for i, det in enumerate(dets) if det in fname]
+                if matches:
+                    idx = matches[0]
+                    files[idx].append(fname)
+        return files
 
     def read_data(self, files, data=None, parent=None):
         # When this is pressed read in a complete set of data for all detectors.

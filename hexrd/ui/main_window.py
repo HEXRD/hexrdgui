@@ -263,17 +263,14 @@ class MainWindow(QObject):
             # Save the chosen dir
             HexrdConfig().set_images_dir(selected_files[0])
 
-            # Make sure the names and number of files and
-            # names and number of detectors match
-            num_detectors = len(HexrdConfig().detector_names)
-            if len(selected_files) != num_detectors:
-                msg = ('Number of files must match number of detectors: ' +
-                       str(num_detectors))
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                return
-
             files, manual = ImageLoadManager().load_images(selected_files)
             if not files:
+                return
+
+            if len(files[0]) > 1:
+                msg = ('Number of files must match number of detectors: ' +
+                       str(len(HexrdConfig().detector_names)))
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
 
             # If it is a hdf5 file allow the user to select the path
