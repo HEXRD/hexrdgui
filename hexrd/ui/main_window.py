@@ -272,7 +272,7 @@ class MainWindow(QObject):
                 QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
 
-            files = ImageLoadManager().check_images(selected_files)
+            files, manual = ImageLoadManager().load_images(selected_files)
             if not files:
                 return
 

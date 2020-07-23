@@ -256,17 +256,12 @@ class LoadPanel(QObject):
             if ImageFileManager().path_prompt(selected_files[0]) is not None:
                 return
 
-        fnames = []
         tmp_ims = []
         for img in selected_files:
-            f = os.path.split(img)[1]
-            name = os.path.splitext(f)[0]
             if self.ext != '.yml':
                 tmp_ims.append(ImageFileManager().open_file(img))
 
-            fnames.append(name)
-
-        self.find_images(fnames)
+        self.find_images(selected_files)
 
         if not self.files:
             return
@@ -331,7 +326,7 @@ class LoadPanel(QObject):
             self.find_directories()
             self.files = ImageLoadManager().match_dirs_images(fnames, self.directories)
         else:
-            self.files = ImageLoadManager().match_images(fnames)
+            self.files, manual = ImageLoadManager().load_images(fnames)
 
         if self.files and self.ext == '.yml':
             self.get_yml_files()
