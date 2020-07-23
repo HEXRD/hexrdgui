@@ -7,6 +7,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.interactive_template import InteractiveTemplate
+from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -30,16 +31,22 @@ class ImportDataPanel(QObject):
         self.ui.rotate.clicked.connect(self.setup_rotate)
 
     def instrument_selected(self, idx):
-        TARDIS = ['None', 'IP2', 'IP3', 'IP4']
-        PXRDIP = ['None']
-        BBXRD = ['None']
-        dets = [TARDIS, PXRDIP, BBXRD]
-
+        instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
+        det_list = self.get_instrument_detectors(instruments[idx])
         self.ui.detectors.clear()
-        self.ui.detectors.insertItems(0, dets[idx])
+        self.ui.detectors.insertItems(0, det_list)
         self.ui.detector_label.setEnabled(True)
         self.ui.detectors.setEnabled(True)
-        self.clear_boundry()
+
+    def get_instrument_detectors(self, instrument):
+        self.mod = resource_loader.get_module(
+            'hexrd.ui.resources.templates.' + instrument)
+        contents = resource_loader.get_contents(self.mod)
+        dets = ['None']
+        for content in contents:
+            if isinstance(content, str) and not content.startswith('__'):
+                dets.append(content.split('.')[0])
+        return dets
 
     def detector_selected(self, selected):
         self.ui.trans.setEnabled(selected)

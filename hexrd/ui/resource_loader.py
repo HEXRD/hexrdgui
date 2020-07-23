@@ -1,3 +1,4 @@
+from importlib import import_module
 try:
     import importlib.resources as importlib_resources
 except ImportError:
@@ -11,3 +12,9 @@ def load_resource(module, name, binary=False):
         return importlib_resources.read_binary(module, name)
 
     return importlib_resources.read_text(module, name)
+
+def get_contents(module):
+    return importlib_resources.contents(module)
+
+def get_module(name):
+    return import_module(name)
