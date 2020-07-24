@@ -33,6 +33,7 @@ class ImportDataPanel(QObject):
         self.ui.rotate.clicked.connect(self.setup_rotate)
         self.ui.button_box.accepted.connect(self.crop_and_mask)
         self.ui.button_box.rejected.connect(self.clear)
+        self.ui.save.clicked.connect(self.save_file)
 
     def instrument_selected(self, idx):
         instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
@@ -139,3 +140,6 @@ class ImportDataPanel(QObject):
         self.ui.rotate.setDisabled(True)
         self.ui.button_box.setDisabled(True)
         self.ui.save.setDisabled(True)
+
+    def save_file(self):
+        self.parent().action_save_imageseries.trigger()
