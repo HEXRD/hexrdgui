@@ -86,6 +86,7 @@ class ImportDataPanel(QObject):
             files = [os.path.split(f[0])[1] for f in selected_files]
             self.ui.files_label.setText(','.join(files))
             self.ui.outline.setEnabled(True)
+            self.ui.add_template.setEnabled(True)
             self.ui.detectors.setDisabled(True)
             self.ui.load.setDisabled(True)
 
