@@ -35,7 +35,7 @@ class InteractiveTemplate:
         self.shape.set_xy(self.shape.xy + translate)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
-        self.parent.draw()
+        self.redraw()
 
     def get_shape(self):
         return self.shape
@@ -46,7 +46,7 @@ class InteractiveTemplate:
 
     def clear(self):
         self.raw_axes.patches.remove(self.shape)
-        self.parent.draw()
+        self.redraw()
 
     def mask(self):
         h, w = self.img.shape
@@ -89,6 +89,9 @@ class InteractiveTemplate:
         x1, y1 = np.nanmax(self.shape.xy, axis=0)
         return np.floor(y0), np.ceil(y1), np.floor(x0), np.ceil(x1)
 
+    def redraw(self):
+        self.parent.draw()
+
     def connect_translate(self):
         self.button_press_cid = self.parent.mpl_connect(
             'button_press_event', self.on_press_translate)
@@ -115,7 +118,7 @@ class InteractiveTemplate:
         dx = event.xdata - xpress
         dy = event.ydata - ypress
         self.shape.set_xy(xy + np.array([dx, dy]))
-        self.parent.draw()
+        self.redraw()
 
     def on_release(self, event):
         if self.press is None:
@@ -127,7 +130,7 @@ class InteractiveTemplate:
         self.shape.set_xy(xy + np.array([dx, dy]))
         self.press = None
         self.center = self.get_midpoint()
-        self.parent.draw()
+        self.redraw()
 
     def disconnect_translate(self):
         self.parent.mpl_disconnect(self.button_press_cid)
@@ -160,7 +163,7 @@ class InteractiveTemplate:
         angle = self.get_angle(event)
         trans = Affine2D().rotate_around(x, y, angle)
         self.shape.set_transform(trans + self.ax.axes.transData)
-        self.parent.draw()
+        self.redraw()
 
     def get_midpoint(self):
         length = len(self.shape.get_xy())
@@ -203,8 +206,7 @@ class InteractiveTemplate:
         self.press = None
         self.rotate = Affine2D().rotate_around(x, y, angle)
         self.transform = self.rotate + self.ax.axes.transData
-        # self.shape.set_transform(self.transform)
-        self.parent.draw()
+        self.redraw()
 
     def disconnect_rotate(self):
         self.parent.mpl_disconnect(self.button_press_cid)
