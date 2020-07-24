@@ -32,6 +32,7 @@ class ImportDataPanel(QObject):
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
         self.ui.button_box.accepted.connect(self.crop_and_mask)
+        self.ui.button_box.rejected.connect(self.clear)
 
     def instrument_selected(self, idx):
         instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
@@ -128,3 +129,13 @@ class ImportDataPanel(QObject):
         det = self.ui.detectors.currentText()
         self.it.redraw()
         self.clear_boundry()
+
+    def clear(self):
+        self.clear_boundry()
+        self.ui.detectors.setEnabled(True)
+        self.ui.load.setEnabled(True)
+        self.ui.add_template.setEnabled(True)
+        self.ui.trans.setDisabled(True)
+        self.ui.rotate.setDisabled(True)
+        self.ui.button_box.setDisabled(True)
+        self.ui.save.setDisabled(True)
