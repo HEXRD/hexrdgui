@@ -10,7 +10,6 @@ from hexrd.ui import resource_loader
 
 class InteractiveTemplate:
     def __init__(self, img, parent=None):
-        # TODO: Handle more than one image being loaded
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
@@ -25,6 +24,15 @@ class InteractiveTemplate:
         pixel_size = HexrdConfig().detector_pixel_size('detector')
         verts = [vert/pixel_size for vert in verts]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
+        min_vals = np.nanmin(self.shape.xy, axis=0)
+        max_vals = np.nanmax(self.shape.xy, axis=0)
+        l, r, b, t = self.ax.get_extent()
+        translate = [0, 0]
+        if not self.raw_axes.contains_point(min_vals):
+            translate = [l, t] - np.nanmin(self.shape.xy, axis=0)
+        elif not self.raw_axes.contains_point(max_vals):
+            translate = [r, b] - np.nanmax(self.shape.xy, axis=0)
+        self.shape.set_xy(self.shape.xy + translate)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
         self.parent.draw()
