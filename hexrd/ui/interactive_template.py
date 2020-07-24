@@ -4,8 +4,8 @@ from matplotlib.transforms import Affine2D
 from matplotlib import patches
 from matplotlib.path import Path
 
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
-import hexrd.ui.resources.templates
 
 
 class InteractiveTemplate:
@@ -22,7 +22,8 @@ class InteractiveTemplate:
     def create_shape(self, module, file_name):
         with resource_loader.resource_path(module, file_name) as f:
             verts = np.loadtxt(f)
-        verts = [vert/0.1 for vert in verts]
+        pixel_size = HexrdConfig().detector_pixel_size('detector')
+        verts = [vert/pixel_size for vert in verts]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)

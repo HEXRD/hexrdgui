@@ -716,6 +716,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return copy.deepcopy(
             self.default_config['instrument']['detectors']['ge1'])
 
+    def detector_pixel_size(self, detector_name):
+        detector = self.detector(detector_name)
+        return detector.get('pixels', {}).get('size', {}).get('value', [1, 1])
+
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
             new_detector = copy.deepcopy(self.detector(detector_to_copy))
