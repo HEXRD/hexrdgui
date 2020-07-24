@@ -53,6 +53,12 @@ class ImportDataPanel(QObject):
                 dets.append(content.split('.')[0])
         return dets
 
+    def load_instrument_config(self, name):
+        fname = 'default_' + name.lower() + '_config.yml'
+        with resource_loader.resource_path(
+                hexrd.ui.resources.calibration, fname) as f:
+            HexrdConfig().load_instrument_config(f)
+
     def detector_selected(self, selected):
         self.ui.data.setEnabled(selected)
         self.ui.instruments.setDisabled(selected)

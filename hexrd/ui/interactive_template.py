@@ -19,14 +19,10 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
 
-    def create_shape(self, file_name):
-        text = resource_loader.load_resource(
-            hexrd.ui.resources.templates, file_name + '.txt')
-        verts = []
-        for val in text.split('\n'):
-            if not val.startswith('#') and val:
-                vert = val.split('\t')
-                verts.append([float(vert[0])/0.1, float(vert[1])/0.1])
+    def create_shape(self, module, file_name):
+        with resource_loader.resource_path(module, file_name) as f:
+            verts = np.loadtxt(f)
+        verts = [vert/0.1 for vert in verts]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)

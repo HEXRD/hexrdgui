@@ -13,8 +13,14 @@ def load_resource(module, name, binary=False):
 
     return importlib_resources.read_text(module, name)
 
+
+def resource_path(module, name):
+    return importlib_resources.path(module, name)
+
+
 def module_contents(module):
     return importlib_resources.contents(module)
+
 
 def import_dynamic_module(name):
     return import_module(name)
