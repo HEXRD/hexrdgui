@@ -11,6 +11,8 @@ from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 
+import hexrd.ui.resources.calibration
+
 
 class ImportDataPanel(QObject):
 
@@ -38,6 +40,7 @@ class ImportDataPanel(QObject):
     def instrument_selected(self, idx):
         instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
         det_list = self.get_instrument_detectors(instruments[idx])
+        self.load_instrument_config(instruments[idx])
         self.ui.detectors.clear()
         self.ui.detectors.insertItems(0, det_list)
         self.ui.detector_label.setEnabled(True)
@@ -89,7 +92,7 @@ class ImportDataPanel(QObject):
     def add_template(self):
         det = self.ui.detectors.currentText()
         self.it = InteractiveTemplate(
-            HexrdConfig().image('detector', 0), self.parent())
+            HexrdConfig().image('default', 0), self.parent())
         self.it.create_shape(module=self.mod, file_name=det + '.txt')
         self.ui.add_template.setDisabled(True)
         self.ui.trans.setEnabled(True)

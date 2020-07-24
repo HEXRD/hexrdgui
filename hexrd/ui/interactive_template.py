@@ -21,7 +21,7 @@ class InteractiveTemplate:
     def create_shape(self, module, file_name):
         with resource_loader.resource_path(module, file_name) as f:
             verts = np.loadtxt(f)
-        pixel_size = HexrdConfig().detector_pixel_size('detector')
+        pixel_size = HexrdConfig().detector_pixel_size('default')
         verts = [vert/pixel_size for vert in verts]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
         min_vals = np.nanmin(self.shape.xy, axis=0)
