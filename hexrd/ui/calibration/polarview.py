@@ -8,6 +8,7 @@ from hexrd.transforms.xfcapi import \
      gvecToDetectorXY
 
 from hexrd import constants as ct
+from hexrd.xrdutil import _project_on_detector_plane
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import run_snip1d
@@ -43,6 +44,10 @@ class PolarView:
     @property
     def detectors(self):
         return self.instr.detectors
+
+    @property
+    def chi(self):
+        return self.instr.chi
 
     @property
     def tvec_s(self):
@@ -184,23 +189,18 @@ class PolarView:
         panel = self.detectors[det]
         img = self.images_dict[det]
 
-        gpts = anglesToGVec(
-            np.vstack([
+        gvec_angs = np.vstack([
                 angpts[1].flatten(),
                 angpts[0].flatten(),
-                dummy_ome,
-                ]).T, bHat_l=panel.bvec)
+                dummy_ome]).T
 
-        xypts = gvecToDetectorXY(
-            gpts,
-            panel.rmat, np.eye(3), np.eye(3),
-            panel.tvec, self.tvec_s, tvec_c,
-            beamVec=panel.bvec)
-
-        if panel.distortion is not None:
-            dfunc = panel.distortion[0]
-            dparams = panel.distortion[1]
-            xypts = dfunc(xypts, dparams)
+        xypts, rmats_s, on_plane = _project_on_detector_plane(
+                gvec_angs,
+                panel.rmat, np.eye(3),
+                self.chi,
+                panel.tvec, tvec_c, self.tvec_s,
+                panel.distortion,
+                beamVec=panel.bvec)
 
         self.warp_dict[det] = panel.interpolate_bilinear(
             xypts, img, pad_with_nans=False
