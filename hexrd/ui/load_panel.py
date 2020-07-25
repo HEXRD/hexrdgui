@@ -8,6 +8,7 @@ from PySide2.QtGui import QCursor
 from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
+from hexrd.ui.constants import UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -234,14 +235,17 @@ class LoadPanel(QObject):
         total_frames = np.sum(self.total_frames)
         if total_frames - self.empty_frames < 2:
             enable = False
-        self.ui.darkMode.setEnabled(enable)
         self.ui.aggregation.setEnabled(enable)
+        for i in range(4):
+            self.ui.darkMode.model().item(i).setEnabled(enable)
 
         if not enable:
             # Update dark mode settings
-            num_dets = len(HexrdConfig().detector_names)
-            self.state['dark'] = [5 for x in range(num_dets)]
-            self.ui.darkMode.setCurrentIndex(5)
+            if self.ui.darkMode.currentIndex() != UI_DARK_INDEX_FILE:
+                num_dets = len(HexrdConfig().detector_names)
+                self.state['dark'] = (
+                    [UI_DARK_INDEX_NONE for x in range(num_dets)])
+                self.ui.darkMode.setCurrentIndex(UI_DARK_INDEX_NONE)
             # Update aggregation settings
             self.state['agg'] = 0
             self.ui.aggregation.setCurrentIndex(0)

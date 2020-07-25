@@ -192,7 +192,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         """
         dark_idx = self.state['dark'][idx]
         if dark_idx == UI_DARK_INDEX_FILE:
-            ims = ImageFileManager().open_file(self.dark_files[idx])
+            ims = ImageFileManager().open_file(self.state['dark_files'][idx])
 
         # Create or load the dark image if selected
         frames = len(ims)
