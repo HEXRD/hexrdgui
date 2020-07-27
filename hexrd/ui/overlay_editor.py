@@ -4,9 +4,9 @@ import numpy as np
 from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
+from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import convert_angle_convention
 
 
 class OverlayEditor:
@@ -18,9 +18,11 @@ class OverlayEditor:
         self._overlay = None
         self.update_type_tab()
 
-        self.ui.tab_widget.tabBar().hide()
+        self.laue_crystal_editor = CalibrationCrystalEditor(parent=self.ui)
+        self.ui.laue_crystal_editor_layout.addWidget(
+            self.laue_crystal_editor.ui)
 
-        self.update_orientation_suffixes()
+        self.ui.tab_widget.tabBar().hide()
 
         self.setup_connections()
 
@@ -34,8 +36,7 @@ class OverlayEditor:
         self.ui.laue_enable_widths.toggled.connect(
             self.update_laue_enable_states)
 
-        HexrdConfig().euler_angle_convention_changed.connect(
-            self.euler_angle_convention_changed)
+        self.laue_crystal_editor.params_modified.connect(self.update_config)
 
     @property
     def overlay(self):
@@ -101,6 +102,14 @@ class OverlayEditor:
         for name in names:
             getattr(self.ui, name).setEnabled(enable_widths)
 
+    @property
+    def laue_crystal_params(self):
+        return copy.deepcopy(self.laue_crystal_editor.params)
+
+    @laue_crystal_params.setter
+    def laue_crystal_params(self, v):
+        self.laue_crystal_editor.params = v
+
     def update_config(self):
         if self.type == 'laue':
             self.update_config_laue()
@@ -115,50 +124,6 @@ class OverlayEditor:
         options['crystal_params'] = self.laue_crystal_params
         options['tth_width'] = self.laue_tth_width
         options['eta_width'] = self.laue_eta_width
-
-    def euler_angle_convention_changed(self):
-        self.update_orientation_suffixes()
-        self.update_gui()
-
-    def update_orientation_suffixes(self):
-        suffix = '' if HexrdConfig().euler_angle_convention is None else '°'
-        widgets = self.laue_cc_widgets
-        for i in self.laue_orientation_indices:
-            widgets[i].setSuffix(suffix)
-
-    def convert_orientation_angle_convention(self, values, old_conv,
-                                             new_conv):
-        # Converts the angle convention of crystal params in place
-        indices = self.laue_orientation_indices
-        angles = [values[i] for i in indices]
-        angles = convert_angle_convention(angles, old_conv, new_conv)
-        for i, angle in zip(indices, angles):
-            values[i] = angle
-
-    @property
-    def laue_orientation_indices(self):
-        return [0, 1, 2]
-
-    @property
-    def laue_crystal_params(self):
-        values = [x.value() for x in self.laue_cc_widgets]
-        if HexrdConfig().euler_angle_convention is not None:
-            # Convert the angles to None
-            convention = HexrdConfig().euler_angle_convention
-            self.convert_orientation_angle_convention(values, convention, None)
-
-        return values
-
-    @laue_crystal_params.setter
-    def laue_crystal_params(self, v):
-        if HexrdConfig().euler_angle_convention is not None:
-            # Convert the angles
-            v = copy.deepcopy(v)
-            convention = HexrdConfig().euler_angle_convention
-            self.convert_orientation_angle_convention(v, None, convention)
-
-        for i, w in enumerate(self.laue_cc_widgets):
-            w.setValue(v[i])
 
     @property
     def laue_enable_widths(self):
@@ -183,11 +148,6 @@ class OverlayEditor:
         return []
 
     @property
-    def laue_cc_widgets(self):
-        # Take advantage of the naming scheme
-        return [getattr(self.ui, f'laue_cc_{i}') for i in range(12)]
-
-    @property
     def laue_widgets(self):
         return [
             self.ui.laue_min_energy,
@@ -195,7 +155,7 @@ class OverlayEditor:
             self.ui.laue_enable_widths,
             self.ui.laue_tth_width,
             self.ui.laue_eta_width
-        ] + self.laue_cc_widgets
+        ]
 
     @property
     def mono_rotation_series_widgets(self):
