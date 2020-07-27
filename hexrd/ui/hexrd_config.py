@@ -260,6 +260,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.instrument_config_loaded.emit()
         self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
+        self.update_active_material_energy()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -382,6 +383,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         prev = self.show_overlays
         self.config['materials']['show_overlays'] = False
         self.update_visible_material_energies()
+        self.update_active_material_energy()
         self.config['materials']['show_overlays'] = prev
 
         self.instrument_config_loaded.emit()
