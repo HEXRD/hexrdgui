@@ -279,8 +279,7 @@ class MainWindow(QObject):
                     ImageFileManager().path_exists(selected_files[0])):
 
                 ImageFileManager().path_prompt(selected_files[0])
-
-            dialog = LoadImagesDialog(selected_files, self.ui)
+            dialog = LoadImagesDialog(files, manual, self.ui)
 
             if dialog.exec_():
                 detector_names, image_files = dialog.results()

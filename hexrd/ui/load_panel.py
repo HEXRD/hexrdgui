@@ -11,6 +11,7 @@ from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.ui_loader import UiLoader
 
 """
@@ -306,6 +307,19 @@ class LoadPanel(QObject):
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
+        if manual:
+            dialog = LoadImagesDialog(self.files, manual, self.ui.parent())
+            if not dialog.exec_():
+                self.reset_data()
+                return
+
+            detector_names, files = dialog.results()
+            image_files = [img for f in self.files for img in f]
+            # Make sure files are matched to selected detector
+            self.files = [[] for det in HexrdConfig().detector_names]
+            for d, f in zip(detector_names, image_files):
+                pos = HexrdConfig().detector_names.index(d)
+                self.files[pos].append(f)
 
         if self.files and self.ext == '.yml':
             self.get_yml_files()

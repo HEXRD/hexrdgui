@@ -15,10 +15,9 @@ class LoadImagesDialog:
 
         loader = UiLoader()
         self.ui = loader.load_file('load_images_dialog.ui', parent)
-
         self.setup_connections()
         self.setup_state()
-        self.setup_table()
+        self.setup_table(manual_assign)
         self.update_table()
 
     def setup_vars(self, image_files):
@@ -59,23 +58,30 @@ class LoadImagesDialog:
             HexrdConfig().load_panel_state = {
                 'trans': [0 for x in range(num_dets)]}
 
-    def setup_table(self):
+    def setup_table(self, manual_assign):
         table = self.ui.match_detectors_table
         table.clearContents()
-        table.setRowCount(len(self.detectors))
-        for i in range(len(self.detectors)):
-            d = QTableWidgetItem(self.detectors[i])
-            table.setItem(i, 0, d)
+        table.setRowCount(len(self.image_files))
+        imgs_per_det = len(self.image_files)/len(HexrdConfig().detector_names)
+        for i in range(len(self.image_files)):
+            if manual_assign:
+                det_cb = QComboBox()
+                det_cb.addItems(list(set(self.detectors)))
+                table.setCellWidget(i, 0, det_cb)
+            else:
+                d = QTableWidgetItem(self.detectors[i])
+                table.setItem(i, 0, d)
 
-            cb = QComboBox()
+            trans_cb = QComboBox()
             options = ["None", "Flip Vertically", "Flip Horizontally",
                 "Transpose", "Rotate 90°", "Rotate 180°", "Rotate 270°"]
-            cb.addItems(options)
+            trans_cb.addItems(options)
             idx = 0
             if 'trans' in HexrdConfig().load_panel_state:
-                idx = HexrdConfig().load_panel_state['trans'][i]
-            cb.setCurrentIndex(idx)
-            table.setCellWidget(i, 1, cb)
+                det = int(i/imgs_per_det)
+                idx = HexrdConfig().load_panel_state['trans'][det]
+            trans_cb.setCurrentIndex(idx)
+            table.setCellWidget(i, 1, trans_cb)
 
             f = QTableWidgetItem(self.image_files[i])
             table.setItem(i, 2, f)
@@ -104,9 +110,15 @@ class LoadImagesDialog:
         detectors = []
         image_files = []
         for i in range(table.rowCount()):
-            detectors.append(table.item(i, 0).text())
+            try:
+                detectors.append(table.cellWidget(i, 0).currentText())
+            except:
+                detectors.append(table.item(i, 0).text())
             image_files.append(table.item(i, 2).text())
-            HexrdConfig().load_panel_state['trans'][i] = table.cellWidget(i, 1).currentIndex()
+            idx = table.cellWidget(i, 1).currentIndex()
+            imgs_per_det = (
+                len(self.image_files)/len(HexrdConfig().detector_names))
+            HexrdConfig().load_panel_state['trans'][int(i/imgs_per_det)] = idx
 
         return detectors, image_files
 
