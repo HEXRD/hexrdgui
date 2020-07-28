@@ -136,45 +136,24 @@ class IndexingRunner:
         }
         print('Running clustering')
         qbar, cl = run_cluster(**kwargs)
-        # print('qbar:', qbar.shape)
-        # print(qbar)
-        # print('cl:', cl.shape)
-        # print(cl)
 
-        quats_f = os.path.join(
-            config.analysis_dir,
-            'accepted_orientations_%s.dat' % config.analysis_id
-            )
-        if not os.path.exists(quats_f):
-            print('Running find_orientations()')
-            results = find_orientations(config)
-            self.write_orientation_results(results, config)
-
-        print('Running fit_grains()')
-        result = fit_grains(config, force=True)
-
-        msg = f'Fit Grains results written to {config.analysis_dir}'
-        QMessageBox.information(
-            None, 'Grain fitting is complete', msg)
-
-    def write_orientation_results(self, results, config):
-        np.savez_compressed(
-            '_'.join(['scored_orientations', config.analysis_id]),
-            **results['scored_orientations']
-        )
-
-        if not os.path.exists(config.analysis_dir):
-            os.makedirs(config.analysis_dir)
-        qbar_filename = 'accepted_orientations_' + config.analysis_id + '.dat'
-        np.savetxt(qbar_filename, results['qbar'].T,
-                fmt='%.18e', delimiter='\t')
-
-        gw = instrument.GrainDataWriter(
-            os.path.join(config.analysis_dir, 'grains.out')
-        )
-        for gid, q in enumerate(results['qbar'].T):
+        # Generate grains table
+        num_grains = qbar.shape[1]
+        shape = (num_grains, 21)
+        grains_table = np.empty(shape)
+        gw = instrument.GrainDataWriter(array=grains_table)
+        for gid, q in enumerate(qbar.T):
             phi = 2*np.arccos(q[0])
             n = xfcapi.unitRowVector(q[1:])
             grain_params = np.hstack([phi*n, const.zeros_3, const.identity_6x1])
             gw.dump_grain(gid, 1., 0., grain_params)
         gw.close()
+
+        print('Running fit_grains')
+        fit_results = fit_grains(config, grains_table, write_spots_files=False)
+        print('Fit Grains Complete. Results:')
+        for result in fit_results:
+            print(result)
+
+        msg = f'Fit Grains results -- length {len(fit_results)} -- written to the console'
+        QMessageBox.information(None, 'Grain fitting is complete', msg)
