@@ -22,6 +22,7 @@ class ImportDataPanel(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('import_data_panel.ui', parent)
         self.it = None
+        self.edited_images = {}
 
         self.setup_connections()
 
@@ -36,6 +37,7 @@ class ImportDataPanel(QObject):
         self.ui.button_box.accepted.connect(self.crop_and_mask)
         self.ui.button_box.rejected.connect(self.clear)
         self.ui.save.clicked.connect(self.save_file)
+        self.ui.complete.clicked.connect(self.completed)
 
     def instrument_selected(self, idx):
         instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
@@ -87,8 +89,6 @@ class ImportDataPanel(QObject):
             self.ui.files_label.setText(','.join(files))
             self.ui.outline.setEnabled(True)
             self.ui.add_template.setEnabled(True)
-            self.ui.detectors.setDisabled(True)
-            self.ui.load.setDisabled(True)
 
     def add_template(self):
         det = self.ui.detectors.currentText()
@@ -100,6 +100,9 @@ class ImportDataPanel(QObject):
         self.ui.rotate.setEnabled(True)
         self.ui.button_box.setEnabled(True)
         self.ui.save.setEnabled(True)
+        self.ui.detectors.setDisabled(True)
+        self.ui.load.setDisabled(True)
+        self.ui.complete.setEnabled(True)
 
     def setup_translate(self):
         if self.it is not None:
@@ -138,6 +141,12 @@ class ImportDataPanel(QObject):
         ilm.set_state({'rect': [bounds]})
         ilm.begin_processing()
         det = self.ui.detectors.currentText()
+        self.edited_images[det] = {
+            'img': img,
+            'rect': bounds,
+            'height': np.abs(bounds[0][0]-bounds[0][1]),
+            'width': np.abs(bounds[1][0]-bounds[1][1])
+        }
         self.it.redraw()
         self.clear_boundry()
 
@@ -150,6 +159,25 @@ class ImportDataPanel(QObject):
         self.ui.rotate.setDisabled(True)
         self.ui.button_box.setDisabled(True)
         self.ui.save.setDisabled(True)
+        self.ui.complete.setDisabled(True)
 
     def save_file(self):
         self.parent().action_save_imageseries.trigger()
+
+    def completed(self):
+        state = {'rect': []}
+        files = []
+        for key, val in self.edited_images.items():
+            HexrdConfig().add_detector(key, 'default')
+            iconfig = HexrdConfig().instrument_config
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'pixels', 'columns'], val['width'])
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'pixels', 'rows'], val['height'])
+            state['rect'].append(val['rect'])
+            files.append([val['img']])
+        HexrdConfig().remove_detector('default')
+        ilm = ImageLoadManager()
+        ilm.read_data(files, parent=self.ui)
+        ilm.set_state(state)
+        ilm.begin_processing()
