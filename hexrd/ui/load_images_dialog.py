@@ -22,12 +22,16 @@ class LoadImagesDialog:
 
     def setup_vars(self, image_files):
         # Flatten out the array of selected images
-        self.image_files = [os.path.basename(img) for imgs in image_files for img in imgs]
+        self.image_files = []
+        for imgs in image_files:
+            for img in imgs:
+                self.image_files.append(os.path.basename(img))
         # Create a list of detectors to match the number of files
         # This is neccessary to check validity of file/detector association
         # when the association is set manually
         multiple = int(len(self.image_files)/len(HexrdConfig().detector_names))
-        self.detectors = [det for det in HexrdConfig().detector_names for i in range(multiple)]
+        dets = HexrdConfig().detector_names
+        self.detectors = [det for det in dets for i in range(multiple)]
 
     def setup_connections(self):
         self.ui.regex_combo.currentIndexChanged.connect(self.update_table)
@@ -112,7 +116,7 @@ class LoadImagesDialog:
         for i in range(table.rowCount()):
             try:
                 detectors.append(table.cellWidget(i, 0).currentText())
-            except:
+            except Exception:
                 detectors.append(table.item(i, 0).text())
             image_files.append(table.item(i, 2).text())
             idx = table.cellWidget(i, 1).currentIndex()
