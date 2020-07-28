@@ -718,7 +718,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def detector_pixel_size(self, detector_name):
         detector = self.detector(detector_name)
-        return detector.get('pixels', {}).get('size', {}).get('value', [1, 1])
+        pixel_size = detector.get('pixels', {}).get('size', {})
+        return pixel_size.get('value', [0.1, 0.1])
 
     def add_detector(self, detector_name, detector_to_copy=None):
         if detector_to_copy is not None:
