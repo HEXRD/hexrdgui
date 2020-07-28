@@ -162,11 +162,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
             if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
-                    # if self.data is None:
                     dirs = self.parent_dir
-                    # elif 'directories' in self.data:
-                    #     print('directories: ', self.data['directories'])
-                    #     dirs = self.data['directories'][i]
 
                     ims = ImageFileManager().open_directory(dirs, self.files[i])
                     HexrdConfig().imageseries_dict[det] = ims
