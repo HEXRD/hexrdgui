@@ -62,9 +62,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             return False
         # If the files do not contain detector names they will need to
         # be manually matched
-        if not all(any(d in f for d in detectors) for f in files[0]):
-            return False
-        return True
+        return all(any(d in f for d in detectors) for f in files[0])
 
     def explict_selection(self, fnames):
         # Assume the user has selected all of the files they would like to load
