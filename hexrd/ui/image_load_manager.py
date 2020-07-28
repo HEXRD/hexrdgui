@@ -64,7 +64,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # be manually matched
         if not all(any(d in f for d in detectors) for f in files[0]):
             return False
-        return files
+        return True
 
     def explict_selection(self, fnames):
         # Assume the user has selected all of the files they would like to load
@@ -75,7 +75,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             if matches:
                 idx = matches[0]
                 files[idx].append(fname)
-        return self.check_success(files)
+        if self.check_success(files):
+            return files
+        else:
+            return []
 
     def match_files(self, fnames):
         dets = HexrdConfig().detector_names
