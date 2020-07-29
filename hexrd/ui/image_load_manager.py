@@ -446,9 +446,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         detector name to dark image.
 
         :param aggr_op_dict: A dict mapping the detector name to a tuple of the form
-                            (func, frames), where func is the function to use to do
-                            the aggregation and frames is number of images to aggregate.
-        :param ims_dict: The dict of image series
+                            (func, frames, ims), where func is the function to use to do
+                            the aggregation, frames is number of images to aggregate, and
+                            ims is the image series to perform the aggregation on.
         """
         futures = []
         progress_dict = {key: 0.0 for key in aggr_op_dict.keys()}
