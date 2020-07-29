@@ -440,7 +440,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         return (key, darkimg)
 
-
     def aggregate_dark_multithread(self, aggr_op_dict):
         """
         Use ThreadPoolExecutor to dark aggregation. Returns a dict mapping the
@@ -455,7 +454,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         progress_dict = {key: 0.0 for key in aggr_op_dict.keys()}
         with ThreadPoolExecutor() as tp:
             for (key, (op, frames, ims)) in aggr_op_dict.items():
-                futures.append(tp.submit(self.aggregate_dark, key, op, ims, frames, progress_dict))
+                futures.append(tp.submit(
+                    self.aggregate_dark, key, op, ims, frames, progress_dict))
 
             self.wait_with_progress(futures, progress_dict)
 
