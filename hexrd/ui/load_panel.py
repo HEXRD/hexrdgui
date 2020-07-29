@@ -344,7 +344,8 @@ class LoadPanel(QObject):
     def enable_read(self):
         if (self.ext == '.tiff'
                 or '' not in self.omega_min and '' not in self.omega_max):
-            if self.state['dark'][self.idx] == 4 and self.dark_files is not None:
+            if (self.state['dark'][self.idx] == 4
+                    and self.dark_files[self.idx] is not None):
                 self.ui.read.setEnabled(len(self.files))
                 return
             elif self.state['dark'][self.idx] != 4 and len(self.files):
