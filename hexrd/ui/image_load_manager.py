@@ -217,7 +217,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         else:
             f = imageseries.stats.median_iter
 
-        return (f, frames)
+        return (f, frames, ims)
 
     def get_dark_aggr_ops(self, ims_dict):
         """
@@ -256,7 +256,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.update_progress_text('Aggregating dark images...')
         dark_images = {}
         if dark_aggr_ops:
-            dark_images = self.aggregate_dark_multithread(dark_aggr_ops, ims_dict)
+            dark_images = self.aggregate_dark_multithread(dark_aggr_ops)
 
         # Apply the operations to the imageseries
         for idx, key in enumerate(ims_dict.keys()):
@@ -441,7 +441,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         return (key, darkimg)
 
 
-    def aggregate_dark_multithread(self, aggr_op_dict, ims_dict):
+    def aggregate_dark_multithread(self, aggr_op_dict):
         """
         Use ThreadPoolExecutor to dark aggregation. Returns a dict mapping the
         detector name to dark image.
@@ -452,10 +452,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         :param ims_dict: The dict of image series
         """
         futures = []
-        progress_dict = {key: 0.0 for key in ims_dict.keys()}
+        progress_dict = {key: 0.0 for key in aggr_op_dict.keys()}
         with ThreadPoolExecutor() as tp:
-            for (key, (op, frames)) in aggr_op_dict.items():
-                futures.append(tp.submit(self.aggregate_dark, key, op, ims_dict[key], frames, progress_dict))
+            for (key, (op, frames, ims)) in aggr_op_dict.items():
+                futures.append(tp.submit(self.aggregate_dark, key, op, ims, frames, progress_dict))
 
             self.wait_with_progress(futures, progress_dict)
 
