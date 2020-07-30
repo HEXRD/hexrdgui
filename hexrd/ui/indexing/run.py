@@ -35,6 +35,7 @@ class IndexingRunner(QObject):
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
         self.fit_grains_dialog = None
+        self.fit_grains_results = None
         self.thread_pool = QThreadPool(self.parent)
         self.progress_dialog = ProgressDialog(self.parent)
 
@@ -116,7 +117,7 @@ class IndexingRunner(QObject):
         self.qfib = generate_orientation_fibers(config, self.ome_maps)
 
         # Find orientations
-        self.update_progress_text('Running indexer paintGrid')
+        self.update_progress_text('Running indexer (paintGrid)')
         ncpus = config.multiprocessing
         self.completeness = indexer.paintGrid(
             self.qfib,
@@ -142,6 +143,18 @@ class IndexingRunner(QObject):
         # Create a full indexing config
         config = create_indexing_config()
 
+        # Setup to run in background
+        self.progress_dialog.setWindowTitle('Fit Grains')
+        self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+        worker = AsyncWorker(self.run_fit_grains, config)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.view_fit_grains_results)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
+
+    def run_fit_grains(self, config):
         min_samples, mean_rpg = create_clustering_parameters(config,
                                                              self.ome_maps)
 
@@ -154,7 +167,7 @@ class IndexingRunner(QObject):
             'compl_thresh': config.find_orientations.clustering.completeness,
             'radius': config.find_orientations.clustering.radius
         }
-        print('Running clustering')
+        self.update_progress_text('Running clustering')
         qbar, cl = run_cluster(**kwargs)
 
         # Generate grains table
@@ -169,15 +182,14 @@ class IndexingRunner(QObject):
             gw.dump_grain(gid, 1., 0., grain_params)
         gw.close()
 
-        print('Running fit_grains')
-        fit_results = fit_grains(config, grains_table, write_spots_files=False)
+        self.update_progress_text(f'Found {num_grains} grains. Running fit optimization.')
+        self.fit_grains_results = fit_grains(config, grains_table, write_spots_files=False)
         print('Fit Grains Complete')
-        self.view_grain_fitting_results(fit_results)
 
-    def view_grain_fitting_results(self, fit_results):
-        for result in fit_results:
+    def view_fit_grains_results(self):
+        for result in self.fit_grains_results:
             print(result)
-        msg = f'Fit Grains results -- length {len(fit_results)} -- written to the console'
+        msg = f'Fit Grains results -- length {len(self.fit_grains_results)} -- written to the console'
         QMessageBox.information(None, 'Grain fitting is complete', msg)
 
     def update_progress_text(self, text):
