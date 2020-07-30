@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QFileDialog
+from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -168,15 +168,40 @@ class ImportDataPanel(QObject):
     def save_file(self):
         self.parent().action_save_imageseries.trigger()
 
+    def check_for_unsaved_changes(self):
+        curr_det = self.ui.detectors.currentText()
+        if self.it is None and curr_det in self.completed_detectors:
+            return
+        msg = ('The currently selected detector has changes that have not been'
+               + ' accepted. Keep changes?')
+        response = QMessageBox.question(
+            self.ui, 'HEXRD', msg, (QMessageBox.Cancel | QMessageBox.Save))
+        if response == QMessageBox.Save:
+            self.crop_and_mask()
+
+    def reset_panel(self):
+        self.clear_boundry()
+        self.ui.detectors.setCurrentIndex(0)
+        self.ui.detectors.setDisabled(True)
+        self.ui.files_label.setText('')
+        self.ui.data.setDisabled(True)
+        self.ui.outline.setDisabled(True)
+        self.ui.completed_dets.setText('')
+        self.ui.finalize.setDisabled(True)
+
     def completed(self):
+        self.check_for_unsaved_changes()
+
         state = {'rect': []}
         files = []
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
             HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'pixels', 'columns'], val['width'])
+                ['detectors', key, 'pixels', 'columns', 'value'],
+                int(val['width']))
             HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'pixels', 'rows'], val['height'])
+                ['detectors', key, 'pixels', 'rows', 'value'],
+                int(val['height']))
             state['rect'].append(val['rect'])
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
@@ -185,3 +210,5 @@ class ImportDataPanel(QObject):
         ilm.set_state(state)
         ilm.begin_processing()
         self.new_config_loaded.emit()
+
+        self.reset_panel()
