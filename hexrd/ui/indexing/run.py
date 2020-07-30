@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 
+from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd import constants as const
@@ -15,21 +16,30 @@ from hexrd.fitgrains import fit_grains
 from hexrd.transforms import xfcapi
 from hexrd.xrdutil import EtaOmeMaps
 
+from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
+from hexrd.ui.progress_dialog import ProgressDialog
 
 
-class IndexingRunner:
+class IndexingRunner(QObject):
+    progress_text = Signal(str)
+
     def __init__(self, parent=None):
+        super(IndexingRunner, self).__init__(parent)
+
         self.parent = parent
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
         self.fit_grains_dialog = None
+        self.thread_pool = QThreadPool(self.parent)
+        self.progress_dialog = ProgressDialog(self.parent)
 
         self.ome_maps = None
+        self.progress_text.connect(self.progress_dialog.setLabelText)
 
     def clear(self):
         self.ome_maps_select_dialog = None
@@ -89,12 +99,26 @@ class IndexingRunner:
         # Create a full indexing config
         config = create_indexing_config()
 
+        # Setup to run indexing in background
+        self.progress_dialog.setWindowTitle('Find Orientations')
+        self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+        worker = AsyncWorker(self.run_indexer, config)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.view_fit_grains_options)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
+
+    def run_indexer(self, config):
         # Generate the orientation fibers
+        self.update_progress_text('Generating orientation fibers')
         self.qfib = generate_orientation_fibers(config, self.ome_maps)
 
-        # Run the indexer
+        # Find orientations
+        self.update_progress_text('Running indexer paintGrid')
         ncpus = config.multiprocessing
-        completeness = indexer.paintGrid(
+        self.completeness = indexer.paintGrid(
             self.qfib,
             self.ome_maps,
             etaRange=np.radians(config.find_orientations.eta.range),
@@ -103,14 +127,10 @@ class IndexingRunner:
             omePeriod=np.radians(config.find_orientations.omega.period),
             threshold=config.find_orientations.threshold,
             doMultiProc=ncpus > 1,
-            nCPUs=ncpus
-        )
-        self.completeness = np.array(completeness)
+            nCPUs=ncpus)
         print('Indexing complete')
 
-        self.run_fit_grains_options()
-
-    def run_fit_grains_options(self):
+    def view_fit_grains_options(self):
         # Run dialog for user options
         dialog = FitGrainsOptionsDialog(self.parent)
         dialog.accepted.connect(self.fit_grains_options_accepted)
@@ -159,3 +179,6 @@ class IndexingRunner:
             print(result)
         msg = f'Fit Grains results -- length {len(fit_results)} -- written to the console'
         QMessageBox.information(None, 'Grain fitting is complete', msg)
+
+    def update_progress_text(self, text):
+        self.progress_text.emit(text)
