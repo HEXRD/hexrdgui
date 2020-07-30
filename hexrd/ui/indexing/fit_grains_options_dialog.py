@@ -9,7 +9,7 @@ from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
 
 
-class FitGrainsDialog(QObject):
+class FitGrainsOptionsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
@@ -21,8 +21,7 @@ class FitGrainsDialog(QObject):
             return
 
         loader = UiLoader()
-        self.ui = loader.load_file('fit_grains_dialog.ui', parent)
-        self.ui.setWindowTitle('Fit Grains')
+        self.ui = loader.load_file('fit_grains_options_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 

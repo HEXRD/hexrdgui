@@ -17,7 +17,7 @@ from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
-from hexrd.ui.indexing.fit_grains_dialog import FitGrainsDialog
+from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 
@@ -108,17 +108,17 @@ class IndexingRunner:
         self.completeness = np.array(completeness)
         print('Indexing complete')
 
-        self.run_grain_fitting()
+        self.run_fit_grains_options()
 
-    def run_grain_fitting(self):
+    def run_fit_grains_options(self):
         # Run dialog for user options
-        dialog = FitGrainsDialog(self.parent)
-        dialog.accepted.connect(self.fit_grains_config_accepted)
+        dialog = FitGrainsOptionsDialog(self.parent)
+        dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
         self.fit_grains_dialog = dialog
         dialog.show()
 
-    def fit_grains_config_accepted(self):
+    def fit_grains_options_accepted(self):
         # Create a full indexing config
         config = create_indexing_config()
 
@@ -151,9 +151,11 @@ class IndexingRunner:
 
         print('Running fit_grains')
         fit_results = fit_grains(config, grains_table, write_spots_files=False)
-        print('Fit Grains Complete. Results:')
+        print('Fit Grains Complete')
+        self.view_grain_fitting_results(fit_results)
+
+    def view_grain_fitting_results(self, fit_results):
         for result in fit_results:
             print(result)
-
         msg = f'Fit Grains results -- length {len(fit_results)} -- written to the console'
         QMessageBox.information(None, 'Grain fitting is complete', msg)
