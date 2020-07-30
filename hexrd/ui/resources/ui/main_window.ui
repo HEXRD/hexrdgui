@@ -173,7 +173,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>677</height>
+          <height>708</height>
          </rect>
         </property>
         <attribute name="label">
@@ -186,16 +186,11 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>677</height>
+          <height>708</height>
          </rect>
         </property>
         <attribute name="label">
          <string>Load Data</string>
-        </attribute>
-       </widget>
-       <widget class="QWidget" name="import_page">
-        <attribute name="label">
-         <string>Import Data</string>
         </attribute>
        </widget>
        <widget class="QWidget" name="instrument_calibration_page">
@@ -204,7 +199,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>677</height>
+          <height>708</height>
          </rect>
         </property>
         <attribute name="label">
