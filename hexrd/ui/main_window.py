@@ -157,6 +157,8 @@ class MainWindow(QObject):
         self.calibration_slider_widget.update_if_mode_matches.connect(
             self.update_if_mode_matches)
         self.load_widget.images_loaded.connect(self.images_loaded)
+        self.import_data_widget.new_config_loaded.connect(
+            self.update_config_gui)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)

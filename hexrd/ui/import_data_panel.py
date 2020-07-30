@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from PySide2.QtCore import QObject
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -15,6 +15,9 @@ import hexrd.ui.resources.calibration
 
 
 class ImportDataPanel(QObject):
+
+    # Emitted when new config is loaded
+    new_config_loaded = Signal()
 
     def __init__(self, parent=None):
         super(ImportDataPanel, self).__init__(parent)
@@ -43,6 +46,7 @@ class ImportDataPanel(QObject):
         instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
         det_list = self.get_instrument_detectors(instruments[idx])
         self.load_instrument_config(instruments[idx])
+        self.new_config_loaded.emit()
         self.ui.detectors.clear()
         self.ui.detectors.insertItems(0, det_list)
         self.ui.detector_label.setEnabled(True)
@@ -169,7 +173,6 @@ class ImportDataPanel(QObject):
         files = []
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
-            iconfig = HexrdConfig().instrument_config
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'columns'], val['width'])
             HexrdConfig().set_instrument_config_val(
@@ -181,3 +184,4 @@ class ImportDataPanel(QObject):
         ilm.read_data(files, parent=self.ui)
         ilm.set_state(state)
         ilm.begin_processing()
+        self.new_config_loaded.emit()
