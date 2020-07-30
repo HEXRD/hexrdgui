@@ -136,11 +136,6 @@ class LoadPanel(QObject):
         self.parent_dir = new_dir
         self.ui.img_directory.setText(self.parent_dir)
 
-    def subdirs_changed(self, checked):
-        self.dir_changed()
-        self.ui.image_folder.setEnabled(checked)
-        self.state['subdirs'] = checked
-
     def config_changed(self):
         self.setup_processing_options()
         self.detectors_changed()
