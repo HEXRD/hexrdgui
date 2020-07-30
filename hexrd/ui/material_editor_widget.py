@@ -34,6 +34,11 @@ class MaterialEditorWidget(QObject):
 
         self.ui.max_hkl.valueChanged.connect(self.set_max_hkl)
 
+        # Flag overlays using this material for an update
+        self.material_modified.connect(
+            lambda: HexrdConfig().flag_overlay_updates_for_material(
+                self.material.name))
+
         # Emit that the ring config changed when the material is modified
         self.material_modified.connect(
             HexrdConfig().overlay_config_changed.emit)

@@ -33,3 +33,43 @@ def default_overlay_style(overlay_type):
         raise Exception(f'Unknown overlay type: {overlay_type}')
 
     return copy.deepcopy(default_styles[overlay_type])
+
+
+def update_overlay_data(instr, display_mode):
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    if not HexrdConfig().show_overlays:
+        # Nothing to do
+        return
+
+    for overlay in HexrdConfig().overlays:
+        if not overlay['visible']:
+            # Skip over invisible overlays
+            continue
+
+        if not overlay.get('update_needed', True):
+            # If it doesn't need an update, skip it
+            continue
+
+        overlay['data'].clear()
+
+        mat_name = overlay['material']
+        mat = HexrdConfig().material(mat_name)
+
+        if not mat:
+            # Print a warning, as this shouldn't happen
+            print('Warning in update_overlay_data():',
+                  f'{mat_name} is not a valid material')
+            continue
+
+        type = overlay['type']
+        kwargs = {
+            'plane_data': mat.planeData,
+            'instr': instr
+        }
+        # Add any options
+        kwargs.update(overlay.get('options', {}))
+
+        generator = overlay_generator(type)(**kwargs)
+        overlay['data'] = generator.overlay(display_mode)
+        overlay['update_needed'] = False

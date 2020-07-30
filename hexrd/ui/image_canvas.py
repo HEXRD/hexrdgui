@@ -14,6 +14,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import utils
 import hexrd.ui.constants
@@ -27,7 +28,7 @@ class ImageCanvas(FigureCanvas):
 
         self.raw_axes = []  # only used for raw currently
         self.axes_images = []
-        self.overlay_artists = []
+        self.overlay_artists = {}
         self.cached_detector_borders = []
         self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
@@ -74,18 +75,19 @@ class ImageCanvas(FigureCanvas):
         self.figure.clear()
         self.raw_axes.clear()
         self.axes_images.clear()
-        self.clear_overlays()
+        self.remove_all_overlay_artists()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.mode = None
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
-        if self.mode != 'images' or len(image_names) != len(self.axes_images):
+        if (self.mode != ViewType.raw or
+                len(image_names) != len(self.axes_images)):
             # Either we weren't in image mode before, or we have a different
             # number of images. Clear and re-draw.
             self.clear()
-            self.mode = 'images'
+            self.mode = ViewType.raw
 
             cols = 1
             if len(image_names) > 1:
@@ -101,6 +103,7 @@ class ImageCanvas(FigureCanvas):
                 axis.set_title(name)
                 self.axes_images.append(axis.imshow(img, cmap=self.cmap,
                                                     norm=self.norm))
+                axis.autoscale(False)
                 self.raw_axes.append(axis)
 
             self.figure.tight_layout()
@@ -122,18 +125,26 @@ class ImageCanvas(FigureCanvas):
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def clear_overlays(self):
+    def remove_all_overlay_artists(self):
         while self.overlay_artists:
-            self.overlay_artists.pop(0).remove()
+            key = next(iter(self.overlay_artists))
+            self.remove_overlay_artists(key)
+
+    def remove_overlay_artists(self, key):
+        artists = self.overlay_artists[key]
+        while artists:
+            artists.pop(0).remove()
+        del self.overlay_artists[key]
 
     def overlay_axes_data(self, overlay):
         # Return the axes and data for drawing the overlay
         if not overlay['data']:
             return []
 
-        if self.mode in ['cartesian', 'polar']:
+        if self.mode in [ViewType.cartesian, ViewType.polar]:
             # If it's cartesian or polar, there is only one axis
-            return [(self.axis, next(iter(overlay['data'].values())))]
+            # Use the same axis for all of the data
+            return [(self.axis, x) for x in overlay['data'].values()]
 
         # If it's raw, there is data for each axis.
         # The title of each axis should match the data key.
@@ -152,9 +163,16 @@ class ImageCanvas(FigureCanvas):
         return overlay_funcs[type]
 
     def draw_overlay(self, overlay):
+        if not overlay['visible']:
+            return
+
         type = overlay['type']
         style = overlay['style']
         for axis, data in self.overlay_axes_data(overlay):
+            if id(data) in self.overlay_artists:
+                # It's already present. Skip it.
+                continue
+
             self.overlay_draw_func(type)(axis, data, style)
 
     def draw_powder_overlay(self, axis, data, style):
@@ -165,10 +183,12 @@ class ImageCanvas(FigureCanvas):
         data_style = style['data']
         ranges_style = style['ranges']
 
+        artists = []
+        self.overlay_artists[id(data)] = artists
         for pr in rings:
             x, y = self.extract_ring_coords(pr)
             artist, = axis.plot(x, y, **data_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
@@ -178,7 +198,7 @@ class ImageCanvas(FigureCanvas):
                 # If ranges are combined, override the color to red
                 current_style['c'] = 'r'
             artist, = axis.plot(x, y, **current_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
@@ -187,8 +207,8 @@ class ImageCanvas(FigureCanvas):
                 # Don't plot duplicate vertical lines
                 x = np.unique(x.round(3))
                 for val in x:
-                    ring = az_axis.axvline(val, **data_style)
-                    self.overlay_artists.append(ring)
+                    artist = az_axis.axvline(val, **data_style)
+                    artists.append(artist)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
@@ -203,24 +223,27 @@ class ImageCanvas(FigureCanvas):
 
                 for val in x:
                     artist = az_axis.axvline(val, **current_style)
-                    self.overlay_artists.append(artist)
+                    artists.append(artist)
 
     def draw_laue_overlay(self, axis, data, style):
         spots = data['spots']
-
-        # FIXME: plot this when we start to generate it
-        ranges = data['ranges']  # noqa: F841
+        ranges = data['ranges']
 
         data_style = style['data']
+        ranges_style = style['ranges']
 
-        # FIXME: plot this when we start to generate it
-        ranges_style = style['ranges']  # noqa: F841
-
+        artists = []
+        self.overlay_artists[id(data)] = artists
         for x, y in spots:
             artist = axis.scatter(x, y, **data_style)
-            self.overlay_artists.append(artist)
+            artists.append(artist)
 
-    def draw_mono_rotation_series_overlay(self, axis, data, style):
+        for range in ranges:
+            x, y = zip(*range)
+            artist, = axis.plot(x, y, **ranges_style)
+            artists.append(artist)
+
+    def draw_mono_rotation_series_overlay(self, id, axis, data, style):
         pass
 
     def update_overlays(self):
@@ -228,7 +251,33 @@ class ImageCanvas(FigureCanvas):
         if not self.iviewer:
             return
 
-        self.clear_overlays()
+        if not HexrdConfig().show_overlays:
+            self.remove_all_overlay_artists()
+            self.draw()
+            return
+
+        def overlay_with_data_id(data_id):
+            for overlay in HexrdConfig().overlays:
+                if any([data_id == id(x) for x in overlay['data'].values()]):
+                    return overlay
+
+            return None
+
+        # Remove any artists that:
+        # 1. Are no longer in the list of overlays
+        # 2. Are not visible
+        # 3. Need updating
+        for key in list(self.overlay_artists.keys()):
+            overlay = overlay_with_data_id(key)
+            if overlay is None:
+                # This artist is no longer a part of the overlays
+                self.remove_overlay_artists(key)
+                continue
+
+            if overlay.get('update_needed', True) or not overlay['visible']:
+                self.remove_overlay_artists(key)
+                continue
+
         self.iviewer.update_overlay_data()
 
         for overlay in HexrdConfig().overlays:
@@ -264,7 +313,7 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def extract_ring_coords(self, data):
-        if self.mode == 'cartesian':
+        if self.mode == ViewType.cartesian:
             # These are in x, y coordinates. Do not swap them.
             return data[:, 0], data[:, 1]
 
@@ -287,7 +336,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         # Do not show the saturation in calibration mode
-        if self.mode == 'cartesian' or self.mode == 'polar':
+        if self.mode != ViewType.raw:
             return
 
         for img in self.axes_images:
@@ -316,15 +365,18 @@ class ImageCanvas(FigureCanvas):
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
             return
 
+        # Re-draw all overlays from scratch
+        HexrdConfig().clear_overlay_data()
+
         bvec = HexrdConfig().instrument_config['beam']['vector']
         self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
         self.update_overlays()
 
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
-        if self.mode != 'cartesian':
+        if self.mode != ViewType.cartesian:
             self.clear()
-            self.mode = 'cartesian'
+            self.mode = ViewType.cartesian
 
         # Force a redraw when the pixel size changes.
         if (self.cartesian_res_config !=
@@ -376,15 +428,15 @@ class ImageCanvas(FigureCanvas):
 
     def show_polar(self):
         HexrdConfig().emit_update_status_bar('Loading polar view...')
-        if self.mode != 'polar':
+        if self.mode != ViewType.polar:
             self.clear()
-            self.mode = 'polar'
+            self.mode = ViewType.polar
 
         polar_res_config = HexrdConfig().config['image']['polar']
         if self._polar_reset_needed(polar_res_config):
             # Reset the whole image when certain config items change
             self.clear()
-            self.mode = 'polar'
+            self.mode = ViewType.polar
 
         self.polar_res_config = polar_res_config.copy()
 
@@ -476,6 +528,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.relim()
             self.axis.autoscale_view()
             self.axis.axis('auto')
+            self.axis.autoscale(False)
             self.figure.tight_layout()
 
         self.update_overlays()
@@ -497,7 +550,7 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def update_azimuthal_integral_plot(self):
-        if self.mode != 'polar':
+        if self.mode != ViewType.polar:
             # Nothing to do. Just return.
             return
 
@@ -520,7 +573,7 @@ class ImageCanvas(FigureCanvas):
         axis.axis('auto')
 
     def on_detector_transform_modified(self, det):
-        if not self.iviewer:
+        if self.mode not in [ViewType.cartesian, ViewType.polar]:
             return
 
         self.iviewer.update_detector(det)
@@ -534,7 +587,7 @@ class ImageCanvas(FigureCanvas):
         self.draw_detector_borders()
 
     def export_polar_plot(self, filename):
-        if self.mode != 'polar':
+        if self.mode != ViewType.polar:
             raise Exception('Not in polar mode. Cannot export polar plot')
 
         if not self.iviewer:
@@ -558,7 +611,7 @@ class ImageCanvas(FigureCanvas):
         return False
 
     def polar_show_snip1d(self):
-        if self.mode != 'polar':
+        if self.mode != ViewType.polar:
             print('snip1d may only be shown in polar mode!')
             return
 

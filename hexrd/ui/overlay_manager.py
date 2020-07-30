@@ -22,6 +22,8 @@ class OverlayManager:
 
         self.overlay_editor = OverlayEditor(self.ui)
         self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.material_combos = []
         self.type_combos = []
@@ -172,7 +174,10 @@ class OverlayManager:
     def update_config_materials(self):
         for i in range(self.ui.table.rowCount()):
             w = self.material_combos[i]
-            HexrdConfig().overlays[i]['material'] = w.currentData()
+            overlay = HexrdConfig().overlays[i]
+            if overlay['material'] != w.currentData():
+                overlay['material'] = w.currentData()
+                overlay['update_needed'] = True
 
         HexrdConfig().overlay_config_changed.emit()
 

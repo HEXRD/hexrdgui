@@ -1,4 +1,5 @@
 import copy
+import os
 
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -307,6 +308,7 @@ class OmeMapsViewerDialog(QObject):
             'NPZ files (*.npz)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             if not selected_file.endswith('.npz'):
                 selected_file += '.npz'
 

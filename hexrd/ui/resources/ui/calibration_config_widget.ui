@@ -479,9 +479,12 @@
         <property name="editable">
          <bool>true</bool>
         </property>
+        <property name="currentText">
+         <string>detector_1</string>
+        </property>
         <item>
          <property name="text">
-          <string>ge1</string>
+          <string>detector_1</string>
          </property>
         </item>
        </widget>

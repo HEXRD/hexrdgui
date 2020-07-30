@@ -2,12 +2,15 @@ from PySide2.QtCore import QObject, QTimer, Signal
 
 import numpy as np
 
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 
 class CalibrationSliderWidget(QObject):
 
+    # Using string argument instead of ViewType to workaround segfault on
+    # conda/macos
     update_if_mode_matches = Signal(str)
 
     # Conversions from configuration value to slider value and back
@@ -280,7 +283,7 @@ class CalibrationSliderWidget(QObject):
             self._update_if_polar_timer = QTimer()
             self._update_if_polar_timer.setSingleShot(True)
             self._update_if_polar_timer.timeout.connect(
-                lambda: self.update_if_mode_matches.emit('polar'))
+                lambda: self.update_if_mode_matches.emit(ViewType.polar))
 
         self._update_if_polar_timer.start(500)
 

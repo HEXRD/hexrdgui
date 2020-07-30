@@ -1,3 +1,5 @@
+import os
+
 from PySide2.QtCore import Signal, QObject, QSignalBlocker
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
@@ -64,6 +66,7 @@ class OmeMapsSelectDialog(QObject):
             'NPZ files (*.npz)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             self.ui.file_name.setText(selected_file)
 
     @property

@@ -2,6 +2,7 @@ import copy
 import functools
 import os
 import time
+import glob
 from concurrent.futures import ThreadPoolExecutor
 
 from hexrd import imageseries
@@ -40,68 +41,78 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         super(ImageLoadManager, self).__init__(None)
         self.unaggregated_images = None
 
-    def check_images(self, fnames):
-        dets = HexrdConfig().detector_names
-        files = [[] for i in range(len(dets))]
-        core_name = os.path.split(fnames[0])[1]
-        for det in dets:
-            if det in fnames[0]:
-                core_name = core_name.replace(det, '')
-        matches = 0
-        for file in fnames:
-            file_name = os.path.split(file)[1]
-            for det in dets:
-                if (det in file_name) and (core_name == file_name.replace(det, '')):
-                    matches += 1
-                    pos = dets.index(det)
-                    files[pos].append(file)
-        # Display error if selected files do not match ea. detector
-        if not len(fnames) == matches:
-            msg = ('ERROR - Files must contain detector name.')
-            QMessageBox.warning(None, 'HEXRD', msg)
-            return []
-        else:
-            return files
+    def load_images(self, fnames):
+        files = self.explict_selection(fnames)
+        manual = False
+        if not files:
+            files = self.match_files(fnames)
+            matched = self.check_success(files)
+            if not matched:
+                manual = True
+                files = [[fname] for fname in fnames]
+        return files, manual
 
-    def match_images(self, fnames):
-        dets = HexrdConfig().detector_names
-        files = [[] for i in range(len(dets))]
-        core_name = fnames[0]
-        for det in dets:
-            if det in fnames[0]:
-                core_name = fnames[0].replace(det, '')
-        for item in os.scandir(HexrdConfig().images_dir):
-            if os.path.isfile(item):
-                file_name = os.path.splitext(item.name)[0]
-                for det in dets:
-                    if (det in file_name) and (core_name == file_name.replace(det, '')):
-                        pos = dets.index(det)
-                        files[pos].append(item.path)
-        # Display error if equivalent files are not found for ea. detector
-        files_per_det = all(len(fnames) == len(elem) for elem in files)
-        if not files_per_det:
-            msg = ('ERROR - There must be the same number of files for each detector.')
-            QMessageBox.warning(None, 'HEXRD', msg)
-            return []
-        else:
-            return files
+    def check_success(self, files):
+        detectors = HexrdConfig().detector_names
+        # Make sure there are the same number of files for each detector
+        # and at least one file per detector
+        if (not files[0]
+                or len(files) != len(detectors)
+                or any(len(files[0]) != len(elem) for elem in files)):
+            return False
+        # If the files do not contain detector names they will need to
+        # be manually matched
+        return all(any(d in f for d in detectors) for f in files[0])
 
-    def match_dirs_images(self, fnames, directories):
+    def explict_selection(self, fnames):
+        # Assume the user has selected all of the files they would like to load
         dets = HexrdConfig().detector_names
         files = [[] for i in range(len(dets))]
-        # Find the images with the same name for the remaining detectors
-        for i, dir in enumerate(directories):
-            pos = dets.index(os.path.basename(dir))
-            for item in os.scandir(dir):
-                fname = os.path.splitext(item.name)[0]
-                if os.path.isfile(item) and fname in fnames:
-                    files[pos].append(item.path)
-            # Display error if equivalent files are not found for ea. detector
-            if len(files[pos]) != len(fnames):
-                msg = ('ERROR - Could not find equivalent file(s) in ' + dir)
-                QMessageBox.warning(None, 'HEXRD', msg)
-                return []
-                break
+        for fname in fnames:
+            matches = [i for i, det in enumerate(dets) if det in fname]
+            if matches:
+                idx = matches[0]
+                files[idx].append(fname)
+        if self.check_success(files):
+            return files
+        else:
+            return []
+
+    def match_files(self, fnames):
+        dets = HexrdConfig().detector_names
+        # Look for files that match everything except detector name
+        # ex: /home/user/images/Ruby_line_ff_000017_ge1.npz becomes
+        # /home/user/images/Ruby_line_ff_000017_*.npz
+        search = []
+        for f in fnames:
+            files = [det for det in dets if det in f]
+            if not files:
+                search.append(f)
+            else:
+                for d in dets:
+                    search.append(d.join(f.rsplit(files[0], 1)))
+        files = self.match_selected_files(fnames, search)
+        if not self.check_success(files):
+            # Look in sibling directories if the matching files were not
+            # found in the current directory.
+            revised_search = []
+            for s in search:
+                fname = os.path.basename(os.path.dirname(s))
+                revised_search.append('*'.join(s.split(fname, 1)))
+            files = self.match_selected_files(fnames, revised_search)
+        return files
+
+    def match_selected_files(self, fnames, search):
+        dets = HexrdConfig().detector_names
+        files = [[] for i in range(len(dets))]
+        results = [f for f in search if glob.glob(f, recursive=True)]
+        results = [glob.glob(f, recursive=True) for f in results]
+        if results:
+            for fname in [r[0] for r in results]:
+                matches = [i for i, det in enumerate(dets) if det in fname]
+                if matches:
+                    idx = matches[0]
+                    files[idx].append(fname)
         return files
 
     def read_data(self, files, data=None, parent=None):
@@ -152,10 +163,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
             if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
-                    if self.data is None:
-                        dirs = self.parent_dir
-                    elif 'directories' in self.data:
-                        dirs = self.data['directories'][i]
+                    dirs = self.parent_dir
 
                     ims = ImageFileManager().open_directory(dirs, self.files[i])
                     HexrdConfig().imageseries_dict[det] = ims
@@ -190,7 +198,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         """
         dark_idx = self.state['dark'][idx]
         if dark_idx == UI_DARK_INDEX_FILE:
-            ims = ImageFileManager().open_file(self.dark_files[idx])
+            ims = ImageFileManager().open_file(self.state['dark_files'][idx])
 
         # Create or load the dark image if selected
         frames = len(ims)
@@ -209,7 +217,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         else:
             f = imageseries.stats.median_iter
 
-        return (f, frames)
+        return (f, frames, ims)
 
     def get_dark_aggr_ops(self, ims_dict):
         """
@@ -248,7 +256,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.update_progress_text('Aggregating dark images...')
         dark_images = {}
         if dark_aggr_ops:
-            dark_images = self.aggregate_dark_multithread(dark_aggr_ops, ims_dict)
+            dark_images = self.aggregate_dark_multithread(dark_aggr_ops)
 
         # Apply the operations to the imageseries
         for idx, key in enumerate(ims_dict.keys()):
@@ -434,22 +442,22 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         return (key, darkimg)
 
-
-    def aggregate_dark_multithread(self, aggr_op_dict, ims_dict):
+    def aggregate_dark_multithread(self, aggr_op_dict):
         """
         Use ThreadPoolExecutor to dark aggregation. Returns a dict mapping the
         detector name to dark image.
 
         :param aggr_op_dict: A dict mapping the detector name to a tuple of the form
-                            (func, frames), where func is the function to use to do
-                            the aggregation and frames is number of images to aggregate.
-        :param ims_dict: The dict of image series
+                            (func, frames, ims), where func is the function to use to do
+                            the aggregation, frames is number of images to aggregate, and
+                            ims is the image series to perform the aggregation on.
         """
         futures = []
-        progress_dict = {key: 0.0 for key in ims_dict.keys()}
+        progress_dict = {key: 0.0 for key in aggr_op_dict.keys()}
         with ThreadPoolExecutor() as tp:
-            for (key, (op, frames)) in aggr_op_dict.items():
-                futures.append(tp.submit(self.aggregate_dark, key, op, ims_dict[key], frames, progress_dict))
+            for (key, (op, frames, ims)) in aggr_op_dict.items():
+                futures.append(tp.submit(
+                    self.aggregate_dark, key, op, ims, frames, progress_dict))
 
             self.wait_with_progress(futures, progress_dict)
 

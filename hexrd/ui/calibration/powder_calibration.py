@@ -8,7 +8,6 @@ from hexrd.fitting import fitpeak
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import convert_tilt_convention
-from hexrd.ui.utils import remove_none_distortions
 
 
 class InstrumentCalibrator(object):
@@ -269,7 +268,6 @@ def run_powder_calibration():
 
     # Set up the instrument
     iconfig = HexrdConfig().instrument_config_none_euler_convention
-    remove_none_distortions(iconfig)
     instr = instrument.HEDMInstrument(instrument_config=iconfig,
                                       tilt_calibration_mapping=rme)
 
@@ -310,9 +308,8 @@ def run_powder_calibration():
 
     # Convert back to whatever convention we were using before
     eac = HexrdConfig().euler_angle_convention
-    if eac != (None, None):
-        old_conv = (None, None)
-        convert_tilt_convention(output_dict, old_conv, eac)
+    if eac is not None:
+        convert_tilt_convention(output_dict, None, eac)
 
     # Add the saturation levels, as they seem to be missing
     sl = 'saturation_level'

@@ -33,6 +33,18 @@ UI_THRESHOLD_LESS_THAN = 0
 UI_THRESHOLD_GREATER_THAN = 1
 UI_THRESHOLD_EQUAL_TO = 2
 
+
+class ViewType:
+    raw = 'raw'
+    cartesian = 'cartesian'
+    polar = 'polar'
+
+
+DEFAULT_EULER_ANGLE_CONVENTION = {
+    'axes_order': 'xyz',
+    'extrinsic': True
+}
+
 DEFAULT_POWDER_STYLE = {
     'data': {
         'c': '#00ffff',  # Cyan
@@ -71,3 +83,7 @@ DEFAULT_MONO_ROTATION_SERIES_STYLE = {
         'lw': 1.0
     }
 }
+
+WORKFLOW_HEDM = 'HEDM'
+WORKFLOW_LLNL = 'LLNL'
+WORKFLOWS = [WORKFLOW_HEDM, WORKFLOW_LLNL]

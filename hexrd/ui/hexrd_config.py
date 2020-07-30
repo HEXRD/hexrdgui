@@ -96,6 +96,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the load_panel_state has been cleared"""
     load_panel_state_reset = Signal()
 
+    """Emitted when the workflow has been changed"""
+    workflow_changed = Signal()
+
+    """Emitted when the Euler angle convention changes"""
+    euler_angle_convention_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -120,9 +126,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_tth_maxes = {}
         self.backup_tth_widths = {}
         self.overlays = []
+        self.workflow = None
         self._threshold_data = {}
 
-        self.set_euler_angle_convention('xyz', True, convert_config=False)
+        default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
+        self.set_euler_angle_convention(default_conv, convert_config=False)
 
         # Load default configuration settings
         self.load_default_config()
@@ -135,6 +143,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.load_settings()
 
         self.set_defaults_if_missing()
+
+        # Remove any 'None' distortion dicts from the detectors
+        utils.remove_none_distortions(self.config['instrument'])
 
         # Add the statuses to the config
         self.create_internal_config(self.config['instrument'])
@@ -164,6 +175,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('config_calibration', self.config['calibration'])
         settings.setValue('config_indexing', self.indexing_config)
         settings.setValue('images_dir', self.images_dir)
+        settings.setValue('working_dir', self.working_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
         settings.setValue('euler_angle_convention', self.euler_angle_convention)
@@ -175,18 +187,31 @@ class HexrdConfig(QObject, metaclass=Singleton):
         HexrdConfig().clear_overlay_data()
         settings.setValue('overlays', self.overlays)
 
+    def save_workflow(self):
+        settings = QSettings()
+        old_workflow = settings.value('workflow', None)
+        if old_workflow != self.workflow:
+            settings.setValue('workflow', self.workflow)
+            self.workflow_changed.emit()
+
     def load_settings(self):
         settings = QSettings()
         self.config['instrument'] = settings.value('config_instrument', None)
         self.config['calibration'] = settings.value('config_calibration', None)
         self.config['indexing'] = settings.value('config_indexing', None)
         self.images_dir = settings.value('images_dir', None)
+        self.working_dir = settings.value('working_dir', None)
         self.hdf5_path = settings.value('hdf5_path', None)
         # All QSettings come back as strings.
         self.live_update = settings.value('live_update', 'true') == 'true'
 
-        conv = settings.value('euler_angle_convention', ('xyz', True))
-        self.set_euler_angle_convention(conv[0], conv[1], convert_config=False)
+        default_convention = constants.DEFAULT_EULER_ANGLE_CONVENTION
+        conv = settings.value('euler_angle_convention', default_convention)
+        if isinstance(conv, tuple):
+            # Convert to our new method of storing it
+            conv = {'axes_order': conv[0], 'extrinsic': conv[1]}
+
+        self.set_euler_angle_convention(conv, convert_config=False)
 
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
@@ -194,6 +219,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []
+
+        self.workflow = settings.value('workflow', None)
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -233,6 +260,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.instrument_config_loaded.emit()
         self.deep_rerender_needed.emit()
         self.update_visible_material_energies()
+        self.update_active_material_energy()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -335,20 +363,28 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
 
         eac = self.euler_angle_convention
-        if eac != (None, None):
+        if eac is not None:
             # Convert it to whatever convention we are using
-            old_conv = (None, None)
-            utils.convert_tilt_convention(self.config['instrument'], old_conv,
-                                          eac)
+            utils.convert_tilt_convention(self.config['instrument'], None, eac)
 
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
+
+        # Remove any 'None' distortion dicts from the detectors
+        utils.remove_none_distortions(self.config['instrument'])
+
         self.create_internal_config(self.config['instrument'])
 
         # Create a backup
         self.backup_instrument_config()
 
+        # Temporarily turn off overlays. They will be updated later.
+        self.clear_overlay_data()
+        prev = self.show_overlays
+        self.config['materials']['show_overlays'] = False
         self.update_visible_material_energies()
+        self.update_active_material_energy()
+        self.config['materials']['show_overlays'] = prev
 
         self.instrument_config_loaded.emit()
 
@@ -364,10 +400,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def save_instrument_config(self, output_file):
         default = self.filter_instrument_config(self.config['instrument'])
         eac = self.euler_angle_convention
-        if eac != (None, None):
+        if eac is not None:
             # Convert it to None convention before saving
-            new_conv = (None, None)
-            utils.convert_tilt_convention(default, eac, new_conv)
+            utils.convert_tilt_convention(default, eac, None)
 
         with open(output_file, 'w') as f:
             yaml.dump(default, f)
@@ -457,18 +492,25 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Get the detector flags
         for name in self.detector_names:
             for path in dflags_order:
-                full_path = ['detectors', name] + path
-                status = self.get_instrument_config_val(full_path)
-
                 if path[0] == 'distortion':
                     # Special case for distortion parameters
                     func_path = ['detectors', name, 'distortion',
                                  'function_name', 'value']
                     func_name = self.get_instrument_config_val(func_path)
+                    if func_name == 'None':
+                        # There is no distortion. Just continue.
+                        continue
+
+                    full_path = ['detectors', name] + path
+                    status = self.get_instrument_config_val(full_path)
+
                     num_params = self.num_distortion_parameters(func_name)
                     for i in range(num_params):
                         statuses.append(status[i])
                     continue
+
+                full_path = ['detectors', name] + path
+                status = self.get_instrument_config_val(full_path)
 
                 # If it is a list, loop through the values
                 if isinstance(status, list):
@@ -619,6 +661,25 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_instrument_config_val(self, path, value):
         """This sets a value from a path list."""
         cur_val = self.config['instrument']
+
+        # Special case for distortion:
+        # If it is None, remove the distortion dict
+        # If it is not None, then create the distortion dict if not present
+        dist_func_path = ['distortion', 'function_name', 'value']
+        if len(path) > 4 and path[2:5] == dist_func_path:
+            cur_val = cur_val[path[0]][path[1]]
+            if value == 'None' and 'distortion' in cur_val:
+                del cur_val['distortion']
+            elif value != 'None':
+                cur_val['distortion'] = {
+                    'function_name': value,
+                    'parameters': (
+                        [0.] * self.num_distortion_parameters(value)
+                    )
+                }
+                self.add_status(cur_val['distortion'])
+            return
+
         try:
             for val in path[:-1]:
                 cur_val = cur_val[val]
@@ -661,6 +722,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         """
         cur_val = self.config['instrument']
+
+        # Special case for distortion:
+        # If no distortion is specified, return 'None'
+        dist_func_path = ['distortion', 'function_name']
+        if len(path) > 3 and path[2:4] == dist_func_path:
+            for val in path:
+                if val not in cur_val:
+                    return 'None' if path[-1] == 'value' else 1
+                cur_val = cur_val[val]
+            return cur_val
+
         try:
             for val in path:
                 cur_val = cur_val[val]
@@ -714,7 +786,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     @property
     def default_detector(self):
         return copy.deepcopy(
-            self.default_config['instrument']['detectors']['ge1'])
+            self.default_config['instrument']['detectors']['detector_1'])
 
     def detector_pixel_size(self, detector_name):
         detector = self.detector(detector_name)
@@ -786,8 +858,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(name + ' is not in materials list!')
         self.config['materials']['materials'][name] = material
 
-        if self.material_is_visible(name):
-            self.overlay_config_changed.emit()
+        self.flag_overlay_updates_for_material(name)
+        self.overlay_config_changed.emit()
 
     def remove_material(self, name):
         if name not in self.materials:
@@ -827,7 +899,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
-        self.overlay_config_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
@@ -861,6 +932,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         mat.beamEnergy = energy
         utils.make_new_pdata(mat)
+        self.flag_overlay_updates_for_material(mat.name)
 
     def update_active_material_energy(self):
         self.update_material_energy(self.active_material)
@@ -898,6 +970,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.backup_tth_width = self.active_material_tth_width
 
             self.active_material.planeData.tThWidth = v
+            self.flag_overlay_updates_for_active_material()
             self.overlay_config_changed.emit()
 
     active_material_tth_width = property(_active_material_tth_width,
@@ -935,6 +1008,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.backup_tth_max = self.active_material_tth_max
 
             self.active_material.planeData.tThMax = v
+            self.flag_overlay_updates_for_active_material()
             self.overlay_config_changed.emit()
 
     active_material_tth_max = property(_active_material_tth_max,
@@ -966,8 +1040,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['materials'].get('show_overlays')
 
     def _set_show_overlays(self, b):
-        self.config['materials']['show_overlays'] = b
-        self.overlay_config_changed.emit()
+        if b != self.show_overlays:
+            self.config['materials']['show_overlays'] = b
+            self.overlay_config_changed.emit()
 
     show_overlays = property(_show_overlays, _set_show_overlays)
 
@@ -1005,10 +1080,21 @@ class HexrdConfig(QObject, metaclass=Singleton):
         overlay['type'] = type
         overlay['style'] = overlays.default_overlay_style(type)
         overlay['options'].clear()
+        overlay['update_needed'] = True
 
     def clear_overlay_data(self):
         for overlay in self.overlays:
             overlay['data'].clear()
+            if 'update_needed' in overlay:
+                del overlay['update_needed']
+
+    def flag_overlay_updates_for_active_material(self):
+        self.flag_overlay_updates_for_material(self.active_material_name)
+
+    def flag_overlay_updates_for_material(self, material_name):
+        for overlay in self.overlays:
+            if overlay['material'] == material_name:
+                overlay['update_needed'] = True
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
@@ -1049,6 +1135,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     polar_res_tth_max = property(_polar_res_tth_max,
                                  set_polar_res_tth_max)
+
+    @property
+    def polar_res_eta_min(self):
+        # This is constant for now...
+        return constants.UI_ETA_MIN_DEGREES
+
+    @property
+    def polar_res_eta_max(self):
+        # This is constant for now...
+        return constants.UI_ETA_MAX_DEGREES
 
     def _polar_apply_snip1d(self):
         return self.config['image']['polar']['apply_snip1d']
@@ -1148,21 +1244,25 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     tab_images = property(tab_images, set_tab_images)
 
-    def set_euler_angle_convention(self, axes_order='xyz', extrinsic=True,
-                                   convert_config=True):
+    def set_euler_angle_convention(self, new_conv, convert_config=True):
 
-        new_conv = (axes_order, extrinsic)
-
-        allowed_combinations = [
-            ('xyz', True),
-            ('zxz', False),
-            (None, None)
+        allowed_conventions = [
+            {
+                'axes_order': 'xyz',
+                'extrinsic': True
+            },
+            {
+                'axes_order': 'zxz',
+                'extrinsic': False
+            },
+            None
         ]
 
-        if new_conv not in allowed_combinations:
+        if new_conv not in allowed_conventions:
+            default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
             print('Warning: Euler angle convention not allowed:', new_conv)
-            print('Setting the default instead:', allowed_combinations[0])
-            new_conv = allowed_combinations[0]
+            print('Setting the default instead:', default_conv)
+            new_conv = default_conv
 
         if convert_config:
             # First, convert all the tilt angles
@@ -1171,13 +1271,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                           new_conv)
 
         # Set the variable
-        self._euler_angle_convention = new_conv
+        self._euler_angle_convention = copy.deepcopy(new_conv)
+        self.euler_angle_convention_changed.emit()
 
     @property
     def instrument_config_none_euler_convention(self):
         iconfig = self.instrument_config
         eac = self.euler_angle_convention
-        utils.convert_tilt_convention(iconfig, eac, (None, None))
+        utils.convert_tilt_convention(iconfig, eac, None)
         return iconfig
 
     @property
@@ -1185,11 +1286,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self._euler_angle_convention
 
     def rotation_matrix_euler(self):
-        axes, extrinsic = self.euler_angle_convention
-        if axes is None or extrinsic is None:
+        convention = self.euler_angle_convention
+        if convention is None:
             return None
 
-        return RotMatEuler(np.zeros(3), axes, extrinsic)
+        return RotMatEuler(np.zeros(3), **convention)
 
     @property
     def show_detector_borders(self):

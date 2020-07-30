@@ -1,5 +1,7 @@
 import numpy as np
 
+from hexrd.ui.constants import ViewType
+
 
 nans_row = np.nan*np.ones((1, 2))
 
@@ -31,7 +33,7 @@ class PowderLineOverlay:
     def delta_eta(self):
         return 360./float(self.eta_steps)
 
-    def overlay(self, display_mode='raw'):
+    def overlay(self, display_mode=ViewType.raw):
         tths = self.plane_data.getTTh()
         etas = np.radians(
             np.linspace(
@@ -64,23 +66,29 @@ class PowderLineOverlay:
                 for ind in indices:
                     point_groups[det_key]['rbnd_indices'] += [ind, ind]
 
+            # Currently, the polar mode draws lines over the whole image.
+            # Thus, we only need data from one detector.
+            # This can be changed in the future if needed.
+            if display_mode == ViewType.polar:
+                break
+
         return point_groups
 
     def generate_ring_points(self, tths, etas, panel, display_mode):
         ring_pts = []
         for tth in tths:
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
-            if display_mode == 'polar':
+            if display_mode == ViewType.polar:
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
-            elif display_mode in ['raw', 'cartesian']:
+            elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 xys_full = panel.angles_to_cart(ang_crds)
                 xys, on_panel = panel.clip_to_panel(
                     xys_full, buffer_edges=False
                 )
 
-                if display_mode == 'raw':
+                if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
                     xys = panel.cartToPixel(xys)
 

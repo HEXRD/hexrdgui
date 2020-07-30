@@ -45,8 +45,6 @@ class CalibrationConfigWidget(QObject):
             self.on_detector_name_edited)
         self.ui.cal_det_remove.clicked.connect(self.on_detector_remove_clicked)
         self.ui.cal_det_add.clicked.connect(self.on_detector_add_clicked)
-        self.ui.cal_det_function.currentIndexChanged.connect(
-            self.update_distortion_params_enable_states)
 
         all_widgets = self.get_all_widgets()
         skip_widgets = ['cal_det_current', 'cal_det_add', 'cal_det_remove']
@@ -63,6 +61,9 @@ class CalibrationConfigWidget(QObject):
             else:
                 widget.valueChanged.connect(self.update_config_from_gui)
                 widget.valueChanged.connect(self.gui_value_changed)
+
+        self.ui.cal_det_function.currentIndexChanged.connect(
+            self.update_gui_from_config)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -216,7 +217,15 @@ class CalibrationConfigWidget(QObject):
                                                           'detector_name'])
 
             tilt_path = ['transform', 'tilt', 'value']
+            dist_params_path = ['distortion', 'parameters']
             for var, path in gui_yaml_paths:
+                if len(path) > 1 and path[:2] == dist_params_path:
+                    # The distortion type should already be set before here
+                    # Check for the number of params. If this is greater
+                    # than the number of params, skip over it.
+                    if not path[-1] < self.num_distortion_params:
+                        continue
+
                 gui_var = getattr(self.ui, var)
                 full_path = ['detectors', cur_detector] + path
                 config_val = self.cfg.get_instrument_config_val(full_path)
@@ -308,9 +317,16 @@ class CalibrationConfigWidget(QObject):
             # If it is anything else, just assume value()
             return gui_object.value()
 
+    @property
+    def distortion(self):
+        return self.ui.cal_det_function.currentText()
+
+    @property
+    def num_distortion_params(self):
+        return HexrdConfig.num_distortion_parameters(self.distortion)
+
     def update_distortion_params_enable_states(self):
-        text = self.ui.cal_det_function.currentText()
-        num_params = HexrdConfig.num_distortion_parameters(text)
+        num_params = self.num_distortion_params
         label_enabled = (num_params != 0)
 
         self.ui.distortion_parameters_label.setEnabled(label_enabled)

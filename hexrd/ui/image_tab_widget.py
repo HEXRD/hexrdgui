@@ -3,6 +3,7 @@ from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 import numpy as np
 
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
@@ -48,6 +49,21 @@ class ImageTabWidget(QTabWidget):
         self.tabBarClicked.connect(self.switch_toolbar)
         HexrdConfig().tab_images_changed.connect(self.load_images)
         HexrdConfig().detectors_changed.connect(self.reset_index)
+
+    def clear(self):
+        # This removes all canvases except the first one,
+        # and it calls super().clear()
+
+        for canvas, cid in zip(self.image_canvases[1:],
+                               self.mpl_connections[1:]):
+            canvas.mpl_disconnect(cid)
+            canvas.deleteLater()
+
+        del self.image_canvases[1:]
+        del self.toolbars[1:]
+        del self.mpl_connections[1:]
+
+        super().clear()
 
     def reset_index(self):
         self.current_index = 0
@@ -248,11 +264,12 @@ class ImageTabWidget(QTabWidget):
 
         # intensity being None implies here that the mouse is on top of the
         # azimuthal integration plot in the polar view.
-        if mode in ['cartesian', 'polar'] and intensity is not None:
+        if (mode in [ViewType.cartesian, ViewType.polar] and
+                intensity is not None):
 
             iviewer = self.image_canvases[0].iviewer
 
-            if mode == 'cartesian':
+            if mode == ViewType.cartesian:
                 xy_data = iviewer.dpanel.pixelToCart(np.vstack([i, j]).T)
                 ang_data, gvec = iviewer.dpanel.cart_to_angles(xy_data)
                 tth = ang_data[:, 0][0]

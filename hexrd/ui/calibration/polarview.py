@@ -8,6 +8,7 @@ from hexrd.transforms.xfcapi import \
      gvecToDetectorXY
 
 from hexrd import constants as ct
+from hexrd.xrdutil import _project_on_detector_plane
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import run_snip1d
@@ -27,14 +28,10 @@ def log_scale_img(img):
     return np.log(fimg)
 
 
-class PolarView(object):
+class PolarView:
     """Create (two-theta, eta) plot of detectors
     """
-    def __init__(self, instrument, eta_min=0., eta_max=360.):
-
-        # etas
-        self._eta_min = np.radians(eta_min)
-        self._eta_max = np.radians(eta_max)
+    def __init__(self, instrument):
 
         self.instr = instrument
 
@@ -47,6 +44,10 @@ class PolarView(object):
     @property
     def detectors(self):
         return self.instr.detectors
+
+    @property
+    def chi(self):
+        return self.instr.chi
 
     @property
     def tvec_s(self):
@@ -76,11 +77,11 @@ class PolarView(object):
 
     @property
     def eta_min(self):
-        return self._eta_min
+        return np.radians(HexrdConfig().polar_res_eta_min)
 
     @property
     def eta_max(self):
-        return self._eta_max
+        return np.radians(HexrdConfig().polar_res_eta_max)
 
     @property
     def eta_range(self):
@@ -98,11 +99,11 @@ class PolarView(object):
 
     @property
     def ntth(self):
-        return int(np.ceil(np.degrees(self.tth_range) / self.tth_pixel_size))
+        return int(np.degrees(self.tth_range) / self.tth_pixel_size)
 
     @property
     def neta(self):
-        return int(np.ceil(np.degrees(self.eta_range) / self.eta_pixel_size))
+        return int(np.degrees(self.eta_range) / self.eta_pixel_size)
 
     @property
     def shape(self):
@@ -188,23 +189,18 @@ class PolarView(object):
         panel = self.detectors[det]
         img = self.images_dict[det]
 
-        gpts = anglesToGVec(
-            np.vstack([
+        gvec_angs = np.vstack([
                 angpts[1].flatten(),
                 angpts[0].flatten(),
-                dummy_ome,
-                ]).T, bHat_l=panel.bvec)
+                dummy_ome]).T
 
-        xypts = gvecToDetectorXY(
-            gpts,
-            panel.rmat, np.eye(3), np.eye(3),
-            panel.tvec, self.tvec_s, tvec_c,
-            beamVec=panel.bvec)
-
-        if panel.distortion is not None:
-            dfunc = panel.distortion[0]
-            dparams = panel.distortion[1]
-            xypts = dfunc(xypts, dparams)
+        xypts, rmats_s, on_plane = _project_on_detector_plane(
+                gvec_angs,
+                panel.rmat, np.eye(3),
+                self.chi,
+                panel.tvec, tvec_c, self.tvec_s,
+                panel.distortion,
+                beamVec=panel.bvec)
 
         self.warp_dict[det] = panel.interpolate_bilinear(
             xypts, img, pad_with_nans=False

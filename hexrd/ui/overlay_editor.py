@@ -1,5 +1,10 @@
-from PySide2.QtCore import QSignalBlocker
+import copy
+import numpy as np
 
+from PySide2.QtCore import QSignalBlocker
+from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
+
+from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -13,13 +18,25 @@ class OverlayEditor:
         self._overlay = None
         self.update_type_tab()
 
+        self.laue_crystal_editor = CalibrationCrystalEditor(parent=self.ui)
+        self.ui.laue_crystal_editor_layout.addWidget(
+            self.laue_crystal_editor.ui)
+
         self.ui.tab_widget.tabBar().hide()
 
         self.setup_connections()
 
     def setup_connections(self):
         for w in self.laue_widgets:
-            w.editingFinished.connect(self.update_config)
+            if isinstance(w, QDoubleSpinBox):
+                w.valueChanged.connect(self.update_config)
+            elif isinstance(w, QCheckBox):
+                w.toggled.connect(self.update_config)
+
+        self.ui.laue_enable_widths.toggled.connect(
+            self.update_laue_enable_states)
+
+        self.laue_crystal_editor.params_modified.connect(self.update_config)
 
     @property
     def overlay(self):
@@ -47,50 +64,98 @@ class OverlayEditor:
         self.ui.tab_widget.setCurrentWidget(w)
 
     def update_gui(self):
-        blockers = [QSignalBlocker(w) for w in self.all_widgets]  # noqa: F841
-
         self.update_type_tab()
 
+        if self.type == 'laue':
+            self.update_gui_laue()
+
+    def update_gui_laue(self):
+        blockers = [QSignalBlocker(w) for w in self.all_widgets]  # noqa: F841
+
         options = self.overlay.get('options', {})
-        if self.type == 'laue':
-            if 'min_energy' in options:
-                self.ui.laue_min_energy.setValue(options['min_energy'])
-            if 'max_energy' in options:
-                self.ui.laue_max_energy.setValue(options['max_energy'])
-            if 'crystal_params' in options:
-                for i, w in enumerate(self.laue_cc_widgets):
-                    w.setValue(options['crystal_params'][i])
+        if 'min_energy' in options:
+            self.ui.laue_min_energy.setValue(options['min_energy'])
+        if 'max_energy' in options:
+            self.ui.laue_max_energy.setValue(options['max_energy'])
+        if 'crystal_params' in options:
+            self.laue_crystal_params = options['crystal_params']
 
-    def update_config(self):
-        options = self.overlay.setdefault('options', {})
-        if self.type == 'laue':
-            options['min_energy'] = self.ui.laue_min_energy.value()
-            options['max_energy'] = self.ui.laue_max_energy.value()
-            options['crystal_params'] = self.laue_crystal_params
+        if options.get('tth_width') is not None:
+            self.ui.laue_tth_width.setValue(np.degrees(options['tth_width']))
+        if options.get('eta_width') is not None:
+            self.ui.laue_eta_width.setValue(np.degrees(options['eta_width']))
 
-        if self.overlay['visible']:
-            # Only cause a re-render if the overlay is visible
-            HexrdConfig().overlay_config_changed.emit()
+        widths = ['tth_width', 'eta_width']
+        enable_widths = all(options.get(x) is not None for x in widths)
+        self.ui.laue_enable_widths.setChecked(enable_widths)
+
+        self.update_laue_enable_states()
+
+    def update_laue_enable_states(self):
+        enable_widths = self.laue_enable_widths
+        names = [
+            'laue_tth_width_label',
+            'laue_tth_width',
+            'laue_eta_width_label',
+            'laue_eta_width'
+        ]
+        for name in names:
+            getattr(self.ui, name).setEnabled(enable_widths)
 
     @property
     def laue_crystal_params(self):
-        return [x.value() for x in self.laue_cc_widgets]
+        return copy.deepcopy(self.laue_crystal_editor.params)
+
+    @laue_crystal_params.setter
+    def laue_crystal_params(self, v):
+        self.laue_crystal_editor.params = v
+
+    def update_config(self):
+        if self.type == 'laue':
+            self.update_config_laue()
+
+        self.overlay['update_needed'] = True
+        HexrdConfig().overlay_config_changed.emit()
+
+    def update_config_laue(self):
+        options = self.overlay.setdefault('options', {})
+        options['min_energy'] = self.ui.laue_min_energy.value()
+        options['max_energy'] = self.ui.laue_max_energy.value()
+        options['crystal_params'] = self.laue_crystal_params
+        options['tth_width'] = self.laue_tth_width
+        options['eta_width'] = self.laue_eta_width
+
+    @property
+    def laue_enable_widths(self):
+        return self.ui.laue_enable_widths.isChecked()
+
+    @property
+    def laue_tth_width(self):
+        if not self.laue_enable_widths:
+            return None
+
+        return np.radians(self.ui.laue_tth_width.value())
+
+    @property
+    def laue_eta_width(self):
+        if not self.laue_enable_widths:
+            return None
+
+        return np.radians(self.ui.laue_eta_width.value())
 
     @property
     def powder_widgets(self):
         return []
 
     @property
-    def laue_cc_widgets(self):
-        # Take advantage of the naming scheme
-        return [getattr(self.ui, f'laue_cc_{i}') for i in range(12)]
-
-    @property
     def laue_widgets(self):
         return [
             self.ui.laue_min_energy,
-            self.ui.laue_max_energy
-        ] + self.laue_cc_widgets
+            self.ui.laue_max_energy,
+            self.ui.laue_enable_widths,
+            self.ui.laue_tth_width,
+            self.ui.laue_eta_width
+        ]
 
     @property
     def mono_rotation_series_widgets(self):

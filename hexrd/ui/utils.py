@@ -34,31 +34,46 @@ def convert_tilt_convention(iconfig, old_convention,
             data.clear()
             data.extend(val)
 
-    old_axes, old_extrinsic = old_convention
-    new_axes, new_extrinsic = new_convention
-
     det_keys = iconfig['detectors'].keys()
-    if old_axes is not None and old_extrinsic is not None:
+    if old_convention is not None:
         # First, convert these to the matrix invariants
-        rme = RotMatEuler(np.zeros(3), old_axes, old_extrinsic)
+        rme = RotMatEuler(np.zeros(3), **old_convention)
         for key in det_keys:
             tilts = iconfig['detectors'][key]['transform']['tilt']
             rme.angles = np.array(_get_tilt_array(tilts))
             phi, n = angleAxisOfRotMat(rme.rmat)
             _set_tilt_array(tilts, (phi * n.flatten()).tolist())
 
-        if new_axes is None or new_extrinsic is None:
+        if new_convention is None:
             # We are done
             return
 
     # Update to the new mapping
-    rme = RotMatEuler(np.zeros(3), new_axes, new_extrinsic)
+    rme = RotMatEuler(np.zeros(3), **new_convention)
     for key in det_keys:
         tilts = iconfig['detectors'][key]['transform']['tilt']
         tilt = np.array(_get_tilt_array(tilts))
         rme.rmat = makeRotMatOfExpMap(tilt)
         # Use np.ndarray.tolist() to convert back to native python types
         _set_tilt_array(tilts, np.array(rme.angles).tolist())
+
+
+def convert_angle_convention(angles, old_convention, new_convention):
+    if old_convention is not None:
+        # First, convert these to the matrix invariants
+        rme = RotMatEuler(np.zeros(3), **old_convention)
+        rme.angles = np.array(angles)
+        phi, n = angleAxisOfRotMat(rme.rmat)
+        angles = (phi * n.flatten()).tolist()
+
+        if new_convention is None:
+            # We are done
+            return angles
+
+    # Update to the new mapping
+    rme = RotMatEuler(np.zeros(3), **new_convention)
+    rme.rmat = makeRotMatOfExpMap(np.array(angles))
+    return np.array(rme.angles).tolist()
 
 
 def make_new_pdata(mat):
@@ -132,5 +147,8 @@ def remove_none_distortions(iconfig):
     # parameters that are set to None
     # This also assumes an iconfig without statuses
     for det in iconfig['detectors'].values():
-        if det.get('distortion', {}).get('function_name', '').lower() == 'none':
+        function_name = det.get('distortion', {}).get('function_name', '')
+        if isinstance(function_name, dict):
+            function_name = function_name['value']
+        if function_name.lower() == 'none':
             del det['distortion']

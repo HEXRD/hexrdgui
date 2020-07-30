@@ -4,9 +4,10 @@ import numpy as np
 
 from hexrd.gridutil import cellIndices
 
+from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays import overlay_generator
+from hexrd.ui.overlays import update_overlay_data
 
 from skimage import transform as tf
 
@@ -20,7 +21,7 @@ def cartesian_viewer():
 class InstrumentViewer:
 
     def __init__(self):
-        self.type = 'cartesian'
+        self.type = ViewType.cartesian
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
 
@@ -62,8 +63,6 @@ class InstrumentViewer:
         return -x_lim, x_lim, y_lim, -y_lim
 
     def update_overlay_data(self):
-        HexrdConfig().clear_overlay_data()
-
         if not HexrdConfig().show_overlays:
             # Nothing to do
             return
@@ -79,31 +78,7 @@ class InstrumentViewer:
         temp_instr._detectors.clear()
         temp_instr._detectors['dpanel'] = self.dpanel
 
-        for overlay in HexrdConfig().overlays:
-            overlay['data'].clear()
-            if not overlay['visible']:
-                # Skip over invisible overlays
-                continue
-
-            mat_name = overlay['material']
-            mat = HexrdConfig().material(mat_name)
-
-            if not mat:
-                # Print a warning, as this shouldn't happen
-                print('Warning in InstrumentViewer.update_overlay_data():',
-                      f'{mat_name} is not a valid material')
-                continue
-
-            type = overlay['type']
-            kwargs = {
-                'plane_data': mat.planeData,
-                'instr': temp_instr
-            }
-            # Add any options
-            kwargs.update(overlay.get('options', {}))
-
-            generator = overlay_generator(type)(**kwargs)
-            overlay['data'] = generator.overlay('cartesian')
+        update_overlay_data(temp_instr, self.type)
 
     def plot_dplane(self):
         # Cache the image max and min for later use

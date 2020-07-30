@@ -126,13 +126,6 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QCheckBox" name="subdirectories">
-        <property name="text">
-         <string>Use Subdirectories</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="QComboBox" name="darkMode">
         <item>
@@ -231,9 +224,12 @@
           <property name="enabled">
            <bool>true</bool>
           </property>
+          <property name="currentText">
+           <string>detector_1</string>
+          </property>
           <item>
            <property name="text">
-            <string>ge1</string>
+            <string>detector_1</string>
            </property>
           </item>
          </widget>

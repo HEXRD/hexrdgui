@@ -23,6 +23,7 @@ from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
 from hexrd.ui.create_polar_mask import create_polar_mask
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -35,6 +36,7 @@ from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui import resource_loader
+from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
 import hexrd.ui.resources.icons
 
 
@@ -65,7 +67,7 @@ class MainWindow(QObject):
         self.ui.color_map_dock_widgets.layout().addWidget(
             self.color_map_editor.ui)
 
-        self.image_mode = 'raw'
+        self.image_mode = ViewType.raw
         self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
         self.ui.image_mode_dock_widgets.layout().addWidget(
             self.image_mode_widget.ui)
@@ -109,6 +111,8 @@ class MainWindow(QObject):
         # occurred. The images will be drawn automatically after
         # the first paint event has occurred (see MainWindow.eventFilter).
 
+        self.workflow_selection_dialog = WorkflowSelectionDialog(self.ui)
+
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
@@ -128,6 +132,8 @@ class MainWindow(QObject):
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_apply_polar_mask.triggered.connect(
             self.on_action_edit_apply_polar_mask_triggered)
+        self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
+            self.on_action_edit_apply_laue_mask_to_polar_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
@@ -147,6 +153,7 @@ class MainWindow(QObject):
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
         self.new_images_loaded.connect(self.update_color_map_bounds)
+        self.new_images_loaded.connect(self.update_indexing_menu)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.new_images_loaded.connect(self.image_mode_widget.reset_masking)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
@@ -171,11 +178,13 @@ class MainWindow(QObject):
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
-        HexrdConfig().deep_rerender_needed.connect(
-            lambda: self.update_all(clear_canvases=True))
+        HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
+
+        self.ui.action_switch_workflow.triggered.connect(
+            self.on_action_switch_workflow_triggered)
 
     def load_icon(self):
         icon = resource_loader.load_resource(hexrd.ui.resources.icons,
@@ -210,6 +219,7 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_instrument_config(selected_file)
             self.update_config_gui()
 
@@ -219,9 +229,11 @@ class MainWindow(QObject):
             'YAML files (*.yml)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             return HexrdConfig().save_instrument_config(selected_file)
 
     def on_detectors_changed(self):
+        HexrdConfig().clear_overlay_data()
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
@@ -258,17 +270,14 @@ class MainWindow(QObject):
             # Save the chosen dir
             HexrdConfig().set_images_dir(selected_files[0])
 
-            # Make sure the names and number of files and
-            # names and number of detectors match
-            num_detectors = len(HexrdConfig().detector_names)
-            if len(selected_files) != num_detectors:
-                msg = ('Number of files must match number of detectors: ' +
-                       str(num_detectors))
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
+            files, manual = ImageLoadManager().load_images(selected_files)
+            if not files:
                 return
 
-            files = ImageLoadManager().check_images(selected_files)
-            if not files:
+            if len(files[0]) > 1:
+                msg = ('Number of files must match number of detectors: ' +
+                       str(len(HexrdConfig().detector_names)))
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
 
             # If it is a hdf5 file allow the user to select the path
@@ -277,8 +286,7 @@ class MainWindow(QObject):
                     ImageFileManager().path_exists(selected_files[0])):
 
                 ImageFileManager().path_prompt(selected_files[0])
-
-            dialog = LoadImagesDialog(selected_files, self.ui)
+            dialog = LoadImagesDialog(files, manual, self.ui)
 
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
@@ -312,6 +320,7 @@ class MainWindow(QObject):
             'HEXRD files (*.hexrd)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_materials(selected_file)
             self.materials_panel.update_gui_from_config()
 
@@ -343,6 +352,7 @@ class MainWindow(QObject):
             'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             if selected_filter.startswith('HDF5'):
                 selected_format = 'hdf5'
             elif selected_filter.startswith('NPZ'):
@@ -376,6 +386,7 @@ class MainWindow(QObject):
             'HEXRD files (*.hexrd)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_export_polar_plot_triggered(self):
@@ -384,6 +395,7 @@ class MainWindow(QObject):
             'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
 
         if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_polar_plot(selected_file)
 
     def on_action_calibration_line_picker_triggered(self):
@@ -445,14 +457,19 @@ class MainWindow(QObject):
             'Extrinsic XYZ',
             'Intrinsic ZXZ'
         ]
+        corresponding_values = [
+            None,
+            {
+                'axes_order': 'xyz',
+                'extrinsic': True
+            },
+            {
+                'axes_order': 'zxz',
+                'extrinsic': False
+            }
+        ]
         current = HexrdConfig().euler_angle_convention
-        ind = 0
-        if current[0] is not None and current[1] is not None:
-            for i, convention in enumerate(allowed_conventions):
-                is_extr = 'Extrinsic' in convention
-                if current[0].upper() in convention and current[1] == is_extr:
-                    ind = i
-                    break
+        ind = corresponding_values.index(current)
 
         name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
                                         'Select Euler Angle Convention',
@@ -462,14 +479,8 @@ class MainWindow(QObject):
             # User canceled...
             return
 
-        if name == 'None':
-            chosen = None
-            extrinsic = None
-        else:
-            chosen = name.split()[1].lower()
-            extrinsic = 'Extrinsic' in name
-
-        HexrdConfig().set_euler_angle_convention(chosen, extrinsic)
+        chosen = corresponding_values[allowed_conventions.index(name)]
+        HexrdConfig().set_euler_angle_convention(chosen)
 
         self.update_all()
         self.update_config_gui()
@@ -486,20 +497,52 @@ class MainWindow(QObject):
         HexrdConfig().polar_masks_line_data.append(line_data.copy())
         self.update_all()
 
+    def on_action_edit_apply_laue_mask_to_polar_triggered(self):
+        if not HexrdConfig().show_overlays:
+            msg = 'Overlays are not displayed'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        all_overlays = HexrdConfig().overlays
+        laue_overlays = [x for x in all_overlays if x['type'] == 'laue']
+        laue_overlays = [x for x in laue_overlays if x['visible']]
+        if not laue_overlays:
+            msg = 'No Laue overlays found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        data = []
+        for overlay in laue_overlays:
+            for det, val in overlay['data'].items():
+                for ranges in val['ranges']:
+                    data.append(ranges)
+
+        if not data:
+            msg = 'No Laue overlay ranges found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        HexrdConfig().polar_masks_line_data.append(data)
+        self.update_all()
+
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
         self.update_config_gui()
 
-    def change_image_mode(self, text):
-        self.image_mode = text.lower()
+    def change_image_mode(self, mode):
+        self.image_mode = mode
         self.update_image_mode_enable_states()
+
+        # Clear the overlays
+        HexrdConfig().clear_overlay_data()
+
         self.update_all()
 
     def update_image_mode_enable_states(self):
         # This is for enable states that depend on the image mode
-        is_raw = self.image_mode == 'raw'
-        is_cartesian = self.image_mode == 'cartesian'
-        is_polar = self.image_mode == 'polar'
+        is_raw = self.image_mode == ViewType.raw
+        is_cartesian = self.image_mode == ViewType.cartesian
+        is_polar = self.image_mode == ViewType.polar
 
         has_images = HexrdConfig().has_images()
 
@@ -507,6 +550,7 @@ class MainWindow(QObject):
         self.ui.action_calibration_line_picker.setEnabled(
             is_polar and has_images)
         self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and has_images)
+        self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():
@@ -567,6 +611,13 @@ class MainWindow(QObject):
         if self.image_mode == mode:
             self.update_all()
 
+    def deep_rerender(self):
+        # Clear all overlays
+        HexrdConfig().clear_overlay_data()
+
+        # Update all and clear the canvases
+        self.update_all(clear_canvases=True)
+
     def update_all(self, clear_canvases=False):
         # If there are no images loaded, skip the request
         if not HexrdConfig().has_images():
@@ -584,9 +635,9 @@ class MainWindow(QObject):
             for canvas in self.ui.image_tab_widget.image_canvases:
                 canvas.clear()
 
-        if self.image_mode == 'cartesian':
+        if self.image_mode == ViewType.cartesian:
             self.ui.image_tab_widget.show_cartesian()
-        elif self.image_mode == 'polar':
+        elif self.image_mode == ViewType.polar:
             # Rebuild polar masks
             del HexrdConfig().polar_masks[:]
             for line_data in HexrdConfig().polar_masks_line_data:
@@ -594,6 +645,10 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.show_polar()
         else:
             self.ui.image_tab_widget.load_images()
+
+        # Only ask if have haven't asked before
+        if HexrdConfig().workflow is None:
+            self.workflow_selection_dialog.show()
 
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
@@ -619,7 +674,7 @@ class MainWindow(QObject):
         if intensity is not None:
             labels.append('value = {:8.3f}'.format(info['intensity']))
 
-            if info['mode'] in ['cartesian', 'polar']:
+            if info['mode'] in [ViewType.cartesian, ViewType.polar]:
                 labels.append('tth = {:8.3f}'.format(info['tth']))
                 labels.append('eta = {:8.3f}'.format(info['eta']))
                 labels.append('dsp = {:8.3f}'.format(info['dsp']))
@@ -633,3 +688,17 @@ class MainWindow(QObject):
         self.image_mode_widget.reset_masking()
         td = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
+
+    def on_action_switch_workflow_triggered(self):
+        self.workflow_selection_dialog.show()
+
+
+    def update_indexing_menu(self):
+        enabled = False
+        image_series_dict = ImageLoadManager().unaggregated_images
+        image_series_dict = HexrdConfig().imageseries_dict if image_series_dict is None else image_series_dict
+        if image_series_dict:
+            # Check length of first series
+            series = next(iter(image_series_dict.values()))
+            enabled = len(series) > 1
+        self.ui.action_run_indexing.setEnabled(enabled)
