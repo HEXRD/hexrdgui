@@ -44,14 +44,19 @@ class ImportDataPanel(QObject):
         self.ui.complete.clicked.connect(self.completed)
 
     def instrument_selected(self, idx):
-        instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
-        det_list = self.get_instrument_detectors(instruments[idx])
-        self.load_instrument_config(instruments[idx])
-        self.new_config_loaded.emit()
-        self.ui.detectors.clear()
-        self.ui.detectors.insertItems(0, det_list)
-        self.ui.detector_label.setEnabled(True)
-        self.ui.detectors.setEnabled(True)
+        if idx == 3:
+            self.ui.detectors.setCurrentIndex(0)
+            self.ui.detectors.setDisabled(True)
+        else:
+            instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
+            det_list = self.get_instrument_detectors(instruments[idx])
+            if len(det_list) > 1:
+                self.load_instrument_config(instruments[idx])
+                self.new_config_loaded.emit()
+                self.ui.detectors.clear()
+                self.ui.detectors.insertItems(0, det_list)
+                self.ui.detector_label.setEnabled(True)
+                self.ui.detectors.setEnabled(True)
 
     def get_instrument_detectors(self, instrument):
         self.mod = resource_loader.import_dynamic_module(
