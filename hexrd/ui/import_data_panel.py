@@ -99,6 +99,7 @@ class ImportDataPanel(QObject):
             self.ui.files_label.setText(', '.join(files))
             self.ui.outline.setEnabled(True)
             self.ui.add_template.setEnabled(True)
+            self.ui.save.setDisabled(True)
 
     def add_template(self):
         det = self.ui.detectors.currentText()
@@ -107,9 +108,9 @@ class ImportDataPanel(QObject):
         self.it.create_shape(module=self.mod, file_name=det + '.txt')
         self.ui.add_template.setDisabled(True)
         self.ui.trans.setEnabled(True)
+        self.ui.trans.setChecked(True)
         self.ui.rotate.setEnabled(True)
         self.ui.button_box.setEnabled(True)
-        self.ui.save.setEnabled(True)
         self.ui.detectors.setDisabled(True)
         self.ui.load.setDisabled(True)
         self.ui.complete.setEnabled(True)
@@ -147,6 +148,9 @@ class ImportDataPanel(QObject):
         self.ui.load.setEnabled(True)
         self.ui.completed_dets.setText(', '.join(self.completed_detectors))
         self.ui.completed_dets.setEnabled(True)
+        self.ui.finalize.setEnabled(True)
+        self.ui.complete.setEnabled(True)
+        self.ui.save.setEnabled(True)
 
     def finalize(self, img, bounds):
         ImageLoadManager().read_data([[img]], parent=self.ui)
