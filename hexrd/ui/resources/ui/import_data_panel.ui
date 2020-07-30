@@ -235,6 +235,9 @@
         </item>
         <item>
          <widget class="QDialogButtonBox" name="save">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="standardButtons">
            <set>QDialogButtonBox::Save</set>
           </property>
@@ -259,13 +262,49 @@
     </spacer>
    </item>
    <item>
-    <widget class="QPushButton" name="complete">
+    <widget class="QGroupBox" name="finalize">
      <property name="enabled">
       <bool>false</bool>
      </property>
-     <property name="text">
-      <string>Complete and Reload Instrument</string>
+     <property name="title">
+      <string>Finalize Instrument</string>
      </property>
+     <layout class="QVBoxLayout" name="verticalLayout_5">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Completed Detectors:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="completed_dets">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QPushButton" name="complete">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Complete and Reload Instrument</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

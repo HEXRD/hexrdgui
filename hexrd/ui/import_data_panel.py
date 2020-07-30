@@ -26,6 +26,7 @@ class ImportDataPanel(QObject):
         self.ui = loader.load_file('import_data_panel.ui', parent)
         self.it = None
         self.edited_images = {}
+        self.completed_detectors = []
 
         self.setup_connections()
 
@@ -90,7 +91,7 @@ class ImportDataPanel(QObject):
                 selected_files, parent=self.ui)
 
             files = [os.path.split(f[0])[1] for f in selected_files]
-            self.ui.files_label.setText(','.join(files))
+            self.ui.files_label.setText(', '.join(files))
             self.ui.outline.setEnabled(True)
             self.ui.add_template.setEnabled(True)
 
@@ -132,12 +133,15 @@ class ImportDataPanel(QObject):
         img = self.it.get_mask()
         bounds = np.array([int(val) for val in self.it.crop()]).reshape(2, 2)
         self.finalize(img, bounds)
+        self.completed_detectors.append(self.ui.detectors.currentText())
         self.ui.trans.setDisabled(True)
         self.ui.rotate.setDisabled(True)
         self.ui.button_box.setDisabled(True)
         self.ui.add_template.setDisabled(True)
         self.ui.detectors.setEnabled(True)
         self.ui.load.setEnabled(True)
+        self.ui.completed_dets.setText(', '.join(self.completed_detectors))
+        self.ui.completed_dets.setEnabled(True)
 
     def finalize(self, img, bounds):
         ImageLoadManager().read_data([[img]], parent=self.ui)
