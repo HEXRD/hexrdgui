@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from PySide2.QtCore import QObject, QThreadPool, Signal
-from PySide2.QtWidgets import QDialog, QTableView, QVBoxLayout
+from PySide2.QtWidgets import QDialog, QMessageBox, QTableView, QVBoxLayout
 
 from hexrd import constants as const
 from hexrd import fitgrains, indexer, instrument
@@ -71,13 +71,25 @@ class IndexingRunner(QObject):
 
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
+            self.ome_maps_select_dialog = None
+            self.view_ome_maps()
         else:
             # Create a full indexing config
             config = create_indexing_config()
-            self.ome_maps = generate_eta_ome_maps(config, save=False)
 
-        self.ome_maps_select_dialog = None
-        self.view_ome_maps()
+            # Setup to generate maps in background
+            self.progress_dialog.setWindowTitle('Generating Eta Omega Maps')
+            self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+            worker = AsyncWorker(self.run_eta_ome_maps, config)
+            self.thread_pool.start(worker)
+
+            worker.signals.result.connect(self.view_ome_maps)
+            worker.signals.finished.connect(self.progress_dialog.accept)
+            self.progress_dialog.exec_()
+
+    def run_eta_ome_maps(self, config):
+        self.ome_maps = generate_eta_ome_maps(config, save=False)
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
@@ -173,6 +185,11 @@ class IndexingRunner(QObject):
 
         # Generate grains table
         num_grains = qbar.shape[1]
+        if num_grains == 0:
+            QMessageBox.warning(self.parent, 'No Grains', 'Clustering found no grains')
+            return
+
+
         shape = (num_grains, 21)
         grains_table = np.empty(shape)
         gw = instrument.GrainDataWriter(array=grains_table)
