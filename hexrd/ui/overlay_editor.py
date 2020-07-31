@@ -79,6 +79,8 @@ class OverlayEditor:
             self.ui.laue_max_energy.setValue(options['max_energy'])
         if 'crystal_params' in options:
             self.laue_crystal_params = options['crystal_params']
+        else:
+            self.laue_crystal_params = [0]*12
 
         if options.get('tth_width') is not None:
             self.ui.laue_tth_width.setValue(np.degrees(options['tth_width']))
