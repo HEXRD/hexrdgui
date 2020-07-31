@@ -2,10 +2,7 @@ import numpy as np
 
 from skimage.exposure import rescale_intensity
 
-from hexrd.transforms.xfcapi import \
-     anglesToGVec, \
-     detectorXYToGvec, \
-     gvecToDetectorXY
+from hexrd.transforms.xfcapi import detectorXYToGvec
 
 from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane
@@ -194,13 +191,15 @@ class PolarView:
                 angpts[0].flatten(),
                 dummy_ome]).T
 
-        xypts, rmats_s, on_plane = _project_on_detector_plane(
+        xypts = np.nan*np.ones((len(gvec_angs), 2))
+        valid_xys, rmats_s, on_plane = _project_on_detector_plane(
                 gvec_angs,
                 panel.rmat, np.eye(3),
                 self.chi,
                 panel.tvec, tvec_c, self.tvec_s,
                 panel.distortion,
                 beamVec=panel.bvec)
+        xypts[on_plane] = valid_xys
 
         self.warp_dict[det] = panel.interpolate_bilinear(
             xypts, img, pad_with_nans=False
