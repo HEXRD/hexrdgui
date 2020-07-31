@@ -100,6 +100,8 @@ class ImportDataPanel(QObject):
             self.ui.outline.setEnabled(True)
             self.ui.add_template.setEnabled(True)
             self.ui.save.setDisabled(True)
+            self.parent().action_show_toolbar.setChecked(False)
+            self.parent().action_show_toolbar.setDisabled(True)
 
     def add_template(self):
         det = self.ui.detectors.currentText()
@@ -225,3 +227,5 @@ class ImportDataPanel(QObject):
         self.new_config_loaded.emit()
 
         self.reset_panel()
+        self.parent().action_show_toolbar.setEnabled(True)
+        self.parent().action_show_toolbar.setChecked(True)
