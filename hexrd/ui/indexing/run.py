@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from PySide2.QtCore import QObject, QThreadPool, Signal
-from PySide2.QtWidgets import QMessageBox
+from PySide2.QtWidgets import QDialog, QTableView, QVBoxLayout
 
 from hexrd import constants as const
 from hexrd import fitgrains, indexer, instrument
@@ -20,6 +20,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
+from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.progress_dialog import ProgressDialog
@@ -189,8 +190,31 @@ class IndexingRunner(QObject):
     def view_fit_grains_results(self):
         for result in self.fit_grains_results:
             print(result)
-        msg = f'Fit Grains results -- length {len(self.fit_grains_results)} -- written to the console'
-        QMessageBox.information(None, 'Grain fitting is complete', msg)
+
+        # Build grains table
+        num_grains = len(self.fit_grains_results)
+        shape = (num_grains, 21)
+        grains_table = np.empty(shape)
+        gw = instrument.GrainDataWriter(array=grains_table)
+        for result in self.fit_grains_results:
+            gw.dump_grain(*result)
+        gw.close()
+
+        # Display grains table in popup dialog
+        dialog = QDialog(self.parent)
+        dialog.setWindowTitle('Fit Grains Results')
+
+        model = FitGrainsResultsModel(grains_table, dialog)
+        view = QTableView(dialog)
+        view.setModel(model)
+        view.verticalHeader().hide()
+        view.resizeColumnToContents(0)
+
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(view)
+        dialog.setLayout(layout)
+        dialog.resize(960, 320)
+        dialog.exec_()
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
