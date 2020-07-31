@@ -137,8 +137,9 @@ def run_snip1d(img):
     snip_width = snip_width_pixels()
     numiter = HexrdConfig().polar_snip1d_numiter
 
-    # !!!: need a selector between
+    # FIXME: need a selector between
     # imageutil.fast_snip1d() and imageutil.snip1d()
+    # return imageutil.fast_snip1d(img, snip_width, numiter)
     return imageutil.snip1d(img, snip_width, numiter)
 
 
