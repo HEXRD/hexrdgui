@@ -2,10 +2,7 @@ import numpy as np
 
 from skimage.exposure import rescale_intensity
 
-from hexrd.transforms.xfcapi import \
-     anglesToGVec, \
-     detectorXYToGvec, \
-     gvecToDetectorXY
+from hexrd.transforms.xfcapi import detectorXYToGvec
 
 from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane
