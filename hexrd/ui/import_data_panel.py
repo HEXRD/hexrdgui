@@ -8,6 +8,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.interactive_template import InteractiveTemplate
+from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 
@@ -38,6 +39,7 @@ class ImportDataPanel(QObject):
         self.ui.add_template.clicked.connect(self.add_template)
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
+        self.ui.add_transform.clicked.connect(self.add_transform)
         self.ui.button_box.accepted.connect(self.crop_and_mask)
         self.ui.button_box.rejected.connect(self.clear)
         self.ui.save.clicked.connect(self.save_file)
@@ -85,23 +87,35 @@ class ImportDataPanel(QObject):
         if selected_file:
             HexrdConfig().set_images_dir(selected_file)
 
+            files, manual = ImageLoadManager().load_images([selected_file])
+            dialog = LoadImagesDialog(files, manual, self.ui.parent())
+            if not dialog.exec_():
+                return
+
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_file)[1]
             if (ImageFileManager().is_hdf5(ext) and not
                     ImageFileManager().path_exists(selected_file)):
                 ImageFileManager().path_prompt(selected_file)
 
-            selected_files = [[selected_file]]
-            ImageLoadManager().read_data(
-                selected_files, parent=self.ui)
+            ImageLoadManager().read_data(files, parent=self.ui)
 
-            files = [os.path.split(f[0])[1] for f in selected_files]
-            self.ui.files_label.setText(', '.join(files))
+            file_names = [os.path.split(f[0])[1] for f in files]
+            self.ui.files_label.setText(', '.join(file_names))
             self.ui.outline.setEnabled(True)
             self.ui.add_template.setEnabled(True)
             self.ui.save.setDisabled(True)
+            self.ui.transforms.setEnabled(True)
+            self.ui.add_transform.setEnabled(True)
             self.parent().action_show_toolbar.setChecked(False)
             self.parent().action_show_toolbar.setDisabled(True)
+
+    def add_transform(self):
+        ilm = ImageLoadManager()
+        state = HexrdConfig().load_panel_state
+        ilm.set_state({ 'trans': [self.ui.transforms.currentIndex()] })
+        ilm.begin_processing(postprocess=True)
+        self.ui.transforms.setCurrentIndex(0)
 
     def add_template(self):
         det = self.ui.detectors.currentText()
