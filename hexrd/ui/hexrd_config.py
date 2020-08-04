@@ -8,6 +8,8 @@ import yaml
 
 import hexrd.imageseries.save
 from hexrd.rotations import RotMatEuler
+from hexrd.config.loader import NumPyIncludeLoader
+from hexrd.config.dumper import NumPyIncludeDumper
 
 from hexrd.ui import constants
 from hexrd.ui import overlays
@@ -360,7 +362,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         old_detectors = self.detector_names
         with open(yml_file, 'r') as f:
-            self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
+            self.config['instrument'] = yaml.load(f, Loader=NumPyIncludeLoader)
 
         eac = self.euler_angle_convention
         if eac is not None:
@@ -405,7 +407,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             utils.convert_tilt_convention(default, eac, None)
 
         with open(output_file, 'w') as f:
-            yaml.dump(default, f)
+            yaml.dump(default, f, Dumper=NumPyIncludeDumper)
 
     def load_materials(self, f):
         with open(f, 'rb') as rf:

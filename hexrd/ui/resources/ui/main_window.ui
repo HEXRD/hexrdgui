@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>14</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -52,8 +52,15 @@
      <property name="title">
       <string>&amp;Open</string>
      </property>
+     <widget class="QMenu" name="menu_load_config">
+      <property name="title">
+       <string>Configuration</string>
+      </property>
+      <addaction name="action_open_config_yaml"/>
+      <addaction name="action_open_config_dir"/>
+     </widget>
      <addaction name="action_open_images"/>
-     <addaction name="action_open_config"/>
+     <addaction name="menu_load_config"/>
      <addaction name="action_open_materials"/>
      <addaction name="action_open_aps_imageseries"/>
     </widget>
@@ -61,8 +68,15 @@
      <property name="title">
       <string>&amp;Save</string>
      </property>
+     <widget class="QMenu" name="menu_save_config">
+      <property name="title">
+       <string>&amp;Configuration</string>
+      </property>
+      <addaction name="action_save_config_yaml"/>
+      <addaction name="action_save_config_dir"/>
+     </widget>
      <addaction name="action_save_imageseries"/>
-     <addaction name="action_save_config"/>
+     <addaction name="menu_save_config"/>
      <addaction name="action_save_materials"/>
     </widget>
     <widget class="QMenu" name="menu_export">
@@ -173,7 +187,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>767</height>
          </rect>
         </property>
         <attribute name="label">
@@ -186,7 +200,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>767</height>
          </rect>
         </property>
         <attribute name="label">
@@ -199,7 +213,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>767</height>
          </rect>
         </property>
         <attribute name="label">
@@ -325,11 +339,6 @@
   <action name="action_open_materials">
    <property name="text">
     <string>&amp;Materials</string>
-   </property>
-  </action>
-  <action name="action_save_config">
-   <property name="text">
-    <string>&amp;Configuration</string>
    </property>
   </action>
   <action name="action_show_toolbar">
@@ -473,6 +482,26 @@
    </property>
    <property name="text">
     <string>Apply Laue Mask to Polar</string>
+   </property>
+  </action>
+  <action name="action_open_config_yaml">
+   <property name="text">
+    <string>YAML</string>
+   </property>
+  </action>
+  <action name="action_open_config_dir">
+   <property name="text">
+    <string>HEXRD Directory</string>
+   </property>
+  </action>
+  <action name="action_save_config_yaml">
+   <property name="text">
+    <string>YAML</string>
+   </property>
+  </action>
+  <action name="action_save_config_dir">
+   <property name="text">
+    <string>HEXRD Directory</string>
    </property>
   </action>
  </widget>

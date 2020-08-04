@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtGui import QIcon, QPixmap
@@ -111,10 +112,14 @@ class MainWindow(QObject):
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
-        self.ui.action_open_config.triggered.connect(
-            self.on_action_open_config_triggered)
-        self.ui.action_save_config.triggered.connect(
-            self.on_action_save_config_triggered)
+        self.ui.action_open_config_yaml.triggered.connect(
+            self.on_action_open_config_yaml_triggered)
+        self.ui.action_open_config_dir.triggered.connect(
+            self.on_action_open_config_dir_triggered)
+        self.ui.action_save_config_yaml.triggered.connect(
+            self.on_action_save_config_yaml_triggered)
+        self.ui.action_save_config_dir.triggered.connect(
+            self.on_action_save_config_dir_triggered)
         self.ui.action_open_materials.triggered.connect(
             self.on_action_open_materials_triggered)
         self.ui.action_save_imageseries.triggered.connect(
@@ -206,24 +211,83 @@ class MainWindow(QObject):
                                            self.materials_panel.ui,
                                            'Materials')
 
-    def on_action_open_config_triggered(self):
+    def on_action_open_config_yaml_triggered(self):
+
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Configuration', HexrdConfig().working_dir,
             'YAML files (*.yml)')
 
         if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
-            HexrdConfig().load_instrument_config(selected_file)
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            HexrdConfig().load_instrument_config(str(path))
             self.update_config_gui()
 
-    def on_action_save_config_triggered(self):
+    def on_action_open_config_dir_triggered(self):
+        dialog = QFileDialog(self.ui, 'Save Configuration',
+                             HexrdConfig().working_dir,
+                             'HEXRD directories (*.hexrd)')
+        dialog.setFileMode(QFileDialog.Directory)
+
+        selected_files = []
+        if dialog.exec_():
+            selected_files = dialog.selectedFiles()
+
+        if len(selected_files) == 0:
+            return
+        else:
+            selected_file = selected_files[0]
+
+        def _load():
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            # Opening a .hexrd directory, so point to config.yml
+            path = path / 'config.yml'
+
+            HexrdConfig().load_instrument_config(str(path))
+
+        # We do this in a worker thread so the UI can refresh.
+        worker = AsyncWorker(_load)
+        worker.signals.finished.connect(self.update_config_gui)
+
+        self.thread_pool.start(worker)
+
+    def on_action_save_config_yaml_triggered(self):
+
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Configuration', HexrdConfig().working_dir,
             'YAML files (*.yml)')
 
         if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
             return HexrdConfig().save_instrument_config(selected_file)
+
+    def on_action_save_config_dir_triggered(self):
+        dialog = QFileDialog(self.ui, 'Save Configuration',
+                             HexrdConfig().working_dir,
+                             'HEXRD directories (*.hexrd)')
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+
+        selected_files = []
+        if dialog.exec():
+            selected_files = dialog.selectedFiles()
+
+        if len(selected_files) == 0:
+            return
+        else:
+            selected_file = selected_files[0]
+
+        if selected_file:
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            path.mkdir(parents=True, exist_ok=True)
+            path = path / 'config.yml'
+
+            return HexrdConfig().save_instrument_config(str(path))
 
     def on_detectors_changed(self):
         HexrdConfig().clear_overlay_data()
@@ -416,6 +480,7 @@ class MainWindow(QObject):
         # We currently don't have any progress updates, so make the
         # progress bar indeterminate.
         self.progress_dialog.setRange(0, 0)
+        self.progress_dialog.setWindowTitle('Calibration Running')
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_line_picked_calibration)
@@ -564,6 +629,7 @@ class MainWindow(QObject):
         # We currently don't have any progress updates, so make the
         # progress bar indeterminate.
         self.progress_dialog.setRange(0, 0)
+        self.progress_dialog.setWindowTitle('Calibration Running')
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_powder_calibration)
