@@ -29,6 +29,7 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
+from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.transform_dialog import TransformDialog
@@ -43,6 +44,9 @@ class MainWindow(QObject):
 
     # Emitted when new images are loaded
     new_images_loaded = Signal()
+
+    # Emitted when a new mask is added
+    new_mask_added = Signal()
 
     def __init__(self, parent=None, image_files=None):
         super(MainWindow, self).__init__(parent)
@@ -90,6 +94,8 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.addTab(
             self.calibration_slider_widget.ui, tab_texts[2])
 
+        self.mask_manager_dialog = MaskManagerDialog(self.ui)
+
         self.setup_connections()
 
         self.update_config_gui()
@@ -133,6 +139,8 @@ class MainWindow(QObject):
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
             self.on_action_transform_detectors_triggered)
+        self.ui.action_open_mask_manager.triggered.connect(
+            self.on_action_open_mask_manager_triggered)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
@@ -178,6 +186,9 @@ class MainWindow(QObject):
 
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
+
+        self.mask_manager_dialog.update_masks.connect(self.update_all)
+        self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
 
     def load_icon(self):
         icon = resource_loader.load_resource(hexrd.ui.resources.icons,
@@ -488,6 +499,7 @@ class MainWindow(QObject):
 
     def run_apply_polar_mask(self, line_data):
         HexrdConfig().polar_masks_line_data.append(line_data.copy())
+        self.new_mask_added.emit()
         self.update_all()
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -516,6 +528,7 @@ class MainWindow(QObject):
             return
 
         HexrdConfig().polar_masks_line_data.append(data)
+        self.new_mask_added.emit()
         self.update_all()
 
     def on_action_edit_reset_instrument_config(self):
@@ -695,3 +708,6 @@ class MainWindow(QObject):
             series = next(iter(image_series_dict.values()))
             enabled = len(series) > 1
         self.ui.action_run_indexing.setEnabled(enabled)
+
+    def on_action_open_mask_manager_triggered(self):
+        self.mask_manager_dialog.show()
