@@ -93,7 +93,12 @@ class MaskManagerDialog(QObject):
         self.update_masks.emit()
 
     def remove_mask(self):
-        return
+        item = self.ui.masks_table.item(self.ui.masks_table.currentRow(), 0)
+        del self.masks[item.text()]
+        HexrdConfig().polar_masks_line_data = (
+            [i for j, i in enumerate(self.masks.values()) if j not in self.hidden])
+        self.update_masks.emit()
+        self.ui.masks_table.removeRow(self.ui.masks_table.currentRow())
 
     def get_old_name(self, row, column):
         if column != 0:
