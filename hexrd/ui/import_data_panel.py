@@ -162,7 +162,8 @@ class ImportDataPanel(QObject):
         self.ui.add_template.setDisabled(True)
         self.ui.detectors.setEnabled(True)
         self.ui.load.setEnabled(True)
-        self.ui.completed_dets.setText(', '.join(self.completed_detectors))
+        self.ui.completed_dets.setText(', '.join(
+            set(self.completed_detectors)))
         self.ui.completed_dets.setEnabled(True)
         self.ui.finalize.setEnabled(True)
         self.ui.complete.setEnabled(True)
@@ -217,6 +218,7 @@ class ImportDataPanel(QObject):
         self.ui.outline.setDisabled(True)
         self.ui.completed_dets.setText('')
         self.ui.finalize.setDisabled(True)
+        self.completed_detectors = []
 
     def completed(self):
         self.check_for_unsaved_changes()
