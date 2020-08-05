@@ -1,29 +1,52 @@
+import os
+
 import numpy as np
 
-from hexrd import indexer
+from PySide2.QtCore import QObject, QThreadPool, Signal
+from PySide2.QtWidgets import QDialog, QMessageBox, QTableView, QVBoxLayout
+
+from hexrd import constants as const
+from hexrd import fitgrains, indexer, instrument
 from hexrd.findorientations import (
-    create_clustering_parameters, generate_eta_ome_maps,
-    generate_orientation_fibers, run_cluster
+    create_clustering_parameters, find_orientations,
+    generate_eta_ome_maps, generate_orientation_fibers,
+    run_cluster
 )
+from hexrd.fitgrains import fit_grains
+from hexrd.transforms import xfcapi
 from hexrd.xrdutil import EtaOmeMaps
 
+from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
+from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
+from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
+from hexrd.ui.progress_dialog import ProgressDialog
 
 
-class IndexingRunner:
+class IndexingRunner(QObject):
+    progress_text = Signal(str)
+
     def __init__(self, parent=None):
+        super(IndexingRunner, self).__init__(parent)
+
         self.parent = parent
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
+        self.fit_grains_dialog = None
+        self.fit_grains_results = None
+        self.thread_pool = QThreadPool(self.parent)
+        self.progress_dialog = ProgressDialog(self.parent)
 
         self.ome_maps = None
+        self.progress_text.connect(self.progress_dialog.setLabelText)
 
     def clear(self):
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
+        self.fit_grains_dialog = None
 
         self.ome_maps = None
 
@@ -48,13 +71,25 @@ class IndexingRunner:
 
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
+            self.ome_maps_select_dialog = None
+            self.view_ome_maps()
         else:
             # Create a full indexing config
             config = create_indexing_config()
-            self.ome_maps = generate_eta_ome_maps(config, save=False)
 
-        self.ome_maps_select_dialog = None
-        self.view_ome_maps()
+            # Setup to generate maps in background
+            self.progress_dialog.setWindowTitle('Generating Eta Omega Maps')
+            self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+            worker = AsyncWorker(self.run_eta_ome_maps, config)
+            self.thread_pool.start(worker)
+
+            worker.signals.result.connect(self.view_ome_maps)
+            worker.signals.finished.connect(self.progress_dialog.accept)
+            self.progress_dialog.exec_()
+
+    def run_eta_ome_maps(self, config):
+        self.ome_maps = generate_eta_ome_maps(config, save=False)
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
@@ -78,12 +113,26 @@ class IndexingRunner:
         # Create a full indexing config
         config = create_indexing_config()
 
+        # Setup to run indexing in background
+        self.progress_dialog.setWindowTitle('Find Orientations')
+        self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+        worker = AsyncWorker(self.run_indexer, config)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.view_fit_grains_options)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
+
+    def run_indexer(self, config):
         # Generate the orientation fibers
+        self.update_progress_text('Generating orientation fibers')
         self.qfib = generate_orientation_fibers(config, self.ome_maps)
 
-        # Run the indexer
+        # Find orientations
+        self.update_progress_text('Running indexer (paintGrid)')
         ncpus = config.multiprocessing
-        completeness = indexer.paintGrid(
+        self.completeness = indexer.paintGrid(
             self.qfib,
             self.ome_maps,
             etaRange=np.radians(config.find_orientations.eta.range),
@@ -92,25 +141,33 @@ class IndexingRunner:
             omePeriod=np.radians(config.find_orientations.omega.period),
             threshold=config.find_orientations.threshold,
             doMultiProc=ncpus > 1,
-            nCPUs=ncpus
-            )
-        self.completeness = np.array(completeness)
+            nCPUs=ncpus)
         print('Indexing complete')
 
-        self.run_grain_fitting()
+    def view_fit_grains_options(self):
+        # Run dialog for user options
+        dialog = FitGrainsOptionsDialog(self.parent)
+        dialog.accepted.connect(self.fit_grains_options_accepted)
+        dialog.rejected.connect(self.clear)
+        self.fit_grains_dialog = dialog
+        dialog.show()
 
-    def run_grain_fitting(self):
-        # FIXME: here, I believe, the user should be able to choose
-        # options for the grain fitting via a dialog. These options should
-        # modify the settings under the
-        # `HexrdConfig().indexing_config['fit_grains']` key. Then, the
-        # following config object will automatically have those settings set.
-
-        print('Running grain fitting...')
-
+    def fit_grains_options_accepted(self):
         # Create a full indexing config
         config = create_indexing_config()
 
+        # Setup to run in background
+        self.progress_dialog.setWindowTitle('Fit Grains')
+        self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+        worker = AsyncWorker(self.run_fit_grains, config)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.view_fit_grains_results)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
+
+    def run_fit_grains(self, config):
         min_samples, mean_rpg = create_clustering_parameters(config,
                                                              self.ome_maps)
 
@@ -123,9 +180,58 @@ class IndexingRunner:
             'compl_thresh': config.find_orientations.clustering.completeness,
             'radius': config.find_orientations.clustering.radius
         }
+        self.update_progress_text('Running clustering')
         qbar, cl = run_cluster(**kwargs)
 
-        self.qbar = qbar
-        self.cl = cl
-        print('Grain fitting is complete!')
-        print(f'{self.qbar.shape[1]} grains were found')
+        # Generate grains table
+        num_grains = qbar.shape[1]
+        if num_grains == 0:
+            QMessageBox.warning(self.parent, 'No Grains', 'Clustering found no grains')
+            return
+
+
+        shape = (num_grains, 21)
+        grains_table = np.empty(shape)
+        gw = instrument.GrainDataWriter(array=grains_table)
+        for gid, q in enumerate(qbar.T):
+            phi = 2*np.arccos(q[0])
+            n = xfcapi.unitRowVector(q[1:])
+            grain_params = np.hstack([phi*n, const.zeros_3, const.identity_6x1])
+            gw.dump_grain(gid, 1., 0., grain_params)
+        gw.close()
+
+        self.update_progress_text(f'Found {num_grains} grains. Running fit optimization.')
+        self.fit_grains_results = fit_grains(config, grains_table, write_spots_files=False)
+        print('Fit Grains Complete')
+
+    def view_fit_grains_results(self):
+        for result in self.fit_grains_results:
+            print(result)
+
+        # Build grains table
+        num_grains = len(self.fit_grains_results)
+        shape = (num_grains, 21)
+        grains_table = np.empty(shape)
+        gw = instrument.GrainDataWriter(array=grains_table)
+        for result in self.fit_grains_results:
+            gw.dump_grain(*result)
+        gw.close()
+
+        # Display grains table in popup dialog
+        dialog = QDialog(self.parent)
+        dialog.setWindowTitle('Fit Grains Results')
+
+        model = FitGrainsResultsModel(grains_table, dialog)
+        view = QTableView(dialog)
+        view.setModel(model)
+        view.verticalHeader().hide()
+        view.resizeColumnToContents(0)
+
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(view)
+        dialog.setLayout(layout)
+        dialog.resize(960, 320)
+        dialog.exec_()
+
+    def update_progress_text(self, text):
+        self.progress_text.emit(text)
