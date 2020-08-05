@@ -37,7 +37,11 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QTableView" name="table_view"/>
+     <widget class="QTableView" name="table_view">
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
+     </widget>
      <widget class="QWidget" name="plot_widget" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>

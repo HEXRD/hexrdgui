@@ -5,7 +5,7 @@ import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import QSignalBlocker
+from PySide2.QtCore import QSignalBlocker, QSortFilterProxyModel
 from PySide2.QtWidgets import QSizePolicy
 
 import hexrd.ui.constants
@@ -29,11 +29,7 @@ class FitGrainsResultsDialog:
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
 
-        # Setup table view
-        view = self.ui.table_view
-        view.verticalHeader().hide()
-        view.setModel(self.data_model)
-        view.resizeColumnToContents(0)
+        self.setup_tableview()
 
         # Add column for equivalent strain
         ngrains = self.data.shape[0]
@@ -59,6 +55,14 @@ class FitGrainsResultsDialog:
         self.ax.clear()
         self.ax.scatter3D(xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
         self.fig.canvas.draw()
+
+    def on_sort_indicator_changed(self, index, order):
+        """Shows sort indicator for columns 0-2, hides for all others."""
+        if index < 3:
+            self.ui.table_view.horizontalHeader().setSortIndicatorShown(True)
+            self.ui.table_view.horizontalHeader().setSortIndicator(index, order)
+        else:
+            self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -93,6 +97,28 @@ class FitGrainsResultsDialog:
         self.ui.plot_color_option.addItem('XY Strain', 20)
         self.ui.plot_color_option.setCurrentIndex(0)
         self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
+
+    def setup_tableview(self):
+        view = self.ui.table_view
+
+        # Subclass QSortFilterProxyModel to restrict sorting by column
+        class GrainsTableSorter(QSortFilterProxyModel):
+            def sort(self, column, order):
+                if column > 2:
+                    return
+                else:
+                    super().sort(column, order)
+
+        proxy_model = GrainsTableSorter(self.ui)
+        proxy_model.setSourceModel(self.data_model)
+        view.verticalHeader().hide()
+        view.setModel(proxy_model)
+        view.resizeColumnToContents(0)
+
+        view.setSortingEnabled(True)
+        view.horizontalHeader().sortIndicatorChanged.connect(self.on_sort_indicator_changed)
+        view.sortByColumn(0, Qt.AscendingOrder)
+        self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
 
 if __name__ == '__main__':
