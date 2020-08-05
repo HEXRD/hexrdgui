@@ -9,6 +9,7 @@ from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QSizePolicy
 
 import hexrd.ui.constants
+from hexrd.matrixutil import vecMVToSymm
 from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.ui_loader import UiLoader
 
@@ -33,6 +34,14 @@ class FitGrainsResultsDialog:
         view.verticalHeader().hide()
         view.setModel(self.data_model)
         view.resizeColumnToContents(0)
+
+        # Add column for equivalent strain
+        ngrains = self.data.shape[0]
+        eqv_strain = np.zeros(ngrains)
+        for i in range(ngrains):
+            emat = vecMVToSymm(self.data[i, 15:21], scale=False)
+            eqv_strain[i]= 2.*np.sqrt(np.sum(emat*emat))/3.
+        np.append(self.data, eqv_strain)
 
         self.setup_selectors()
         self.setup_plot()
@@ -75,6 +84,7 @@ class FitGrainsResultsDialog:
         self.ui.plot_color_option.clear()
         self.ui.plot_color_option.addItem('Completeness', 1)
         self.ui.plot_color_option.addItem('Goodness of Fit', 2)
+        self.ui.plot_color_option.addItem('Equivalent Strain', -1)
         self.ui.plot_color_option.addItem('XX Strain', 15)
         self.ui.plot_color_option.addItem('YY Strain', 16)
         self.ui.plot_color_option.addItem('ZZ Strain', 17)
