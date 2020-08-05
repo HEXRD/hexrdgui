@@ -22,6 +22,8 @@ class MaskManagerDialog(QObject):
         self.create_masks_list()
         self.threshold_name = ''
 
+        self.setup_connections()
+
     def show(self):
         self.setup_table()
         self.ui.show()
@@ -49,6 +51,9 @@ class MaskManagerDialog(QObject):
             self.masks['mask_' + str(len(data) - 1)] = data[-1]
             self.visible['mask_' + str(len(data) - 1)] = data[-1]
         self.setup_table()
+    def setup_connections(self):
+        self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
+        self.ui.masks_table.cellChanged.connect(self.update_mask_name)
 
     def setup_table(self, status=True):
         self.ui.masks_table.setRowCount(0)
@@ -89,3 +94,18 @@ class MaskManagerDialog(QObject):
 
     def remove_mask(self):
         return
+
+    def get_old_name(self, row, column):
+        if column != 0:
+            return
+
+        self.old_name = self.ui.masks_table.item(row, 0).text()
+
+    def update_mask_name(self, row, column):
+        if not hasattr(self, 'old_name') or self.old_name is None:
+            return
+
+        new_name = self.ui.masks_table.item(row, 0).text()
+        if self.old_name != new_name:
+            self.masks[new_name] = self.masks.pop(self.old_name)
+        self.old_name = None
