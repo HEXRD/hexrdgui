@@ -1,23 +1,94 @@
+import numpy as np
+
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+import matplotlib
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.figure import Figure
+
+from PySide2.QtCore import QSignalBlocker
+from PySide2.QtWidgets import QSizePolicy
+
+import hexrd.ui.constants
+from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.ui_loader import UiLoader
+
 
 class FitGrainsResultsDialog:
 
-    def __init__(self, parent=None):
-        # super().__init__(parent)
+    def __init__(self, data, parent=None):
+        self.ax = None
+        self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.data = data
+        self.data_model = FitGrainsResultsModel(data)
+        self.canvas = None
+        self.fig = None
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_results_dialog.ui', parent)
-        #self.ui.splitter.setSizes([200, 600])
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
 
+        # Setup table view
+        view = self.ui.table_view
+        view.verticalHeader().hide()
+        view.setModel(self.data_model)
+        view.resizeColumnToContents(0)
+
+        self.setup_selectors()
+        self.setup_plot()
+        self.on_colorby_changed()
+
+    def on_colorby_changed(self):
+        column = self.ui.plot_color_option.currentData()
+        colors = self.data[:, column]
+
+        xs = data[:, 6]
+        ys = data[:, 7]
+        zs = data[:, 8]
+        sz = matplotlib.rcParams['lines.markersize'] ** 3
+
+        self.ax.clear()
+        self.ax.scatter3D(xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
+        self.fig.canvas.draw()
+
+    def setup_plot(self):
+        # Create the figure and axes to use
+        canvas = FigureCanvas(Figure(tight_layout=True))
+
+        # Get the canvas to take up the majority of the screen most of the time
+        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        fig = canvas.figure
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        self.ui.canvas_layout.addWidget(canvas)
+
+        self.fig = fig
+        self.ax = ax
+        self.canvas = canvas
+
+    def setup_selectors(self):
+        # Build combo boxes in code to assign columns in grains data
+        blocker = QSignalBlocker(self.ui.plot_color_option)  # noqa: F841
+        self.ui.plot_color_option.clear()
+        self.ui.plot_color_option.addItem('Completeness', 1)
+        self.ui.plot_color_option.addItem('Goodness of Fit', 2)
+        self.ui.plot_color_option.addItem('XX Strain', 15)
+        self.ui.plot_color_option.addItem('YY Strain', 16)
+        self.ui.plot_color_option.addItem('ZZ Strain', 17)
+        self.ui.plot_color_option.addItem('YZ Strain', 18)
+        self.ui.plot_color_option.addItem('XZ Strain', 19)
+        self.ui.plot_color_option.addItem('XY Strain', 20)
+        self.ui.plot_color_option.setCurrentIndex(0)
+        self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
+
 
 if __name__ == '__main__':
-    import os
     import sys
-    import numpy as np
+    from PySide2.QtCore import QCoreApplication, Qt
     from PySide2.QtWidgets import QApplication
-    from fit_grains_results_model import FitGrainsResultsModel
 
     # User specifies grains.out file
     if (len(sys.argv) < 2):
@@ -28,18 +99,13 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     # print(sys.argv)
+    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
     app = QApplication(sys.argv)
 
     data = np.loadtxt(sys.argv[1])
     # print(data)
-    model = FitGrainsResultsModel(data)
 
-    dialog = FitGrainsResultsDialog()
-    view = dialog.ui.table_view
-    view.verticalHeader().hide()
-    view.setModel(model)
-    view.resizeColumnToContents(0)
-
+    dialog = FitGrainsResultsDialog(data)
     dialog.ui.resize(1200, 800)
     dialog.ui.show()
     app.exec_()
