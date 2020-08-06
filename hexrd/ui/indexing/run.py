@@ -149,7 +149,7 @@ class IndexingRunner(QObject):
         dialog = FitGrainsOptionsDialog(self.parent)
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
-        self.fit_grains_dialog = dialog
+        self.fit_grains_options_dialog = dialog
         dialog.show()
 
     def fit_grains_options_accepted(self):
@@ -235,7 +235,8 @@ class IndexingRunner(QObject):
 
         # Display results dialog
         dialog = FitGrainsResultsDialog(grains_table, self.parent)
-        dialog.resize(1200, 800)
+        dialog.ui.resize(1200, 800)
+        self.fit_grains_results_dialog = dialog
         dialog.show()
 
     def update_progress_text(self, text):

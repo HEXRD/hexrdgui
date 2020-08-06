@@ -7,7 +7,7 @@ import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import QSignalBlocker, QSortFilterProxyModel
+from PySide2.QtCore import QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
 from PySide2.QtWidgets import QFileDialog, QSizePolicy
 
 import hexrd.ui.constants
@@ -17,18 +17,24 @@ from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.ui_loader import UiLoader
 
 
-class FitGrainsResultsDialog:
+class FitGrainsResultsDialog(QObject):
+    finished = Signal()
 
     def __init__(self, data, parent=None):
+        super(FitGrainsResultsDialog, self).__init__()
+
         self.ax = None
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.data = data
         self.data_model = FitGrainsResultsModel(data)
         self.canvas = None
         self.fig = None
+        self.colorbar = None
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_results_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
 
@@ -51,13 +57,17 @@ class FitGrainsResultsDialog:
         column = self.ui.plot_color_option.currentData()
         colors = self.data[:, column]
 
-        xs = data[:, 6]
-        ys = data[:, 7]
-        zs = data[:, 8]
+        xs = self.data[:, 6]
+        ys = self.data[:, 7]
+        zs = self.data[:, 8]
         sz = matplotlib.rcParams['lines.markersize'] ** 3
 
         self.ax.clear()
-        self.ax.scatter3D(xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
+        if self.colorbar is not None:
+            self.colorbar.remove()
+            del self.colorbar
+        scatter_plot = self.ax.scatter3D(xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
+        self.colorbar = self.fig.colorbar(scatter_plot, shrink=0.8)
         self.fig.canvas.draw()
 
     def on_export_button_pressed(self):
@@ -82,8 +92,9 @@ class FitGrainsResultsDialog:
             self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
     def setup_connections(self):
-        self.ui.export_button.pressed.connect(self.on_export_button_pressed)
+        self.ui.export_button.clicked.connect(self.on_export_button_pressed)
         self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
+        self.ui.finished.connect(self.finished)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -140,10 +151,13 @@ class FitGrainsResultsDialog:
         view.sortByColumn(0, Qt.AscendingOrder)
         self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
+    def show(self):
+        self.ui.show()
+
 
 if __name__ == '__main__':
     import sys
-    from PySide2.QtCore import QCoreApplication, Qt
+    from PySide2.QtCore import QCoreApplication
     from PySide2.QtWidgets import QApplication
 
     # User specifies grains.out file
@@ -163,5 +177,6 @@ if __name__ == '__main__':
 
     dialog = FitGrainsResultsDialog(data)
     dialog.ui.resize(1200, 800)
-    dialog.ui.show()
+    dialog.finished.connect(app.quit)
+    dialog.show()
     app.exec_()
