@@ -173,6 +173,16 @@ class IndexingRunner(QObject):
         min_samples, mean_rpg = create_clustering_parameters(config,
                                                              self.ome_maps)
 
+        # Add fit_grains config
+        dialog_config = HexrdConfig().indexing_config['fit_grains']
+        config.set('fitgrains:npdiv', dialog_config['npdiv'])
+        config.set('fitgrains:refit', dialog_config['refit'])
+        config.set('fitgrains:threshold', dialog_config['threshold'])
+        config.set('fitgrains:tth_max', dialog_config['tth_max'])
+        config.set('fitgrains:tolerance:tth', dialog_config['tth_tolerances'])
+        config.set('fitgrains:tolerance:eta', dialog_config['eta_tolerances'])
+        config.set('fitgrains:tolerance:omega', dialog_config['omega_tolerances'])
+
         kwargs = {
             'compl': self.completeness,
             'qfib': self.qfib,
@@ -202,6 +212,7 @@ class IndexingRunner(QObject):
         gw.close()
 
         self.update_progress_text(f'Found {num_grains} grains. Running fit optimization.')
+
         self.fit_grains_results = fit_grains(config, grains_table, write_spots_files=False)
         print('Fit Grains Complete')
 
