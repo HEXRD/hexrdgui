@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from PySide2.QtCore import QObject, QThreadPool, Signal
-from PySide2.QtWidgets import QDialog, QMessageBox, QTableView, QVBoxLayout
+from PySide2.QtWidgets import QMessageBox
 
 from hexrd import constants as const
 from hexrd import fitgrains, indexer, instrument
@@ -20,7 +20,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
-from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
+from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.progress_dialog import ProgressDialog
@@ -164,10 +164,12 @@ class IndexingRunner(QObject):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.view_fit_grains_results)
+        worker.signals.error.connect(self.on_async_error)
         worker.signals.finished.connect(self.progress_dialog.accept)
         self.progress_dialog.exec_()
 
     def run_fit_grains(self, config):
+        self.fit_grains_results = None
         min_samples, mean_rpg = create_clustering_parameters(config,
                                                              self.ome_maps)
 
@@ -186,9 +188,8 @@ class IndexingRunner(QObject):
         # Generate grains table
         num_grains = qbar.shape[1]
         if num_grains == 0:
-            QMessageBox.warning(self.parent, 'No Grains', 'Clustering found no grains')
+            print('Fit Grains Complete - no grains were found')
             return
-
 
         shape = (num_grains, 21)
         grains_table = np.empty(shape)
@@ -205,6 +206,10 @@ class IndexingRunner(QObject):
         print('Fit Grains Complete')
 
     def view_fit_grains_results(self):
+        if self.fit_grains_results is None:
+            QMessageBox.information(self.parent, "No Grains Fond", "No grains were found")
+            return
+
         for result in self.fit_grains_results:
             print(result)
 
@@ -217,21 +222,17 @@ class IndexingRunner(QObject):
             gw.dump_grain(*result)
         gw.close()
 
-        # Display grains table in popup dialog
-        dialog = QDialog(self.parent)
-        dialog.setWindowTitle('Fit Grains Results')
-
-        model = FitGrainsResultsModel(grains_table, dialog)
-        view = QTableView(dialog)
-        view.setModel(model)
-        view.verticalHeader().hide()
-        view.resizeColumnToContents(0)
-
-        layout = QVBoxLayout(dialog)
-        layout.addWidget(view)
-        dialog.setLayout(layout)
-        dialog.resize(960, 320)
-        dialog.exec_()
+        # Display results dialog
+        dialog = FitGrainsResultsDialog(grains_table, self.parent)
+        dialog.resize(1200, 800)
+        dialog.show()
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
+
+    def on_async_error(self, t):
+        exctype, value, traceback = t
+        msg = f'An ERROR occurred: {exctype}: {value}.'
+        msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
+        msg_box.setDetailedText(traceback)
+        msg_box.exec_()
