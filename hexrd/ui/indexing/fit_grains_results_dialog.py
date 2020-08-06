@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
@@ -6,9 +8,10 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide2.QtCore import QSignalBlocker, QSortFilterProxyModel
-from PySide2.QtWidgets import QSizePolicy
+from PySide2.QtWidgets import QFileDialog, QSizePolicy
 
 import hexrd.ui.constants
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.ui_loader import UiLoader
@@ -41,6 +44,7 @@ class FitGrainsResultsDialog:
 
         self.setup_selectors()
         self.setup_plot()
+        self.setup_connections()
         self.on_colorby_changed()
 
     def on_colorby_changed(self):
@@ -56,6 +60,19 @@ class FitGrainsResultsDialog:
         self.ax.scatter3D(xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
         self.fig.canvas.draw()
 
+    def on_export_button_pressed(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Export Fit-Grains Results', HexrdConfig().working_dir,
+            'Output files (*.out)|All files(*.*)')
+
+        if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            name, ext = os.path.splitext(selected_file)
+            if not ext:
+                selected_file += '.out'
+
+            self.data_model.save(selected_file)
+
     def on_sort_indicator_changed(self, index, order):
         """Shows sort indicator for columns 0-2, hides for all others."""
         if index < 3:
@@ -63,6 +80,10 @@ class FitGrainsResultsDialog:
             self.ui.table_view.horizontalHeader().setSortIndicator(index, order)
         else:
             self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
+
+    def setup_connections(self):
+        self.ui.export_button.pressed.connect(self.on_export_button_pressed)
+        self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -96,7 +117,6 @@ class FitGrainsResultsDialog:
         self.ui.plot_color_option.addItem('XZ Strain', 19)
         self.ui.plot_color_option.addItem('XY Strain', 20)
         self.ui.plot_color_option.setCurrentIndex(0)
-        self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
 
     def setup_tableview(self):
         view = self.ui.table_view

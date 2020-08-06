@@ -38,80 +38,157 @@
       <enum>Qt::Vertical</enum>
      </property>
      <widget class="QTableView" name="table_view">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>150</height>
+       </size>
+      </property>
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
      </widget>
      <widget class="QWidget" name="plot_widget" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
-        <widget class="QGroupBox" name="plot_options">
+        <widget class="QWidget" name="dialog_controls" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="title">
-          <string>Options</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout">
-          <item row="0" column="0">
-           <widget class="QLabel" name="plot_color_label">
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <property name="sizeConstraint">
+           <enum>QLayout::SetDefaultConstraint</enum>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="export_button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
-             <string>Color By</string>
+             <string>Export</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="plot_color_option">
-            <item>
-             <property name="text">
-              <string>Completeness</string>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="plot_controls">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>Options</string>
+            </property>
+            <layout class="QFormLayout" name="formLayout_2">
+             <property name="leftMargin">
+              <number>0</number>
              </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Goodness of Fit</string>
+             <property name="bottomMargin">
+              <number>0</number>
              </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>XX Strain</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>YY Strain</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>ZZ Strain</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>YZ Strain</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>XZ Strain</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>XY Strain</string>
-             </property>
-            </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="plot_color_label">
+               <property name="text">
+                <string>Color By</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="plot_color_option">
+               <item>
+                <property name="text">
+                 <string>Completeness</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Goodness of Fit</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>XX Strain</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>YY Strain</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>ZZ Strain</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>YZ Strain</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>XZ Strain</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>XY Strain</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="canvas_layout" stretch=""/>
+        <layout class="QVBoxLayout" name="canvas_layout"/>
        </item>
       </layout>
      </widget>
