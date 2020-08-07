@@ -102,6 +102,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
 
+    """Emitted when the threshold mask status changes"""
+    threshold_mask_changed = Signal(bool)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)

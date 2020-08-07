@@ -82,6 +82,9 @@ class ImageModeWidget(QObject):
 
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
 
+        HexrdConfig().threshold_mask_changed.connect(
+            self.ui.raw_threshold_mask.setChecked)
+
     def currentChanged(self, index):
         modes = {
             0: ViewType.raw,

@@ -51,9 +51,11 @@ class MaskManagerDialog(QObject):
             self.masks['mask_' + str(len(data) - 1)] = data[-1]
             self.visible['mask_' + str(len(data) - 1)] = data[-1]
         self.setup_table()
+
     def setup_connections(self):
         self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
+        HexrdConfig().threshold_mask_changed.connect(self.update_masks_list)
 
     def setup_table(self, status=True):
         self.ui.masks_table.setRowCount(0)
@@ -78,6 +80,15 @@ class MaskManagerDialog(QObject):
             pb = QPushButton('Remove Mask')
             pb.clicked.connect(self.remove_mask)
             self.ui.masks_table.setCellWidget(i, 2, pb)
+
+            # Connect manager to raw image mode tab settings
+            # for threshold mask
+            if key == self.threshold_name:
+                self.setup_threshold_connections(cb, pb)
+
+    def setup_threshold_connections(self, checkbox, pushbutton):
+        HexrdConfig().threshold_mask_changed.connect(checkbox.setChecked)
+        checkbox.toggled.connect(HexrdConfig().set_threshold_mask_status)
 
     def toggle_visibility(self, checked):
         name = self.threshold_name
