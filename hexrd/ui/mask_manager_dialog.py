@@ -80,6 +80,7 @@ class MaskManagerDialog(QObject):
             self.ui.masks_table.setCellWidget(i, 2, pb)
 
     def toggle_visibility(self, checked):
+        name = self.threshold_name
         if self.ui.masks_table.currentRow() > 0:
             row = self.ui.masks_table.currentRow()
             name = self.ui.masks_table.item(row, 0).text()
@@ -113,4 +114,8 @@ class MaskManagerDialog(QObject):
         new_name = self.ui.masks_table.item(row, 0).text()
         if self.old_name != new_name:
             self.masks[new_name] = self.masks.pop(self.old_name)
+            if self.old_name in self.visible.keys():
+                self.visible[new_name] = self.visible.pop(self.old_name)
+        if self.old_name == self.threshold_name:
+            self.threshold_name = new_name
         self.old_name = None

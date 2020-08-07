@@ -1315,9 +1315,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self._threshold_data['value'] = 0.0
         return self._threshold_data['value']
 
+    def threshold_mask_status(self):
+        if 'mask_status' not in self._threshold_data:
+            self._threshold_data['mask_status'] = False
+        return self._threshold_data['mask_status']
+
     def threshold_mask(self):
         if 'mask' not in self._threshold_data:
-            self._threshold_data['mask'] = False
+            self._threshold_data['mask'] = None
         return self._threshold_data['mask']
 
     def set_threshold_comparison(self, v):
@@ -1326,12 +1331,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_threshold_value(self, v):
         self._threshold_data['value'] = v
 
-    def set_threshold_mask(self, v):
-        self._threshold_data['mask'] = v
+    def set_threshold_mask_status(self, v):
+        self._threshold_data['mask_status'] = v
+        self.threshold_mask_changed.emit(v)
+
+    def set_threshold_mask(self, m):
+        self._threshold_data['mask'] = m
 
     threshold_comparison = property(threshold_comparison,
                                     set_threshold_comparison)
     threshold_value = property(threshold_value,
                                set_threshold_value)
+    threshold_mask_status = property(threshold_mask_status,
+                                     set_threshold_mask_status)
     threshold_mask = property(threshold_mask,
                               set_threshold_mask)

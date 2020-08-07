@@ -690,7 +690,7 @@ class MainWindow(QObject):
         self.ui.status_bar.showMessage(msg)
 
     def on_action_transform_detectors_triggered(self):
-        mask_state = HexrdConfig().threshold_mask
+        mask_state = HexrdConfig().threshold_mask_status
         self.image_mode_widget.reset_masking()
         td = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
