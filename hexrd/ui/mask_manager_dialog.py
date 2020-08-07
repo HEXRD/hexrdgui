@@ -46,8 +46,11 @@ class MaskManagerDialog(QObject):
             self.threshold_name = 'threshold'
         else:
             data = HexrdConfig().polar_masks_line_data
-            if not data or data[-1] in self.masks.values():
+            if not data:
                 return
+            if any(np.array_equal(data[-1], m) for m in self.masks.values()):
+                return
+
             self.masks['mask_' + str(len(data) - 1)] = data[-1]
             self.visible['mask_' + str(len(data) - 1)] = data[-1]
         self.setup_table()
