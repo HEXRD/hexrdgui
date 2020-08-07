@@ -205,7 +205,10 @@ class ImageModeWidget(QObject):
         # easily be reverted to their original state if the mask is
         # toggled off.
         self.ui.raw_threshold_comparison.setEnabled(checked)
+        self.ui.raw_threshold_comparison.setCurrentIndex(
+            HexrdConfig().threshold_comparison)
         self.ui.raw_threshold_value.setEnabled(checked)
+        self.ui.raw_threshold_value.setValue(HexrdConfig().threshold_value)
         if not hasattr(self, 'ims_copy') or self.ims_copy is None:
             self.ims_copy = copy.copy(HexrdConfig().imageseries_dict)
         self.update_mask(checked)

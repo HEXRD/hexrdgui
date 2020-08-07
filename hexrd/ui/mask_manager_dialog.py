@@ -104,9 +104,21 @@ class MaskManagerDialog(QObject):
             [v for k, v in self.visible.items() if k != self.threshold_name])
         self.update_masks.emit()
 
+    def reset_threshold(self):
+        self.threshold_name = ''
+        HexrdConfig().set_threshold_comparison(0)
+        HexrdConfig().set_threshold_value(0.0)
+        HexrdConfig().set_threshold_mask(None)
+        HexrdConfig().set_threshold_mask_status(False)
+
     def remove_mask(self):
         item = self.ui.masks_table.item(self.ui.masks_table.currentRow(), 0)
         del self.masks[item.text()]
+        if item.text() in self.visible.keys():
+            del self.visible[item.text()]
+
+        if item.text() == self.threshold_name:
+            self.reset_threshold()
         HexrdConfig().polar_masks_line_data = (
             [i for j, i in enumerate(self.masks.values()) if j not in self.hidden])
         self.update_masks.emit()
