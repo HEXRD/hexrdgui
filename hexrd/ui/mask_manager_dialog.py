@@ -65,16 +65,12 @@ class MaskManagerDialog(QObject):
             self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
             # Add checkbox to toggle visibility
-            widget = QWidget()
             cb = QCheckBox()
-            cb.setChecked(True)
+            status = key in self.visible.keys()
+            cb.setChecked(status)
+            cb.setStyleSheet('margin-left:50%; margin-right:50%;')
             cb.toggled.connect(self.toggle_visibility)
-            layout = QHBoxLayout(widget)
-            layout.addWidget(cb)
-            layout.setAlignment(cb, Qt.AlignHCenter)
-            layout.setContentsMargins(0,0,0,0)
-            widget.setLayout(layout)
-            self.ui.masks_table.setCellWidget(i, 1, widget)
+            self.ui.masks_table.setCellWidget(i, 1, cb)
 
             # Add push button to remove mask
             pb = QPushButton('Remove Mask')
