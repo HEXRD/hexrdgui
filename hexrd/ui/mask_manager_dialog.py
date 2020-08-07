@@ -132,6 +132,10 @@ class MaskManagerDialog(QObject):
 
         new_name = self.ui.masks_table.item(row, 0).text()
         if self.old_name != new_name:
+            if new_name in self.masks.keys():
+                self.ui.masks_table.item(row, 0).setText(self.old_name)
+                return
+
             self.masks[new_name] = self.masks.pop(self.old_name)
             if self.old_name in self.visible.keys():
                 self.visible[new_name] = self.visible.pop(self.old_name)
