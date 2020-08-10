@@ -89,10 +89,11 @@ class MaskManagerDialog(QObject):
         checkbox.toggled.connect(HexrdConfig().set_threshold_mask_status)
 
     def toggle_visibility(self, checked):
-        name = self.threshold_name
-        if self.ui.masks_table.currentRow() > 0:
-            row = self.ui.masks_table.currentRow()
-            name = self.ui.masks_table.item(row, 0).text()
+        if self.ui.masks_table.currentRow() < 0:
+            return
+
+        row = self.ui.masks_table.currentRow()
+        name = self.ui.masks_table.item(row, 0).text()
         if checked and name and name not in self.visible.keys():
             self.visible[name] = self.masks[name]
         elif not checked and name in self.visible.keys():
