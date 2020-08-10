@@ -37,6 +37,20 @@ def default_overlay_style(overlay_type):
     return copy.deepcopy(default_styles[overlay_type])
 
 
+def default_overlay_options(overlay_type):
+    default_options = {
+        OverlayType.powder: constants.DEFAULT_POWDER_OPTIONS,
+        OverlayType.laue: constants.DEFAULT_LAUE_OPTIONS,
+        OverlayType.mono_rotation_series: (
+            constants.DEFAULT_MONO_ROTATION_SERIES_OPTIONS)
+    }
+
+    if overlay_type not in default_options:
+        raise Exception(f'Unknown overlay type: {overlay_type}')
+
+    return copy.deepcopy(default_options[overlay_type])
+
+
 def update_overlay_data(instr, display_mode):
     from hexrd.ui.hexrd_config import HexrdConfig
 
