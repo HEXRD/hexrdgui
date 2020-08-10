@@ -39,7 +39,6 @@ class MaskManagerDialog(QObject):
         self.visible = copy.copy(self.masks)
 
     def update_masks_list(self):
-        # Check if new mask is threshold
         if not self.threshold_name and HexrdConfig().threshold_mask_status:
             self.masks['threshold'] = HexrdConfig().threshold_mask
             self.visible['threshold'] = HexrdConfig().threshold_mask
@@ -95,7 +94,6 @@ class MaskManagerDialog(QObject):
             row = self.ui.masks_table.currentRow()
             name = self.ui.masks_table.item(row, 0).text()
         if checked and name and name not in self.visible.keys():
-            # TODO: does this need to be a copy of masks[name]?
             self.visible[name] = self.masks[name]
         elif not checked and name in self.visible.keys():
             del self.visible[name]
