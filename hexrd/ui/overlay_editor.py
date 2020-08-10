@@ -5,7 +5,7 @@ from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
-from hexrd.ui.constants import OverlayType
+from hexrd.ui.constants import DEFAULT_CRYSTAL_PARAMS, OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -81,7 +81,7 @@ class OverlayEditor:
         if 'crystal_params' in options:
             self.laue_crystal_params = options['crystal_params']
         else:
-            self.laue_crystal_params = [0]*12
+            self.laue_crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
 
         if options.get('tth_width') is not None:
             self.ui.laue_tth_width.setValue(np.degrees(options['tth_width']))
