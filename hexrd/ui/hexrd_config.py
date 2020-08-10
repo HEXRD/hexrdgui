@@ -220,6 +220,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []
 
+        # For backward compatibility:
+        for overlay in self.overlays:
+            overlay['type'] = constants.OverlayType(overlay['type'])
+
         self.workflow = settings.value('workflow', None)
 
     def emit_update_status_bar(self, msg):

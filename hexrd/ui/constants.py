@@ -1,3 +1,5 @@
+from enum import Enum
+
 from hexrd import constants
 
 # Wavelength to kilo electron volt conversion
@@ -38,6 +40,12 @@ class ViewType:
     raw = 'raw'
     cartesian = 'cartesian'
     polar = 'polar'
+
+
+class OverlayType(Enum):
+    powder = 'powder'
+    laue = 'laue'
+    mono_rotation_series = 'mono_rotation_series'
 
 
 DEFAULT_EULER_ANGLE_CONVENTION = {
