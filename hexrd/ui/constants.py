@@ -1,3 +1,5 @@
+from enum import Enum
+
 from hexrd import constants
 
 # Wavelength to kilo electron volt conversion
