@@ -37,7 +37,10 @@ class LoadHDF5Dialog:
     remember = self.ui.remember_path.isChecked()
 
     path_list = self.ui.hdf5_paths.currentItem().text()
-    group = os.path.split(path_list)[0]
+    if not os.path.split(path_list)[0]:
+      group = '/'
+    else:
+      group = os.path.split(path_list)[0]
     dataset = os.path.split(path_list)[1]
 
     return group, dataset, remember
