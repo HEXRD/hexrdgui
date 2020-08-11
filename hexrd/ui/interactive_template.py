@@ -172,10 +172,9 @@ class InteractiveTemplate:
         self.redraw()
 
     def get_midpoint(self):
-        length = len(self.shape.get_xy())
-        sum_x = np.nansum(self.shape.get_xy()[:, 0])
-        sum_y = np.nansum(self.shape.get_xy()[:, 1])
-        return sum_x/length, sum_y/length
+        x0, y0 = np.nanmin(self.shape.xy, axis=0)
+        x1, y1 = np.nanmax(self.shape.xy, axis=0)
+        return [(x1 + x0)/2, (y1 + y0)/2]
 
     def mouse_position(self, e):
         xmin, xmax, ymin, ymax = self.ax.get_extent()
