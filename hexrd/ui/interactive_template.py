@@ -85,7 +85,10 @@ class InteractiveTemplate:
         l, r, b, t = self.ax.get_extent()
         x0, y0 = np.nanmin(self.shape.xy, axis=0)
         x1, y1 = np.nanmax(self.shape.xy, axis=0)
-        return np.floor(y0), np.ceil(y1), np.floor(x0), np.ceil(x1)
+        return (max(np.floor(y0), t),
+                min(np.ceil(y1), b),
+                max(np.floor(x0), l),
+                min(np.ceil(x1), r))
 
     def redraw(self):
         self.parent.draw()
