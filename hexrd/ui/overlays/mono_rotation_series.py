@@ -98,7 +98,7 @@ class MonoRotationSeriesSpotOverlay:
         else:
             self._aggregation_mode = x
 
-    def overlay(self, display_mode=ViewType.raw, frame_aggregateion_mode=None):
+    def overlay(self, display_mode=ViewType.raw):
         """
         Returns appropriate point groups for displaying bragg reflection
         locations for a monochromatic rotation series.
@@ -107,8 +107,6 @@ class MonoRotationSeriesSpotOverlay:
         ----------
         display_mode : TYPE, optional
             DESCRIPTION. The default is ViewType.raw.
-        frame_aggregateion_mode : TYPE, optional
-            DESCRIPTION. The default is None.
 
         Raises
         ------
