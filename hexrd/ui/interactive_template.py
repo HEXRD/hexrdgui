@@ -1,6 +1,5 @@
 import numpy as np
 
-from matplotlib.transforms import Affine2D
 from matplotlib import patches
 from matplotlib.path import Path
 
@@ -13,7 +12,6 @@ class InteractiveTemplate:
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
-        self.transform = self.ax.axes.transData
         self.img = img
         self.shape = None
         self.press = None
@@ -24,6 +22,13 @@ class InteractiveTemplate:
         pixel_size = HexrdConfig().detector_pixel_size('default')
         verts = [vert/pixel_size for vert in verts]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
+        translate = self.translate()
+        self.shape.set_xy(self.shape.xy + translate)
+        self.connect_translate()
+        self.raw_axes.add_patch(self.shape)
+        self.redraw()
+
+    def translate(self):
         min_vals = np.nanmin(self.shape.xy, axis=0)
         max_vals = np.nanmax(self.shape.xy, axis=0)
         l, r, b, t = self.ax.get_extent()
@@ -32,10 +37,7 @@ class InteractiveTemplate:
             translate = [l, t] - np.nanmin(self.shape.xy, axis=0)
         elif not self.raw_axes.contains_point(max_vals):
             translate = [r, b] - np.nanmax(self.shape.xy, axis=0)
-        self.shape.set_xy(self.shape.xy + translate)
-        self.connect_translate()
-        self.raw_axes.add_patch(self.shape)
-        self.redraw()
+        return translate
 
     def get_shape(self):
         return self.shape
@@ -63,13 +65,9 @@ class InteractiveTemplate:
 
     def get_paths(self):
         all_paths = []
-        verts = self.shape.get_patch_transform().transform(
-            self.shape.get_path().vertices)
-        if hasattr(self, 'rotate'):
-            self.rotate.transform(verts)
         points = []
         codes = []
-        for coords in verts:
+        for coords in self.shape.get_path().vertices[:-1]:
             if np.isnan(coords).any():
                 codes[0] = Path.MOVETO
                 all_paths.append(Path(points, codes))
@@ -107,7 +105,6 @@ class InteractiveTemplate:
         contains, info = self.shape.contains(event)
         if not contains:
             return
-        self.shape.set_transform(self.transform)
         self.press = self.shape.xy, event.xdata, event.ydata
 
     def on_translate(self, event):
@@ -129,7 +126,6 @@ class InteractiveTemplate:
         dy = event.ydata - ypress
         self.shape.set_xy(xy + np.array([dx, dy]))
         self.press = None
-        self.center = self.get_midpoint()
         self.redraw()
 
     def disconnect_translate(self):
@@ -152,17 +148,24 @@ class InteractiveTemplate:
         contains, info = self.shape.contains(event)
         if not contains:
             return
+        self.center = self.get_midpoint()
         self.shape.set_transform(self.ax.axes.transData)
         self.press = self.shape.xy, event.xdata, event.ydata
+
+    def rotate_template(self, points, angle):
+        x = [np.cos(angle), np.sin(angle)]
+        y = [-np.sin(angle), np.cos(angle)]
+        verts = np.dot(points - self.center, np.array([x, y])) + self.center
+        self.shape.set_xy(verts)
 
     def on_rotate(self, event):
         if self.press is None:
             return
 
         x, y = self.center
+        xy, xpress, ypress = self.press
         angle = self.get_angle(event)
-        trans = Affine2D().rotate_around(x, y, angle)
-        self.shape.set_transform(trans + self.ax.axes.transData)
+        self.rotate_template(xy, angle)
         self.redraw()
 
     def get_midpoint(self):
@@ -203,9 +206,9 @@ class InteractiveTemplate:
 
         angle = self.get_angle(event)
         y, x = self.center
+        xy, xpress, ypress = self.press
         self.press = None
-        self.rotate = Affine2D().rotate_around(x, y, angle)
-        self.transform = self.rotate + self.ax.axes.transData
+        self.rotate_template(xy, angle)
         self.redraw()
 
     def disconnect_rotate(self):
