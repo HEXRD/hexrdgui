@@ -331,7 +331,7 @@ class ImageCanvas(FigureCanvas):
             artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
-    def draw_mono_rotation_series_overlay(self, id, axis, data, style):
+    def draw_mono_rotation_series_overlay(self, axis, data, style):
         pass
 
     def update_overlays(self):
