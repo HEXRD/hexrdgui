@@ -38,20 +38,28 @@ class MaskManagerDialog(QObject):
             self.masks['threshold'] = HexrdConfig().threshold_mask
         self.visible = copy.copy(self.masks)
 
+    def create_unique_name(self, name, value=0):
+        while name in self.masks.keys():
+            value += 1
+            name = name.split('_')[0] + '_' + str(value)
+        return name
+
     def update_masks_list(self):
         if not self.threshold_name and HexrdConfig().threshold_mask_status:
-            self.masks['threshold'] = HexrdConfig().threshold_mask
-            self.visible['threshold'] = HexrdConfig().threshold_mask
-            self.threshold_name = 'threshold'
+            name = self.create_unique_name('threshold')
+            self.masks[name] = HexrdConfig().threshold_mask
+            self.visible[name] = HexrdConfig().threshold_mask
+            self.threshold_name = name
         else:
             data = HexrdConfig().polar_masks_line_data
             if not data:
                 return
             if any(np.array_equal(data[-1], m) for m in self.masks.values()):
                 return
-
-            self.masks['mask_' + str(len(data) - 1)] = data[-1]
-            self.visible['mask_' + str(len(data) - 1)] = data[-1]
+            name = self.create_unique_name(
+                'mask_' + str(len(data) - 1), len(data) - 1)
+            self.masks[name] = data[-1]
+            self.visible[name] = data[-1]
         self.setup_table()
 
     def setup_connections(self):
