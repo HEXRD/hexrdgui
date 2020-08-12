@@ -130,12 +130,11 @@ class LoadPanel(QObject):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
+        new_dir = os.path.commonpath(
+            [fname for fnames in self.files for fname in fnames])
+        HexrdConfig().set_images_dir(new_dir)
+        self.parent_dir = new_dir
         self.ui.img_directory.setText(self.parent_dir)
-
-    def subdirs_changed(self, checked):
-        self.dir_changed()
-        self.ui.image_folder.setEnabled(checked)
-        self.state['subdirs'] = checked
 
     def config_changed(self):
         self.setup_processing_options()
@@ -324,6 +323,8 @@ class LoadPanel(QObject):
             for d, f in zip(detector_names, image_files):
                 pos = HexrdConfig().detector_names.index(d)
                 self.files[pos].append(f)
+
+        self.dir_changed()
 
         if self.files and self.ext == '.yml':
             self.get_yml_files()

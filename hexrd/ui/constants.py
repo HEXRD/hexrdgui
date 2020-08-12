@@ -1,3 +1,6 @@
+from enum import Enum
+import numpy as np
+
 from hexrd import constants
 
 # Wavelength to kilo electron volt conversion
@@ -38,6 +41,12 @@ class ViewType:
     raw = 'raw'
     cartesian = 'cartesian'
     polar = 'polar'
+
+
+class OverlayType(Enum):
+    powder = 'powder'
+    laue = 'laue'
+    mono_rotation_series = 'mono_rotation_series'
 
 
 DEFAULT_EULER_ANGLE_CONVENTION = {
@@ -83,6 +92,22 @@ DEFAULT_MONO_ROTATION_SERIES_STYLE = {
         'lw': 1.0
     }
 }
+
+DEFAULT_CRYSTAL_PARAMS = np.hstack(
+    [constants.zeros_3, constants.zeros_3, constants.identity_6x1])
+
+DEFAULT_POWDER_OPTIONS = {}
+
+DEFAULT_LAUE_OPTIONS = {
+    'crystal_params': DEFAULT_CRYSTAL_PARAMS.copy(),
+    'sample_rmat': constants.identity_3x3.copy(),
+    'min_energy': 5,
+    'max_energy': 35,
+    'tth_width': None,
+    'eta_width': None
+}
+
+DEFAULT_MONO_ROTATION_SERIES_OPTIONS = {}
 
 WORKFLOW_HEDM = 'HEDM'
 WORKFLOW_LLNL = 'LLNL'

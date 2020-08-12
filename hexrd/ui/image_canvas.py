@@ -14,7 +14,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import utils
 import hexrd.ui.constants
@@ -152,9 +152,10 @@ class ImageCanvas(FigureCanvas):
 
     def overlay_draw_func(self, type):
         overlay_funcs = {
-            'powder': self.draw_powder_overlay,
-            'laue': self.draw_laue_overlay,
-            'mono_rotation_series': self.draw_mono_rotation_series_overlay
+            OverlayType.powder: self.draw_powder_overlay,
+            OverlayType.laue: self.draw_laue_overlay,
+            OverlayType.mono_rotation_series: (
+                self.draw_mono_rotation_series_overlay)
         }
 
         if type not in overlay_funcs:

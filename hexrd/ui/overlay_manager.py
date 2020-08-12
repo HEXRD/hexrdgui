@@ -1,6 +1,7 @@
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QWidget
 
+from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlay_editor import OverlayEditor
 from hexrd.ui.overlay_style_picker import OverlayStylePicker
@@ -45,9 +46,9 @@ class OverlayManager:
     @staticmethod
     def format_type(type):
         types = {
-            'powder': 'Powder',
-            'laue': 'Laue',
-            'mono_rotation_series': 'Mono Rotation Series'
+            OverlayType.powder: 'Powder',
+            OverlayType.laue: 'Laue',
+            OverlayType.mono_rotation_series: 'Mono Rotation Series'
         }
 
         if type not in types:
@@ -71,18 +72,13 @@ class OverlayManager:
         return self.create_table_widget(cb)
 
     def create_type_combo(self, v):
-        types = [
-            'powder',
-            'laue',
-            'mono_rotation_series'
-        ]
-
+        types = list(OverlayType)
         if v not in types:
             raise Exception(f'Unknown type: {v}')
 
         cb = QComboBox(self.ui.table)
         for type in types:
-            cb.addItem(self.format_type(type), type)
+            cb.addItem(self.format_type(type), type.value)
 
         cb.setCurrentIndex(types.index(v))
         cb.currentIndexChanged.connect(self.update_config_types)
@@ -185,7 +181,7 @@ class OverlayManager:
         for i in range(self.ui.table.rowCount()):
             w = self.type_combos[i]
             # This won't do anything if the type already matches
-            HexrdConfig().change_overlay_type(i, w.currentData())
+            HexrdConfig().change_overlay_type(i, OverlayType(w.currentData()))
 
         HexrdConfig().overlay_config_changed.emit()
         self.update_overlay_editor()
@@ -207,7 +203,8 @@ class OverlayManager:
         return HexrdConfig().overlays[i] if i is not None else None
 
     def add(self):
-        HexrdConfig().append_overlay(self.active_material_name, 'powder')
+        HexrdConfig().append_overlay(self.active_material_name,
+                                     OverlayType.powder)
         self.update_table()
         self.select_row(len(HexrdConfig().overlays) - 1)
 
