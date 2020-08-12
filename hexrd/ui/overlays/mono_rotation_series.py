@@ -24,6 +24,7 @@ class MonoRotationSeriesSpotOverlay:
         else:
             assert len(crystal_params) == 12, \
                 "crystal parameters must have length 12"
+            self._crystal_params = crystal_params
 
         if eta_ranges is None:
             self._eta_ranges = [(-np.pi, np.pi), ]
