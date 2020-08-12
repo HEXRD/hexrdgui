@@ -85,7 +85,7 @@ class MonoRotationSeriesSpotOverlay:
 
     @property
     def ome_period(self):
-        return self._ome_ranges[0][0] + np.r_[0., 2*np.pi]
+        return self._ome_period
 
     @property
     def aggregation_mode(self):
