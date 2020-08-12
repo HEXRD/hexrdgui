@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>509</width>
-    <height>399</height>
+    <height>312</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,260 +23,14 @@
    <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
 </string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_4">
+   <item row="0" column="0">
     <widget class="QGroupBox" name="calibration_crystal_group_box">
      <property name="title">
       <string>Calibration Crystal</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="1" column="0" colspan="3">
-       <widget class="QGroupBox" name="stretch_matrix_group_box">
-        <property name="title">
-         <string>Stretch Matrix</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="1" column="0">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_3">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_0">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="suffix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="value">
-            <double>0.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_4">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_5">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_1">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="value">
-            <double>0.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_2">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="value">
-            <double>0.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_6">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_8">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="stretch_matrix_7">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="decimals">
-            <number>5</number>
-           </property>
-           <property name="minimum">
-            <double>-10000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="3">
+      <item row="0" column="0" colspan="2">
        <widget class="QTabWidget" name="tabWidget">
         <property name="minimumSize">
          <size>
@@ -285,95 +39,13 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="form_tab">
          <attribute name="title">
           <string>Form</string>
          </attribute>
-         <layout class="QGridLayout" name="gridLayout">
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="position_0">
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-            <property name="keyboardTracking">
-             <bool>false</bool>
-            </property>
-            <property name="decimals">
-             <number>5</number>
-            </property>
-            <property name="minimum">
-             <double>-10000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>10000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QDoubleSpinBox" name="orientation_1">
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-            <property name="keyboardTracking">
-             <bool>false</bool>
-            </property>
-            <property name="prefix">
-             <string/>
-            </property>
-            <property name="decimals">
-             <number>5</number>
-            </property>
-            <property name="minimum">
-             <double>-10000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>10000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="orientation_label">
-            <property name="text">
-             <string>Orientation:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="orientation_0">
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-            <property name="keyboardTracking">
-             <bool>false</bool>
-            </property>
-            <property name="prefix">
-             <string/>
-            </property>
-            <property name="decimals">
-             <number>5</number>
-            </property>
-            <property name="minimum">
-             <double>-10000.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>10000.000000000000000</double>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-           </widget>
-          </item>
+         <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="3">
            <widget class="QDoubleSpinBox" name="orientation_2">
             <property name="alignment">
@@ -421,13 +93,16 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QDoubleSpinBox" name="position_2">
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="orientation_0">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
             <property name="keyboardTracking">
              <bool>false</bool>
+            </property>
+            <property name="prefix">
+             <string/>
             </property>
             <property name="decimals">
              <number>5</number>
@@ -453,7 +128,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="4" column="2">
            <spacer name="verticalSpacer">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -461,127 +136,142 @@
             <property name="sizeHint" stdset="0">
              <size>
               <width>20</width>
-              <height>40</height>
+              <height>20</height>
              </size>
             </property>
            </spacer>
           </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="slider_tab">
-         <attribute name="title">
-          <string>Slider</string>
-         </attribute>
-         <widget class="QWidget" name="widget" native="true">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>458</width>
-            <height>181</height>
-           </rect>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
-              <widget class="QComboBox" name="comboBox_2">
-               <item>
-                <property name="text">
-                 <string>Position</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Orientation</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_translation_range_2">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Slider Range:</string>
-               </property>
+          <item row="0" column="2">
+           <widget class="QDoubleSpinBox" name="orientation_1">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="prefix">
+             <string/>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-10000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0" colspan="4">
+           <widget class="QGroupBox" name="stretch_matrix_group_box">
+            <property name="title">
+             <string>Stretch Matrix</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="0">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_0">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QDoubleSpinBox" name="sb_translation_range_2">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="keyboardTracking">
                 <bool>false</bool>
                </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="suffix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
+               </property>
                <property name="minimum">
-                <double>0.000000000000000</double>
+                <double>-10000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>100000.000000000000000</double>
+                <double>10000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
                </property>
                <property name="value">
-                <double>300.000000000000000</double>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QGridLayout" name="gridLayout_5">
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_translation_3">
-               <property name="minimumSize">
-                <size>
-                 <width>20</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>X:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                <double>0.000000000000000</double>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QSlider" name="slider_translation_3">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+              <widget class="QDoubleSpinBox" name="stretch_matrix_1">
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
                </property>
                <property name="minimum">
-                <number>-100000</number>
+                <double>-10000.000000000000000</double>
                </property>
                <property name="maximum">
-                <number>100000</number>
+                <double>10000.000000000000000</double>
                </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.000000000000000</double>
                </property>
               </widget>
              </item>
              <item row="0" column="2">
-              <widget class="QDoubleSpinBox" name="sb_translation_3">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_2">
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
                <property name="keyboardTracking">
                 <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
+               </property>
+               <property name="minimum">
+                <double>-10000.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>10000.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_3">
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
                </property>
                <property name="minimum">
                 <double>-10000.000000000000000</double>
@@ -594,33 +284,44 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_translation_4">
-               <property name="text">
-                <string>Y:</string>
-               </property>
+             <item row="1" column="1">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_4">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QSlider" name="slider_translation_4">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
+               </property>
                <property name="minimum">
-                <number>-100000</number>
+                <double>-10000.000000000000000</double>
                </property>
                <property name="maximum">
-                <number>100000</number>
+                <double>10000.000000000000000</double>
                </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
                </property>
               </widget>
              </item>
              <item row="1" column="2">
-              <widget class="QDoubleSpinBox" name="sb_translation_4">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_5">
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
                <property name="keyboardTracking">
                 <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
                </property>
                <property name="minimum">
                 <double>-10000.000000000000000</double>
@@ -634,32 +335,68 @@
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QLabel" name="label_translation_5">
-               <property name="text">
-                <string>Z:</string>
-               </property>
+              <widget class="QDoubleSpinBox" name="stretch_matrix_6">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
+               </property>
+               <property name="minimum">
+                <double>-10000.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>10000.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QSlider" name="slider_translation_5">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_7">
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
+               </property>
                <property name="minimum">
-                <number>-100000</number>
+                <double>-10000.000000000000000</double>
                </property>
                <property name="maximum">
-                <number>100000</number>
+                <double>10000.000000000000000</double>
                </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
                </property>
               </widget>
              </item>
              <item row="2" column="2">
-              <widget class="QDoubleSpinBox" name="sb_translation_5">
+              <widget class="QDoubleSpinBox" name="stretch_matrix_8">
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
                <property name="keyboardTracking">
                 <bool>false</bool>
+               </property>
+               <property name="prefix">
+                <string/>
+               </property>
+               <property name="decimals">
+                <number>5</number>
                </property>
                <property name="minimum">
                 <double>-10000.000000000000000</double>
@@ -673,9 +410,297 @@
               </widget>
              </item>
             </layout>
-           </item>
-          </layout>
-         </widget>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="orientation_label">
+            <property name="text">
+             <string>Orientation:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="QDoubleSpinBox" name="position_2">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-10000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="position_0">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-10000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>10</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="slider_tab">
+         <attribute name="title">
+          <string>Slider</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QWidget" name="widget" native="true">
+            <layout class="QVBoxLayout" name="verticalLayout">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <item>
+                <widget class="QComboBox" name="comboBox_2">
+                 <item>
+                  <property name="text">
+                   <string>Position</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Orientation</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_translation_range_2">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                   <horstretch>1</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>Slider Range:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDoubleSpinBox" name="sb_translation_range_2">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimum">
+                  <double>0.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>100000.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>300.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QGridLayout" name="gridLayout_5">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_translation_3">
+                 <property name="minimumSize">
+                  <size>
+                   <width>20</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>X:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QSlider" name="slider_translation_3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>1</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimum">
+                  <number>-100000</number>
+                 </property>
+                 <property name="maximum">
+                  <number>100000</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QDoubleSpinBox" name="sb_translation_3">
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimum">
+                  <double>-10000.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>10000.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_translation_4">
+                 <property name="text">
+                  <string>Y:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QSlider" name="slider_translation_4">
+                 <property name="minimum">
+                  <number>-100000</number>
+                 </property>
+                 <property name="maximum">
+                  <number>100000</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QDoubleSpinBox" name="sb_translation_4">
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimum">
+                  <double>-10000.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>10000.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_translation_5">
+                 <property name="text">
+                  <string>Z:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QSlider" name="slider_translation_5">
+                 <property name="minimum">
+                  <number>-100000</number>
+                 </property>
+                 <property name="maximum">
+                  <number>100000</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QDoubleSpinBox" name="sb_translation_5">
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimum">
+                  <double>-10000.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>10000.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.100000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>
