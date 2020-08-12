@@ -149,7 +149,13 @@ DEFAULT_LAUE_OPTIONS = {
     'width_shape': 'ellipse',
 }
 
-DEFAULT_MONO_ROTATION_SERIES_OPTIONS = {}
+DEFAULT_MONO_ROTATION_SERIES_OPTIONS = {
+    'crystal_params': DEFAULT_CRYSTAL_PARAMS.copy(),
+    'eta_ranges': [[-np.pi, np.pi]],
+    'ome_ranges': [[-np.pi, np.pi]],
+    'ome_period': [-np.pi, np.pi],
+    'aggregation_mode': 'Maximum'
+}
 
 DEFAULT_WPPF_PLOT_STYLE = {
     'marker': 'o',

@@ -59,6 +59,11 @@
       <attribute name="title">
        <string>Mono Rotation Series</string>
       </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="mono_rotation_series_overlay_editor_layout"/>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="blank_tab">
       <attribute name="title">

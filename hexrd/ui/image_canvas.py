@@ -332,7 +332,14 @@ class ImageCanvas(FigureCanvas):
             artists.append(artist)
 
     def draw_mono_rotation_series_overlay(self, axis, data, style):
-        pass
+        data_points = data['data']
+
+        data_style = style['data']
+        artists = []
+        self.overlay_artists[id(data)] = artists
+        for x, y in data_points:
+            artist = axis.scatter(x, y, **data_style)
+            artists.append(artist)
 
     def update_overlays(self):
         if HexrdConfig().loading_state:

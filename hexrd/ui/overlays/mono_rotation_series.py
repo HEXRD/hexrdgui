@@ -129,17 +129,19 @@ class MonoRotationSeriesSpotOverlay:
             ome_ranges=self.ome_ranges,
             ome_period=self.ome_period
         )
-        point_groups = dict.fromkeys(sim_data)
+        point_groups = {}
+        keys = ['data', 'ranges']
         for det_key, psim in sim_data.items():
+            point_groups[det_key] = {key: [] for key in keys}
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
             if display_mode == ViewType.polar:
                 if self.aggregation_mode is None:
                     raise NotImplementedError
                 else:
-                    point_groups[det_key] = valid_angs[0]
+                    point_groups[det_key]['data'] = valid_angs[0]
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 if self.aggregation_mode is None:
                     raise NotImplementedError
                 else:
-                    point_groups[det_key] = valid_xys[0]
+                    point_groups[det_key]['data'] = valid_xys[0]
         return point_groups
