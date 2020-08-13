@@ -299,10 +299,13 @@ class MainWindow(QObject):
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_files[0])[1]
-            if (ImageFileManager().is_hdf5(ext) and not
+            if (ImageFileManager().is_hdf(ext) and not
                     ImageFileManager().path_exists(selected_files[0])):
 
-                ImageFileManager().path_prompt(selected_files[0])
+                selection = ImageFileManager().path_prompt(selected_files[0])
+                if not selection:
+                    return
+
             dialog = LoadImagesDialog(files, manual, self.ui)
 
             if dialog.exec_():

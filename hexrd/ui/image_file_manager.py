@@ -26,6 +26,8 @@ class Singleton(type):
 class ImageFileManager(metaclass=Singleton):
 
     IMAGE_FILE_EXTS = ['.tiff', '.tif']
+    HDF4_FILE_EXTS = ['.h4', '.hdf4', '.hdf']
+    HDF5_FILE_EXTS = ['.h5', '.hdf5', '.he5']
 
     def __init__(self):
         # Clear any previous images
@@ -75,10 +77,16 @@ class ImageFileManager(metaclass=Singleton):
                 return
 
     def open_file(self, f):
+        # f could be either a file or numpy array
         ext = os.path.splitext(f)[1] if isinstance(f, str) else None
         if ext is None:
             ims = imageseries.open(None, 'array', data=f)
-        elif self.is_hdf5(ext):
+        elif ext in self.HDF4_FILE_EXTS:
+            from pyhdf.SD import SD, SDC
+            hdf = SD(f, SDC.READ)
+            dset = hdf.select(self.path[1])
+            ims = imageseries.open(None, 'array', data=dset)
+        elif ext in self.HDF5_FILE_EXTS:
             data = h5py.File(f, 'r')
             dset = data['/'.join(self.path)][()]
             if dset.ndim < 3:
@@ -144,9 +152,9 @@ class ImageFileManager(metaclass=Singleton):
             os.remove(temp.name)
         return ims
 
-    def is_hdf5(self, extension):
-        hdf5_extensions = ['.h5', '.hdf5', '.he5']
-        if extension in hdf5_extensions:
+    def is_hdf(self, extension):
+        hdf_extensions = ['.h4', '.hdf4', '.hdf', '.h5', '.hdf5', '.he5']
+        if extension in hdf_extensions:
             return True
 
         return False
@@ -162,9 +170,11 @@ class ImageFileManager(metaclass=Singleton):
 
     def path_prompt(self, f):
         path_dialog = LoadHDF5Dialog(f)
-        if path_dialog.ui.exec_():
+        if path_dialog.paths:
+            path_dialog.ui.exec_()
             group, data, remember = path_dialog.results()
             self.path = [group, data]
             self.remember = remember
+            return True
         else:
             return False

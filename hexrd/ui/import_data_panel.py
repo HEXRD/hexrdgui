@@ -98,9 +98,11 @@ class ImportDataPanel(QObject):
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_file)[1]
-            if (ImageFileManager().is_hdf5(ext) and not
+            if (ImageFileManager().is_hdf(ext) and not
                     ImageFileManager().path_exists(selected_file)):
-                ImageFileManager().path_prompt(selected_file)
+                path_selected = ImageFileManager().path_prompt(selected_file)
+                if not path_selected:
+                    return
 
             ImageLoadManager().read_data(files, parent=self.ui)
 
