@@ -236,7 +236,7 @@ class MainWindow(QObject):
             self.update_config_gui()
 
     def on_action_open_config_dir_triggered(self):
-        dialog = QFileDialog(self.ui, 'Save Configuration',
+        dialog = QFileDialog(self.ui, 'Load Configuration',
                              HexrdConfig().working_dir,
                              'HEXRD directories (*.hexrd)')
         dialog.setFileMode(QFileDialog.Directory)
