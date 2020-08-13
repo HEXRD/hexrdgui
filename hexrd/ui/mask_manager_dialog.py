@@ -40,8 +40,9 @@ class MaskManagerDialog(QObject):
 
     def create_unique_name(self, name, value=0):
         while name in self.masks.keys():
+            prefix  = name.split('_')[0]
+            name = f'{prefix}_{value}'
             value += 1
-            name = name.split('_')[0] + '_' + str(value)
         return name
 
     def update_masks_list(self):
@@ -56,8 +57,7 @@ class MaskManagerDialog(QObject):
                 return
             if any(np.array_equal(data[-1], m) for m in self.masks.values()):
                 return
-            name = self.create_unique_name(
-                'mask_' + str(len(data) - 1), len(data) - 1)
+            name = self.create_unique_name('mask_0')
             self.masks[name] = data[-1]
             self.visible[name] = data[-1]
         self.setup_table()
