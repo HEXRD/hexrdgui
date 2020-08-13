@@ -66,7 +66,7 @@ class ImportDataPanel(QObject):
         contents = resource_loader.module_contents(self.mod)
         dets = ['None']
         for content in contents:
-            if isinstance(content, str) and not content.startswith('__'):
+            if not content.startswith('__'):
                 dets.append(content.split('.')[0])
         return dets
 
