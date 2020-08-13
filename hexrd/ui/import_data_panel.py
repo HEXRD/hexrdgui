@@ -45,6 +45,10 @@ class ImportDataPanel(QObject):
         self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
 
+    def enable_widgets(self, *widgets, enabled):
+        for w in widgets:
+            w.setEnabled(enabled)
+
     def instrument_selected(self, idx):
         if idx == 3:
             self.ui.detectors.setCurrentIndex(0)
@@ -57,8 +61,8 @@ class ImportDataPanel(QObject):
                 self.new_config_loaded.emit()
                 self.ui.detectors.clear()
                 self.ui.detectors.insertItems(0, det_list)
-                self.ui.detector_label.setEnabled(True)
-                self.ui.detectors.setEnabled(True)
+                self.enable_widgets(self.ui.detector_label, self.ui.detectors,
+                                    enabled=True)
 
     def get_instrument_detectors(self, instrument):
         self.mod = resource_loader.import_dynamic_module(
@@ -102,13 +106,12 @@ class ImportDataPanel(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
-            self.ui.outline.setEnabled(True)
-            self.ui.add_template.setEnabled(True)
-            self.ui.save.setDisabled(True)
-            self.ui.transforms.setEnabled(True)
-            self.ui.add_transform.setEnabled(True)
+            self.enable_widgets(self.ui.outline, self.ui.add_template,
+                                self.ui.transforms, self.ui.add_transform,
+                                enabled=True)
+            self.enable_widgets(self.parent().action_show_toolbar,
+                                self.ui.save, enabled=False)
             self.parent().action_show_toolbar.setChecked(False)
-            self.parent().action_show_toolbar.setDisabled(True)
 
     def add_transform(self):
         ilm = ImageLoadManager()
@@ -122,14 +125,11 @@ class ImportDataPanel(QObject):
         self.it = InteractiveTemplate(
             HexrdConfig().image('default', 0), self.parent())
         self.it.create_shape(module=self.mod, file_name=det + '.txt')
-        self.ui.add_template.setDisabled(True)
-        self.ui.trans.setEnabled(True)
+        self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
+                            self.ui.complete, enabled=True)
+        self.enable_widgets(self.ui.detectors, self.ui.add_template,
+                            self.ui.load, enabled=False)
         self.ui.trans.setChecked(True)
-        self.ui.rotate.setEnabled(True)
-        self.ui.button_box.setEnabled(True)
-        self.ui.detectors.setDisabled(True)
-        self.ui.load.setDisabled(True)
-        self.ui.complete.setEnabled(True)
 
     def setup_translate(self):
         if self.it is not None:
@@ -156,18 +156,13 @@ class ImportDataPanel(QObject):
         bounds = np.array([int(val) for val in self.it.crop()]).reshape(2, 2)
         self.finalize(img, bounds)
         self.completed_detectors.append(self.ui.detectors.currentText())
-        self.ui.trans.setDisabled(True)
-        self.ui.rotate.setDisabled(True)
-        self.ui.button_box.setDisabled(True)
-        self.ui.add_template.setDisabled(True)
-        self.ui.detectors.setEnabled(True)
-        self.ui.load.setEnabled(True)
+        self.enable_widgets(self.ui.detectors, self.ui.load, self.ui.complete,
+                            self.ui.completed_dets, self.ui.save,
+                            self.ui.finalize, enabled=True)
+        self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
+                            self.ui.add_template, enabled=False)
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
-        self.ui.completed_dets.setEnabled(True)
-        self.ui.finalize.setEnabled(True)
-        self.ui.complete.setEnabled(True)
-        self.ui.save.setEnabled(True)
 
     def finalize(self, img, bounds):
         ImageLoadManager().read_data([[img]], parent=self.ui)
@@ -186,14 +181,10 @@ class ImportDataPanel(QObject):
 
     def clear(self):
         self.clear_boundry()
-        self.ui.detectors.setEnabled(True)
-        self.ui.load.setEnabled(True)
-        self.ui.add_template.setEnabled(True)
-        self.ui.trans.setDisabled(True)
-        self.ui.rotate.setDisabled(True)
-        self.ui.button_box.setDisabled(True)
-        self.ui.save.setDisabled(True)
-        self.ui.complete.setDisabled(True)
+        self.enable_widgets(self.ui.detectors, self.ui.load,
+                            self.ui.add_template, enabled=True)
+        self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
+                            self.ui.save, self.ui.complete, enabled=False)
 
     def save_file(self):
         self.parent().action_save_imageseries.trigger()
@@ -211,13 +202,12 @@ class ImportDataPanel(QObject):
 
     def reset_panel(self):
         self.clear_boundry()
+        self.ui.instruments.setCurrentIndex(3)
         self.ui.detectors.setCurrentIndex(0)
-        self.ui.detectors.setDisabled(True)
         self.ui.files_label.setText('')
-        self.ui.data.setDisabled(True)
-        self.ui.outline.setDisabled(True)
         self.ui.completed_dets.setText('')
-        self.ui.finalize.setDisabled(True)
+        self.enable_widgets(self.ui.detectors, self.ui.data, self.ui.outline,
+                            self.ui.finalize, enabled=False)
         self.completed_detectors = []
 
     def completed(self):
