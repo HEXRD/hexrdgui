@@ -7,13 +7,14 @@ from hexrd.ui.overlays.mono_rotation_series import (
 from hexrd.ui.overlays.powder_diffraction import PowderLineOverlay
 
 from hexrd.ui import constants
+from hexrd.ui.constants import OverlayType
 
 
 def overlay_generator(overlay_type):
     generators = {
-        'powder': PowderLineOverlay,
-        'laue': LaueSpotOverlay,
-        'mono_rotation_series': MonoRotationSeriesSpotOverlay
+        OverlayType.powder: PowderLineOverlay,
+        OverlayType.laue: LaueSpotOverlay,
+        OverlayType.mono_rotation_series: MonoRotationSeriesSpotOverlay
     }
 
     if overlay_type not in generators:
@@ -24,15 +25,30 @@ def overlay_generator(overlay_type):
 
 def default_overlay_style(overlay_type):
     default_styles = {
-        'powder': constants.DEFAULT_POWDER_STYLE,
-        'laue': constants.DEFAULT_LAUE_STYLE,
-        'mono_rotation_series': constants.DEFAULT_MONO_ROTATION_SERIES_STYLE
+        OverlayType.powder: constants.DEFAULT_POWDER_STYLE,
+        OverlayType.laue: constants.DEFAULT_LAUE_STYLE,
+        OverlayType.mono_rotation_series: (
+            constants.DEFAULT_MONO_ROTATION_SERIES_STYLE)
     }
 
     if overlay_type not in default_styles:
         raise Exception(f'Unknown overlay type: {overlay_type}')
 
     return copy.deepcopy(default_styles[overlay_type])
+
+
+def default_overlay_options(overlay_type):
+    default_options = {
+        OverlayType.powder: constants.DEFAULT_POWDER_OPTIONS,
+        OverlayType.laue: constants.DEFAULT_LAUE_OPTIONS,
+        OverlayType.mono_rotation_series: (
+            constants.DEFAULT_MONO_ROTATION_SERIES_OPTIONS)
+    }
+
+    if overlay_type not in default_options:
+        raise Exception(f'Unknown overlay type: {overlay_type}')
+
+    return copy.deepcopy(default_options[overlay_type])
 
 
 def update_overlay_data(instr, display_mode):

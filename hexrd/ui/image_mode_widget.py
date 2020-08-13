@@ -42,7 +42,7 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_show_saturation_level)
         self.ui.raw_threshold_mask.toggled.connect(self.raw_masking)
         self.ui.raw_threshold_mask.toggled.connect(
-            HexrdConfig().set_threshold_mask)
+            HexrdConfig().set_threshold_mask_status)
         self.ui.raw_threshold_comparison.currentIndexChanged.connect(
             HexrdConfig().set_threshold_comparison)
         self.ui.raw_threshold_comparison.currentIndexChanged.connect(
@@ -81,6 +81,9 @@ class ImageModeWidget(QObject):
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
+
+        HexrdConfig().threshold_mask_changed.connect(
+            self.ui.raw_threshold_mask.setChecked)
 
     def currentChanged(self, index):
         modes = {
@@ -121,7 +124,7 @@ class ImageModeWidget(QObject):
         self.ui.raw_threshold_value.setValue(
             HexrdConfig().threshold_value)
         self.ui.raw_threshold_mask.setChecked(
-            HexrdConfig().threshold_mask)
+            HexrdConfig().threshold_mask_status)
         self.ui.cartesian_pixel_size.setValue(
             HexrdConfig().cartesian_pixel_size)
         self.ui.cartesian_virtual_plane_distance.setValue(
@@ -202,7 +205,10 @@ class ImageModeWidget(QObject):
         # easily be reverted to their original state if the mask is
         # toggled off.
         self.ui.raw_threshold_comparison.setEnabled(checked)
+        self.ui.raw_threshold_comparison.setCurrentIndex(
+            HexrdConfig().threshold_comparison)
         self.ui.raw_threshold_value.setEnabled(checked)
+        self.ui.raw_threshold_value.setValue(HexrdConfig().threshold_value)
         if not hasattr(self, 'ims_copy') or self.ims_copy is None:
             self.ims_copy = copy.copy(HexrdConfig().imageseries_dict)
         self.update_mask(checked)
