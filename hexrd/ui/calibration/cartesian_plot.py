@@ -1,6 +1,7 @@
 import copy
 
 import numpy as np
+import psutil
 
 from hexrd.gridutil import cellIndices
 
@@ -42,6 +43,10 @@ class InstrumentViewer:
 
         self.dplane = DisplayPlane(tvec=dplane_tvec, tilt=dplane_tilt)
         self.make_dpanel()
+
+        # Check that the image size won't be too big...
+        self.check_size_feasible()
+
         self.plot_dplane()
 
     def check_keys_match(self):
@@ -50,6 +55,34 @@ class InstrumentViewer:
             msg = ('Images do not match the panel ids!\n'
                    f'Images: {str(list(self.images_dict.keys()))}\n'
                    f'PanelIds: {str(list(self.instr._detectors.keys()))}')
+            raise Exception(msg)
+
+    def check_size_feasible(self):
+        available_mem = psutil.virtual_memory().available
+        img_dtype = np.float64
+        dtype_size = np.dtype(img_dtype).itemsize
+
+        mem_usage = self.dpanel.rows * self.dpanel.cols * dtype_size
+        # Extra memory we probably need for other things...
+        mem_extra_buffer = 1e7
+        mem_usage += mem_extra_buffer
+        if mem_usage > available_mem:
+
+            def format_size(size):
+                sizes = [
+                    ('TB', 1e12),
+                    ('GB', 1e9),
+                    ('MB', 1e6),
+                    ('KB', 1e3),
+                    ('B', 1)
+                ]
+                for s in sizes:
+                    if size > s[1]:
+                        return f'{round(size / s[1], 2)} {s[0]}'
+
+            msg = 'Not enough memory for Cartesian plot\n'
+            msg += f'Memory available: {format_size(available_mem)}\n'
+            msg += f'Memory required: {format_size(mem_usage)}'
             raise Exception(msg)
 
     def make_dpanel(self):
