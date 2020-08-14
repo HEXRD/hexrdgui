@@ -2,6 +2,7 @@ import copy
 import math
 
 from PySide2.QtCore import QThreadPool
+from PySide2.QtWidgets import QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
@@ -72,6 +73,10 @@ class ImageCanvas(FigureCanvas):
 
     def clear(self):
         self.iviewer = None
+        self.mode = None
+        self.clear_figure()
+
+    def clear_figure(self):
         self.figure.clear()
         self.raw_axes.clear()
         self.axes_images.clear()
@@ -414,6 +419,7 @@ class ImageCanvas(FigureCanvas):
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_cartesian)
+        worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_cartesian(self, iviewer):
         self.iviewer = iviewer
@@ -467,6 +473,7 @@ class ImageCanvas(FigureCanvas):
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_polar)
+        worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_polar(self, iviewer):
         self.iviewer = iviewer
@@ -541,6 +548,14 @@ class ImageCanvas(FigureCanvas):
 
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    def async_worker_error(self, error):
+        QMessageBox.critical(self, 'HEXRD', str(error[1]))
+        msg = f'{str(self.mode)} view error!'
+        HexrdConfig().emit_update_status_bar(msg)
+
+        self.clear_figure()
+        self.draw()
 
     def set_cmap(self, cmap):
         self.cmap = cmap
