@@ -1,4 +1,5 @@
 import copy
+import itertools
 
 import numpy as np
 import psutil
@@ -28,6 +29,7 @@ class InstrumentViewer:
 
         # Perform some checks before proceeding
         self.check_keys_match()
+        self.check_angles_feasible()
 
         self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.warp_dict = {}
@@ -55,6 +57,27 @@ class InstrumentViewer:
             msg = ('Images do not match the panel ids!\n'
                    f'Images: {str(list(self.images_dict.keys()))}\n'
                    f'PanelIds: {str(list(self.instr._detectors.keys()))}')
+            raise Exception(msg)
+
+    def check_angles_feasible(self):
+        max_angle = 120.0
+
+        # Check all combinations of detectors. If any have an angle
+        # between them that is greater than the max, raise an exception.
+        combos = itertools.combinations(self.instr._detectors.items(), 2)
+        bad_combos = []
+        acos = np.arccos
+        norm = np.linalg.norm
+        for x, y in combos:
+            n1, n2 = x[1].normal, y[1].normal
+            angle = np.degrees(acos(np.dot(n1, n2) / norm(n1) / norm(n2)))
+            if angle > max_angle:
+                bad_combos.append(((x[0], y[0]), angle))
+
+        if bad_combos:
+            msg = 'Cartesian plot not feasible\n'
+            msg += 'Angle between detectors is too large\n'
+            msg += '\n'.join([f'{x[0]}: {x[1]}' for x in bad_combos])
             raise Exception(msg)
 
     def check_size_feasible(self):
