@@ -25,12 +25,8 @@ class InstrumentViewer:
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
 
-        # Make sure each key in the image dict is in the panel_ids
-        if self.images_dict.keys() != self.instr._detectors.keys():
-            msg = ('Images do not match the panel ids!\n' +
-                   'Images: ' + str(list(self.images_dict.keys())) + '\n' +
-                   'PanelIds: ' + str(list(self.instr._detectors.keys())))
-            raise Exception(msg)
+        # Perform some checks before proceeding
+        self.check_keys_match()
 
         self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.warp_dict = {}
@@ -47,6 +43,14 @@ class InstrumentViewer:
         self.dplane = DisplayPlane(tvec=dplane_tvec, tilt=dplane_tilt)
         self.make_dpanel()
         self.plot_dplane()
+
+    def check_keys_match(self):
+        # Make sure each key in the image dict is in the panel_ids
+        if self.images_dict.keys() != self.instr._detectors.keys():
+            msg = ('Images do not match the panel ids!\n'
+                   f'Images: {str(list(self.images_dict.keys()))}\n'
+                   f'PanelIds: {str(list(self.instr._detectors.keys()))}')
+            raise Exception(msg)
 
     def make_dpanel(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
