@@ -39,7 +39,7 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="form_tab">
          <attribute name="title">
@@ -168,6 +168,12 @@
           </item>
           <item row="3" column="0" colspan="4">
            <widget class="QGroupBox" name="stretch_matrix_group_box">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>128</height>
+             </size>
+            </property>
             <property name="title">
              <string>Stretch Matrix</string>
             </property>
@@ -498,12 +504,12 @@
                 <widget class="QComboBox" name="comboBox_2">
                  <item>
                   <property name="text">
-                   <string>Position</string>
+                   <string>Orientation</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Orientation</string>
+                   <string>Position</string>
                   </property>
                  </item>
                 </widget>
