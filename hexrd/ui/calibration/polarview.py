@@ -38,6 +38,8 @@ class PolarView:
 
         self.snip1d_background = None
 
+        self.update_angular_grid()
+
     @property
     def detectors(self):
         return self.instr.detectors
@@ -106,13 +108,16 @@ class PolarView:
     def shape(self):
         return (self.neta, self.ntth)
 
-    @property
-    def angular_grid(self):
+    def update_angular_grid(self):
         tth_vec = np.radians(self.tth_pixel_size * (np.arange(self.ntth)))\
             + self.tth_min + 0.5 * np.radians(self.tth_pixel_size)
         eta_vec = np.radians(self.eta_pixel_size * (np.arange(self.neta)))\
             + self.eta_min + 0.5 * np.radians(self.eta_pixel_size)
-        return np.meshgrid(eta_vec, tth_vec, indexing='ij')
+        self._angular_grid = np.meshgrid(eta_vec, tth_vec, indexing='ij')
+
+    @property
+    def angular_grid(self):
+        return self._angular_grid
 
     def detector_borders(self, det):
         panel = self.detectors[det]
