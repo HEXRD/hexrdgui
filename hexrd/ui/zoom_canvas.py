@@ -1,9 +1,6 @@
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-
-from skimage.draw import polygon
 
 import numpy as np
 
@@ -21,9 +18,7 @@ class ZoomCanvas(FigureCanvas):
 
         # Set up the box overlay lines
         ax = self.main_canvas.axis
-        self.box_overlay_lines = []
-        self.box_overlay_lines.append(ax.plot([], [], 'm-')[0])
-        self.box_overlay_lines.append(ax.plot([], [], 'm-')[0])
+        self.box_overlay_line = ax.plot([], [], 'm-')[0]
 
         # user-specified ROI in degrees (from interactors)
         self.tth_tol = 0.5
@@ -48,8 +43,8 @@ class ZoomCanvas(FigureCanvas):
             self.mne_id = None
 
     def remove_overlay_lines(self):
-        while self.box_overlay_lines:
-            self.box_overlay_lines.pop(0).remove()
+        self.box_overlay_line.remove()
+        self.box_overlay_line = None
 
     def mouse_moved(self, event):
         if event.inaxes is None:
@@ -68,51 +63,49 @@ class ZoomCanvas(FigureCanvas):
     def render(self):
         point = (self.xdata, self.ydata)
         rsimg = self.main_canvas.iviewer.img
+        _extent = self.main_canvas.iviewer._extent
         pv = self.pv
 
-        tth_tol = self.tth_tol
-        eta_tol = self.eta_tol
-
-        roi_diff = (np.tile([tth_tol, eta_tol], (4, 1)) * 0.5 *
+        roi_diff = (np.tile([self.tth_tol, self.eta_tol], (4, 1)) * 0.5 *
                     np.vstack([[-1, -1], [1, -1], [1, 1], [-1, 1]]))
         roi_deg = np.tile(point, (4, 1)) + roi_diff
+
+        # Clip the values into the required boundaries
+        roi_deg[:, 0] = np.clip(roi_deg[:, 0],
+                                *np.degrees((pv.tth_min, pv.tth_max)))
+        roi_deg[:, 1] = np.clip(roi_deg[:, 1],
+                                *np.degrees((pv.eta_min, pv.eta_max)))
 
         # get pixel values from PolarView class
         i_row = pv.eta_to_pixel(np.radians(roi_deg[:, 1]))
         j_col = pv.tth_to_pixel(np.radians(roi_deg[:, 0]))
 
-        # file rectangle
-        rr, cc = polygon(i_row, j_col, shape=rsimg.shape)
-        eta_pix_cen = np.degrees(pv.angular_grid[0][rr, 0])
-        tth_pix_cen = np.degrees(pv.angular_grid[1][0, cc])
-        extent = [
-            min(tth_pix_cen) - 0.5 * pv.tth_pixel_size,
-            max(tth_pix_cen) + 0.5 * pv.tth_pixel_size,
-            max(eta_pix_cen) + 0.5 * pv.eta_pixel_size,
-            min(eta_pix_cen) - 0.5 * pv.eta_pixel_size
-        ]
-
-        # roi
-        roi = rsimg[rr, cc].reshape(len(np.unique(rr)), len(np.unique(cc)))
+        # Convert to intgers
+        i_row = np.round(i_row).astype(int)
+        j_col = np.round(j_col).astype(int)
 
         # plot
+        roi = rsimg[i_row[1]:i_row[2], j_col[0]:j_col[1]]
         a2_data = (
-            np.degrees(
-                pv.angular_grid[1][0, cc.reshape(len(np.unique(rr)),
-                                                 len(np.unique(cc)))[0, :]]
-            ),
+            np.degrees(pv.angular_grid[1][0, j_col[0]:j_col[1]]),
             np.sum(roi, axis=0)
         )
+
+        xlims = roi_deg[0:2, 0]
+        ylims = roi_deg[2:0:-1, 1]
+
         if self.axes_images is None:
             grid = self.figure.add_gridspec(3, 1)
             a1 = self.figure.add_subplot(grid[:2, 0])
             a2 = self.figure.add_subplot(grid[2, 0], sharex=a1)
-            im1 = a1.imshow(roi, extent=extent, cmap=self.main_canvas.cmap,
+            a1.set_xlim(*xlims)
+            a1.set_ylim(*ylims)
+            im1 = a1.imshow(rsimg, extent=_extent, cmap=self.main_canvas.cmap,
                             norm=self.main_canvas.norm, picker=True,
                             interpolation='none')
             a1.axis('auto')
             a1.label_outer()
-            im2 = a2.plot(a2_data)[0]
+            im2, = a2.plot(a2_data[0], a2_data[1])
             self.figure.suptitle(r"ROI zoom")
             a2.set_xlabel(r"$2\theta$ [deg]")
             a2.set_ylabel(r"intensity")
@@ -121,19 +114,16 @@ class ZoomCanvas(FigureCanvas):
             self.axes_images = [im1, im2]
             self.grid = grid
         else:
-            self.axes_images[0].set_data(roi)
-            self.axes_images[0].set_extent(extent)
+            self.axes[0].set_xlim(*xlims)
+            self.axes[0].set_ylim(*ylims)
             self.axes_images[1].set_data(a2_data)
 
-            # I can't figure out how to get the bottom axis to autoscale
-            # properly. Do it manually.
-            data_min, data_max = a2_data[1].min(), a2_data[1].max()
-            ymin = data_min - 0.1 * (data_max - data_min) - 1.e-6
-            ymax = data_max + 0.1 * (data_max - data_min) + 1.e-6
-            self.axes[1].set_ylim((ymin, ymax))
+            self.axes[1].relim()
+            self.axes[1].autoscale_view(scalex=False)
 
-        self.box_overlay_lines[0].set_data(roi_deg[:, 0], roi_deg[:, 1])
-        self.box_overlay_lines[1].set_data(roi_deg[[-1, 0], 0], roi_deg[[-1, 0], 1])
+        xs = np.append(roi_deg[:, 0], roi_deg[0, 0])
+        ys = np.append(roi_deg[:, 1], roi_deg[0, 1])
+        self.box_overlay_line.set_data(xs, ys)
 
         self.main_canvas.draw()
         self.draw()
