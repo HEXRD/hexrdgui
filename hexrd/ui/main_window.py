@@ -250,6 +250,8 @@ class MainWindow(QObject):
         else:
             selected_file = selected_files[0]
 
+        path = Path(selected_file)
+
         def _load():
             path = Path(selected_file)
             HexrdConfig().working_dir = str(path.parent)
@@ -258,6 +260,12 @@ class MainWindow(QObject):
             path = path / 'config.yml'
 
             HexrdConfig().load_instrument_config(str(path))
+
+        # Check we have the config.yml
+        if not (path / 'config.yml').exists():
+            msg = 'Invalid HEXRD directory, config.yml missing.'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
 
         # We do this in a worker thread so the UI can refresh.
         worker = AsyncWorker(_load)
