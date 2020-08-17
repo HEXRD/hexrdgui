@@ -290,6 +290,16 @@ class MainWindow(QObject):
         dialog.setFileMode(QFileDialog.Directory)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
 
+        # We connect up the curentChanged signal, so we can save a listing
+        # before the QFileDialog creates a directory, so we can determine if
+        # the directory already existed, see below.
+        listing = []
+
+        def _current_changed(p):
+            nonlocal listing
+            listing = [str(p) for p in Path(p).parent.iterdir()]
+        dialog.currentChanged.connect(_current_changed)
+
         selected_files = []
         if dialog.exec():
             selected_files = dialog.selectedFiles()
@@ -298,6 +308,20 @@ class MainWindow(QObject):
             return
         else:
             selected_file = selected_files[0]
+
+        # The QFileDialog will create the directory for us. However, if
+        # the user didn't us a .hexrd suffix we need to add it, but only if is
+        # didn't exist before. This is hack to get around the fact that we
+        # can't easily stop QFileDialog from creating the directory.
+        if Path(selected_file).suffix != '.hexrd':
+            # if it wasn't in the listing before the QFileDialog, we can
+            # be pretty confident that is was create by the QFileDialog.
+            if selected_file not in listing:
+                selected_file = Path(selected_file).rename(
+                                    f'{selected_file}.hexrd')
+            # else just added the suffix
+            else:
+                selected_file = Path(selected_file).with_suffix('.hexrd')
 
         if selected_file:
             path = Path(selected_file)
