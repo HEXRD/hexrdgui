@@ -238,7 +238,7 @@ class MainWindow(QObject):
     def on_action_open_config_dir_triggered(self):
         dialog = QFileDialog(self.ui, 'Load Configuration',
                              HexrdConfig().working_dir,
-                             'HEXRD directories (*.hexrd)')
+                             'HEXRD directories (*)')
         dialog.setFileMode(QFileDialog.Directory)
 
         selected_files = []
@@ -278,7 +278,7 @@ class MainWindow(QObject):
     def on_action_save_config_dir_triggered(self):
         dialog = QFileDialog(self.ui, 'Save Configuration',
                              HexrdConfig().working_dir,
-                             'HEXRD directories (*.hexrd)')
+                             'HEXRD directories (*)')
         dialog.setFileMode(QFileDialog.Directory)
         dialog.setAcceptMode(QFileDialog.AcceptSave)
 
