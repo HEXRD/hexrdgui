@@ -1,3 +1,4 @@
+from PySide2.QtCore import Signal
 from PySide2.QtWidgets import QSizePolicy
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -8,6 +9,8 @@ import numpy as np
 
 
 class ZoomCanvas(FigureCanvas):
+
+    point_picked = Signal(object)
 
     def __init__(self, main_canvas, draw_crosshairs=True):
         self.figure = Figure()
@@ -21,6 +24,7 @@ class ZoomCanvas(FigureCanvas):
         self.draw_crosshairs = draw_crosshairs
 
         self.axes_images = None
+        self.frozen = False
 
         # Set up the box overlay lines
         ax = self.main_canvas.axis
@@ -36,6 +40,8 @@ class ZoomCanvas(FigureCanvas):
     def setup_connections(self):
         self.mne_id = self.main_canvas.mpl_connect('motion_notify_event',
                                                    self.mouse_moved)
+        self.bp_id = self.mpl_connect('button_press_event',
+                                      self.button_pressed)
 
     def __del__(self):
         self.cleanup()
@@ -63,6 +69,13 @@ class ZoomCanvas(FigureCanvas):
             self.crosshairs.remove()
             self.crosshairs = None
 
+    def button_pressed(self, event):
+        if event.button != 1:
+            # Don't do anything if it isn't a left click
+            return
+
+        self.point_picked.emit(event)
+
     def mouse_moved(self, event):
         if event.inaxes is None:
             # Do nothing...
@@ -70,6 +83,10 @@ class ZoomCanvas(FigureCanvas):
 
         if not event.inaxes.get_images():
             # Image is over intensity plot. Do nothing...
+            return
+
+        if self.frozen:
+            # Do not render if frozen
             return
 
         self.xdata = event.xdata

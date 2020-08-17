@@ -52,6 +52,8 @@ class LinePickerDialog(QObject):
         self.linebuilder = None
         self.lines = []
 
+        self.two_click_mode = False
+
         self.zoom_canvas = ZoomCanvas(canvas)
         self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
         self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
@@ -72,8 +74,10 @@ class LinePickerDialog(QObject):
         self.ui.back_button.pressed.connect(self.back_button_pressed)
         self.point_picked.connect(self.update_enable_states)
         self.last_point_removed.connect(self.update_enable_states)
+        self.ui.two_click_mode.toggled.connect(self.two_click_mode_changed)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
+        self.zoom_canvas.point_picked.connect(self.zoom_point_picked)
 
     def update_enable_states(self):
         linebuilder = self.linebuilder
@@ -98,9 +102,6 @@ class LinePickerDialog(QObject):
         while self.lines:
             self.lines.pop(0).remove()
 
-        if self.linebuilder:
-            self.linebuilder.disconnect()
-
         self.linebuilder = None
         self.cursor = None
 
@@ -115,6 +116,15 @@ class LinePickerDialog(QObject):
         self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
         self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
         self.zoom_canvas.render()
+
+    def zoom_point_picked(self, event):
+        self.zoom_frozen = False
+        lb = self.linebuilder
+        if lb is None:
+            return
+
+        # Forward the event to the line builder
+        lb.handle_left_click(event)
 
     def back_button_pressed(self):
         linebuilder = self.linebuilder
@@ -131,6 +141,10 @@ class LinePickerDialog(QObject):
         linebuilder.update_line_data()
 
         self.last_point_removed.emit()
+
+    def two_click_mode_changed(self, on):
+        self.two_click_mode = on
+        self.zoom_frozen = False
 
     def start(self):
         if self.canvas.mode != ViewType.polar:
@@ -178,7 +192,6 @@ class LinePickerDialog(QObject):
             # Don't do anything if there is no ring data
             return
 
-        linebuilder.disconnect()
         self.ring_data.append(ring_data)
         self.add_line()
 
@@ -186,6 +199,18 @@ class LinePickerDialog(QObject):
         if event.button == 3 and not self.single_line_mode:
             self.line_completed.emit()
             self.line_finished()
+            return
+
+        if event.button == 1 and self.two_click_mode:
+            self.zoom_frozen = True
+            return
+
+        lb = self.linebuilder
+        if lb is None:
+            return
+
+        # Forward the event to the line builder
+        lb.button_pressed(event)
 
     def accept(self):
         # Finish the current line
@@ -204,6 +229,14 @@ class LinePickerDialog(QObject):
     def show(self):
         self.ui.show()
 
+    @property
+    def zoom_frozen(self):
+        return self.zoom_canvas.frozen
+
+    @zoom_frozen.setter
+    def zoom_frozen(self, v):
+        self.zoom_canvas.frozen = v
+
 
 class LineBuilder(QObject):
 
@@ -217,18 +250,8 @@ class LineBuilder(QObject):
         self.canvas = line.figure.canvas
         self.xs = list(line.get_xdata())
         self.ys = list(line.get_ydata())
-        self.cid = self.canvas.mpl_connect('button_press_event', self)
 
-    def __del__(self):
-        self.disconnect()
-
-    def disconnect(self):
-        if self.cid is not None:
-            # Disconnect the signal
-            self.canvas.mpl_disconnect(self.cid)
-            self.cid = None
-
-    def __call__(self, event):
+    def button_pressed(self, event):
         """
         Picker callback
         """

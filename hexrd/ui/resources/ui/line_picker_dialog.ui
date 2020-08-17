@@ -114,6 +114,16 @@
      <item row="3" column="0" colspan="2">
       <layout class="QVBoxLayout" name="zoom_canvas_layout"/>
      </item>
+     <item row="6" column="0">
+      <widget class="QCheckBox" name="two_click_mode">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If enabled, upon the first click on the main canvas, the zoom will be frozen, and then the user will click on the zoom canvas for the point to be added.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Two click mode</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -128,6 +138,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>zoom_tth_width</tabstop>
+  <tabstop>zoom_eta_width</tabstop>
+  <tabstop>two_click_mode</tabstop>
+  <tabstop>back_button</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
