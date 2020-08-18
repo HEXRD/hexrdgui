@@ -1,0 +1,15 @@
+beam:
+  energy: 71.6764
+  vector: {azimuth: 90.0, polar_angle: 90.0}
+detectors:
+  default:
+    pixels:
+      columns: 3750
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+oscillation_stage:
+  chi: 0.0
+  translation: [0.0, 0.0, 0.0]

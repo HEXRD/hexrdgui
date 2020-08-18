@@ -266,6 +266,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 self.get_dark_op(ops, dark_images[key])
             if 'trans' in self.state:
                 self.get_flip_op(ops, idx)
+            if 'rect' in self.state:
+                ops.append(('rectangle', self.state['rect'][idx]))
 
             frames = self.get_range(ims_dict[key])
             ims_dict[key] = imageseries.process.ProcessedImageSeries(

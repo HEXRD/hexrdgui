@@ -180,7 +180,7 @@
      <item>
       <widget class="QToolBox" name="config_tool_box">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="materials_page">
         <property name="geometry">

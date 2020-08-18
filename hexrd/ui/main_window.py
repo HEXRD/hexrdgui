@@ -23,10 +23,12 @@ from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
 from hexrd.ui.create_polar_mask import create_polar_mask
+from hexrd.ui.constants import ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
@@ -52,6 +54,7 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
+        self.workflow_widgets = {'HEDM': [], 'LLNL': []}
 
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
@@ -76,6 +79,14 @@ class MainWindow(QObject):
         self.load_widget = LoadPanel(self.ui)
         self.ui.load_page.setLayout(QVBoxLayout())
         self.ui.load_page.layout().addWidget(self.load_widget.ui)
+        self.load_widget.ui.setVisible(False)
+        self.workflow_widgets[WORKFLOW_HEDM].append(self.load_widget.ui)
+
+        self.import_data_widget = ImportDataPanel(self.ui)
+        self.ui.load_page.setLayout(QVBoxLayout())
+        self.ui.load_page.layout().addWidget(self.import_data_widget.ui)
+        self.import_data_widget.ui.setVisible(False)
+        self.workflow_widgets[WORKFLOW_LLNL].append(self.import_data_widget.ui)
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
@@ -95,6 +106,8 @@ class MainWindow(QObject):
         self.setup_connections()
 
         self.update_config_gui()
+
+        self.add_workflow_widgets()
 
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
@@ -167,6 +180,8 @@ class MainWindow(QObject):
         self.calibration_slider_widget.update_if_mode_matches.connect(
             self.update_if_mode_matches)
         self.load_widget.images_loaded.connect(self.images_loaded)
+        self.import_data_widget.new_config_loaded.connect(
+            self.update_config_gui)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -180,6 +195,7 @@ class MainWindow(QObject):
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
+        HexrdConfig().workflow_changed.connect(self.add_workflow_widgets)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -195,6 +211,14 @@ class MainWindow(QObject):
 
     def show(self):
         self.ui.show()
+
+    def add_workflow_widgets(self):
+        current_workflow = HexrdConfig().workflow
+        for key in self.workflow_widgets.keys():
+            visible = True if key == current_workflow else False
+            for widget in self.workflow_widgets[key]:
+                widget.setVisible(visible)
+
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -373,10 +397,13 @@ class MainWindow(QObject):
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_files[0])[1]
-            if (ImageFileManager().is_hdf5(ext) and not
+            if (ImageFileManager().is_hdf(ext) and not
                     ImageFileManager().path_exists(selected_files[0])):
 
-                ImageFileManager().path_prompt(selected_files[0])
+                selection = ImageFileManager().path_prompt(selected_files[0])
+                if not selection:
+                    return
+
             dialog = LoadImagesDialog(files, manual, self.ui)
 
             if dialog.exec_():
