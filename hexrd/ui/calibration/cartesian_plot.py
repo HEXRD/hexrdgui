@@ -58,9 +58,10 @@ class InstrumentViewer:
     def extent(self):
         # We might want to use self.dpanel.col_edge_vec and
         # self.dpanel.row_edge_vec here instead.
+        # !!! recall that extents are (left, right, bottom, top)
         x_lim = self.dpanel.col_dim / 2
         y_lim = self.dpanel.row_dim / 2
-        return -x_lim, x_lim, y_lim, -y_lim
+        return -x_lim, x_lim, -y_lim, y_lim
 
     def update_overlay_data(self):
         if not HexrdConfig().show_overlays:
