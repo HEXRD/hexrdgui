@@ -13,8 +13,9 @@ def apply_raw_mask(imageseries):
         masked_ims = [None for i in range(len(ims))]
         for idx in range(len(ims)):
             img = copy.copy(ims[idx])
-            masked_img = _create_raw_mask(img, comparison, value)
+            masked_img, mask = _create_raw_mask(img, comparison, value)
             masked_ims[idx] = masked_img
+            HexrdConfig().set_threshold_mask(mask)
         HexrdConfig().imageseries_dict[det] = masked_ims
 
 
@@ -31,4 +32,4 @@ def _create_raw_mask(img, comparison, value):
     elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
         mask = (img == value)
     img[mask] = 0
-    return img
+    return img, mask

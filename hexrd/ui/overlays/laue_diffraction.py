@@ -107,10 +107,6 @@ class LaueSpotOverlay:
                     data = panel.cartToPixel(data)
                     # Swap x and y, they are flipped
                     data[:, [0, 1]] = data[:, [1, 0]]
-                else:
-                    # I'm not sure why, but the y axis is flipped for
-                    # Cartesian...
-                    data[:, 1] = -data[:, 1]
 
                 point_groups[det_key]['spots'] = data
                 point_groups[det_key]['ranges'] = self.range_data(
@@ -138,11 +134,18 @@ class LaueSpotOverlay:
 
         return ranges
 
-    @staticmethod
-    def range_data(range_corners, display_mode, panel):
+    @property
+    def tvec_c(self):
+        if self.crystal_params is None:
+            return None
+        return self.crystal_params[3:6].reshape(3, 1)
+
+    def range_data(self, range_corners, display_mode, panel):
         # This function is only for raw and cartesian views
         if not range_corners:
             return []
+
+        tvec_c = self.tvec_c
 
         # The range data is curved for raw and cartesian.
         # Get more intermediate points so the data reflects this.
@@ -151,14 +154,12 @@ class LaueSpotOverlay:
             data = []
             for i in range(len(corners) - 1):
                 tmp = np.linspace(corners[i], corners[i + 1])
-                data.extend(panel.angles_to_cart(tmp))
+                data.extend(panel.angles_to_cart(tmp, tvec_c=tvec_c))
 
             data = np.array(data)
             if display_mode == ViewType.raw:
                 data = panel.cartToPixel(data)
                 data[:, [0, 1]] = data[:, [1, 0]]
-            elif display_mode == ViewType.cartesian:
-                data[:, 1] = -data[:, 1]
 
             results.append(data)
 

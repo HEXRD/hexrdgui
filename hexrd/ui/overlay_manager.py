@@ -1,5 +1,7 @@
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
-from PySide2.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QWidget
+from PySide2.QtWidgets import (
+    QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QWidget
+)
 
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -63,6 +65,8 @@ class OverlayManager:
             raise Exception(f'Unknown material: {v}')
 
         cb = QComboBox(self.ui.table)
+        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        cb.setSizePolicy(size_policy)
         for mat in materials:
             cb.addItem(mat, mat)
 
@@ -77,6 +81,8 @@ class OverlayManager:
             raise Exception(f'Unknown type: {v}')
 
         cb = QComboBox(self.ui.table)
+        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        cb.setSizePolicy(size_policy)
         for type in types:
             cb.addItem(self.format_type(type), type.value)
 

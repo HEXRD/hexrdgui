@@ -1,7 +1,7 @@
 import os
+from pathlib import Path
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
-from PySide2.QtGui import QIcon, QPixmap
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
     QVBoxLayout
@@ -31,14 +31,14 @@ from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
+from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui import resource_loader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
-import hexrd.ui.resources.icons
+
 
 
 class MainWindow(QObject):
@@ -46,15 +46,15 @@ class MainWindow(QObject):
     # Emitted when new images are loaded
     new_images_loaded = Signal()
 
+    # Emitted when a new mask is added
+    new_mask_added = Signal()
+
     def __init__(self, parent=None, image_files=None):
         super(MainWindow, self).__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
         self.workflow_widgets = {'HEDM': [], 'LLNL': []}
-
-        # Load the icon
-        self.load_icon()
 
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
@@ -101,6 +101,8 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.addTab(
             self.calibration_slider_widget.ui, tab_texts[2])
 
+        self.mask_manager_dialog = MaskManagerDialog(self.ui)
+
         self.setup_connections()
 
         self.update_config_gui()
@@ -124,10 +126,14 @@ class MainWindow(QObject):
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
-        self.ui.action_open_config.triggered.connect(
-            self.on_action_open_config_triggered)
-        self.ui.action_save_config.triggered.connect(
-            self.on_action_save_config_triggered)
+        self.ui.action_open_config_yaml.triggered.connect(
+            self.on_action_open_config_yaml_triggered)
+        self.ui.action_open_config_dir.triggered.connect(
+            self.on_action_open_config_dir_triggered)
+        self.ui.action_save_config_yaml.triggered.connect(
+            self.on_action_save_config_yaml_triggered)
+        self.ui.action_save_config_dir.triggered.connect(
+            self.on_action_save_config_dir_triggered)
         self.ui.action_open_materials.triggered.connect(
             self.on_action_open_materials_triggered)
         self.ui.action_save_imageseries.triggered.connect(
@@ -146,6 +152,8 @@ class MainWindow(QObject):
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
             self.on_action_transform_detectors_triggered)
+        self.ui.action_open_mask_manager.triggered.connect(
+            self.on_action_open_mask_manager_triggered)
         self.ui.action_show_live_updates.toggled.connect(
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
@@ -195,12 +203,11 @@ class MainWindow(QObject):
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
 
-    def load_icon(self):
-        icon = resource_loader.load_resource(hexrd.ui.resources.icons,
-                                             'hexrd.ico', binary=True)
-        pixmap = QPixmap()
-        pixmap.loadFromData(icon, 'ico')
-        self.ui.setWindowIcon(QIcon(pixmap))
+        self.mask_manager_dialog.update_masks.connect(self.update_all)
+        self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
+
+    def set_icon(self, icon):
+        self.ui.setWindowIcon(icon)
 
     def show(self):
         self.ui.show()
@@ -230,24 +237,115 @@ class MainWindow(QObject):
                                            self.materials_panel.ui,
                                            'Materials')
 
-    def on_action_open_config_triggered(self):
+    def on_action_open_config_yaml_triggered(self):
+
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Configuration', HexrdConfig().working_dir,
             'YAML files (*.yml)')
 
         if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
-            HexrdConfig().load_instrument_config(selected_file)
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            HexrdConfig().load_instrument_config(str(path))
             self.update_config_gui()
 
-    def on_action_save_config_triggered(self):
+    def on_action_open_config_dir_triggered(self):
+        dialog = QFileDialog(self.ui, 'Load Configuration',
+                             HexrdConfig().working_dir,
+                             'HEXRD directories (*)')
+        dialog.setFileMode(QFileDialog.Directory)
+
+        selected_files = []
+        if dialog.exec_():
+            selected_files = dialog.selectedFiles()
+
+        if len(selected_files) == 0:
+            return
+        else:
+            selected_file = selected_files[0]
+
+        path = Path(selected_file)
+
+        def _load():
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            # Opening a .hexrd directory, so point to config.yml
+            path = path / 'config.yml'
+
+            HexrdConfig().load_instrument_config(str(path))
+
+        # Check we have the config.yml
+        if not (path / 'config.yml').exists():
+            msg = 'Invalid HEXRD directory, config.yml missing.'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        # We do this in a worker thread so the UI can refresh.
+        worker = AsyncWorker(_load)
+        worker.signals.finished.connect(self.update_config_gui)
+
+        self.thread_pool.start(worker)
+
+    def on_action_save_config_yaml_triggered(self):
+
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Configuration', HexrdConfig().working_dir,
             'YAML files (*.yml)')
 
         if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
             return HexrdConfig().save_instrument_config(selected_file)
+
+    def on_action_save_config_dir_triggered(self):
+        dialog = QFileDialog(self.ui, 'Save Configuration',
+                             HexrdConfig().working_dir,
+                             'HEXRD directories (*)')
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+
+        # We connect up the curentChanged signal, so we can save a listing
+        # before the QFileDialog creates a directory, so we can determine if
+        # the directory already existed, see below.
+        listing = []
+
+        def _current_changed(p):
+            nonlocal listing
+            listing = [str(p) for p in Path(p).parent.iterdir()]
+        dialog.currentChanged.connect(_current_changed)
+
+        selected_files = []
+        if dialog.exec():
+            selected_files = dialog.selectedFiles()
+
+        if len(selected_files) == 0:
+            return
+        else:
+            selected_file = selected_files[0]
+
+        # The QFileDialog will create the directory for us. However, if
+        # the user didn't us a .hexrd suffix we need to add it, but only if is
+        # didn't exist before. This is hack to get around the fact that we
+        # can't easily stop QFileDialog from creating the directory.
+        if Path(selected_file).suffix != '.hexrd':
+            # if it wasn't in the listing before the QFileDialog, we can
+            # be pretty confident that is was create by the QFileDialog.
+            if selected_file not in listing:
+                selected_file = Path(selected_file).rename(
+                                    f'{selected_file}.hexrd')
+            # else just added the suffix
+            else:
+                selected_file = Path(selected_file).with_suffix('.hexrd')
+
+        if selected_file:
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            path.mkdir(parents=True, exist_ok=True)
+            path = path / 'config.yml'
+
+            return HexrdConfig().save_instrument_config(str(path))
 
     def on_detectors_changed(self):
         HexrdConfig().clear_overlay_data()
@@ -310,6 +408,11 @@ class MainWindow(QObject):
 
             if dialog.exec_():
                 detector_names, image_files = dialog.results()
+                image_files = [img for f in files for img in f]
+                files = [[] for det in HexrdConfig().detector_names]
+                for d, f in zip(detector_names, image_files):
+                    pos = HexrdConfig().detector_names.index(d)
+                    files[pos].append(f)
                 ImageLoadManager().read_data(files, parent=self.ui)
                 self.images_loaded()
 
@@ -443,6 +546,7 @@ class MainWindow(QObject):
         # We currently don't have any progress updates, so make the
         # progress bar indeterminate.
         self.progress_dialog.setRange(0, 0)
+        self.progress_dialog.setWindowTitle('Calibration Running')
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_line_picked_calibration)
@@ -515,6 +619,7 @@ class MainWindow(QObject):
 
     def run_apply_polar_mask(self, line_data):
         HexrdConfig().polar_masks_line_data.append(line_data.copy())
+        self.new_mask_added.emit()
         self.update_all()
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -543,6 +648,7 @@ class MainWindow(QObject):
             return
 
         HexrdConfig().polar_masks_line_data.append(data)
+        self.new_mask_added.emit()
         self.update_all()
 
     def on_action_edit_reset_instrument_config(self):
@@ -591,6 +697,7 @@ class MainWindow(QObject):
         # We currently don't have any progress updates, so make the
         # progress bar indeterminate.
         self.progress_dialog.setRange(0, 0)
+        self.progress_dialog.setWindowTitle('Calibration Running')
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_powder_calibration)
@@ -704,7 +811,7 @@ class MainWindow(QObject):
         self.ui.status_bar.showMessage(msg)
 
     def on_action_transform_detectors_triggered(self):
-        mask_state = HexrdConfig().threshold_mask
+        mask_state = HexrdConfig().threshold_mask_status
         self.image_mode_widget.reset_masking()
         td = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
@@ -722,3 +829,6 @@ class MainWindow(QObject):
             series = next(iter(image_series_dict.values()))
             enabled = len(series) > 1
         self.ui.action_run_indexing.setEnabled(enabled)
+
+    def on_action_open_mask_manager_triggered(self):
+        self.mask_manager_dialog.show()

@@ -8,6 +8,8 @@ import yaml
 
 import hexrd.imageseries.save
 from hexrd.rotations import RotMatEuler
+from hexrd.config.loader import NumPyIncludeLoader
+from hexrd.config.dumper import NumPyIncludeDumper
 
 from hexrd.ui import constants
 from hexrd.ui import overlays
@@ -101,6 +103,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
+
+    """Emitted when the threshold mask status changes"""
+    threshold_mask_changed = Signal(bool)
 
     def __init__(self):
         # Should this have a parent?
@@ -364,7 +369,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def load_instrument_config(self, yml_file):
         old_detectors = self.detector_names
         with open(yml_file, 'r') as f:
-            self.config['instrument'] = yaml.load(f, Loader=yaml.FullLoader)
+            self.config['instrument'] = yaml.load(f, Loader=NumPyIncludeLoader)
 
         eac = self.euler_angle_convention
         if eac is not None:
@@ -409,7 +414,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             utils.convert_tilt_convention(default, eac, None)
 
         with open(output_file, 'w') as f:
-            yaml.dump(default, f)
+            yaml.dump(default, f, Dumper=NumPyIncludeDumper)
 
     def load_materials(self, f):
         with open(f, 'rb') as rf:
@@ -1324,9 +1329,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self._threshold_data['value'] = 0.0
         return self._threshold_data['value']
 
+    def threshold_mask_status(self):
+        if 'mask_status' not in self._threshold_data:
+            self._threshold_data['mask_status'] = False
+        return self._threshold_data['mask_status']
+
     def threshold_mask(self):
         if 'mask' not in self._threshold_data:
-            self._threshold_data['mask'] = False
+            self._threshold_data['mask'] = None
         return self._threshold_data['mask']
 
     def set_threshold_comparison(self, v):
@@ -1335,12 +1345,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_threshold_value(self, v):
         self._threshold_data['value'] = v
 
-    def set_threshold_mask(self, v):
-        self._threshold_data['mask'] = v
+    def set_threshold_mask_status(self, v):
+        self._threshold_data['mask_status'] = v
+        self.threshold_mask_changed.emit(v)
+
+    def set_threshold_mask(self, m):
+        self._threshold_data['mask'] = m
 
     threshold_comparison = property(threshold_comparison,
                                     set_threshold_comparison)
     threshold_value = property(threshold_value,
                                set_threshold_value)
+    threshold_mask_status = property(threshold_mask_status,
+                                     set_threshold_mask_status)
     threshold_mask = property(threshold_mask,
                               set_threshold_mask)
