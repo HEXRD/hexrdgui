@@ -102,9 +102,8 @@ class InstrumentViewer:
         corners = [[y, x] for x, y in corners]
         corners = self.dpanel.pixelToCart(corners)
 
-        # y is negative for some reason. I am not sure why right now.
         x_vals = [x[0] for x in corners]
-        y_vals = [-x[1] for x in corners]
+        y_vals = [x[1] for x in corners]
 
         if x_vals and y_vals:
             # Double each set of points.
@@ -121,7 +120,7 @@ class InstrumentViewer:
             # If there are points outside the frame, move them inside.
             extent = self.extent
             x_range = (extent[0], extent[1])
-            y_range = (extent[3], extent[2])
+            y_range = (extent[2], extent[3])
 
             def out_of_frame(p):
                 # Check if point p is out of the frame
