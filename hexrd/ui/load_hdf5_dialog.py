@@ -26,7 +26,7 @@ class LoadHDF5Dialog:
     except (Exception, IOError) as error:
       msg = ('ERROR - This installation does not support '
               + 'this file type.')
-      QMessageBox.warning(None, 'HEXRD', msg)
+      QMessageBox.warning(self.ui, 'HEXRD', msg)
 
   def get_HDF5_paths(self, f):
     img = h5py.File(f, 'r')
