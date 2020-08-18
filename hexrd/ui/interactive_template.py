@@ -16,6 +16,9 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
 
+    def update_image(self, img):
+        self.img = img
+
     def create_shape(self, module, file_name):
         with resource_loader.resource_path(module, file_name) as f:
             verts = np.loadtxt(f)
