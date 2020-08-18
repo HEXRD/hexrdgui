@@ -25,6 +25,7 @@ requirements:
     - fabio
     - pyyaml
     - hexrd
+    - pyhdf
 
 test:
   imports:
