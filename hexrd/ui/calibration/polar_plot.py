@@ -36,6 +36,9 @@ class InstrumentViewer:
     def angular_grid(self):
         return self.pv.angular_grid
 
+    def update_angular_grid(self):
+        self.pv.update_angular_grid()
+
     def draw_polar(self):
         """show polar view of rings"""
         self.pv = PolarView(self.instr)
