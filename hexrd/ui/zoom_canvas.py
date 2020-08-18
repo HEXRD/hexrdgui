@@ -118,7 +118,7 @@ class ZoomCanvas(FigureCanvas):
         i_row = pv.eta_to_pixel(np.radians(roi_deg[:, 1]))
         j_col = pv.tth_to_pixel(np.radians(roi_deg[:, 0]))
 
-        # Convert to intgers
+        # Convert to integers
         i_row = np.round(i_row).astype(int)
         j_col = np.round(j_col).astype(int)
 
