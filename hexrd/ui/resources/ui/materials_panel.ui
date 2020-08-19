@@ -180,16 +180,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="hide_all">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hide all material overlays&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Hide All</string>
-       </property>
-      </widget>
-     </item>
      <item row="4" column="2" colspan="2">
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -317,7 +307,6 @@
   <tabstop>show_materials_table</tabstop>
   <tabstop>show_overlay_manager</tabstop>
   <tabstop>show_overlays</tabstop>
-  <tabstop>hide_all</tabstop>
   <tabstop>enable_width</tabstop>
   <tabstop>tth_width</tabstop>
   <tabstop>limit_active</tabstop>

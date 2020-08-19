@@ -79,8 +79,6 @@ class MaterialsPanel(QObject):
         self.ui.min_d_spacing.valueChanged.connect(
             self.on_min_d_spacing_changed)
 
-        self.ui.hide_all.pressed.connect(self.hide_all_overlays)
-
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
         self.ui.enable_width.toggled.connect(self.update_enable_states)
@@ -247,17 +245,6 @@ class MaterialsPanel(QObject):
         old_name = HexrdConfig().active_material_name
         HexrdConfig().rename_material(old_name, new_name)
         self.update_gui_from_config()
-
-    def hide_all_overlays(self):
-        for overlay in HexrdConfig().overlays:
-            overlay['visible'] = False
-
-        # If there's an overlay manager, update it
-        if hasattr(self, '_overlay_manager'):
-            self._overlay_manager.update_table()
-
-        self.update_gui_from_config()
-        HexrdConfig().overlay_config_changed.emit()
 
     def show_materials_table(self):
         self.materials_table.show()
