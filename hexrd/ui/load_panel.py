@@ -240,7 +240,7 @@ class LoadPanel(QObject):
         # Select the path if the file(s) are HDF5
         if (ImageFileManager().is_hdf(self.ext) and not
                 ImageFileManager().path_exists(selected_files[0])):
-            if ImageFileManager().path_prompt(selected_files[0]) is not None:
+            if ImageFileManager().path_prompt(selected_files[0]) is None:
                 return
 
         tmp_ims = []

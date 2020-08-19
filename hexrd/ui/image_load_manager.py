@@ -90,7 +90,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 search.append(f)
             else:
                 for d in dets:
-                    search.append(d.join(f.rsplit(files[0], 1)))
+                    search.append(d.join(f.rsplit(files[0])))
         files = self.match_selected_files(fnames, search)
         if not self.check_success(files):
             # Look in sibling directories if the matching files were not
