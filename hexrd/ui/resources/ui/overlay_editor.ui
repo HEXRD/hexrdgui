@@ -23,8 +23,8 @@
    <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
 </string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" colspan="2">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
     <widget class="QTabWidget" name="tab_widget">
      <property name="minimumSize">
       <size>
@@ -39,16 +39,9 @@
       <attribute name="title">
        <string>Powder</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>No Custom Settings for Powder</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="powder_overlay_editor_layout"/>
        </item>
       </layout>
      </widget>
@@ -74,7 +67,7 @@
      </widget>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

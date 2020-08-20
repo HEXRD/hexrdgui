@@ -1,4 +1,5 @@
 from hexrd.ui.laue_overlay_editor import LaueOverlayEditor
+from hexrd.ui.powder_overlay_editor import PowderOverlayEditor
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -8,8 +9,11 @@ class OverlayEditor:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_editor.ui', parent)
 
-        self.laue_overlay_editor = LaueOverlayEditor(self.ui)
+        self.powder_overlay_editor = PowderOverlayEditor(self.ui)
+        self.ui.powder_overlay_editor_layout.addWidget(
+            self.powder_overlay_editor.ui)
 
+        self.laue_overlay_editor = LaueOverlayEditor(self.ui)
         self.ui.laue_overlay_editor_layout.addWidget(
             self.laue_overlay_editor.ui)
 
@@ -45,7 +49,7 @@ class OverlayEditor:
     @property
     def active_widget(self):
         widgets = {
-            'powder': None,
+            'powder': self.powder_overlay_editor,
             'laue': self.laue_overlay_editor,
             'mono_rotation_series': None
         }
@@ -54,3 +58,10 @@ class OverlayEditor:
             return None
 
         return widgets[self.type.value]
+
+    def update_active_widget_gui(self):
+        w = self.active_widget
+        if w is None:
+            return
+
+        w.update_gui()

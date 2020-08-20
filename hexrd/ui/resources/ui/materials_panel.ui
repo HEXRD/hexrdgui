@@ -110,17 +110,7 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="5" column="0">
-      <widget class="QCheckBox" name="limit_active">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max 2θ or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Limit Active</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="3">
+     <item row="4" column="3">
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -134,98 +124,29 @@
       </spacer>
      </item>
      <item row="4" column="0">
-      <widget class="QCheckBox" name="enable_width">
+      <widget class="QCheckBox" name="limit_active">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the currently selected material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max 2θ or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>Enable Width</string>
+        <string>Limit Active</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QDoubleSpinBox" name="tth_width">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="show_overlays">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;2θ width for the currently selected material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="prefix">
-        <string/>
-       </property>
-       <property name="suffix">
-        <string>°</string>
-       </property>
-       <property name="decimals">
-        <number>3</number>
-       </property>
-       <property name="minimum">
-        <double>0.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>10.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.005000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.125000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="2" colspan="2">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="6" column="1">
-      <widget class="QLabel" name="min_d_spacing_label">
-       <property name="enabled">
-        <bool>false</bool>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display overlays in the canvas for each material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
-        <string>Min d-spacing:</string>
+        <string>Show Overlays</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item row="5" column="2">
-      <widget class="QDoubleSpinBox" name="max_tth">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The max 2θ for the HKLs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="suffix">
-        <string>°</string>
-       </property>
-       <property name="singleStep">
-        <double>0.100000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="2">
       <widget class="QDoubleSpinBox" name="min_d_spacing">
        <property name="enabled">
         <bool>false</bool>
@@ -247,7 +168,36 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
+     <item row="4" column="2">
+      <widget class="QDoubleSpinBox" name="max_tth">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The max 2θ for the HKLs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string>°</string>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="4">
+      <widget class="QPushButton" name="show_overlay_manager">
+       <property name="text">
+        <string>Overlay Manager</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
       <widget class="QLabel" name="max_tth_label">
        <property name="enabled">
         <bool>false</bool>
@@ -257,14 +207,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0" colspan="4">
-      <widget class="QPushButton" name="show_materials_table">
-       <property name="text">
-        <string>Materials Table</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="3">
+     <item row="5" column="3">
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -277,23 +220,20 @@
        </property>
       </spacer>
      </item>
-     <item row="2" column="0">
-      <widget class="QCheckBox" name="show_overlays">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display overlays in the canvas for each material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <item row="5" column="1">
+      <widget class="QLabel" name="min_d_spacing_label">
+       <property name="enabled">
+        <bool>false</bool>
        </property>
        <property name="text">
-        <string>Show Overlays</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
+        <string>Min d-spacing:</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="0" colspan="4">
-      <widget class="QPushButton" name="show_overlay_manager">
+     <item row="0" column="0" colspan="4">
+      <widget class="QPushButton" name="show_materials_table">
        <property name="text">
-        <string>Overlay Manager</string>
+        <string>Materials Table</string>
        </property>
       </widget>
      </item>
@@ -307,8 +247,6 @@
   <tabstop>show_materials_table</tabstop>
   <tabstop>show_overlay_manager</tabstop>
   <tabstop>show_overlays</tabstop>
-  <tabstop>enable_width</tabstop>
-  <tabstop>tth_width</tabstop>
   <tabstop>limit_active</tabstop>
   <tabstop>max_tth</tabstop>
   <tabstop>min_d_spacing</tabstop>

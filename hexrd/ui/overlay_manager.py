@@ -181,6 +181,9 @@ class OverlayManager:
                 overlay['material'] = w.currentData()
                 overlay['update_needed'] = True
 
+                # In case the active widget depends on material settings
+                self.overlay_editor.update_active_widget_gui()
+
         HexrdConfig().overlay_config_changed.emit()
 
     def update_config_types(self):

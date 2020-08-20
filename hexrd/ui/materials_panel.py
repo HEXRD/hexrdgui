@@ -1,6 +1,5 @@
 import copy
 import math
-import numpy as np
 
 from PySide2.QtCore import QObject, QSignalBlocker, Qt
 from PySide2.QtGui import QFocusEvent, QKeyEvent
@@ -67,11 +66,6 @@ class MaterialsPanel(QObject):
         self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
 
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
-        self.ui.enable_width.toggled.connect(
-            HexrdConfig().set_tth_width_enabled)
-        self.ui.tth_width.valueChanged.connect(
-            lambda v: HexrdConfig().set_active_material_tth_width(
-                np.radians(v)))
 
         self.ui.limit_active.toggled.connect(
             HexrdConfig().set_limit_active_rings)
@@ -81,15 +75,11 @@ class MaterialsPanel(QObject):
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
-        self.ui.enable_width.toggled.connect(self.update_enable_states)
         self.ui.limit_active.toggled.connect(self.update_enable_states)
         self.ui.limit_active.toggled.connect(self.update_material_limits)
         self.ui.limit_active.toggled.connect(self.update_table)
 
     def update_enable_states(self):
-        enable_width = self.ui.enable_width.isChecked()
-        self.ui.tth_width.setEnabled(enable_width)
-
         limit_active = self.ui.limit_active.isChecked()
         self.ui.max_tth.setEnabled(limit_active)
         self.ui.min_d_spacing.setEnabled(limit_active)
@@ -136,8 +126,6 @@ class MaterialsPanel(QObject):
             self.material_editor_widget,
             self.ui.materials_combo,
             self.ui.show_overlays,
-            self.ui.enable_width,
-            self.ui.tth_width,
             self.ui.min_d_spacing,
             self.ui.max_tth,
             self.ui.limit_active
@@ -158,11 +146,6 @@ class MaterialsPanel(QObject):
         self.ui.materials_combo.setCurrentIndex(
             materials_keys.index(HexrdConfig().active_material_name))
         self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
-        self.ui.enable_width.setChecked(HexrdConfig().tth_width_enabled)
-
-        width = HexrdConfig().active_material_tth_width
-        width = width if width else HexrdConfig().backup_tth_width
-        self.ui.tth_width.setValue(np.degrees(width))
 
         self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
 
