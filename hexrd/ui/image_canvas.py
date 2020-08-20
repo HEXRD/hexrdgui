@@ -465,10 +465,17 @@ class ImageCanvas(FigureCanvas):
             # scale.
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(grid[:2, 0])
-                self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
+                self.axes_images.append(self.axis.imshow(img, extent=extent,
+                                                         cmap=self.cmap,
                                                          norm=self.norm,
                                                          picker=True,
                                                          interpolation='none'))
+                self.axis.axis('auto')
+                # Do not allow the axis to autoscale, which could happen if
+                # overlays are drawn out-of-bounds
+                self.axis.autoscale(False)
+                self.axis.set_ylabel(r'$\eta$ (deg)')
+                self.axis.label_outer()
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
@@ -482,34 +489,13 @@ class ImageCanvas(FigureCanvas):
                 self.azimuthal_line_artist, = axis.plot(tth,
                                                         np.sum(img, axis=0))
 
-                # Let the axes rescale one time
-                axis.autoscale_view()
-
-                # Turn off autoscale so modifying the rings does not
-                # rescale the y axis.
-                axis.autoscale(False)
-
-                self.axis.set_ylabel(r'$\eta$ (deg)')
-
                 self.azimuthal_integral_axis = axis
+                axis.set_xlabel(r'2$\theta$ (deg)')
+                axis.set_ylabel(r'Azimuthal Integration')
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
 
-            # These need to be set every time for some reason
-            self.axis.label_outer()
-            axis.set_xlabel(r'2$\theta$ (deg)')
-            axis.set_ylabel(r'Azimuthal Integration')
-
-            # If the x limits are outside what the user set,
-            # modify them.
-            x_min = HexrdConfig().polar_res_tth_min
-            x_max = HexrdConfig().polar_res_tth_max
-            xlim = axis.get_xlim()
-            if xlim[0] < x_min:
-                axis.set_xlim(left=x_min)
-            if xlim[1] > x_max:
-                axis.set_xlim(right=x_max)
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -523,13 +509,9 @@ class ImageCanvas(FigureCanvas):
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
-        # We must adjust the extent of the image
         if rescale_image:
-            self.axes_images[0].set_extent(extent)
             self.axis.relim()
             self.axis.autoscale_view()
-            self.axis.axis('auto')
-            self.axis.autoscale(False)
             self.figure.tight_layout()
 
         self.update_overlays()
@@ -568,10 +550,8 @@ class ImageCanvas(FigureCanvas):
         line.set_data(tth, np.sum(self.iviewer.img, axis=0))
 
         # Rescale the axes for the new data
-        # All three of these are required
         axis.relim()
-        axis.autoscale_view()
-        axis.axis('auto')
+        axis.autoscale_view(scalex=False)
 
     def on_detector_transform_modified(self, det):
         if self.mode not in [ViewType.cartesian, ViewType.polar]:
