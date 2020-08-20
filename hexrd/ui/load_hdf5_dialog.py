@@ -11,10 +11,11 @@ class LoadHDF5Dialog:
     self.file = f
     self.paths = []
 
-    self.get_paths(f)
-
     loader = UiLoader()
     self.ui = loader.load_file('load_hdf5_dialog.ui', parent)
+
+    self.get_paths(f)
+
     self.create_list()
 
   def get_HDF4_paths(self, f):
