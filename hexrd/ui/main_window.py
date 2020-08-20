@@ -389,7 +389,8 @@ class MainWindow(QObject):
             if not files:
                 return
 
-            if len(files[0]) > 1:
+            if (any(len(f) != 1 for f in files)
+                    or len(files) < len(HexrdConfig().detector_names)):
                 msg = ('Number of files must match number of detectors: ' +
                        str(len(HexrdConfig().detector_names)))
                 QMessageBox.warning(self.ui, 'HEXRD', msg)

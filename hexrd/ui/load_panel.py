@@ -310,6 +310,13 @@ class LoadPanel(QObject):
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
+
+        if len(self.files) % len(HexrdConfig().detector_names) != 0:
+            msg = ('Please select at least one file for each detector.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.files = []
+            return
+
         if manual:
             dialog = LoadImagesDialog(self.files, manual, self.ui.parent())
             if not dialog.exec_():
