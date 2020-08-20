@@ -69,7 +69,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         dets = HexrdConfig().detector_names
         files = [[] for i in range(len(dets))]
         for fname in fnames:
-            matches = [i for i, det in enumerate(dets) if det in fname]
+            path, f = os.path.split(fname)
+            matches = [i for i, det in enumerate(dets) if det in f]
             if matches:
                 idx = matches[0]
                 files[idx].append(fname)
@@ -85,20 +86,23 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # /home/user/images/Ruby_line_ff_000017_*.npz
         search = []
         for f in fnames:
-            files = [det for det in dets if det in f]
+            path, fname = os.path.split(f)
+            files = [det for det in dets if det in fname]
             if not files:
-                search.append(f)
+                search.append('/'.join([path, fname]))
             else:
                 for d in dets:
-                    search.append(d.join(f.rsplit(files[0])))
+                    next_file = d.join(fname.rsplit(files[0]))
+                    search.append('/'.join([path, next_file]))
         files = self.match_selected_files(fnames, search)
         if not self.check_success(files):
             # Look in sibling directories if the matching files were not
             # found in the current directory.
             revised_search = []
-            for s in search:
-                fname = os.path.basename(os.path.dirname(s))
-                revised_search.append('*'.join(s.split(fname, 1)))
+            for f in fnames:
+                directory = os.path.basename(os.path.dirname(f))
+                for d in dets:
+                    revised_search.append(d.join(f.split(directory)))
             files = self.match_selected_files(fnames, revised_search)
         return files
 
@@ -108,11 +112,15 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         results = [f for f in search if glob.glob(f, recursive=True)]
         results = [glob.glob(f, recursive=True) for f in results]
         if results:
-            for fname in [r[0] for r in results]:
-                matches = [i for i, det in enumerate(dets) if det in fname]
-                if matches:
+            for fname in [fname for f in results for fname in f]:
+                path, f = os.path.split(fname)
+                matches = [i for i, det in enumerate(dets) if det in f]
+                if not matches:
+                    root, dirs = os.path.split(path)
+                    matches = [i for i, det in enumerate(dets) if det in dirs]
+                if len(matches):
                     idx = matches[0]
-                    files[idx].append(fname)
+                    files[idx].append('/'.join([path, f]))
         return files
 
     def read_data(self, files, data=None, parent=None):
