@@ -107,6 +107,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the threshold mask status changes"""
     threshold_mask_changed = Signal(bool)
 
+    """Emitted when the materials panel should update"""
+    active_material_modified = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -969,10 +972,26 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         return list({x['material'] for x in self.overlays if x['visible']})
 
+    def set_tth_max_all_materials(self, v):
+        # v should be in radians
+        for name, mat in self.materials.items():
+            plane_data = mat.planeData
+            if v == plane_data.tThMax:
+                continue
+
+            plane_data.tThMax = v
+            self.flag_overlay_updates_for_material(name)
+
+            if mat is self.active_material:
+                self.active_material_modified.emit()
+
+        self.overlay_config_changed.emit()
+
     def _active_material_tth_max(self):
         return self.active_material.planeData.tThMax
 
     def _set_active_material_tth_max(self, v):
+        # v should be in radians
         if v != self.active_material_tth_max:
             if v is None:
                 self.backup_tth_max = self.active_material_tth_max
