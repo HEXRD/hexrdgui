@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>14</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -109,6 +109,7 @@
      </property>
      <addaction name="action_edit_apply_polar_mask"/>
      <addaction name="action_edit_apply_laue_mask_to_polar"/>
+     <addaction name="action_edit_apply_raw_mask"/>
      <addaction name="action_open_mask_manager"/>
     </widget>
     <addaction name="action_edit_euler_angle_convention"/>
@@ -524,6 +525,11 @@
   <action name="action_open_mask_manager">
    <property name="text">
     <string>Manage Masks</string>
+   </property>
+  </action>
+  <action name="action_edit_apply_raw_mask">
+   <property name="text">
+    <string>Apply Mask to Raw</string>
    </property>
   </action>
  </widget>

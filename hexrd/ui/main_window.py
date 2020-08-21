@@ -32,6 +32,7 @@ from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
+from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.transform_dialog import TransformDialog
@@ -148,6 +149,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_polar_mask_triggered)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
+        self.ui.action_edit_apply_raw_mask.triggered.connect(
+            self.on_action_edit_apply_raw_mask_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
@@ -651,6 +654,9 @@ class MainWindow(QObject):
         HexrdConfig().polar_masks_line_data.append(data)
         self.new_mask_added.emit()
         self.update_all()
+
+    def on_action_edit_apply_raw_mask_triggered(self):
+        mrd = MaskRegionsDialog(self.ui).show()
 
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
