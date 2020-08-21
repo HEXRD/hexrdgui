@@ -129,7 +129,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.polar_masks = []
         self.polar_masks_line_data = []
         self.backup_tth_maxes = {}
-        self.backup_tth_widths = {}
         self.overlays = []
         self.workflow = None
         self._threshold_data = {}
@@ -969,44 +968,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return []
 
         return list({x['material'] for x in self.overlays if x['visible']})
-
-    def _active_material_tth_width(self):
-        return self.active_material.planeData.tThWidth
-
-    def set_active_material_tth_width(self, v):
-        if v != self.active_material_tth_width:
-            if v is None:
-                self.backup_tth_width = self.active_material_tth_width
-
-            self.active_material.planeData.tThWidth = v
-            self.flag_overlay_updates_for_active_material()
-            self.overlay_config_changed.emit()
-
-    active_material_tth_width = property(_active_material_tth_width,
-                                         set_active_material_tth_width)
-
-    def _backup_tth_width(self):
-        return self.backup_tth_widths.setdefault(self.active_material_name,
-                                                 0.002182)
-
-    def _set_backup_tth_width(self, v):
-        self.backup_tth_widths[self.active_material_name] = v
-
-    backup_tth_width = property(_backup_tth_width, _set_backup_tth_width)
-
-    def _tth_width_enabled(self):
-        return self.active_material_tth_width is not None
-
-    def set_tth_width_enabled(self, v):
-        # This will restore the backup of tth width, or set tth width to None
-        if v != self.tth_width_enabled:
-            if v:
-                self.active_material_tth_width = self.backup_tth_width
-            else:
-                self.active_material_tth_width = None
-
-    tth_width_enabled = property(_tth_width_enabled,
-                                 set_tth_width_enabled)
 
     def _active_material_tth_max(self):
         return self.active_material.planeData.tThMax

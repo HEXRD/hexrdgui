@@ -1,12 +1,5 @@
-import copy
-import numpy as np
-
-from PySide2.QtCore import QSignalBlocker
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
-
-from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
-from hexrd.ui.constants import DEFAULT_CRYSTAL_PARAMS, OverlayType
-from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.laue_overlay_editor import LaueOverlayEditor
+from hexrd.ui.powder_overlay_editor import PowderOverlayEditor
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -16,28 +9,17 @@ class OverlayEditor:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_editor.ui', parent)
 
-        self._overlay = None
-        self.update_type_tab()
+        self.powder_overlay_editor = PowderOverlayEditor(self.ui)
+        self.ui.powder_overlay_editor_layout.addWidget(
+            self.powder_overlay_editor.ui)
 
-        self.laue_crystal_editor = CalibrationCrystalEditor(parent=self.ui)
-        self.ui.laue_crystal_editor_layout.addWidget(
-            self.laue_crystal_editor.ui)
+        self.laue_overlay_editor = LaueOverlayEditor(self.ui)
+        self.ui.laue_overlay_editor_layout.addWidget(
+            self.laue_overlay_editor.ui)
 
         self.ui.tab_widget.tabBar().hide()
 
-        self.setup_connections()
-
-    def setup_connections(self):
-        for w in self.laue_widgets:
-            if isinstance(w, QDoubleSpinBox):
-                w.valueChanged.connect(self.update_config)
-            elif isinstance(w, QCheckBox):
-                w.toggled.connect(self.update_config)
-
-        self.ui.laue_enable_widths.toggled.connect(
-            self.update_laue_enable_states)
-
-        self.laue_crystal_editor.params_modified.connect(self.update_config)
+        self.overlay = None
 
     @property
     def overlay(self):
@@ -46,10 +28,7 @@ class OverlayEditor:
     @overlay.setter
     def overlay(self, v):
         self._overlay = v
-        if self.overlay is not None:
-            self.update_gui()
-        else:
-            self.update_type_tab()
+        self.update_type_tab()
 
     @property
     def type(self):
@@ -64,121 +43,25 @@ class OverlayEditor:
 
         self.ui.tab_widget.setCurrentWidget(w)
 
-    def update_gui(self):
-        self.update_type_tab()
-
-        if self.type == OverlayType.laue:
-            self.update_gui_laue()
-
-    def update_gui_laue(self):
-        blockers = [QSignalBlocker(w) for w in self.all_widgets]  # noqa: F841
-
-        options = self.overlay.get('options', {})
-        if 'min_energy' in options:
-            self.ui.laue_min_energy.setValue(options['min_energy'])
-        if 'max_energy' in options:
-            self.ui.laue_max_energy.setValue(options['max_energy'])
-        if 'crystal_params' in options:
-            self.laue_crystal_params = options['crystal_params']
-        else:
-            self.laue_crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
-
-        if options.get('tth_width') is not None:
-            self.ui.laue_tth_width.setValue(np.degrees(options['tth_width']))
-        if options.get('eta_width') is not None:
-            self.ui.laue_eta_width.setValue(np.degrees(options['eta_width']))
-
-        widths = ['tth_width', 'eta_width']
-        enable_widths = all(options.get(x) is not None for x in widths)
-        self.ui.laue_enable_widths.setChecked(enable_widths)
-
-        self.update_laue_enable_states()
-
-    def update_laue_enable_states(self):
-        enable_widths = self.laue_enable_widths
-        names = [
-            'laue_tth_width_label',
-            'laue_tth_width',
-            'laue_eta_width_label',
-            'laue_eta_width'
-        ]
-        for name in names:
-            getattr(self.ui, name).setEnabled(enable_widths)
+        if self.active_widget is not None:
+            self.active_widget.overlay = self.overlay
 
     @property
-    def laue_crystal_params(self):
-        return copy.deepcopy(self.laue_crystal_editor.params)
+    def active_widget(self):
+        widgets = {
+            'powder': self.powder_overlay_editor,
+            'laue': self.laue_overlay_editor,
+            'mono_rotation_series': None
+        }
 
-    @laue_crystal_params.setter
-    def laue_crystal_params(self, v):
-        self.laue_crystal_editor.params = v
-
-    def update_config(self):
-        if self.type == OverlayType.laue:
-            self.update_config_laue()
-
-        self.overlay['update_needed'] = True
-        HexrdConfig().overlay_config_changed.emit()
-
-    def update_config_laue(self):
-        options = self.overlay.setdefault('options', {})
-        options['min_energy'] = self.ui.laue_min_energy.value()
-        options['max_energy'] = self.ui.laue_max_energy.value()
-        options['crystal_params'] = self.laue_crystal_params
-        options['tth_width'] = self.laue_tth_width
-        options['eta_width'] = self.laue_eta_width
-
-    @property
-    def laue_enable_widths(self):
-        return self.ui.laue_enable_widths.isChecked()
-
-    @property
-    def laue_tth_width(self):
-        if not self.laue_enable_widths:
+        if self.type is None or self.type.value not in widgets:
             return None
 
-        return np.radians(self.ui.laue_tth_width.value())
+        return widgets[self.type.value]
 
-    @property
-    def laue_eta_width(self):
-        if not self.laue_enable_widths:
-            return None
+    def update_active_widget_gui(self):
+        w = self.active_widget
+        if w is None:
+            return
 
-        return np.radians(self.ui.laue_eta_width.value())
-
-    @property
-    def powder_widgets(self):
-        return []
-
-    @property
-    def laue_widgets(self):
-        return [
-            self.ui.laue_min_energy,
-            self.ui.laue_max_energy,
-            self.ui.laue_enable_widths,
-            self.ui.laue_tth_width,
-            self.ui.laue_eta_width
-        ]
-
-    @property
-    def mono_rotation_series_widgets(self):
-        return []
-
-    @property
-    def tab_widgets(self):
-        return [
-            self.ui.tab_widget,
-            self.ui.powder_tab,
-            self.ui.laue_tab,
-            self.ui.mono_rotation_series_tab,
-            self.ui.blank_tab
-        ]
-
-    @property
-    def all_widgets(self):
-        return (
-            self.powder_widgets +
-            self.laue_widgets +
-            self.mono_rotation_series_widgets +
-            self.tab_widgets
-        )
+        w.update_gui()
