@@ -24,8 +24,8 @@ class MaskRegionsDialog(QObject):
         self.canvas_ids = []
         self.axes = None
         self.press = []
-        self.patches = {det:[] for det in HexrdConfig().detector_names}
-        self.masks = {det:[] for det in HexrdConfig().detector_names}
+        self.patches = {det: [] for det in HexrdConfig().detector_names}
+        self.masks = {det: [] for det in HexrdConfig().detector_names}
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -33,7 +33,7 @@ class MaskRegionsDialog(QObject):
         self.setup_canvas_connections()
         self.setup_ui_connections()
         self.select_shape()
-    
+
     def show(self):
         self.ui.show()
 
@@ -106,10 +106,10 @@ class MaskRegionsDialog(QObject):
                         try:
                             getattr(patch, 'set_' + attr)(
                                 getattr(p, 'get_' + attr)())
-                        except:
+                        except Exception:
                             try:
                                 setattr(patch, attr, getattr(p, attr))
-                            except:
+                            except Exception:
                                 continue
                     axes.add_patch(patch)
 
@@ -173,7 +173,7 @@ class MaskRegionsDialog(QObject):
         for canvas in self.parent.image_tab_widget.active_canvases():
             for axes in canvas.raw_axes:
                 axes.patches.clear()
-        self.patches = {det:[] for det in HexrdConfig().detector_names}
+        self.patches = {det: [] for det in HexrdConfig().detector_names}
         self.disconnect()
         ImageLoadManager().read_data(files)
         self.new_images_loaded.emit()
