@@ -32,9 +32,9 @@ class MaskRegionsDialog(QObject):
 
         self.setup_canvas_connections()
         self.setup_ui_connections()
+        self.select_shape()
     
     def show(self):
-        self.select_shape()
         self.ui.show()
 
     def disconnect(self):

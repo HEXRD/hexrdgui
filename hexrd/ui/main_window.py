@@ -656,10 +656,9 @@ class MainWindow(QObject):
         self.update_all()
 
     def on_action_edit_apply_raw_mask_triggered(self):
-        if not hasattr(self, 'mrd'):
-            self.mrd = MaskRegionsDialog(self.ui)
-        self.mrd.show()
-        self.mrd.new_images_loaded.connect(self.new_images_loaded)
+        mrd = MaskRegionsDialog(self.ui)
+        mrd.new_images_loaded.connect(self.new_images_loaded)
+        mrd.show()
 
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
