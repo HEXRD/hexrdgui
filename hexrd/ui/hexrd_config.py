@@ -850,6 +850,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if name in self.materials:
             raise Exception(name + ' is already in materials list!')
         self.config['materials']['materials'][name] = material
+        self.reset_tth_max(name)
 
     def rename_material(self, old_name, new_name):
         if old_name != new_name:
