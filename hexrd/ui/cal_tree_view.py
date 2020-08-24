@@ -52,7 +52,10 @@ class CalTreeItemModel(BaseTreeItemModel):
         if value == item.data(index.column()):
             return True
 
-        if index.column() == VALUE_COL:
+        key = item.data(KEY_COL)
+        # Note: We don't want todo this check for panel buffers as they
+        # can be a list or numpy.ndarray
+        if index.column() == VALUE_COL and key != constants.BUFFER_KEY:
             old_value = self.cfg.get_instrument_config_val(path)
 
             # As a validation step, ensure that the new value can be
@@ -261,6 +264,11 @@ class CalTreeView(QTreeView):
             index = self.model().index(i, KEY_COL, parent)
             item = self.model().get_item(index)
             path = self.model().get_path_from_root(item, KEY_COL)
+
+            # Force open the editor for the panel buffer values
+            if item.data(KEY_COL) == constants.BUFFER_KEY:
+                self.openPersistentEditor(self.model().index(i, VALUE_COL,
+                                          parent))
 
             if (HexrdConfig().collapsed_state is None
                     or path not in HexrdConfig().collapsed_state):
