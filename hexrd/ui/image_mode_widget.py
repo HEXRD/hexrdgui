@@ -197,7 +197,7 @@ class ImageModeWidget(QObject):
         HexrdConfig().config['image']['polar'].update(params)
 
         # Update all of the materials with the new tth_max
-        HexrdConfig().set_tth_max_all_materials(np.radians(params['tth_max']))
+        HexrdConfig().reset_tth_max_all_materials()
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
