@@ -24,6 +24,7 @@ class MaskRegionsDialog(QObject):
         self.canvas_ids = []
         self.axes = None
         self.press = []
+        self.patches = {det:[] for det in HexrdConfig().detector_names}
         self.masks = {det:[] for det in HexrdConfig().detector_names}
 
         loader = UiLoader()
@@ -62,6 +63,7 @@ class MaskRegionsDialog(QObject):
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
+        HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
 
     def select_shape(self):
         self.selection = self.ui.shape.currentText()
@@ -69,16 +71,18 @@ class MaskRegionsDialog(QObject):
 
     def create_patch(self):
         if self.selection == 'Rectangle':
-            self.patch = patches.Rectangle(self.press, 0, 0, fill=False)
+            self.patch = patches.Rectangle((0, 0), 0, 0, fill=False)
         elif self.selection == 'Ellipse':
-            self.patch = patches.Ellipse(self.press, 0, 0, fill=False)
+            self.patch = patches.Ellipse((0, 0), 0, 0, fill=False)
         self.axes.add_patch(self.patch)
+        self.patches[self.det].append(self.patch)
 
     def update_patch(self, event):
         x0, y0 = self.press
         height = event.ydata - y0
         width = event.xdata - x0
         if self.selection == 'Rectangle':
+            self.patch.set_xy(self.press)
             self.patch.set_height(height)
             self.patch.set_width(width)
         if self.selection == 'Ellipse':
@@ -86,6 +90,28 @@ class MaskRegionsDialog(QObject):
             self.patch.set_center(center)
             self.patch.height = height
             self.patch.width = width
+
+    def tabbed_view_changed(self):
+        self.disconnect()
+        self.setup_canvas_connections()
+
+        for canvas in self.parent.image_tab_widget.active_canvases():
+            for axes in canvas.raw_axes:
+                for p in self.patches[axes.get_title()]:
+                    # Artists cannot be reused or simply copied, instead
+                    # a new artist must be created
+                    obj, *attrs = p.__str__().split('(')
+                    patch = getattr(patches, obj)((0, 0), 0, 0, fill=False)
+                    for attr in ['xy', 'center', 'width', 'height']:
+                        try:
+                            getattr(patch, 'set_' + attr)(
+                                getattr(p, 'get_' + attr)())
+                        except:
+                            try:
+                                setattr(patch, attr, getattr(p, attr))
+                            except:
+                                continue
+                    axes.add_patch(patch)
 
     def axes_entered(self, event):
         self.axes = event.inaxes
@@ -113,7 +139,7 @@ class MaskRegionsDialog(QObject):
     def create_mask(self):
         img = HexrdConfig().image(self.det, 0)
         if self.selection == 'Rectangle':
-            rr, cc = rectangle(self.press, self.end, shape=img.shape)
+            rr, cc = rectangle(self.patch.xy, self.end, shape=img.shape)
         elif self.selection == 'Ellipse':
             cx, cy = self.patch.get_center()
             c_rad = self.patch.height / 2
@@ -147,7 +173,7 @@ class MaskRegionsDialog(QObject):
         for canvas in self.parent.image_tab_widget.active_canvases():
             for axes in canvas.raw_axes:
                 axes.patches.clear()
-
+        self.patches = {det:[] for det in HexrdConfig().detector_names}
         self.disconnect()
         ImageLoadManager().read_data(files)
         self.new_images_loaded.emit()
