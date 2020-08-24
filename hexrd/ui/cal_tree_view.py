@@ -8,7 +8,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
-
+from hexrd.ui import constants
 
 # Global constants
 REFINED = 0
