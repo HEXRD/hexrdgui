@@ -9,6 +9,7 @@ from hexrd import matrixutil
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
+from hexrd.ui.calibration_crystal_slider_widget import CalibrationCrystalSliderWidget
 
 
 class CalibrationCrystalEditor(QObject):
@@ -28,6 +29,11 @@ class CalibrationCrystalEditor(QObject):
         self.update_orientation_suffixes()
 
         self.setup_connections()
+
+        # Load slider widget
+        slider_widget = CalibrationCrystalSliderWidget(self.ui)
+        self.ui.slider_widget_parent.layout().addWidget(slider_widget.ui)
+        self.ui.tab_widget.removeTab(2)  # remove deprecated sliders
 
     def setup_connections(self):
         HexrdConfig().euler_angle_convention_changed.connect(
