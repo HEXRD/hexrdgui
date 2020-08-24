@@ -4,6 +4,8 @@ from PySide2.QtWidgets import (
 )
 from PySide2.QtGui import QCursor
 
+import numpy as np
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui.tree_views.tree_item import TreeItem
@@ -49,7 +51,10 @@ class CalTreeItemModel(BaseTreeItemModel):
         path = self.get_path_from_root(item, index.column())
 
         # If they are identical, don't do anything
-        if value == item.data(index.column()):
+        # (we exclude np.ndarray's from this)
+        is_numpy = isinstance(value, np.ndarray) or \
+            isinstance(item.data(index.column()), np.ndarray)
+        if not is_numpy and value == item.data(index.column()):
             return True
 
         key = item.data(KEY_COL)
