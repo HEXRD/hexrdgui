@@ -63,6 +63,7 @@ class MaskRegionsDialog(QObject):
 
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
+        self.ui.button_box.rejected.connect(self.cancel)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
         self.ui.undo.clicked.connect(self.undo_selection)
         HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
@@ -100,7 +101,7 @@ class MaskRegionsDialog(QObject):
 
         for canvas in self.parent.image_tab_widget.active_canvases():
             for axes in canvas.raw_axes:
-                for p in self.patches[axes.get_title()]:
+                for p in self.patches.get(axes.get_title(), []):
                     # Artists cannot be reused or simply copied, instead
                     # a new artist must be created
                     obj, *attrs = p.__str__().split('(')
@@ -117,15 +118,25 @@ class MaskRegionsDialog(QObject):
                     axes.add_patch(patch)
                 self.patches[axes.get_title()] = axes.patches
 
+    def discard_patch(self):
+        det = self.added_patches.pop()
+        if det == ViewType.polar:
+            HexrdConfig().polar_masks_line_data.pop()
+        else:
+            HexrdConfig().raw_masks_line_data.pop()
+        return self.patches[det].pop()
+
     def undo_selection(self):
         if not self.added_patches:
             return
 
-        det  = self.added_patches.pop()
-        last_patch = self.patches[det].pop()
-        for a in self.canvas.raw_axes:
-            if a.get_title() == det:
-                a.patches.remove(last_patch)
+        last_patch = self.discard_patch()
+        if det == ViewType.polar and hasattr(self.canvas, 'axis'):
+            self.canvas.axis.patches.remove(last_patch)
+        else:
+            for a in self.canvas.raw_axes:
+                if a.get_title() == det:
+                    a.patches.remove(last_patch)
         self.canvas.draw()
 
     def axes_entered(self, event):
@@ -192,4 +203,17 @@ class MaskRegionsDialog(QObject):
         self.disconnect()
         ImageLoadManager().read_data(files)
         self.new_images_loaded.emit()
+        self.canvas.draw()
+
+    def cancel(self):
+        while self.added_patches:
+            self.discard_patch()
+
+        if hasattr(self.canvas, 'axis'):
+            self.canvas.axis.patches.clear()
+        for canvas in self.parent.image_tab_widget.active_canvases():
+            for axes in canvas.raw_axes:
+                axes.patches.clear()
+
+        self.disconnect()
         self.canvas.draw()
