@@ -24,6 +24,7 @@ class MaskRegionsDialog(QObject):
         self.canvas_ids = []
         self.axes = None
         self.press = []
+        self.added_patches = []
         self.patches = {det: [] for det in HexrdConfig().detector_names}
         self.masks = {det: [] for det in HexrdConfig().detector_names}
 
@@ -63,6 +64,7 @@ class MaskRegionsDialog(QObject):
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
+        self.ui.undo.clicked.connect(self.undo_selection)
         HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
 
     def select_shape(self):
@@ -76,6 +78,7 @@ class MaskRegionsDialog(QObject):
             self.patch = patches.Ellipse((0, 0), 0, 0, fill=False)
         self.axes.add_patch(self.patch)
         self.patches[self.det].append(self.patch)
+        self.added_patches.append(self.det)
 
     def update_patch(self, event):
         x0, y0 = self.press
@@ -112,6 +115,18 @@ class MaskRegionsDialog(QObject):
                             except Exception:
                                 continue
                     axes.add_patch(patch)
+                self.patches[axes.get_title()] = axes.patches
+
+    def undo_selection(self):
+        if not self.added_patches:
+            return
+
+        det  = self.added_patches.pop()
+        last_patch = self.patches[det].pop()
+        for a in self.canvas.raw_axes:
+            if a.get_title() == det:
+                a.patches.remove(last_patch)
+        self.canvas.draw()
 
     def axes_entered(self, event):
         self.axes = event.inaxes
