@@ -12,7 +12,7 @@ class InteractiveTemplate:
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
-        self.panels = self.parent.iviewer.instr._detectors
+        self.panels = self.parent.iviewer.instr.detectors
         self.img = img
         self.shape = None
         self.press = None
