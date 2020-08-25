@@ -41,8 +41,7 @@ class ValueColumnDelegate(QStyledItemDelegate):
 
             return edit_btn
         else:
-            return super(ValueColumnDelegate, self).createEditor(parent,
-                                                                 option, index)
+            return super().createEditor(parent, option, index)
 
 
 class ValueColumnEditorFactory(QItemEditorFactory):
