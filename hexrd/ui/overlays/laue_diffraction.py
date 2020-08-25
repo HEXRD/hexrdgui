@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 
 from hexrd import constants
@@ -10,7 +12,7 @@ class LaueSpotOverlay:
                  crystal_params=None, sample_rmat=None,
                  min_energy=5., max_energy=35.,
                  tth_width=None, eta_width=None):
-        self._plane_data = plane_data
+        self.plane_data = plane_data
         self._instrument = instr
         if crystal_params is None:
             self._crystal_params = np.hstack(
@@ -34,6 +36,14 @@ class LaueSpotOverlay:
     @property
     def plane_data(self):
         return self._plane_data
+
+    @plane_data.setter
+    def plane_data(self, v):
+        self._plane_data = v
+        # For Laue overlays, we will use all hkl values
+        if self._plane_data.exclusions is not None:
+            self._plane_data = copy.deepcopy(self._plane_data)
+            self._plane_data.exclusions = None
 
     @property
     def instrument(self):

@@ -79,6 +79,9 @@ class MaterialsPanel(QObject):
         self.ui.limit_active.toggled.connect(self.update_material_limits)
         self.ui.limit_active.toggled.connect(self.update_table)
 
+        HexrdConfig().active_material_modified.connect(
+            self.update_gui_from_config)
+
     def update_enable_states(self):
         limit_active = self.ui.limit_active.isChecked()
         self.ui.max_tth.setEnabled(limit_active)

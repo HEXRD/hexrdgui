@@ -107,6 +107,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the threshold mask status changes"""
     threshold_mask_changed = Signal(bool)
 
+    """Emitted when the materials panel should update"""
+    active_material_modified = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -826,6 +829,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                              'materials.hexrd', binary=True)
         self.load_materials_from_binary(data)
 
+        # Set the tth_max of all the materials to match that of the polar
+        # resolution config.
+        self.reset_tth_max_all_materials()
+
     def load_materials_from_binary(self, data):
         matlist = pickle.loads(data, encoding='latin1')
         materials = dict(zip([i.name for i in matlist], matlist))
@@ -843,6 +850,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if name in self.materials:
             raise Exception(name + ' is already in materials list!')
         self.config['materials']['materials'][name] = material
+        self.reset_tth_max(name)
 
     def rename_material(self, old_name, new_name):
         if old_name != new_name:
@@ -969,10 +977,34 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         return list({x['material'] for x in self.overlays if x['visible']})
 
+    def reset_tth_max(self, material_name):
+        # Sets the tth_max of the material to match that of the polar
+        # resolution. Does not emit "overlay_config_changed".
+        tth_max = np.radians(self.polar_res_tth_max)
+        mat = self.material(material_name)
+        plane_data = mat.planeData
+        if tth_max == plane_data.tThMax:
+            return
+
+        plane_data.tThMax = tth_max
+        self.flag_overlay_updates_for_material(material_name)
+
+        if mat is self.active_material:
+            self.active_material_modified.emit()
+
+    def reset_tth_max_all_materials(self):
+        # Sets the tth max of all materials to match that of the
+        # polar resolution.
+        for name in self.materials.keys():
+            self.reset_tth_max(name)
+
+        self.overlay_config_changed.emit()
+
     def _active_material_tth_max(self):
         return self.active_material.planeData.tThMax
 
     def _set_active_material_tth_max(self, v):
+        # v should be in radians
         if v != self.active_material_tth_max:
             if v is None:
                 self.backup_tth_max = self.active_material_tth_max
