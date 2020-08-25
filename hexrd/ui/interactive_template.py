@@ -12,6 +12,7 @@ class InteractiveTemplate:
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
+        self.panels = self.parent.iviewer.instr.detectors
         self.img = img
         self.shape = None
         self.press = None
@@ -21,26 +22,13 @@ class InteractiveTemplate:
 
     def create_shape(self, module, file_name):
         with resource_loader.resource_path(module, file_name) as f:
-            verts = np.loadtxt(f)
-        pixel_size = HexrdConfig().detector_pixel_size('default')
-        verts = [vert/pixel_size for vert in verts]
+            data = np.loadtxt(f)
+        verts = self.panels['default'].cartToPixel(data)
+        verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
-        translate = self.translate()
-        self.shape.set_xy(self.shape.xy + translate)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
-
-    def translate(self):
-        min_vals = np.nanmin(self.shape.xy, axis=0)
-        max_vals = np.nanmax(self.shape.xy, axis=0)
-        l, r, b, t = self.ax.get_extent()
-        translate = [0, 0]
-        if not self.raw_axes.contains_point(min_vals):
-            translate = [l, t] - np.nanmin(self.shape.xy, axis=0)
-        elif not self.raw_axes.contains_point(max_vals):
-            translate = [r, b] - np.nanmax(self.shape.xy, axis=0)
-        return translate
 
     def get_shape(self):
         return self.shape
