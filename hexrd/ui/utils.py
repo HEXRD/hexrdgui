@@ -82,9 +82,11 @@ def make_new_pdata(mat):
     # and the previous tthWidth
     prev_exclusions = mat.planeData.exclusions
     prev_tThWidth = mat.planeData.tThWidth
+    prev_tThMax = mat.planeData.tThMax
     mat._newPdata()
     mat.planeData.exclusions = prev_exclusions
     mat.planeData.tThWidth = prev_tThWidth
+    mat.planeData.tThMax = prev_tThMax
 
 
 def coords2index(im, x, y):
