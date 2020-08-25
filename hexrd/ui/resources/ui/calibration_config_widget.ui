@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>506</width>
-    <height>570</height>
+    <height>595</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -1056,6 +1056,7 @@
   <tabstop>cal_det_current</tabstop>
   <tabstop>cal_det_add</tabstop>
   <tabstop>cal_det_remove</tabstop>
+  <tabstop>cal_det_buffer</tabstop>
   <tabstop>cal_det_function</tabstop>
   <tabstop>cal_det_param_0</tabstop>
   <tabstop>cal_det_param_1</tabstop>
