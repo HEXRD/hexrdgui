@@ -3,6 +3,8 @@
 import math
 import numpy as np
 
+from PySide2.QtCore import QObject
+
 import matplotlib.transforms as mtransforms
 
 from hexrd import imageutil
@@ -155,3 +157,24 @@ def remove_none_distortions(iconfig):
             function_name = function_name['value']
         if function_name.lower() == 'none':
             del det['distortion']
+
+
+class EventBlocker(QObject):
+    """ A context manager that can be used block a specific event """
+
+    def __init__(self, obj, event_type):
+        super().__init__()
+        self._obj = obj
+        self._event_type = event_type
+
+    def __enter__(self):
+        self._obj.installEventFilter(self)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._obj.removeEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if event.type() == self._event_type:
+            return True
+        else:
+            return super().eventFilter(obj, event)
