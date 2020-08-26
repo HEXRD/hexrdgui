@@ -99,6 +99,11 @@ class CalTreeItemModel(BaseTreeItemModel):
         return flags
 
     def add_tree_item(self, key, value, status, parent):
+        # In the case of the panel buffer we don't want to added children
+        # The editor will take care of this.
+        if parent.data(KEY_COL) == constants.BUFFER_KEY:
+            return
+
         data = [key, value, status]
         tree_item = TreeItem(data, parent)
         return tree_item
@@ -131,7 +136,8 @@ class CalTreeItemModel(BaseTreeItemModel):
             else:
                 tree_item = self.add_tree_item(key, None, REFINED,
                                                cur_tree_item)
-            self.recursive_add_tree_items(cur_config[key], tree_item)
+            if tree_item is not None:
+                self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def update_parent_status(self, parent):
         children = parent.child_items
