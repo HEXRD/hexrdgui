@@ -4,10 +4,13 @@ from PySide2.QtWidgets import (
     QPushButton
 )
 
+from PySide2.QtCore import QEvent
+
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui import constants
+from hexrd.ui.utils import EventBlocker
 
 BUTTON_LABEL = 'Configure Panel Buffer'
 
@@ -27,15 +30,25 @@ class ValueColumnDelegate(QStyledItemDelegate):
             edit_btn = QPushButton(BUTTON_LABEL, parent)
 
             def _clicked():
+                def _set_enable(enabled):
+                    # We need to block the event here, otherwise setData(...)
+                    # gets called with the buttons boolean value!
+                    with EventBlocker(edit_btn, QEvent.FocusOut):
+                        edit_btn.setEnabled(enabled)
                 # Disable to prevent creating multiple dialogs
-                edit_btn.setEnabled(False)
+                _set_enable(False)
+
                 # Extract out the detector, so we can update the right config
                 path = model.get_path_from_root(item, index.column())
                 detector = path[path.index('detectors') + 1]
                 dialog = PanelBufferDialog(detector, self)
                 dialog.show()
+
+                def _enable(_):
+                    _set_enable(True)
+
                 # Re-enable the edit button
-                dialog.ui.finished.connect(lambda _: edit_btn.setEnabled(True))
+                dialog.finished.connect(_enable)
 
             edit_btn.clicked.connect(_clicked)
 
