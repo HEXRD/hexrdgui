@@ -96,8 +96,10 @@ class PanelBufferDialog(QObject):
         config = HexrdConfig().config
         detector_config = config['instrument']['detectors'][self.detector]
 
+        buffer_default = {'status': 0}
+        buffer = detector_config.setdefault('buffer', buffer_default)
         if self.mode == CONFIG_MODE_BORDER:
-            detector_config['buffer']['value'] = [self.x_border, self.y_border]
+            buffer['value'] = [self.x_border, self.y_border]
         else:
             array = np.load(self.file_name)
 
@@ -110,7 +112,8 @@ class PanelBufferDialog(QObject):
                 self.show()
                 return
 
-            detector_config['buffer']['value'] = array
+            buffer['value'] = array
+
 
     def update_gui(self):
         blockers = [QSignalBlocker(x) for x in self.widgets]  # noqa: F841
