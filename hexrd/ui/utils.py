@@ -173,7 +173,6 @@ class EventBlocker(QObject):
 
     def eventFilter(self, obj, event):
         if event.type() == self._event_type:
-            print("blocked")
             return True
         else:
             return super().eventFilter(obj, event)
