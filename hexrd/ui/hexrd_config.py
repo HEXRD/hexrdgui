@@ -434,7 +434,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def filter_instrument_config(self, cur_config):
         # Filters the refined status values out of the
-        # intrument config tree
+        # instrument config tree
         default = {}
         default['instrument'] = copy.deepcopy(cur_config)
         if self.has_status(default['instrument']):
