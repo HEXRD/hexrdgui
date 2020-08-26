@@ -15,6 +15,7 @@ class PanelBufferDialog(QObject):
 
     accepted = Signal()
     rejected = Signal()
+    finished = Signal(int)
 
     def __init__(self, detector, parent=None):
         super().__init__(parent)
@@ -55,12 +56,13 @@ class PanelBufferDialog(QObject):
             self.show()
             return
 
-        self.update_config()
-
-        self.accepted.emit()
+        if self.update_config():
+            self.accepted.emit()
+            self.finished.emit(self.ui.result())
 
     def on_rejected(self):
         self.rejected.emit()
+        self.finished.emit(self.ui.result())
 
     def select_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -110,10 +112,11 @@ class PanelBufferDialog(QObject):
                 msg = 'The NumPy array shape must match the detector'
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
                 self.show()
-                return
+                return False
 
             buffer['value'] = array
 
+        return True
 
     def update_gui(self):
         blockers = [QSignalBlocker(x) for x in self.widgets]  # noqa: F841
