@@ -7,7 +7,7 @@ from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui.create_raw_mask import apply_raw_mask, remove_raw_mask
+from hexrd.ui.create_raw_mask import apply_threshold_mask, remove_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -216,9 +216,9 @@ class ImageModeWidget(QObject):
     def update_mask(self, masking):
         # Add or remove the mask. This will cause a re-render
         if not isinstance(masking, bool) or masking:
-            apply_raw_mask(self.ims_copy)
+            apply_threshold_mask(self.ims_copy)
         else:
-            remove_raw_mask(self.ims_copy)
+            remove_threshold_mask(self.ims_copy)
             self.ims_copy = None
         self.mask_applied.emit()
 

@@ -5,7 +5,7 @@ from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
-def apply_raw_mask(imageseries):
+def apply_threshold_mask(imageseries):
     comparison = HexrdConfig().threshold_comparison
     value = HexrdConfig().threshold_value
     for det in HexrdConfig().detector_names:
@@ -13,17 +13,17 @@ def apply_raw_mask(imageseries):
         masked_ims = [None for i in range(len(ims))]
         for idx in range(len(ims)):
             img = copy.copy(ims[idx])
-            masked_img, mask = _create_raw_mask(img, comparison, value)
+            masked_img, mask = _create_threshold_mask(img, comparison, value)
             masked_ims[idx] = masked_img
             HexrdConfig().set_threshold_mask(mask)
         HexrdConfig().imageseries_dict[det] = masked_ims
 
 
-def remove_raw_mask(ims_dict_copy):
+def remove_threshold_mask(ims_dict_copy):
     HexrdConfig().imageseries_dict = copy.copy(ims_dict_copy)
 
 
-def _create_raw_mask(img, comparison, value):
+def _create_threshold_mask(img, comparison, value):
     mask = np.ones(img.shape, dtype=bool)
     if comparison == constants.UI_THRESHOLD_LESS_THAN:
         mask = (img < value)
