@@ -23,6 +23,11 @@ class CalibrationCrystalEditor(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('calibration_crystal_editor.ui', parent)
 
+        # Load slider widget
+        self.slider_widget = CalibrationCrystalSliderWidget(parent=self.ui)
+        self.ui.slider_widget_parent.layout().addWidget(self.slider_widget.ui)
+        self.ui.tab_widget.removeTab(2)  # remove deprecated sliders
+
         self.params = params
 
         self.update_gui()
@@ -30,17 +35,18 @@ class CalibrationCrystalEditor(QObject):
 
         self.setup_connections()
 
-        # Load slider widget
-        slider_widget = CalibrationCrystalSliderWidget(self.ui)
-        self.ui.slider_widget_parent.layout().addWidget(slider_widget.ui)
-        self.ui.tab_widget.removeTab(2)  # remove deprecated sliders
 
     def setup_connections(self):
         HexrdConfig().euler_angle_convention_changed.connect(
             self.euler_angle_convention_changed)
 
+        self.ui.tab_widget.currentChanged.connect(
+            self.update_config_gui)
+
         for w in self.all_widgets:
             w.valueChanged.connect(self.value_changed)
+
+        self.slider_widget.changed.connect(self.slider_widget_changed)
 
     @property
     def params(self):
@@ -72,6 +78,11 @@ class CalibrationCrystalEditor(QObject):
 
         self.params_modified.emit()
 
+    def slider_widget_changed(self, orientation, position):
+        self.params[:3] = orientation
+        self.params[3:6] = position
+        self.params_modified.emit()
+
     def euler_angle_convention_changed(self):
         self.update_gui()
         self.update_orientation_suffixes()
@@ -80,6 +91,7 @@ class CalibrationCrystalEditor(QObject):
         suffix = '' if HexrdConfig().euler_angle_convention is None else '°'
         for w in self.orientation_widgets:
             w.setSuffix(suffix)
+        self.slider_widget.set_orientation_suffix(suffix)
 
     def update_params(self):
         if self.params is None:
@@ -97,6 +109,8 @@ class CalibrationCrystalEditor(QObject):
         self.orientation = self.params[:3]
         self.position = self.params[3:6]
         self.inverse_stretch = self.params[6:]
+
+        self.slider_widget.update_gui(self.orientation, self.position)
 
     @property
     def stretch_matrix_duplicates(self):
@@ -211,3 +225,18 @@ class CalibrationCrystalEditor(QObject):
             self.position_widgets +
             self.stretch_matrix_widgets
         )
+
+    def update_config_gui(self):
+        current_widget = self.ui.tab_widget.currentWidget()
+        if current_widget is self.ui.form_tab:
+            # Update local widgets from slider
+            orientation = self.slider_widget.orientation
+            for i, w in enumerate(self.orientation_widgets):
+                blocker = QSignalBlocker(w)  # noqa: F841
+                w.setValue(orientation[i])
+            self.position = self.slider_widget.position
+        elif current_widget is self.ui.slider_tab:
+            # Update slider from local widgets
+            o_values = [x.value() for x in self.orientation_widgets]
+            p_values = [x.value() for x in self.position_widgets]
+            self.slider_widget.update_gui(o_values, p_values)
