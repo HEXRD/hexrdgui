@@ -14,7 +14,7 @@ from skimage.draw import rectangle, ellipse
 class MaskRegionsDialog(QObject):
 
     # Emitted when new images are loaded
-    new_images_loaded = Signal()
+    new_mask_added = Signal()
 
     def __init__(self, parent=None):
         super(MaskRegionsDialog, self).__init__(parent)
@@ -26,7 +26,6 @@ class MaskRegionsDialog(QObject):
         self.press = []
         self.added_patches = []
         self.patches = {det: [] for det in HexrdConfig().detector_names}
-        self.masks = {det: [] for det in HexrdConfig().detector_names}
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -45,8 +44,6 @@ class MaskRegionsDialog(QObject):
         self.images.clear()
 
     def setup_canvas_connections(self):
-        self.disconnect()
-
         for canvas in self.parent.image_tab_widget.active_canvases():
             press = canvas.mpl_connect(
                 'button_press_event', self.button_pressed)
@@ -163,18 +160,10 @@ class MaskRegionsDialog(QObject):
         self.canvas.draw()
 
     def create_mask(self):
-        img = HexrdConfig().image(self.det, 0)
-        if self.selection == 'Rectangle':
-            rr, cc = rectangle(self.patch.xy, self.end, shape=img.shape)
-        elif self.selection == 'Ellipse':
-            cx, cy = self.patch.get_center()
-            c_rad = self.patch.height / 2
-            r_rad = self.patch.width / 2
-            rr, cc = ellipse(cx, cy, r_rad, c_rad, shape=img.shape)
-
-        mask = np.ones(img.shape, dtype=bool)
-        mask[cc, rr] = False
-        self.masks[self.det].append(mask)
+        data_coords = self.patch.get_patch_transform().transform(
+            self.patch.get_path().vertices)
+        pixel_coords = self.axes.transData.transform(data_coords)
+        HexrdConfig().raw_masks_line_data.append(pixel_coords)
 
     def button_released(self, event):
         if not self.axes or not self.press:
@@ -189,20 +178,9 @@ class MaskRegionsDialog(QObject):
         self.canvas.draw()
 
     def apply_masks(self):
-        files = []
-        for key, values in self.masks.items():
-            img = HexrdConfig().image(key, 0)
-            for mask in values:
-                img[~mask] = 0
-            files.append([img])
-
-        for canvas in self.parent.image_tab_widget.active_canvases():
-            for axes in canvas.raw_axes:
-                axes.patches.clear()
-        self.patches = {det: [] for det in HexrdConfig().detector_names}
         self.disconnect()
-        ImageLoadManager().read_data(files)
-        self.new_images_loaded.emit()
+        self.patches = {det: [] for det in HexrdConfig().detector_names}
+        self.new_mask_added.emit()
         self.canvas.draw()
 
     def cancel(self):
