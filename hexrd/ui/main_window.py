@@ -657,7 +657,8 @@ class MainWindow(QObject):
 
     def on_action_edit_apply_raw_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
-        mrd.new_images_loaded.connect(self.new_images_loaded)
+        mrd.new_mask_added.connect(self.update_all)
+        mrd.new_mask_added.connect(self.new_mask_added.emit)
         mrd.show()
 
     def on_action_edit_reset_instrument_config(self):
