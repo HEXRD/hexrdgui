@@ -95,7 +95,8 @@ class MaskRegionsDialog(QObject):
 
     def tabbed_view_changed(self):
         self.disconnect()
-        self.setup_canvas_connections()
+        if self.ui.isVisible():
+            self.setup_canvas_connections()
 
         for canvas in self.parent.image_tab_widget.active_canvases():
             for axes in canvas.raw_axes:
