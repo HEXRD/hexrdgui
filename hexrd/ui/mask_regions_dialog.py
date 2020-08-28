@@ -4,6 +4,7 @@ from PySide2.QtCore import QObject, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 
 from matplotlib import patches, path
@@ -25,7 +26,7 @@ class MaskRegionsDialog(QObject):
         self.axes = None
         self.press = []
         self.added_patches = []
-        self.patches = {det: [] for det in HexrdConfig().detector_names}
+        self.patches = {}
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -75,7 +76,7 @@ class MaskRegionsDialog(QObject):
         elif self.selection == 'Ellipse':
             self.patch = patches.Ellipse((0, 0), 0, 0, fill=False)
         self.axes.add_patch(self.patch)
-        self.patches[self.det].append(self.patch)
+        self.patches.setdefault(self.det, []).append(self.patch)
         self.added_patches.append(self.det)
 
     def update_patch(self, event):
@@ -139,6 +140,7 @@ class MaskRegionsDialog(QObject):
     def axes_entered(self, event):
         self.axes = event.inaxes
         self.canvas = event.canvas
+        self.image_mode = self.canvas.mode
 
     def axes_exited(self, event):
         self.axes = None
@@ -149,6 +151,8 @@ class MaskRegionsDialog(QObject):
 
         self.press = [int(event.xdata), int(event.ydata)]
         self.det = self.axes.get_title()
+        if not self.det:
+            self.det = self.image_mode
         self.create_patch()
         self.canvas.draw()
 
@@ -161,9 +165,11 @@ class MaskRegionsDialog(QObject):
 
     def create_mask(self):
         data_coords = self.patch.get_patch_transform().transform(
-            self.patch.get_path().vertices)
-        pixel_coords = self.axes.transData.transform(data_coords)
-        HexrdConfig().raw_masks_line_data.append(pixel_coords)
+            self.patch.get_path().vertices[:-1])
+        if self.image_mode == ViewType.raw:
+            HexrdConfig().raw_masks_line_data.append((self.det, data_coords))
+        elif self.image_mode == ViewType.polar:
+            HexrdConfig().polar_masks_line_data.append([data_coords])
 
     def button_released(self, event):
         if not self.axes or not self.press:
@@ -179,7 +185,9 @@ class MaskRegionsDialog(QObject):
 
     def apply_masks(self):
         self.disconnect()
-        self.patches = {det: [] for det in HexrdConfig().detector_names}
+        self.patches.clear()
+        if hasattr(self.canvas, 'axis'):
+            self.canvas.axis.patches.clear()
         self.new_mask_added.emit()
         self.canvas.draw()
 
