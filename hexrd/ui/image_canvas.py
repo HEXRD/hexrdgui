@@ -83,9 +83,10 @@ class ImageCanvas(FigureCanvas):
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
         if (self.mode != ViewType.raw or
-                len(image_names) != len(self.axes_images)):
-            # Either we weren't in image mode before, or we have a different
-            # number of images. Clear and re-draw.
+                len(image_names) != len(self.axes_images) or
+                len(HexrdConfig().raw_masks)):
+            # Either we weren't in image mode before, we have a different
+            # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
             self.mode = ViewType.raw
 
@@ -98,6 +99,11 @@ class ImageCanvas(FigureCanvas):
             idx = HexrdConfig().current_imageseries_idx
             for i, name in enumerate(image_names):
                 img = HexrdConfig().image(name, idx)
+
+                # Apply any masks
+                for det, mask in HexrdConfig().raw_masks:
+                    if det == name:
+                        img[~mask] = 0
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
                 axis.set_title(name)

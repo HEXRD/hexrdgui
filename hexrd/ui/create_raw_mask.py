@@ -1,9 +1,11 @@
 import copy
 import numpy as np
 
+from skimage.draw import polygon
+
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
-
+from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 
 def apply_threshold_mask(imageseries):
     comparison = HexrdConfig().threshold_comparison
@@ -33,3 +35,12 @@ def _create_threshold_mask(img, comparison, value):
         mask = (img == value)
     img[mask] = 0
     return img, mask
+
+
+def create_raw_mask(line_data):
+    name, data = line_data
+    img = HexrdConfig().image(name, 0)
+    rr, cc = polygon(data[:,1], data[:,0], shape=img.shape)
+    mask = np.ones(img.shape, dtype=bool)
+    mask[rr, cc] = False
+    HexrdConfig().raw_masks.append((name, mask))
