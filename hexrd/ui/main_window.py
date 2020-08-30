@@ -49,7 +49,7 @@ class MainWindow(QObject):
     new_images_loaded = Signal()
 
     # Emitted when a new mask is added
-    new_mask_added = Signal()
+    new_mask_added = Signal(str)
 
     def __init__(self, parent=None, image_files=None):
         super(MainWindow, self).__init__(parent)
@@ -624,7 +624,7 @@ class MainWindow(QObject):
 
     def run_apply_polar_mask(self, line_data):
         HexrdConfig().polar_masks_line_data.append(line_data.copy())
-        self.new_mask_added.emit()
+        self.new_mask_added.emit(self.image_mode)
         self.update_all()
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -653,7 +653,7 @@ class MainWindow(QObject):
             return
 
         HexrdConfig().polar_masks_line_data.append(data)
-        self.new_mask_added.emit()
+        self.new_mask_added.emit(self.image_mode)
         self.update_all()
 
     def on_action_edit_apply_raw_mask_triggered(self):

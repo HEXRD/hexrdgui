@@ -15,7 +15,7 @@ from skimage.draw import rectangle, ellipse
 class MaskRegionsDialog(QObject):
 
     # Emitted when new images are loaded
-    new_mask_added = Signal()
+    new_mask_added = Signal(str)
 
     def __init__(self, parent=None):
         super(MaskRegionsDialog, self).__init__(parent)
@@ -189,7 +189,7 @@ class MaskRegionsDialog(QObject):
         self.patches.clear()
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
-        self.new_mask_added.emit()
+        self.new_mask_added.emit(self.image_mode)
         self.canvas.draw()
 
     def cancel(self):

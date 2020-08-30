@@ -47,29 +47,33 @@ class MaskManagerDialog(QObject):
             value += 1
         return name
 
-    def update_masks_list(self):
-        if not self.threshold and HexrdConfig().threshold_mask_status:
+    def update_masks_list(self, mask_type):
+        if mask_type == 'polar':
+            if not HexrdConfig().polar_masks_line_data:
+                return
+            for data in HexrdConfig().polar_masks_line_data:
+                vals = self.masks.values()
+                for val in data:
+                    if any(np.array_equal(val, m) for t, m in vals):
+                        continue
+                    name = self.create_unique_name(mask_type + '_mask_0')
+                    self.masks[name] = (mask_type, val)
+                    self.visible.append(name)
+        elif mask_type == 'raw':
+            if not HexrdConfig().raw_masks_line_data:
+                return
+            for det, val in HexrdConfig().raw_masks_line_data:
+                vals = self.masks.values()
+                if any(np.array_equal(val, m) for t, m in vals):
+                    continue
+                name = self.create_unique_name(mask_type + '_mask_0')
+                self.masks[name] = (det, val)
+                self.visible.append(name)
+        else:
             name = self.create_unique_name('threshold')
             self.masks[name] = ('threshold', HexrdConfig().threshold_mask)
             self.visible.append(name)
             self.threshold = True
-        else:
-            polar = HexrdConfig().polar_masks_line_data
-            raw = HexrdConfig().raw_masks_line_data
-            for mtype, data in [('polar', polar), ('raw', raw)]:
-                if not data:
-                    continue
-                vals = self.masks.values()
-                for val in data:
-                    name = self.create_unique_name(mtype + '_mask_0')
-                    if isinstance(val, tuple):
-                        det, val = val
-                    if any(np.array_equal(val, m) for m, t in vals):
-                        return
-
-                    mask_type = mtype if mtype == 'polar' else det
-                    self.masks[name] = (mask_type, val)
-                    self.visible.append(name)
         self.setup_table()
 
     def setup_connections(self):
