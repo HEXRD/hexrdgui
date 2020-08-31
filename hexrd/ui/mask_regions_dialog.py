@@ -190,7 +190,6 @@ class MaskRegionsDialog(QObject):
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
         self.new_mask_added.emit(self.image_mode)
-        self.canvas.draw()
 
     def cancel(self):
         while self.added_patches:
