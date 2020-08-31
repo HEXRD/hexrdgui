@@ -150,8 +150,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_polar_mask_triggered)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
-        self.ui.action_edit_apply_raw_mask.triggered.connect(
-            self.on_action_edit_apply_raw_mask_triggered)
+        self.ui.action_edit_apply_polygon_mask.triggered.connect(
+            self.on_action_edit_apply_polygon_mask_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
@@ -655,7 +655,7 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         self.update_all()
 
-    def on_action_edit_apply_raw_mask_triggered(self):
+    def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
         mrd.new_mask_added.connect(self.update_all)
         mrd.new_mask_added.connect(self.new_mask_added.emit)
