@@ -1,10 +1,9 @@
 import os
 import numpy as np
 
-from PySide2.QtCore import QObject, Signal, Qt
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import (
-    QCheckBox, QFileDialog, QHBoxLayout, QMenu,
-    QPushButton, QTableWidgetItem, QWidget)
+    QCheckBox, QFileDialog, QMenu, QPushButton, QTableWidgetItem)
 from PySide2.QtGui import QCursor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -40,12 +39,13 @@ class MaskManagerDialog(QObject):
                 self.masks['raw_mask_' + str(i)] = (det, v)
         if HexrdConfig().threshold_mask_status:
             self.threshold = True
-            self.masks['threshold'] = ('threshold', HexrdConfig().threshold_mask)
+            self.masks['threshold'] = (
+                'threshold', HexrdConfig().threshold_mask)
         self.visible = list(self.masks.keys())
 
     def create_unique_name(self, name, value=0):
         while name in self.masks.keys():
-            prefix, *rest  = name.rpartition('_')
+            prefix, *rest = name.rpartition('_')
             name = f'{prefix}_{value}'
             value += 1
         return name
@@ -82,7 +82,8 @@ class MaskManagerDialog(QObject):
     def setup_connections(self):
         self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
-        self.ui.masks_table.customContextMenuRequested.connect(self.context_menu_event)
+        self.ui.masks_table.customContextMenuRequested.connect(
+            self.context_menu_event)
         self.ui.export_masks.clicked.connect(self.export_visible_masks)
         HexrdConfig().threshold_mask_changed.connect(self.update_masks_list)
 

@@ -24,8 +24,8 @@ from hexrd.ui.calibration.line_picked_calibration import (
 )
 from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
 from hexrd.ui.create_raw_mask import create_raw_mask
-from hexrd.ui.constants import ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL
-from hexrd.ui.constants import OverlayType, ViewType
+from hexrd.ui.constants import (
+    OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -222,7 +222,6 @@ class MainWindow(QObject):
             visible = True if key == current_workflow else False
             for widget in self.workflow_widgets[key]:
                 widget.setVisible(visible)
-
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and

@@ -1,15 +1,10 @@
-import numpy as np
-
 from PySide2.QtCore import QObject, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 
-from matplotlib import patches, path
-
-from skimage.draw import rectangle, ellipse
+from matplotlib import patches
 
 
 class MaskRegionsDialog(QObject):
@@ -99,7 +94,6 @@ class MaskRegionsDialog(QObject):
         self.disconnect()
         if self.ui.isVisible():
             self.setup_canvas_connections()
-
         for canvas in self.parent.image_tab_widget.active_canvases():
             for axes in canvas.raw_axes:
                 for p in self.patches.get(axes.get_title(), []):
