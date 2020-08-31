@@ -4,6 +4,7 @@ import numpy as np
 from skimage.draw import polygon
 
 from hexrd.ui import constants
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 
@@ -37,10 +38,21 @@ def _create_threshold_mask(img, comparison, value):
     return img, mask
 
 
+def convert_polar_to_raw(line):
+    line_data = []
+    for l in line:
+        for key, panel in create_hedm_instrument().detectors.items():
+            cart = panel.angles_to_cart(np.radians(l))
+            raw = panel.cartToPixel(cart)
+            line_data.append((key, raw))
+    return line_data
+
+
 def create_raw_mask(line_data):
     name, data = line_data
     img = HexrdConfig().image(name, 0)
     rr, cc = polygon(data[:,1], data[:,0], shape=img.shape)
-    mask = np.ones(img.shape, dtype=bool)
-    mask[rr, cc] = False
-    HexrdConfig().raw_masks.append((name, mask))
+    if len(rr) >= 1:
+        mask = np.ones(img.shape, dtype=bool)
+        mask[rr, cc] = False
+        HexrdConfig().raw_masks.append((name, mask))

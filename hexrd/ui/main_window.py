@@ -23,7 +23,7 @@ from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
 from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
-from hexrd.ui.create_raw_mask import create_raw_mask
+from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -788,6 +788,9 @@ class MainWindow(QObject):
             del HexrdConfig().raw_masks[:]
             for line_data in HexrdConfig().raw_masks_line_data:
                 create_raw_mask(line_data)
+            for data in HexrdConfig().polar_masks_line_data:
+                line_data = convert_polar_to_raw(data)
+                for line in line_data: create_raw_mask(line)
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before
