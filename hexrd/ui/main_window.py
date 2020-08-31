@@ -22,7 +22,7 @@ from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
-from hexrd.ui.create_polar_mask import create_polar_mask
+from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
 from hexrd.ui.create_raw_mask import create_raw_mask
 from hexrd.ui.constants import ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL
 from hexrd.ui.constants import OverlayType, ViewType
@@ -779,6 +779,9 @@ class MainWindow(QObject):
             # Rebuild polar masks
             del HexrdConfig().polar_masks[:]
             for line_data in HexrdConfig().polar_masks_line_data:
+                create_polar_mask(line_data)
+            for det, data in HexrdConfig().raw_masks_line_data:
+                line_data = convert_raw_to_polar(det, data)
                 create_polar_mask(line_data)
             self.ui.image_tab_widget.show_polar()
         else:
