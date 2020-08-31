@@ -27,6 +27,8 @@ class MaskRegionsDialog(QObject):
         self.press = []
         self.added_patches = []
         self.patches = {}
+        self.canvas = None
+        self.image_mode = None
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -123,13 +125,13 @@ class MaskRegionsDialog(QObject):
             HexrdConfig().polar_masks_line_data.pop()
         else:
             HexrdConfig().raw_masks_line_data.pop()
-        return self.patches[det].pop()
+        return self.patches[det].pop(), det
 
     def undo_selection(self):
         if not self.added_patches:
             return
 
-        last_patch = self.discard_patch()
+        last_patch, det = self.discard_patch()
         if det == ViewType.polar and hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.remove(last_patch)
         else:
@@ -187,6 +189,7 @@ class MaskRegionsDialog(QObject):
     def apply_masks(self):
         self.disconnect()
         self.patches.clear()
+        self.added_patches.clear()
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
         self.new_mask_added.emit(self.image_mode)
