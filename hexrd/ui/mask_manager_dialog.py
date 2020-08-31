@@ -1,8 +1,11 @@
+import os
 import numpy as np
 
 from PySide2.QtCore import QObject, Signal, Qt
 from PySide2.QtWidgets import (
-    QCheckBox, QHBoxLayout, QPushButton, QTableWidgetItem, QWidget)
+    QCheckBox, QFileDialog, QHBoxLayout, QMenu,
+    QPushButton, QTableWidgetItem, QWidget)
+from PySide2.QtGui import QCursor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -79,6 +82,8 @@ class MaskManagerDialog(QObject):
     def setup_connections(self):
         self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
+        self.ui.masks_table.customContextMenuRequested.connect(self.context_menu_event)
+        self.ui.export_masks.clicked.connect(self.export_visible_masks)
         HexrdConfig().threshold_mask_changed.connect(self.update_masks_list)
 
     def setup_table(self, status=True):
@@ -179,3 +184,34 @@ class MaskManagerDialog(QObject):
                 self.visible.append(new_name)
                 self.visible.remove(self.old_name)
         self.old_name = None
+
+    def context_menu_event(self, event):
+        index = self.ui.masks_table.indexAt(event)
+        menu = QMenu(self.ui.masks_table)
+        export = menu.addAction('Export Mask')
+        action = menu.exec_(QCursor.pos())
+        if action == export:
+            selection = self.ui.masks_table.item(index.row(), 0).text()
+            mtype, data = self.masks[selection]
+            self.export_masks({selection: data})
+
+    def export_masks(self, data):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Mask', HexrdConfig().working_dir,
+            'NPZ files (*.npz);; NPY files (*.npy)')
+
+        if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            path, ext = os.path.splitext(selected_file)
+
+            if ext.lower() == '.npz':
+                np.savez(selected_file, **data)
+            elif ext.lower() == '.npy':
+                np.save(selected_file, list(data.values())[0])
+
+    def export_visible_masks(self):
+        d = {}
+        for mask in self.visible:
+            mtype, data = self.masks[mask]
+            d[mask] = data
+        self.export_masks(d)
