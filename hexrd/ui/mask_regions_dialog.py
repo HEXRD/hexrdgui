@@ -143,6 +143,10 @@ class MaskRegionsDialog(QObject):
         self.axes = None
 
     def button_pressed(self, event):
+        if self.image_mode == ViewType.cartesian:
+            print('Masking must be done in raw or polar view')
+            return
+
         if not self.axes:
             return
 
