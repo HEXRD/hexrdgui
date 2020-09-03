@@ -1,9 +1,23 @@
 from enum import Enum
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtWidgets import QProxyStyle, QStyle
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+
+
+class SpinBoxStyle(QProxyStyle):
+    def styleHint(self, hint, option=None, widget=None, returnData=None):
+        """Increase the auto-repeat threshold to 1 sec.
+
+        Otherwise single click causes two increments.
+        """
+        if hint == QStyle.SH_SpinBox_ClickAutoRepeatThreshold:
+            return 1000
+        else:
+            return super().styleHint(hint, option, widget, returnData)
+
 
 class WidgetMode(Enum):
     ORIENTATION = 1  # sliders update orientation
@@ -19,6 +33,8 @@ class CalibrationCrystalSliderWidget(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('calibration_crystal_slider_widget.ui', parent)
+        for w in self.spinbox_widgets:
+            w.setStyle(SpinBoxStyle())
 
         self._orientation = [0.0] * 3
         self._position = [0.0] * 3
