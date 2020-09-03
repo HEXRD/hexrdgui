@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>384</width>
+    <width>427</width>
     <height>711</height>
    </rect>
   </property>
@@ -165,12 +165,12 @@
           </item>
           <item>
            <property name="text">
-            <string>Flip Vertically</string>
+            <string>Flip about Vertical Axis</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Flip Horizontally</string>
+            <string>Flip about Horizontal Axis</string>
            </property>
           </item>
           <item>
