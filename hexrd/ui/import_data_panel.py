@@ -123,7 +123,8 @@ class ImportDataPanel(QObject):
         ilm.set_state({ 'trans': [self.ui.transforms.currentIndex()] })
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
-        self.it.update_image(HexrdConfig().image('default', 0))
+        if self.it:
+            self.it.update_image(HexrdConfig().image('default', 0))
 
     def add_template(self):
         det = self.ui.detectors.currentText()
