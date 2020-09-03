@@ -36,7 +36,8 @@ class CalibrationCrystalSliderWidget(QObject):
         self._mode = WidgetMode.ORIENTATION
 
         loader = UiLoader()
-        self.ui = loader.load_file('calibration_crystal_slider_widget.ui', parent)
+        self.ui = loader.load_file(
+            'calibration_crystal_slider_widget.ui', parent)
         for w in self.spinbox_widgets:
             w.setStyle(SpinBoxStyle())
 
@@ -83,7 +84,7 @@ class CalibrationCrystalSliderWidget(QObject):
             suffix = ''
 
         self.ui.slider_range.setSuffix(suffix)
-        for i,w in enumerate(self.spinbox_widgets):
+        for i, w in enumerate(self.spinbox_widgets):
             blocker = QSignalBlocker(w)  # noqa: F841
             w.setSuffix(suffix)
             w.setValue(data[i])
@@ -144,10 +145,11 @@ class CalibrationCrystalSliderWidget(QObject):
         self.update_ranges()
 
     def update_ranges(self):
-        data = self._orientation if self.mode == WidgetMode.ORIENTATION else self._position
+        data = self._orientation if self.mode == WidgetMode.ORIENTATION \
+            else self._position
         range_value = self.ui.slider_range.value() * self.CONF_VAL_TO_SLIDER_VAL
         delta = range_value / 2.0
         sliders = self.slider_widgets
-        for i,slider in enumerate(sliders):
+        for i, slider in enumerate(sliders):
             val = data[i]
             slider.setRange(val - delta, val + delta)

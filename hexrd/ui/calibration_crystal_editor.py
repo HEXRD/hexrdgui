@@ -38,7 +38,6 @@ class CalibrationCrystalEditor(QObject):
 
         self.setup_connections()
 
-
     def setup_connections(self):
         HexrdConfig().euler_angle_convention_changed.connect(
             self.euler_angle_convention_changed)
@@ -82,7 +81,8 @@ class CalibrationCrystalEditor(QObject):
         self.params_modified.emit()
 
     def slider_widget_changed(self, mode, index, value):
-        prefix = 'orientation' if mode == SliderWidgetMode.ORIENTATION else 'position'
+        prefix = 'orientation' if mode == SliderWidgetMode.ORIENTATION \
+            else 'position'
         name = f'{prefix}_{index}'
         w = getattr(self.ui, name)
         w.setValue(value)
