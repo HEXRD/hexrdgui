@@ -84,7 +84,9 @@ def make_new_pdata(mat):
     prev_tThWidth = mat.planeData.tThWidth
     prev_tThMax = mat.planeData.tThMax
     mat._newPdata()
-    mat.planeData.exclusions = prev_exclusions
+    if len(mat.planeData.exclusions) == len(prev_exclusions):
+        mat.planeData.exclusions = prev_exclusions
+
     mat.planeData.tThWidth = prev_tThWidth
     mat.planeData.tThMax = prev_tThMax
 

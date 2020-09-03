@@ -441,7 +441,7 @@ class MainWindow(QObject):
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Materials File', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd)')
+            'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -507,7 +507,7 @@ class MainWindow(QObject):
     def on_action_save_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Materials', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd)')
+            'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)

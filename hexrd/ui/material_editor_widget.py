@@ -1,9 +1,11 @@
 from PySide2.QtCore import Signal, QObject
 
+from hexrd.material import _angstroms
 from hexrd import spacegroup
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import make_new_pdata
 
 
 class MaterialEditorWidget(QObject):
@@ -32,7 +34,7 @@ class MaterialEditorWidget(QObject):
             widget.currentIndexChanged.connect(self.set_space_group)
             widget.currentIndexChanged.connect(self.enable_lattice_params)
 
-        self.ui.max_hkl.valueChanged.connect(self.set_max_hkl)
+        self.ui.min_d_spacing.valueChanged.connect(self.set_min_d_spacing)
 
         # Flag overlays using this material for an update
         self.material_modified.connect(
@@ -57,11 +59,12 @@ class MaterialEditorWidget(QObject):
         self.set_space_group(sgid)
         self.enable_lattice_params()  # This updates the values also
 
-        prev_blocked = self.ui.max_hkl.blockSignals(True)
+        prev_blocked = self.ui.min_d_spacing.blockSignals(True)
         try:
-            self.ui.max_hkl.setValue(self.material.hklMax)
+            self.ui.min_d_spacing.setValue(
+                self.material.dmin.getVal('angstrom'))
         finally:
-            self.ui.max_hkl.blockSignals(prev_blocked)
+            self.ui.min_d_spacing.blockSignals(prev_blocked)
 
     @property
     def lattice_widgets(self):
@@ -118,7 +121,7 @@ class MaterialEditorWidget(QObject):
 
             self.set_material_space_group(sgid)
 
-            reqp = m.spaceGroup.reqParams
+            reqp = spacegroup.SpaceGroup(m.sgnum).reqParams
             lprm = m.latticeParameters
             for i, widget in enumerate(self.lattice_widgets):
                 widget.setEnabled(i in reqp)
@@ -134,7 +137,7 @@ class MaterialEditorWidget(QObject):
         self.block_lattice_signals(True)
         try:
             m = self.material
-            reqp = m.spaceGroup.reqParams
+            reqp = spacegroup.SpaceGroup(m.sgnum).reqParams
             nreq = len(reqp)
             lp_red = nreq*[0.0]
             for i in range(nreq):
@@ -155,14 +158,16 @@ class MaterialEditorWidget(QObject):
         # already equal before setting.
         if self.material.sgnum != sgid:
             self.material.sgnum = sgid
+            make_new_pdata(self.material)
             self.material_modified.emit()
 
-    def set_max_hkl(self):
+    def set_min_d_spacing(self):
         # This can be an expensive operation, so make sure it isn't
         # already equal before setting.
-        val = self.ui.max_hkl.value()
-        if self.material.hklMax != val:
-            self.material.hklMax = val
+        val = self.ui.min_d_spacing.value()
+        if self.material.dmin.getVal('angstrom') != val:
+            self.material.dmin = _angstroms(val)
+            make_new_pdata(self.material)
             self.material_modified.emit()
 
     @property

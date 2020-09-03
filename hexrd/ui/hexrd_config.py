@@ -1,5 +1,4 @@
 import copy
-import pickle
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
 
@@ -10,6 +9,8 @@ import hexrd.imageseries.save
 from hexrd.rotations import RotMatEuler
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.config.dumper import NumPyIncludeDumper
+from hexrd.material import load_materials_hdf5, save_materials_hdf5
+from hexrd.valunits import valWUnit
 
 from hexrd.ui import constants
 from hexrd.ui import overlays
@@ -419,13 +420,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
             yaml.dump(default, f, Dumper=NumPyIncludeDumper)
 
     def load_materials(self, f):
-        with open(f, 'rb') as rf:
-            data = rf.read()
-        self.load_materials_from_binary(data)
+        beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
+        self.materials = load_materials_hdf5(f, kev=beam_energy)
 
     def save_materials(self, f):
-        with open(f, 'wb') as wf:
-            pickle.dump(list(self.materials.values()), wf)
+        save_materials_hdf5(f, self.materials)
 
     def set_live_update(self, status):
         self.live_update = status
@@ -825,26 +824,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     # This section is for materials configuration
     def load_default_materials(self):
-        data = resource_loader.load_resource(hexrd.ui.resources.materials,
-                                             'materials.hexrd', binary=True)
-        self.load_materials_from_binary(data)
+        module = hexrd.ui.resources.materials
+        with resource_loader.path(module, 'materials.h5') as file_path:
+            self.load_materials(str(file_path))
 
         # Set the tth_max of all the materials to match that of the polar
         # resolution config.
         self.reset_tth_max_all_materials()
-
-    def load_materials_from_binary(self, data):
-        matlist = pickle.loads(data, encoding='latin1')
-        materials = dict(zip([i.name for i in matlist], matlist))
-
-        # For some reason, the default materials do not have the same beam
-        # energy as their plane data. We need to fix this.
-        for material in materials.values():
-            pd_wavelength = material.planeData.get_wavelength()
-            material._beamEnergy = constants.WAVELENGTH_TO_KEV / pd_wavelength
-
-        self.materials = materials
-        self.prune_overlays()
 
     def add_material(self, name, material):
         if name in self.materials:
@@ -898,6 +884,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.active_material = list(materials.keys())[0]
 
         self.prune_overlays()
+        self.flag_overlay_updates_for_all_materials()
+        self.overlay_config_changed.emit()
 
     materials = property(_materials, _set_materials)
 
@@ -1097,6 +1085,10 @@ class HexrdConfig(QObject, metaclass=Singleton):
         for overlay in self.overlays:
             if overlay['material'] == material_name:
                 overlay['update_needed'] = True
+
+    def flag_overlay_updates_for_all_materials(self):
+        for name in self.materials:
+            self.flag_overlay_updates_for_material(name)
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']

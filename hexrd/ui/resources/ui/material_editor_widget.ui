@@ -175,7 +175,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Max h² + k² + l²</string>
+           <string>Min d-spacing</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -215,18 +215,30 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="max_hkl">
+         <widget class="QDoubleSpinBox" name="min_d_spacing">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
+          <property name="suffix">
+           <string> Å</string>
+          </property>
+          <property name="decimals">
+           <number>5</number>
+          </property>
+          <property name="minimum">
+           <double>0.000010000000000</double>
+          </property>
           <property name="maximum">
-           <number>1000</number>
+           <double>1000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
           </property>
           <property name="value">
-           <number>100</number>
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -490,7 +502,6 @@
  </widget>
  <tabstops>
   <tabstop>space_group</tabstop>
-  <tabstop>max_hkl</tabstop>
   <tabstop>hall_symbol</tabstop>
   <tabstop>hermann_mauguin</tabstop>
   <tabstop>laue_group</tabstop>

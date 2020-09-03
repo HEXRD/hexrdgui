@@ -24,3 +24,7 @@ def module_contents(module):
 
 def import_dynamic_module(name):
     return import_module(name)
+
+
+def path(module, name):
+    return importlib_resources.path(module, name)
