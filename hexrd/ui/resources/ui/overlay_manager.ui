@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>494</width>
-    <height>220</height>
+    <height>246</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -37,12 +37,18 @@
      <property name="text">
       <string>Remove</string>
      </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
     </widget>
    </item>
    <item row="2" column="0">
     <widget class="QPushButton" name="add_button">
      <property name="text">
       <string>Add</string>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
@@ -118,6 +124,9 @@
      </property>
      <property name="text">
       <string>Edit Style</string>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
