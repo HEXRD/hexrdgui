@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 from PySide2.QtWidgets import QProxyStyle, QStyle
@@ -19,13 +19,13 @@ class SpinBoxStyle(QProxyStyle):
             return super().styleHint(hint, option, widget, returnData)
 
 
-class WidgetMode(Enum):
+class WidgetMode(IntEnum):
     ORIENTATION = 1  # sliders update orientation
     POSITION = 2     # sliders update position
 
 
 class CalibrationCrystalSliderWidget(QObject):
-    changed = Signal(list, list)
+    changed = Signal(int, int, float)
 
     def __init__(self, parent=None):
         super(CalibrationCrystalSliderWidget, self).__init__(parent)
@@ -82,11 +82,12 @@ class CalibrationCrystalSliderWidget(QObject):
     def on_spinbox_changed(self, value):
         sender_name = self.sender().objectName()
         index = int(sender_name[-1])
-        if self.mode == WidgetMode.ORIENTATION:
+        mode = self.mode
+        if mode == WidgetMode.ORIENTATION:
             self._orientation[index] = value
         else:
             self._position[index] = value
-        self.changed.emit(self._orientation, self._position)
+        self.changed.emit(mode.value, index, value)
 
     def set_orientation_suffix(self, suffix):
         self._orientation_suffix = suffix

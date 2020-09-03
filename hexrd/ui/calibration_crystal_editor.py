@@ -9,7 +9,10 @@ from hexrd import matrixutil
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
-from hexrd.ui.calibration_crystal_slider_widget import CalibrationCrystalSliderWidget
+from hexrd.ui.calibration_crystal_slider_widget import (
+    CalibrationCrystalSliderWidget,
+    WidgetMode as SliderWidgetMode
+)
 
 
 class CalibrationCrystalEditor(QObject):
@@ -78,10 +81,11 @@ class CalibrationCrystalEditor(QObject):
 
         self.params_modified.emit()
 
-    def slider_widget_changed(self, orientation, position):
-        self.params[:3] = orientation
-        self.params[3:6] = position
-        self.params_modified.emit()
+    def slider_widget_changed(self, mode, index, value):
+        prefix = 'orientation' if mode == SliderWidgetMode.ORIENTATION else 'position'
+        name = f'{prefix}_{index}'
+        w = getattr(self.ui, name)
+        w.setValue(value)
 
     def euler_angle_convention_changed(self):
         self.update_gui()
@@ -228,15 +232,8 @@ class CalibrationCrystalEditor(QObject):
 
     def update_config_gui(self):
         current_widget = self.ui.tab_widget.currentWidget()
-        if current_widget is self.ui.form_tab:
-            # Update local widgets from slider
-            orientation = self.slider_widget.orientation
-            for i, w in enumerate(self.orientation_widgets):
-                blocker = QSignalBlocker(w)  # noqa: F841
-                w.setValue(orientation[i])
-            self.position = self.slider_widget.position
-        elif current_widget is self.ui.slider_tab:
-            # Update slider from local widgets
+        if current_widget is self.ui.slider_tab:
+            # Update slider tab contents
             o_values = [x.value() for x in self.orientation_widgets]
             p_values = [x.value() for x in self.position_widgets]
             self.slider_widget.update_gui(o_values, p_values)
