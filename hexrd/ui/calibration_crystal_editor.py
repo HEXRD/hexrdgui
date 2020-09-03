@@ -114,7 +114,7 @@ class CalibrationCrystalEditor(QObject):
         self.position = self.params[3:6]
         self.inverse_stretch = self.params[6:]
 
-        self.slider_widget.update_gui(self.orientation, self.position)
+        self.update_config_gui()
 
     @property
     def stretch_matrix_duplicates(self):
