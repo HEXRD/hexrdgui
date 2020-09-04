@@ -1,4 +1,5 @@
 import copy
+import os
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
 
@@ -9,7 +10,7 @@ import hexrd.imageseries.save
 from hexrd.rotations import RotMatEuler
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.config.dumper import NumPyIncludeDumper
-from hexrd.material import load_materials_hdf5, save_materials_hdf5
+from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.valunits import valWUnit
 
 from hexrd.ui import constants
@@ -425,6 +426,23 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     def save_materials(self, f):
         save_materials_hdf5(f, self.materials)
+
+    def import_material(self, f):
+        beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
+        base_name = os.path.splitext(os.path.basename(f))[0]
+
+        # Make sure we have a unique name
+        ind = 1
+        name = base_name
+        while name in self.materials:
+            name = base_name + f'_{ind}'
+            ind += 1
+
+        material = Material(name, f, kev=beam_energy)
+        self.add_material(name, material)
+
+        # Make it the active material
+        self.active_material = name
 
     def set_live_update(self, status):
         self.live_update = status
