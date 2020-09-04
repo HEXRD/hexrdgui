@@ -48,11 +48,6 @@ def calibrate_instrument_from_picks(
         param_flags=None, xtol=1e-4, ftol=1e-4):
     """
     arguments xyo_det, hkls_idx are DICTs over panels
-
-    !!!
-        distortion is still hosed...
-        Currently a dict of detector keys with
-        distortion[key] = [d_func, d_params, d_flags]
     """
     pnames = [
         '{:>24s}'.format('wavelength'),
@@ -78,10 +73,10 @@ def calibrate_instrument_from_picks(
     if tilt_conversion is not None:
         instr.tilt_calibration_mapping = tilt_conversion
 
-    # now add distortion if
+    # now add distortion if not None
     for det_key, panel in instr.detectors.items():
         if panel.distortion is not None:
-            for j in range(len(panel.distortion[1])):
+            for j in range(len(panel.distortion.params)):
                 pnames.append(
                     '{:>24s}'.format('%s dparam[%d]' % (det_key, j))
                 )
