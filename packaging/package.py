@@ -120,8 +120,10 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     env_prefix = str(tmp / package_env_name)
     Conda.run_command(
         Conda.Commands.CREATE,
-        '--prefix', env_prefix ,
-        'python=3.8'
+        '--prefix', env_prefix,
+        '--channel', 'anaconda',
+        '--channel', 'conda-forge',
+        'python=3.8.4'
     )
 
     hexrdgui_output_folder_uri = Path(hexrdgui_output_folder).absolute().as_uri()
