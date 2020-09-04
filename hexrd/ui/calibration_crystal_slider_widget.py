@@ -27,6 +27,8 @@ class WidgetMode(IntEnum):
 class CalibrationCrystalSliderWidget(QObject):
     changed = Signal(int, int, float)
 
+    DEFAULT_SLIDER_RANGE = 30.0
+
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10
     SLIDER_VAL_TO_CONF_VAL = 0.1
@@ -42,10 +44,10 @@ class CalibrationCrystalSliderWidget(QObject):
             w.setStyle(SpinBoxStyle())
 
         self._orientation = [0.0] * 3
-        self._orientatin_range = 30.0
+        self._orientation_range = self.DEFAULT_SLIDER_RANGE
         self._orientation_suffix = ''
         self._position = [0.0] * 3
-        self._position_range = 30.0
+        self._position_range = self.DEFAULT_SLIDER_RANGE
 
         self.setup_connections()
 
@@ -128,8 +130,8 @@ class CalibrationCrystalSliderWidget(QObject):
         self.changed.emit(mode.value, index, value)
 
     def reset_ranges(self):
-        self._orientation_range = 30.0
-        self._position_range = 30.0
+        self._orientation_range = self.DEFAULT_SLIDER_RANGE
+        self._position_range = self.DEFAULT_SLIDER_RANGE
         self.update_ranges()
 
     def setup_connections(self):
