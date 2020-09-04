@@ -28,6 +28,7 @@ class ImportDataPanel(QObject):
         self.it = None
         self.edited_images = {}
         self.completed_detectors = []
+        self.canvas = parent.image_tab_widget.image_canvases[0]
 
         self.setup_connections()
 
@@ -78,6 +79,8 @@ class ImportDataPanel(QObject):
         fname = 'default_' + name.lower() + '_config.yml'
         with resource_loader.resource_path(
                 hexrd.ui.resources.calibration, fname) as f:
+            for overlay in HexrdConfig().overlays:
+                overlay['visible'] = False
             HexrdConfig().load_instrument_config(f)
 
     def detector_selected(self, selected):
@@ -104,6 +107,8 @@ class ImportDataPanel(QObject):
                 if not path_selected:
                     return
 
+            if hasattr(self, 'prev_extent'):
+                self.canvas.axes_images[0].set_extent(self.prev_extent)
             ImageLoadManager().read_data(files, parent=self.ui)
 
             file_names = [os.path.split(f[0])[1] for f in files]
@@ -121,7 +126,8 @@ class ImportDataPanel(QObject):
         ilm.set_state({ 'trans': [self.ui.transforms.currentIndex()] })
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
-        self.it.update_image(HexrdConfig().image('default', 0))
+        if self.it:
+            self.it.update_image(HexrdConfig().image('default', 0))
 
     def add_template(self):
         det = self.ui.detectors.currentText()
@@ -155,9 +161,7 @@ class ImportDataPanel(QObject):
             self.it.disconnect_translate()
         else:
             self.it.disconnect_rotate()
-        img = self.it.get_mask()
-        bounds = np.array([int(val) for val in self.it.crop()]).reshape(2, 2)
-        self.finalize(img, bounds)
+        self.finalize()
         self.completed_detectors.append(self.ui.detectors.currentText())
         self.enable_widgets(self.ui.detectors, self.ui.load, self.ui.complete,
                             self.ui.completed_dets, self.ui.save,
@@ -167,18 +171,21 @@ class ImportDataPanel(QObject):
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
 
-    def finalize(self, img, bounds):
+    def finalize(self):
+        self.it.get_mask()
+        img = self.it.crop()
+        bounds = self.it.bounds()
         ImageLoadManager().read_data([[img]], parent=self.ui)
-        ilm = ImageLoadManager()
-        ilm.set_state({'rect': [bounds]})
-        ilm.begin_processing()
         det = self.ui.detectors.currentText()
         self.edited_images[det] = {
             'img': img,
-            'rect': bounds,
-            'height': np.abs(bounds[0][0]-bounds[0][1]),
-            'width': np.abs(bounds[1][0]-bounds[1][1])
+            'height': np.abs(bounds[1]-bounds[0]),
+            'width': np.abs(bounds[3]-bounds[2])
         }
+        self.canvas.raw_axes[0].autoscale(True)
+        self.prev_extent = self.canvas.axes_images[0].get_extent()
+        self.canvas.axes_images[0].set_extent(
+            (bounds[2], bounds[3], bounds[0], bounds[1]))
         self.it.redraw()
         self.clear_boundry()
 
@@ -216,7 +223,6 @@ class ImportDataPanel(QObject):
     def completed(self):
         self.check_for_unsaved_changes()
 
-        state = {'rect': []}
         files = []
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
@@ -226,13 +232,10 @@ class ImportDataPanel(QObject):
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'rows', 'value'],
                 int(val['height']))
-            state['rect'].append(val['rect'])
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
         ilm = ImageLoadManager()
         ilm.read_data(files, parent=self.ui)
-        ilm.set_state(state)
-        ilm.begin_processing()
         self.new_config_loaded.emit()
 
         self.reset_panel()
