@@ -86,7 +86,7 @@ class InteractiveTemplate:
 
     def crop(self):
         y0, y1, x0, x1 = self.bounds()
-        self.img = self.img[y0:y1,x0:x1]
+        self.img = self.img[y0:y1, x0:x1]
         return self.img
 
     def connect_translate(self):
