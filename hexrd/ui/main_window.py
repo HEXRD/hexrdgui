@@ -511,6 +511,12 @@ class MainWindow(QObject):
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
+
+            # Ensure the file name has an hdf5 ending
+            acceptable_exts = ['.h5', '.hdf5']
+            if not any(selected_file.endswith(x) for x in acceptable_exts):
+                selected_file += '.h5'
+
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_export_polar_plot_triggered(self):
