@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>697</height>
+    <height>725</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -573,6 +573,9 @@
       <widget class="QPushButton" name="export_button">
        <property name="text">
         <string>Export</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
        </property>
       </widget>
      </item>

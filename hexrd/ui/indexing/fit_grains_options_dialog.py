@@ -2,6 +2,8 @@ from PySide2.QtCore import (
     QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal, Slot)
 from PySide2.QtWidgets import QDialogButtonBox, QHeaderView
 
+from hexrd.ui import enter_key_filter
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -24,6 +26,7 @@ class FitGrainsOptionsDialog(QObject):
         self.ui = loader.load_file('fit_grains_options_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.installEventFilter(enter_key_filter)
 
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')

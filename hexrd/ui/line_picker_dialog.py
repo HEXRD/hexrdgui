@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 
+from hexrd.ui import enter_key_filter
+
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.zoom_canvas import ZoomCanvas
@@ -24,6 +26,7 @@ class LinePickerDialog(QObject):
         self.ui = loader.load_file('line_picker_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.installEventFilter(enter_key_filter)
 
         self.canvas = canvas
         self.ring_data = []

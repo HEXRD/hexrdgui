@@ -1,3 +1,5 @@
+from hexrd.ui import enter_key_filter
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ui_loader import UiLoader
@@ -9,6 +11,7 @@ class TransformDialog:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('transforms_dialog.ui', parent)
+        self.ui.installEventFilter(enter_key_filter)
         self.det_labels = []
         self.det_cboxes = []
 
