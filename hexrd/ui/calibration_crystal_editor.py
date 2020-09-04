@@ -29,7 +29,6 @@ class CalibrationCrystalEditor(QObject):
         # Load slider widget
         self.slider_widget = CalibrationCrystalSliderWidget(parent=self.ui)
         self.ui.slider_widget_parent.layout().addWidget(self.slider_widget.ui)
-        self.ui.tab_widget.removeTab(2)  # remove deprecated sliders
 
         self.params = params
 
@@ -43,7 +42,7 @@ class CalibrationCrystalEditor(QObject):
             self.euler_angle_convention_changed)
 
         self.ui.tab_widget.currentChanged.connect(
-            self.update_config_gui)
+            self.update_tab_gui)
 
         for w in self.all_widgets:
             w.valueChanged.connect(self.value_changed)
@@ -58,6 +57,7 @@ class CalibrationCrystalEditor(QObject):
     def params(self, v):
         self._params = copy.deepcopy(v)
         self.update_gui()
+        self.slider_widget.reset_ranges()
 
     def value_changed(self):
         sender = self.sender()
@@ -114,7 +114,7 @@ class CalibrationCrystalEditor(QObject):
         self.position = self.params[3:6]
         self.inverse_stretch = self.params[6:]
 
-        self.update_config_gui()
+        self.update_tab_gui()
 
     @property
     def stretch_matrix_duplicates(self):
@@ -230,10 +230,10 @@ class CalibrationCrystalEditor(QObject):
             self.stretch_matrix_widgets
         )
 
-    def update_config_gui(self):
+    def update_tab_gui(self):
+        """Updates slider tab contents when it becomes current tab."""
         current_widget = self.ui.tab_widget.currentWidget()
         if current_widget is self.ui.slider_tab:
-            # Update slider tab contents
             o_values = [x.value() for x in self.orientation_widgets]
             p_values = [x.value() for x in self.position_widgets]
             self.slider_widget.update_gui(o_values, p_values)

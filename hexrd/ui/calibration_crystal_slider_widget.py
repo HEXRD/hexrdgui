@@ -42,8 +42,10 @@ class CalibrationCrystalSliderWidget(QObject):
             w.setStyle(SpinBoxStyle())
 
         self._orientation = [0.0] * 3
-        self._position = [0.0] * 3
+        self._orientatin_range = 30.0
         self._orientation_suffix = ''
+        self._position = [0.0] * 3
+        self._position_range = 30.0
 
         self.setup_connections()
 
@@ -78,16 +80,23 @@ class CalibrationCrystalSliderWidget(QObject):
     def on_mode_changed(self):
         if self.mode == WidgetMode.ORIENTATION:
             data = self._orientation
+            srange = self._orientation_range
             suffix = self._orientation_suffix
         else:
             data = self._position
+            srange = self._position_range
             suffix = ''
 
-        self.ui.slider_range.setSuffix(suffix)
+        # Update spinbox values
         for i, w in enumerate(self.spinbox_widgets):
             blocker = QSignalBlocker(w)  # noqa: F841
             w.setSuffix(suffix)
             w.setValue(data[i])
+
+        # Update slider positions
+        self.ui.slider_range.setValue(srange)
+        self.ui.slider_range.setSuffix(suffix)
+        self.update_ranges()
 
     def on_slider_changed(self, value):
         sender_name = self.sender().objectName()
@@ -96,6 +105,9 @@ class CalibrationCrystalSliderWidget(QObject):
         w_name = f'spinbox_{index}'
         w = getattr(self.ui, w_name)
         w.setValue(spinbox_value)
+
+    def on_range_changed(self):
+        self.update_ranges()
 
     def on_spinbox_changed(self, value):
         sender_name = self.sender().objectName()
@@ -110,17 +122,23 @@ class CalibrationCrystalSliderWidget(QObject):
         slider_value = value * self.CONF_VAL_TO_SLIDER_VAL
         w_name = f'slider_{index}'
         w = getattr(self.ui, w_name)
-        blocker = QSignalBlocker(w)
+        blocker = QSignalBlocker(w)  # noqa: F841
         w.setValue(slider_value)
 
         self.changed.emit(mode.value, index, value)
 
+    def reset_ranges(self):
+        self._orientation_range = 30.0
+        self._position_range = 30.0
+        self.update_ranges()
+
     def setup_connections(self):
+        self.ui.slider_mode.currentIndexChanged.connect(self.on_mode_changed)
+        self.ui.slider_range.valueChanged.connect(self.on_range_changed)
         for w in self.spinbox_widgets:
             w.valueChanged.connect(self.on_spinbox_changed)
         for w in self.slider_widgets:
             w.valueChanged.connect(self.on_slider_changed)
-        self.ui.slider_mode.currentIndexChanged.connect(self.on_mode_changed)
 
     def set_orientation_suffix(self, suffix):
         self._orientation_suffix = suffix
@@ -133,10 +151,7 @@ class CalibrationCrystalSliderWidget(QObject):
         """Called by parent widget."""
         self._orientation = orientation
         self._position = position
-        self.update_gui_from_config()
 
-    def update_gui_from_config(self):
-        """Called when widget becomes active tab."""
         data = self._orientation if self.mode == WidgetMode.ORIENTATION \
             else self._position
         for i, w in enumerate(self.spinbox_widgets):
@@ -147,9 +162,12 @@ class CalibrationCrystalSliderWidget(QObject):
     def update_ranges(self):
         data = self._orientation if self.mode == WidgetMode.ORIENTATION \
             else self._position
-        range_value = self.ui.slider_range.value() * self.CONF_VAL_TO_SLIDER_VAL
+        range_value = self.ui.slider_range.value() * \
+            self.CONF_VAL_TO_SLIDER_VAL
         delta = range_value / 2.0
         sliders = self.slider_widgets
         for i, slider in enumerate(sliders):
             val = data[i]
+            blocker = QSignalBlocker(slider)  # noqa: F841
             slider.setRange(val - delta, val + delta)
+            slider.setValue(val)
