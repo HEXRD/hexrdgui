@@ -4,6 +4,8 @@ import numpy as np
 from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
+from skimage.transform import rotate
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -41,7 +43,7 @@ class ImportDataPanel(QObject):
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
         self.ui.add_transform.clicked.connect(self.add_transform)
-        self.ui.button_box.accepted.connect(self.crop_and_mask)
+        self.ui.button_box.accepted.connect(self.finalize)
         self.ui.button_box.rejected.connect(self.clear)
         self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
@@ -156,12 +158,12 @@ class ImportDataPanel(QObject):
         self.it.clear()
         self.it = None
 
-    def crop_and_mask(self):
+    def finalize(self):
         if self.ui.trans.isChecked():
             self.it.disconnect_translate()
         else:
             self.it.disconnect_rotate()
-        self.finalize()
+        self.crop_and_mask()
         self.completed_detectors.append(self.ui.detectors.currentText())
         self.enable_widgets(self.ui.detectors, self.ui.load, self.ui.complete,
                             self.ui.completed_dets, self.ui.save,
@@ -171,16 +173,20 @@ class ImportDataPanel(QObject):
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
 
-    def finalize(self):
-        self.it.get_mask()
+    def crop_and_mask(self):
+        if self.it.rotation:
+            self.it.update_image(rotate(self.it.img, self.it.rotation))
+            self.it.rotate_template(self.it.get_shape().xy, -(self.it.rotation))
+        self.it.update_image(self.it.get_mask())
         img = self.it.crop()
         bounds = self.it.bounds()
         ImageLoadManager().read_data([[img]], parent=self.ui)
         det = self.ui.detectors.currentText()
         self.edited_images[det] = {
             'img': img,
-            'height': np.abs(bounds[1]-bounds[0]),
-            'width': np.abs(bounds[3]-bounds[2])
+            'height': img.shape[0],
+            'width': img.shape[1],
+            'transform': transform
         }
         self.canvas.raw_axes[0].autoscale(True)
         self.prev_extent = self.canvas.axes_images[0].get_extent()
@@ -208,7 +214,7 @@ class ImportDataPanel(QObject):
         response = QMessageBox.question(
             self.ui, 'HEXRD', msg, (QMessageBox.Cancel | QMessageBox.Save))
         if response == QMessageBox.Save:
-            self.crop_and_mask()
+            self.finalize()
 
     def reset_panel(self):
         self.clear_boundry()

@@ -16,6 +16,7 @@ class InteractiveTemplate:
         self.img = img
         self.shape = None
         self.press = None
+        self.final_rotation = 0
 
     def update_image(self, img):
         self.img = img
@@ -36,6 +37,10 @@ class InteractiveTemplate:
     def get_mask(self):
         self.mask()
         return self.img
+
+    @property
+    def rotation(self):
+        return self.final_rotation
 
     def clear(self):
         self.raw_axes.patches.remove(self.shape)
@@ -203,6 +208,7 @@ class InteractiveTemplate:
             return
 
         angle = self.get_angle(event)
+        self.final_rotation += angle
         y, x = self.center
         xy, xpress, ypress = self.press
         self.press = None
