@@ -444,7 +444,7 @@ class MainWindow(QObject):
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Materials File', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd)')
+            'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -510,10 +510,16 @@ class MainWindow(QObject):
     def on_action_save_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Materials', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd)')
+            'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
+
+            # Ensure the file name has an hdf5 ending
+            acceptable_exts = ['.h5', '.hdf5']
+            if not any(selected_file.endswith(x) for x in acceptable_exts):
+                selected_file += '.h5'
+
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_export_polar_plot_triggered(self):

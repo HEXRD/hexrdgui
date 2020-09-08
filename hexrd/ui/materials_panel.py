@@ -1,9 +1,10 @@
 import copy
 import math
+import os
 
 from PySide2.QtCore import QObject, QSignalBlocker, Qt
 from PySide2.QtGui import QFocusEvent, QKeyEvent
-from PySide2.QtWidgets import QComboBox, QMenu, QMessageBox
+from PySide2.QtWidgets import QComboBox, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.materials_table import MaterialsTable
@@ -42,6 +43,7 @@ class MaterialsPanel(QObject):
         self.tool_button_menu = m
 
         self.add_material_action = m.addAction('Add material')
+        self.import_material_action = m.addAction('Import material')
         self.delete_material_action = m.addAction('Delete material')
 
         b.setMenu(m)
@@ -49,6 +51,7 @@ class MaterialsPanel(QObject):
     def setup_connections(self):
         self.ui.materials_combo.installEventFilter(self)
         self.add_material_action.triggered.connect(self.add_material)
+        self.import_material_action.triggered.connect(self.import_material)
         self.delete_material_action.triggered.connect(
             self.remove_current_material)
         self.ui.materials_combo.currentIndexChanged.connect(
@@ -207,6 +210,16 @@ class MaterialsPanel(QObject):
         HexrdConfig().active_material = new_name
         self.material_editor_widget.material = new_mat
         self.update_gui_from_config()
+
+    def import_material(self):
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, 'Import Material', HexrdConfig().working_dir,
+            'CIF files (*.cif)')
+
+        if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            HexrdConfig().import_material(selected_file)
+            self.update_gui_from_config()
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
