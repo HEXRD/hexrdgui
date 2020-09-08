@@ -6,6 +6,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from skimage.transform import rotate
 
+from hexrd.ui.utils import convert_angle_convention
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -181,8 +182,24 @@ class ImportDataPanel(QObject):
             set(self.completed_detectors)))
 
     def set_tilt(self, det):
-        return HexrdConfig().get_instrument_config_val(
+        transform = HexrdConfig().get_instrument_config_val(
             ['detectors', det, 'transform'])
+        tilt_angles = transform['tilt']['value']
+        convention = HexrdConfig().euler_angle_convention
+        if convention['axes_order'] == 'xyz':
+            *zx, z = convert_angle_convention(
+                tilt_angles,
+                convention,
+                {'axes_order': 'zxz', 'extrinsic': False})
+            tilt_angles = convert_angle_convention(
+                [*zx, (z + float(-self.it.rotation))],
+                {'axes_order': 'zxz', 'extrinsic': False},
+                convention)
+        else:
+            *zx, z = transform['tilt']['value']
+            tilt_angles = [*zx, (z + float(-self.it.rotation))]
+        transform['tilt']['value'] = tilt_angles
+        return transform
 
     def crop_and_mask(self):
         if self.it.rotation:
