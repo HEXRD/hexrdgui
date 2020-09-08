@@ -1,7 +1,7 @@
 from PySide2.QtCore import QObject, Qt, QTimer, Signal
 from PySide2.QtGui import QFocusEvent, QKeyEvent
 from PySide2.QtWidgets import (
-    QAbstractSpinBox, QComboBox, QLineEdit, QMessageBox, QPushButton
+    QComboBox, QLineEdit, QMessageBox, QPushButton
 )
 
 import numpy as np
@@ -9,6 +9,7 @@ import numpy as np
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
 
 
 class CalibrationConfigWidget(QObject):
@@ -64,6 +65,7 @@ class CalibrationConfigWidget(QObject):
 
         self.ui.cal_det_function.currentIndexChanged.connect(
             self.update_gui_from_config)
+        self.ui.cal_det_buffer.clicked.connect(self._on_configure_buffer)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -377,3 +379,13 @@ class CalibrationConfigWidget(QObject):
                         return False
 
         return False
+
+    def _on_configure_buffer(self):
+        # Disable button to prevent multiple dialogs
+        self.ui.cal_det_buffer.setEnabled(False)
+        detector = self.get_current_detector()
+        dialog = PanelBufferDialog(detector, self.ui)
+        dialog.show()
+        # Re-enable button
+        dialog.ui.finished.connect(
+            lambda _: self.ui.cal_det_buffer.setEnabled(True))

@@ -207,13 +207,10 @@ class PowderCalibrator(object):
                         continue
                     xy_meas = panel.angles_to_cart([[tth_meas, eta_ref], ])
 
-                    # FIXME: distortion kludge
+                    # distortion
                     if panel.distortion is not None:
-                        xy_meas = panel.distortion[0](
-                                xy_meas,
-                                panel.distortion[1],
-                                invert=True
-                            )
+                        xy_meas = panel.distortion.apply_inverse(xy_meas)
+
                     # cat results
                     tmp.append(
                         np.hstack(
@@ -246,13 +243,9 @@ class PowderCalibrator(object):
             if len(pdata) > 0:
                 calc_xy = panel.angles_to_cart(pdata[:, -2:])
 
-                # FIXME: distortion kludge
+                # distortion
                 if panel.distortion is not None:
-                    calc_xy = panel.distortion[0](
-                            calc_xy,
-                            panel.distortion[1],
-                            invert=True
-                        )
+                    calc_xy = panel.distortion.apply_inverse(calc_xy)
 
                 resd.append(
                     (pdata[:, :2].flatten() - calc_xy.flatten())

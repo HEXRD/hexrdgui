@@ -72,17 +72,22 @@ class InteractiveTemplate:
 
         return all_paths
 
-    def crop(self):
+    def bounds(self):
         l, r, b, t = self.ax.get_extent()
         x0, y0 = np.nanmin(self.shape.xy, axis=0)
         x1, y1 = np.nanmax(self.shape.xy, axis=0)
-        return (max(np.floor(y0), t),
-                min(np.ceil(y1), b),
-                max(np.floor(x0), l),
-                min(np.ceil(x1), r))
+        return np.array([max(np.floor(y0), t),
+                         min(np.ceil(y1), b),
+                         max(np.floor(x0), l),
+                         min(np.ceil(x1), r)]).astype(int)
 
     def redraw(self):
         self.parent.draw()
+
+    def crop(self):
+        y0, y1, x0, x1 = self.bounds()
+        self.img = self.img[y0:y1, x0:x1]
+        return self.img
 
     def connect_translate(self):
         self.button_press_cid = self.parent.mpl_connect(

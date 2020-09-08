@@ -4,11 +4,13 @@ from PySide2.QtWidgets import (
 )
 from PySide2.QtGui import QCursor
 
+import numpy as np
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
-
+from hexrd.ui import constants
 
 # Global constants
 REFINED = 0
@@ -49,10 +51,16 @@ class CalTreeItemModel(BaseTreeItemModel):
         path = self.get_path_from_root(item, index.column())
 
         # If they are identical, don't do anything
-        if value == item.data(index.column()):
+        # (we exclude np.ndarray's from this)
+        is_numpy = isinstance(value, np.ndarray) or \
+            isinstance(item.data(index.column()), np.ndarray)
+        if not is_numpy and value == item.data(index.column()):
             return True
 
-        if index.column() == VALUE_COL:
+        key = item.data(KEY_COL)
+        # Note: We don't want todo this check for panel buffers as they
+        # can be a list or numpy.ndarray
+        if index.column() == VALUE_COL and key != constants.BUFFER_KEY:
             old_value = self.cfg.get_instrument_config_val(path)
 
             # As a validation step, ensure that the new value can be
@@ -91,6 +99,11 @@ class CalTreeItemModel(BaseTreeItemModel):
         return flags
 
     def add_tree_item(self, key, value, status, parent):
+        # In the case of the panel buffer we don't want to added children
+        # The editor will take care of this.
+        if parent.data(KEY_COL) == constants.BUFFER_KEY:
+            return
+
         data = [key, value, status]
         tree_item = TreeItem(data, parent)
         return tree_item
@@ -123,7 +136,8 @@ class CalTreeItemModel(BaseTreeItemModel):
             else:
                 tree_item = self.add_tree_item(key, None, REFINED,
                                                cur_tree_item)
-            self.recursive_add_tree_items(cur_config[key], tree_item)
+            if tree_item is not None:
+                self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def update_parent_status(self, parent):
         children = parent.child_items
@@ -261,6 +275,11 @@ class CalTreeView(QTreeView):
             index = self.model().index(i, KEY_COL, parent)
             item = self.model().get_item(index)
             path = self.model().get_path_from_root(item, KEY_COL)
+
+            # Force open the editor for the panel buffer values
+            if item.data(KEY_COL) == constants.BUFFER_KEY:
+                self.openPersistentEditor(self.model().index(i, VALUE_COL,
+                                          parent))
 
             if (HexrdConfig().collapsed_state is None
                     or path not in HexrdConfig().collapsed_state):
