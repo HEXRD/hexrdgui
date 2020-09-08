@@ -2,7 +2,39 @@ beam:
   energy: 71.6764
   vector: {azimuth: 90.0, polar_angle: 90.0}
 detectors:
-  default:
+  IMAGE-PLATE-B:
+    pixels:
+      columns: 3750
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+  IMAGE-PLATE-D:
+    pixels:
+      columns: 3750
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+  IMAGE-PLATE-L:
+    pixels:
+      columns: 3750
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+  IMAGE-PLATE-R:
+    pixels:
+      columns: 3750
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [0.0, 0.0, 0.0]
+      translation: [0.0, 0.0, 0.0]
+  IMAGE-PLATE-U:
     pixels:
       columns: 3750
       rows: 750

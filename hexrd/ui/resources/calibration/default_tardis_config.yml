@@ -2,7 +2,23 @@ beam:
   energy: 10.2505
   vector: {azimuth: 62.94883531793789, polar_angle: 86.08781021594156}
 detectors:
-  default:
+  IMAGE-PLATE-2:
+    pixels:
+      columns: 1250
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [-0.005111197737536585, 2.2191352926595385, 2.219135292660227]
+      translation: [-0.20313195139059825, -10.327102563252069, -22.92244597373422]
+  IMAGE-PLATE-4:
+    pixels:
+      columns: 1250
+      rows: 750
+      size: [0.1, 0.1]
+    transform:
+      tilt: [0.01581017523523518, 2.2142732800584652, -2.214273280058543]
+      translation: [0.46196738576170365, 10.029537345317017, -26.82681325728007]
+  IMAGE-PLATE-3:
     pixels:
       columns: 1250
       rows: 750
@@ -12,4 +28,4 @@ detectors:
       translation: [0.0, 0.0, 0.0]
 oscillation_stage:
   chi: 0.0
-  translation: [0.0, 0.0, 0.0]
+  translation: [0.0, 0.0, 0.236345]

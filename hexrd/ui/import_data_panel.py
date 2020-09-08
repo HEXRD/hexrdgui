@@ -60,8 +60,6 @@ class ImportDataPanel(QObject):
             instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
             det_list = self.get_instrument_detectors(instruments[idx])
             if len(det_list) > 1:
-                self.load_instrument_config(instruments[idx])
-                self.new_config_loaded.emit()
                 self.ui.detectors.clear()
                 self.ui.detectors.insertItems(0, det_list)
                 self.enable_widgets(self.ui.detector_label, self.ui.detectors,
@@ -88,6 +86,14 @@ class ImportDataPanel(QObject):
     def detector_selected(self, selected):
         self.ui.data.setEnabled(selected)
         self.ui.instruments.setDisabled(selected)
+        if self.ui.detectors.currentText() == 'None':
+            return
+
+        self.load_instrument_config(self.ui.instruments.currentText())
+        for det in HexrdConfig().detector_names:
+            if det != self.ui.detectors.currentText():
+                HexrdConfig().remove_detector(det)
+        self.new_config_loaded.emit()
 
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
@@ -129,13 +135,14 @@ class ImportDataPanel(QObject):
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
         if self.it:
-            self.it.update_image(HexrdConfig().image('default', 0))
+            det = self.ui.detectors.currentText()
+            self.it.update_image(HexrdConfig().image(det, 0))
 
     def add_template(self):
         det = self.ui.detectors.currentText()
         self.it = InteractiveTemplate(
-            HexrdConfig().image('default', 0), self.parent())
-        self.it.create_shape(module=self.mod, file_name=det + '.txt')
+            HexrdConfig().image(det, 0), self.parent())
+        self.it.create_shape(module=self.mod, file_name=det + '.txt', det=det)
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
@@ -173,6 +180,10 @@ class ImportDataPanel(QObject):
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
 
+    def set_tilt(self, det):
+        return HexrdConfig().get_instrument_config_val(
+            ['detectors', det, 'transform'])
+
     def crop_and_mask(self):
         if self.it.rotation:
             self.it.update_image(rotate(self.it.img, self.it.rotation))
@@ -182,6 +193,7 @@ class ImportDataPanel(QObject):
         bounds = self.it.bounds()
         ImageLoadManager().read_data([[img]], parent=self.ui)
         det = self.ui.detectors.currentText()
+        transform = self.set_tilt(det)
         self.edited_images[det] = {
             'img': img,
             'height': img.shape[0],
@@ -230,6 +242,8 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
+        current_det = self.ui.detectors.currentText()
+        HexrdConfig().rename_detector(current_det, 'default')
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
             HexrdConfig().set_instrument_config_val(
@@ -238,6 +252,8 @@ class ImportDataPanel(QObject):
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'rows', 'value'],
                 int(val['height']))
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'transform'], val['transform'])
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
         ilm = ImageLoadManager()
