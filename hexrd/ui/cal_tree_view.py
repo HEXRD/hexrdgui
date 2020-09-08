@@ -129,7 +129,10 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         for key in keys:
             if key == 'value':
-                self.set_value(key, cur_config[key], cur_tree_item)
+                data = cur_config[key]
+                if cur_tree_item.data(0) == 'tilt':
+                    data = [np.degrees(rad).item() for rad in cur_config[key]]
+                self.set_value(key, data, cur_tree_item)
                 continue
             elif key == 'status':
                 tree_item = cur_tree_item
