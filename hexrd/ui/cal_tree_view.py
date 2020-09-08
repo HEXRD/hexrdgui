@@ -76,6 +76,11 @@ class CalTreeItemModel(BaseTreeItemModel):
         item.set_data(index.column(), value)
 
         if item.child_count() == 0:
+            parent = item.parent_item.data(KEY_COL)
+            if (parent == 'tilt' and
+                    HexrdConfig().rotation_matrix_euler() is not None):
+                # Convert tilt values to radians before saving
+                value = np.radians(value).item()
             self.cfg.set_instrument_config_val(path, value)
             dist_func_path = ['distortion', 'function_name', 'value']
             if len(path) > 4 and path[2:5] == dist_func_path:
@@ -130,7 +135,8 @@ class CalTreeItemModel(BaseTreeItemModel):
         for key in keys:
             if key == 'value':
                 data = cur_config[key]
-                if cur_tree_item.data(0) == 'tilt':
+                if (cur_tree_item.data(KEY_COL) == 'tilt' and
+                        HexrdConfig().rotation_matrix_euler() is not None):
                     data = [np.degrees(rad).item() for rad in cur_config[key]]
                 self.set_value(key, data, cur_tree_item)
                 continue
