@@ -42,6 +42,9 @@ class CalibrationSliderWidget(QObject):
 
         self.ui.push_reset_config.pressed.connect(self.reset_config)
 
+        HexrdConfig().euler_angle_convention_changed.connect(
+            self.update_labels)
+
     def update_ranges(self):
         r = self.ui.sb_translation_range.value()
         slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
@@ -172,6 +175,7 @@ class CalibrationSliderWidget(QObject):
             self.unblock_all_signals(previously_blocked)
 
         self.update_ranges()
+        self.update_labels()
 
     def update_detectors_from_config(self):
         widget = self.ui.detector
@@ -290,3 +294,13 @@ class CalibrationSliderWidget(QObject):
     def reset_config(self):
         HexrdConfig().restore_instrument_config_backup()
         self.update_gui_from_config()
+
+    def update_labels(self):
+        # Make sure tilt labels reflect current euler convention
+        if HexrdConfig().euler_angle_convention is None:
+            a, b, c = 'xyz'
+        else:
+            a, b, c = HexrdConfig().euler_angle_convention['axes_order']
+        self.ui.label_tilt_2.setText(str.upper(a + ':'))
+        self.ui.label_tilt_0.setText(str.upper(b + ':'))
+        self.ui.label_tilt_1.setText(str.upper(c + ':'))
