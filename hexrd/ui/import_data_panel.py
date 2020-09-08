@@ -204,7 +204,8 @@ class ImportDataPanel(QObject):
     def crop_and_mask(self):
         if self.it.rotation:
             self.it.update_image(rotate(self.it.img, self.it.rotation))
-            self.it.rotate_template(self.it.get_shape().xy, -(self.it.rotation))
+            shape = self.it.get_shape()
+            self.it.rotate_template(shape.xy, -(self.it.rotation))
         self.it.update_image(self.it.get_mask())
         img = self.it.crop()
         bounds = self.it.bounds()
