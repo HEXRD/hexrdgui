@@ -1,9 +1,10 @@
-import copy
+import os
 import numpy as np
 
-from PySide2.QtCore import QObject, Signal, Qt
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import (
-    QCheckBox, QHBoxLayout, QPushButton, QTableWidgetItem, QWidget)
+    QCheckBox, QFileDialog, QMenu, QPushButton, QTableWidgetItem)
+from PySide2.QtGui import QCursor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -20,7 +21,7 @@ class MaskManagerDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
         self.create_masks_list()
-        self.threshold_name = ''
+        self.threshold = False
 
         self.setup_connections()
 
@@ -32,51 +33,70 @@ class MaskManagerDialog(QObject):
         self.masks = {}
         for v, i in enumerate(HexrdConfig().polar_masks_line_data):
             if not any(np.array_equal(m, v) for m in self.masks.values()):
-                self.masks['mask_' + str(i)] = copy.copy(v)
+                self.masks['polar_mask_' + str(i)] = ('polar', v)
+        for (det, v), i in enumerate(HexrdConfig().raw_masks_line_data):
+            if not any(np.array_equal(m, v) for m in self.masks.values()):
+                self.masks['raw_mask_' + str(i)] = (det, v)
         if HexrdConfig().threshold_mask_status:
-            self.threshold_name = 'threshold'
-            self.masks['threshold'] = HexrdConfig().threshold_mask
-        self.visible = copy.copy(self.masks)
+            self.threshold = True
+            self.masks['threshold'] = (
+                'threshold', HexrdConfig().threshold_mask)
+        self.visible = list(self.masks.keys())
 
     def create_unique_name(self, name, value=0):
         while name in self.masks.keys():
-            prefix  = name.split('_')[0]
+            prefix, *rest = name.rpartition('_')
             name = f'{prefix}_{value}'
             value += 1
         return name
 
-    def update_masks_list(self):
-        if not self.threshold_name and HexrdConfig().threshold_mask_status:
-            name = self.create_unique_name('threshold')
-            self.masks[name] = HexrdConfig().threshold_mask
-            self.visible[name] = HexrdConfig().threshold_mask
-            self.threshold_name = name
+    def update_masks_list(self, mask_type):
+        if mask_type == 'polar':
+            if not HexrdConfig().polar_masks_line_data:
+                return
+            for data in HexrdConfig().polar_masks_line_data:
+                vals = self.masks.values()
+                for val in data:
+                    if any(np.array_equal(val, m) for t, m in vals):
+                        continue
+                    name = self.create_unique_name(mask_type + '_mask_0')
+                    self.masks[name] = (mask_type, val)
+                    self.visible.append(name)
+        elif mask_type == 'raw':
+            if not HexrdConfig().raw_masks_line_data:
+                return
+            for det, val in HexrdConfig().raw_masks_line_data:
+                vals = self.masks.values()
+                if any(np.array_equal(val, m) for t, m in vals):
+                    continue
+                name = self.create_unique_name(mask_type + '_mask_0')
+                self.masks[name] = (det, val)
+                self.visible.append(name)
         else:
-            data = HexrdConfig().polar_masks_line_data
-            if not data:
-                return
-            if any(np.array_equal(data[-1], m) for m in self.masks.values()):
-                return
-            name = self.create_unique_name('mask_0')
-            self.masks[name] = data[-1]
-            self.visible[name] = data[-1]
+            name = self.create_unique_name('threshold')
+            self.masks[name] = ('threshold', HexrdConfig().threshold_mask)
+            self.visible.append(name)
+            self.threshold = True
         self.setup_table()
 
     def setup_connections(self):
         self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
+        self.ui.masks_table.customContextMenuRequested.connect(
+            self.context_menu_event)
+        self.ui.export_masks.clicked.connect(self.export_visible_masks)
         HexrdConfig().threshold_mask_changed.connect(self.update_masks_list)
 
     def setup_table(self, status=True):
         self.ui.masks_table.setRowCount(0)
-        for i, key in enumerate(self.masks.keys()):
+        for i, (key, value) in enumerate(self.masks.items()):
             # Add label
             self.ui.masks_table.insertRow(i)
             self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
             # Add checkbox to toggle visibility
             cb = QCheckBox()
-            status = key in self.visible.keys()
+            status = key in self.visible
             cb.setChecked(status)
             cb.setStyleSheet('margin-left:50%; margin-right:50%;')
             cb.toggled.connect(self.toggle_visibility)
@@ -89,7 +109,8 @@ class MaskManagerDialog(QObject):
 
             # Connect manager to raw image mode tab settings
             # for threshold mask
-            if key == self.threshold_name:
+            mtype, data = value
+            if mtype == 'threshold':
                 self.setup_threshold_connections(cb, pb)
 
     def setup_threshold_connections(self, checkbox, pushbutton):
@@ -102,33 +123,46 @@ class MaskManagerDialog(QObject):
 
         row = self.ui.masks_table.currentRow()
         name = self.ui.masks_table.item(row, 0).text()
-        if checked and name and name not in self.visible.keys():
-            self.visible[name] = self.masks[name]
-        elif not checked and name in self.visible.keys():
-            del self.visible[name]
-        HexrdConfig().polar_masks_line_data = (
-            [v for k, v in self.visible.items() if k != self.threshold_name])
+        mtype, data = self.masks[name]
+
+        if checked and name and name not in self.visible:
+            self.visible.append(name)
+            if mtype == 'polar':
+                HexrdConfig().polar_masks_line_data.append([data])
+            else:
+                HexrdConfig().raw_masks_line_data.append((mtype, data))
+        elif not checked and name in self.visible:
+            self.visible.remove(name)
+            if mtype == 'polar':
+                HexrdConfig().polar_masks_line_data.remove([data])
+            else:
+                HexrdConfig().raw_masks_line_data.remove((mtype, data))
         self.update_masks.emit()
 
     def reset_threshold(self):
-        self.threshold_name = ''
+        self.threshold = False
         HexrdConfig().set_threshold_comparison(0)
         HexrdConfig().set_threshold_value(0.0)
         HexrdConfig().set_threshold_mask(None)
         HexrdConfig().set_threshold_mask_status(False)
 
     def remove_mask(self):
-        item = self.ui.masks_table.item(self.ui.masks_table.currentRow(), 0)
-        del self.masks[item.text()]
-        if item.text() in self.visible.keys():
-            del self.visible[item.text()]
+        row = self.ui.masks_table.currentRow()
+        name = self.ui.masks_table.item(row, 0).text()
+        mtype, data = self.masks[name]
 
-        if item.text() == self.threshold_name:
+        del self.masks[name]
+        if name in self.visible:
+            self.visible.remove(name)
+            if mtype == 'polar':
+                HexrdConfig().polar_masks_line_data.remove([data])
+            else:
+                HexrdConfig().raw_masks_line_data.remove((mtype, data))
+        if mtype == 'threshold':
             self.reset_threshold()
-        HexrdConfig().polar_masks_line_data = (
-            [v for k, v in self.visible.items() if k != self.threshold_name])
+
         self.update_masks.emit()
-        self.ui.masks_table.removeRow(self.ui.masks_table.currentRow())
+        self.ui.masks_table.removeRow(row)
 
     def get_old_name(self, row, column):
         if column != 0:
@@ -147,8 +181,38 @@ class MaskManagerDialog(QObject):
                 return
 
             self.masks[new_name] = self.masks.pop(self.old_name)
-            if self.old_name in self.visible.keys():
-                self.visible[new_name] = self.visible.pop(self.old_name)
-        if self.old_name == self.threshold_name:
-            self.threshold_name = new_name
+            if self.old_name in self.visible:
+                self.visible.append(new_name)
+                self.visible.remove(self.old_name)
         self.old_name = None
+
+    def context_menu_event(self, event):
+        index = self.ui.masks_table.indexAt(event)
+        menu = QMenu(self.ui.masks_table)
+        export = menu.addAction('Export Mask')
+        action = menu.exec_(QCursor.pos())
+        if action == export:
+            selection = self.ui.masks_table.item(index.row(), 0).text()
+            mtype, data = self.masks[selection]
+            self.export_masks({selection: data})
+
+    def export_masks(self, data):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Mask', HexrdConfig().working_dir,
+            'NPZ files (*.npz);; NPY files (*.npy)')
+
+        if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            path, ext = os.path.splitext(selected_file)
+
+            if ext.lower() == '.npz':
+                np.savez(selected_file, **data)
+            elif ext.lower() == '.npy':
+                np.save(selected_file, list(data.values())[0])
+
+    def export_visible_masks(self):
+        d = {}
+        for mask in self.visible:
+            mtype, data = self.masks[mask]
+            d[mask] = data
+        self.export_masks(d)

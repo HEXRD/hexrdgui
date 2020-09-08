@@ -2,8 +2,16 @@ import numpy as np
 
 from skimage.draw import polygon
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.calibration.polarview import PolarView
 from hexrd.ui.hexrd_config import HexrdConfig
+
+
+def convert_raw_to_polar(det, line):
+    panel = create_hedm_instrument().detectors[det]
+    cart = panel.pixelToCart(line)
+    tth, gvec = panel.cart_to_angles(cart)
+    return [np.degrees(tth)]
 
 
 def create_polar_mask(line_data):

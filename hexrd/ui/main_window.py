@@ -22,9 +22,10 @@ from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
-from hexrd.ui.create_polar_mask import create_polar_mask
-from hexrd.ui.constants import ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL
-from hexrd.ui.constants import OverlayType, ViewType
+from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
+from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
+from hexrd.ui.constants import (
+    OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -32,6 +33,7 @@ from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
+from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.transform_dialog import TransformDialog
@@ -47,7 +49,7 @@ class MainWindow(QObject):
     new_images_loaded = Signal()
 
     # Emitted when a new mask is added
-    new_mask_added = Signal()
+    new_mask_added = Signal(str)
 
     def __init__(self, parent=None, image_files=None):
         super(MainWindow, self).__init__(parent)
@@ -148,6 +150,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_polar_mask_triggered)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
+        self.ui.action_edit_apply_polygon_mask.triggered.connect(
+            self.on_action_edit_apply_polygon_mask_triggered)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
@@ -218,7 +222,6 @@ class MainWindow(QObject):
             visible = True if key == current_workflow else False
             for widget in self.workflow_widgets[key]:
                 widget.setVisible(visible)
-
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -620,7 +623,7 @@ class MainWindow(QObject):
 
     def run_apply_polar_mask(self, line_data):
         HexrdConfig().polar_masks_line_data.append(line_data.copy())
-        self.new_mask_added.emit()
+        self.new_mask_added.emit(self.image_mode)
         self.update_all()
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -649,8 +652,14 @@ class MainWindow(QObject):
             return
 
         HexrdConfig().polar_masks_line_data.append(data)
-        self.new_mask_added.emit()
+        self.new_mask_added.emit(self.image_mode)
         self.update_all()
+
+    def on_action_edit_apply_polygon_mask_triggered(self):
+        mrd = MaskRegionsDialog(self.ui)
+        mrd.new_mask_added.connect(self.update_all)
+        mrd.new_mask_added.connect(self.new_mask_added.emit)
+        mrd.show()
 
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
@@ -770,8 +779,18 @@ class MainWindow(QObject):
             del HexrdConfig().polar_masks[:]
             for line_data in HexrdConfig().polar_masks_line_data:
                 create_polar_mask(line_data)
+            for det, data in HexrdConfig().raw_masks_line_data:
+                line_data = convert_raw_to_polar(det, data)
+                create_polar_mask(line_data)
             self.ui.image_tab_widget.show_polar()
         else:
+            # Rebuild raw masks
+            del HexrdConfig().raw_masks[:]
+            for line_data in HexrdConfig().raw_masks_line_data:
+                create_raw_mask(line_data)
+            for data in HexrdConfig().polar_masks_line_data:
+                line_data = convert_polar_to_raw(data)
+                for line in line_data: create_raw_mask(line)
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before
