@@ -118,11 +118,19 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     logger.info('Creating new conda environment.')
     # Now create a new environment to install the package into
     env_prefix = str(tmp / package_env_name)
+
+    channels = ['--channel', 'anaconda', '--channel', 'conda-forge']
+
+    # For the mac we need to use our own version of Python built with the
+    # latest SDK. See https://github.com/HEXRD/hexrdgui/issues/505 for
+    # more details. So we add the HEXRD channel that has our Python package.
+    if platform.system() == 'Darwin':
+        channels = ['--channel', 'HEXRD'] + channels
+
     Conda.run_command(
         Conda.Commands.CREATE,
         '--prefix', env_prefix,
-        '--channel', 'anaconda',
-        '--channel', 'conda-forge',
+        *channels,
         'python=3.8.4'
     )
 
