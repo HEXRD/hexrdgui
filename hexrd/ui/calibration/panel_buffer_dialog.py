@@ -4,6 +4,8 @@ from PySide2.QtCore import Signal, QObject, QSignalBlocker
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 import numpy as np
 
+from hexrd.ui import enter_key_filter
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -23,6 +25,7 @@ class PanelBufferDialog(QObject):
         self.detector = detector
         loader = UiLoader()
         self.ui = loader.load_file('panel_buffer_dialog.ui')
+        self.ui.installEventFilter(enter_key_filter)
 
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()

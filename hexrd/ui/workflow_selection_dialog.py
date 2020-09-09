@@ -1,6 +1,6 @@
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui import constants
+from hexrd.ui import constants, enter_key_filter
 
 
 class WorkflowSelectionDialog:
@@ -8,6 +8,7 @@ class WorkflowSelectionDialog:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('workflow_selection_dialog.ui', parent)
+        self.ui.installEventFilter(enter_key_filter)
         self.init_gui()
         self.update_gui_from_config()
         self.setup_connections()

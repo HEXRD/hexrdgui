@@ -5,6 +5,9 @@ from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import (
     QCheckBox, QFileDialog, QMenu, QPushButton, QTableWidgetItem)
 from PySide2.QtGui import QCursor
+
+from hexrd.ui import enter_key_filter
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -20,6 +23,7 @@ class MaskManagerDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
+        self.ui.installEventFilter(enter_key_filter)
         self.create_masks_list()
         self.threshold = False
 

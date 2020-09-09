@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>478</width>
-    <height>157</height>
+    <height>235</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -94,6 +94,9 @@
         <widget class="QPushButton" name="select_file_button">
          <property name="text">
           <string>Select NumPy Array File</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
