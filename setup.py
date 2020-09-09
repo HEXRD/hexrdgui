@@ -8,7 +8,8 @@ install_reqs = [
     'importlib-resources',
     'fabio@git+https://github.com/joelvbernier/fabio.git@master',
     'pyyaml',
-    'hexrd@git+https://github.com/hexrd/hexrd.git@master'
+    'hexrd@git+https://github.com/hexrd/hexrd.git@master',
+    'silx'
 ]
 
 # This is a hack to get around the fact that pyside2 on conda-forge doesn't install

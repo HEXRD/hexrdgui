@@ -9,6 +9,7 @@ from PySide2.QtWidgets import QComboBox, QFileDialog, QMenu, QMessageBox
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
+from hexrd.ui.material_structure_editor import MaterialStructureEditor
 from hexrd.ui.overlay_manager import OverlayManager
 from hexrd.ui.ui_loader import UiLoader
 
@@ -25,7 +26,12 @@ class MaterialsPanel(QObject):
         self.material_editor_widget = MaterialEditorWidget(m, self.ui)
         self.materials_table = MaterialsTable(self.ui)
 
-        self.ui.layout().insertWidget(2, self.material_editor_widget.ui)
+        self.ui.material_editor_layout.addWidget(
+            self.material_editor_widget.ui)
+
+        self.material_structure_editor = MaterialStructureEditor(self.ui)
+        self.ui.material_structure_editor_layout.addWidget(
+            self.material_structure_editor.ui)
 
         # Turn off autocomplete for the QComboBox
         self.ui.materials_combo.setCompleter(None)
@@ -162,6 +168,9 @@ class MaterialsPanel(QObject):
         self.update_table()
         self.update_enable_states()
 
+    def update_structure_tab(self):
+        self.material_structure_editor.update_gui()
+
     def update_material_limits(self):
         max_tth = HexrdConfig().active_material_tth_max
         if max_tth is None:
@@ -189,6 +198,7 @@ class MaterialsPanel(QObject):
     def set_active_material(self):
         HexrdConfig().active_material = self.current_material()
         self.material_editor_widget.material = HexrdConfig().active_material
+        self.update_structure_tab()
 
     def current_material(self):
         return self.ui.materials_combo.currentText()

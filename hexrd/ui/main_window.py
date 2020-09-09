@@ -450,6 +450,7 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_materials(selected_file)
             self.materials_panel.update_gui_from_config()
+            self.materials_panel.update_structure_tab()
 
     def on_action_save_imageseries_triggered(self):
         if not HexrdConfig().has_images():
