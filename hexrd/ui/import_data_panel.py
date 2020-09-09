@@ -166,6 +166,10 @@ class ImportDataPanel(QObject):
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
                             self.ui.load, enabled=False)
+        if self.ui.instruments.currentText() != 'TARDIS':
+            self.enable_widgets(self.ui.height_label, self.ui.bb_height,
+                                self.ui.bb_width, self.ui.width_label,
+                                self.ui.bb_label, enabled=True)
         self.ui.trans.setChecked(True)
 
     def setup_translate(self):
