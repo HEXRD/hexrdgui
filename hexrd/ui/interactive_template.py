@@ -16,6 +16,7 @@ class InteractiveTemplate:
         self.img = img
         self.shape = None
         self.press = None
+        self.total_rotation = 0
 
     def update_image(self, img):
         self.img = img
@@ -203,6 +204,7 @@ class InteractiveTemplate:
             return
 
         angle = self.get_angle(event)
+        self.total_rotation += angle
         y, x = self.center
         xy, xpress, ypress = self.press
         self.press = None

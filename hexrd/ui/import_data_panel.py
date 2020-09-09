@@ -1,8 +1,11 @@
 import os
 import numpy as np
+import yaml
 
 from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox
+
+from hexrd import resources as hexrd_resources
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -29,6 +32,7 @@ class ImportDataPanel(QObject):
         self.edited_images = {}
         self.completed_detectors = []
         self.canvas = parent.image_tab_widget.image_canvases[0]
+        self.detector_defaults = {}
 
         self.setup_connections()
 
@@ -50,33 +54,41 @@ class ImportDataPanel(QObject):
         for w in widgets:
             w.setEnabled(enabled)
 
+    def get_instrument_defaults(self):
+        self.detector_defaults.clear()
+        fname = f'{self.instrument.lower()}_ref_config.yml'
+        text = resource_loader.load_resource(hexrd_resources, fname)
+        defaults = yaml.load(text, Loader=yaml.FullLoader)
+        for det, vals in defaults['detectors'].items():
+            self.detector_defaults[det] = vals['transform']
+
     def instrument_selected(self, idx):
-        if idx == 3:
+        instruments = {1: 'TARDIS', 2: 'PXRDIP'}
+        self.instrument = instruments.get(idx, None)
+
+        if self.instrument is None:
             self.ui.detectors.setCurrentIndex(0)
             self.ui.detectors.setDisabled(True)
         else:
-            instruments = ['TARDIS', 'PXRDIP', 'BBXRD']
-            det_list = self.get_instrument_detectors(instruments[idx])
-            if len(det_list) > 1:
-                self.load_instrument_config(instruments[idx])
-                self.new_config_loaded.emit()
-                self.ui.detectors.clear()
-                self.ui.detectors.insertItems(0, det_list)
-                self.enable_widgets(self.ui.detector_label, self.ui.detectors,
-                                    enabled=True)
+            self.get_instrument_defaults()
+            self.set_convention()
+            det_list = list(self.detector_defaults.keys())
+            det_list.insert(0, '(None)')
+            self.load_instrument_config()
+            self.ui.detectors.clear()
+            self.ui.detectors.insertItems(0, det_list)
+            self.enable_widgets(self.ui.detector_label, self.ui.detectors,
+                                enabled=True)
 
-    def get_instrument_detectors(self, instrument):
-        self.mod = resource_loader.import_dynamic_module(
-            'hexrd.ui.resources.templates.' + instrument)
-        contents = resource_loader.module_contents(self.mod)
-        dets = ['None']
-        for content in contents:
-            if not content.startswith('__'):
-                dets.append(content.split('.')[0])
-        return dets
+    def set_convention(self):
+        if self.instrument != 'TARDIS':
+            return
 
-    def load_instrument_config(self, name):
-        fname = 'default_' + name.lower() + '_config.yml'
+        new_conv = {'axes_order': 'zxz', 'extrinsic': False}
+        HexrdConfig().set_euler_angle_convention(new_conv)
+
+    def load_instrument_config(self):
+        fname = f'default_{self.instrument.lower()}_config.yml'
         with resource_loader.resource_path(
                 hexrd.ui.resources.calibration, fname) as f:
             for overlay in HexrdConfig().overlays:

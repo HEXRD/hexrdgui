@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>427</width>
+    <width>491</width>
     <height>711</height>
    </rect>
   </property>
@@ -51,8 +51,13 @@
            <bool>true</bool>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
+          <item>
+           <property name="text">
+            <string>(None)</string>
+           </property>
+          </item>
           <item>
            <property name="text">
             <string>TARDIS</string>
@@ -61,16 +66,6 @@
           <item>
            <property name="text">
             <string>PXRDIP</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>BBXRD</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>(None)</string>
            </property>
           </item>
          </widget>
