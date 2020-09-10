@@ -3,7 +3,6 @@ import numpy as np
 from matplotlib import patches
 from matplotlib.path import Path
 
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
 
 

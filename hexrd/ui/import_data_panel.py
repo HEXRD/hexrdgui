@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import yaml
 
 from PySide2.QtCore import QObject, Signal
@@ -149,8 +148,7 @@ class ImportDataPanel(QObject):
 
     def add_transform(self):
         ilm = ImageLoadManager()
-        state = HexrdConfig().load_panel_state
-        ilm.set_state({ 'trans': [self.ui.transforms.currentIndex()] })
+        ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
         if self.it:
