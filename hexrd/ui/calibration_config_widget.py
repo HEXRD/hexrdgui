@@ -357,15 +357,16 @@ class CalibrationConfigWidget(QObject):
         # focus here so it gets called only once.
         if type(target) == QComboBox:
             if target.objectName() == 'cal_det_current':
-                widget = self.ui.cal_det_current
                 enter_keys = [Qt.Key_Return, Qt.Key_Enter]
                 if type(event) == QKeyEvent and event.key() in enter_keys:
+                    widget = self.ui.cal_det_current
                     widget.lineEdit().clearFocus()
                     return True
 
                 if type(event) == QFocusEvent and event.lostFocus():
                     # This happens either if enter is pressed, or if the
                     # user tabs out.
+                    widget = self.ui.cal_det_current
                     items = [widget.itemText(i) for i in range(widget.count())]
                     text = widget.currentText()
                     idx = widget.currentIndex()
