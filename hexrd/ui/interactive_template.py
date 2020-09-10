@@ -21,10 +21,10 @@ class InteractiveTemplate:
     def update_image(self, img):
         self.img = img
 
-    def create_shape(self, module, file_name):
+    def create_shape(self, module, file_name, det):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
-        verts = self.panels['default'].cartToPixel(data)
+        verts = self.panels[det].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
         self.connect_translate()

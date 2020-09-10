@@ -157,10 +157,12 @@ class ImportDataPanel(QObject):
             self.it.update_image(HexrdConfig().image(self.detector, 0))
 
     def add_template(self):
-        det = self.ui.detectors.currentText()
         self.it = InteractiveTemplate(
-            HexrdConfig().image('default', 0), self.parent())
-        self.it.create_shape(module=self.mod, file_name=det + '.txt')
+            HexrdConfig().image(self.detector, 0), self.parent())
+        self.it.create_shape(
+            module=hexrd_resources,
+            file_name=f'{self.instrument}_{self.detector}_bnd.txt',
+            det=self.detector)
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
