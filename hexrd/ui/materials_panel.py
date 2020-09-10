@@ -265,15 +265,16 @@ class MaterialsPanel(QObject):
         # We should keep this and CalibrationConfigWidget.eventFilter similar.
         if type(target) == QComboBox:
             if target.objectName() == 'materials_combo':
-                widget = self.ui.materials_combo
                 enter_keys = [Qt.Key_Return, Qt.Key_Enter]
                 if type(event) == QKeyEvent and event.key() in enter_keys:
+                    widget = self.ui.materials_combo
                     widget.lineEdit().clearFocus()
                     return True
 
                 if type(event) == QFocusEvent and event.lostFocus():
                     # This happens either if enter is pressed, or if the
                     # user tabs out.
+                    widget = self.ui.materials_combo
                     items = [widget.itemText(i) for i in range(widget.count())]
                     text = widget.currentText()
                     idx = widget.currentIndex()
