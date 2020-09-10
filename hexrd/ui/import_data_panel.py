@@ -49,6 +49,7 @@ class ImportDataPanel(QObject):
         self.ui.button_box.rejected.connect(self.clear)
         self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
+        self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
