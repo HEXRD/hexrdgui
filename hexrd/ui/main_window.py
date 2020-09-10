@@ -355,8 +355,9 @@ class MainWindow(QObject):
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
-        # Update the load widget
-        self.load_widget.config_changed()
+        if self.workflow_selection_dialog == WORKFLOW_LLNL:
+            # Update the load widget
+            self.load_widget.config_changed()
 
     def load_dummy_images(self):
         ImageFileManager().load_dummy_images()
