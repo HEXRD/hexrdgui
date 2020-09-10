@@ -191,7 +191,7 @@ class ImportDataPanel(QObject):
         else:
             self.it.disconnect_rotate()
         self.finalize()
-        self.completed_detectors.append(self.ui.detectors.currentText())
+        self.completed_detectors.append(self.detector)
         self.enable_widgets(self.ui.detectors, self.ui.load, self.ui.complete,
                             self.ui.completed_dets, self.ui.save,
                             self.ui.finalize, enabled=True)
@@ -203,11 +203,11 @@ class ImportDataPanel(QObject):
     def finalize(self):
         self.it.masked_image
         img = self.it.cropped_image
-        det = self.ui.detectors.currentText()
-        self.edited_images[det] = {
+        self.edited_images[self.detector] = {
             'img': img,
             'height': img.shape[0],
             'width': img.shape[1],
+            'tilt': self.it.rotation
         }
         ImageLoadManager().read_data([[img]], parent=self.ui)
         self.canvas.raw_axes[0].autoscale(True)
@@ -228,8 +228,7 @@ class ImportDataPanel(QObject):
         self.parent().action_save_imageseries.trigger()
 
     def check_for_unsaved_changes(self):
-        curr_det = self.ui.detectors.currentText()
-        if self.it is None and curr_det in self.completed_detectors:
+        if self.it is None and self.detector in self.completed_detectors:
             return
         msg = ('The currently selected detector has changes that have not been'
                + ' accepted. Keep changes?')
@@ -252,19 +251,25 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
+        HexrdConfig().rename_detector(self.detector, 'default')
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
+            self.set_detector_defaults(key)
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'columns', 'value'],
                 int(val['width']))
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'rows', 'value'],
                 int(val['height']))
+            *zx, z = HexrdConfig().get_instrument_config_val(
+                ['detectors', key, 'transform', 'tilt', 'value'])
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'transform', 'tilt', 'value'],
+                [*zx, (z + float(val['tilt']))])
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
-        ilm = ImageLoadManager()
-        ilm.read_data(files, parent=self.ui)
         self.new_config_loaded.emit()
+        ImageLoadManager().read_data(files, parent=self.ui)
 
         self.reset_panel()
         self.parent().action_show_toolbar.setEnabled(True)

@@ -56,6 +56,10 @@ class InteractiveTemplate:
         self.img = self.img[y0:y1, x0:x1]
         return self.img
 
+    @property
+    def rotation(self):
+        return self.total_rotation
+
     def clear(self):
         self.raw_axes.patches.remove(self.shape)
         self.redraw()
