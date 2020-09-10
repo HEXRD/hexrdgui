@@ -155,6 +155,17 @@ class ImportDataPanel(QObject):
         if self.it:
             self.it.update_image(HexrdConfig().image(self.detector, 0))
 
+    def display_bounds(self):
+        self.ui.bb_height.blockSignals(True)
+        self.ui.bb_width.blockSignals(True)
+
+        y0, y1, x0, x1 = self.it.bounds
+        self.ui.bb_width.setMaximum(x1 - x0)
+        self.ui.bb_height.setMaximum(y1 - y0)
+
+        self.ui.bb_width.setValue(x1)
+        self.ui.bb_height.setValue(y1)
+
     def add_template(self):
         self.it = InteractiveTemplate(
             HexrdConfig().image(self.detector, 0), self.parent())
@@ -162,6 +173,7 @@ class ImportDataPanel(QObject):
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
             det=self.detector)
+        self.display_bounds()
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
