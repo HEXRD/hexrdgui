@@ -199,20 +199,19 @@ class ImportDataPanel(QObject):
             set(self.completed_detectors)))
 
     def finalize(self):
-        self.it.get_mask()
-        img = self.it.crop()
-        bounds = self.it.bounds()
-        ImageLoadManager().read_data([[img]], parent=self.ui)
+        self.it.masked_image
+        img = self.it.cropped_image
         det = self.ui.detectors.currentText()
         self.edited_images[det] = {
             'img': img,
-            'height': np.abs(bounds[1]-bounds[0]),
-            'width': np.abs(bounds[3]-bounds[2])
+            'height': img.shape[0],
+            'width': img.shape[1],
         }
+        ImageLoadManager().read_data([[img]], parent=self.ui)
         self.canvas.raw_axes[0].autoscale(True)
         self.prev_extent = self.canvas.axes_images[0].get_extent()
-        self.canvas.axes_images[0].set_extent(
-            (bounds[2], bounds[3], bounds[0], bounds[1]))
+        y0, y1, x0, x1 = self.it.bounds
+        self.canvas.axes_images[0].set_extent((x0, x1, y0, y1))
         self.it.redraw()
         self.clear_boundry()
 
