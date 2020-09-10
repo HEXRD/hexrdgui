@@ -7,6 +7,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd import resources as hexrd_resources
 
+from hexrd.ui.utils import convert_tilt_convention
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -95,9 +96,23 @@ class ImportDataPanel(QObject):
                 overlay['visible'] = False
             HexrdConfig().load_instrument_config(f)
 
+    def set_detector_defaults(self, det):
+        for key, value in self.detector_defaults[det].items():
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', det, 'transform', key, 'value'], value)
+            self.detector_defaults[det]
+        eac = {'axes_order': 'zxz', 'extrinsic': False}
+        convert_tilt_convention(HexrdConfig().config['instrument'], None, eac)
+        self.new_config_loaded.emit()
+
     def detector_selected(self, selected):
         self.ui.data.setEnabled(selected)
         self.ui.instruments.setDisabled(selected)
+        if selected:
+            self.detector = self.ui.detectors.currentText()
+            old_det = HexrdConfig().detector_names[0]
+            HexrdConfig().rename_detector(old_det, self.detector)
+            self.set_detector_defaults(self.detector)
 
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
@@ -139,7 +154,7 @@ class ImportDataPanel(QObject):
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
         if self.it:
-            self.it.update_image(HexrdConfig().image('default', 0))
+            self.it.update_image(HexrdConfig().image(self.detector, 0))
 
     def add_template(self):
         det = self.ui.detectors.currentText()
