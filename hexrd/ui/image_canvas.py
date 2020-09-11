@@ -33,11 +33,10 @@ class ImageCanvas(FigureCanvas):
         self.saturation_texts = []
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
-        # The presence of an iviewer indicates we are currently viewing
-        # a calibration.
         self.iviewer = None
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
+        self.wppf_plot = None
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -76,9 +75,19 @@ class ImageCanvas(FigureCanvas):
         self.raw_axes.clear()
         self.axes_images.clear()
         self.remove_all_overlay_artists()
+        self.clear_azimuthal_integral_axis()
+        self.mode = None
+
+    def clear_azimuthal_integral_axis(self):
+        self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
-        self.mode = None
+        HexrdConfig().last_azimuthal_integral_data = None
+
+    def clear_wppf_plot(self):
+        if self.wppf_plot:
+            self.wppf_plot.remove()
+            self.wppf_plot = None
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -492,12 +501,14 @@ class ImageCanvas(FigureCanvas):
 
             if self.azimuthal_integral_axis is None:
                 axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
-                self.azimuthal_line_artist, = axis.plot(tth,
-                                                        np.sum(img, axis=0))
+                data = (tth, np.sum(img, axis=0))
+                self.azimuthal_line_artist, = axis.plot(*data)
+                HexrdConfig().last_azimuthal_integral_data = data
 
                 self.azimuthal_integral_axis = axis
                 axis.set_xlabel(r'2$\theta$ (deg)')
                 axis.set_ylabel(r'Azimuthal Integration')
+                self.update_wppf_plot()
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
@@ -553,11 +564,42 @@ class ImageCanvas(FigureCanvas):
         tth = np.degrees(self.iviewer.angular_grid[1][0])
 
         # Set the new data
-        line.set_data(tth, np.sum(self.iviewer.img, axis=0))
+        data = (tth, np.sum(self.iviewer.img, axis=0))
+        line.set_data(*data)
+
+        HexrdConfig().last_azimuthal_integral_data = data
+
+        # Update the wppf data if applicable
+        self.update_wppf_plot()
 
         # Rescale the axes for the new data
         axis.relim()
         axis.autoscale_view(scalex=False)
+
+    def update_wppf_plot(self):
+        self.clear_wppf_plot()
+
+        wppf_data = HexrdConfig().wppf_data
+        axis = self.azimuthal_integral_axis
+        line = self.azimuthal_line_artist
+        if any(x is None for x in (wppf_data, axis, line)):
+            return
+
+        # Make a copy that we will modify
+        wppf_data = copy.deepcopy(list(wppf_data))
+
+        # Scale the wppf data to match the scale of the azimuthal integral data
+        y = wppf_data[1]
+        old_range = (y.min(), y.max())
+        new_range = (line.get_data()[1].min(), line.get_data()[1].max())
+        wppf_data[1] = np.interp(y, old_range, new_range)
+
+        style = {
+            's': 30,
+            'facecolors': 'none',
+            'edgecolors': 'r'
+        }
+        self.wppf_plot = axis.scatter(*wppf_data, **style)
 
     def on_detector_transform_modified(self, det):
         if self.mode not in [ViewType.cartesian, ViewType.polar]:

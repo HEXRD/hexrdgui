@@ -125,6 +125,7 @@
     <addaction name="action_run_powder_calibration"/>
     <addaction name="action_calibration_line_picker"/>
     <addaction name="action_run_indexing"/>
+    <addaction name="action_run_wppf"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
@@ -530,6 +531,11 @@
   <action name="action_edit_apply_polygon_mask">
    <property name="text">
     <string>Apply Polygon Mask</string>
+   </property>
+  </action>
+  <action name="action_run_wppf">
+   <property name="text">
+    <string>WPPF</string>
    </property>
   </action>
  </widget>

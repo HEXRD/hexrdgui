@@ -19,6 +19,7 @@ from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.indexing.run import IndexingRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
+from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.calibration.line_picked_calibration import (
     run_line_picked_calibration
 )
@@ -172,6 +173,7 @@ class MainWindow(QObject):
             self.on_action_calibration_line_picker_triggered)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
+        self.ui.action_run_wppf.triggered.connect(self.run_wppf)
         self.new_images_loaded.connect(self.update_color_map_bounds)
         self.new_images_loaded.connect(self.update_indexing_menu)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
@@ -583,6 +585,10 @@ class MainWindow(QObject):
         self._indexing_runner = IndexingRunner(self.ui)
         self._indexing_runner.run()
 
+    def run_wppf(self):
+        self._wppf_runner = WppfRunner(self.ui)
+        self._wppf_runner.run()
+
     def update_color_map_bounds(self):
         self.color_map_editor.update_bounds(
             HexrdConfig().current_images_dict())
@@ -694,6 +700,7 @@ class MainWindow(QObject):
         self.ui.action_calibration_line_picker.setEnabled(
             is_polar and has_images)
         self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and has_images)
+        self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
 
     def start_powder_calibration(self):

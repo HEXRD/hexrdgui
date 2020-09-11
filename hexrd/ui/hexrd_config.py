@@ -137,7 +137,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.raw_masks_line_data = []
         self.backup_tth_maxes = {}
         self.overlays = []
+        self.wppf_data = None
         self.workflow = None
+        self.last_azimuthal_integral_data = None
         self._threshold_data = {}
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
