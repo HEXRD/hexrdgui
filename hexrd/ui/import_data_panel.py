@@ -50,6 +50,8 @@ class ImportDataPanel(QObject):
         self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
         self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
+        self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
+        self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -114,6 +116,18 @@ class ImportDataPanel(QObject):
             HexrdConfig().rename_detector(old_det, self.detector)
             self.set_detector_defaults(self.detector)
 
+    def update_bbox_height(self, val):
+        y0, y1, *x = self.it.bounds
+        h = y1 - y0
+        scale = 1 - ((h - val) / h)
+        self.it.scale_template(sy=scale)
+
+    def update_bbox_width(self, val):
+        *y, x0, x1 = self.it.bounds
+        w = x1 - x0
+        scale = 1 - ((w - val) / w)
+        self.it.scale_template(sx=scale)
+
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -165,6 +179,9 @@ class ImportDataPanel(QObject):
 
         self.ui.bb_width.setValue(x1)
         self.ui.bb_height.setValue(y1)
+
+        self.ui.bb_height.blockSignals(False)
+        self.ui.bb_width.blockSignals(False)
 
     def add_template(self):
         self.it = InteractiveTemplate(

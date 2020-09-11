@@ -261,6 +261,12 @@
           <property name="enabled">
            <bool>false</bool>
           </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="value">
+           <number>99</number>
+          </property>
          </widget>
         </item>
         <item alignment="Qt::AlignRight">
@@ -277,6 +283,12 @@
          <widget class="QSpinBox" name="bb_height">
           <property name="enabled">
            <bool>false</bool>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="value">
+           <number>99</number>
           </property>
          </widget>
         </item>

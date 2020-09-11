@@ -2,6 +2,7 @@ import numpy as np
 
 from matplotlib import patches
 from matplotlib.path import Path
+from matplotlib.transforms import Affine2D
 
 from hexrd.ui import resource_loader
 
@@ -26,6 +27,7 @@ class InteractiveTemplate:
         verts = self.panels[det].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
+        self.center = self.get_midpoint()
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
@@ -97,6 +99,18 @@ class InteractiveTemplate:
     def redraw(self):
         self.parent.draw()
 
+    def scale_template(self, sx=1, sy=1):
+        xy = self.shape.xy
+        # Scale the shape
+        scaled_xy = Affine2D().scale(sx, sy).transform(xy)
+        self.shape.set_xy(scaled_xy)
+
+        # Translate the shape back to where it was
+        diff = np.array(self.center) - np.array(self.get_midpoint())
+        new_xy = scaled_xy + diff
+        self.shape.set_xy(new_xy)
+        self.redraw()
+
     def connect_translate(self):
         self.button_press_cid = self.parent.mpl_connect(
             'button_press_event', self.on_press_translate)
@@ -121,6 +135,7 @@ class InteractiveTemplate:
         xy, xpress, ypress = self.press
         dx = event.xdata - xpress
         dy = event.ydata - ypress
+        self.center = self.get_midpoint()
         self.shape.set_xy(xy + np.array([dx, dy]))
         self.redraw()
 
