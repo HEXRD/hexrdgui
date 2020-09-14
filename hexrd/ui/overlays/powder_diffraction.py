@@ -1,5 +1,7 @@
 import numpy as np
 
+from hexrd.xrdutil import _convert_angles
+
 from hexrd.ui.constants import ViewType
 
 
@@ -7,9 +9,10 @@ nans_row = np.nan*np.ones((1, 2))
 
 
 class PowderLineOverlay:
-    def __init__(self, plane_data, instr, eta_steps=360):
+    def __init__(self, plane_data, instr, tvec=np.zeros(3), eta_steps=360):
         self._plane_data = plane_data
         self._instrument = instr
+        self._tvec = tvec
         self._eta_steps = eta_steps
 
     @property
@@ -19,6 +22,16 @@ class PowderLineOverlay:
     @property
     def instrument(self):
         return self._instrument
+
+    @property
+    def tvec(self):
+        return self._tvec
+
+    @tvec.setter
+    def tvec(self, x):
+        x = np.asarray(x, float).flatten()
+        assert len(x) == 3, "tvec input must have exactly 3 elements"
+        self._tvec = x
 
     @property
     def eta_steps(self):
@@ -61,8 +74,8 @@ class PowderLineOverlay:
                                                       display_mode)
                 upper_pts = self.generate_ring_points(r_upper, etas, panel,
                                                       display_mode)
-                for l, u in zip(lower_pts, upper_pts):
-                    point_groups[det_key]['rbnds'] += [l, u]
+                for lpts, upts in zip(lower_pts, upper_pts):
+                    point_groups[det_key]['rbnds'] += [lpts, upts]
                 for ind in indices:
                     point_groups[det_key]['rbnd_indices'] += [ind, ind]
 
@@ -79,11 +92,18 @@ class PowderLineOverlay:
         for tth in tths:
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
             if display_mode == ViewType.polar:
+                # !!! apply offset correction
+                ang_crds = _convert_angles(
+                    ang_crds, panel,
+                    np.eye(3), self.tvec,
+                    beam_vector=self.instrument.beam_vector,
+                    eta_vector=self.instrument.eta_vector
+                )
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
-                xys_full = panel.angles_to_cart(ang_crds)
+                xys_full = panel.angles_to_cart(ang_crds, tvec_c=self.tvec)
                 xys, on_panel = panel.clip_to_panel(
                     xys_full, buffer_edges=False
                 )
