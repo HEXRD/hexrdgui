@@ -9,14 +9,19 @@ from PySide2.QtWidgets import QDoubleSpinBox
 
 FLOAT_REGEX = re.compile(r'(([+-]?\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?)')
 
+# "i" and "in" are both interpreted as "inf"
+INFINITE_REGEX = re.compile(r'^([+-]?)(i(?:n|nf)?)$')
+
 
 class FloatValidator(QValidator):
 
     @staticmethod
     def valid_float_string(string):
         match = FLOAT_REGEX.search(string)
+        if match:
+            return match.group(0) == string
 
-        return match.groups()[0] == string if match else False
+        return INFINITE_REGEX.search(string) is not None
 
     def validate(self, string, position):
         if FloatValidator.valid_float_string(string):
@@ -29,8 +34,11 @@ class FloatValidator(QValidator):
 
     def fixup(self, text):
         match = FLOAT_REGEX.search(text)
+        if match:
+            return match.group(0)
 
-        return match.groups()[0] if match else ""
+        match = INFINITE_REGEX.search(text)
+        return match.group(1) + 'inf' if match else ''
 
 
 class ScientificDoubleSpinBox(QDoubleSpinBox):
@@ -58,7 +66,7 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
         return self.validator.fixup(text)
 
     def valueFromText(self, text):
-        return float(text)
+        return float(self.fixup(text))
 
     def textFromValue(self, value):
         return ScientificDoubleSpinBox.format_float(value)
