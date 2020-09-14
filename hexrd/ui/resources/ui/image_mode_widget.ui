@@ -535,7 +535,7 @@
               <item row="2" column="0">
                <widget class="QCheckBox" name="polar_apply_snip1d">
                 <property name="text">
-                 <string>Apply snip1d?</string>
+                 <string>Apply SNIP?</string>
                 </property>
                </widget>
               </item>
@@ -622,8 +622,22 @@
               <item row="3" column="3" colspan="2">
                <widget class="QPushButton" name="polar_show_snip1d">
                 <property name="text">
-                 <string>Show snip1d</string>
+                 <string>Show SNIP</string>
                 </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QComboBox" name="polar_snip1d_algorithm">
+                <item>
+                 <property name="text">
+                  <string>Fast SNIP 1D</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>SNIP 1D</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>

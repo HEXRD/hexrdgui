@@ -1,5 +1,6 @@
 # Some general utilities that are used in multiple places
 
+from enum import IntEnum
 import math
 import numpy as np
 
@@ -10,6 +11,11 @@ import matplotlib.transforms as mtransforms
 from hexrd import imageutil
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
+
+
+class SnipAlgorithmType(IntEnum):
+    Fast_SNIP_1D = 0
+    SNIP_1D = 1
 
 
 def convert_tilt_convention(iconfig, old_convention,
@@ -142,11 +148,15 @@ def run_snip1d(img):
 
     snip_width = snip_width_pixels()
     numiter = HexrdConfig().polar_snip1d_numiter
+    algorithm = HexrdConfig().polar_snip1d_algorithm
 
-    # FIXME: need a selector between
-    # imageutil.fast_snip1d() and imageutil.snip1d()
-    # return imageutil.fast_snip1d(img, snip_width, numiter)
-    return imageutil.snip1d(img, snip_width, numiter)
+    if algorithm == SnipAlgorithmType.Fast_SNIP_1D:
+        return imageutil.fast_snip1d(img, snip_width, numiter)
+    elif algorithm == SnipAlgorithmType.SNIP_1D:
+        return imageutil.snip1d(img, snip_width, numiter)
+
+    # (else:)
+    raise RuntimeError(f'Unrecognized polar_snip1d_algorithm {algorithm}')
 
 
 def remove_none_distortions(iconfig):
