@@ -16,6 +16,7 @@ from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 class SnipAlgorithmType(IntEnum):
     Fast_SNIP_1D = 0
     SNIP_1D = 1
+    SNIP_2D = 2
 
 
 def convert_tilt_convention(iconfig, old_convention,
@@ -154,6 +155,8 @@ def run_snip1d(img):
         return imageutil.fast_snip1d(img, snip_width, numiter)
     elif algorithm == SnipAlgorithmType.SNIP_1D:
         return imageutil.snip1d(img, snip_width, numiter)
+    elif algorithm == SnipAlgorithmType.SNIP_2D:
+        return imageutil.snip2d(img, snip_width, numiter)
 
     # (else:)
     raise RuntimeError(f'Unrecognized polar_snip1d_algorithm {algorithm}')

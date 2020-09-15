@@ -614,13 +614,20 @@ class ImageCanvas(FigureCanvas):
         if not hasattr(self, '_snip1d_figure_cache'):
             # Create the figure and axes to use
             fig, ax = plt.subplots()
-            ax.set_title('snip1d')
             ax.set_xlabel(r'2$\theta$ (deg)')
             ax.set_ylabel(r'$\eta$ (deg)')
             fig.canvas.set_window_title('HEXRD')
             self._snip1d_figure_cache = (fig, ax)
         else:
             fig, ax = self._snip1d_figure_cache
+
+        algorithm = HexrdConfig().polar_snip1d_algorithm
+        titles = ['Fast SNIP 1D', 'SNIP 1D', 'SNIP 2D']
+        if algorithm < len(titles):
+            title = titles[algorithm]
+        else:
+            title = f'Algorithm {algorithm}'
+        ax.set_title(title)
 
         if self.iviewer.snip1d_background is not None:
             background = self.iviewer.snip1d_background

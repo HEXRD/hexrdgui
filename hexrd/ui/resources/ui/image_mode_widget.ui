@@ -638,6 +638,11 @@
                   <string>SNIP 1D</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>SNIP 2D</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>
