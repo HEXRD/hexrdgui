@@ -125,6 +125,7 @@ class LaueSpotOverlay:
                 beamVec=self.instrument.beam_vector,
                 etaVec=self.instrument.eta_vector
             )
+            angles_corr = np.vstack(angles_corr).T
             if display_mode == ViewType.polar:
                 range_corners = self.range_corners(angles_corr)
                 point_groups[det_key]['spots'] = np.degrees(angles_corr)
@@ -153,14 +154,15 @@ class LaueSpotOverlay:
             return []
 
         widths = (self.tth_width, self.eta_width)
+        tol_box = np.array(
+            [[0.5, 0.5],
+             [0.5, -0.5],
+             [-0.5, -0.5],
+             [-0.5, 0.5]]
+        )
         ranges = []
         for spot in spots:
-            corners = [
-               (spot[0] + widths[0], spot[1] + widths[1]),
-               (spot[0] + widths[0], spot[1] - widths[1]),
-               (spot[0] - widths[0], spot[1] - widths[1]),
-               (spot[0] - widths[0], spot[1] + widths[1])
-            ]
+            corners = np.tile(spot, (4, 1)) + tol_box*np.tile(widths, (4, 1))
             # Put the first point at the end to complete the square
             corners.append(corners[0])
             ranges.append(corners)
