@@ -1,5 +1,6 @@
 import numpy as np
 
+from hexrd.constants import identity_3x3
 from hexrd.xrdutil import _convert_angles
 
 from hexrd.ui.constants import ViewType
@@ -70,10 +71,12 @@ class PowderLineOverlay:
 
             if self.plane_data.tThWidth is not None:
                 # Generate the ranges too
-                lower_pts = self.generate_ring_points(r_lower, etas, panel,
-                                                      display_mode)
-                upper_pts = self.generate_ring_points(r_upper, etas, panel,
-                                                      display_mode)
+                lower_pts = self.generate_ring_points(
+                    r_lower, etas, panel, display_mode
+                )
+                upper_pts = self.generate_ring_points(
+                    r_upper, etas, panel, display_mode
+                )
                 for lpts, upts in zip(lower_pts, upper_pts):
                     point_groups[det_key]['rbnds'] += [lpts, upts]
                 for ind in indices:
@@ -95,7 +98,7 @@ class PowderLineOverlay:
                 # !!! apply offset correction
                 ang_crds = _convert_angles(
                     ang_crds, panel,
-                    np.eye(3), self.tvec,
+                    identity_3x3, self.tvec,
                     beam_vector=self.instrument.beam_vector,
                     eta_vector=self.instrument.eta_vector
                 )
@@ -103,13 +106,21 @@ class PowderLineOverlay:
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
+                # !!! must apply offset
                 xys_full = panel.angles_to_cart(ang_crds, tvec_c=self.tvec)
+
+                # !!! distortion
+                if panel.distortion is not None:
+                    xys_full = panel.distortion.apply_inverse(xys_full)
+
+                # clip to detector panel
                 xys, on_panel = panel.clip_to_panel(
                     xys_full, buffer_edges=False
                 )
 
                 if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
+                    # ??? keep in pixels?
                     xys = panel.cartToPixel(xys)
 
                 diff_tol = np.radians(self.delta_eta) + 1e-4
