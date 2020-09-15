@@ -7,6 +7,7 @@ detectors:
       columns: 1250
       rows: 750
       size: [0.1, 0.1]
+    buffer: [0.2, 0.2]
     transform:
       tilt: [0.0, 0.0, 0.0]
       translation: [0.0, 0.0, 0.0]

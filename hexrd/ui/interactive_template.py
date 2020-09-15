@@ -3,7 +3,6 @@ import numpy as np
 from matplotlib import patches
 from matplotlib.path import Path
 
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
 
 
@@ -16,26 +15,49 @@ class InteractiveTemplate:
         self.img = img
         self.shape = None
         self.press = None
+        self.total_rotation = 0
 
     def update_image(self, img):
         self.img = img
 
-    def create_shape(self, module, file_name):
+    def create_shape(self, module, file_name, det):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
-        verts = self.panels['default'].cartToPixel(data)
+        verts = self.panels[det].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
-    def get_shape(self):
+    @property
+    def template(self):
         return self.shape
 
-    def get_mask(self):
+    @property
+    def masked_image(self):
         self.mask()
         return self.img
+
+    @property
+    def bounds(self):
+        l, r, b, t = self.ax.get_extent()
+        x0, y0 = np.nanmin(self.shape.xy, axis=0)
+        x1, y1 = np.nanmax(self.shape.xy, axis=0)
+        return np.array([max(np.floor(y0), t),
+                         min(np.ceil(y1), b),
+                         max(np.floor(x0), l),
+                         min(np.ceil(x1), r)]).astype(int)
+
+    @property
+    def cropped_image(self):
+        y0, y1, x0, x1 = self.bounds
+        self.img = self.img[y0:y1, x0:x1]
+        return self.img
+
+    @property
+    def rotation(self):
+        return self.total_rotation
 
     def clear(self):
         self.raw_axes.patches.remove(self.shape)
@@ -72,22 +94,8 @@ class InteractiveTemplate:
 
         return all_paths
 
-    def bounds(self):
-        l, r, b, t = self.ax.get_extent()
-        x0, y0 = np.nanmin(self.shape.xy, axis=0)
-        x1, y1 = np.nanmax(self.shape.xy, axis=0)
-        return np.array([max(np.floor(y0), t),
-                         min(np.ceil(y1), b),
-                         max(np.floor(x0), l),
-                         min(np.ceil(x1), r)]).astype(int)
-
     def redraw(self):
         self.parent.draw()
-
-    def crop(self):
-        y0, y1, x0, x1 = self.bounds()
-        self.img = self.img[y0:y1, x0:x1]
-        return self.img
 
     def connect_translate(self):
         self.button_press_cid = self.parent.mpl_connect(
@@ -203,6 +211,7 @@ class InteractiveTemplate:
             return
 
         angle = self.get_angle(event)
+        self.total_rotation += angle
         y, x = self.center
         xy, xpress, ypress = self.press
         self.press = None
