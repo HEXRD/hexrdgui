@@ -3,8 +3,8 @@
 Requires Python 3.8+
 
 ```bash
-git clone git@github.com:/HEXRD/hexrd.git
-git clone git@github.com:/HEXRD/hexrdgui.git
+git clone https://github.com/HEXRD/hexrd.git
+git clone https://github.com/HEXRD/hexrdgui.git
 ```
 
 ## pip
