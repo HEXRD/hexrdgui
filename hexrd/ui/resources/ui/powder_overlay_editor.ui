@@ -24,7 +24,33 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="2">
+   <item row="2" column="3">
+    <widget class="ScientificDoubleSpinBox" name="offset_1"/>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="offset_label">
+     <property name="text">
+      <string>Offset:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="ScientificDoubleSpinBox" name="offset_0"/>
+   </item>
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="enable_width">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Enable Width</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="4">
+    <widget class="ScientificDoubleSpinBox" name="offset_2"/>
+   </item>
+   <item row="1" column="2" colspan="3">
     <widget class="QDoubleSpinBox" name="tth_width">
      <property name="enabled">
       <bool>false</bool>
@@ -61,17 +87,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QCheckBox" name="enable_width">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Enable Width</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1" colspan="2">
+   <item row="3" column="1" colspan="4">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -86,6 +102,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.py</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>enable_width</tabstop>
   <tabstop>tth_width</tabstop>
