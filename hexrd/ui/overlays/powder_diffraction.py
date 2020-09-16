@@ -13,7 +13,7 @@ class PowderLineOverlay:
     def __init__(self, plane_data, instr, tvec=np.zeros(3), eta_steps=360):
         self._plane_data = plane_data
         self._instrument = instr
-        self._tvec = tvec
+        self.tvec = tvec
         self._eta_steps = eta_steps
 
     @property
