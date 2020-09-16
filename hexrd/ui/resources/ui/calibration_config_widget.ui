@@ -83,10 +83,10 @@
             <number>6</number>
            </property>
            <property name="minimum">
-            <double>0.012398000000000</double>
+            <double>0.000001000000000</double>
            </property>
            <property name="maximum">
-            <double>123.984200000000001</double>
+            <double>1000000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.001000000000000</double>
@@ -114,7 +114,7 @@
             <double>0.100000000000000</double>
            </property>
            <property name="maximum">
-            <double>1000.000000000000000</double>
+            <double>1000000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
