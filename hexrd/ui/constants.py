@@ -96,7 +96,9 @@ DEFAULT_MONO_ROTATION_SERIES_STYLE = {
 DEFAULT_CRYSTAL_PARAMS = np.hstack(
     [constants.zeros_3, constants.zeros_3, constants.identity_6x1])
 
-DEFAULT_POWDER_OPTIONS = {}
+DEFAULT_POWDER_OPTIONS = {
+    'tvec': np.zeros(3)
+}
 
 DEFAULT_LAUE_OPTIONS = {
     'crystal_params': DEFAULT_CRYSTAL_PARAMS.copy(),
