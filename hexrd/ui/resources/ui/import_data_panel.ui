@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>514</width>
-    <height>717</height>
+    <width>491</width>
+    <height>472</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -145,17 +145,17 @@
           </property>
           <item>
            <property name="text">
-            <string/>
+            <string>None</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Flip about Vertical Axis</string>
+            <string>Mirror about Vertical</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Flip about Horizontal Axis</string>
+            <string>Mirror about Horizontal</string>
            </property>
           </item>
           <item>
