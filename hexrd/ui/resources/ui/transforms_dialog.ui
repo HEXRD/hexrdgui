@@ -61,17 +61,17 @@
       <widget class="QComboBox" name="transform_all_menu">
        <item>
         <property name="text">
-         <string>(None)</string>
+         <string>None</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flip Vertically</string>
+         <string>Mirror about Vertical</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flip Horizontally</string>
+         <string>Mirror about Horizontal</string>
         </property>
        </item>
        <item>
