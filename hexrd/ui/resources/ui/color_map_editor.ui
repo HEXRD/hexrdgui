@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>329</width>
+    <width>339</width>
     <height>121</height>
    </rect>
   </property>
@@ -76,7 +76,7 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QSpinBox" name="maximum">
+         <widget class="ScientificDoubleSpinBox" name="maximum">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -165,7 +165,7 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QSpinBox" name="minimum">
+         <widget class="ScientificDoubleSpinBox" name="minimum">
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
@@ -226,6 +226,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>hexrd/ui/scientificspinbox</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>color_map</tabstop>
   <tabstop>reverse</tabstop>
