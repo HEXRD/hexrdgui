@@ -4,6 +4,7 @@ polar:
   tth_min: 1.0
   tth_max: 20.0
   apply_snip1d: false
+  snip1d_algorithm: 0
   snip1d_width: 0.2
   snip1d_numiter: 2
 cartesian:

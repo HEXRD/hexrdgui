@@ -1170,6 +1170,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
     polar_apply_snip1d = property(_polar_apply_snip1d,
                                   set_polar_apply_snip1d)
 
+    def _polar_snip1d_algorithm(self):
+        return self.config['image']['polar']['snip1d_algorithm']
+
+    def set_polar_snip1d_algorithm(self, v):
+        self.config['image']['polar']['snip1d_algorithm'] = v
+        self.rerender_needed.emit()
+
+    polar_snip1d_algorithm = property(_polar_snip1d_algorithm,
+                                      set_polar_snip1d_algorithm)
+
     def _polar_snip1d_width(self):
         return self.config['image']['polar']['snip1d_width']
 
