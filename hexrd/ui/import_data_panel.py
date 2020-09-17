@@ -178,8 +178,13 @@ class ImportDataPanel(QObject):
 
     def add_transform(self):
         ilm = ImageLoadManager()
+        # Prevent color map reset on transform
+        ilm.blockSignals(True)
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
+        ilm.blockSignals(False)
+        # Image needs to be updated but signal was blocked. Emit now.
+        ilm.update_needed.emit()
         self.ui.transforms.setCurrentIndex(0)
 
         img = HexrdConfig().image(self.detector, 0)
