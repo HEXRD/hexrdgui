@@ -1,6 +1,7 @@
 import numpy as np
 
 from hexrd.constants import identity_3x3
+from hexrd.transforms import xfcapi
 from hexrd.xrdutil import _convert_angles
 
 from hexrd.ui.constants import ViewType
@@ -10,11 +11,13 @@ nans_row = np.nan*np.ones((1, 2))
 
 
 class PowderLineOverlay:
-    def __init__(self, plane_data, instr, tvec=np.zeros(3), eta_steps=360):
+    def __init__(self, plane_data, instr, tvec=np.zeros(3),
+                 eta_steps=360, eta_period=np.r_[-180., 180.]):
         self._plane_data = plane_data
         self._instrument = instr
         self._tvec = tvec
         self._eta_steps = eta_steps
+        self._eta_period = eta_period
 
     @property
     def plane_data(self):
@@ -46,6 +49,17 @@ class PowderLineOverlay:
     @property
     def delta_eta(self):
         return 360./float(self.eta_steps)
+
+    @property
+    def eta_period(self):
+        return self._eta_period
+
+    @eta_period.setter
+    def eta_period(self, x):
+        assert len(x) == 2, "eta period must be a 2-element sequence"
+        if xfcapi.angularDifference(x[0], x[1], units='degrees')> 1e-4:
+            raise RuntimeError("period specification is not 360 degrees")
+        self._eta_period = x
 
     def overlay(self, display_mode=ViewType.raw):
         tths = self.plane_data.getTTh()
@@ -104,6 +118,17 @@ class PowderLineOverlay:
                 )
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
+                
+                # fix eta period
+                ang_crds[:, 0] = xfcapi.mapAngle(
+                    ang_crds[:, 0], self.eta_period, units='degrees'
+                )
+                
+                # sort points for monotonic eta
+                eidx = np.argsort(ang_crds[:, 0])
+                ang_crds = ang_crds[eidx, :]
+                
+                # append to list with nan padding
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 # !!! must apply offset
