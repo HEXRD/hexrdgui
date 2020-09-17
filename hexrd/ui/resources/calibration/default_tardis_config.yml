@@ -1,6 +1,6 @@
 beam:
   energy: 10.2505
-  vector: {azimuth: 119., polar_angle: 90.}
+  vector: {azimuth: 119.0, polar_angle: 90.0}
 detectors:
   default:
     pixels:
