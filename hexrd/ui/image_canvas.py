@@ -585,15 +585,6 @@ class ImageCanvas(FigureCanvas):
         if any(x is None for x in (wppf_data, axis, line)):
             return
 
-        # Make a copy that we will modify
-        wppf_data = copy.deepcopy(list(wppf_data))
-
-        # Scale the wppf data to match the scale of the azimuthal integral data
-        y = wppf_data[1]
-        old_range = (y.min(), y.max())
-        new_range = (line.get_data()[1].min(), line.get_data()[1].max())
-        wppf_data[1] = np.interp(y, old_range, new_range)
-
         style = {
             's': 30,
             'facecolors': 'none',

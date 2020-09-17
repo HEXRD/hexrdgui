@@ -534,6 +534,9 @@
    </property>
   </action>
   <action name="action_run_wppf">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>WPPF</string>
    </property>

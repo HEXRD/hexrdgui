@@ -95,8 +95,6 @@ class WppfRunner(QObject):
 
     def wppf_finished(self):
         HexrdConfig().wppf_data = list(self.wppf_object.spectrum_sim.data)
-        # Need to update x to match the tth_list for some reason...
-        # HexrdConfig().wppf_data[0] = self.wppf_object.tth_list
         HexrdConfig().rerender_needed.emit()
 
     def update_progress_text(self, text):
