@@ -104,9 +104,22 @@ class WppfRunner(QObject):
         QCoreApplication.processEvents()
 
     def wppf_finished(self):
-        # Nothing to do currently, since we already re-render after each
-        # refinement.
-        pass
+        self.update_param_values()
+
+    def update_param_values(self):
+        # Update the param values with their new values from the wppf_object
+        params = self.params
+        if not params:
+            return
+
+        new_params = self.wppf_object.params
+        for k, v in params.items():
+            v[0] = new_params[k].value
+
+    @property
+    def params(self):
+        conf = HexrdConfig().config['calibration']
+        return conf.get('wppf', {}).get('params')
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
