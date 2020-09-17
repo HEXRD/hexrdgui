@@ -15,6 +15,8 @@ class PowderLineOverlay:
                  eta_steps=360, eta_period=np.r_[-180., 180.]):
         self._plane_data = plane_data
         self._instrument = instr
+        tvec = np.asarray(tvec, float).flatten()
+        assert len(tvec) == 3, "tvec input must have exactly 3 elements"
         self._tvec = tvec
         self._eta_steps = eta_steps
         self._eta_period = eta_period
