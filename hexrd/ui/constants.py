@@ -97,7 +97,7 @@ DEFAULT_CRYSTAL_PARAMS = np.hstack(
     [constants.zeros_3, constants.zeros_3, constants.identity_6x1])
 
 DEFAULT_POWDER_OPTIONS = {
-    'tvec': np.zeros(3)
+    'tvec': constants.zeros_3
 }
 
 DEFAULT_LAUE_OPTIONS = {
