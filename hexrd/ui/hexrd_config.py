@@ -70,6 +70,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when detector borders need to be re-rendered"""
     rerender_detector_borders = Signal()
 
+    """Emitted when wppf needs to be re-rendered"""
+    rerender_wppf = Signal()
+
     """Emitted for any config changes EXCEPT detector transform changes
 
     Indicates that the image needs to be re-drawn from scratch.

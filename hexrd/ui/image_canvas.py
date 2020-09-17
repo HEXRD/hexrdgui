@@ -63,6 +63,7 @@ class ImageCanvas(FigureCanvas):
             self.on_detector_transform_modified)
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
+        HexrdConfig().rerender_wppf.connect(self.draw_wppf)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
 
     def __del__(self):
@@ -326,6 +327,10 @@ class ImageCanvas(FigureCanvas):
                 plot, = self.axis.plot(*line, color='y', lw=2)
                 self.cached_detector_borders.append(plot)
 
+        self.draw()
+
+    def draw_wppf(self):
+        self.update_wppf_plot()
         self.draw()
 
     def extract_ring_coords(self, data):

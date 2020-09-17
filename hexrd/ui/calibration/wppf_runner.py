@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide2.QtCore import QObject, QThreadPool, Signal
+from PySide2.QtCore import QCoreApplication, QObject, QThreadPool, Signal
 
 from hexrd.material import _angstroms
 from hexrd.WPPF import LeBail, Rietveld
@@ -92,10 +92,21 @@ class WppfRunner(QObject):
 
         for i in range(dialog.refinement_steps):
             self.wppf_object.RefineCycle()
+            self.rerender_wppf()
+
+    def rerender_wppf(self):
+        HexrdConfig().wppf_data = list(self.wppf_object.spectrum_sim.data)
+        HexrdConfig().rerender_wppf.emit()
+
+        # Process events to make sure it visually updates.
+        # If this causes issues, we can post self.wppf_object.RefineCycle()
+        # calls to the event loop in the future instead.
+        QCoreApplication.processEvents()
 
     def wppf_finished(self):
-        HexrdConfig().wppf_data = list(self.wppf_object.spectrum_sim.data)
-        HexrdConfig().rerender_needed.emit()
+        # Nothing to do currently, since we already re-render after each
+        # refinement.
+        pass
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
