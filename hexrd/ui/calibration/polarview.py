@@ -119,6 +119,10 @@ class PolarView:
     def angular_grid(self):
         return self._angular_grid
 
+    @property
+    def eta_period(self):
+        return self.eta_min + 360.
+    
     def detector_borders(self, det):
         panel = self.detectors[det]
 
