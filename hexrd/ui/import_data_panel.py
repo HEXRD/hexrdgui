@@ -154,6 +154,7 @@ class ImportDataPanel(QObject):
             if hasattr(self, 'prev_extent'):
                 self.canvas.axes_images[0].set_extent(self.prev_extent)
             ImageLoadManager().read_data(files, parent=self.ui)
+            self.prev_extent = self.canvas.axes_images[0].get_extent()
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
@@ -169,8 +170,19 @@ class ImportDataPanel(QObject):
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
+
+        img  = HexrdConfig().image(self.detector, 0)
+        if self.detector in self.edited_images.keys():
+            # This transform is being done post-processing
+            self.edited_images[self.detector]['img'] = img
+            self.edited_images[self.detector]['height'] = img.shape[0]
+            self.edited_images[self.detector]['width'] = img.shape[1]
+            self.canvas.axes_images[0].set_extent(
+                (0, img.shape[1], img.shape[0], 0))
+            self.canvas.draw()
+
         if self.it:
-            self.it.update_image(HexrdConfig().image(self.detector, 0))
+            self.it.update_image(img)
 
     def display_bounds(self):
         self.ui.bb_height.blockSignals(True)
