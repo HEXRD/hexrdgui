@@ -130,7 +130,7 @@ class ImportDataPanel(QObject):
             self.cmap.block_updates(True)
             HexrdConfig().rename_detector(old_det, self.detector)
             self.cmap.block_updates(False)
- 
+
             self.set_detector_defaults(self.detector)
 
     def update_bbox_height(self, val):
