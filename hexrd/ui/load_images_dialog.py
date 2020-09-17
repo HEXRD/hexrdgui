@@ -81,7 +81,7 @@ class LoadImagesDialog:
                 table.setItem(i, 0, d)
 
             trans_cb = QComboBox()
-            options = ["None", "Flip Vertically", "Flip Horizontally",
+            options = ["None", "Flip about Vertical Axis", "Flip about Horizontal Axis",
                 "Transpose", "Rotate 90°", "Rotate 180°", "Rotate 270°"]
             trans_cb.addItems(options)
             idx = 0

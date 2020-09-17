@@ -66,12 +66,12 @@
        </item>
        <item>
         <property name="text">
-         <string>Flip Vertically</string>
+         <string>Flip about Vertical Axis</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flip Horizontally</string>
+         <string>Flip about Horizontal Axis</string>
         </property>
        </item>
        <item>

@@ -20,7 +20,7 @@ class TransformDialog:
 
     def update_gui(self):
         options = [
-            '(None)', 'Flip Vertically', 'Flip Horizontally', 'Transpose',
+            '(None)', 'Flip about Vertical Axis', 'Flip about Horizontal Axis', 'Transpose',
             'Rotate 90°', 'Rotate 180°', 'Rotate 270°']
         for i, det in enumerate(HexrdConfig().detector_names):
             hbox = QHBoxLayout()
