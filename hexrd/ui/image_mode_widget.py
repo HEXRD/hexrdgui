@@ -67,6 +67,10 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_res_tth_min)
         self.ui.polar_res_tth_max.valueChanged.connect(
             HexrdConfig().set_polar_res_tth_max)
+        self.ui.polar_res_eta_min.valueChanged.connect(
+            self.on_eta_min_changed)
+        self.ui.polar_res_eta_max.valueChanged.connect(
+            self.on_eta_max_changed)
         self.ui.polar_apply_snip1d.toggled.connect(
             HexrdConfig().set_polar_apply_snip1d)
         self.ui.polar_snip1d_algorithm.currentIndexChanged.connect(
@@ -111,6 +115,8 @@ class ImageModeWidget(QObject):
             self.ui.polar_pixel_size_eta,
             self.ui.polar_res_tth_min,
             self.ui.polar_res_tth_max,
+            self.ui.polar_res_eta_min,
+            self.ui.polar_res_eta_max,
             self.ui.polar_apply_snip1d,
             self.ui.polar_snip1d_algorithm,
             self.ui.polar_snip1d_width,
@@ -144,6 +150,10 @@ class ImageModeWidget(QObject):
             HexrdConfig().polar_res_tth_min)
         self.ui.polar_res_tth_max.setValue(
             HexrdConfig().polar_res_tth_max)
+        self.ui.polar_res_eta_min.setValue(
+            HexrdConfig().polar_res_eta_min)
+        self.ui.polar_res_eta_max.setValue(
+            HexrdConfig().polar_res_eta_max)
         self.ui.polar_snip1d_algorithm.setCurrentIndex(
             HexrdConfig().polar_snip1d_algorithm)
         self.ui.polar_apply_snip1d.setChecked(
@@ -232,6 +242,38 @@ class ImageModeWidget(QObject):
 
     def reset_masking(self, checked=False):
         self.ui.raw_threshold_mask.setChecked(checked)
+
+    def on_eta_min_changed(self, min_value):
+        """Sync max when min is changed."""
+        max_value = HexrdConfig().polar_res_eta_max
+        update_max = False
+        if min_value > max_value:
+            max_value = min_value
+            update_max = True
+        elif max_value - min_value > 360.0:
+            max_value = min_value + 360.0
+            update_max = True
+        if update_max:
+            blocked = QSignalBlocker(self.ui.polar_res_eta_max)  # noqa: F841
+            self.ui.polar_res_eta_max.setValue(max_value)
+            HexrdConfig().set_polar_res_eta_max(max_value, rerender=False)
+        HexrdConfig().polar_res_eta_min = min_value
+
+    def on_eta_max_changed(self, max_value):
+        """Sync min when max is changed."""
+        min_value = HexrdConfig().polar_res_eta_min
+        update_min = False
+        if max_value < min_value:
+            min_value = max_value
+            update_min = True
+        elif max_value - min_value > 360.0:
+            min_value = max_value - 360.0
+            update_min = True
+        if update_min:
+            blocked = QSignalBlocker(self.ui.polar_res_eta_min)  # noqa: F841
+            self.ui.polar_res_eta_min.setValue(min_value)
+            HexrdConfig().set_polar_res_eta_min(min_value, rerender=False)
+        HexrdConfig().polar_res_eta_max = max_value
 
 
 def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
