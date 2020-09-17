@@ -154,17 +154,17 @@ class LaueSpotOverlay:
             return []
 
         widths = (self.tth_width, self.eta_width)
+        # Put the first point at the end to complete the square
         tol_box = np.array(
             [[0.5, 0.5],
              [0.5, -0.5],
              [-0.5, -0.5],
-             [-0.5, 0.5]]
+             [-0.5, 0.5],
+             [0.5, 0.5]]
         )
         ranges = []
         for spot in spots:
-            corners = np.tile(spot, (4, 1)) + tol_box*np.tile(widths, (4, 1))
-            # Put the first point at the end to complete the square
-            corners.append(corners[0])
+            corners = np.tile(spot, (5, 1)) + tol_box*np.tile(widths, (5, 1))
             ranges.append(corners)
 
         return ranges
