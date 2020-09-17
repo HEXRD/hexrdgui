@@ -61,7 +61,11 @@ class ImportDataPanel(QObject):
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
         fname = f'{self.instrument.lower()}_ref_config.yml'
-        text = resource_loader.load_resource(hexrd_resources, fname)
+        try:
+            text = resource_loader.load_resource(hexrd_resources, fname)
+        except Exception:
+            fname = f'{self.instrument.lower()}_reference_config.yml'
+            text = resource_loader.load_resource(hexrd_resources, fname)
         defaults = yaml.load(text, Loader=yaml.FullLoader)
         for det, vals in defaults['detectors'].items():
             self.detector_defaults[det] = vals['transform']
