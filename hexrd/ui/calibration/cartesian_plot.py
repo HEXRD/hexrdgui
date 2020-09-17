@@ -1,6 +1,8 @@
 import copy
+import itertools
 
 import numpy as np
+import psutil
 
 from hexrd.gridutil import cellIndices
 
@@ -25,12 +27,9 @@ class InstrumentViewer:
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().current_images_dict()
 
-        # Make sure each key in the image dict is in the panel_ids
-        if self.images_dict.keys() != self.instr._detectors.keys():
-            msg = ('Images do not match the panel ids!\n' +
-                   'Images: ' + str(list(self.images_dict.keys())) + '\n' +
-                   'PanelIds: ' + str(list(self.instr._detectors.keys())))
-            raise Exception(msg)
+        # Perform some checks before proceeding
+        self.check_keys_match()
+        self.check_angles_feasible()
 
         self.pixel_size = HexrdConfig().cartesian_pixel_size
         self.warp_dict = {}
@@ -46,7 +45,68 @@ class InstrumentViewer:
 
         self.dplane = DisplayPlane(tvec=dplane_tvec, tilt=dplane_tilt)
         self.make_dpanel()
+
+        # Check that the image size won't be too big...
+        self.check_size_feasible()
+
         self.plot_dplane()
+
+    def check_keys_match(self):
+        # Make sure each key in the image dict is in the panel_ids
+        if self.images_dict.keys() != self.instr._detectors.keys():
+            msg = ('Images do not match the panel ids!\n'
+                   f'Images: {str(list(self.images_dict.keys()))}\n'
+                   f'PanelIds: {str(list(self.instr._detectors.keys()))}')
+            raise Exception(msg)
+
+    def check_angles_feasible(self):
+        max_angle = 120.0
+
+        # Check all combinations of detectors. If any have an angle
+        # between them that is greater than the max, raise an exception.
+        combos = itertools.combinations(self.instr._detectors.items(), 2)
+        bad_combos = []
+        acos = np.arccos
+        norm = np.linalg.norm
+        for x, y in combos:
+            n1, n2 = x[1].normal, y[1].normal
+            angle = np.degrees(acos(np.dot(n1, n2) / norm(n1) / norm(n2)))
+            if angle > max_angle:
+                bad_combos.append(((x[0], y[0]), angle))
+
+        if bad_combos:
+            msg = 'Cartesian plot not feasible\n'
+            msg += 'Angle between detectors is too large\n'
+            msg += '\n'.join([f'{x[0]}: {x[1]}' for x in bad_combos])
+            raise Exception(msg)
+
+    def check_size_feasible(self):
+        available_mem = psutil.virtual_memory().available
+        img_dtype = np.float64
+        dtype_size = np.dtype(img_dtype).itemsize
+
+        mem_usage = self.dpanel.rows * self.dpanel.cols * dtype_size
+        # Extra memory we probably need for other things...
+        mem_extra_buffer = 1e7
+        mem_usage += mem_extra_buffer
+        if mem_usage > available_mem:
+
+            def format_size(size):
+                sizes = [
+                    ('TB', 1e12),
+                    ('GB', 1e9),
+                    ('MB', 1e6),
+                    ('KB', 1e3),
+                    ('B', 1)
+                ]
+                for s in sizes:
+                    if size > s[1]:
+                        return f'{round(size / s[1], 2)} {s[0]}'
+
+            msg = 'Not enough memory for Cartesian plot\n'
+            msg += f'Memory available: {format_size(available_mem)}\n'
+            msg += f'Memory required: {format_size(mem_usage)}'
+            raise Exception(msg)
 
     def make_dpanel(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
