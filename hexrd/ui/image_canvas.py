@@ -63,6 +63,7 @@ class ImageCanvas(FigureCanvas):
             self.on_detector_transform_modified)
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
+        HexrdConfig().rerender_wppf.connect(self.draw_wppf)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
 
     def __del__(self):
@@ -328,6 +329,10 @@ class ImageCanvas(FigureCanvas):
 
         self.draw()
 
+    def draw_wppf(self):
+        self.update_wppf_plot()
+        self.draw()
+
     def extract_ring_coords(self, data):
         if self.mode == ViewType.cartesian:
             # These are in x, y coordinates. Do not swap them.
@@ -584,15 +589,6 @@ class ImageCanvas(FigureCanvas):
         line = self.azimuthal_line_artist
         if any(x is None for x in (wppf_data, axis, line)):
             return
-
-        # Make a copy that we will modify
-        wppf_data = copy.deepcopy(list(wppf_data))
-
-        # Scale the wppf data to match the scale of the azimuthal integral data
-        y = wppf_data[1]
-        old_range = (y.min(), y.max())
-        new_range = (line.get_data()[1].min(), line.get_data()[1].max())
-        wppf_data[1] = np.interp(y, old_range, new_range)
 
         style = {
             's': 30,
