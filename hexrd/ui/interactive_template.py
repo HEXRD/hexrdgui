@@ -24,6 +24,11 @@ class InteractiveTemplate:
     def update_image(self, img):
         self.img = img
 
+    def rotate_shape(self, angle):
+        angle = np.radians(angle)
+        self.rotate_template(self.shape.xy, angle)
+        self.redraw()
+
     def create_shape(self, module, file_name, det):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)

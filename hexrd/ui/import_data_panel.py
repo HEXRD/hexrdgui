@@ -14,6 +14,7 @@ from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.constants import UI_TRANS_INDEX_ROTATE_90
 
 import hexrd.ui.resources.calibration
 
@@ -148,6 +149,8 @@ class ImportDataPanel(QObject):
                 if not path_selected:
                     return
 
+            if not self.canvas.raw_axes[0].get_autoscale_on():
+                self.canvas.raw_axes[0].set_autoscale_on(True)
             if hasattr(self, 'prev_extent'):
                 self.canvas.axes_images[0].set_extent(self.prev_extent)
             ImageLoadManager().read_data(files, parent=self.ui)
@@ -190,6 +193,9 @@ class ImportDataPanel(QObject):
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
             det=self.detector)
+        if self.instrument == 'PXRDIP':
+            self.it.rotate_shape(angle=-90)
+
         self.display_bounds()
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.complete, enabled=True)
@@ -235,15 +241,21 @@ class ImportDataPanel(QObject):
     def finalize(self):
         self.it.cropped_image
         img = self.it.masked_image
+        ilm = ImageLoadManager()
+        ilm.read_data([[img]], parent=self.ui)
+        if self.instrument == 'PXRDIP':
+            ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
+            ilm.begin_processing(postprocess=True)
+        img = HexrdConfig().image(self.detector, 0)
+        self.it.update_image(img)
         self.edited_images[self.detector] = {
             'img': img,
             'height': img.shape[0],
             'width': img.shape[1],
             'tilt': self.it.rotation
         }
-        y0, y1, x0, x1 = self.it.bounds
-        self.canvas.axes_images[0].set_extent((x0, x1, y0, y1))
-        ImageLoadManager().read_data([[img]], parent=self.ui)
+        self.canvas.axes_images[0].set_extent(
+            (0, img.shape[1], img.shape[0], 0))
         self.it.redraw()
         self.clear_boundry()
 
