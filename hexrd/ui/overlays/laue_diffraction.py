@@ -3,6 +3,7 @@ import copy
 import numpy as np
 
 from hexrd import constants
+from hexrd.transforms import xfcapi
 
 from hexrd.ui.constants import ViewType
 
@@ -102,16 +103,38 @@ class LaueSpotOverlay:
         keys = ['spots', 'ranges']
         for det_key, psim in sim_data.items():
             point_groups[det_key] = {key: [] for key in keys}
+
+            # grab panel and split out simulation results
+            # !!! note that the sim results are lists over number of grains
+            #     and here we explicitly have one.
+            panel = self.instrument.detectors[det_key]
             xy_det, hkls_in, angles, dspacing, energy = psim
-            idx = ~np.isnan(energy)
-            angles = angles[idx, :]
-            range_corners = self.range_corners(angles)
+
+            # find valid points
+            idx = ~np.isnan(energy[0])  # there is only one grain here
+
+            # filter (tth, eta) results
+            xy_data = xy_det[0][idx, :]
+            angles = angles[0][idx, :]  # these are in radians
+
+            # !!! apply offset corrections to angles
+            # convert to angles in LAB ref
+            angles_corr, _ = xfcapi.detectorXYToGvec(
+                xy_data, panel.rmat, self.sample_rmat,
+                panel.tvec, constants.zeros_3, constants.zeros_3,
+                beamVec=self.instrument.beam_vector,
+                etaVec=self.instrument.eta_vector
+            )
+            angles_corr = np.vstack(angles_corr).T
             if display_mode == ViewType.polar:
-                point_groups[det_key]['spots'] = np.degrees(angles)
+                range_corners = self.range_corners(angles_corr)
+                point_groups[det_key]['spots'] = np.degrees(angles_corr)
                 point_groups[det_key]['ranges'] = np.degrees(range_corners)
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
+                # !!! verify this
+                range_corners = self.range_corners(angles)
                 panel = self.instrument.detectors[det_key]
-                data = xy_det[idx, :]
+                data = xy_data
                 if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
                     data = panel.cartToPixel(data)
@@ -120,7 +143,8 @@ class LaueSpotOverlay:
 
                 point_groups[det_key]['spots'] = data
                 point_groups[det_key]['ranges'] = self.range_data(
-                    range_corners, display_mode, panel)
+                    range_corners, display_mode, panel
+                )
 
         return point_groups
 
@@ -130,14 +154,15 @@ class LaueSpotOverlay:
             return []
 
         widths = (self.tth_width, self.eta_width)
+        tol_box = np.array(
+            [[0.5, 0.5],
+             [0.5, -0.5],
+             [-0.5, -0.5],
+             [-0.5, 0.5]]
+        )
         ranges = []
         for spot in spots:
-            corners = [
-               (spot[0] + widths[0], spot[1] + widths[1]),
-               (spot[0] + widths[0], spot[1] - widths[1]),
-               (spot[0] - widths[0], spot[1] - widths[1]),
-               (spot[0] - widths[0], spot[1] + widths[1])
-            ]
+            corners = np.tile(spot, (4, 1)) + tol_box*np.tile(widths, (4, 1))
             # Put the first point at the end to complete the square
             corners.append(corners[0])
             ranges.append(corners)
