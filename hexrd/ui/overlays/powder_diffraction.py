@@ -19,6 +19,11 @@ class PowderLineOverlay:
         assert len(tvec) == 3, "tvec input must have exactly 3 elements"
         self._tvec = tvec
         self._eta_steps = eta_steps
+        
+        eta_period = np.asarray(eta_period, float).flatten()
+        assert len(eta_period) == 2, "eta period must be a 2-element sequence"
+        if xfcapi.angularDifference(eta_period[0], eta_period[1], units='degrees')> 1e-4:
+            raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = eta_period
 
     @property
@@ -58,6 +63,7 @@ class PowderLineOverlay:
 
     @eta_period.setter
     def eta_period(self, x):
+        x = np.asarray(x, float).flatten()
         assert len(x) == 2, "eta period must be a 2-element sequence"
         if xfcapi.angularDifference(x[0], x[1], units='degrees')> 1e-4:
             raise RuntimeError("period specification is not 360 degrees")
