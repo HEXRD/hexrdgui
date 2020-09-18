@@ -246,7 +246,10 @@ class ImportDataPanel(QObject):
                             self.ui.completed_dets, self.ui.save,
                             self.ui.finalize, enabled=True)
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
-                            self.ui.add_template, enabled=False)
+                            self.ui.add_template, self.ui.bb_label,
+                            self.ui.bb_height, self.ui.height_label,
+                            self.ui.bb_width, self.ui.width_label,
+                            enabled=False)
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
 
