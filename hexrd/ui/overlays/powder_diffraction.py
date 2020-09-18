@@ -19,10 +19,11 @@ class PowderLineOverlay:
         assert len(tvec) == 3, "tvec input must have exactly 3 elements"
         self._tvec = tvec
         self._eta_steps = eta_steps
-        
+
         eta_period = np.asarray(eta_period, float).flatten()
         assert len(eta_period) == 2, "eta period must be a 2-element sequence"
-        if xfcapi.angularDifference(eta_period[0], eta_period[1], units='degrees')> 1e-4:
+        if xfcapi.angularDifference(eta_period[0], eta_period[1],
+                                    units='degrees') > 1e-4:
             raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = eta_period
 
@@ -65,7 +66,7 @@ class PowderLineOverlay:
     def eta_period(self, x):
         x = np.asarray(x, float).flatten()
         assert len(x) == 2, "eta period must be a 2-element sequence"
-        if xfcapi.angularDifference(x[0], x[1], units='degrees')> 1e-4:
+        if xfcapi.angularDifference(x[0], x[1], units='degrees') > 1e-4:
             raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = x
 
@@ -126,16 +127,16 @@ class PowderLineOverlay:
                 )
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
-                
+
                 # fix eta period
                 ang_crds[:, 0] = xfcapi.mapAngle(
                     ang_crds[:, 0], self.eta_period, units='degrees'
                 )
-                
+
                 # sort points for monotonic eta
                 eidx = np.argsort(ang_crds[:, 0])
                 ang_crds = ang_crds[eidx, :]
-                
+
                 # append to list with nan padding
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
