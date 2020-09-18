@@ -14,6 +14,7 @@ from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.constants import UI_TRANS_INDEX_ROTATE_90
 
 import hexrd.ui.resources.calibration
 
@@ -50,6 +51,8 @@ class ImportDataPanel(QObject):
         self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
         self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
+        self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
+        self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -58,12 +61,17 @@ class ImportDataPanel(QObject):
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
         fname = f'{self.instrument.lower()}_ref_config.yml'
-        text = resource_loader.load_resource(hexrd_resources, fname)
+        try:
+            text = resource_loader.load_resource(hexrd_resources, fname)
+        except Exception:
+            fname = f'{self.instrument.lower()}_reference_config.yml'
+            text = resource_loader.load_resource(hexrd_resources, fname)
         defaults = yaml.load(text, Loader=yaml.FullLoader)
         for det, vals in defaults['detectors'].items():
             self.detector_defaults[det] = vals['transform']
 
     def instrument_selected(self, idx):
+        self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
         self.instrument = instruments.get(idx, None)
 
@@ -97,6 +105,9 @@ class ImportDataPanel(QObject):
             HexrdConfig().load_instrument_config(f)
 
     def set_detector_defaults(self, det):
+        if det not in self.detector_defaults.keys():
+            return
+
         for key, value in self.detector_defaults[det].items():
             HexrdConfig().set_instrument_config_val(
                 ['detectors', det, 'transform', key, 'value'], value)
@@ -116,6 +127,18 @@ class ImportDataPanel(QObject):
             old_det = HexrdConfig().detector_names[0]
             HexrdConfig().rename_detector(old_det, self.detector)
             self.set_detector_defaults(self.detector)
+
+    def update_bbox_height(self, val):
+        y0, y1, *x = self.it.bounds
+        h = y1 - y0
+        scale = 1 - ((h - val) / h)
+        self.it.scale_template(sy=scale)
+
+    def update_bbox_width(self, val):
+        *y, x0, x1 = self.it.bounds
+        w = x1 - x0
+        scale = 1 - ((w - val) / w)
+        self.it.scale_template(sx=scale)
 
     def load_images(self):
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
@@ -137,9 +160,12 @@ class ImportDataPanel(QObject):
                 if not path_selected:
                     return
 
+            if not self.canvas.raw_axes[0].get_autoscale_on():
+                self.canvas.raw_axes[0].set_autoscale_on(True)
             if hasattr(self, 'prev_extent'):
                 self.canvas.axes_images[0].set_extent(self.prev_extent)
             ImageLoadManager().read_data(files, parent=self.ui)
+            self.prev_extent = self.canvas.axes_images[0].get_extent()
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
@@ -155,8 +181,33 @@ class ImportDataPanel(QObject):
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
+
+        img = HexrdConfig().image(self.detector, 0)
+        if self.detector in self.edited_images.keys():
+            # This transform is being done post-processing
+            self.edited_images[self.detector]['img'] = img
+            self.edited_images[self.detector]['height'] = img.shape[0]
+            self.edited_images[self.detector]['width'] = img.shape[1]
+            self.canvas.axes_images[0].set_extent(
+                (0, img.shape[1], img.shape[0], 0))
+            self.canvas.draw()
+
         if self.it:
-            self.it.update_image(HexrdConfig().image(self.detector, 0))
+            self.it.update_image(img)
+
+    def display_bounds(self):
+        self.ui.bb_height.blockSignals(True)
+        self.ui.bb_width.blockSignals(True)
+
+        y0, y1, x0, x1 = self.it.bounds
+        self.ui.bb_width.setMaximum(x1 - x0)
+        self.ui.bb_height.setMaximum(y1 - y0)
+
+        self.ui.bb_width.setValue(x1)
+        self.ui.bb_height.setValue(y1)
+
+        self.ui.bb_height.blockSignals(False)
+        self.ui.bb_width.blockSignals(False)
 
     def add_template(self):
         self.it = InteractiveTemplate(
@@ -165,10 +216,18 @@ class ImportDataPanel(QObject):
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
             det=self.detector)
+        if self.instrument == 'PXRDIP':
+            self.it.rotate_shape(angle=-90)
+
+        self.display_bounds()
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
                             self.ui.load, enabled=False)
+        if self.ui.instruments.currentText() != 'TARDIS':
+            self.enable_widgets(self.ui.height_label, self.ui.bb_height,
+                                self.ui.bb_width, self.ui.width_label,
+                                self.ui.bb_label, enabled=True)
         self.ui.trans.setChecked(True)
 
     def setup_translate(self):
@@ -198,24 +257,31 @@ class ImportDataPanel(QObject):
                             self.ui.completed_dets, self.ui.save,
                             self.ui.finalize, enabled=True)
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
-                            self.ui.add_template, enabled=False)
+                            self.ui.add_template, self.ui.bb_label,
+                            self.ui.bb_height, self.ui.height_label,
+                            self.ui.bb_width, self.ui.width_label,
+                            enabled=False)
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
 
     def finalize(self):
-        self.it.masked_image
-        img = self.it.cropped_image
+        self.it.cropped_image
+        img = self.it.masked_image
+        ilm = ImageLoadManager()
+        ilm.read_data([[img]], parent=self.ui)
+        if self.instrument == 'PXRDIP':
+            ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
+            ilm.begin_processing(postprocess=True)
+        img = HexrdConfig().image(self.detector, 0)
+        self.it.update_image(img)
         self.edited_images[self.detector] = {
             'img': img,
             'height': img.shape[0],
             'width': img.shape[1],
             'tilt': self.it.rotation
         }
-        ImageLoadManager().read_data([[img]], parent=self.ui)
-        self.canvas.raw_axes[0].autoscale(True)
-        self.prev_extent = self.canvas.axes_images[0].get_extent()
-        y0, y1, x0, x1 = self.it.bounds
-        self.canvas.axes_images[0].set_extent((x0, x1, y0, y1))
+        self.canvas.axes_images[0].set_extent(
+            (0, img.shape[1], img.shape[0], 0))
         self.it.redraw()
         self.clear_boundry()
 

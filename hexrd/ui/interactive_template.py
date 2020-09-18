@@ -2,7 +2,11 @@ import numpy as np
 
 from matplotlib import patches
 from matplotlib.path import Path
+from matplotlib.transforms import Affine2D
 
+from skimage.draw import polygon
+
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
 
 
@@ -20,12 +24,18 @@ class InteractiveTemplate:
     def update_image(self, img):
         self.img = img
 
+    def rotate_shape(self, angle):
+        angle = np.radians(angle)
+        self.rotate_template(self.shape.xy, angle)
+        self.redraw()
+
     def create_shape(self, module, file_name, det):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
         verts = self.panels[det].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1)
+        self.center = self.get_midpoint()
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
@@ -53,6 +63,7 @@ class InteractiveTemplate:
     def cropped_image(self):
         y0, y1, x0, x1 = self.bounds
         self.img = self.img[y0:y1, x0:x1]
+        self.shape.set_xy(self.shape.xy - np.array([x0, y0]))
         return self.img
 
     @property
@@ -64,17 +75,20 @@ class InteractiveTemplate:
         self.redraw()
 
     def mask(self):
-        h, w = self.img.shape
-        x, y = np.meshgrid(np.arange(w), np.arange(h))
-        coords = np.vstack((x.flatten(), y.flatten())).T
-        transformed_paths = self.get_paths()
-        self.mask = np.zeros(self.img.shape)
-        for path in transformed_paths:
-            points = path.contains_points(coords)
-            grid = points.reshape(h, w)
-            self.mask = (self.mask != grid)
-        self.original = self.ax.get_array()
-        self.img[~self.mask] = 0
+        col, row = self.shape.xy.T
+        col_nans = np.where(np.isnan(col))[0]
+        row_nans = np.where(np.isnan(row))[0]
+        cols = np.split(col, col_nans)
+        rows = np.split(row, row_nans)
+        master_mask = np.zeros(self.img.shape, dtype=bool)
+        for c, r in zip(cols, rows):
+            c = c[~np.isnan(c)]
+            r = r[~np.isnan(r)]
+            rr, cc = polygon(r, c, shape=self.img.shape)
+            mask = np.zeros(self.img.shape, dtype=bool)
+            mask[rr, cc] = True
+            master_mask = np.logical_xor(master_mask, mask)
+        self.img[~master_mask] = 0
 
     def get_paths(self):
         all_paths = []
@@ -96,6 +110,18 @@ class InteractiveTemplate:
 
     def redraw(self):
         self.parent.draw()
+
+    def scale_template(self, sx=1, sy=1):
+        xy = self.shape.xy
+        # Scale the shape
+        scaled_xy = Affine2D().scale(sx, sy).transform(xy)
+        self.shape.set_xy(scaled_xy)
+
+        # Translate the shape back to where it was
+        diff = np.array(self.center) - np.array(self.get_midpoint())
+        new_xy = scaled_xy + diff
+        self.shape.set_xy(new_xy)
+        self.redraw()
 
     def connect_translate(self):
         self.button_press_cid = self.parent.mpl_connect(
@@ -121,6 +147,7 @@ class InteractiveTemplate:
         xy, xpress, ypress = self.press
         dx = event.xdata - xpress
         dy = event.ydata - ypress
+        self.center = self.get_midpoint()
         self.shape.set_xy(xy + np.array([dx, dy]))
         self.redraw()
 
