@@ -81,8 +81,13 @@ class LoadImagesDialog:
                 table.setItem(i, 0, d)
 
             trans_cb = QComboBox()
-            options = ["None", "Flip Vertically", "Flip Horizontally",
-                "Transpose", "Rotate 90°", "Rotate 180°", "Rotate 270°"]
+            options = ["None",
+                       "Mirror about Vertical",
+                       "Mirror about Horizontal",
+                       "Transpose",
+                       "Rotate 90°",
+                       "Rotate 180°",
+                       "Rotate 270°"]
             trans_cb.addItems(options)
             idx = 0
             if 'trans' in HexrdConfig().load_panel_state:

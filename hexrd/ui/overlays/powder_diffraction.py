@@ -1,5 +1,9 @@
 import numpy as np
 
+from hexrd.constants import identity_3x3
+from hexrd.transforms import xfcapi
+from hexrd.xrdutil import _convert_angles
+
 from hexrd.ui.constants import ViewType
 
 
@@ -7,10 +11,15 @@ nans_row = np.nan*np.ones((1, 2))
 
 
 class PowderLineOverlay:
-    def __init__(self, plane_data, instr, eta_steps=360):
+    def __init__(self, plane_data, instr, tvec=np.zeros(3),
+                 eta_steps=360, eta_period=np.r_[-180., 180.]):
         self._plane_data = plane_data
         self._instrument = instr
+        tvec = np.asarray(tvec, float).flatten()
+        assert len(tvec) == 3, "tvec input must have exactly 3 elements"
+        self._tvec = tvec
         self._eta_steps = eta_steps
+        self._eta_period = eta_period
 
     @property
     def plane_data(self):
@@ -19,6 +28,16 @@ class PowderLineOverlay:
     @property
     def instrument(self):
         return self._instrument
+
+    @property
+    def tvec(self):
+        return self._tvec
+
+    @tvec.setter
+    def tvec(self, x):
+        x = np.asarray(x, float).flatten()
+        assert len(x) == 3, "tvec input must have exactly 3 elements"
+        self._tvec = x
 
     @property
     def eta_steps(self):
@@ -32,6 +51,17 @@ class PowderLineOverlay:
     @property
     def delta_eta(self):
         return 360./float(self.eta_steps)
+
+    @property
+    def eta_period(self):
+        return self._eta_period
+
+    @eta_period.setter
+    def eta_period(self, x):
+        assert len(x) == 2, "eta period must be a 2-element sequence"
+        if xfcapi.angularDifference(x[0], x[1], units='degrees')> 1e-4:
+            raise RuntimeError("period specification is not 360 degrees")
+        self._eta_period = x
 
     def overlay(self, display_mode=ViewType.raw):
         tths = self.plane_data.getTTh()
@@ -57,12 +87,14 @@ class PowderLineOverlay:
 
             if self.plane_data.tThWidth is not None:
                 # Generate the ranges too
-                lower_pts = self.generate_ring_points(r_lower, etas, panel,
-                                                      display_mode)
-                upper_pts = self.generate_ring_points(r_upper, etas, panel,
-                                                      display_mode)
-                for l, u in zip(lower_pts, upper_pts):
-                    point_groups[det_key]['rbnds'] += [l, u]
+                lower_pts = self.generate_ring_points(
+                    r_lower, etas, panel, display_mode
+                )
+                upper_pts = self.generate_ring_points(
+                    r_upper, etas, panel, display_mode
+                )
+                for lpts, upts in zip(lower_pts, upper_pts):
+                    point_groups[det_key]['rbnds'] += [lpts, upts]
                 for ind in indices:
                     point_groups[det_key]['rbnd_indices'] += [ind, ind]
 
@@ -79,17 +111,43 @@ class PowderLineOverlay:
         for tth in tths:
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
             if display_mode == ViewType.polar:
+                # !!! apply offset correction
+                ang_crds = _convert_angles(
+                    ang_crds, panel,
+                    identity_3x3, self.tvec,
+                    beam_vector=self.instrument.beam_vector,
+                    eta_vector=self.instrument.eta_vector
+                )
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
+                
+                # fix eta period
+                ang_crds[:, 0] = xfcapi.mapAngle(
+                    ang_crds[:, 0], self.eta_period, units='degrees'
+                )
+                
+                # sort points for monotonic eta
+                eidx = np.argsort(ang_crds[:, 0])
+                ang_crds = ang_crds[eidx, :]
+                
+                # append to list with nan padding
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
-                xys_full = panel.angles_to_cart(ang_crds)
+                # !!! must apply offset
+                xys_full = panel.angles_to_cart(ang_crds, tvec_c=self.tvec)
+
+                # !!! distortion
+                if panel.distortion is not None:
+                    xys_full = panel.distortion.apply_inverse(xys_full)
+
+                # clip to detector panel
                 xys, on_panel = panel.clip_to_panel(
                     xys_full, buffer_edges=False
                 )
 
                 if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
+                    # ??? keep in pixels?
                     xys = panel.cartToPixel(xys)
 
                 diff_tol = np.radians(self.delta_eta) + 1e-4

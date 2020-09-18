@@ -114,6 +114,9 @@ class ImportDataPanel(QObject):
             self.detector_defaults[det]
         eac = {'axes_order': 'zxz', 'extrinsic': False}
         convert_tilt_convention(HexrdConfig().config['instrument'], None, eac)
+        self.detector_defaults[det]['tilt'] = (
+            HexrdConfig().get_instrument_config_val(
+                ['detectors', det, 'transform', 'tilt', 'value']))
         self.new_config_loaded.emit()
 
     def detector_selected(self, selected):
@@ -319,18 +322,20 @@ class ImportDataPanel(QObject):
         HexrdConfig().rename_detector(self.detector, 'default')
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
-            self.set_detector_defaults(key)
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'columns', 'value'],
                 int(val['width']))
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'rows', 'value'],
                 int(val['height']))
-            *zx, z = HexrdConfig().get_instrument_config_val(
-                ['detectors', key, 'transform', 'tilt', 'value'])
+            *zx, z = self.detector_defaults[key]['tilt']
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'transform', 'tilt', 'value'],
                 [*zx, (z + float(val['tilt']))])
+            translation = self.detector_defaults[key]['translation']
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'transform', 'translation', 'value'],
+                translation)
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
         self.new_config_loaded.emit()

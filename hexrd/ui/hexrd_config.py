@@ -70,6 +70,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when detector borders need to be re-rendered"""
     rerender_detector_borders = Signal()
 
+    """Emitted when wppf needs to be re-rendered"""
+    rerender_wppf = Signal()
+
     """Emitted for any config changes EXCEPT detector transform changes
 
     Indicates that the image needs to be re-drawn from scratch.
@@ -137,7 +140,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.raw_masks_line_data = []
         self.backup_tth_maxes = {}
         self.overlays = []
+        self.wppf_data = None
         self.workflow = None
+        self.last_azimuthal_integral_data = None
         self._threshold_data = {}
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
@@ -1169,6 +1174,16 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
     polar_apply_snip1d = property(_polar_apply_snip1d,
                                   set_polar_apply_snip1d)
+
+    def _polar_snip1d_algorithm(self):
+        return self.config['image']['polar']['snip1d_algorithm']
+
+    def set_polar_snip1d_algorithm(self, v):
+        self.config['image']['polar']['snip1d_algorithm'] = v
+        self.rerender_needed.emit()
+
+    polar_snip1d_algorithm = property(_polar_snip1d_algorithm,
+                                      set_polar_snip1d_algorithm)
 
     def _polar_snip1d_width(self):
         return self.config['image']['polar']['snip1d_width']

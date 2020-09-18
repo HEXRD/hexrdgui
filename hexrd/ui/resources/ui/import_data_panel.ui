@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>491</width>
-    <height>711</height>
+    <height>472</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -101,10 +101,13 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Expanding</enum>
+     </property>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>10</height>
       </size>
      </property>
     </spacer>
@@ -155,17 +158,17 @@
           </property>
           <item>
            <property name="text">
-            <string/>
+            <string>None</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Flip about Vertical Axis</string>
+            <string>Mirror about Vertical</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Flip about Horizontal Axis</string>
+            <string>Mirror about Horizontal</string>
            </property>
           </item>
           <item>
@@ -374,7 +377,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>10</height>
       </size>
      </property>
     </spacer>
