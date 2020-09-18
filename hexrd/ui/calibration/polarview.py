@@ -2,7 +2,7 @@ import numpy as np
 
 from skimage.exposure import rescale_intensity
 
-from hexrd.transforms.xfcapi import detectorXYToGvec
+from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
 
 from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane
@@ -145,6 +145,10 @@ class PolarView:
                 border, panel.rmat, ct.identity_3x3,
                 panel.tvec, ct.zeros_3, ct.zeros_3,
                 beamVec=panel.bvec, etaVec=panel.evec)
+            angles = np.array(angles)
+            angles[1:, :] = mapAngle(
+                angles[1:, :], np.radians(self.eta_period), units='radians'
+            )
             # Convert to degrees, and keep them as lists for
             # easier modification later
             borders[i] = np.degrees(angles).tolist()
