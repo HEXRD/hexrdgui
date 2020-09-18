@@ -226,26 +226,24 @@ class ImageCanvas(FigureCanvas):
             az_axis = self.azimuthal_integral_axis
             for pr in rings:
                 x, _ = self.extract_ring_coords(pr)
-                # Don't plot duplicate vertical lines
-                x = np.unique(x.round(3))
-                for val in x:
-                    artist = az_axis.axvline(val, **data_style)
-                    artists.append(artist)
+                # Average the points together for the vertical line
+                x = np.nanmean(x)
+                artist = az_axis.axvline(x, **data_style)
+                artists.append(artist)
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
                 x, _ = self.extract_ring_coords(pr)
-                # Don't plot duplicate vertical lines
-                x = np.unique(x.round(3))
+                # Average the points together for the vertical line
+                x = np.nanmean(x)
 
                 current_style = copy.deepcopy(ranges_style)
                 if len(ind) > 1:
                     # If rbnds are combined, override the color to red
                     current_style['c'] = 'r'
 
-                for val in x:
-                    artist = az_axis.axvline(val, **current_style)
-                    artists.append(artist)
+                artist = az_axis.axvline(x, **current_style)
+                artists.append(artist)
 
     def draw_laue_overlay(self, axis, data, style):
         spots = data['spots']
