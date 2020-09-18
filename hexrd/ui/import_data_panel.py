@@ -67,6 +67,7 @@ class ImportDataPanel(QObject):
             self.detector_defaults[det] = vals['transform']
 
     def instrument_selected(self, idx):
+        self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
         self.instrument = instruments.get(idx, None)
 
@@ -100,6 +101,9 @@ class ImportDataPanel(QObject):
             HexrdConfig().load_instrument_config(f)
 
     def set_detector_defaults(self, det):
+        if det not in self.detector_defaults.keys():
+            return
+
         for key, value in self.detector_defaults[det].items():
             HexrdConfig().set_instrument_config_val(
                 ['detectors', det, 'transform', key, 'value'], value)
