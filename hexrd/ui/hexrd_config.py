@@ -1163,6 +1163,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         if rerender:
             self.rerender_needed.emit()
 
+            # If we are drawing outside of the previous extents,
+            # we will need to update the overlays as well.
+            self.flag_overlay_updates_for_all_materials()
+            self.overlay_config_changed.emit()
+
     polar_res_eta_min = property(_polar_res_eta_min,
                                  set_polar_res_eta_min)
 
@@ -1173,6 +1178,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.config['image']['polar']['eta_max'] = v
         if rerender:
             self.rerender_needed.emit()
+
+            # If we are drawing outside of the previous extents,
+            # we will need to update the overlays as well.
+            self.flag_overlay_updates_for_all_materials()
+            self.overlay_config_changed.emit()
 
     polar_res_eta_max = property(_polar_res_eta_max,
                                  set_polar_res_eta_max)
