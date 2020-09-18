@@ -81,7 +81,8 @@ def update_overlay_data(instr, display_mode):
         type = overlay['type']
         kwargs = {
             'plane_data': mat.planeData,
-            'instr': instr
+            'instr': instr,
+            'eta_period': HexrdConfig().polar_res_eta_period
         }
         # Add any options
         kwargs.update(overlay.get('options', {}))

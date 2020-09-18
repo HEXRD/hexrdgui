@@ -12,7 +12,8 @@ class LaueSpotOverlay:
     def __init__(self, plane_data, instr,
                  crystal_params=None, sample_rmat=None,
                  min_energy=5., max_energy=35.,
-                 tth_width=None, eta_width=None):
+                 tth_width=None, eta_width=None,
+                 eta_period=np.r_[-180., 180.]):
         self.plane_data = plane_data
         self._instrument = instr
         if crystal_params is None:
@@ -33,6 +34,13 @@ class LaueSpotOverlay:
 
         self.tth_width = tth_width
         self.eta_width = eta_width
+
+        eta_period = np.asarray(eta_period, float).flatten()
+        assert len(eta_period) == 2, "eta period must be a 2-element sequence"
+        if xfcapi.angularDifference(eta_period[0], eta_period[1],
+                                    units='degrees') > 1e-4:
+            raise RuntimeError("period specification is not 360 degrees")
+        self._eta_period = eta_period
 
     @property
     def plane_data(self):
@@ -91,6 +99,18 @@ class LaueSpotOverlay:
         widths = ['tth_width', 'eta_width']
         return all(getattr(self, x) is not None for x in widths)
 
+    @property
+    def eta_period(self):
+        return self._eta_period
+
+    @eta_period.setter
+    def eta_period(self, x):
+        x = np.asarray(x, float).flatten()
+        assert len(x) == 2, "eta period must be a 2-element sequence"
+        if xfcapi.angularDifference(x[0], x[1], units='degrees') > 1e-4:
+            raise RuntimeError("period specification is not 360 degrees")
+        self._eta_period = x
+
     def overlay(self, display_mode=ViewType.raw):
         sim_data = self.instrument.simulate_laue_pattern(
             self.plane_data,
@@ -116,6 +136,9 @@ class LaueSpotOverlay:
             # filter (tth, eta) results
             xy_data = xy_det[0][idx, :]
             angles = angles[0][idx, :]  # these are in radians
+            angles[:, 1] = xfcapi.mapAngle(
+                angles[:, 1], np.radians(self.eta_period), units='radians'
+            )
 
             # !!! apply offset corrections to angles
             # convert to angles in LAB ref
@@ -125,7 +148,12 @@ class LaueSpotOverlay:
                 beamVec=self.instrument.beam_vector,
                 etaVec=self.instrument.eta_vector
             )
+            # FIXME modify output to be array
             angles_corr = np.vstack(angles_corr).T
+            angles_corr[:, 1] = xfcapi.mapAngle(
+                angles_corr[:, 1], np.radians(self.eta_period), units='radians'
+            )
+
             if display_mode == ViewType.polar:
                 range_corners = self.range_corners(angles_corr)
                 point_groups[det_key]['spots'] = np.degrees(angles_corr)
