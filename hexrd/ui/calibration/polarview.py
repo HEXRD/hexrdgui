@@ -28,6 +28,7 @@ def log_scale_img(img):
 class PolarView:
     """Create (two-theta, eta) plot of detectors
     """
+
     def __init__(self, instrument):
 
         self.instr = instrument
@@ -121,8 +122,8 @@ class PolarView:
 
     @property
     def eta_period(self):
-        return self.eta_min + 360.
-    
+        return self.eta_min + np.r_[0., 360.]
+
     def detector_borders(self, det):
         panel = self.detectors[det]
 
