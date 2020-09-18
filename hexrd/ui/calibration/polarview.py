@@ -122,7 +122,7 @@ class PolarView:
 
     @property
     def eta_period(self):
-        return self.eta_min + np.r_[0., 360.]
+        return HexrdConfig().polar_res_eta_period
 
     def detector_borders(self, det):
         panel = self.detectors[det]
