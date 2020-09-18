@@ -182,7 +182,7 @@ class ImportDataPanel(QObject):
         ilm.begin_processing(postprocess=True)
         self.ui.transforms.setCurrentIndex(0)
 
-        img  = HexrdConfig().image(self.detector, 0)
+        img = HexrdConfig().image(self.detector, 0)
         if self.detector in self.edited_images.keys():
             # This transform is being done post-processing
             self.edited_images[self.detector]['img'] = img
