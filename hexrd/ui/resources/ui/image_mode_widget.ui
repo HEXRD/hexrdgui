@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>409</width>
-    <height>138</height>
+    <width>432</width>
+    <height>152</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -356,41 +356,88 @@
               <property name="spacing">
                <number>0</number>
               </property>
-              <item row="2" column="2">
-               <spacer name="horizontalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+              <item row="2" column="7">
+               <widget class="QDoubleSpinBox" name="polar_res_eta_max">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
                 </property>
-               </spacer>
-              </item>
-              <item row="2" column="5">
-               <spacer name="horizontalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                <property name="suffix">
+                 <string>°</string>
                 </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
+                <property name="decimals">
+                 <number>3</number>
                 </property>
-               </spacer>
-              </item>
-              <item row="1" column="3">
-               <widget class="QLabel" name="label_12">
-                <property name="text">
-                 <string>min</string>
+                <property name="minimum">
+                 <double>-540.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>540.000000000000000</double>
+                </property>
+                <property name="value">
+                 <double>180.000000000000000</double>
                 </property>
                </widget>
               </item>
-              <item row="0" column="7">
-               <widget class="QDoubleSpinBox" name="polar_pixel_size_eta">
+              <item row="0" column="6">
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>η:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QCheckBox" name="polar_apply_snip1d">
+                <property name="text">
+                 <string>Apply SNIP?</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="4">
+               <widget class="QDoubleSpinBox" name="polar_res_eta_min">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="suffix">
+                 <string>°</string>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>-540.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>540.000000000000000</double>
+                </property>
+                <property name="value">
+                 <double>-180.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>η Range:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="4">
+               <widget class="QDoubleSpinBox" name="polar_snip1d_width">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -404,23 +451,13 @@
                  <number>3</number>
                 </property>
                 <property name="maximum">
-                 <double>99.989999999999995</double>
+                 <double>360.000000000000000</double>
                 </property>
                 <property name="singleStep">
-                 <double>0.005000000000000</double>
+                 <double>0.100000000000000</double>
                 </property>
                 <property name="value">
                  <double>0.200000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="6">
-               <widget class="QLabel" name="label_5">
-                <property name="text">
-                 <string>max</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -449,21 +486,18 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="3">
-               <widget class="QLabel" name="label_6">
+              <item row="1" column="6">
+               <widget class="QLabel" name="label_5">
                 <property name="text">
-                 <string>2θ:</string>
+                 <string>max</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 <set>Qt::AlignCenter</set>
                 </property>
                </widget>
               </item>
-              <item row="2" column="4">
-               <widget class="QDoubleSpinBox" name="polar_snip1d_width">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
+              <item row="0" column="7">
+               <widget class="QDoubleSpinBox" name="polar_pixel_size_eta">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -477,13 +511,68 @@
                  <number>3</number>
                 </property>
                 <property name="maximum">
-                 <double>360.000000000000000</double>
+                 <double>99.989999999999995</double>
                 </property>
                 <property name="singleStep">
-                 <double>0.100000000000000</double>
+                 <double>0.005000000000000</double>
                 </property>
                 <property name="value">
                  <double>0.200000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="7">
+               <widget class="QSpinBox" name="polar_snip1d_numiter">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>10000</number>
+                </property>
+                <property name="value">
+                 <number>2</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="5">
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLabel" name="label_12">
+                <property name="text">
+                 <string>min</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="3">
+               <widget class="QLabel" name="label_10">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>w:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                </widget>
               </item>
@@ -494,6 +583,55 @@
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QLabel" name="label_6">
+                <property name="text">
+                 <string>2θ:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_4">
+                <property name="text">
+                 <string>2θ Range:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QComboBox" name="polar_snip1d_algorithm">
+                <item>
+                 <property name="text">
+                  <string>Fast SNIP 1D</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>SNIP 1D</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>SNIP 2D</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="3" column="6">
+               <widget class="QLabel" name="label_11">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>n iter:</string>
                 </property>
                </widget>
               </item>
@@ -522,46 +660,6 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="6">
-               <widget class="QLabel" name="label_2">
-                <property name="text">
-                 <string>η:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QCheckBox" name="polar_apply_snip1d">
-                <property name="text">
-                 <string>Apply SNIP?</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="3">
-               <widget class="QLabel" name="label_10">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="text">
-                 <string>w:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="6">
-               <widget class="QLabel" name="label_11">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="text">
-                 <string>n iter:</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="4">
                <widget class="QDoubleSpinBox" name="polar_pixel_size_tth">
                 <property name="alignment">
@@ -587,62 +685,41 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="7">
-               <widget class="QSpinBox" name="polar_snip1d_numiter">
-                <property name="enabled">
-                 <bool>false</bool>
+              <item row="3" column="2">
+               <spacer name="horizontalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
                 </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
                 </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="minimum">
-                 <number>1</number>
-                </property>
-                <property name="maximum">
-                 <number>10000</number>
-                </property>
-                <property name="value">
-                 <number>2</number>
-                </property>
-               </widget>
+               </spacer>
               </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_4">
-                <property name="text">
-                 <string>2θ Range:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="3" colspan="2">
+              <item row="4" column="3" colspan="2">
                <widget class="QPushButton" name="polar_show_snip1d">
                 <property name="text">
                  <string>Show SNIP</string>
                 </property>
                </widget>
               </item>
-              <item row="3" column="0">
-               <widget class="QComboBox" name="polar_snip1d_algorithm">
-                <item>
-                 <property name="text">
-                  <string>Fast SNIP 1D</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>SNIP 1D</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>SNIP 2D</string>
-                 </property>
-                </item>
+              <item row="2" column="3">
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>min</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="6">
+               <widget class="QLabel" name="label_15">
+                <property name="text">
+                 <string>max</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
                </widget>
               </item>
              </layout>

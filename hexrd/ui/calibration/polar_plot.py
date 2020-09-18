@@ -46,8 +46,10 @@ class InstrumentViewer:
 
         tth_min = HexrdConfig().polar_res_tth_min
         tth_max = HexrdConfig().polar_res_tth_max
+        eta_min = HexrdConfig().polar_res_eta_min
+        eta_max = HexrdConfig().polar_res_eta_max
 
-        self._extent = [tth_min, tth_max, 180., -180.]   # l, r, b, t
+        self._extent = [tth_min, tth_max, eta_max, eta_min]   # l, r, b, t
         self.img = self.pv.img
         self.snip1d_background = self.pv.snip1d_background
 

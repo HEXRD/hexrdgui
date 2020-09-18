@@ -3,6 +3,8 @@ polar:
   pixel_size_eta: 0.20
   tth_min: 1.0
   tth_max: 20.0
+  eta_min: -180.0
+  eta_max: 180.0
   apply_snip1d: false
   snip1d_algorithm: 0
   snip1d_width: 0.2

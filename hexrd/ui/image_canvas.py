@@ -641,7 +641,9 @@ class ImageCanvas(FigureCanvas):
             'pixel_size_tth',
             'pixel_size_eta',
             'tth_min',
-            'tth_max'
+            'tth_max',
+            'eta_min',
+            'eta_max'
         ]
 
         for key in reset_needed_list:
