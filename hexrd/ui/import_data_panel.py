@@ -272,7 +272,7 @@ class ImportDataPanel(QObject):
         if self.instrument == 'PXRDIP':
             ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
             ilm.begin_processing(postprocess=True)
-        img = HexrdConfig().image(self.detector, 0)
+            img = HexrdConfig().image(self.detector, 0)
         self.it.update_image(img)
         self.edited_images[self.detector] = {
             'img': img,
