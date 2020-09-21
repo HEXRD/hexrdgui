@@ -160,6 +160,7 @@ class CalibrationCrystalEditor(QObject):
         # This automatically converts from Euler angle conventions
         values = [x.value() for x in self.orientation_widgets]
         if HexrdConfig().euler_angle_convention is not None:
+            values = np.radians(values)
             convention = HexrdConfig().euler_angle_convention
             self.convert_angle_convention(values, convention, None)
 
@@ -172,6 +173,7 @@ class CalibrationCrystalEditor(QObject):
             v = copy.deepcopy(v)
             convention = HexrdConfig().euler_angle_convention
             self.convert_angle_convention(v, None, convention)
+            v = np.degrees(v)
 
         for i, w in enumerate(self.orientation_widgets):
             blocker = QSignalBlocker(w)  # noqa: F841

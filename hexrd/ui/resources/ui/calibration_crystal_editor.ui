@@ -539,6 +539,13 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>tab_widget</tabstop>
+  <tabstop>orientation_0</tabstop>
+  <tabstop>orientation_1</tabstop>
+  <tabstop>orientation_2</tabstop>
+  <tabstop>position_0</tabstop>
+  <tabstop>position_1</tabstop>
+  <tabstop>position_2</tabstop>
   <tabstop>stretch_matrix_0</tabstop>
   <tabstop>stretch_matrix_1</tabstop>
   <tabstop>stretch_matrix_2</tabstop>
