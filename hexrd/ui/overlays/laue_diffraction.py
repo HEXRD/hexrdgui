@@ -156,7 +156,11 @@ class LaueSpotOverlay:
 
             if display_mode == ViewType.polar:
                 range_corners = self.range_corners(angles_corr)
-                point_groups[det_key]['spots'] = np.degrees(angles_corr)
+                # Save the Laue spots as a list instead of a numpy array,
+                # so that we can predictably get the id() of spots inside.
+                # Numpy arrays do fancy optimizations that break this.
+                spots = np.degrees(angles_corr).tolist()
+                point_groups[det_key]['spots'] = spots
                 point_groups[det_key]['ranges'] = np.degrees(range_corners)
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 # !!! verify this
