@@ -554,6 +554,15 @@ class ImageCanvas(FigureCanvas):
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
+    def update_polar(self):
+        if not self.iviewer:
+            return
+
+        self.iviewer.update_image()
+        self.axes_images[0].set_data(self.iviewer.img)
+        self.update_azimuthal_integral_plot()
+        self.update_overlays()
+
     def async_worker_error(self, error):
         QMessageBox.critical(self, 'HEXRD', str(error[1]))
         msg = f'{str(self.mode)} view error!'
