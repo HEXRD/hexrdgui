@@ -11,6 +11,7 @@ from hexrd.ui import enter_key_filter
 from hexrd.ui.utils import create_unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.constants import ViewType
 
 
 class MaskManagerDialog(QObject):
@@ -27,6 +28,7 @@ class MaskManagerDialog(QObject):
         self.ui.installEventFilter(enter_key_filter)
         self.create_masks_list()
         self.threshold = False
+        self.image_mode = ViewType.raw
 
         self.setup_connections()
 
@@ -114,6 +116,9 @@ class MaskManagerDialog(QObject):
         HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
         checkbox.toggled.connect(self.threshold_toggled)
 
+    def image_mode_changed(self, mode):
+        self.image_mode = mode
+
     def threshold_toggled(self, v):
         HexrdConfig().set_threshold_mask_status(v, set_by_mgr=True)
 
@@ -159,8 +164,12 @@ class MaskManagerDialog(QObject):
         if mtype == 'threshold':
             self.reset_threshold()
 
-        self.update_masks.emit()
         self.ui.masks_table.removeRow(row)
+
+        if self.image_mode == ViewType.polar:
+            HexrdConfig().polar_masks_changed.emit()
+        elif self.image_mode == ViewType.raw:
+            HexrdConfig().raw_masks_changed.emit()
 
     def get_old_name(self, row, column):
         if column != 0:

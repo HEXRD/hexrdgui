@@ -212,8 +212,9 @@ class MainWindow(QObject):
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
 
-        self.mask_manager_dialog.update_masks.connect(self.update_all)
         self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
+        self.image_mode_widget.tab_changed.connect(
+            self.mask_manager_dialog.image_mode_changed)
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
