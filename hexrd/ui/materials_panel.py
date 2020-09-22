@@ -230,6 +230,7 @@ class MaterialsPanel(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().import_material(selected_file)
             self.update_gui_from_config()
+            self.update_structure_tab()
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
