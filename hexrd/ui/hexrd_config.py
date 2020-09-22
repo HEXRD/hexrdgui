@@ -138,6 +138,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.polar_masks_line_data = {}
         self.raw_masks = {}
         self.raw_masks_line_data = {}
+        self.visible_masks = []
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None

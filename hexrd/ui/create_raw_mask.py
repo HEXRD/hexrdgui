@@ -56,3 +56,4 @@ def create_raw_mask(name, line_data):
         mask = np.ones(img.shape, dtype=bool)
         mask[rr, cc] = False
         HexrdConfig().raw_masks[name] = (det, mask)
+        HexrdConfig().visible_masks.append(name)
