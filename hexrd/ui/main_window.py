@@ -592,7 +592,11 @@ class MainWindow(QObject):
 
     def run_wppf(self):
         self._wppf_runner = WppfRunner(self.ui)
-        self._wppf_runner.run()
+        try:
+            self._wppf_runner.run()
+        except Exception as e:
+            QMessageBox.critical(self.ui, 'HEXRD', str(e))
+            return
 
     def update_color_map_bounds(self):
         self.color_map_editor.update_bounds(

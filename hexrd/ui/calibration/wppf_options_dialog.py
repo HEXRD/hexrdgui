@@ -13,8 +13,10 @@ from PySide2.QtWidgets import (
 from hexrd.ui import enter_key_filter
 
 import hexrd.ui.resources.calibration as calibration_resources
+from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
+from hexrd.ui.select_items_dialog import SelectItemsDialog
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -53,6 +55,7 @@ class WppfOptionsDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
+        self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.background_method.currentIndexChanged.connect(
             self.update_visible_background_parameters)
         self.ui.select_experiment_file_button.pressed.connect(
@@ -88,6 +91,35 @@ class WppfOptionsDialog(QObject):
 
     def show(self):
         self.ui.show()
+
+    @property
+    def selected_materials(self):
+        if not hasattr(self, '_selected_materials'):
+            # Choose the visible ones with powder overlays by default
+            overlays = [x for x in HexrdConfig().overlays if x['visible']]
+            overlays = [x for x in overlays if x['type'] == OverlayType.powder]
+            materials = [x['material'] for x in overlays]
+            self._selected_materials = list(dict.fromkeys(materials))
+
+        return self._selected_materials
+
+    @selected_materials.setter
+    def selected_materials(self, v):
+        self._selected_materials = v
+
+    @property
+    def powder_overlay_materials(self):
+        overlays = HexrdConfig().overlays
+        overlays = [x for x in overlays if x['type'] == OverlayType.powder]
+        return list(dict.fromkeys([x['material'] for x in overlays]))
+
+    def select_materials(self):
+        materials = self.powder_overlay_materials
+        selected = self.selected_materials
+        items = [(name, name in selected) for name in materials]
+        dialog = SelectItemsDialog(items, self.ui)
+        if dialog.exec_():
+            self.selected_materials = dialog.selected_items
 
     def update_visible_background_parameters(self):
         is_chebyshev = self.background_method == 'chebyshev'
