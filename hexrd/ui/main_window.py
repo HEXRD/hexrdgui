@@ -16,6 +16,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
+from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.indexing.run import IndexingRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
@@ -634,7 +635,7 @@ class MainWindow(QObject):
     def on_action_edit_apply_polar_mask_triggered(self):
         # Make the dialog
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._apply_polar_mask_line_picker = LinePickerDialog(canvas, self.ui)
+        self._apply_polar_mask_line_picker = HandDrawnMaskDialog(canvas, self.ui)
         self._apply_polar_mask_line_picker.start()
         self._apply_polar_mask_line_picker.finished.connect(
             self.run_apply_polar_mask)
