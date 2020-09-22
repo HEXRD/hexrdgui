@@ -203,6 +203,8 @@ class MainWindow(QObject):
             self.on_detectors_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().workflow_changed.connect(self.add_workflow_widgets)
+        HexrdConfig().raw_masks_changed.connect(
+            self.ui.image_tab_widget.load_images)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -642,6 +644,7 @@ class MainWindow(QObject):
         ld = line_data.copy()
         HexrdConfig().polar_masks_line_data[name] = ld
         create_polar_mask(name, ld)
+        HexrdConfig().polar_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -676,7 +679,6 @@ class MainWindow(QObject):
 
     def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
-        mrd.new_mask_added.connect(self.update_all)
         mrd.new_mask_added.connect(self.new_mask_added.emit)
         mrd.show()
 

@@ -66,6 +66,8 @@ class ImageCanvas(FigureCanvas):
             self.draw_detector_borders)
         HexrdConfig().rerender_wppf.connect(self.draw_wppf)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
+        HexrdConfig().polar_masks_changed.connect(self.update_polar)
+
 
     def __del__(self):
         # This is so that the figure can be cleaned up

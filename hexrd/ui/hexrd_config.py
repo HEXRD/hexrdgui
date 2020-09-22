@@ -115,6 +115,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
 
+    """Emitted when a new raw mask has been created"""
+    raw_masks_changed = Signal()
+
+    """Emitted when a new polar mask has been created"""
+    polar_masks_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
