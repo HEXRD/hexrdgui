@@ -193,3 +193,11 @@ class EventBlocker(QObject):
             return True
         else:
             return super().eventFilter(obj, event)
+
+
+def create_unique_name(dic, name, value=0):
+    while name in dic.keys():
+        prefix, *rest = name.rpartition('_')
+        name = f'{prefix}_{value}'
+        value += 1
+    return name

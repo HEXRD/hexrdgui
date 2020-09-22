@@ -66,6 +66,8 @@ class ImageCanvas(FigureCanvas):
             self.draw_detector_borders)
         HexrdConfig().rerender_wppf.connect(self.draw_wppf)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
+        HexrdConfig().polar_masks_changed.connect(self.update_polar)
+
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -98,8 +100,7 @@ class ImageCanvas(FigureCanvas):
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
         if (self.mode != ViewType.raw or
-                len(image_names) != len(self.axes_images) or
-                len(HexrdConfig().raw_masks)):
+                len(image_names) != len(self.axes_images)):
             # Either we weren't in image mode before, we have a different
             # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
@@ -116,8 +117,9 @@ class ImageCanvas(FigureCanvas):
                 img = HexrdConfig().image(name, idx)
 
                 # Apply any masks
-                for det, mask in HexrdConfig().raw_masks:
-                    if det == name:
+                for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
+                    if (mask_name in HexrdConfig().visible_masks and
+                            det == name):
                         img[~mask] = 0
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
@@ -132,6 +134,11 @@ class ImageCanvas(FigureCanvas):
             idx = HexrdConfig().current_imageseries_idx
             for i, name in enumerate(image_names):
                 img = HexrdConfig().image(name, idx)
+                # Apply any masks
+                for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
+                    if (mask_name in HexrdConfig().visible_masks and
+                            det == name):
+                        img[~mask] = 0
                 self.axes_images[i].set_data(img)
 
         # This will call self.draw()
@@ -546,6 +553,15 @@ class ImageCanvas(FigureCanvas):
 
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    def update_polar(self):
+        if not self.iviewer:
+            return
+
+        self.iviewer.update_image()
+        self.axes_images[0].set_data(self.iviewer.img)
+        self.update_azimuthal_integral_plot()
+        self.update_overlays()
 
     def async_worker_error(self, error):
         QMessageBox.critical(self, 'HEXRD', str(error[1]))

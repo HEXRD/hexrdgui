@@ -239,8 +239,10 @@ class PolarView:
             self.snip1d_background = None
 
         # Apply masks if they are present
-        masks = HexrdConfig().polar_masks
-        for mask in masks:
+        masks = HexrdConfig().polar_masks.items()
+        visible = HexrdConfig().visible_masks
+        visible_masks = [mask for name, mask in masks if name in visible]
+        for mask in visible_masks:
             img[~mask] = 0
 
         self.img = img

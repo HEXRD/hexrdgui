@@ -109,11 +109,20 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
 
-    """Emitted when the threshold mask status changes"""
-    threshold_mask_changed = Signal(bool)
+    """Emitted when the threshold mask status changes via image mode"""
+    mode_threshold_mask_changed = Signal(bool)
+
+    """Emitted when the threshold mask status changes via mask manager"""
+    mgr_threshold_mask_changed = Signal(bool)
 
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
+
+    """Emitted when a new raw mask has been created"""
+    raw_masks_changed = Signal()
+
+    """Emitted when a new polar mask has been created"""
+    polar_masks_changed = Signal()
 
     def __init__(self):
         # Should this have a parent?
@@ -134,10 +143,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = {}
-        self.polar_masks = []
-        self.polar_masks_line_data = []
-        self.raw_masks = []
-        self.raw_masks_line_data = []
+        self.polar_masks = {}
+        self.polar_masks_line_data = {}
+        self.raw_masks = {}
+        self.raw_masks_line_data = {}
+        self.visible_masks = []
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None
@@ -1391,9 +1401,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_threshold_value(self, v):
         self._threshold_data['value'] = v
 
-    def set_threshold_mask_status(self, v):
-        self._threshold_data['mask_status'] = v
-        self.threshold_mask_changed.emit(v)
+    def set_threshold_mask_status(self, v, set_by_mgr=False):
+        if set_by_mgr and self._threshold_data['mask_status'] != v:
+            self.mgr_threshold_mask_changed.emit(v)
+            self._threshold_data['mask_status'] = v
+        elif not set_by_mgr and self._threshold_data['mask_status'] != v:
+            self.mode_threshold_mask_changed.emit(v)
+            self._threshold_data['mask_status'] = v
 
     def set_threshold_mask(self, m):
         self._threshold_data['mask'] = m
