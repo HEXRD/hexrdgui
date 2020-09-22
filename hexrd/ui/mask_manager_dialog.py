@@ -106,13 +106,16 @@ class MaskManagerDialog(QObject):
 
             # Connect manager to raw image mode tab settings
             # for threshold mask
-            mtype, data = value
+            mtype, data = self.masks[key]
             if mtype == 'threshold':
                 self.setup_threshold_connections(cb, pb)
 
     def setup_threshold_connections(self, checkbox, pushbutton):
-        HexrdConfig().threshold_mask_changed.connect(checkbox.setChecked)
-        checkbox.toggled.connect(HexrdConfig().set_threshold_mask_status)
+        HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
+        checkbox.toggled.connect(self.threshold_toggled)
+
+    def threshold_toggled(self, v):
+        HexrdConfig().set_threshold_mask_status(v, set_by_mgr=True)
 
     def toggle_visibility(self, checked):
         if self.ui.masks_table.currentRow() < 0:

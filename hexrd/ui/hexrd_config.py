@@ -109,8 +109,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
 
-    """Emitted when the threshold mask status changes"""
-    threshold_mask_changed = Signal(bool)
+    """Emitted when the threshold mask status changes via image mode"""
+    mode_threshold_mask_changed = Signal(bool)
+
+    """Emitted when the threshold mask status changes via mask manager"""
+    mgr_threshold_mask_changed = Signal(bool)
 
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
@@ -1372,9 +1375,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def set_threshold_value(self, v):
         self._threshold_data['value'] = v
 
-    def set_threshold_mask_status(self, v):
-        self._threshold_data['mask_status'] = v
-        self.threshold_mask_changed.emit(v)
+    def set_threshold_mask_status(self, v, set_by_mgr=False):
+        if set_by_mgr and self._threshold_data['mask_status'] != v:
+            self.mgr_threshold_mask_changed.emit(v)
+            self._threshold_data['mask_status'] = v
+        elif not set_by_mgr and self._threshold_data['mask_status'] != v:
+            self.mode_threshold_mask_changed.emit(v)
+            self._threshold_data['mask_status'] = v
 
     def set_threshold_mask(self, m):
         self._threshold_data['mask'] = m
