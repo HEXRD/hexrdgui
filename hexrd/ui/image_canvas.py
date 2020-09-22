@@ -118,7 +118,8 @@ class ImageCanvas(FigureCanvas):
 
                 # Apply any masks
                 for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
-                    if det == name and mask_name in HexrdConfig().visible_masks:
+                    if (mask_name in HexrdConfig().visible_masks and
+                            det == name):
                         img[~mask] = 0
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
@@ -135,7 +136,8 @@ class ImageCanvas(FigureCanvas):
                 img = HexrdConfig().image(name, idx)
                 # Apply any masks
                 for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
-                    if det == name and mask_name in HexrdConfig().visible_masks:
+                    if (mask_name in HexrdConfig().visible_masks and
+                            det == name):
                         img[~mask] = 0
                 self.axes_images[i].set_data(img)
 

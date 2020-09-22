@@ -813,7 +813,8 @@ class MainWindow(QObject):
                 create_raw_mask(name, line_data)
             for name, data in HexrdConfig().polar_masks_line_data.items():
                 line_data = convert_polar_to_raw(data)
-                for line in line_data: create_raw_mask(name, line)
+                for line in line_data:
+                    create_raw_mask(name, line)
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before

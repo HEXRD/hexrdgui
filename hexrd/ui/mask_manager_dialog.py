@@ -84,7 +84,8 @@ class MaskManagerDialog(QObject):
         self.ui.masks_table.customContextMenuRequested.connect(
             self.context_menu_event)
         self.ui.export_masks.clicked.connect(self.export_visible_masks)
-        HexrdConfig().mode_threshold_mask_changed.connect(self.update_masks_list)
+        HexrdConfig().mode_threshold_mask_changed.connect(
+            self.update_masks_list)
 
     def setup_table(self, status=True):
         self.ui.masks_table.setRowCount(0)
@@ -133,13 +134,11 @@ class MaskManagerDialog(QObject):
         if checked and name and name not in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.append(name)
         elif not checked and name in HexrdConfig().visible_masks:
-            print('mask removed')
             HexrdConfig().visible_masks.remove(name)
 
         if self.image_mode == ViewType.polar:
             HexrdConfig().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
-            print('emit raw masks changed')
             HexrdConfig().raw_masks_changed.emit()
 
     def reset_threshold(self):
