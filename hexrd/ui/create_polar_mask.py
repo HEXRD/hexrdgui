@@ -14,12 +14,13 @@ def convert_raw_to_polar(det, line):
     return [np.degrees(tth)]
 
 
-def create_polar_mask(line_data, names):
+def create_polar_mask(line_data, name):
     # Calculate current image dimensions
     pv = PolarView(None)
     shape = pv.shape
     # Generate masks from line data
-    for line, name in zip(line_data, names):
+    final_mask = np.ones(shape, dtype=bool)
+    for line in line_data:
         tth = np.asarray([point[0] for point in line])
         eta = np.asarray([point[1] for point in line])
 
@@ -29,4 +30,5 @@ def create_polar_mask(line_data, names):
         rr, cc = polygon(i_row, j_col, shape=shape)
         mask = np.ones(shape, dtype=bool)
         mask[rr, cc] = False
-        HexrdConfig().polar_masks[name] = mask
+        final_mask = np.logical_and(final_mask, mask)
+    HexrdConfig().polar_masks[name] = final_mask
