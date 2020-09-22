@@ -1,5 +1,8 @@
 from PySide2.QtCore import QObject, Signal
 
+from hexrd.ui.create_polar_mask import create_polar_mask
+from hexrd.ui.create_raw_mask import create_raw_mask
+from hexrd.ui.utils import create_unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
@@ -24,6 +27,8 @@ class MaskRegionsDialog(QObject):
         self.patches = {}
         self.canvas = None
         self.image_mode = None
+        self.polar_masks_line_data = []
+        self.raw_masks_line_data = []
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -116,9 +121,9 @@ class MaskRegionsDialog(QObject):
     def discard_patch(self):
         det = self.added_patches.pop()
         if det == ViewType.polar:
-            HexrdConfig().polar_masks_line_data.pop()
+            self.polar_masks_line_data.pop()
         else:
-            HexrdConfig().raw_masks_line_data.pop()
+            self.raw_masks_line_data.pop()
         return self.patches[det].pop(), det
 
     def undo_selection(self):
@@ -164,20 +169,33 @@ class MaskRegionsDialog(QObject):
         self.update_patch(event)
         self.canvas.draw()
 
-    def create_mask(self):
+    def save_line_data(self):
         data_coords = self.patch.get_patch_transform().transform(
             self.patch.get_path().vertices[:-1])
         if self.image_mode == ViewType.raw:
-            HexrdConfig().raw_masks_line_data.append((self.det, data_coords))
+            self.raw_masks_line_data.append((self.det, data_coords))
         elif self.image_mode == ViewType.polar:
-            HexrdConfig().polar_masks_line_data.append([data_coords])
+            self.polar_masks_line_data.append([data_coords])
+
+    def create_masks(self):
+        for data in self.raw_masks_line_data:
+            name = create_unique_name(
+                HexrdConfig().raw_masks_line_data, 'raw_mask_0')
+            HexrdConfig().raw_masks_line_data[name] = data
+            create_raw_mask(name, data)
+
+        for data_coords in self.polar_masks_line_data:
+            name = create_unique_name(
+                HexrdConfig().polar_masks_line_data, 'polar_mask_0')
+            HexrdConfig().polar_masks_line_data[name] = [data_coords]
+            create_polar_mask(name, data_coords)
 
     def button_released(self, event):
         if not self.axes or not self.press:
             return
 
         self.end = [int(event.xdata), int(event.ydata)]
-        self.create_mask()
+        self.save_line_data()
 
         self.press.clear()
         self.end.clear()
@@ -190,6 +208,10 @@ class MaskRegionsDialog(QObject):
         self.added_patches.clear()
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
+        for canvas in self.parent.image_tab_widget.active_canvases():
+            for axes in canvas.raw_axes:
+                axes.patches.clear()
+        self.create_masks()
         self.new_mask_added.emit(self.image_mode)
 
     def cancel(self):
@@ -198,9 +220,6 @@ class MaskRegionsDialog(QObject):
 
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
-        for canvas in self.parent.image_tab_widget.active_canvases():
-            for axes in canvas.raw_axes:
-                axes.patches.clear()
 
         self.disconnect()
         self.canvas.draw()

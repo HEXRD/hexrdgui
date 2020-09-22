@@ -48,11 +48,11 @@ def convert_polar_to_raw(line):
     return line_data
 
 
-def create_raw_mask(line_data):
-    name, data = line_data
-    img = HexrdConfig().image(name, 0)
+def create_raw_mask(name, line_data):
+    det, data = line_data
+    img = HexrdConfig().image(det, 0)
     rr, cc = polygon(data[:,1], data[:,0], shape=img.shape)
     if len(rr) >= 1:
         mask = np.ones(img.shape, dtype=bool)
         mask[rr, cc] = False
-        HexrdConfig().raw_masks.append((name, mask))
+        HexrdConfig().raw_masks[name] = (det, mask)
