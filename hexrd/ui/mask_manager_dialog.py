@@ -190,9 +190,16 @@ class MaskManagerDialog(QObject):
             self.masks[new_name] = self.masks.pop(self.old_name)
             mtype, data = self.masks[new_name]
             if mtype == 'polar':
-                value = HexrdConfig().polar_masks.pop(self.old_name)
+                value = HexrdConfig().polar_masks_line_data.pop(self.old_name)
                 HexrdConfig().polar_masks[new_name] = value
             elif mtype != 'threshold':
+                value = HexrdConfig().raw_masks_line_data.pop(self.old_name)
+                HexrdConfig().raw_masks[new_name] = value
+
+            if self.old_name in HexrdConfig().polar_masks.keys():
+                value = HexrdConfig().polar_masks.pop(self.old_name)
+                HexrdConfig().polar_masks[new_name] = value
+            if self.old_name in HexrdConfig().raw_masks.keys():
                 value = HexrdConfig().raw_masks.pop(self.old_name)
                 HexrdConfig().raw_masks[new_name] = value
 
