@@ -30,4 +30,3 @@ def create_polar_mask(line_data, names):
         mask = np.ones(shape, dtype=bool)
         mask[rr, cc] = False
         HexrdConfig().polar_masks[name] = mask
-        HexrdConfig().visible_masks.append(name)

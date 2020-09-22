@@ -647,6 +647,7 @@ class MainWindow(QObject):
                 HexrdConfig().polar_masks_line_data, 'polar_mask_0')
             names.append(name)
             HexrdConfig().polar_masks_line_data[name] = line.copy()
+            HexrdConfig().visible_masks.append(name)
         create_polar_mask(line_data.copy(), names)
         HexrdConfig().polar_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
