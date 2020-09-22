@@ -641,11 +641,13 @@ class MainWindow(QObject):
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, line_data):
-        name = create_unique_name(
-            HexrdConfig().polar_masks_line_data, 'polar_mask_0')
-        ld = line_data.copy()
-        HexrdConfig().polar_masks_line_data[name] = ld
-        create_polar_mask(name, ld)
+        names = []
+        for line in line_data:
+            name = create_unique_name(
+                HexrdConfig().polar_masks_line_data, 'polar_mask_0')
+            names.append(name)
+            HexrdConfig().polar_masks_line_data[name] = line.copy()
+        create_polar_mask(line_data.copy(), names)
         HexrdConfig().polar_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
@@ -802,10 +804,10 @@ class MainWindow(QObject):
             # Rebuild polar masks
             HexrdConfig().polar_masks.clear()
             for name, line_data in HexrdConfig().polar_masks_line_data.items():
-                create_polar_mask(name, line_data)
+                create_polar_mask(line_data, [name])
             for name, (det, data) in HexrdConfig().raw_masks_line_data.items():
                 line_data = convert_raw_to_polar(det, data)
-                create_polar_mask(name, line_data)
+                create_polar_mask(line_data, [name])
             self.ui.image_tab_widget.show_polar()
         else:
             # Rebuild raw masks
