@@ -86,7 +86,8 @@ class MainWindow(QObject):
         self.load_widget.ui.setVisible(False)
         self.workflow_widgets[WORKFLOW_HEDM].append(self.load_widget.ui)
 
-        self.import_data_widget = ImportDataPanel(self.ui)
+        self.import_data_widget = ImportDataPanel(self.color_map_editor,
+                                                  self.ui)
         self.ui.load_page.setLayout(QVBoxLayout())
         self.ui.load_page.layout().addWidget(self.import_data_widget.ui)
         self.import_data_widget.ui.setVisible(False)

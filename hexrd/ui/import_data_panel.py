@@ -24,7 +24,7 @@ class ImportDataPanel(QObject):
     # Emitted when new config is loaded
     new_config_loaded = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, cmap=None, parent=None):
         super(ImportDataPanel, self).__init__(parent)
 
         loader = UiLoader()
@@ -34,6 +34,7 @@ class ImportDataPanel(QObject):
         self.completed_detectors = []
         self.canvas = parent.image_tab_widget.image_canvases[0]
         self.detector_defaults = {}
+        self.cmap = cmap
 
         self.setup_connections()
 
@@ -125,7 +126,11 @@ class ImportDataPanel(QObject):
         if selected:
             self.detector = self.ui.detectors.currentText()
             old_det = HexrdConfig().detector_names[0]
+
+            self.cmap.block_updates(True)
             HexrdConfig().rename_detector(old_det, self.detector)
+            self.cmap.block_updates(False)
+
             self.set_detector_defaults(self.detector)
 
     def update_bbox_height(self, val):
@@ -164,8 +169,13 @@ class ImportDataPanel(QObject):
                 self.canvas.raw_axes[0].set_autoscale_on(True)
             if hasattr(self, 'prev_extent'):
                 self.canvas.axes_images[0].set_extent(self.prev_extent)
+
+            if self.completed_detectors:
+                # Only reset the color map range for first detector processed
+                self.cmap.block_updates(True)
             ImageLoadManager().read_data(files, parent=self.ui)
             self.prev_extent = self.canvas.axes_images[0].get_extent()
+            self.cmap.block_updates(False)
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
@@ -177,9 +187,13 @@ class ImportDataPanel(QObject):
             self.parent().action_show_toolbar.setChecked(False)
 
     def add_transform(self):
+        # Prevent color map reset on transform
+        self.cmap.block_updates(True)
         ilm = ImageLoadManager()
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
+        self.cmap.block_updates(False)
+
         self.ui.transforms.setCurrentIndex(0)
 
         img = HexrdConfig().image(self.detector, 0)
@@ -267,12 +281,16 @@ class ImportDataPanel(QObject):
     def finalize(self):
         self.it.cropped_image
         img = self.it.masked_image
+
         ilm = ImageLoadManager()
+        self.cmap.block_updates(True)
         ilm.read_data([[img]], parent=self.ui)
         if self.instrument == 'PXRDIP':
             ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
             ilm.begin_processing(postprocess=True)
             img = HexrdConfig().image(self.detector, 0)
+        self.cmap.block_updates(False)
+
         self.it.update_image(img)
         self.edited_images[self.detector] = {
             'img': img,
@@ -282,6 +300,7 @@ class ImportDataPanel(QObject):
         }
         self.canvas.axes_images[0].set_extent(
             (0, img.shape[1], img.shape[0], 0))
+
         self.it.redraw()
         self.clear_boundry()
 
@@ -316,6 +335,7 @@ class ImportDataPanel(QObject):
         self.completed_detectors = []
 
     def completed(self):
+        self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
         files = []
@@ -339,8 +359,10 @@ class ImportDataPanel(QObject):
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
         self.new_config_loaded.emit()
+
         ImageLoadManager().read_data(files, parent=self.ui)
 
         self.reset_panel()
         self.parent().action_show_toolbar.setEnabled(True)
         self.parent().action_show_toolbar.setChecked(True)
+        self.cmap.block_updates(False)

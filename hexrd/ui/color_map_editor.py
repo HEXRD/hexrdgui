@@ -55,7 +55,14 @@ class ColorMapEditor:
         self.ui.maximum.setMinimum(self.ui.minimum.value())
         self.ui.minimum.setMaximum(self.ui.maximum.value())
 
+    def block_updates(self, blocked):
+        self.updates_blocked = blocked
+
     def update_bounds(self, data):
+        if hasattr(self, 'updates_blocked') and self.updates_blocked:
+            # We don't want to adjust the bounds
+            return
+
         bounds = self.percentile_range(data)
         self.ui.minimum.setValue(bounds[0])
         self.ui.minimum.setToolTip('Min: ' + str(bounds[0]))
@@ -82,6 +89,10 @@ class ColorMapEditor:
         return l, h
 
     def reset_range(self):
+        if hasattr(self, 'updates_blocked') and self.updates_blocked:
+            # We don't want to adjust the range
+            return
+
         if self.ui.minimum.maximum() < self.bounds[0]:
             # Make sure we can actually set the value...
             self.ui.minimum.setMaximum(self.bounds[0])
