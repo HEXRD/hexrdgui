@@ -63,6 +63,8 @@ class SelectItemsWidget(QObject):
             w = self.create_checkbox(checked)
             self.ui.table.setCellWidget(i, COLUMNS['checkbox'], w)
 
+        self.ui.table.resizeColumnsToContents()
+
     def checkbox_toggled(self):
         # Go through and update the items
         for i, (item, cb) in enumerate(zip(self.items, self.checkboxes)):
