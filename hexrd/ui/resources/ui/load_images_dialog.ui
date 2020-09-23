@@ -41,6 +41,9 @@
    </item>
    <item>
     <widget class="QTableWidget" name="match_detectors_table">
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustToContents</enum>
+     </property>
      <property name="alternatingRowColors">
       <bool>true</bool>
      </property>

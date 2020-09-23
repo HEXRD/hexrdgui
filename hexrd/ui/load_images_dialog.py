@@ -98,6 +98,7 @@ class LoadImagesDialog:
 
             f = QTableWidgetItem(self.image_files[i])
             table.setItem(i, 2, f)
+        table.resizeColumnsToContents()
 
     def update_combo_state(self):
         enable = len(self.ui.regex_line_edit.text()) == 0
