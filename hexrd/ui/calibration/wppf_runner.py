@@ -18,6 +18,7 @@ class WppfRunner(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self._spec_offset = 0
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(parent)
         self.progress_text.connect(self.progress_dialog.setLabelText)
@@ -91,6 +92,13 @@ class WppfRunner(QObject):
             # Re-format it to match the expected input format
             expt_spectrum = np.array(list(zip(*expt_spectrum)))
 
+        # Add offset to ensure we pass WPPF values greater than zero
+        min_value = expt_spectrum[:, 1].min()
+        max_value = expt_spectrum[:, 1].max()
+        # Generate the offset -min value + 0.5% of max value
+        self._spec_offset = -min_value + max_value * 0.005
+        expt_spectrum[:, 1] = np.add(expt_spectrum[:, 1], self._spec_offset)
+
         phases = [HexrdConfig().material(x) for x in dialog.selected_materials]
         kwargs = {
             'expt_spectrum': expt_spectrum,
@@ -107,7 +115,11 @@ class WppfRunner(QObject):
             self.rerender_wppf()
 
     def rerender_wppf(self):
-        HexrdConfig().wppf_data = list(self.wppf_object.spectrum_sim.data)
+        # We need to remove the offset before rendering
+        (x, y) = self.wppf_object.spectrum_sim.data
+        y = np.add(np.copy(y), -self._spec_offset)
+        HexrdConfig().wppf_data = (x, y)
+
         HexrdConfig().rerender_wppf.emit()
 
         # Process events to make sure it visually updates.
