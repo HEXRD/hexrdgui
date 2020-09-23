@@ -6,6 +6,7 @@ from matplotlib.transforms import Affine2D
 
 from skimage.draw import polygon
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
 
@@ -15,7 +16,7 @@ class InteractiveTemplate:
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
-        self.panels = self.parent.iviewer.instr.detectors
+        self.panels = create_hedm_instrument().detectors
         self.img = img
         self.shape = None
         self.press = None
