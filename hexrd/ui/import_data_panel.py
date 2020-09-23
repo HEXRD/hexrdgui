@@ -167,14 +167,14 @@ class ImportDataPanel(QObject):
 
             if not self.canvas.raw_axes[0].get_autoscale_on():
                 self.canvas.raw_axes[0].set_autoscale_on(True)
-            if hasattr(self, 'prev_extent'):
-                self.canvas.axes_images[0].set_extent(self.prev_extent)
 
             if self.completed_detectors:
                 # Only reset the color map range for first detector processed
                 self.cmap.block_updates(True)
             ImageLoadManager().read_data(files, parent=self.ui)
-            self.prev_extent = self.canvas.axes_images[0].get_extent()
+            img_shape = HexrdConfig().image(self.detector, 0).shape
+            self.canvas.axes_images[0].set_extent(
+                (-0.5, img_shape[1], img_shape[0], -0.5))
             self.cmap.block_updates(False)
 
             file_names = [os.path.split(f[0])[1] for f in files]
