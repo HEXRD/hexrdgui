@@ -284,6 +284,8 @@ class ImportDataPanel(QObject):
 
         ilm = ImageLoadManager()
         self.cmap.block_updates(True)
+        # Do not re-apply transform if selected in load file dialog
+        HexrdConfig().load_panel_state.clear()
         ilm.read_data([[img]], parent=self.ui)
         if self.instrument == 'PXRDIP':
             ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
@@ -291,7 +293,6 @@ class ImportDataPanel(QObject):
             img = HexrdConfig().image(self.detector, 0)
         self.cmap.block_updates(False)
 
-        self.it.update_image(img)
         self.edited_images[self.detector] = {
             'img': img,
             'height': img.shape[0],
