@@ -6,6 +6,7 @@ from hexrd.material import _angstroms
 from hexrd.WPPF import LeBail, Rietveld
 
 from hexrd.ui.calibration.wppf_options_dialog import WppfOptionsDialog
+from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.progress_dialog import ProgressDialog
 
@@ -25,10 +26,20 @@ class WppfRunner(QObject):
         self.wppf_options_dialog = None
 
     def run(self):
+        self.validate()
+
         # We will go through these steps:
         # 1. Select options
         # 2. Run WPPF
         self.select_options()
+
+    def validate(self):
+        powder_overlays = [
+            x for x in HexrdConfig().overlays
+            if (x['type'] == OverlayType.powder and x['visible'])
+        ]
+        if not powder_overlays:
+            raise Exception('At least one visible powder overlay is required')
 
     def select_options(self):
         dialog = WppfOptionsDialog(self.parent())
@@ -80,10 +91,11 @@ class WppfRunner(QObject):
             # Re-format it to match the expected input format
             expt_spectrum = np.array(list(zip(*expt_spectrum)))
 
+        phases = [HexrdConfig().material(x) for x in dialog.selected_materials]
         kwargs = {
             'expt_spectrum': expt_spectrum,
             'params': dialog.params,
-            'phases': HexrdConfig().active_material,
+            'phases': phases,
             'wavelength': wavelength,
             'bkgmethod': dialog.background_method_dict
         }
