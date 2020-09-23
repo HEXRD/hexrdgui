@@ -151,10 +151,14 @@ class MainWindow(QObject):
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_apply_polar_mask.triggered.connect(
             self.on_action_edit_apply_polar_mask_triggered)
+        self.ui.action_edit_apply_polar_mask.triggered.connect(
+            self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
             self.on_action_edit_apply_polygon_mask_triggered)
+        self.ui.action_edit_apply_polygon_mask.triggered.connect(
+            self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_transform_detectors.triggered.connect(
@@ -173,6 +177,8 @@ class MainWindow(QObject):
             self.start_powder_calibration)
         self.ui.action_calibration_line_picker.triggered.connect(
             self.on_action_calibration_line_picker_triggered)
+        self.ui.action_calibration_line_picker.triggered.connect(
+            self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)

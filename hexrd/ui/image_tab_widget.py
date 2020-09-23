@@ -171,6 +171,14 @@ class ImageTabWidget(QTabWidget):
             self.toolbars[idx]['sb'].update_name(self.image_names[idx])
             self.toolbars[idx]['sb'].update_range(True)
 
+    def toggle_off_toolbar(self):
+        toolbars = [bars['tb'] for bars in self.toolbars]
+        for tb in toolbars:
+            if tb.mode == 'zoom rect':
+                tb.zoom()
+            if tb.mode == 'pan/zoom':
+                tb.pan()
+
     def show_cartesian(self):
         self.update_image_names()
         self.update_ims_toolbar()
