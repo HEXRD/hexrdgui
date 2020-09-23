@@ -16,6 +16,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
+from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.indexing.run import IndexingRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
@@ -635,17 +636,19 @@ class MainWindow(QObject):
     def on_action_edit_apply_polar_mask_triggered(self):
         # Make the dialog
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._apply_polar_mask_line_picker = LinePickerDialog(canvas, self.ui)
+        self._apply_polar_mask_line_picker = (
+            HandDrawnMaskDialog(canvas, self.ui))
         self._apply_polar_mask_line_picker.start()
         self._apply_polar_mask_line_picker.finished.connect(
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, line_data):
-        name = create_unique_name(
-            HexrdConfig().polar_masks_line_data, 'polar_mask_0')
-        ld = line_data.copy()
-        HexrdConfig().polar_masks_line_data[name] = ld
-        create_polar_mask(name, ld)
+        for line in line_data:
+            name = create_unique_name(
+                HexrdConfig().polar_masks_line_data, 'polar_mask_0')
+            HexrdConfig().polar_masks_line_data[name] = line.copy()
+            HexrdConfig().visible_masks.append(name)
+            create_polar_mask([line.copy()], name)
         HexrdConfig().polar_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
@@ -675,9 +678,11 @@ class MainWindow(QObject):
             return
         name = create_unique_name(
             HexrdConfig().polar_masks_line_data, 'laue_mask')
+        create_polar_mask(data, name)
         HexrdConfig().polar_masks_line_data[name] = data
+        HexrdConfig().visible_masks.append(name)
         self.new_mask_added.emit(self.image_mode)
-        self.update_all()
+        HexrdConfig().polar_masks_changed.emit()
 
     def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
@@ -802,10 +807,10 @@ class MainWindow(QObject):
             # Rebuild polar masks
             HexrdConfig().polar_masks.clear()
             for name, line_data in HexrdConfig().polar_masks_line_data.items():
-                create_polar_mask(name, line_data)
+                create_polar_mask(line_data, name)
             for name, (det, data) in HexrdConfig().raw_masks_line_data.items():
                 line_data = convert_raw_to_polar(det, data)
-                create_polar_mask(name, line_data)
+                create_polar_mask(line_data, name)
             self.ui.image_tab_widget.show_polar()
         else:
             # Rebuild raw masks

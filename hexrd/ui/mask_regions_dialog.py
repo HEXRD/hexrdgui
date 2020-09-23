@@ -183,13 +183,15 @@ class MaskRegionsDialog(QObject):
                 HexrdConfig().raw_masks_line_data, 'raw_mask_0')
             HexrdConfig().raw_masks_line_data[name] = data
             create_raw_mask(name, data)
+            HexrdConfig().visible_masks.append(name)
             HexrdConfig().raw_masks_changed.emit()
 
         for data_coords in self.polar_masks_line_data:
             name = create_unique_name(
                 HexrdConfig().polar_masks_line_data, 'polar_mask_0')
             HexrdConfig().polar_masks_line_data[name] = [data_coords]
-            create_polar_mask(name, data_coords)
+            create_polar_mask(data_coords, name)
+            HexrdConfig().visible_masks.append(name)
             HexrdConfig().polar_masks_changed.emit()
 
     def button_released(self, event):
