@@ -245,12 +245,12 @@ class ImportDataPanel(QObject):
         self.ui.trans.setChecked(True)
 
     def setup_translate(self):
-        if self.it is not None:
+        if self.it is not None and self.ui.rotate.isChecked():
             self.it.disconnect_rotate()
             self.it.connect_translate()
 
     def setup_rotate(self):
-        if self.it is not None:
+        if self.it is not None and self.ui.trans.isChecked():
             self.it.disconnect_translate()
             self.it.connect_rotate()
 
