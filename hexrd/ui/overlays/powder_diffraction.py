@@ -1,8 +1,6 @@
 import numpy as np
 
-from hexrd.constants import identity_3x3
 from hexrd.transforms import xfcapi
-from hexrd.xrdutil import _convert_angles
 
 from hexrd.ui.constants import ViewType
 
@@ -119,12 +117,12 @@ class PowderLineOverlay:
 
             # !!! must apply offset
             xys_full = panel.angles_to_cart(ang_crds, tvec_c=self.tvec)
-                
+
             # clip to detector panel
             xys, on_panel = panel.clip_to_panel(
                 xys_full, buffer_edges=False
             )
-            
+
             if display_mode == ViewType.polar:
                 if panel.distortion is not None:
                     xys = panel.distortion.apply(xys)
