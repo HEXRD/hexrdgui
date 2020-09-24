@@ -184,6 +184,7 @@ class OverlayManager:
                 # In case the active widget depends on material settings
                 self.overlay_editor.update_active_widget_gui()
 
+        HexrdConfig().update_visible_material_energies()
         HexrdConfig().overlay_config_changed.emit()
 
     def update_config_types(self):
@@ -200,6 +201,7 @@ class OverlayManager:
             w = self.visibility_boxes[i]
             HexrdConfig().overlays[i]['visible'] = w.isChecked()
 
+        HexrdConfig().update_visible_material_energies()
         HexrdConfig().overlay_config_changed.emit()
 
     @property
