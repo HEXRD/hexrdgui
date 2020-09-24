@@ -51,6 +51,19 @@ def default_overlay_options(overlay_type):
     return copy.deepcopy(default_options[overlay_type])
 
 
+def default_overlay_refinements(overlay_type):
+    default_refinements = {
+        OverlayType.powder: [],
+        OverlayType.laue: constants.DEFAULT_CRYSTAL_REFINEMENTS,
+        OverlayType.mono_rotation_series: constants.DEFAULT_CRYSTAL_REFINEMENTS
+    }
+
+    if overlay_type not in default_refinements:
+        raise Exception(f'Unknown overlay type: {overlay_type}')
+
+    return copy.deepcopy(default_refinements[overlay_type])
+
+
 def update_overlay_data(instr, display_mode):
     from hexrd.ui.hexrd_config import HexrdConfig
 

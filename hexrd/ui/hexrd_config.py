@@ -1088,6 +1088,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             'style': style,
             'visible': visible,
             'options': overlays.default_overlay_options(type),
+            'refinements': overlays.default_overlay_refinements(type),
             'data': {}
         }
         self.overlays.append(overlay)
@@ -1106,6 +1107,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         overlay['type'] = type
         overlay['style'] = overlays.default_overlay_style(type)
         overlay['options'] = overlays.default_overlay_options(type)
+        overlay['refinements'] = overlays.default_overlay_refinements(type)
         overlay['update_needed'] = True
 
     def clear_overlay_data(self):

@@ -120,3 +120,23 @@ BUFFER_KEY = 'buffer'
 # determine which mode has been set by the navigation bar
 ZOOM = 'zoom rect'
 PAN = 'pan/zoom'
+
+def default_crystal_refinements():
+    inverse_matrix_strings = [
+        '0_0',
+        '1_1',
+        '2_2',
+        '1_2',
+        '0_2',
+        '0_1'
+    ]
+
+    items = [f'orientation_{i}' for i in range(3)]
+    items += [f'position_{i}' for i in range(3)]
+    items += [f'stretch_{x}' for x
+              in inverse_matrix_strings]
+    default_refine = True
+    return [(x, default_refine) for x in items]
+
+
+DEFAULT_CRYSTAL_REFINEMENTS = default_crystal_refinements()

@@ -5,7 +5,9 @@ from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
-from hexrd.ui.constants import DEFAULT_CRYSTAL_PARAMS
+from hexrd.ui.constants import (
+    DEFAULT_CRYSTAL_PARAMS, DEFAULT_CRYSTAL_REFINEMENTS
+)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -32,6 +34,8 @@ class LaueOverlayEditor:
 
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
         self.crystal_editor.params_modified.connect(self.update_config)
+        self.crystal_editor.refinements_modified.connect(
+            self.update_refinements)
 
     @property
     def overlay(self):
@@ -57,6 +61,10 @@ class LaueOverlayEditor:
             self.crystal_params = options['crystal_params']
         else:
             self.crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
+        if 'refinements' in self.overlay:
+            self.refinements = self.overlay['refinements']
+        else:
+            self.refinements = copy.deepcopy(DEFAULT_CRYSTAL_REFINEMENTS)
 
         if options.get('tth_width') is not None:
             self.ui.tth_width.setValue(np.degrees(options['tth_width']))
@@ -88,6 +96,14 @@ class LaueOverlayEditor:
     def crystal_params(self, v):
         self.crystal_editor.params = v
 
+    @property
+    def refinements(self):
+        return copy.deepcopy(self.crystal_editor.refinements)
+
+    @refinements.setter
+    def refinements(self, v):
+        self.crystal_editor.refinements = v
+
     def update_config(self):
         options = self.overlay.setdefault('options', {})
         options['min_energy'] = self.ui.min_energy.value()
@@ -96,8 +112,13 @@ class LaueOverlayEditor:
         options['tth_width'] = self.tth_width
         options['eta_width'] = self.eta_width
 
+        self.update_refinements()
+
         self.overlay['update_needed'] = True
         HexrdConfig().overlay_config_changed.emit()
+
+    def update_refinements(self):
+        self.overlay['refinements'] = self.refinements
 
     @property
     def enable_widths(self):
