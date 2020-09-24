@@ -164,6 +164,9 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect_translate(self):
+        if not self.button_press_cid:
+            return
+
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
         self.parent.mpl_disconnect(self.motion_cid)
@@ -247,6 +250,9 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect_rotate(self):
+        if not self.button_press_cid:
+            return
+
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_drag_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
