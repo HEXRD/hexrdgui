@@ -155,7 +155,7 @@ class MaskRegionsDialog(QObject):
         if not self.axes:
             return
 
-        self.press = [int(event.xdata), int(event.ydata)]
+        self.press = [event.xdata, event.ydata]
         self.det = self.axes.get_title()
         if not self.det:
             self.det = self.image_mode
@@ -196,7 +196,7 @@ class MaskRegionsDialog(QObject):
         if not self.axes or not self.press:
             return
 
-        self.end = [int(event.xdata), int(event.ydata)]
+        self.end = [event.xdata, event.ydata]
         self.save_line_data()
 
         self.press.clear()
