@@ -37,6 +37,7 @@ class ImportDataPanel(QObject):
         self.detector_defaults = {}
         self.cmap = cmap
 
+        self.set_default_color()
         self.setup_connections()
 
     def setup_connections(self):
@@ -62,6 +63,12 @@ class ImportDataPanel(QObject):
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
             w.setEnabled(enabled)
+
+    def set_default_color(self):
+        self.outline_color = '#00ffff'
+        self.ui.line_color.setText(self.outline_color)
+        self.ui.line_color.setStyleSheet(
+            'QPushButton {background-color: cyan}')
 
     def get_instrument_defaults(self):
         self.detector_defaults.clear()

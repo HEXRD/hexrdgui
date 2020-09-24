@@ -35,7 +35,7 @@ class InteractiveTemplate:
             data = np.loadtxt(f)
         verts = self.panels[det].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
-        self.shape = patches.Polygon(verts, fill=False, lw=1)
+        self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
         self.center = self.get_midpoint()
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
