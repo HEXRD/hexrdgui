@@ -222,6 +222,10 @@ class MaskRegionsDialog(QObject):
 
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
+        else:
+            for canvas in self.parent.image_tab_widget.active_canvases():
+                for axes in canvas.raw_axes:
+                    axes.patches.clear()
 
         self.disconnect()
         self.canvas.draw()
