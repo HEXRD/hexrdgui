@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>432</width>
-    <height>152</height>
+    <height>159</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -762,38 +762,5 @@
   <tabstop>polar_res_tth_max</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>polar_apply_snip1d</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>polar_snip1d_width</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>49</x>
-     <y>92</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>159</x>
-     <y>92</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>polar_apply_snip1d</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>polar_snip1d_numiter</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>49</x>
-     <y>92</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>287</x>
-     <y>92</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

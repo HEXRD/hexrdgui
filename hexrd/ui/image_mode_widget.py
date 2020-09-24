@@ -71,6 +71,7 @@ class ImageModeWidget(QObject):
             self.on_eta_min_changed)
         self.ui.polar_res_eta_max.valueChanged.connect(
             self.on_eta_max_changed)
+        self.ui.polar_apply_snip1d.toggled.connect(self.update_enable_states)
         self.ui.polar_apply_snip1d.toggled.connect(
             HexrdConfig().set_polar_apply_snip1d)
         self.ui.polar_snip1d_algorithm.currentIndexChanged.connect(
@@ -162,6 +163,13 @@ class ImageModeWidget(QObject):
             HexrdConfig().polar_snip1d_width)
         self.ui.polar_snip1d_numiter.setValue(
             HexrdConfig().polar_snip1d_numiter)
+
+        self.update_enable_states()
+
+    def update_enable_states(self):
+        apply_snip1d = self.ui.polar_apply_snip1d.isChecked()
+        self.ui.polar_snip1d_width.setEnabled(apply_snip1d)
+        self.ui.polar_snip1d_numiter.setEnabled(apply_snip1d)
 
     def auto_generate_cartesian_params(self):
         # This will automatically generate and set values for the
