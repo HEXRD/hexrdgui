@@ -78,6 +78,10 @@ class PowderLineOverlay:
             )
         )
 
+        if tths.size == 0:
+            # No overlays
+            return {}
+
         if self.plane_data.tThWidth is not None:
             # Need to get width data as well
             indices, ranges = self.plane_data.getMergedRanges()
