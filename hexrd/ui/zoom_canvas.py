@@ -7,18 +7,21 @@ import numpy as np
 
 class ZoomCanvas(FigureCanvas):
 
-    def __init__(self, main_canvas):
+    def __init__(self, main_canvas, draw_crosshairs=True):
         self.figure = Figure()
         super(FigureCanvas, self).__init__(self.figure)
 
         self.main_canvas = main_canvas
         self.pv = main_canvas.iviewer.pv
 
+        self.draw_crosshairs = draw_crosshairs
+
         self.axes_images = None
 
         # Set up the box overlay lines
         ax = self.main_canvas.axis
         self.box_overlay_line = ax.plot([], [], 'm-')[0]
+        self.crosshairs = None
 
         # user-specified ROI in degrees (from interactors)
         self.tth_tol = 0.5
@@ -47,6 +50,15 @@ class ZoomCanvas(FigureCanvas):
             self.box_overlay_line.remove()
             self.box_overlay_line = None
 
+    def clear_crosshairs(self):
+        if self.crosshairs is not None:
+            self.crosshairs.set_data([], [])
+
+    def remove_crosshairs(self):
+        if self.crosshairs is not None:
+            self.crosshairs.remove()
+            self.crosshairs = None
+
     def mouse_moved(self, event):
         if event.inaxes is None:
             # Do nothing...
@@ -61,7 +73,28 @@ class ZoomCanvas(FigureCanvas):
 
         self.render()
 
+    def plot_crosshairs(self, xlims, ylims):
+        x_scale = 0.05
+        y_scale = 0.1
+
+        center = np.array([np.mean(xlims), np.mean(ylims)])
+
+        xmag = abs(xlims[1] - xlims[0]) * x_scale
+        ymag = abs(ylims[1] - ylims[0]) * y_scale
+
+        vals = [
+            center + (0, ymag),
+            center - (0, ymag),
+            (np.nan, np.nan),
+            center + (xmag, 0),
+            center - (xmag, 0)
+        ]
+
+        self.crosshairs.set_data(zip(*vals))
+
     def render(self):
+        self.clear_crosshairs()
+
         point = (self.xdata, self.ydata)
         rsimg = self.main_canvas.iviewer.img
         _extent = self.main_canvas.iviewer._extent
@@ -111,6 +144,7 @@ class ZoomCanvas(FigureCanvas):
             a2.set_xlabel(r"$2\theta$ [deg]")
             a2.set_ylabel(r"intensity")
             a1.set_ylabel(r"$\eta$ [deg]")
+            self.crosshairs = a1.plot([], [], 'r-')[0]
             self.axes = [a1, a2]
             self.axes_images = [im1, im2]
             self.grid = grid
@@ -121,6 +155,9 @@ class ZoomCanvas(FigureCanvas):
 
             self.axes[1].relim()
             self.axes[1].autoscale_view(scalex=False)
+
+        if self.draw_crosshairs:
+            self.plot_crosshairs(xlims, ylims)
 
         xs = np.append(roi_deg[:, 0], roi_deg[0, 0])
         ys = np.append(roi_deg[:, 1], roi_deg[0, 1])
