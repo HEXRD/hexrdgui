@@ -41,6 +41,12 @@ class InteractiveTemplate:
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
+    def update_style(self, style, width, color):
+        self.shape.set_linestyle(style)
+        self.shape.set_linewidth(width)
+        self.shape.set_edgecolor(color)
+        self.redraw()
+
     @property
     def template(self):
         return self.shape

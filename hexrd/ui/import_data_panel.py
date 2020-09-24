@@ -2,7 +2,8 @@ import os
 import yaml
 
 from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
+from PySide2.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
 
@@ -54,6 +55,9 @@ class ImportDataPanel(QObject):
         self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
+        self.ui.line_style.currentIndexChanged.connect(self.update_template_style)
+        self.ui.line_color.clicked.connect(self.pick_line_color)
+        self.ui.line_size.valueChanged.connect(self.update_template_style)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -230,6 +234,7 @@ class ImportDataPanel(QObject):
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
             det=self.detector)
+        self.update_template_style()
         if self.instrument == 'PXRDIP':
             self.it.rotate_shape(angle=-90)
 
@@ -246,6 +251,23 @@ class ImportDataPanel(QObject):
                                 self.ui.bb_width, self.ui.width_label,
                                 self.ui.bb_label, enabled=True)
         self.ui.trans.setChecked(True)
+
+    def update_template_style(self):
+        ls = self.ui.line_style.currentText()
+        lw = self.ui.line_size.value()
+        self.it.update_style(ls, lw, self.outline_color)
+
+    def pick_line_color(self):
+        sender = self.sender()
+        color = sender.text()
+
+        dialog = QColorDialog(QColor(color), self.ui)
+        if dialog.exec_():
+            sender.setText(dialog.selectedColor().name())
+            lc = self.ui.line_color
+            lc.setStyleSheet('QPushButton {background-color: %s}' % lc.text())
+            self.outline_color = dialog.selectedColor().name()
+            self.update_template_style()
 
     def setup_translate(self):
         if self.it is not None:
