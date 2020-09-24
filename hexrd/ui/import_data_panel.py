@@ -2,7 +2,8 @@ import os
 import yaml
 
 from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
+from PySide2.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
 
@@ -36,6 +37,7 @@ class ImportDataPanel(QObject):
         self.detector_defaults = {}
         self.cmap = cmap
 
+        self.set_default_color()
         self.setup_connections()
 
     def setup_connections(self):
@@ -54,10 +56,20 @@ class ImportDataPanel(QObject):
         self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
+        self.ui.line_style.currentIndexChanged.connect(
+            self.update_template_style)
+        self.ui.line_color.clicked.connect(self.pick_line_color)
+        self.ui.line_size.valueChanged.connect(self.update_template_style)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
             w.setEnabled(enabled)
+
+    def set_default_color(self):
+        self.outline_color = '#00ffff'
+        self.ui.line_color.setText(self.outline_color)
+        self.ui.line_color.setStyleSheet(
+            'QPushButton {background-color: cyan}')
 
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
@@ -230,12 +242,16 @@ class ImportDataPanel(QObject):
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
             det=self.detector)
+        self.update_template_style()
         if self.instrument == 'PXRDIP':
             self.it.rotate_shape(angle=-90)
 
         self.display_bounds()
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
-                            self.ui.complete, enabled=True)
+                            self.ui.complete, self.ui.line_color,
+                            self.ui.line_style, self.ui.line_size,
+                            self.ui.color_label, self.ui.size_label,
+                            self.ui.style_label, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
                             self.ui.load, enabled=False)
         if self.ui.instruments.currentText() != 'TARDIS':
@@ -243,6 +259,23 @@ class ImportDataPanel(QObject):
                                 self.ui.bb_width, self.ui.width_label,
                                 self.ui.bb_label, enabled=True)
         self.ui.trans.setChecked(True)
+
+    def update_template_style(self):
+        ls = self.ui.line_style.currentText()
+        lw = self.ui.line_size.value()
+        self.it.update_style(ls, lw, self.outline_color)
+
+    def pick_line_color(self):
+        sender = self.sender()
+        color = sender.text()
+
+        dialog = QColorDialog(QColor(color), self.ui)
+        if dialog.exec_():
+            sender.setText(dialog.selectedColor().name())
+            lc = self.ui.line_color
+            lc.setStyleSheet('QPushButton {background-color: %s}' % lc.text())
+            self.outline_color = dialog.selectedColor().name()
+            self.update_template_style()
 
     def setup_translate(self):
         if self.it is not None:
@@ -274,6 +307,9 @@ class ImportDataPanel(QObject):
                             self.ui.add_template, self.ui.bb_label,
                             self.ui.bb_height, self.ui.height_label,
                             self.ui.bb_width, self.ui.width_label,
+                            self.ui.line_color, self.ui.line_style,
+                            self.ui.line_size, self.ui.color_label,
+                            self.ui.size_label, self.ui.style_label,
                             enabled=False)
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
