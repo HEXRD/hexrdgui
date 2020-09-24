@@ -163,7 +163,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials'] = copy.deepcopy(
             self.default_config['materials'])
-        self.config['image'] = copy.deepcopy(self.default_config['image'])
 
         if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
