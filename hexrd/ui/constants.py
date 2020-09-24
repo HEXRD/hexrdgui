@@ -121,6 +121,7 @@ BUFFER_KEY = 'buffer'
 ZOOM = 'zoom rect'
 PAN = 'pan/zoom'
 
+
 def default_crystal_refinements():
     inverse_matrix_strings = [
         '0_0',
