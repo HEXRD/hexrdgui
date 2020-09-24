@@ -235,7 +235,10 @@ class ImportDataPanel(QObject):
 
         self.display_bounds()
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
-                            self.ui.complete, enabled=True)
+                            self.ui.complete, self.ui.line_color,
+                            self.ui.line_style, self.ui.line_size,
+                            self.ui.color_label, self.ui.size_label,
+                            self.ui.style_label, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
                             self.ui.load, enabled=False)
         if self.ui.instruments.currentText() != 'TARDIS':
@@ -274,6 +277,9 @@ class ImportDataPanel(QObject):
                             self.ui.add_template, self.ui.bb_label,
                             self.ui.bb_height, self.ui.height_label,
                             self.ui.bb_width, self.ui.width_label,
+                            self.ui.line_color, self.ui.line_style,
+                            self.ui.line_size, self.ui.color_label,
+                            self.ui.size_label, self.ui.style_label,
                             enabled=False)
         self.ui.completed_dets.setText(', '.join(
             set(self.completed_detectors)))
