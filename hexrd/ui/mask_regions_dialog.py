@@ -64,6 +64,7 @@ class MaskRegionsDialog(QObject):
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
         self.ui.button_box.rejected.connect(self.cancel)
+        self.ui.rejected.connect(self.cancel)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
         self.ui.undo.clicked.connect(self.undo_selection)
         HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
