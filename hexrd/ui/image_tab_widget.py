@@ -3,7 +3,7 @@ from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 import numpy as np
 
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import ViewType, ZOOM, PAN
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
@@ -170,6 +170,14 @@ class ImageTabWidget(QTabWidget):
         if self.toolbars:
             self.toolbars[idx]['sb'].update_name(self.image_names[idx])
             self.toolbars[idx]['sb'].update_range(True)
+
+    def toggle_off_toolbar(self):
+        toolbars = [bars['tb'] for bars in self.toolbars]
+        for tb in toolbars:
+            if tb.mode == ZOOM:
+                tb.zoom()
+            if tb.mode == PAN:
+                tb.pan()
 
     def show_cartesian(self):
         self.update_image_names()

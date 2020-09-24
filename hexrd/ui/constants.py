@@ -115,3 +115,8 @@ WORKFLOWS = [WORKFLOW_HEDM, WORKFLOW_LLNL]
 HEXRD_DIRECTORY_SUFFIX = '.hexrd'
 
 BUFFER_KEY = 'buffer'
+
+# Used to access matplotlib internals in backend_bases and
+# determine which mode has been set by the navigation bar
+ZOOM = 'zoom rect'
+PAN = 'pan/zoom'

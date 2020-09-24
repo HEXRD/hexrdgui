@@ -64,6 +64,7 @@ class MaskRegionsDialog(QObject):
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
         self.ui.button_box.rejected.connect(self.cancel)
+        self.ui.rejected.connect(self.cancel)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
         self.ui.undo.clicked.connect(self.undo_selection)
         HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
@@ -155,7 +156,7 @@ class MaskRegionsDialog(QObject):
         if not self.axes:
             return
 
-        self.press = [int(event.xdata), int(event.ydata)]
+        self.press = [event.xdata, event.ydata]
         self.det = self.axes.get_title()
         if not self.det:
             self.det = self.image_mode
@@ -198,7 +199,7 @@ class MaskRegionsDialog(QObject):
         if not self.axes or not self.press:
             return
 
-        self.end = [int(event.xdata), int(event.ydata)]
+        self.end = [event.xdata, event.ydata]
         self.save_line_data()
 
         self.press.clear()
@@ -224,6 +225,10 @@ class MaskRegionsDialog(QObject):
 
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
+        else:
+            for canvas in self.parent.image_tab_widget.active_canvases():
+                for axes in canvas.raw_axes:
+                    axes.patches.clear()
 
         self.disconnect()
         self.canvas.draw()
