@@ -43,8 +43,9 @@ class ZoomCanvas(FigureCanvas):
             self.mne_id = None
 
     def remove_overlay_lines(self):
-        self.box_overlay_line.remove()
-        self.box_overlay_line = None
+        if self.box_overlay_line is not None:
+            self.box_overlay_line.remove()
+            self.box_overlay_line = None
 
     def mouse_moved(self, event):
         if event.inaxes is None:
