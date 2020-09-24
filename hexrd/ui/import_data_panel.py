@@ -56,7 +56,8 @@ class ImportDataPanel(QObject):
         self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
-        self.ui.line_style.currentIndexChanged.connect(self.update_template_style)
+        self.ui.line_style.currentIndexChanged.connect(
+            self.update_template_style)
         self.ui.line_color.clicked.connect(self.pick_line_color)
         self.ui.line_size.valueChanged.connect(self.update_template_style)
 
