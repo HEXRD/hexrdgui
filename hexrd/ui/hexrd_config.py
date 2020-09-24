@@ -1107,6 +1107,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
             overlay['data'].clear()
             if 'update_needed' in overlay:
                 del overlay['update_needed']
+            if 'highlights' in overlay:
+                del overlay['highlights']
 
     def flag_overlay_updates_for_active_material(self):
         self.flag_overlay_updates_for_material(self.active_material_name)

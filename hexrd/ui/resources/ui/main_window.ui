@@ -123,7 +123,7 @@
      <string>R&amp;un</string>
     </property>
     <addaction name="action_run_powder_calibration"/>
-    <addaction name="action_calibration_line_picker"/>
+    <addaction name="action_run_calibration"/>
     <addaction name="action_run_indexing"/>
     <addaction name="action_run_wppf"/>
    </widget>
@@ -437,12 +437,12 @@
     <string>Polar Plot</string>
    </property>
   </action>
-  <action name="action_calibration_line_picker">
+  <action name="action_run_calibration">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Calibration Line Picker</string>
+    <string>Calibration</string>
    </property>
   </action>
   <action name="action_edit_reset_instrument_config">

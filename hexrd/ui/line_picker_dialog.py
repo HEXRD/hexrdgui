@@ -1,3 +1,5 @@
+import copy
+
 from PySide2.QtCore import Qt, QObject, Signal
 
 from itertools import cycle
@@ -16,19 +18,33 @@ from hexrd.ui.zoom_canvas import ZoomCanvas
 
 class LinePickerDialog(QObject):
 
-    # Emits the ring data that was selected
-    finished = Signal(list)
+    # Emitted when a point was picked
+    point_picked = Signal()
 
-    def __init__(self, canvas, parent):
+    # Emitted when a line is completed
+    line_completed = Signal()
+
+    # Emitted when the dialog is closed
+    finished = Signal()
+
+    # Emits the ring data that was selected
+    result = Signal(list)
+
+    def __init__(self, canvas, parent, single_line_mode=False):
         super(LinePickerDialog, self).__init__(parent)
+
+        self.canvas = canvas
 
         loader = UiLoader()
         self.ui = loader.load_file('line_picker_dialog.ui', parent)
+
+        self.single_line_mode = single_line_mode
+        self.ui.start_new_line_label.setVisible(not self.single_line_mode)
+
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
         self.ui.installEventFilter(enter_key_filter)
 
-        self.canvas = canvas
         self.ring_data = []
         self.linebuilder = None
         self.lines = []
@@ -46,8 +62,8 @@ class LinePickerDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.accepted.connect(self.accepted)
-        self.ui.rejected.connect(self.rejected)
+        self.ui.accepted.connect(self.accept)
+        self.ui.rejected.connect(self.reject)
         self.ui.zoom_tth_width.valueChanged.connect(self.zoom_width_changed)
         self.ui.zoom_eta_width.valueChanged.connect(self.zoom_width_changed)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
@@ -111,12 +127,19 @@ class LinePickerDialog(QObject):
         line, = ax.plot([], [], color=color, marker=marker,
                         linestyle=linestyle)
         self.linebuilder = LineBuilder(line)
+
+        self.linebuilder.point_picked.connect(self.point_picked.emit)
+
         self.lines.append(line)
         self.canvas.draw()
 
     def line_finished(self):
-        # append to ring_data
         linebuilder = self.linebuilder
+        # If the linebuilder is already gone, just return
+        if linebuilder is None:
+            return
+
+        # append to ring_data
         ring_data = np.vstack([linebuilder.xs, linebuilder.ys]).T
 
         if len(ring_data) == 0:
@@ -128,24 +151,36 @@ class LinePickerDialog(QObject):
         self.add_line()
 
     def button_pressed(self, event):
-        if event.button == 3:
+        if event.button == 3 and not self.single_line_mode:
+            self.line_completed.emit()
             self.line_finished()
 
-    def accepted(self):
+    def accept(self):
         # Finish the current line
         self.line_finished()
-        self.finished.emit(self.ring_data)
+
+        # finished needs to be emitted before the result
+        self.finished.emit()
+        self.result.emit(copy.deepcopy(self.ring_data))
+
         self.clear()
 
-    def rejected(self):
+    def reject(self):
+        self.finished.emit()
         self.clear()
 
     def show(self):
         self.ui.show()
 
 
-class LineBuilder:
+class LineBuilder(QObject):
+
+    # Emits when a point was picked
+    point_picked = Signal()
+
     def __init__(self, line):
+        super().__init__()
+
         self.line = line
         self.canvas = line.figure.canvas
         self.xs = list(line.get_xdata())
@@ -166,17 +201,26 @@ class LineBuilder:
         Picker callback
         """
         print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-          ('double' if event.dblclick else 'single', event.button,
-           event.x, event.y, event.xdata, event.ydata))
-
-        if event.button != 1:
-            # Don't do anything unless it is a left click
-            return
+              ('double' if event.dblclick else 'single', event.button,
+               event.x, event.y, event.xdata, event.ydata))
 
         if event.inaxes != self.line.axes:
             return
 
-        self.xs.append(event.xdata)
-        self.ys.append(event.ydata)
+        if event.button == 1:
+            self.handle_left_click(event)
+        elif event.button == 2:
+            self.handle_middle_click(event)
+
+    def handle_left_click(self, event):
+        self.append_data(event.xdata, event.ydata)
+
+    def handle_middle_click(self, event):
+        self.append_data(np.nan, np.nan)
+
+    def append_data(self, x, y):
+        self.xs.append(x)
+        self.ys.append(y)
         self.line.set_data(self.xs, self.ys)
+        self.point_picked.emit()
         self.canvas.draw()

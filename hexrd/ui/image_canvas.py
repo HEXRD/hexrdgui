@@ -68,7 +68,6 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
         HexrdConfig().polar_masks_changed.connect(self.update_polar)
 
-
     def __del__(self):
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
@@ -191,9 +190,24 @@ class ImageCanvas(FigureCanvas):
 
         return overlay_funcs[type]
 
+    def get_overlay_highlight_ids(self, overlay):
+        highlights = overlay.get('highlights')
+        if not highlights:
+            return []
+
+        def recursive_get(cur, path):
+            for p in path:
+                cur = cur[p]
+            return cur
+
+        return [id(recursive_get(overlay['data'], h)) for h in highlights]
+
     def draw_overlay(self, overlay):
         if not overlay['visible']:
             return
+
+        # Keep track of any overlays we need to highlight
+        self.overlay_highlight_ids += self.get_overlay_highlight_ids(overlay)
 
         type = overlay['type']
         style = overlay['style']
@@ -212,18 +226,30 @@ class ImageCanvas(FigureCanvas):
         data_style = style['data']
         ranges_style = style['ranges']
 
+        highlight_style = hexrd.ui.constants.HIGHLIGHT_POWDER_STYLE
+        highlight_indices = [i for i, x in enumerate(rings)
+                             if id(x) in self.overlay_highlight_ids]
+
         artists = []
         self.overlay_artists[id(data)] = artists
-        for pr in rings:
+        for i, pr in enumerate(rings):
+            current_style = data_style
+            if i in highlight_indices:
+                # Override with highlight style
+                current_style = highlight_style['data']
+
             x, y = self.extract_ring_coords(pr)
-            artist, = axis.plot(x, y, **data_style)
+            artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
             x, y = self.extract_ring_coords(pr)
             current_style = copy.deepcopy(ranges_style)
-            if len(ind) > 1:
+            if any(x in highlight_indices for x in ind):
+                # Override with highlight style
+                current_style = highlight_style['ranges']
+            elif len(ind) > 1:
                 # If ranges are combined, override the color to red
                 current_style['c'] = 'r'
             artist, = axis.plot(x, y, **current_style)
@@ -259,15 +285,27 @@ class ImageCanvas(FigureCanvas):
         data_style = style['data']
         ranges_style = style['ranges']
 
+        highlight_style = hexrd.ui.constants.HIGHLIGHT_LAUE_STYLE
+        highlight_indices = [i for i, x in enumerate(spots)
+                             if id(x) in self.overlay_highlight_ids]
+
         artists = []
         self.overlay_artists[id(data)] = artists
-        for x, y in spots:
-            artist = axis.scatter(x, y, **data_style)
+        for i, (x, y) in enumerate(spots):
+            current_style = data_style
+            if i in highlight_indices:
+                current_style = highlight_style['data']
+
+            artist = axis.scatter(x, y, **current_style)
             artists.append(artist)
 
-        for range in ranges:
-            x, y = zip(*range)
-            artist, = axis.plot(x, y, **ranges_style)
+        for i, box in enumerate(ranges):
+            current_style = ranges_style
+            if i in highlight_indices:
+                current_style = highlight_style['ranges']
+
+            x, y = zip(*box)
+            artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
     def draw_mono_rotation_series_overlay(self, id, axis, data, style):
@@ -307,6 +345,7 @@ class ImageCanvas(FigureCanvas):
 
         self.iviewer.update_overlay_data()
 
+        self.overlay_highlight_ids = []
         for overlay in HexrdConfig().overlays:
             self.draw_overlay(overlay)
 
