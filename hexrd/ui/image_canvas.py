@@ -640,6 +640,12 @@ class ImageCanvas(FigureCanvas):
         # This will call self.draw()
         self.draw_detector_borders()
 
+        # In polar mode, the overlays are clipped to the detectors, so
+        # they must be re-drawn as well
+        if self.mode == ViewType.polar:
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            self.update_overlays()
+
     def export_polar_plot(self, filename):
         if self.mode != ViewType.polar:
             raise Exception('Not in polar mode. Cannot export polar plot')
