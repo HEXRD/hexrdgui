@@ -491,12 +491,12 @@ class ImageCanvas(FigureCanvas):
         # if HexrdConfig().polar_show_azimuthal_integral
         if True:
             # The top image will have 2x the height of the bottom image
-            grid = plt.GridSpec(3, 1)
+            grid = plt.GridSpec(4, 1)
 
             # It is important to persist the plot so that we don't reset the
             # scale.
             if len(self.axes_images) == 0:
-                self.axis = self.figure.add_subplot(grid[:2, 0])
+                self.axis = self.figure.add_subplot(grid[:3, 0])
                 self.axes_images.append(self.axis.imshow(img, extent=extent,
                                                          cmap=self.cmap,
                                                          norm=self.norm,
@@ -517,7 +517,7 @@ class ImageCanvas(FigureCanvas):
             tth = np.degrees(angular_grid[1][0])
 
             if self.azimuthal_integral_axis is None:
-                axis = self.figure.add_subplot(grid[2, 0], sharex=self.axis)
+                axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
                 data = (tth, np.sum(img, axis=0))
                 self.azimuthal_line_artist, = axis.plot(*data)
                 HexrdConfig().last_azimuthal_integral_data = data

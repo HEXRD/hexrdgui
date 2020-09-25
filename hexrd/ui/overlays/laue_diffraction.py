@@ -144,7 +144,7 @@ class LaueSpotOverlay:
             # convert to angles in LAB ref
             angles_corr, _ = xfcapi.detectorXYToGvec(
                 xy_data, panel.rmat, self.sample_rmat,
-                panel.tvec, constants.zeros_3, constants.zeros_3,
+                panel.tvec, self.instrument.tvec, constants.zeros_3,
                 beamVec=self.instrument.beam_vector,
                 etaVec=self.instrument.eta_vector
             )
