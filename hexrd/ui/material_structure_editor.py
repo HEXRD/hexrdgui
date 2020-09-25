@@ -16,6 +16,24 @@ from hexrd.ui.material_site_editor import MaterialSiteEditor
 from hexrd.ui.ui_loader import UiLoader
 
 
+DEFAULT_SITE = {
+    'name': 'CeO',
+    'fractional_coords': [0, 0, 0],
+    'atoms': [
+        {
+            'symbol': 'O',
+            'occupancy': 0.5,
+            'U': 1e-6
+        },
+        {
+            'symbol': 'Ce',
+            'occupancy': 0.5,
+            'U': 1e-6
+        }
+    ],
+}
+
+
 class MaterialStructureEditor:
 
     def __init__(self, parent=None):
@@ -147,13 +165,7 @@ class MaterialStructureEditor:
         return new
 
     def add_site(self):
-        # Copy if the active site if there is one. Otherwise, copy the
-        # last row.
-        site = self.active_site
-        if site is None:
-            site = self.sites[-1]
-
-        self.sites.append(self.new_site(site))
+        self.sites.append(self.new_site(DEFAULT_SITE))
         self.update_table()
 
         # Select the newly added row
