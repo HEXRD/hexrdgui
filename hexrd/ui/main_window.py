@@ -170,9 +170,9 @@ class MainWindow(QObject):
             self.on_action_export_current_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
-        self.ui.action_edit_apply_polar_mask.triggered.connect(
-            self.on_action_edit_apply_polar_mask_triggered)
-        self.ui.action_edit_apply_polar_mask.triggered.connect(
+        self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
+            self.on_action_edit_apply_hand_drawn_mask_triggered)
+        self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
@@ -550,13 +550,13 @@ class MainWindow(QObject):
         self.update_all()
         self.update_config_gui()
 
-    def on_action_edit_apply_polar_mask_triggered(self):
+    def on_action_edit_apply_hand_drawn_mask_triggered(self):
         # Make the dialog
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._apply_polar_mask_line_picker = (
+        self._apply_drawn_mask_line_picker = (
             HandDrawnMaskDialog(canvas, self.ui))
-        self._apply_polar_mask_line_picker.start()
-        self._apply_polar_mask_line_picker.finished.connect(
+        self._apply_drawn_mask_line_picker.start()
+        self._apply_drawn_mask_line_picker.finished.connect(
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, line_data):
@@ -645,8 +645,8 @@ class MainWindow(QObject):
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian) and has_images)
         self.ui.action_run_calibration.setEnabled(is_polar and has_images)
-        self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and
-                                                        has_images)
+        self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
+            is_polar and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
 
