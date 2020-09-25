@@ -639,6 +639,7 @@ class MainWindow(QObject):
         # This is for enable states that depend on the image mode
         is_cartesian = self.image_mode == ViewType.cartesian
         is_polar = self.image_mode == ViewType.polar
+        is_raw = self.image_mode == ViewType.raw
 
         has_images = HexrdConfig().has_images()
 
@@ -646,7 +647,7 @@ class MainWindow(QObject):
             (is_polar or is_cartesian) and has_images)
         self.ui.action_run_calibration.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
-            is_polar and has_images)
+            (is_polar or is_raw) and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
 

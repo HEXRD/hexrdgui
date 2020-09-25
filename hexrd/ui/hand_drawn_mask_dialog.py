@@ -26,6 +26,7 @@ class HandDrawnMaskDialog(QObject):
         self.ring_data = []
         self.linebuilder = None
         self.lines = []
+        self.drawing = False
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
@@ -39,6 +40,10 @@ class HandDrawnMaskDialog(QObject):
         self.ui.rejected.connect(self.rejected)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
+        self.enter_id = self.canvas.mpl_connect('axes_enter_event',
+                                                self.axes_entered)
+        self.exit_id = self.canvas.mpl_connect('axes_leave_event',
+                                               self.axes_exited)
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
@@ -66,28 +71,27 @@ class HandDrawnMaskDialog(QObject):
         self.canvas.draw_idle()
 
     def start(self):
-        if self.canvas.mode != ViewType.polar:
-            print('line picker only works in polar mode!')
-            return
-
-        ax = self.canvas.axis
-
         # list for set of rings 'picked'
         self.ring_data.clear()
-
-        # fire up the cursor for this tool
-        self.cursor = Cursor(ax, useblit=True, color='red', linewidth=1)
-        self.add_line()
         self.show()
 
+    def axes_entered(self, event):
+        self.ax = event.inaxes
+        # fire up the cursor for this tool
+        self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
+        self.add_line()
+
+    def axes_exited(self, event):
+        if not self.drawing:
+            self.linebuilder.disconnect()
+
     def add_line(self):
-        ax = self.canvas.axis
         color = next(self.color_cycler)
         marker = '.'
         linestyle = 'None'
 
         # empty line
-        line, = ax.plot([], [], color=color, marker=marker,
+        line, = self.ax.plot([], [], color=color, marker=marker,
                         linestyle=linestyle)
         self.linebuilder = LineBuilder(line)
         self.lines.append(line)
@@ -107,6 +111,8 @@ class HandDrawnMaskDialog(QObject):
         self.add_line()
 
     def button_pressed(self, event):
+        if event.button == 1:
+            self.drawing = True
         if event.button == 3:
             self.line_finished()
 
