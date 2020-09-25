@@ -124,19 +124,8 @@ class PowderLineOverlay:
             )
 
             if display_mode == ViewType.polar:
-                if panel.distortion is not None:
-                    xys = panel.distortion.apply(xys)
-                ang_crds, _ = panel.cart_to_angles(xys, self.instrument.tvec)
-
-                '''
                 # !!! apply offset correction
-                ang_crds = _convert_angles(
-                    ang_crds, panel,
-                    identity_3x3, self.tvec,
-                    beam_vector=self.instrument.beam_vector,
-                    eta_vector=self.instrument.eta_vector
-                )
-                '''
+                ang_crds, _ = panel.cart_to_angles(xys, self.instrument.tvec)
 
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
