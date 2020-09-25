@@ -241,7 +241,6 @@ class MaterialStructureEditor:
         """The sites have a structure like the following:
         {
             'name': 'NaBr1',
-            'total_occupancy': 1.0,
             'fractional_coords': [0.25, 0.25, 0.25],
             'atoms': [
                 {
@@ -294,7 +293,6 @@ class MaterialStructureEditor:
 
             # Combine the symbols for a basic name
             site['name'] = self.next_name(''.join(symbols))
-            site['total_occupancy'] = sum(info_array[i][3] for i in indices)
             site['fractional_coords'] = coords
             site['atoms'] = []
 

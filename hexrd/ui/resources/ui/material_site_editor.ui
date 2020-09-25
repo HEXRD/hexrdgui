@@ -92,6 +92,9 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="1" colspan="3">
        <widget class="QDoubleSpinBox" name="total_occupancy">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
