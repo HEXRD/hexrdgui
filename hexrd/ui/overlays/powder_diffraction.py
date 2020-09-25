@@ -1,5 +1,7 @@
 import numpy as np
 
+from hexrd import constants
+
 from hexrd.transforms import xfcapi
 
 from hexrd.ui.constants import ViewType
@@ -110,6 +112,7 @@ class PowderLineOverlay:
         return point_groups
 
     def generate_ring_points(self, tths, etas, panel, display_mode):
+        delta_eta_nom = np.degrees(np.median(np.diff(etas)))
         ring_pts = []
         for tth in tths:
             # construct ideal angular coords
@@ -117,6 +120,10 @@ class PowderLineOverlay:
 
             # !!! must apply offset
             xys_full = panel.angles_to_cart(ang_crds, tvec_c=self.tvec)
+
+            # skip if ring not on panel
+            if len(xys_full) == 0:
+                continue
 
             # clip to detector panel
             xys, on_panel = panel.clip_to_panel(
@@ -126,6 +133,9 @@ class PowderLineOverlay:
             if display_mode == ViewType.polar:
                 # !!! apply offset correction
                 ang_crds, _ = panel.cart_to_angles(xys, self.instrument.tvec)
+
+                if len(ang_crds) == 0:
+                    continue
 
                 # Swap columns, convert to degrees
                 ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
@@ -138,6 +148,26 @@ class PowderLineOverlay:
                 # sort points for monotonic eta
                 eidx = np.argsort(ang_crds[:, 0])
                 ang_crds = ang_crds[eidx, :]
+
+                # branch cut
+                delta_eta_est = np.median(np.diff(ang_crds[:, 0]))
+                cut_on_panel = bool(
+                    xfcapi.angularDifference(
+                        np.min(ang_crds[:, 0]),
+                        np.max(ang_crds[:, 0]),
+                        units='degrees'
+                    ) < 2*delta_eta_est
+                )
+                if cut_on_panel and len(ang_crds) > 2:
+                    split_idx = np.argmax(
+                        np.abs(np.diff(ang_crds[:, 0]) - delta_eta_est)
+                    ) + 1
+
+                    ang_crds = np.vstack(
+                        [ang_crds[:split_idx, :],
+                         nans_row,
+                         ang_crds[split_idx:, :]]
+                    )
 
                 # append to list with nan padding
                 ring_pts.append(np.vstack([ang_crds, nans_row]))
