@@ -14,7 +14,7 @@ from hexrd.ui.ui_loader import UiLoader
 class HandDrawnMaskDialog(QObject):
 
     # Emits the ring data that was selected
-    finished = Signal(list)
+    finished = Signal(list, list)
 
     def __init__(self, canvas, parent):
         super(HandDrawnMaskDialog, self).__init__(parent)
@@ -27,6 +27,7 @@ class HandDrawnMaskDialog(QObject):
         self.linebuilder = None
         self.lines = []
         self.drawing = False
+        self.dets = []
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
@@ -76,6 +77,9 @@ class HandDrawnMaskDialog(QObject):
         self.show()
 
     def axes_entered(self, event):
+        if self.drawing:
+            return
+
         self.ax = event.inaxes
         # fire up the cursor for this tool
         self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
@@ -84,8 +88,12 @@ class HandDrawnMaskDialog(QObject):
     def axes_exited(self, event):
         if not self.drawing:
             self.linebuilder.disconnect()
+            self.lines.pop()
 
     def add_line(self):
+        if self.drawing:
+            return
+
         color = next(self.color_cycler)
         marker = '.'
         linestyle = 'None'
@@ -108,6 +116,8 @@ class HandDrawnMaskDialog(QObject):
 
         linebuilder.disconnect()
         self.ring_data.append(ring_data)
+        self.dets.append(self.ax.get_title())
+        self.drawing = False
         self.add_line()
 
     def button_pressed(self, event):
@@ -119,7 +129,7 @@ class HandDrawnMaskDialog(QObject):
     def accepted(self):
         # Finish the current line
         self.line_finished()
-        self.finished.emit(self.ring_data)
+        self.finished.emit(self.dets, self.ring_data)
         self.clear()
 
     def rejected(self):

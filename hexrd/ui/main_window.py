@@ -559,14 +559,23 @@ class MainWindow(QObject):
         self._apply_drawn_mask_line_picker.finished.connect(
             self.run_apply_polar_mask)
 
-    def run_apply_polar_mask(self, line_data):
-        for line in line_data:
-            name = create_unique_name(
-                HexrdConfig().polar_masks_line_data, 'polar_mask_0')
-            HexrdConfig().polar_masks_line_data[name] = line.copy()
-            HexrdConfig().visible_masks.append(name)
-            create_polar_mask([line.copy()], name)
-        HexrdConfig().polar_masks_changed.emit()
+    def run_apply_polar_mask(self, dets, line_data):
+        if self.image_mode == ViewType.raw:
+            for det, line in zip(dets, line_data):
+                name = create_unique_name(
+                    HexrdConfig().raw_masks_line_data, 'raw_mask_0')
+                HexrdConfig().raw_masks_line_data[name] = [(det, line.copy())]
+                HexrdConfig().visible_masks.append(name)
+                create_raw_mask(name, [(det, line.copy())])
+            HexrdConfig().raw_masks_changed.emit()
+        elif self.image_mode == ViewType.polar:
+            for line in line_data:
+                name = create_unique_name(
+                    HexrdConfig().polar_masks_line_data, 'polar_mask_0')
+                HexrdConfig().polar_masks_line_data[name] = line.copy()
+                HexrdConfig().visible_masks.append(name)
+                create_polar_mask([line.copy()], name)
+            HexrdConfig().polar_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
