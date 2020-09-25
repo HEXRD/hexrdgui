@@ -68,8 +68,13 @@ class HandDrawnMaskDialog(QObject):
         self.cursor = None
 
         self.canvas.mpl_disconnect(self.bp_id)
+        self.canvas.mpl_disconnect(self.enter_id)
+        self.canvas.mpl_disconnect(self.exit_id)
+
         self.bp_id = None
-        self.canvas.draw_idle()
+        self.enter_id = None
+        self.exit_id = None
+        self.canvas.draw()
 
     def start(self):
         # list for set of rings 'picked'
@@ -117,8 +122,8 @@ class HandDrawnMaskDialog(QObject):
         linebuilder.disconnect()
         self.ring_data.append(ring_data)
         self.dets.append(self.ax.get_title())
-        self.drawing = False
         self.add_line()
+        self.drawing = False
 
     def button_pressed(self, event):
         if event.button == 1:
