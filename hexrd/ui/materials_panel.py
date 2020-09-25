@@ -243,6 +243,7 @@ class MaterialsPanel(QObject):
         HexrdConfig().remove_material(name)
         self.material_editor_widget.material = HexrdConfig().active_material
         self.update_gui_from_config()
+        self.update_structure_tab()
 
     def modify_material_name(self):
         new_name = self.ui.materials_combo.currentText()
