@@ -817,8 +817,9 @@ class MainWindow(QObject):
             # Rebuild polar masks
             HexrdConfig().polar_masks.clear()
             for name, line_data in HexrdConfig().polar_masks_line_data.items():
-                create_polar_mask(line_data, name)
-            for name, (det, data) in HexrdConfig().raw_masks_line_data.items():
+                create_polar_mask([line_data], name)
+            for name, value in HexrdConfig().raw_masks_line_data.items():
+                det, data = value[0]
                 line_data = convert_raw_to_polar(det, data)
                 create_polar_mask(line_data, name)
             self.ui.image_tab_widget.show_polar()
@@ -829,8 +830,7 @@ class MainWindow(QObject):
                 create_raw_mask(name, line_data)
             for name, data in HexrdConfig().polar_masks_line_data.items():
                 line_data = convert_polar_to_raw(data)
-                for line in line_data:
-                    create_raw_mask(name, line)
+                create_raw_mask(name, line_data)
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before

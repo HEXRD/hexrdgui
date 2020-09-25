@@ -40,19 +40,19 @@ def _create_threshold_mask(img, comparison, value):
 
 def convert_polar_to_raw(line):
     line_data = []
-    for l in line:
-        for key, panel in create_hedm_instrument().detectors.items():
-            cart = panel.angles_to_cart(np.radians(l))
-            raw = panel.cartToPixel(cart)
-            line_data.append((key, raw))
+    for key, panel in create_hedm_instrument().detectors.items():
+        cart = panel.angles_to_cart(np.radians(line))
+        raw = panel.cartToPixel(cart)
+        line_data.append((key, raw))
     return line_data
 
 
 def create_raw_mask(name, line_data):
-    det, data = line_data
-    img = HexrdConfig().image(det, 0)
-    rr, cc = polygon(data[:, 1], data[:, 0], shape=img.shape)
-    if len(rr) >= 1:
-        mask = np.ones(img.shape, dtype=bool)
-        mask[rr, cc] = False
-        HexrdConfig().raw_masks[name] = (det, mask)
+    for l in line_data:
+        det, data = l
+        img = HexrdConfig().image(det, 0)
+        rr, cc = polygon(data[:, 1], data[:, 0], shape=img.shape)
+        if len(rr) >= 1:
+            mask = np.ones(img.shape, dtype=bool)
+            mask[rr, cc] = False
+            HexrdConfig().raw_masks[name] = (det, mask)
