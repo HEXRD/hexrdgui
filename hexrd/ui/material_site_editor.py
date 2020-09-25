@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Signal
 from PySide2.QtWidgets import QSizePolicy, QTableWidgetItem
 
 from hexrd.material import Material
@@ -57,6 +57,9 @@ class MaterialSiteEditor(QObject):
             w.valueChanged.connect(self.update_config)
         self.ui.total_occupancy.valueChanged.connect(
             self.update_occupancy_validity)
+        self.ui.table.selectionModel().selectionChanged.connect(
+            self.selection_changed)
+        self.ui.remove_atom_type.pressed.connect(self.remove_selected_atom)
 
     def select_atom_types(self):
         dialog = PeriodicTableDialog(self.atom_types, self.ui)
@@ -149,6 +152,43 @@ class MaterialSiteEditor(QObject):
         self.update_table()
         self.emit_site_modified_if_valid()
 
+    @property
+    def num_rows(self):
+        return self.ui.table.rowCount()
+
+    @property
+    def selected_row(self):
+        selected = self.ui.table.selectionModel().selectedRows()
+        return selected[0].row() if selected else None
+
+    def select_row(self, i):
+        if i is None or i >= self.num_rows:
+            # Out of range. Don't do anything.
+            return
+
+        # Select the row
+        selection_model = self.ui.table.selectionModel()
+        selection_model.clearSelection()
+
+        model_index = selection_model.model().index(i, 0)
+        command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+        selection_model.select(model_index, command)
+
+    def selection_changed(self):
+        self.update_enable_states()
+
+    def update_enable_states(self):
+        enable_remove = self.num_rows > 1 and self.selected_row is not None
+        self.ui.remove_atom_type.setEnabled(enable_remove)
+
+    def remove_selected_atom(self):
+        if self.selected_row is None:
+            return
+
+        atom_types = self.atom_types
+        del atom_types[self.selected_row]
+        self.atom_types = atom_types
+
     def create_symbol_label(self, v):
         w = QTableWidgetItem(v)
         return w
@@ -197,7 +237,13 @@ class MaterialSiteEditor(QObject):
         self.update_table()
 
     def update_table(self):
-        blocker = QSignalBlocker(self.ui.table)  # noqa: F841
+        prev_selected = self.selected_row
+
+        block_list = [
+            self.ui.table,
+            self.ui.table.selectionModel()
+        ]
+        blockers = [QSignalBlocker(x) for x in block_list]  # noqa: F841
 
         atoms = self.site['atoms']
         self.clear_table()
@@ -213,6 +259,14 @@ class MaterialSiteEditor(QObject):
             self.ui.table.setCellWidget(i, COLUMNS['thermal_factor'], w)
 
         self.update_occupancy_validity()
+
+        if prev_selected is not None:
+            select_row = (prev_selected if prev_selected < self.num_rows
+                          else self.num_rows - 1)
+            self.select_row(select_row)
+
+        # Just in case the selection actually changed...
+        self.selection_changed()
 
     def update_thermal_factor_header(self):
         w = self.ui.table.horizontalHeaderItem(COLUMNS['thermal_factor'])
