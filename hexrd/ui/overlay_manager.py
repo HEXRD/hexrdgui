@@ -140,6 +140,7 @@ class OverlayManager:
                           else len(overlays) - 1)
             self.select_row(select_row)
 
+        self.ui.table.resizeColumnsToContents()
         # Just in case the selection actually changed...
         self.selection_changed()
 
