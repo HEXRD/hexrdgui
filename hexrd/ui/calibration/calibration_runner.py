@@ -125,7 +125,22 @@ class CalibrationRunner:
         self.pick_next_line()
 
     def finish(self):
-        print(f'{self.all_overlay_picks=}')
+        # Temporary
+        import json
+
+        pick_results = []
+        for i, val in self.all_overlay_picks.items():
+            overlay = self.overlays[i]
+            pick_results.append({
+                'material': overlay['material'],
+                'type': overlay['type'].value,
+                'picks': val
+            })
+
+        out_file = 'calibration_picks.json'
+        print(f'Writing out picks to {out_file}')
+        with open(out_file, 'w') as wf:
+            json.dump(pick_results, wf)
 
     def set_exclusive_overlay_visibility(self, overlay):
         self.overlay_visibilities = [overlay is x for x in self.overlays]
