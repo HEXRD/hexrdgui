@@ -70,8 +70,18 @@ class LinePickerDialog(QObject):
         self.ui.zoom_tth_width.valueChanged.connect(self.zoom_width_changed)
         self.ui.zoom_eta_width.valueChanged.connect(self.zoom_width_changed)
         self.ui.back_button.pressed.connect(self.back_button_pressed)
+        self.point_picked.connect(self.update_enable_states)
+        self.last_point_removed.connect(self.update_enable_states)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
+
+    def update_enable_states(self):
+        linebuilder = self.linebuilder
+        enable_back_button = (
+            linebuilder is not None and
+            all(z for z in [linebuilder.xs, linebuilder.ys])
+        )
+        self.ui.back_button.setEnabled(enable_back_button)
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
@@ -149,6 +159,8 @@ class LinePickerDialog(QObject):
         self.linebuilder = LineBuilder(line)
 
         self.linebuilder.point_picked.connect(self.point_picked.emit)
+
+        self.update_enable_states()
 
         self.lines.append(line)
         self.canvas.draw()
