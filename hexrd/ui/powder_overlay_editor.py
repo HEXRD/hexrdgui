@@ -1,9 +1,13 @@
+import copy
+
 import numpy as np
 
 from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
+from hexrd.ui.constants import DEFAULT_POWDER_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -15,6 +19,11 @@ class PowderOverlayEditor:
 
         self._overlay = None
 
+        refinements = copy.deepcopy(DEFAULT_POWDER_REFINEMENTS)
+        self.refinements_selector = SelectItemsWidget(refinements, self.ui)
+        self.ui.refinements_selector_layout.addWidget(
+            self.refinements_selector.ui)
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -25,6 +34,20 @@ class PowderOverlayEditor:
                 w.toggled.connect(self.update_config)
 
         self.ui.enable_width.toggled.connect(self.update_enable_states)
+        self.refinements_selector.selection_changed.connect(
+            self.update_refinements)
+
+    @property
+    def refinements(self):
+        return self.refinements_selector.items
+
+    @refinements.setter
+    def refinements(self, v):
+        self.refinements_selector.items = copy.deepcopy(v)
+        self.refinements_selector.update_table()
+
+    def update_refinements(self):
+        self.overlay['refinements'] = copy.deepcopy(self.refinements)
 
     @property
     def overlay(self):
@@ -47,6 +70,11 @@ class PowderOverlayEditor:
 
         self.tth_width_gui = self.tth_width_config
         self.offset_gui = self.offset_config
+
+        if 'refinements' in self.overlay:
+            self.refinements = self.overlay['refinements']
+        else:
+            self.refinements = DEFAULT_POWDER_REFINEMENTS
 
         self.update_enable_states()
 

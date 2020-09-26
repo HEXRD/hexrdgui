@@ -53,7 +53,7 @@ def default_overlay_options(overlay_type):
 
 def default_overlay_refinements(overlay_type):
     default_refinements = {
-        OverlayType.powder: [],
+        OverlayType.powder: constants.DEFAULT_POWDER_REFINEMENTS,
         OverlayType.laue: constants.DEFAULT_CRYSTAL_REFINEMENTS,
         OverlayType.mono_rotation_series: constants.DEFAULT_CRYSTAL_REFINEMENTS
     }
