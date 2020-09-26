@@ -30,6 +30,9 @@ class LinePickerDialog(QObject):
     # Emits the ring data that was selected
     result = Signal(list)
 
+    # Emitted when the last point was removed
+    last_point_removed = Signal()
+
     def __init__(self, canvas, parent, single_line_mode=False):
         super(LinePickerDialog, self).__init__(parent)
 
@@ -66,6 +69,7 @@ class LinePickerDialog(QObject):
         self.ui.rejected.connect(self.reject)
         self.ui.zoom_tth_width.valueChanged.connect(self.zoom_width_changed)
         self.ui.zoom_eta_width.valueChanged.connect(self.zoom_width_changed)
+        self.ui.back_button.pressed.connect(self.back_button_pressed)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
 
@@ -101,6 +105,22 @@ class LinePickerDialog(QObject):
         self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
         self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
         self.zoom_canvas.render()
+
+    def back_button_pressed(self):
+        linebuilder = self.linebuilder
+        if linebuilder is None:
+            # Nothing to do
+            return
+
+        if not linebuilder.xs or not linebuilder.ys:
+            # Nothing to delete
+            return
+
+        linebuilder.xs.pop(-1)
+        linebuilder.ys.pop(-1)
+        linebuilder.update_line_data()
+
+        self.last_point_removed.emit()
 
     def start(self):
         if self.canvas.mode != ViewType.polar:
@@ -221,6 +241,9 @@ class LineBuilder(QObject):
     def append_data(self, x, y):
         self.xs.append(x)
         self.ys.append(y)
-        self.line.set_data(self.xs, self.ys)
+        self.update_line_data()
         self.point_picked.emit()
+
+    def update_line_data(self):
+        self.line.set_data(self.xs, self.ys)
         self.canvas.draw()

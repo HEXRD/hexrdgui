@@ -112,6 +112,8 @@ class CalibrationRunner:
             self.point_picked)
         self._calibration_line_picker.line_completed.connect(
             self.line_completed)
+        self._calibration_line_picker.last_point_removed.connect(
+            self.last_point_removed)
         self._calibration_line_picker.finished.connect(
             self.restore_backup_overlay_visibilities)
         self._calibration_line_picker.finished.connect(
@@ -130,6 +132,11 @@ class CalibrationRunner:
 
     def restore_backup_overlay_visibilities(self):
         self.overlay_visibilities = self.backup_overlay_visibilities
+        HexrdConfig().overlay_config_changed.emit()
+
+    def set_highlighting(self, highlighting):
+        self.active_overlay['highlights'] = highlighting
+        HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
     def remove_all_highlighting(self):
@@ -205,9 +212,16 @@ class CalibrationRunner:
                 self._calibration_line_picker.ui.accept()
             return
 
-        self.active_overlay['highlights'] = [data_path]
-        HexrdConfig().flag_overlay_updates_for_all_materials()
-        HexrdConfig().overlay_config_changed.emit()
+        self.set_highlighting([data_path])
+
+    def decrement_overlay_data_index(self):
+        if self.overlay_data_index == 0:
+            # Can't go back any further
+            return
+
+        self.overlay_data_index -= 1
+        data_path = self.current_data_path
+        self.set_highlighting([data_path])
 
     def point_picked(self):
         linebuilder = self._calibration_line_picker.linebuilder
@@ -218,3 +232,17 @@ class CalibrationRunner:
 
     def line_completed(self):
         self.increment_overlay_data_index()
+
+    def last_point_removed(self):
+        if self.active_overlay_type == OverlayType.powder:
+            if len(self.current_data_list) == 0:
+                # Go back one line
+                self.decrement_overlay_data_index()
+            if len(self.current_data_list) == 0:
+                # Still nothing to do
+                return
+            # Remove the last point of data
+            self.current_data_list.pop(-1)
+        elif self.active_overlay_type == OverlayType.laue:
+            self.decrement_overlay_data_index()
+            self.current_data_list.clear()
