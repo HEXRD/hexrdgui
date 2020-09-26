@@ -30,23 +30,16 @@
       <string>Site Atom Types</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="1" column="1" colspan="2">
-       <widget class="QPushButton" name="select_atom_types">
-        <property name="text">
-         <string>Select Atom Types</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1" colspan="2">
        <widget class="QTableWidget" name="table">
         <property name="editTriggers">
          <set>QAbstractItemView::NoEditTriggers</set>
         </property>
         <property name="selectionMode">
-         <enum>QAbstractItemView::NoSelection</enum>
+         <enum>QAbstractItemView::SingleSelection</enum>
         </property>
         <property name="selectionBehavior">
-         <enum>QAbstractItemView::SelectItems</enum>
+         <enum>QAbstractItemView::SelectRows</enum>
         </property>
         <attribute name="horizontalHeaderDefaultSectionSize">
          <number>120</number>
@@ -71,6 +64,23 @@
         </column>
        </widget>
       </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="remove_atom_type">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="select_atom_types">
+        <property name="text">
+         <string>Select Atom Types</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -82,6 +92,9 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="1" colspan="3">
        <widget class="QDoubleSpinBox" name="total_occupancy">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -198,6 +211,7 @@
   <tabstop>thermal_factor_type</tabstop>
   <tabstop>table</tabstop>
   <tabstop>select_atom_types</tabstop>
+  <tabstop>remove_atom_type</tabstop>
  </tabstops>
  <resources/>
  <connections/>
