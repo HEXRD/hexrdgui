@@ -176,22 +176,22 @@ class MaskRegionsDialog(QObject):
         if self.image_mode == ViewType.raw:
             self.raw_masks_line_data.append((self.det, data_coords))
         elif self.image_mode == ViewType.polar:
-            self.polar_masks_line_data.append([data_coords])
+            self.polar_masks_line_data.append(data_coords)
 
     def create_masks(self):
         for data in self.raw_masks_line_data:
             name = create_unique_name(
                 HexrdConfig().raw_masks_line_data, 'raw_mask_0')
-            HexrdConfig().raw_masks_line_data[name] = data
-            create_raw_mask(name, data)
+            HexrdConfig().raw_masks_line_data[name] = [data]
+            create_raw_mask(name, [data])
             HexrdConfig().visible_masks.append(name)
             HexrdConfig().raw_masks_changed.emit()
 
         for data_coords in self.polar_masks_line_data:
             name = create_unique_name(
                 HexrdConfig().polar_masks_line_data, 'polar_mask_0')
-            HexrdConfig().polar_masks_line_data[name] = [data_coords]
-            create_polar_mask(data_coords, name)
+            HexrdConfig().polar_masks_line_data[name] = data_coords
+            create_polar_mask([data_coords], name)
             HexrdConfig().visible_masks.append(name)
             HexrdConfig().polar_masks_changed.emit()
 
