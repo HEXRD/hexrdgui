@@ -13,8 +13,8 @@ from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
 from hexrd.ui import constants
 
 # Global constants
-REFINED = 0
-FIXED = 1
+FIXED = 0
+REFINABLE = 1
 
 KEY_COL = BaseTreeItemModel.KEY_COL
 VALUE_COL = BaseTreeItemModel.VALUE_COL
@@ -25,7 +25,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
     def __init__(self, parent=None):
         super(CalTreeItemModel, self).__init__(parent)
-        self.root_item = TreeItem(['key', 'value', 'fixed'])
+        self.root_item = TreeItem(['key', 'value', 'refinable'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
 
@@ -117,7 +117,8 @@ class CalTreeItemModel(BaseTreeItemModel):
         # Rebuild the tree from scratch
         self.clear()
         for key in self.cfg.internal_instrument_config.keys():
-            tree_item = self.add_tree_item(key, None, REFINED, self.root_item)
+            tree_item = self.add_tree_item(key, None, REFINABLE,
+                                           self.root_item)
             self.recursive_add_tree_items(
                 self.cfg.internal_instrument_config[key], tree_item)
             self.update_parent_status(tree_item)
@@ -143,7 +144,7 @@ class CalTreeItemModel(BaseTreeItemModel):
             elif key == 'status':
                 tree_item = cur_tree_item
             else:
-                tree_item = self.add_tree_item(key, None, REFINED,
+                tree_item = self.add_tree_item(key, None, REFINABLE,
                                                cur_tree_item)
             if tree_item is not None:
                 self.recursive_add_tree_items(cur_config[key], tree_item)

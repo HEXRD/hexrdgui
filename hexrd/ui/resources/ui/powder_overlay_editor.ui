@@ -24,43 +24,18 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="3">
-    <widget class="ScientificDoubleSpinBox" name="offset_1">
-     <property name="keyboardTracking">
-      <bool>false</bool>
+   <item row="4" column="1" colspan="4">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QLabel" name="offset_label">
-     <property name="text">
-      <string>Offset:</string>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
      </property>
-    </widget>
-   </item>
-   <item row="2" column="2">
-    <widget class="ScientificDoubleSpinBox" name="offset_0">
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QCheckBox" name="enable_width">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Enable Width</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="4">
-    <widget class="ScientificDoubleSpinBox" name="offset_2">
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-    </widget>
+    </spacer>
    </item>
    <item row="1" column="2" colspan="3">
     <widget class="QDoubleSpinBox" name="tth_width">
@@ -99,18 +74,55 @@
      </property>
     </widget>
    </item>
+   <item row="2" column="4">
+    <widget class="ScientificDoubleSpinBox" name="offset_2">
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="3">
+    <widget class="ScientificDoubleSpinBox" name="offset_1">
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="ScientificDoubleSpinBox" name="offset_0">
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="enable_width">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Enable Width</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="offset_label">
+     <property name="text">
+      <string>Offset:</string>
+     </property>
+    </widget>
+   </item>
    <item row="3" column="1" colspan="4">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QGroupBox" name="refinements_group">
+     <property name="title">
+      <string>Refinements</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QVBoxLayout" name="refinements_selector_layout"/>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
@@ -124,6 +136,9 @@
  <tabstops>
   <tabstop>enable_width</tabstop>
   <tabstop>tth_width</tabstop>
+  <tabstop>offset_0</tabstop>
+  <tabstop>offset_1</tabstop>
+  <tabstop>offset_2</tabstop>
  </tabstops>
  <resources/>
  <connections/>

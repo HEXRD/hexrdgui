@@ -531,6 +531,16 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="refinements_tab">
+         <attribute name="title">
+          <string>Refinements</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <layout class="QVBoxLayout" name="refinements_selector_layout"/>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>

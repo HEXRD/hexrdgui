@@ -6,7 +6,9 @@ from PySide2.QtCore import QObject, QSignalBlocker, Signal
 
 from hexrd import matrixutil
 
+from hexrd.ui.constants import DEFAULT_CRYSTAL_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
 from hexrd.ui.calibration_crystal_slider_widget import (
@@ -20,6 +22,9 @@ class CalibrationCrystalEditor(QObject):
     # Emitted when the params get modified
     params_modified = Signal()
 
+    # Emitted when the refinements get modified
+    refinements_modified = Signal()
+
     def __init__(self, params=None, parent=None):
         super().__init__(parent)
 
@@ -29,6 +34,11 @@ class CalibrationCrystalEditor(QObject):
         # Load slider widget
         self.slider_widget = CalibrationCrystalSliderWidget(parent=self.ui)
         self.ui.slider_widget_parent.layout().addWidget(self.slider_widget.ui)
+
+        refinements = copy.deepcopy(DEFAULT_CRYSTAL_REFINEMENTS)
+        self.refinements_selector = SelectItemsWidget(refinements, self.ui)
+        self.ui.refinements_selector_layout.addWidget(
+            self.refinements_selector.ui)
 
         self.params = params
 
@@ -48,6 +58,8 @@ class CalibrationCrystalEditor(QObject):
             w.valueChanged.connect(self.value_changed)
 
         self.slider_widget.changed.connect(self.slider_widget_changed)
+        self.refinements_selector.selection_changed.connect(
+            self.refinements_edited)
 
     @property
     def params(self):
@@ -58,6 +70,18 @@ class CalibrationCrystalEditor(QObject):
         self._params = copy.deepcopy(v)
         self.update_gui()
         self.slider_widget.reset_ranges()
+
+    @property
+    def refinements(self):
+        return self.refinements_selector.items
+
+    @refinements.setter
+    def refinements(self, v):
+        self.refinements_selector.items = copy.deepcopy(v)
+        self.refinements_selector.update_table()
+
+    def refinements_edited(self):
+        self.refinements_modified.emit()
 
     def value_changed(self):
         sender = self.sender()

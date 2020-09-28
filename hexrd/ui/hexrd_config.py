@@ -505,9 +505,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.add_status(value)
             else:
                 if isinstance(value, list):
-                    stat_default = [1] * len(value)
+                    stat_default = [0] * len(value)
                 else:
-                    stat_default = 1
+                    stat_default = 0
                 current[key] = {'status': (stat_default), 'value': value}
 
     def remove_status(self, current, prev=None, parent=None):
@@ -565,9 +565,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 else:
                     statuses.append(status)
 
-        # Finally, reverse all booleans. We use "fixed", but they use
-        # "refinable".
-        statuses = [not x for x in statuses]
         return np.asarray(statuses)
 
     def set_statuses_from_prev_iconfig(self, prev_iconfig):
@@ -592,11 +589,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # currently using "set_statuses_from_prev_iconfig" instead.
         # If we ever want to use this function again, let's try to make
         # it much faster.
-
-        # First, make a deep copy, and then reverse all booleans. We
-        # use "fixed", but they use "refinable"
-        statuses = copy.deepcopy(statuses)
-        statuses = [not x for x in statuses]
 
         cur_ind = 0
 
@@ -1088,6 +1080,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             'style': style,
             'visible': visible,
             'options': overlays.default_overlay_options(type),
+            'refinements': overlays.default_overlay_refinements(type),
             'data': {}
         }
         self.overlays.append(overlay)
@@ -1106,6 +1099,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         overlay['type'] = type
         overlay['style'] = overlays.default_overlay_style(type)
         overlay['options'] = overlays.default_overlay_options(type)
+        overlay['refinements'] = overlays.default_overlay_refinements(type)
         overlay['update_needed'] = True
 
     def clear_overlay_data(self):

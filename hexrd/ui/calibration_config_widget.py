@@ -299,10 +299,10 @@ class CalibrationConfigWidget(QObject):
         if isinstance(gui_object, QComboBox):
             gui_object.setCurrentText(value)
         else:
-            if flag == 1 and not gui_object.styleSheet():
+            if flag == 0 and not gui_object.styleSheet():
                 s = 'QSpinBox, QDoubleSpinBox { background-color: lightgray; }'
                 gui_object.setStyleSheet(s)
-            elif gui_object.styleSheet() and flag != 1:
+            elif gui_object.styleSheet() and flag != 0:
                 gui_object.setStyleSheet("")
             # If it is anything else, just assume setValue()
             gui_object.setValue(value)
