@@ -753,6 +753,7 @@ class MainWindow(QObject):
                     # These are Laue spots
                     continue
                 else:
+                    # This is a single mask
                     line_data = convert_polar_to_raw(data)
                     create_raw_mask(name, line_data)
             self.ui.image_tab_widget.load_images()
