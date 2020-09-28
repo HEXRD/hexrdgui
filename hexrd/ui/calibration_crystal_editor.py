@@ -77,8 +77,7 @@ class CalibrationCrystalEditor(QObject):
 
     @refinements.setter
     def refinements(self, v):
-        self.refinements_selector.items = copy.deepcopy(v)
-        self.refinements_selector.update_table()
+        self.refinements_selector.items = v
 
     def refinements_edited(self):
         self.refinements_modified.emit()
