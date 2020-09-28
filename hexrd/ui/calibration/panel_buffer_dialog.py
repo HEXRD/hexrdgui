@@ -109,8 +109,9 @@ class PanelBufferDialog(QObject):
             array = np.load(self.file_name)
 
             # Must match the detector size
-            detector_shape = (detector_config['pixels']['columns']['value'],
-                              detector_config['pixels']['rows']['value'])
+            detector_shape = (detector_config['pixels']['rows']['value'],
+                              detector_config['pixels']['columns']['value'])
+
             if array.shape != detector_shape:
                 msg = 'The NumPy array shape must match the detector'
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
