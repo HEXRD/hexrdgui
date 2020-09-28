@@ -200,9 +200,9 @@ class MaskManagerDialog(QObject):
                 value = HexrdConfig().raw_masks.pop(self.old_name)
                 HexrdConfig().raw_masks[new_name] = value
 
-            if self.old_name in self.visible:
-                self.visible.append(new_name)
-                self.visible.remove(self.old_name)
+            if self.old_name in HexrdConfig().visible_masks:
+                HexrdConfig().visible_masks.append(new_name)
+                HexrdConfig().visible_masks.remove(self.old_name)
         self.old_name = None
 
     def context_menu_event(self, event):
