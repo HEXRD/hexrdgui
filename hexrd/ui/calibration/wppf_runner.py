@@ -1,9 +1,4 @@
-import numpy as np
-
 from PySide2.QtCore import QCoreApplication, QObject, QThreadPool, Signal
-
-from hexrd.material import _angstroms
-from hexrd.WPPF import LeBail, Rietveld
 
 from hexrd.ui.calibration.wppf_options_dialog import WppfOptionsDialog
 from hexrd.ui.constants import OverlayType
@@ -71,36 +66,7 @@ class WppfRunner(QObject):
 
     def run_wppf(self):
         dialog = self.wppf_options_dialog
-        method = dialog.wppf_method
-
-        if method == 'LeBail':
-            class_type = LeBail
-        elif method == 'Rietveld':
-            class_type = Rietveld
-        else:
-            raise Exception(f'Unknown method: {method}')
-
-        wavelength = {
-            'synchrotron': _angstroms(HexrdConfig().beam_wavelength)
-        }
-
-        if dialog.use_experiment_file:
-            expt_spectrum = np.loadtxt(dialog.experiment_file)
-        else:
-            expt_spectrum = HexrdConfig().last_azimuthal_integral_data
-            # Re-format it to match the expected input format
-            expt_spectrum = np.array(list(zip(*expt_spectrum)))
-
-        phases = [HexrdConfig().material(x) for x in dialog.selected_materials]
-        kwargs = {
-            'expt_spectrum': expt_spectrum,
-            'params': dialog.params,
-            'phases': phases,
-            'wavelength': wavelength,
-            'bkgmethod': dialog.background_method_dict
-        }
-
-        self.wppf_object = class_type(**kwargs)
+        self.wppf_object = dialog.create_wppf_object()
 
         for i in range(dialog.refinement_steps):
             self.wppf_object.RefineCycle()

@@ -11,13 +11,61 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="8" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   <item row="5" column="0">
+    <widget class="QCheckBox" name="use_experiment_file">
+     <property name="text">
+      <string>Use Experiment File</string>
      </property>
-     <property name="centerButtons">
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="background_method_label">
+     <property name="text">
+      <string>Background Method:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="3">
+    <widget class="QPushButton" name="select_materials_button">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select Materials</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="3">
+    <layout class="QGridLayout" name="background_method_parameters_layout">
+     <item row="1" column="0">
+      <widget class="QLabel" name="chebyshev_polynomial_degree_label">
+       <property name="text">
+        <string>Chebyshev Polynomial Degree:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="chebyshev_polynomial_degree">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>100000000</number>
+       </property>
+       <property name="value">
+        <number>6</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="5" column="1">
+    <widget class="QLineEdit" name="experiment_file">
+     <property name="enabled">
       <bool>false</bool>
+     </property>
+     <property name="text">
+      <string/>
      </property>
     </widget>
    </item>
@@ -49,50 +97,6 @@
      </item>
     </widget>
    </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QSpinBox" name="refinement_steps">
-     <property name="minimum">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <number>10000000</number>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="refinement_steps_label">
-     <property name="text">
-      <string>Refinement Steps:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="3">
-    <layout class="QGridLayout" name="background_method_parameters_layout">
-     <item row="1" column="0">
-      <widget class="QLabel" name="chebyshev_polynomial_degree_label">
-       <property name="text">
-        <string>Chebyshev Polynomial Degree:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="chebyshev_polynomial_degree">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>100000000</number>
-       </property>
-       <property name="value">
-        <number>6</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
    <item row="5" column="2">
     <widget class="QPushButton" name="select_experiment_file_button">
      <property name="enabled">
@@ -100,37 +104,6 @@
      </property>
      <property name="text">
       <string>Select File</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
-    <widget class="QCheckBox" name="use_experiment_file">
-     <property name="text">
-      <string>Use Experiment File</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="wppf_method_label">
-     <property name="text">
-      <string>WPPF Method:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QLineEdit" name="experiment_file">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="background_method_label">
-     <property name="text">
-      <string>Background Method:</string>
      </property>
     </widget>
    </item>
@@ -169,13 +142,47 @@
      </column>
     </widget>
    </item>
-   <item row="0" column="0" colspan="3">
-    <widget class="QPushButton" name="select_materials_button">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <item row="9" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" colspan="2">
+    <widget class="QSpinBox" name="refinement_steps">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000000</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="wppf_method_label">
      <property name="text">
-      <string>Select Materials</string>
+      <string>WPPF Method:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="refinement_steps_label">
+     <property name="text">
+      <string>Refinement Steps:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="3">
+    <widget class="QPushButton" name="reset_table_to_defaults">
+     <property name="text">
+      <string>Reset Table to Defaults</string>
      </property>
     </widget>
    </item>
@@ -191,6 +198,7 @@
   <tabstop>experiment_file</tabstop>
   <tabstop>select_experiment_file_button</tabstop>
   <tabstop>table</tabstop>
+  <tabstop>reset_table_to_defaults</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -201,8 +209,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>217</x>
-     <y>205</y>
+     <x>226</x>
+     <y>383</y>
     </hint>
     <hint type="destinationlabel">
      <x>217</x>
@@ -217,8 +225,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>217</x>
-     <y>205</y>
+     <x>226</x>
+     <y>383</y>
     </hint>
     <hint type="destinationlabel">
      <x>217</x>
@@ -233,12 +241,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>89</x>
-     <y>149</y>
+     <x>98</x>
+     <y>191</y>
     </hint>
     <hint type="destinationlabel">
-     <x>357</x>
-     <y>149</y>
+     <x>533</x>
+     <y>192</y>
     </hint>
    </hints>
   </connection>
@@ -249,12 +257,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>89</x>
-     <y>149</y>
+     <x>98</x>
+     <y>191</y>
     </hint>
     <hint type="destinationlabel">
-     <x>585</x>
-     <y>149</y>
+     <x>625</x>
+     <y>192</y>
     </hint>
    </hints>
   </connection>
