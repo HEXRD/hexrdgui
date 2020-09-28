@@ -122,8 +122,8 @@ class HandDrawnMaskDialog(QObject):
         linebuilder.disconnect()
         self.ring_data.append(ring_data)
         self.dets.append(self.ax.get_title())
-        self.add_line()
         self.drawing = False
+        self.add_line()
 
     def button_pressed(self, event):
         if event.button == 1:
