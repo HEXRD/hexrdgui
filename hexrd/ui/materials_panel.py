@@ -90,6 +90,8 @@ class MaterialsPanel(QObject):
 
         HexrdConfig().active_material_modified.connect(
             self.update_gui_from_config)
+        HexrdConfig().active_material_modified.connect(
+            self.material_editor_widget.update_gui_from_material)
 
     def update_enable_states(self):
         limit_active = self.ui.limit_active.isChecked()
