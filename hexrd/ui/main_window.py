@@ -7,8 +7,6 @@ from PySide2.QtWidgets import (
     QVBoxLayout
 )
 
-import numpy as np
-
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 
@@ -17,13 +15,10 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
-from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.indexing.run import IndexingRunner
+from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.wppf_runner import WppfRunner
-from hexrd.ui.calibration.line_picked_calibration import (
-    run_line_picked_calibration
-)
 from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
 from hexrd.ui.utils import create_unique_name
@@ -43,7 +38,6 @@ from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
-
 
 
 class MainWindow(QObject):
@@ -176,9 +170,9 @@ class MainWindow(QObject):
         self.image_mode_widget.mask_applied.connect(self.update_all)
         self.ui.action_run_powder_calibration.triggered.connect(
             self.start_powder_calibration)
-        self.ui.action_calibration_line_picker.triggered.connect(
-            self.on_action_calibration_line_picker_triggered)
-        self.ui.action_calibration_line_picker.triggered.connect(
+        self.ui.action_run_calibration.triggered.connect(
+            self.on_action_run_calibration_triggered)
+        self.ui.action_run_calibration.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
@@ -547,42 +541,18 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_polar_plot(selected_file)
 
-    def on_action_calibration_line_picker_triggered(self):
-        # Do a quick check for refinable paramters, which are required
-        flags = HexrdConfig().get_statuses_instrument_format()
-        if np.count_nonzero(flags) == 0:
-            msg = 'There are no refinable parameters'
-            QMessageBox.warning(self.ui, 'HEXRD', msg)
+    def on_action_run_calibration_triggered(self):
+        canvas = self.ui.image_tab_widget.image_canvases[0]
+        runner = CalibrationRunner(canvas)
+        self._calibration_runner = runner
+
+        try:
+            runner.run()
+        except Exception as e:
+            QMessageBox.warning(self.ui, 'HEXRD', str(e))
             return
 
-        # Make the dialog
-        canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._calibration_line_picker = LinePickerDialog(canvas, self.ui)
-        self._calibration_line_picker.start()
-        self._calibration_line_picker.finished.connect(
-            self.start_line_picked_calibration)
-
-    def start_line_picked_calibration(self, line_data):
-        HexrdConfig().emit_update_status_bar('Running powder calibration...')
-
-        # Run the calibration in a background thread
-        worker = AsyncWorker(run_line_picked_calibration, line_data)
-        self.thread_pool.start(worker)
-
-        # We currently don't have any progress updates, so make the
-        # progress bar indeterminate.
-        self.progress_dialog.setRange(0, 0)
-        self.progress_dialog.setWindowTitle('Calibration Running')
-
-        # Get the results and close the progress dialog when finished
-        worker.signals.result.connect(self.finish_line_picked_calibration)
-        worker.signals.finished.connect(self.progress_dialog.accept)
-        msg = 'Powder calibration finished!'
-        f = lambda: HexrdConfig().emit_update_status_bar(msg)
-        worker.signals.finished.connect(f)
-        self.progress_dialog.exec_()
-
-    def finish_line_picked_calibration(self, res):
+    def finish_calibration(self, res):
         print('Received result from line picked calibration')
 
         if res is not True:
@@ -721,8 +691,7 @@ class MainWindow(QObject):
         has_images = HexrdConfig().has_images()
 
         self.ui.action_export_polar_plot.setEnabled(is_polar and has_images)
-        self.ui.action_calibration_line_picker.setEnabled(
-            is_polar and has_images)
+        self.ui.action_run_calibration.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
