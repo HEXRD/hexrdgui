@@ -1,7 +1,9 @@
+import copy
 import importlib.resources
 import os
 from pathlib import Path
 
+import numpy as np
 import yaml
 
 from PySide2.QtCore import Qt, QObject, QSignalBlocker, Signal
@@ -9,6 +11,9 @@ from PySide2.QtWidgets import (
     QCheckBox, QFileDialog, QHBoxLayout, QMessageBox, QSizePolicy,
     QTableWidgetItem, QWidget
 )
+
+from hexrd.material import _angstroms
+from hexrd.WPPF import LeBail, Rietveld, Parameters
 
 from hexrd.ui import enter_key_filter
 
@@ -28,6 +33,8 @@ COLUMNS = {
     'vary': 4
 }
 
+LENGTH_SUFFIXES = ['_a', '_b', '_c']
+
 
 class WppfOptionsDialog(QObject):
 
@@ -44,6 +51,7 @@ class WppfOptionsDialog(QObject):
 
         self.load_initial_params()
         self.load_settings()
+        self.update_extra_params()
 
         self.value_spinboxes = []
         self.minimum_spinboxes = []
@@ -60,6 +68,8 @@ class WppfOptionsDialog(QObject):
             self.update_visible_background_parameters)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file)
+        self.ui.reset_table_to_defaults.pressed.connect(
+            self.reset_table_to_defaults)
 
         self.ui.accepted.connect(self.accept)
         self.ui.rejected.connect(self.reject)
@@ -87,7 +97,37 @@ class WppfOptionsDialog(QObject):
     def load_initial_params(self):
         text = importlib.resources.read_text(calibration_resources,
                                              'wppf_params.yml')
-        self.params = yaml.load(text, Loader=yaml.FullLoader)
+        self.default_params = yaml.load(text, Loader=yaml.FullLoader)
+        self.params = copy.deepcopy(self.default_params)
+
+    def update_extra_params(self):
+        # First, make a copy of the old params object. We will remove all
+        # extra params currently in place.
+        old_params = copy.deepcopy(self.params)
+        for key in list(self.params.keys()):
+            if key not in self.default_params:
+                del self.params[key]
+
+        # Next, create the WPPF object and allow it to add whatever params
+        # it wants to. Then we will add them to the new params.
+        wppf_object = self.create_wppf_object(add_params=True)
+        for key, obj in wppf_object.params.param_dict.items():
+            if key in self.params:
+                # Already present. Continue
+                continue
+
+            if key in old_params:
+                # Copy over the previous info for the key
+                self.params[key] = old_params[key]
+                continue
+
+            # Otherwise, copy it straight from the WPPF object.
+            self.params[key] = [
+                obj.value,
+                obj.lb,
+                obj.ub,
+                obj.vary
+            ]
 
     def show(self):
         self.ui.show()
@@ -120,6 +160,8 @@ class WppfOptionsDialog(QObject):
         dialog = SelectItemsDialog(items, self.ui)
         if dialog.exec_():
             self.selected_materials = dialog.selected_items
+            self.update_extra_params()
+            self.update_table()
 
     def update_visible_background_parameters(self):
         is_chebyshev = self.background_method == 'chebyshev'
@@ -225,6 +267,11 @@ class WppfOptionsDialog(QObject):
             HexrdConfig().working_dir = str(path.parent)
             self.ui.experiment_file.setText(selected_file)
 
+    def reset_table_to_defaults(self):
+        self.params = copy.deepcopy(self.default_params)
+        self.update_extra_params()
+        self.update_table()
+
     def create_label(self, v):
         w = QTableWidgetItem(v)
         w.setTextAlignment(Qt.AlignCenter)
@@ -292,20 +339,26 @@ class WppfOptionsDialog(QObject):
             w = self.create_label(name)
             self.ui.table.setItem(i, COLUMNS['name'], w)
 
-            w = self.create_value_spinbox(vals[0])
+            w = self.create_value_spinbox(self.value(name, vals))
             self.ui.table.setCellWidget(i, COLUMNS['value'], w)
 
-            w = self.create_minimum_spinbox(vals[1])
+            w = self.create_minimum_spinbox(self.minimum(name, vals))
             self.ui.table.setCellWidget(i, COLUMNS['minimum'], w)
 
-            w = self.create_maximum_spinbox(vals[2])
+            w = self.create_maximum_spinbox(self.maximum(name, vals))
             self.ui.table.setCellWidget(i, COLUMNS['maximum'], w)
 
-            w = self.create_vary_checkbox(vals[3])
+            w = self.create_vary_checkbox(self.vary(name, vals))
             self.ui.table.setCellWidget(i, COLUMNS['vary'], w)
 
     def update_params(self):
-        for i, vals in enumerate(self.params.values()):
+        for i, (name, vals) in enumerate(self.params.items()):
+            if any(name.endswith(x) for x in LENGTH_SUFFIXES):
+                # Convert from angstrom to nm for WPPF
+                vals = copy.deepcopy(vals)
+                for j in range(3):
+                    vals[j] /= 10.0
+
             vals[0] = self.value_spinboxes[i].value()
             vals[1] = self.minimum_spinboxes[i].value()
             vals[2] = self.maximum_spinboxes[i].value()
@@ -322,6 +375,77 @@ class WppfOptionsDialog(QObject):
             'table'
         ]
         return [getattr(self.ui, x) for x in names]
+
+    def convert(self, name, val):
+        # Check if we need to convert this data to other units
+        if any(name.endswith(x) for x in LENGTH_SUFFIXES):
+            # Convert from nm to Angstroms
+            return val * 10.0
+        return val
+
+    def value(self, name, vals):
+        return self.convert(name, vals[0])
+
+    def minimum(self, name, vals):
+        return self.convert(name, vals[1])
+
+    def maximum(self, name, vals):
+        return self.convert(name, vals[2])
+
+    def vary(self, name, vals):
+        return vals[3]
+
+    def create_wppf_params_object(self):
+        params = Parameters()
+        for name, val in self.params.items():
+            kwargs = {
+                'name': name,
+                'value': float(val[0]),
+                'lb': float(val[1]),
+                'ub': float(val[2]),
+                'vary': bool(val[3])
+            }
+            params.add(**kwargs)
+        return params
+
+    def create_wppf_object(self, add_params=False):
+        # If add_params is True, it allows WPPF to add more parameters
+        # This is mostly for material lattice parameters
+
+        method = self.wppf_method
+        if method == 'LeBail':
+            class_type = LeBail
+        elif method == 'Rietveld':
+            class_type = Rietveld
+        else:
+            raise Exception(f'Unknown method: {method}')
+
+        if add_params:
+            params = self.params
+        else:
+            params = self.create_wppf_params_object()
+
+        wavelength = {
+            'synchrotron': _angstroms(HexrdConfig().beam_wavelength)
+        }
+
+        if self.use_experiment_file:
+            expt_spectrum = np.loadtxt(self.experiment_file)
+        else:
+            expt_spectrum = HexrdConfig().last_azimuthal_integral_data
+            # Re-format it to match the expected input format
+            expt_spectrum = np.array(list(zip(*expt_spectrum)))
+
+        phases = [HexrdConfig().material(x) for x in self.selected_materials]
+        kwargs = {
+            'expt_spectrum': expt_spectrum,
+            'params': params,
+            'phases': phases,
+            'wavelength': wavelength,
+            'bkgmethod': self.background_method_dict
+        }
+
+        return class_type(**kwargs)
 
 
 if __name__ == '__main__':
