@@ -798,8 +798,12 @@ class MainWindow(QObject):
             for name, line_data in HexrdConfig().raw_masks_line_data.items():
                 create_raw_mask(name, line_data)
             for name, data in HexrdConfig().polar_masks_line_data.items():
-                line_data = convert_polar_to_raw(data)
-                create_raw_mask(name, line_data)
+                if isinstance(data, list):
+                    # These are Laue spots
+                    continue
+                else:
+                    line_data = convert_polar_to_raw(data)
+                    create_raw_mask(name, line_data)
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before
