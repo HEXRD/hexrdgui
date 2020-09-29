@@ -1,31 +1,24 @@
-from PySide2.QtCore import QObject, QTimer, Signal
+from PySide2.QtCore import QObject
 
 import numpy as np
 
-from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 
 class CalibrationSliderWidget(QObject):
 
-    # Using string argument instead of ViewType to workaround segfault on
-    # conda/macos
-    update_if_mode_matches = Signal(str)
-
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10
     SLIDER_VAL_TO_CONF_VAL = 0.1
 
     def __init__(self, parent=None):
-        super(CalibrationSliderWidget, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('calibration_slider_widget.ui', parent)
 
         self.update_gui_from_config()
-
-        self.timer = None
 
         self.setup_connections()
 
@@ -215,7 +208,7 @@ class CalibrationSliderWidget(QObject):
             det = self.current_detector_dict()
             rme = HexrdConfig().rotation_matrix_euler()
             if key == 'tilt' and rme is not None:
-                # Convert to radians, and to the native python type before saving
+                # Convert to radians, and to the native python type before save
                 val = np.radians(val).item()
 
             det['transform'][key]['value'][ind] = val
@@ -234,11 +227,9 @@ class CalibrationSliderWidget(QObject):
             elif key == 'polar':
                 iconfig['beam']['vector']['polar_angle']['value'] = val
                 HexrdConfig().beam_vector_changed.emit()
-                self.emit_update_if_polar()
             else:
                 iconfig['beam']['vector'][key]['value'] = val
                 HexrdConfig().beam_vector_changed.emit()
-                self.emit_update_if_polar()
 
     def update_widget_value(self, widget):
         name = widget.objectName()
@@ -280,16 +271,6 @@ class CalibrationSliderWidget(QObject):
             widget.setMaximum(val)
 
         widget.setValue(val)
-
-    def emit_update_if_polar(self):
-        # Only emit this once every 500 milliseconds or so
-        if not hasattr(self, '_update_if_polar_timer'):
-            self._update_if_polar_timer = QTimer()
-            self._update_if_polar_timer.setSingleShot(True)
-            self._update_if_polar_timer.timeout.connect(
-                lambda: self.update_if_mode_matches.emit(ViewType.polar))
-
-        self._update_if_polar_timer.start(500)
 
     def reset_config(self):
         HexrdConfig().restore_instrument_config_backup()

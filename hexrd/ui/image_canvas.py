@@ -1,7 +1,7 @@
 import copy
 import math
 
-from PySide2.QtCore import QThreadPool
+from PySide2.QtCore import QThreadPool, QTimer
 from PySide2.QtWidgets import QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -433,6 +433,20 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def beam_vector_changed(self):
+        if self.mode == ViewType.polar:
+            # Polar needs a complete re-draw
+            # Only emit this once every 100 milliseconds or so to avoid
+            # too many updates if the slider widget is being used.
+            if not hasattr(self, '_beam_vec_update_polar_timer'):
+                timer = QTimer()
+                timer.setSingleShot(True)
+                timer.timeout.connect(HexrdConfig().rerender_needed.emit)
+                self._beam_vec_update_polar_timer = timer
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            self._beam_vec_update_polar_timer.start(100)
+            return
+
+        # If it isn't polar, only overlay updates are needed
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
             return
 
