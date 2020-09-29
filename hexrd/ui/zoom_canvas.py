@@ -1,3 +1,5 @@
+from PySide2.QtWidgets import QSizePolicy
+
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
@@ -9,7 +11,9 @@ class ZoomCanvas(FigureCanvas):
 
     def __init__(self, main_canvas, draw_crosshairs=True):
         self.figure = Figure()
-        super(FigureCanvas, self).__init__(self.figure)
+        super().__init__(self.figure)
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.main_canvas = main_canvas
         self.pv = main_canvas.iviewer.pv

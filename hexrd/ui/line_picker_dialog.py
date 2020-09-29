@@ -55,7 +55,7 @@ class LinePickerDialog(QObject):
         self.zoom_canvas = ZoomCanvas(canvas)
         self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
         self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
-        self.ui.layout().insertWidget(1, self.zoom_canvas)
+        self.ui.zoom_canvas_layout.addWidget(self.zoom_canvas)
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
