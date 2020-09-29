@@ -65,3 +65,7 @@ class OverlayEditor:
             return
 
         w.update_gui()
+
+    def update_refinement_options(self):
+        # Right now, only powder refinement options can vary
+        self.powder_overlay_editor.update_refinement_options()

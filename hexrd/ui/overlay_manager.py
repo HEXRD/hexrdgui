@@ -214,6 +214,9 @@ class OverlayManager:
         i = self.selected_row
         return HexrdConfig().overlays[i] if i is not None else None
 
+    def update_refinement_options(self):
+        self.overlay_editor.update_refinement_options()
+
     def add(self):
         HexrdConfig().append_overlay(self.active_material_name,
                                      OverlayType.powder)

@@ -1,3 +1,5 @@
+import copy
+
 from PySide2.QtCore import QObject, Qt, Signal
 from PySide2.QtWidgets import QCheckBox, QHBoxLayout, QTableWidgetItem, QWidget
 
@@ -20,12 +22,19 @@ class SelectItemsWidget(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('select_items_widget.ui', parent)
 
+        self.checkboxes = []
+
         # The items should be a list of tuples of length two, like
         # (name, selected).
         self.items = items
 
-        self.checkboxes = []
+    @property
+    def items(self):
+        return self._items
 
+    @items.setter
+    def items(self, v):
+        self._items = copy.deepcopy(v)
         self.update_table()
 
     def create_table_widget(self, w):

@@ -70,6 +70,8 @@ class MaterialsPanel(QObject):
 
         self.material_editor_widget.material_modified.connect(
             self.update_table)
+        self.material_editor_widget.material_modified.connect(
+            self.update_refinement_options)
 
         self.ui.show_materials_table.pressed.connect(self.show_materials_table)
         self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
@@ -272,6 +274,12 @@ class MaterialsPanel(QObject):
 
     def update_table(self):
         self.materials_table.update_table()
+
+    def update_refinement_options(self):
+        if not hasattr(self, '_overlay_manager'):
+            return
+
+        self._overlay_manager.update_refinement_options()
 
     def eventFilter(self, target, event):
         # This is almost identical to CalibrationConfigWidget.eventFilter
