@@ -120,7 +120,7 @@ class LaueSpotOverlay:
             grain_params=[self.crystal_params, ])
 
         point_groups = {}
-        keys = ['spots', 'ranges']
+        keys = ['spots', 'ranges', 'hkls']
         for det_key, psim in sim_data.items():
             point_groups[det_key] = {key: [] for key in keys}
 
@@ -136,6 +136,7 @@ class LaueSpotOverlay:
             # filter (tth, eta) results
             xy_data = xy_det[0][idx, :]
             angles = angles[0][idx, :]  # these are in radians
+            point_groups[det_key]['hkls'] = hkls_in[0][:, idx].T
             angles[:, 1] = xfcapi.mapAngle(
                 angles[:, 1], np.radians(self.eta_period), units='radians'
             )
