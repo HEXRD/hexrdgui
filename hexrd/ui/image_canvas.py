@@ -688,10 +688,16 @@ class ImageCanvas(FigureCanvas):
         self.wppf_plot = axis.scatter(*wppf_data, **style)
 
     def on_detector_transform_modified(self, det):
-        if self.mode not in [ViewType.cartesian, ViewType.polar]:
+        if self.mode is None:
             return
 
         self.iviewer.update_detector(det)
+        if self.mode == ViewType.raw:
+            # Only overlays need to be updated
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            self.update_overlays()
+            return
+
         self.axes_images[0].set_data(self.iviewer.img)
 
         # This will only run if we are in polar mode
