@@ -108,16 +108,28 @@ class WppfOptionsDialog(QObject):
             if key not in self.default_params:
                 del self.params[key]
 
-        # Next, create the WPPF object and allow it to add whatever params
-        # it wants to. Then we will add them to the new params.
-        wppf_object = self.create_wppf_object(add_params=True)
+        # Temporarily set the background method to chebyshev
+        # so that the spline lineplot won't pop up
+        blocker = QSignalBlocker(self.ui.background_method)  # noqa: F841
+        previous = self.background_method
+        self.background_method = 'chebyshev'
+
+        try:
+            # Next, create the WPPF object and allow it to add whatever params
+            # it wants to. Then we will add them to the new params.
+            wppf_object = self.create_wppf_object(add_params=True)
+        finally:
+            # Restore the old background method
+            self.background_method = previous
+
         for key, obj in wppf_object.params.param_dict.items():
             if key in self.params:
                 # Already present. Continue
                 continue
 
-            if key in old_params:
+            if all(key in x for x in [old_params, self.default_params]):
                 # Copy over the previous info for the key
+                # Only copy over default params, no extra params
                 self.params[key] = old_params[key]
                 continue
 
