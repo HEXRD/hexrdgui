@@ -186,8 +186,6 @@ class MainWindow(QObject):
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
-        self.calibration_slider_widget.update_if_mode_matches.connect(
-            self.update_if_mode_matches)
         self.load_widget.images_loaded.connect(self.images_loaded)
         self.import_data_widget.new_config_loaded.connect(
             self.update_config_gui)
