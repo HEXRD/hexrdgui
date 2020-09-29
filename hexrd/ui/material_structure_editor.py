@@ -17,7 +17,7 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 DEFAULT_SITE = {
-    'name': 'CeO',
+    'name': 'Site',
     'fractional_coords': [0, 0, 0],
     'atoms': [
         {
@@ -301,10 +301,7 @@ class MaterialStructureEditor:
 
         for indices, coords in site_indices:
             site = {}
-            symbols = [ptableinverse[type_array[i]] for i in indices]
-
-            # Combine the symbols for a basic name
-            site['name'] = self.next_name(''.join(symbols))
+            site['name'] = self.next_name('Site')
             site['fractional_coords'] = coords
             site['atoms'] = []
 
