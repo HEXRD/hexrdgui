@@ -141,6 +141,7 @@ class CalibrationRunner:
                 'material': overlay['material'],
                 'type': overlay['type'].value,
                 'options': overlay['options'],
+                'refinements': overlay['refinements'],
                 'picks': val
             })
 
