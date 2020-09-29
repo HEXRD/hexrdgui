@@ -128,19 +128,26 @@ class CalibrationRunner:
         # Temporary
         import json
 
+        class NumpyEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
         pick_results = []
         for i, val in self.all_overlay_picks.items():
             overlay = self.overlays[i]
             pick_results.append({
                 'material': overlay['material'],
                 'type': overlay['type'].value,
+                'options': overlay['options'],
                 'picks': val
             })
 
         out_file = 'calibration_picks.json'
         print(f'Writing out picks to {out_file}')
         with open(out_file, 'w') as wf:
-            json.dump(pick_results, wf)
+            json.dump(pick_results, wf, cls=NumpyEncoder)
 
     def set_exclusive_overlay_visibility(self, overlay):
         self.overlay_visibilities = [overlay is x for x in self.overlays]
