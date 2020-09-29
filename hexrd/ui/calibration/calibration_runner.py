@@ -127,6 +127,27 @@ class CalibrationRunner:
     def finish(self):
         # Temporary
         import json
+        import pickle
+        from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+        from hexrd.ui.overlays import default_overlay_refinements
+
+        class NumpyEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        def get_refinements(overlay):
+            refinements = overlay.get('refinements')
+            if refinements is None:
+                refinements = default_overlay_refinements(overlay['type'])
+            return refinements
+
+        def get_hkls(overlay):
+            return {
+                key: val.get('hkls', [])
+                for key, val in overlay['data'].items()
+            }
 
         pick_results = []
         for i, val in self.all_overlay_picks.items():
@@ -134,13 +155,34 @@ class CalibrationRunner:
             pick_results.append({
                 'material': overlay['material'],
                 'type': overlay['type'].value,
+                'options': overlay['options'],
+                'refinements': get_refinements(overlay),
+                'hkls': get_hkls(overlay),
                 'picks': val
             })
+
+            # Dump out the material
+            mat_file_name = overlay['material'] + '.pkl'
+            print(f'Writing out material to {mat_file_name}')
+            with open(mat_file_name, 'wb') as wf:
+                pickle.dump(HexrdConfig().material(overlay['material']), wf)
 
         out_file = 'calibration_picks.json'
         print(f'Writing out picks to {out_file}')
         with open(out_file, 'w') as wf:
-            json.dump(pick_results, wf)
+            json.dump(pick_results, wf, cls=NumpyEncoder)
+
+        # Dump out the instrument as well
+        instr = create_hedm_instrument()
+        print(f'Writing out instrument to instrument.pkl')
+        with open('instrument.pkl', 'wb') as wf:
+            pickle.dump(instr, wf)
+
+        # Dump out refinement flags
+        flags = HexrdConfig().get_statuses_instrument_format()
+        print(f'Writing out refinement flags to refinement_flags.json')
+        with open('refinement_flags.json', 'w') as wf:
+            json.dump(flags, wf, cls=NumpyEncoder)
 
     def set_exclusive_overlay_visibility(self, overlay):
         self.overlay_visibilities = [overlay is x for x in self.overlays]
