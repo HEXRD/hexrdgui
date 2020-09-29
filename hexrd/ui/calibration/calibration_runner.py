@@ -143,6 +143,12 @@ class CalibrationRunner:
                 refinements = default_overlay_refinements(overlay['type'])
             return refinements
 
+        def get_hkls(overlay):
+            return {
+                key: val.get('hkls', [])
+                for key, val in overlay['data'].items()
+            }
+
         pick_results = []
         for i, val in self.all_overlay_picks.items():
             overlay = self.overlays[i]
@@ -151,6 +157,7 @@ class CalibrationRunner:
                 'type': overlay['type'].value,
                 'options': overlay['options'],
                 'refinements': get_refinements(overlay),
+                'hkls': get_hkls(overlay),
                 'picks': val
             })
 
