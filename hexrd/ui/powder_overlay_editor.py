@@ -5,6 +5,8 @@ import numpy as np
 from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
+from hexrd import unitcell
+
 from hexrd.ui.constants import DEFAULT_POWDER_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.select_items_widget import SelectItemsWidget
@@ -24,6 +26,8 @@ class PowderOverlayEditor:
         self.ui.refinements_selector_layout.addWidget(
             self.refinements_selector.ui)
 
+        self.update_refinement_options()
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -36,6 +40,31 @@ class PowderOverlayEditor:
         self.ui.enable_width.toggled.connect(self.update_enable_states)
         self.refinements_selector.selection_changed.connect(
             self.update_refinements)
+
+    def update_refinement_options(self):
+        if self.overlay is None:
+            return
+
+        default_refinements = copy.deepcopy(DEFAULT_POWDER_REFINEMENTS)
+        indices = unitcell._rqpDict[self.material.unitcell.latticeType][0]
+
+        # Save the previous values
+        prev_refinements = copy.deepcopy(self.refinements_selector.items)
+
+        def get_prev_val(name, default=True):
+            for entry in prev_refinements:
+                if entry[0] == name:
+                    return entry[1]
+
+            return default
+
+        refinements = []
+        for i in indices:
+            name, val = default_refinements[i]
+            refinements.append((name, get_prev_val(name, default=val)))
+
+        self.refinements_selector.items = refinements
+        self.update_refinements()
 
     @property
     def refinements(self):
@@ -77,6 +106,7 @@ class PowderOverlayEditor:
             self.refinements = DEFAULT_POWDER_REFINEMENTS
 
         self.update_enable_states()
+        self.update_refinement_options()
 
     def update_config(self):
         self.tth_width_config = self.tth_width_gui
@@ -86,20 +116,26 @@ class PowderOverlayEditor:
         HexrdConfig().overlay_config_changed.emit()
 
     @property
-    def tth_width_config(self):
+    def material(self):
         if self.overlay is None:
             return None
 
         name = self.overlay['material']
-        return HexrdConfig().material(name).planeData.tThWidth
+        return HexrdConfig().material(name)
+
+    @property
+    def tth_width_config(self):
+        if self.overlay is None:
+            return None
+
+        return self.material.planeData.tThWidth
 
     @tth_width_config.setter
     def tth_width_config(self, v):
         if self.overlay is None:
             return
 
-        name = self.overlay['material']
-        HexrdConfig().material(name).planeData.tThWidth = v
+        self.material.planeData.tThWidth = v
 
     @property
     def tth_width_gui(self):
