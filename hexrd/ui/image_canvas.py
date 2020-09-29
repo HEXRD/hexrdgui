@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 
 import numpy as np
 
@@ -569,6 +570,7 @@ class ImageCanvas(FigureCanvas):
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
 
+            self.update_azimuthal_integral_plot_y_scale()
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -620,6 +622,7 @@ class ImageCanvas(FigureCanvas):
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
+        self.update_azimuthal_integral_plot_y_scale()
         self.draw()
 
     def update_azimuthal_integral_plot(self):
@@ -648,6 +651,11 @@ class ImageCanvas(FigureCanvas):
         # Rescale the axes for the new data
         axis.relim()
         axis.autoscale_view(scalex=False)
+
+    def update_azimuthal_integral_plot_y_scale(self):
+        if self.azimuthal_integral_axis is not None:
+            scale = 'log' if isinstance(self.norm, LogNorm) else 'linear'
+            self.azimuthal_integral_axis.set_yscale(scale)
 
     def update_wppf_plot(self):
         self.clear_wppf_plot()
