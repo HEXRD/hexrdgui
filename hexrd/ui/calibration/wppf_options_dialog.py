@@ -127,8 +127,9 @@ class WppfOptionsDialog(QObject):
                 # Already present. Continue
                 continue
 
-            if key in old_params:
+            if all(key in x for x in [old_params, self.default_params]):
                 # Copy over the previous info for the key
+                # Only copy over default params, no extra params
                 self.params[key] = old_params[key]
                 continue
 
