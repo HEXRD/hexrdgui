@@ -336,6 +336,6 @@ class EditorFactory(QItemEditorFactory):
         super().__init__(self, parent)
 
     def createEditor(self, user_type, parent):
-        editor = super().createEditor(user_type, parent)
+        editor = QLineEdit(parent)
         editor.setAlignment(Qt.AlignCenter)
         return editor
