@@ -26,6 +26,7 @@ requirements:
     - pyyaml
     - hexrd
     - pyhdf
+    - silx
 
 test:
   imports:
