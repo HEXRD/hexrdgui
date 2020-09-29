@@ -784,7 +784,9 @@ class MainWindow(QObject):
             # Rebuild polar masks
             HexrdConfig().polar_masks.clear()
             for name, line_data in HexrdConfig().polar_masks_line_data.items():
-                create_polar_mask([line_data], name)
+                if not isinstance(line_data, list):
+                    line_data = [line_data]
+                create_polar_mask(line_data, name)
             for name, value in HexrdConfig().raw_masks_line_data.items():
                 det, data = value[0]
                 line_data = convert_raw_to_polar(det, data)
