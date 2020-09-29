@@ -66,7 +66,8 @@ class MaskManagerDialog(QObject):
         elif mask_type == 'raw':
             if not HexrdConfig().raw_masks_line_data:
                 return
-            for name, (det, val) in HexrdConfig().raw_masks_line_data.items():
+            for name, value in HexrdConfig().raw_masks_line_data.items():
+                det, val = value[0]
                 vals = self.masks.values()
                 if any(np.array_equal(val, m) for t, m in vals):
                     continue
