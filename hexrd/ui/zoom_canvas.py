@@ -39,8 +39,10 @@ class ZoomCanvas(FigureCanvas):
         self.setup_connections()
 
     def setup_connections(self):
-        self.mne_id = self.main_canvas.mpl_connect('motion_notify_event',
-                                                   self.mouse_moved)
+        self.mc_mne_id = self.main_canvas.mpl_connect(
+            'motion_notify_event', self.main_canvas_mouse_moved)
+        self.mne_id = self.mpl_connect('motion_notify_event',
+                                       self.mouse_moved)
         self.bp_id = self.mpl_connect('button_press_event',
                                       self.button_pressed)
 
@@ -52,9 +54,17 @@ class ZoomCanvas(FigureCanvas):
         self.remove_overlay_lines()
 
     def disconnect(self):
+        if self.mc_mne_id is not None:
+            self.main_canvas.mpl_disconnect(self.mc_mne_id)
+            self.mc_mne_id = None
+
         if self.mne_id is not None:
-            self.main_canvas.mpl_disconnect(self.mne_id)
+            self.mpl_disconnect(self.mne_id)
             self.mne_id = None
+
+        if self.bp_id is not None:
+            self.mpl_disconnect(self.bp_id)
+            self.bp_id = None
 
     def remove_overlay_lines(self):
         if self.box_overlay_line is not None:
@@ -78,6 +88,11 @@ class ZoomCanvas(FigureCanvas):
         self.point_picked.emit(event)
 
     def mouse_moved(self, event):
+        # Clear the crosshairs when the mouse is moving over the canvas
+        self.clear_crosshairs()
+        self.draw()
+
+    def main_canvas_mouse_moved(self, event):
         if event.inaxes is None:
             # Do nothing...
             return
