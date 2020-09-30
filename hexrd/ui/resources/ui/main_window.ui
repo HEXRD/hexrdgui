@@ -476,7 +476,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Apply Mask to Polar</string>
+    <string>Apply Polygon to Polar</string>
    </property>
   </action>
   <action name="action_edit_apply_laue_mask_to_polar">
@@ -519,7 +519,7 @@
   </action>
   <action name="action_edit_apply_polygon_mask">
    <property name="text">
-    <string>Apply Polygon Mask</string>
+    <string>Apply Ellipse/Rectangle Mask</string>
    </property>
   </action>
   <action name="action_run_wppf">
