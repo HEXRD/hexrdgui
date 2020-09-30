@@ -4,6 +4,7 @@ from PySide2.QtWidgets import QSizePolicy
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
+from matplotlib.widgets import Cursor
 
 import numpy as np
 
@@ -160,6 +161,7 @@ class ZoomCanvas(FigureCanvas):
                             interpolation='none')
             a1.axis('auto')
             a1.label_outer()
+            self.cursor = Cursor(a1, useblit=True, color='red', linewidth=1)
             im2, = a2.plot(a2_data[0], a2_data[1])
             self.figure.suptitle(r"ROI zoom")
             a2.set_xlabel(r"$2\theta$ [deg]")
