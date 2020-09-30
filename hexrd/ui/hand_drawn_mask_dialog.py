@@ -9,7 +9,6 @@ from matplotlib.widgets import Cursor
 
 from hexrd.ui import enter_key_filter
 
-from hexrd.ui.line_picker_dialog import LineBuilder
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 
@@ -125,3 +124,59 @@ class HandDrawnMaskDialog(QObject):
 
     def show(self):
         self.ui.show()
+
+
+class LineBuilder(QObject):
+
+    # Emits when a point was picked
+    point_picked = Signal()
+
+    def __init__(self, line):
+        super().__init__()
+
+        self.line = line
+        self.canvas = line.figure.canvas
+        self.xs = list(line.get_xdata())
+        self.ys = list(line.get_ydata())
+        self.cid = self.canvas.mpl_connect('button_press_event', self)
+
+    def __del__(self):
+        self.disconnect()
+
+    def disconnect(self):
+        if self.cid is not None:
+            # Disconnect the signal
+            self.canvas.mpl_disconnect(self.cid)
+            self.cid = None
+
+    def __call__(self, event):
+        """
+        Picker callback
+        """
+        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+              ('double' if event.dblclick else 'single', event.button,
+               event.x, event.y, event.xdata, event.ydata))
+
+        if event.inaxes != self.line.axes:
+            return
+
+        if event.button == 1:
+            self.handle_left_click(event)
+        elif event.button == 2:
+            self.handle_middle_click(event)
+
+    def handle_left_click(self, event):
+        self.append_data(event.xdata, event.ydata)
+
+    def handle_middle_click(self, event):
+        self.append_data(np.nan, np.nan)
+
+    def append_data(self, x, y):
+        self.xs.append(x)
+        self.ys.append(y)
+        self.update_line_data()
+        self.point_picked.emit()
+
+    def update_line_data(self):
+        self.line.set_data(self.xs, self.ys)
+        self.canvas.draw()
