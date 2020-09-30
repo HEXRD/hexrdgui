@@ -40,6 +40,7 @@ class OverlayManager:
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
+        HexrdConfig().calibration_complete.connect(self.update_overlay_editor)
 
     def show(self):
         self.update_table()

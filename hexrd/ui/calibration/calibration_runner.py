@@ -1,8 +1,12 @@
 import numpy as np
 
+from hexrd.ui.calibration.pick_based_calibration import run_calibration
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
+from hexrd.ui.overlays import default_overlay_refinements
+from hexrd.ui.utils import convert_tilt_convention, make_new_pdata
 
 
 class CalibrationRunner:
@@ -18,17 +22,27 @@ class CalibrationRunner:
         self.pick_next_line()
 
     def validate(self):
-        # Do a quick check for refinable paramters, which are required
-        flags = HexrdConfig().get_statuses_instrument_format()
-        if np.count_nonzero(flags) == 0:
-            raise Exception('There are no refinable parameters')
-
         visible_overlays = self.visible_overlays
         if not visible_overlays:
             raise Exception('No visible overlays')
 
         if not all(self.has_widths(x) for x in visible_overlays):
             raise Exception('All visible overlays must have widths')
+
+        flags = HexrdConfig().get_statuses_instrument_format().tolist()
+        # Make sure the length of our flags matches up with the instruments
+        instr = create_hedm_instrument()
+        if len(flags) != len(instr.calibration_flags):
+            msg = ('Length of internal flags does not match '
+                   'instr.calibration_flags')
+            raise Exception(msg)
+
+        # Add overlay refinements
+        for overlay in visible_overlays:
+            flags += [x[1] for x in self.get_refinements(overlay)]
+
+        if np.count_nonzero(flags) == 0:
+            raise Exception('There are no refinable parameters')
 
     def clear_all_overlay_picks(self):
         self.all_overlay_picks.clear()
@@ -124,24 +138,13 @@ class CalibrationRunner:
         self.save_overlay_picks()
         self.pick_next_line()
 
-    def finish(self):
-        # Temporary
-        import json
-        import pickle
-        from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-        from hexrd.ui.overlays import default_overlay_refinements
+    def get_refinements(self, overlay):
+        refinements = overlay.get('refinements')
+        if refinements is None:
+            refinements = default_overlay_refinements(overlay['type'])
+        return refinements
 
-        class NumpyEncoder(json.JSONEncoder):
-            def default(self, obj):
-                if isinstance(obj, np.ndarray):
-                    return obj.tolist()
-                return json.JSONEncoder.default(self, obj)
-
-        def get_refinements(overlay):
-            refinements = overlay.get('refinements')
-            if refinements is None:
-                refinements = default_overlay_refinements(overlay['type'])
-            return refinements
+    def generate_pick_results(self):
 
         def get_hkls(overlay):
             return {
@@ -156,17 +159,40 @@ class CalibrationRunner:
                 'material': overlay['material'],
                 'type': overlay['type'].value,
                 'options': overlay['options'],
-                'refinements': get_refinements(overlay),
+                'refinements': self.get_refinements(overlay),
                 'hkls': get_hkls(overlay),
                 'picks': val
             })
+        return pick_results
 
+    @property
+    def pick_materials(self):
+        mats = [
+            HexrdConfig().material(self.overlays[i]['material'])
+            for i in self.all_overlay_picks
+        ]
+        return {x.name: x for x in mats}
+
+    def dump_results(self):
+        # This dumps out all results to files for testing
+        # It is mostly intended for debug purposes
+        import json
+        import pickle
+
+        class NumpyEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        for name, mat in self.pick_materials.items():
             # Dump out the material
-            mat_file_name = overlay['material'] + '.pkl'
+            mat_file_name = f'{name}.pkl'
             print(f'Writing out material to {mat_file_name}')
             with open(mat_file_name, 'wb') as wf:
-                pickle.dump(HexrdConfig().material(overlay['material']), wf)
+                pickle.dump(mat, wf)
 
+        pick_results = self.generate_pick_results()
         out_file = 'calibration_picks.json'
         print(f'Writing out picks to {out_file}')
         with open(out_file, 'w') as wf:
@@ -183,6 +209,73 @@ class CalibrationRunner:
         print(f'Writing out refinement flags to refinement_flags.json')
         with open('refinement_flags.json', 'w') as wf:
             json.dump(flags, wf, cls=NumpyEncoder)
+
+    def finish(self):
+        self.run_calibration()
+
+    def run_calibration(self):
+        picks = self.generate_pick_results()
+        materials = self.pick_materials
+        instr = create_hedm_instrument()
+        flags = HexrdConfig().get_statuses_instrument_format()
+        instr.calibration_flags = flags
+
+        instr_calibrator = run_calibration(picks, instr, materials)
+        self.write_instrument_to_hexrd_config(instr)
+
+        # Update the lattice parameters and overlays
+        overlays = [self.overlays[i] for i in self.all_overlay_picks]
+        for overlay, calibrator in zip(overlays, instr_calibrator.calibrators):
+            if calibrator.calibrator_type == 'powder':
+                if calibrator.params.size == 0:
+                    continue
+
+                mat_name = overlay['material']
+                mat = materials[mat_name]
+                mat.latticeParameters = calibrator.params
+                make_new_pdata(mat)
+                HexrdConfig().flag_overlay_updates_for_material(mat_name)
+                if mat is HexrdConfig().active_material:
+                    HexrdConfig().active_material_modified.emit()
+            elif calibrator.calibrator_type == 'laue':
+                overlay['options']['crystal_params'] = calibrator.params
+
+        # In case any overlays changed
+        HexrdConfig().overlay_config_changed.emit()
+        HexrdConfig().calibration_complete.emit()
+
+    def write_instrument_to_hexrd_config(self, instr):
+        iconfig = HexrdConfig().instrument_config_none_euler_convention
+
+        # Add this so the calibration crystal gets written
+        cal_crystal = iconfig.get('calibration_crystal')
+        output_dict = instr.write_config(calibration_dict=cal_crystal)
+
+        # Convert back to whatever convention we were using before
+        eac = HexrdConfig().euler_angle_convention
+        if eac is not None:
+            convert_tilt_convention(output_dict, None, eac)
+
+        # Add the saturation levels, as they seem to be missing
+        sl = 'saturation_level'
+        for det in output_dict['detectors'].keys():
+            output_dict['detectors'][det][sl] = iconfig['detectors'][det][sl]
+
+        # Save the previous iconfig to restore the statuses
+        prev_iconfig = HexrdConfig().config['instrument']
+
+        # Update the config
+        HexrdConfig().config['instrument'] = output_dict
+
+        # This adds in any missing keys. In particular, it is going to
+        # add in any "None" detector distortions
+        HexrdConfig().set_detector_defaults_if_missing()
+
+        # Add status values
+        HexrdConfig().add_status(output_dict)
+
+        # Set the previous statuses to be the current statuses
+        HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
 
     def set_exclusive_overlay_visibility(self, overlay):
         self.overlay_visibilities = [overlay is x for x in self.overlays]
