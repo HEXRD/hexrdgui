@@ -112,7 +112,7 @@ class ZoomCanvas(FigureCanvas):
 
     def plot_crosshairs(self, xlims, ylims):
         x_scale = 0.05
-        y_scale = 0.1
+        y_scale = 0.05
 
         center = np.array([np.mean(xlims), np.mean(ylims)])
 
@@ -161,14 +161,19 @@ class ZoomCanvas(FigureCanvas):
             np.degrees(pv.angular_grid[1][0, j_col[0]:j_col[1]]),
             np.sum(roi, axis=0)
         )
+        a3_data = (
+            np.sum(roi, axis=1),
+            np.degrees(pv.angular_grid[0][i_row[1]:i_row[2], 0])
+        )
 
         xlims = roi_deg[0:2, 0]
         ylims = roi_deg[2:0:-1, 1]
 
         if self.axes_images is None:
-            grid = self.figure.add_gridspec(3, 1)
-            a1 = self.figure.add_subplot(grid[:2, 0])
-            a2 = self.figure.add_subplot(grid[2, 0], sharex=a1)
+            grid = self.figure.add_gridspec(5, 5)
+            a1 = self.figure.add_subplot(grid[:4, :4])
+            a2 = self.figure.add_subplot(grid[4, :4], sharex=a1)
+            a3 = self.figure.add_subplot(grid[:4, 4], sharey=a1)
             a1.set_xlim(*xlims)
             a1.set_ylim(*ylims)
             im1 = a1.imshow(rsimg, extent=_extent, cmap=self.main_canvas.cmap,
@@ -176,15 +181,19 @@ class ZoomCanvas(FigureCanvas):
                             interpolation='none')
             a1.axis('auto')
             a1.label_outer()
+            a3.label_outer()
+            a3.tick_params(labelbottom=True)  # Label bottom anyways for a3
             self.cursor = Cursor(a1, useblit=True, color='red', linewidth=1)
             im2, = a2.plot(a2_data[0], a2_data[1])
+            im3, = a3.plot(a3_data[0], a3_data[1])
             self.figure.suptitle(r"ROI zoom")
             a2.set_xlabel(r"$2\theta$ [deg]")
             a2.set_ylabel(r"intensity")
             a1.set_ylabel(r"$\eta$ [deg]")
+            a3.set_xlabel(r"intensity")
             self.crosshairs = a1.plot([], [], 'r-')[0]
-            self.axes = [a1, a2]
-            self.axes_images = [im1, im2]
+            self.axes = [a1, a2, a3]
+            self.axes_images = [im1, im2, im3]
             self.grid = grid
         else:
             # Make sure we update the color map and norm each time
@@ -194,9 +203,12 @@ class ZoomCanvas(FigureCanvas):
             self.axes[0].set_xlim(*xlims)
             self.axes[0].set_ylim(*ylims)
             self.axes_images[1].set_data(a2_data)
+            self.axes_images[2].set_data(a3_data)
 
             self.axes[1].relim()
             self.axes[1].autoscale_view(scalex=False)
+            self.axes[2].relim()
+            self.axes[2].autoscale_view(scaley=False)
 
         if self.draw_crosshairs:
             self.plot_crosshairs(xlims, ylims)
