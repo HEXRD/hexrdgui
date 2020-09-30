@@ -170,6 +170,10 @@ class ZoomCanvas(FigureCanvas):
             self.axes_images = [im1, im2]
             self.grid = grid
         else:
+            # Make sure we update the color map and norm each time
+            self.axes_images[0].set_cmap(self.main_canvas.cmap)
+            self.axes_images[0].set_norm(self.main_canvas.norm)
+
             self.axes[0].set_xlim(*xlims)
             self.axes[0].set_ylim(*ylims)
             self.axes_images[1].set_data(a2_data)
