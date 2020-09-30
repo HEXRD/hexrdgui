@@ -24,6 +24,7 @@ class ZoomCanvas(FigureCanvas):
 
         self.draw_crosshairs = draw_crosshairs
 
+        self.axes = None
         self.axes_images = None
         self.frozen = False
 
@@ -31,6 +32,7 @@ class ZoomCanvas(FigureCanvas):
         ax = self.main_canvas.axis
         self.box_overlay_line = ax.plot([], [], 'm-')[0]
         self.crosshairs = None
+        self.vhlines = None
 
         # user-specified ROI in degrees (from interactors)
         self.tth_tol = 0.5
@@ -90,7 +92,19 @@ class ZoomCanvas(FigureCanvas):
     def mouse_moved(self, event):
         # Clear the crosshairs when the mouse is moving over the canvas
         self.clear_crosshairs()
+        self.update_vhlines(event)
         self.draw()
+
+    def update_vhlines(self, event):
+        # These are vertical and horizontal lines on the integral axes
+        if any(not x for x in [self.vhlines, self.axes]):
+            return
+
+        _, a2, a3 = self.axes
+        vline, hline = self.vhlines
+
+        vline.set_data([event.xdata] * 2, a2.get_ylim())
+        hline.set_data(a3.get_xlim(), [event.ydata] * 2)
 
     def main_canvas_mouse_moved(self, event):
         if event.inaxes is None:
@@ -195,6 +209,11 @@ class ZoomCanvas(FigureCanvas):
             self.axes = [a1, a2, a3]
             self.axes_images = [im1, im2, im3]
             self.grid = grid
+
+            # These are vertical and horizontal lines on the integral axes
+            vline, = a2.plot([], [], color='red', linewidth=1)
+            hline, = a3.plot([], [], color='red', linewidth=1)
+            self.vhlines = [vline, hline]
         else:
             # Make sure we update the color map and norm each time
             self.axes_images[0].set_cmap(self.main_canvas.cmap)
