@@ -92,40 +92,40 @@ DEFAULT_MONO_ROTATION_SERIES_STYLE = {
 
 HIGHLIGHT_POWDER_STYLE = {
     'data': {
-        'c': '#fce94f',  # Yellow
+        'c': '#ff00ff',  # Magenta
         'ls': 'solid',
-        'lw': 2.0
+        'lw': 3.0
     },
     'ranges': {
-        'c': '#fce94f',  # Yellow
+        'c': '#ff00ff',  # Magenta
         'ls': 'dotted',
-        'lw': 2.0
+        'lw': 3.0
     }
 }
 
 HIGHLIGHT_LAUE_STYLE = {
     'data': {
-        'c': '#fce94f',  # Yellow
+        'c': '#ff00ff',  # Magenta
         'marker': 'o',
         's': 4.0
     },
     'ranges': {
-        'c': '#fce94f',  # Yellow
+        'c': '#ff00ff',  # Magenta
         'ls': 'dotted',
-        'lw': 2.0
+        'lw': 3.0
     }
 }
 
 HIGHLIGHT_MONO_ROTATION_SERIES_STYLE = {
     'data': {
-        'c': '#fce94f',  # Yellow
+        'c': '#ff00ff',  # Magenta
         'ls': 'solid',
-        'lw': 2.0
+        'lw': 3.0
     },
     'ranges': {
-        'c': '#fce94f',  # Yellow
+        'c': '#ff00ff',  # Magenta
         'ls': 'dotted',
-        'lw': 2.0
+        'lw': 3.0
     }
 }
 
