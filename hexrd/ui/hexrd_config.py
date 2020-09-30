@@ -124,6 +124,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when a new polar mask has been created"""
     polar_masks_changed = Signal()
 
+    """Emitted when point picked calibration is complete"""
+    calibration_complete = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)

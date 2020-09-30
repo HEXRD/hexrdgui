@@ -175,8 +175,8 @@ def default_crystal_refinements():
     items += [f'position_{i}' for i in range(3)]
     items += [f'stretch_{x}' for x
               in inverse_matrix_strings]
-    default_refine = True
-    return [(x, default_refine) for x in items]
+    refine_indices = [0, 1, 2]  # Only refine these by default
+    return [(x, i in refine_indices) for i, x in enumerate(items)]
 
 
 DEFAULT_CRYSTAL_REFINEMENTS = default_crystal_refinements()

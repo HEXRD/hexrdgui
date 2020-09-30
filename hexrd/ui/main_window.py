@@ -216,6 +216,8 @@ class MainWindow(QObject):
         self.image_mode_widget.tab_changed.connect(
             self.mask_manager_dialog.image_mode_changed)
 
+        HexrdConfig().calibration_complete.connect(self.calibration_finished)
+
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
 
@@ -550,13 +552,8 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', str(e))
             return
 
-    def finish_calibration(self, res):
-        print('Received result from line picked calibration')
-
-        if res is not True:
-            print('Optimization failed!')
-            return
-
+    def calibration_finished(self):
+        print('Calibration finished')
         print('Updating the GUI')
         self.update_config_gui()
         self.update_all()
