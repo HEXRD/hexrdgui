@@ -72,6 +72,7 @@ class PowderLineOverlay:
 
     def overlay(self, display_mode=ViewType.raw):
         tths = self.plane_data.getTTh()
+        hkls = self.plane_data.getHKLs()
         etas = np.radians(
             np.linspace(
                 -180., 180., num=self.eta_steps + 1
@@ -90,18 +91,22 @@ class PowderLineOverlay:
 
         point_groups = {}
         for det_key, panel in self.instrument.detectors.items():
-            keys = ['rings', 'rbnds', 'rbnd_indices']
+            keys = ['rings', 'rbnds', 'rbnd_indices', 'hkls']
             point_groups[det_key] = {key: [] for key in keys}
-            ring_pts = self.generate_ring_points(tths, etas, panel,
-                                                 display_mode)
+            ring_pts, skipped_tth = self.generate_ring_points(
+                tths, etas, panel, display_mode)
+
+            det_hkls = [x for i, x in enumerate(hkls) if i not in skipped_tth]
+
             point_groups[det_key]['rings'] = ring_pts
+            point_groups[det_key]['hkls'] = det_hkls
 
             if self.plane_data.tThWidth is not None:
                 # Generate the ranges too
-                lower_pts = self.generate_ring_points(
+                lower_pts, _ = self.generate_ring_points(
                     r_lower, etas, panel, display_mode
                 )
-                upper_pts = self.generate_ring_points(
+                upper_pts, _ = self.generate_ring_points(
                     r_upper, etas, panel, display_mode
                 )
                 for lpts, upts in zip(lower_pts, upper_pts):
@@ -114,7 +119,8 @@ class PowderLineOverlay:
     def generate_ring_points(self, tths, etas, panel, display_mode):
         delta_eta_nom = np.degrees(np.median(np.diff(etas)))
         ring_pts = []
-        for tth in tths:
+        skipped_tth = []
+        for i, tth in enumerate(tths):
             # construct ideal angular coords
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
 
@@ -123,6 +129,7 @@ class PowderLineOverlay:
 
             # skip if ring not on panel
             if len(xys_full) == 0:
+                skipped_tth.append(i)
                 continue
 
             # clip to detector panel
@@ -135,6 +142,7 @@ class PowderLineOverlay:
                 ang_crds, _ = panel.cart_to_angles(xys, self.instrument.tvec)
 
                 if len(ang_crds) == 0:
+                    skipped_tth.append(i)
                     continue
 
                 # Swap columns, convert to degrees
@@ -204,4 +212,4 @@ class PowderLineOverlay:
                     nxys[ii + i:, :] = xys[ii:, :]
                     ring_pts.append(np.vstack([nxys, nans_row]))
 
-        return ring_pts
+        return ring_pts, skipped_tth
