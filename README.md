@@ -46,6 +46,10 @@ conda install -c hexrd -c cjh1 -c anaconda -c conda-forge hexrdgui
 conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c cjh1 -c anaconda -c conda-forge hexrdgui
 ```
 
+## Binary packages
+
+Binary packages for Windows, Mac and Linux can be found attached to each [release](https://github.com/HEXRD/hexrdgui/releases)
+
 # Run
 
 ```bash
