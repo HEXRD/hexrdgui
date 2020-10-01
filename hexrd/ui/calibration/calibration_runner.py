@@ -129,9 +129,7 @@ class CalibrationRunner:
         self._calibration_line_picker.last_point_removed.connect(
             self.last_point_removed)
         self._calibration_line_picker.finished.connect(
-            self.restore_backup_overlay_visibilities)
-        self._calibration_line_picker.finished.connect(
-            self.remove_all_highlighting)
+            self.calibration_line_picker_finished)
         self._calibration_line_picker.result.connect(self.finish_line)
 
     def finish_line(self):
@@ -280,6 +278,11 @@ class CalibrationRunner:
     def set_exclusive_overlay_visibility(self, overlay):
         self.overlay_visibilities = [overlay is x for x in self.overlays]
 
+    def calibration_line_picker_finished(self):
+        self.pad_data_with_empty_lists()
+        self.restore_backup_overlay_visibilities()
+        self.remove_all_highlighting()
+
     def restore_backup_overlay_visibilities(self):
         self.overlay_visibilities = self.backup_overlay_visibilities
         HexrdConfig().overlay_config_changed.emit()
@@ -329,6 +332,10 @@ class CalibrationRunner:
         self.overlay_data_index_map = data_map
 
     def save_overlay_picks(self):
+        # Make sure there is at least an empty list for each detector
+        for key in self.active_overlay['data'].keys():
+            if key not in self.overlay_picks:
+                self.overlay_picks[key] = []
         self.all_overlay_picks[self.current_overlay_ind] = self.overlay_picks
 
     @property
@@ -353,6 +360,20 @@ class CalibrationRunner:
 
         raise Exception(f'Not implemented: {self.active_overlay_type}')
 
+    def pad_data_with_empty_lists(self):
+        # This increments the overlay data index to the end and inserts
+        # empty lists along the way.
+        if self.active_overlay_type == OverlayType.powder:
+            while self.current_data_path is not None:
+                # This will automatically insert a list for powder
+                self.current_data_list
+                self.overlay_data_index += 1
+        elif self.active_overlay_type == OverlayType.laue:
+            while self.current_data_path is not None:
+                # Use NaN's to indicate a skip for laue
+                self.current_data_list.append((np.nan, np.nan))
+                self.overlay_data_index += 1
+
     def increment_overlay_data_index(self):
         self.overlay_data_index += 1
         data_path = self.current_data_path
@@ -363,6 +384,10 @@ class CalibrationRunner:
             return
 
         self.set_highlighting([data_path])
+
+        if self.active_overlay_type == OverlayType.powder:
+            # Make sure a list is automatically inserted for powder
+            self.current_data_list
 
     def decrement_overlay_data_index(self):
         if self.overlay_data_index == 0:
