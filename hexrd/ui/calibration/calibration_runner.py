@@ -420,4 +420,5 @@ class CalibrationRunner:
             self.current_data_list.pop(-1)
         elif self.active_overlay_type == OverlayType.laue:
             self.decrement_overlay_data_index()
-            self.current_data_list.clear()
+            if self.current_data_list:
+                self.current_data_list.pop(-1)
