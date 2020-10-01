@@ -34,11 +34,21 @@ CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
 
 # Install
 
+## conda (release)
+
+```bash
+conda install -c hexrd -c cjh1 -c anaconda -c conda-forge hexrdgui
+```
+
 ## conda (prerelease)
 
 ```bash
 conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c cjh1 -c anaconda -c conda-forge hexrdgui
 ```
+
+## Binary packages
+
+Binary packages for Windows, Mac and Linux can be found attached to each [release](https://github.com/HEXRD/hexrdgui/releases)
 
 # Run
 
