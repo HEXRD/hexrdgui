@@ -61,12 +61,14 @@ pip install --no-deps -U -e hexrdgui
 # Install
 
 ## conda (release)
+### Install the latest release
 
 ```bash
 conda install -c hexrd -c cjh1 -c anaconda -c conda-forge hexrdgui
 ```
 
 ## conda (prerelease)
+### Install the latest changes on master. This release may be unstable.
 
 ```bash
 conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c cjh1 -c anaconda -c conda-forge hexrdgui
