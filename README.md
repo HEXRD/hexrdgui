@@ -56,6 +56,10 @@ set CONDA_BUILD=1
 pip install --no-deps -U -e hexrdgui
 ```
 
+If you are running in Windows PowerShell or other environments where the stdout
+and stderr is not appearing in the console you can run the python module directly
+`python hexrdgui/hexrd/ui/main.py`, you should then see stdout and stderr.
+
 # Install
 
 ## conda (release)
