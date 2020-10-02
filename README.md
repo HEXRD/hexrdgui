@@ -33,8 +33,6 @@ CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
 ### Mac OS
 ```bash
 # First, make sure python3.8+ is installed.
-# If it is not, run the following command:
-conda install -c anaconda python=3.8
 # On OSX you will need to use the Python package from the HEXRD channel
 # See the following issue for more details: https://github.com/HEXRD/hexrdgui/issues/505
 conda install -c HEXRD python=3.8.4
@@ -54,7 +52,7 @@ conda install -c anaconda python=3.8
 conda install -c HEXRD -c cjh1 -c anaconda -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
 pip install --no-deps -U -e hexrd
-BUILD_CONDA_BUILD=1
+set CONDA_BUILD=1
 pip install --no-deps -U -e hexrdgui
 ```
 
