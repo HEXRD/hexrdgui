@@ -18,6 +18,19 @@ pip install -e hexrdgui
 
 ## conda
 
+### Linux
+```bash
+# First, make sure python3.8+ is installed.
+# If it is not, run the following command:
+conda install -c anaconda python=3.8
+# Install deps using conda package
+conda install -c HEXRD -c cjh1 -c anaconda -c conda-forge hexrdgui
+# Now using pip to link repo's into environment for development
+pip install --no-deps -U -e hexrd
+CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
+```
+
+### Mac OS
 ```bash
 # First, make sure python3.8+ is installed.
 # If it is not, run the following command:
@@ -30,6 +43,19 @@ conda install -c HEXRD -c cjh1 -c anaconda -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
 pip install --no-deps -U -e hexrd
 CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
+```
+
+### Windows
+```bash
+# First, make sure python3.8+ is installed.
+# If it is not, run the following command:
+conda install -c anaconda python=3.8
+# Install deps using conda package
+conda install -c HEXRD -c cjh1 -c anaconda -c conda-forge hexrdgui
+# Now using pip to link repo's into environment for development
+pip install --no-deps -U -e hexrd
+BUILD_CONDA_BUILD=1
+pip install --no-deps -U -e hexrdgui
 ```
 
 # Install
