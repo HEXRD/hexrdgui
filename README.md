@@ -18,10 +18,21 @@ pip install -e hexrdgui
 
 ## conda
 
+### Linux
 ```bash
 # First, make sure python3.8+ is installed.
 # If it is not, run the following command:
 conda install -c anaconda python=3.8
+# Install deps using conda package
+conda install -c HEXRD -c cjh1 -c anaconda -c conda-forge hexrdgui
+# Now using pip to link repo's into environment for development
+pip install --no-deps -U -e hexrd
+CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
+```
+
+### Mac OS
+```bash
+# First, make sure python3.8+ is installed.
 # On OSX you will need to use the Python package from the HEXRD channel
 # See the following issue for more details: https://github.com/HEXRD/hexrdgui/issues/505
 conda install -c HEXRD python=3.8.4
@@ -32,15 +43,34 @@ pip install --no-deps -U -e hexrd
 CONDA_BUILD=1 pip install --no-deps -U -e hexrdgui
 ```
 
+### Windows
+```bash
+# First, make sure python3.8+ is installed.
+# If it is not, run the following command:
+conda install -c anaconda python=3.8
+# Install deps using conda package
+conda install -c HEXRD -c cjh1 -c anaconda -c conda-forge hexrdgui
+# Now using pip to link repo's into environment for development
+pip install --no-deps -U -e hexrd
+set CONDA_BUILD=1
+pip install --no-deps -U -e hexrdgui
+```
+
+If you are running in Windows PowerShell or other environments where the stdout
+and stderr is not appearing in the console you can run the python module directly
+`python hexrdgui/hexrd/ui/main.py`, you should then see stdout and stderr.
+
 # Install
 
 ## conda (release)
+### Install the latest release
 
 ```bash
 conda install -c hexrd -c cjh1 -c anaconda -c conda-forge hexrdgui
 ```
 
 ## conda (prerelease)
+### Install the latest changes on master. This release may be unstable.
 
 ```bash
 conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c cjh1 -c anaconda -c conda-forge hexrdgui
