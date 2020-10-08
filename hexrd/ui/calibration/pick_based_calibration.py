@@ -302,10 +302,7 @@ class PowderCalibrator(object):
             pick_angs = pick_angs_dict[det_key]
             pick_xys = pick_xys_dict[det_key]
             assert len(pick_angs) == len(dsp_ref), "picks are wrong length"
-            if len(pick_angs) != len(pick_xys):
-                import pdb
-                pdb.set_trace()
-                assert len(pick_angs) == len(pick_xys), "pick xy data inconsistent"
+            assert len(pick_angs) == len(pick_xys), "pick xy data inconsistent"
             # the data structure is:
             #     [x, y, tth, eta, h, k, l, dsp0]
             # FIXME: clean this up!
