@@ -9,6 +9,7 @@ import numpy as np
 
 from scipy.optimize import leastsq
 
+from hexrd.transforms import xfcapi
 from hexrd.ui.calibration.calibrationutil import sxcal_obj_func
 
 
@@ -31,14 +32,18 @@ def enrich_pick_data(picks, instr, materials):
             if pick_type == 'laue':
                 # need grain parameters and stacked picks
                 grain_params = pick_data['options']['crystal_params']
-                tth_eta_picks = np.vstack(pick_dict[det_key])
-
-                # calculate cartesian coords
-                xy_picks = panel.angles_to_cart(
-                    np.radians(tth_eta_picks),
-                    tvec_c=np.asarray(grain_params[3:6], dtype=float)
-                )
-                pick_data[data_key][det_key] = xy_picks
+                tth_eta_picks = pick_dict[det_key]
+                if len(tth_eta_picks) == 0:
+                    tth_eta_picks = np.empty((0, 2))
+                    pick_data[data_key][det_key] = np.empty((0, 2))
+                else:
+                    # calculate cartesian coords
+                    tth_eta_picks = np.vstack(tth_eta_picks)
+                    xy_picks = panel.angles_to_cart(
+                        np.radians(tth_eta_picks),
+                        tvec_c=np.asarray(grain_params[3:6], dtype=float)
+                    )
+                    pick_data[data_key][det_key] = xy_picks
             elif pick_type == 'powder':
                 # need translation vector
                 tvec_c = np.asarray(
@@ -53,7 +58,9 @@ def enrich_pick_data(picks, instr, materials):
                             np.atleast_2d(np.radians(ring_picks)),
                             tvec_c=tvec_c
                         )
-                        pdl.append(xy_picks)
+                    else:
+                        xy_picks = []
+                    pdl.append(xy_picks)
                 pick_data[data_key][det_key] = pdl
 
 
@@ -75,7 +82,8 @@ class LaueCalibrator(object):
             [self._instr.calibration_parameters, self._params]
         )
         assert len(flags) == len(self._full_params), \
-            "flags must have %d elements" % len(self._full_params)
+            "flags must have %d elements; you gave %d" \
+            % len(self._full_params, len(flags))
         self._flags = flags
         self._energy_cutoffs = [min_energy, max_energy]
 
@@ -266,8 +274,6 @@ class PowderCalibrator(object):
         """
         # need this for dsp
         bmatx = self.plane_data.latVecOps['B']
-        hkls_ref = self.plane_data.hkls.T
-        dsp_ref = self.plane_data.getPlaneSpacings()
 
         # first update instrument from input parameters
         full_params = np.asarray(self.full_params)
@@ -288,6 +294,11 @@ class PowderCalibrator(object):
         # build residual
         retval = []
         for det_key, panel in self.instr.detectors.items():
+            # !!! now grabbing this from picks
+            hkls_ref = np.asarray(data_dict['hkls'][det_key], dtype=int)
+            gvecs = np.dot(hkls_ref, bmatx.T)
+            dsp_ref = 1./xfcapi.rowNorm(gvecs)
+
             pick_angs = pick_angs_dict[det_key]
             pick_xys = pick_xys_dict[det_key]
             assert len(pick_angs) == len(dsp_ref), "picks are wrong length"
