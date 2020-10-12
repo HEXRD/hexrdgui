@@ -132,7 +132,9 @@ class FitGrainsResultsDialog(QObject):
         self.ui.plot_color_option.addItem('YZ Strain', 18)
         self.ui.plot_color_option.addItem('XZ Strain', 19)
         self.ui.plot_color_option.addItem('XY Strain', 20)
-        self.ui.plot_color_option.setCurrentIndex(0)
+
+        index = self.ui.plot_color_option.findData(-1)
+        self.ui.plot_color_option.setCurrentIndex(index)
 
     def setup_tableview(self):
         view = self.ui.table_view
