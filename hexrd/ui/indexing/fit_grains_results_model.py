@@ -63,9 +63,8 @@ class FitGrainsResultsModel(QAbstractTableModel):
             header = delim.join(
                 [delim.join(
                     np.tile('{:<12}', 3)
-                    ).format(*header_items[:3]),
-                delim.join(
-                    np.tile('{:<23}', len(header_items) - 3)
+                    ).format(*header_items[:3]), delim.join(
+                        np.tile('{:<23}', len(header_items) - 3)
                     ).format(*header_items[3:])]
             )
             fp.write(header)
@@ -77,8 +76,7 @@ class FitGrainsResultsModel(QAbstractTableModel):
                 output_str = delim.join(
                     [delim.join(
                         ['{:<12d}', '{:<12f}', '{:<12e}']
-                    ).format(*res[:3]),
-                    delim.join(
+                    ).format(*res[:3]), delim.join(
                         np.tile('{:<23.16e}', len(res) - 3)
                     ).format(*res[3:])]
                 )

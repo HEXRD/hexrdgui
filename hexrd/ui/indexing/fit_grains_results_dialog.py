@@ -7,7 +7,9 @@ import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
+from PySide2.QtCore import (
+    QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
+)
 from PySide2.QtWidgets import QFileDialog, QSizePolicy
 
 import hexrd.ui.constants
@@ -45,7 +47,7 @@ class FitGrainsResultsDialog(QObject):
         eqv_strain = np.zeros(ngrains)
         for i in range(ngrains):
             emat = vecMVToSymm(self.data[i, 15:21], scale=False)
-            eqv_strain[i]= 2.*np.sqrt(np.sum(emat*emat))/3.
+            eqv_strain[i] = 2.*np.sqrt(np.sum(emat*emat))/3.
         np.append(self.data, eqv_strain)
 
         self.setup_selectors()
@@ -66,7 +68,8 @@ class FitGrainsResultsDialog(QObject):
         if self.colorbar is not None:
             self.colorbar.remove()
             del self.colorbar
-        scatter_plot = self.ax.scatter3D(xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
+        scatter_plot = self.ax.scatter3D(
+            xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
         self.colorbar = self.fig.colorbar(scatter_plot, shrink=0.8)
         self.fig.canvas.draw()
 
@@ -87,13 +90,15 @@ class FitGrainsResultsDialog(QObject):
         """Shows sort indicator for columns 0-2, hides for all others."""
         if index < 3:
             self.ui.table_view.horizontalHeader().setSortIndicatorShown(True)
-            self.ui.table_view.horizontalHeader().setSortIndicator(index, order)
+            self.ui.table_view.horizontalHeader().setSortIndicator(
+                index, order)
         else:
             self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
     def setup_connections(self):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
-        self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
+        self.ui.plot_color_option.currentIndexChanged.connect(
+            self.on_colorby_changed)
         self.ui.finished.connect(self.finished)
 
     def setup_plot(self):
@@ -147,7 +152,8 @@ class FitGrainsResultsDialog(QObject):
         view.resizeColumnToContents(0)
 
         view.setSortingEnabled(True)
-        view.horizontalHeader().sortIndicatorChanged.connect(self.on_sort_indicator_changed)
+        view.horizontalHeader().sortIndicatorChanged.connect(
+            self.on_sort_indicator_changed)
         view.sortByColumn(0, Qt.AscendingOrder)
         self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 

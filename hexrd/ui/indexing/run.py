@@ -181,7 +181,8 @@ class IndexingRunner(QObject):
         config.set('fitgrains:tth_max', dialog_config['tth_max'])
         config.set('fitgrains:tolerance:tth', dialog_config['tth_tolerances'])
         config.set('fitgrains:tolerance:eta', dialog_config['eta_tolerances'])
-        config.set('fitgrains:tolerance:omega', dialog_config['omega_tolerances'])
+        config.set(
+            'fitgrains:tolerance:omega', dialog_config['omega_tolerances'])
 
         kwargs = {
             'compl': self.completeness,
@@ -218,7 +219,8 @@ class IndexingRunner(QObject):
 
     def view_fit_grains_results(self):
         if self.fit_grains_results is None:
-            QMessageBox.information(self.parent, "No Grains Fond", "No grains were found")
+            QMessageBox.information(
+                self.parent, "No Grains Fond", "No grains were found")
             return
 
         for result in self.fit_grains_results:
