@@ -119,12 +119,11 @@ class LinePickerDialog(QObject):
 
     def zoom_point_picked(self, event):
         self.zoom_frozen = False
-        lb = self.linebuilder
-        if lb is None:
+        if self.linebuilder is None:
             return
 
-        # Forward the event to the line builder
-        lb.handle_left_click(event)
+        # Append the data to the line builder
+        self.linebuilder.append_data(event.xdata, event.ydata)
 
     def back_button_pressed(self):
         linebuilder = self.linebuilder
@@ -196,21 +195,37 @@ class LinePickerDialog(QObject):
         self.add_line()
 
     def button_pressed(self, event):
-        if event.button == 3 and not self.single_line_mode:
+        if event.button == 3:
+            # Advance the line to the next one
+            self.next_line()
+            return
+
+        if event.button != 1:
+            # Nothing else to do
+            return
+
+        if self.two_click_mode:
+            # Freeze the zoom window
+            self.zoom_frozen = True
+            return
+
+        if self.linebuilder is None:
+            return
+
+        self.linebuilder.append_data(event.xdata, event.ydata)
+
+    def next_line(self):
+        if not self.single_line_mode:
+            # Complete a line
             self.line_completed.emit()
             self.line_finished()
             return
 
-        if event.button == 1 and self.two_click_mode:
-            self.zoom_frozen = True
+        # Otherwise, insert NaNs
+        if self.linebuilder is None:
             return
 
-        lb = self.linebuilder
-        if lb is None:
-            return
-
-        # Forward the event to the line builder
-        lb.button_pressed(event)
+        self.linebuilder.append_data(np.nan, np.nan)
 
     def accept(self):
         # Finish the current line
@@ -250,28 +265,6 @@ class LineBuilder(QObject):
         self.canvas = line.figure.canvas
         self.xs = list(line.get_xdata())
         self.ys = list(line.get_ydata())
-
-    def button_pressed(self, event):
-        """
-        Picker callback
-        """
-        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-              ('double' if event.dblclick else 'single', event.button,
-               event.x, event.y, event.xdata, event.ydata))
-
-        if event.inaxes != self.line.axes:
-            return
-
-        if event.button == 1:
-            self.handle_left_click(event)
-        elif event.button == 2:
-            self.handle_middle_click(event)
-
-    def handle_left_click(self, event):
-        self.append_data(event.xdata, event.ydata)
-
-    def handle_middle_click(self, event):
-        self.append_data(np.nan, np.nan)
 
     def append_data(self, x, y):
         self.xs.append(x)
