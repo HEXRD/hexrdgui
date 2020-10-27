@@ -31,6 +31,7 @@ class FitGrainsResultsDialog(QObject):
         self.data_model = FitGrainsResultsModel(data)
         self.canvas = None
         self.fig = None
+        self.scatter_artist = None
         self.colorbar = None
 
         loader = UiLoader()
@@ -55,6 +56,16 @@ class FitGrainsResultsDialog(QObject):
         self.setup_connections()
         self.on_colorby_changed()
 
+    def clear_artists(self):
+        # Colorbar must be removed before the scatter artist
+        if self.colorbar is not None:
+            self.colorbar.remove()
+            self.colorbar = None
+
+        if self.scatter_artist is not None:
+            self.scatter_artist.remove()
+            self.scatter_artist = None
+
     def on_colorby_changed(self):
         column = self.ui.plot_color_option.currentData()
         colors = self.data[:, column]
@@ -64,13 +75,12 @@ class FitGrainsResultsDialog(QObject):
         zs = self.data[:, 8]
         sz = matplotlib.rcParams['lines.markersize'] ** 3
 
-        self.ax.clear()
-        if self.colorbar is not None:
-            self.colorbar.remove()
-            del self.colorbar
-        scatter_plot = self.ax.scatter3D(
+        # I could not find a way to update scatter plot marker colors and
+        # the colorbar mappable. So we must re-draw both from scratch...
+        self.clear_artists()
+        self.scatter_artist = self.ax.scatter3D(
             xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
-        self.colorbar = self.fig.colorbar(scatter_plot, shrink=0.8)
+        self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
         self.fig.canvas.draw()
 
     def on_export_button_pressed(self):
