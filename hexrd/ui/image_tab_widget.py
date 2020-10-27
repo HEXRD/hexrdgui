@@ -139,7 +139,8 @@ class ImageTabWidget(QTabWidget):
         while len(self.toolbars) != len(self.image_canvases):
             # The new one to add
             idx = len(self.toolbars)
-            tb = NavigationToolbar(self.image_canvases[idx], parent, False)
+            tb = NavigationToolbar(self.image_canvases[idx], parent, False,
+                                   button_blacklist='Subplots')
             # Current detector
             name = self.image_names[idx]
             sb = ImageSeriesToolbar(name, self)
