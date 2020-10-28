@@ -1,3 +1,4 @@
+from functools import partial
 import os
 
 import numpy as np
@@ -11,7 +12,7 @@ from matplotlib.figure import Figure
 from PySide2.QtCore import (
     QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
 )
-from PySide2.QtWidgets import QFileDialog, QSizePolicy
+from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
 
 import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -56,6 +57,7 @@ class FitGrainsResultsDialog(QObject):
         self.setup_selectors()
         self.setup_plot()
         self.setup_toolbar()
+        self.setup_view_direction_options()
         self.setup_connections()
         self.on_colorby_changed()
 
@@ -128,6 +130,10 @@ class FitGrainsResultsDialog(QObject):
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
         self.ui.finished.connect(self.finished)
 
+        for name in ('x', 'y', 'z'):
+            action = getattr(self, f'set_view_{name}')
+            action.triggered.connect(partial(self.reset_view, name))
+
     def setup_plot(self):
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -163,17 +169,65 @@ class FitGrainsResultsDialog(QObject):
         self.ui.toolbar_layout.addWidget(self.toolbar)
         self.ui.toolbar_layout.setAlignment(self.toolbar, Qt.AlignCenter)
 
+    def setup_view_direction_options(self):
+        b = self.ui.set_view_direction
+
+        m = QMenu(b)
+        self.set_view_direction_menu = m
+
+        self.set_view_z = m.addAction('XY')
+        self.set_view_y = m.addAction('XZ')
+        self.set_view_x = m.addAction('YZ')
+
+        b.setMenu(m)
+
+    def reset_view(self, direction):
+        # The adjustment is to force the tick markers and label to
+        # appear on one side.
+        adjust = 1.e-5
+
+        angles_map = {
+            'x': (0, 0),
+            'y': (0, 90 - adjust),
+            'z': (90 - adjust, -90 - adjust)
+        }
+        self.ax.view_init(*angles_map[direction])
+
+        # Temporarily hide the labels of the axis perpendicular to the
+        # screen for easier viewing.
+        if self.axes_visible:
+            self.hide_axis(direction)
+
+        self.canvas.draw()
+
+        # As soon as the image is re-drawn, the perpendicular axis will
+        # be visible again.
+        if self.axes_visible:
+            self.show_axis(direction)
+
+    def set_axis_visible(self, name, visible):
+        ax = getattr(self.ax, f'{name}axis')
+        set_label_func = getattr(self.ax, f'set_{name}label')
+        if visible:
+            ax.set_major_locator(ticker.AutoLocator())
+            set_label_func(name.upper())
+        else:
+            ax.set_ticks([])
+            set_label_func('')
+
+    def hide_axis(self, name):
+        self.set_axis_visible(name, False)
+
+    def show_axis(self, name):
+        self.set_axis_visible(name, True)
+
+    @property
+    def axes_visible(self):
+        return not self.ui.hide_axes.isChecked()
+
     def update_axis_visibility(self):
-        visible = not self.ui.hide_axes.isChecked()
         for name in ('x', 'y', 'z'):
-            ax = getattr(self.ax, f'{name}axis')
-            set_label_func = getattr(self.ax, f'set_{name}label')
-            if not visible:
-                ax.set_ticks([])
-                set_label_func('')
-            else:
-                ax.set_major_locator(ticker.AutoLocator())
-                set_label_func(name.upper())
+            self.set_axis_visible(name, self.axes_visible)
 
         self.canvas.draw()
 
