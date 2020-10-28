@@ -199,12 +199,12 @@
               <widget class="QComboBox" name="projection">
                <item>
                 <property name="text">
-                 <string>Perspective</string>
+                 <string>Orthographic</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>Orthographic</string>
+                 <string>Perspective</string>
                 </property>
                </item>
               </widget>
