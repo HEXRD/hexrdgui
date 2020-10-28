@@ -4,6 +4,7 @@ import numpy as np
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib
+import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
@@ -109,6 +110,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
         self.ui.plot_color_option.currentIndexChanged.connect(
             self.on_colorby_changed)
+        self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
         self.ui.finished.connect(self.finished)
 
     def setup_plot(self):
@@ -128,6 +130,20 @@ class FitGrainsResultsDialog(QObject):
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
+
+    def update_axis_visibility(self):
+        visible = not self.ui.hide_axes.isChecked()
+        for name in ('x', 'y', 'z'):
+            ax = getattr(self.ax, f'{name}axis')
+            set_label_func = getattr(self.ax, f'set_{name}label')
+            if not visible:
+                ax.set_ticks([])
+                set_label_func('')
+            else:
+                ax.set_major_locator(ticker.AutoLocator())
+                set_label_func(name.upper())
+
+        self.canvas.draw()
 
     def setup_selectors(self):
         # Build combo boxes in code to assign columns in grains data
