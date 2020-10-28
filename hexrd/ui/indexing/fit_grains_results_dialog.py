@@ -17,6 +17,7 @@ import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
+from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -54,6 +55,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.setup_selectors()
         self.setup_plot()
+        self.setup_toolbar()
         self.setup_connections()
         self.on_colorby_changed()
 
@@ -130,6 +132,23 @@ class FitGrainsResultsDialog(QObject):
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
+
+    def setup_toolbar(self):
+        # These don't work for 3D plots
+        # "None" removes the separators
+        button_blacklist = [
+            None,
+            'Home',
+            'Back',
+            'Forward',
+            'Pan',
+            'Zoom',
+            'Subplots'
+        ]
+        self.toolbar = NavigationToolbar(self.canvas, self.ui, False,
+                                         button_blacklist)
+        self.ui.toolbar_layout.addWidget(self.toolbar)
+        self.ui.toolbar_layout.setAlignment(self.toolbar, Qt.AlignCenter)
 
     def update_axis_visibility(self):
         visible = not self.ui.hide_axes.isChecked()

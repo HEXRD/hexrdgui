@@ -202,6 +202,9 @@
     </widget>
    </item>
    <item>
+    <layout class="QVBoxLayout" name="toolbar_layout"/>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="button_box">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
