@@ -130,14 +130,14 @@
              <property name="bottomMargin">
               <number>0</number>
              </property>
-             <item row="0" column="0">
+             <item row="1" column="0">
               <widget class="QLabel" name="plot_color_label">
                <property name="text">
-                <string>Color By</string>
+                <string>Color By:</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
+             <item row="1" column="1">
               <widget class="QComboBox" name="plot_color_option">
                <item>
                 <property name="text">
@@ -181,11 +181,32 @@
                </item>
               </widget>
              </item>
-             <item row="1" column="1">
+             <item row="2" column="1">
               <widget class="QCheckBox" name="hide_axes">
                <property name="text">
                 <string>Hide Axes</string>
                </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="projection_label">
+               <property name="text">
+                <string>Projection:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="projection">
+               <item>
+                <property name="text">
+                 <string>Perspective</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Orthographic</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -216,6 +237,13 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>table_view</tabstop>
+  <tabstop>export_button</tabstop>
+  <tabstop>projection</tabstop>
+  <tabstop>plot_color_option</tabstop>
+  <tabstop>hide_axes</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

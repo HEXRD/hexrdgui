@@ -108,8 +108,21 @@ class FitGrainsResultsDialog(QObject):
         else:
             self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
+    @property
+    def projection(self):
+        name_map = {
+            'Perspective': 'persp',
+            'Orthographic': 'ortho'
+        }
+        return name_map[self.ui.projection.currentText()]
+
+    def projection_changed(self):
+        self.ax.set_proj_type(self.projection)
+        self.canvas.draw()
+
     def setup_connections(self):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
+        self.ui.projection.currentIndexChanged.connect(self.projection_changed)
         self.ui.plot_color_option.currentIndexChanged.connect(
             self.on_colorby_changed)
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
@@ -123,7 +136,7 @@ class FitGrainsResultsDialog(QObject):
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         fig = canvas.figure
-        ax = fig.add_subplot(111, projection='3d')
+        ax = fig.add_subplot(111, projection='3d', proj_type=self.projection)
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
