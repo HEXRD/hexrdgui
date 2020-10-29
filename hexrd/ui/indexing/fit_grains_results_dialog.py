@@ -1,5 +1,6 @@
 from functools import partial
 import os
+import sys
 
 import numpy as np
 
@@ -54,12 +55,17 @@ class FitGrainsResultsDialog(QObject):
             eqv_strain[i] = 2.*np.sqrt(np.sum(emat*emat))/3.
         np.append(self.data, eqv_strain)
 
+        self.setup_gui()
+
+    def setup_gui(self):
         self.setup_selectors()
         self.setup_plot()
         self.setup_toolbar()
         self.setup_view_direction_options()
         self.setup_connections()
         self.on_colorby_changed()
+        self.backup_ranges()
+        self.update_ranges_gui()
 
     def clear_artists(self):
         # Colorbar must be removed before the scatter artist
@@ -86,7 +92,7 @@ class FitGrainsResultsDialog(QObject):
         self.scatter_artist = self.ax.scatter3D(
             xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
         self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
-        self.fig.canvas.draw()
+        self.draw()
 
     def on_export_button_pressed(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -120,7 +126,7 @@ class FitGrainsResultsDialog(QObject):
 
     def projection_changed(self):
         self.ax.set_proj_type(self.projection)
-        self.canvas.draw()
+        self.draw()
 
     def setup_connections(self):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
@@ -133,6 +139,12 @@ class FitGrainsResultsDialog(QObject):
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
             action.triggered.connect(partial(self.reset_view, name))
+
+        for w in self.range_widgets:
+            w.valueChanged.connect(self.update_ranges_mpl)
+            w.valueChanged.connect(self.update_range_constraints)
+
+        self.ui.reset_ranges.pressed.connect(self.reset_ranges)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -198,7 +210,7 @@ class FitGrainsResultsDialog(QObject):
         if self.axes_visible:
             self.hide_axis(direction)
 
-        self.canvas.draw()
+        self.draw()
 
         # As soon as the image is re-drawn, the perpendicular axis will
         # be visible again.
@@ -229,7 +241,7 @@ class FitGrainsResultsDialog(QObject):
         for name in ('x', 'y', 'z'):
             self.set_axis_visible(name, self.axes_visible)
 
-        self.canvas.draw()
+        self.draw()
 
     def setup_selectors(self):
         # Build combo boxes in code to assign columns in grains data
@@ -274,9 +286,73 @@ class FitGrainsResultsDialog(QObject):
     def show(self):
         self.ui.show()
 
+    @property
+    def range_widgets(self):
+        widgets = []
+        for name in ('x', 'y', 'z'):
+            for i in range(2):
+                widgets.append(getattr(self.ui, f'range_{name}_{i}'))
+
+        return widgets
+
+    @property
+    def ranges_gui(self):
+        return [w.value() for w in self.range_widgets]
+
+    @ranges_gui.setter
+    def ranges_gui(self, v):
+        self.remove_range_constraints()
+        for x, w in zip(v, self.range_widgets):
+            w.setValue(round(x, 5))
+        self.update_range_constraints()
+
+    @property
+    def ranges_mpl(self):
+        vals = []
+        for name in ('x', 'y', 'z'):
+            lims_func = getattr(self.ax, f'get_{name}lim')
+            vals.extend(lims_func())
+        return vals
+
+    @ranges_mpl.setter
+    def ranges_mpl(self, v):
+        for i, name in enumerate(('x', 'y', 'z')):
+            lims = (v[i * 2], v[i * 2 + 1])
+            set_func = getattr(self.ax, f'set_{name}lim')
+            set_func(*lims)
+
+    def update_ranges_mpl(self):
+        self.ranges_mpl = self.ranges_gui
+        self.draw()
+
+    def update_ranges_gui(self):
+        blocked = [QSignalBlocker(w) for w in self.range_widgets]  # noqa: F841
+        self.ranges_gui = self.ranges_mpl
+
+    def backup_ranges(self):
+        self._ranges_backup = self.ranges_mpl
+
+    def reset_ranges(self):
+        self.ranges_mpl = self._ranges_backup
+        self.update_ranges_gui()
+
+    def remove_range_constraints(self):
+        widgets = self.range_widgets
+        for w1, w2 in zip(widgets[0::2], widgets[1::2]):
+            w1.setMaximum(sys.float_info.max)
+            w2.setMinimum(sys.float_info.min)
+
+    def update_range_constraints(self):
+        widgets = self.range_widgets
+        for w1, w2 in zip(widgets[0::2], widgets[1::2]):
+            w1.setMaximum(w2.value())
+            w2.setMinimum(w1.value())
+
+    def draw(self):
+        self.canvas.draw()
+
 
 if __name__ == '__main__':
-    import sys
     from PySide2.QtCore import QCoreApplication
     from PySide2.QtWidgets import QApplication
 
