@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import numpy as np
+
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtWidgets import (
     QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
@@ -16,6 +18,7 @@ from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.indexing.run import IndexingRunner
+from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
 from hexrd.ui.calibration.wppf_runner import WppfRunner
@@ -130,6 +133,8 @@ class MainWindow(QObject):
             self.on_action_open_config_yaml_triggered)
         self.ui.action_open_config_dir.triggered.connect(
             self.on_action_open_config_dir_triggered)
+        self.ui.action_open_grain_fitting_results.triggered.connect(
+            self.open_grain_fitting_results)
         self.ui.action_save_config_yaml.triggered.connect(
             self.on_action_save_config_yaml_triggered)
         self.ui.action_save_config_dir.triggered.connect(
@@ -357,6 +362,20 @@ class MainWindow(QObject):
             path = path / 'config.yml'
 
             return HexrdConfig().save_instrument_config(str(path))
+
+    def open_grain_fitting_results(self):
+        selected_file, _ = QFileDialog.getOpenFileName(
+            self.ui, 'Open Grain Fitting File', HexrdConfig().working_dir,
+            'Grain fitting output files (*.out)')
+
+        if selected_file:
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            data = np.loadtxt(selected_file)
+            dialog = FitGrainsResultsDialog(data)
+            dialog.show()
+            self._fit_grains_results_dialog = dialog
 
     def on_detectors_changed(self):
         HexrdConfig().clear_overlay_data()
