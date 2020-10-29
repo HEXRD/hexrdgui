@@ -320,10 +320,10 @@ class FitGrainsResultsDialog(QObject):
             lims = (v[i * 2], v[i * 2 + 1])
             set_func = getattr(self.ax, f'set_{name}lim')
             set_func(*lims)
+        self.draw()
 
     def update_ranges_mpl(self):
         self.ranges_mpl = self.ranges_gui
-        self.draw()
 
     def update_ranges_gui(self):
         blocked = [QSignalBlocker(w) for w in self.range_widgets]  # noqa: F841
