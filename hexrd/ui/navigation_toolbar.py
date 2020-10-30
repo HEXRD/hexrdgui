@@ -1,5 +1,7 @@
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
+from hexrd.ui.utils import wrap_with_callbacks
+
 
 class NavigationToolbar(NavigationToolbar2QT):
 
@@ -25,3 +27,15 @@ class NavigationToolbar(NavigationToolbar2QT):
         # Restore the global navigation tool items for other parts of
         # the program to use them.
         NavigationToolbar2QT.toolitems = old_toolitems
+
+    @wrap_with_callbacks
+    def home(self, *args):
+        super().home(*args)
+
+    @wrap_with_callbacks
+    def back(self, *args):
+        super().back(*args)
+
+    @wrap_with_callbacks
+    def forward(self, *args):
+        super().back(*args)

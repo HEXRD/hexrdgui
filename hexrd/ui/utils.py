@@ -201,3 +201,28 @@ def create_unique_name(dic, name, value=0):
         name = f'{prefix}_{value}'
         value += 1
     return name
+
+
+def wrap_with_callbacks(func):
+    """Call callbacks before and/or after a member function
+
+    If this decorator is used on a member function, and if there is also
+    a member function defined on the object called
+    '{before/after}_{function_name}_callback', that function will be
+    called before/after the member function, with the same arguments
+    that are given to the member function.
+    """
+    def callback(self, when, *args, **kwargs):
+        func_name = func.__name__
+        callback_name = f'{when}_{func_name}_callback'
+        f = self.__dict__.get(callback_name)
+        if f is not None:
+            f(*args, **kwargs)
+
+    def wrapper(self, *args, **kwargs):
+        callback(self, 'before', *args, **kwargs)
+        ret = func(self, *args, **kwargs)
+        callback(self, 'after', *args, **kwargs)
+        return ret
+
+    return wrapper

@@ -169,9 +169,6 @@ class FitGrainsResultsDialog(QObject):
         # "None" removes the separators
         button_blacklist = [
             None,
-            'Home',
-            'Back',
-            'Forward',
             'Pan',
             'Zoom',
             'Subplots'
@@ -180,6 +177,12 @@ class FitGrainsResultsDialog(QObject):
                                          button_blacklist)
         self.ui.toolbar_layout.addWidget(self.toolbar)
         self.ui.toolbar_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+
+        # Make sure our ranges editor gets updated any time matplotlib
+        # might have modified the ranges underneath.
+        self.toolbar.after_home_callback = self.update_ranges_gui
+        self.toolbar.after_back_callback = self.update_ranges_gui
+        self.toolbar.after_forward_callback = self.update_ranges_gui
 
     def setup_view_direction_options(self):
         b = self.ui.set_view_direction
@@ -320,6 +323,11 @@ class FitGrainsResultsDialog(QObject):
             lims = (v[i * 2], v[i * 2 + 1])
             set_func = getattr(self.ax, f'set_{name}lim')
             set_func(*lims)
+
+        # Update the navigation stack so the home/back/forward
+        # buttons will know about the range change.
+        self.toolbar.push_current()
+
         self.draw()
 
     def update_ranges_mpl(self):
