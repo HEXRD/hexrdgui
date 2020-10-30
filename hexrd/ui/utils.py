@@ -1,6 +1,7 @@
 # Some general utilities that are used in multiple places
 
 from enum import IntEnum
+from functools import reduce
 import math
 import numpy as np
 
@@ -226,3 +227,9 @@ def wrap_with_callbacks(func):
         return ret
 
     return wrapper
+
+
+def compose(*functions):
+    # Combine a series of functions together.
+    # Note that the functions are called from right to left.
+    return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
