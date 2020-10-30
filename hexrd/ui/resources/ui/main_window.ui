@@ -63,6 +63,8 @@
      <addaction name="menu_load_config"/>
      <addaction name="action_open_materials"/>
      <addaction name="action_open_aps_imageseries"/>
+     <addaction name="separator"/>
+     <addaction name="action_open_grain_fitting_results"/>
     </widget>
     <widget class="QMenu" name="menu_save">
      <property name="title">
@@ -528,6 +530,11 @@
    </property>
    <property name="text">
     <string>WPPF</string>
+   </property>
+  </action>
+  <action name="action_open_grain_fitting_results">
+   <property name="text">
+    <string>Grain Fitting Results</string>
    </property>
   </action>
  </widget>
