@@ -162,8 +162,7 @@ class OmeMapsViewerDialog(QObject):
         fig.canvas.set_window_title('HEXRD')
         self.ui.canvas_layout.addWidget(canvas)
 
-        self.toolbar = NavigationToolbar(canvas, self.ui, False,
-                                         button_blacklist='Subplots')
+        self.toolbar = NavigationToolbar(canvas, self.ui, False)
         self.ui.canvas_layout.addWidget(self.toolbar)
 
         # Center the toolbar

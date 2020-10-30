@@ -5,6 +5,8 @@ from hexrd.ui.utils import wrap_with_callbacks
 
 class NavigationToolbar(NavigationToolbar2QT):
 
+    default_button_blacklist = ['Subplots', 'Customize']
+
     def __init__(self, canvas, parent, coordinates=True,
                  button_blacklist=None):
         # This adds the option to blacklist some of the buttons for the
@@ -12,7 +14,7 @@ class NavigationToolbar(NavigationToolbar2QT):
         # Subplots, Save.
         # Blacklisting the None object removes separators.
         if button_blacklist is None:
-            button_blacklist = []
+            button_blacklist = self.default_button_blacklist
         elif not isinstance(button_blacklist, (list, tuple)):
             button_blacklist = [button_blacklist]
 

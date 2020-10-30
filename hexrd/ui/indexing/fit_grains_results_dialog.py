@@ -171,7 +171,8 @@ class FitGrainsResultsDialog(QObject):
             None,
             'Pan',
             'Zoom',
-            'Subplots'
+            'Subplots',
+            'Customize'
         ]
         self.toolbar = NavigationToolbar(self.canvas, self.ui, False,
                                          button_blacklist)
