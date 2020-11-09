@@ -381,6 +381,11 @@ if __name__ == '__main__':
     # print(data)
 
     dialog = FitGrainsResultsDialog(data)
+
+    # For the sample, don't make it a Qt tool
+    flags = dialog.ui.windowFlags()
+    dialog.ui.setWindowFlags(flags & ~Qt.Tool)
+
     dialog.ui.resize(1200, 800)
     dialog.finished.connect(app.quit)
     dialog.show()
