@@ -9,6 +9,7 @@ from PySide2.QtWidgets import QComboBox, QFileDialog, QMenu, QMessageBox
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
+from hexrd.ui.material_properties_editor import MaterialPropertiesEditor
 from hexrd.ui.material_structure_editor import MaterialStructureEditor
 from hexrd.ui.overlay_manager import OverlayManager
 from hexrd.ui.ui_loader import UiLoader
@@ -32,6 +33,10 @@ class MaterialsPanel(QObject):
         self.material_structure_editor = MaterialStructureEditor(self.ui)
         self.ui.material_structure_editor_layout.addWidget(
             self.material_structure_editor.ui)
+
+        self.material_properties_editor = MaterialPropertiesEditor(self.ui)
+        self.ui.material_properties_editor_layout.addWidget(
+            self.material_properties_editor.ui)
 
         # Turn off autocomplete for the QComboBox
         self.ui.materials_combo.setCompleter(None)
@@ -69,9 +74,7 @@ class MaterialsPanel(QObject):
             self.modify_material_name)
 
         self.material_editor_widget.material_modified.connect(
-            self.update_table)
-        self.material_editor_widget.material_modified.connect(
-            self.update_refinement_options)
+            self.material_modified)
 
         self.ui.show_materials_table.pressed.connect(self.show_materials_table)
         self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
@@ -172,8 +175,16 @@ class MaterialsPanel(QObject):
         self.update_table()
         self.update_enable_states()
 
+    def material_modified(self):
+        self.update_table()
+        self.update_refinement_options()
+        self.update_properties_tab()
+
     def update_structure_tab(self):
         self.material_structure_editor.update_gui()
+
+    def update_properties_tab(self):
+        self.material_properties_editor.update_gui()
 
     def update_material_limits(self):
         max_tth = HexrdConfig().active_material_tth_max
@@ -203,6 +214,7 @@ class MaterialsPanel(QObject):
         HexrdConfig().active_material = self.current_material()
         self.material_editor_widget.material = HexrdConfig().active_material
         self.update_structure_tab()
+        self.update_properties_tab()
 
     def current_material(self):
         return self.ui.materials_combo.currentText()
@@ -235,6 +247,7 @@ class MaterialsPanel(QObject):
             HexrdConfig().import_material(selected_file)
             self.update_gui_from_config()
             self.update_structure_tab()
+            self.update_properties_tab()
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
@@ -248,6 +261,7 @@ class MaterialsPanel(QObject):
         self.material_editor_widget.material = HexrdConfig().active_material
         self.update_gui_from_config()
         self.update_structure_tab()
+        self.update_properties_tab()
 
     def modify_material_name(self):
         new_name = self.ui.materials_combo.currentText()
