@@ -93,6 +93,8 @@ class FitGrainsResultsDialog(QObject):
         if tensor_type == 'stress':
             for grain in data:
                 # Convert strain to stress
+                # Multiply last three numbers by factor of 2
+                grain[18:21] *= 2
                 grain[15:21] = np.dot(self.compliance, grain[15:21])
 
                 # Compute the equivalent stress
