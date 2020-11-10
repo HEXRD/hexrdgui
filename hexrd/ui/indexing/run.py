@@ -235,8 +235,11 @@ class IndexingRunner(QObject):
             gw.dump_grain(*result)
         gw.close()
 
+        # Use the material to compute stress from strain
+        material = HexrdConfig().active_material
+
         # Display results dialog
-        dialog = FitGrainsResultsDialog(grains_table, self.parent)
+        dialog = FitGrainsResultsDialog(grains_table, material, self.parent)
         dialog.ui.resize(1200, 800)
         self.fit_grains_results_dialog = dialog
         dialog.show()

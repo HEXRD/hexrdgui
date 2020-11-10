@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 import os
 import sys
@@ -26,13 +27,23 @@ from hexrd.ui.ui_loader import UiLoader
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, parent=None):
-        super(FitGrainsResultsDialog, self).__init__()
+    def __init__(self, data, material=None, parent=None):
+        super().__init__()
+
+        if material is None:
+            # Assume the active material is the correct one.
+            # This might not actually be the case, though...
+            material = HexrdConfig().active_material
+            if material:
+                # Warn the user so this is clear.
+                print(f'Assuming material of {material.name} for stress '
+                      'computations')
 
         self.ax = None
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.data = data
         self.data_model = FitGrainsResultsModel(data)
+        self.material = material
         self.canvas = None
         self.fig = None
         self.scatter_artist = None
@@ -48,24 +59,67 @@ class FitGrainsResultsDialog(QObject):
         self.setup_tableview()
 
         # Add column for equivalent strain
-        ngrains = self.data.shape[0]
-        eqv_strain = np.zeros(ngrains)
-        for i in range(ngrains):
-            emat = vecMVToSymm(self.data[i, 15:21], scale=False)
-            eqv_strain[i] = 2.*np.sqrt(np.sum(emat*emat))/3.
-        np.append(self.data, eqv_strain)
+        eqv_strain = np.zeros(self.num_grains)
+        for i, grain in enumerate(self.data):
+            emat = vecMVToSymm(grain[15:21], scale=False)
+            eqv_strain[i] = 2 * np.sqrt(np.sum(emat**2)) / 3
+        # Reshape so we can hstack it
+        self.data = np.hstack((self.data, eqv_strain[:, np.newaxis]))
 
         self.setup_gui()
 
     def setup_gui(self):
-        self.setup_selectors()
+        self.update_selectors()
         self.setup_plot()
         self.setup_toolbar()
         self.setup_view_direction_options()
         self.setup_connections()
-        self.on_colorby_changed()
+        self.update_plot()
         self.backup_ranges()
         self.update_ranges_gui()
+        self.update_enable_states()
+
+    @property
+    def num_grains(self):
+        return self.data.shape[0]
+
+    @property
+    def converted_data(self):
+        # Perform conversions on the data to the specified types.
+        # For instance, use stress instead of strain if that is set.
+        tensor_type = self.tensor_type
+        data = copy.deepcopy(self.data)
+
+        if tensor_type == 'stress':
+            for grain in data:
+                # Convert strain to stress
+                grain[15:21] = np.dot(self.compliance, grain[15:21])
+
+                # Compute the equivalent stress
+                m = vecMVToSymm(grain[15:21], scale=False)
+                grain[21] = 2 * np.sqrt(np.sum(m**2)) / 3
+
+        return data
+
+    @property
+    def stiffness(self):
+        try:
+            # Any of these could be an attribute error
+            return self.material.unitcell.stiffness
+        except AttributeError:
+            return None
+
+    @property
+    def compliance(self):
+        try:
+            # Any of these could be an attribute error
+            return self.material.unitcell.compliance
+        except AttributeError:
+            return None
+
+    def update_enable_states(self):
+        has_stiffness = self.stiffness is not None
+        self.ui.convert_strain_to_stress.setEnabled(has_stiffness)
 
     def clear_artists(self):
         # Colorbar must be removed before the scatter artist
@@ -78,19 +132,20 @@ class FitGrainsResultsDialog(QObject):
             self.scatter_artist = None
 
     def on_colorby_changed(self):
-        column = self.ui.plot_color_option.currentData()
-        colors = self.data[:, column]
+        self.update_plot()
 
-        xs = self.data[:, 6]
-        ys = self.data[:, 7]
-        zs = self.data[:, 8]
+    def update_plot(self):
+        column = self.ui.plot_color_option.currentData()
+        colors = self.converted_data[:, column]
+
+        coords = self.data[:, 6:9]
         sz = matplotlib.rcParams['lines.markersize'] ** 3
 
         # I could not find a way to update scatter plot marker colors and
         # the colorbar mappable. So we must re-draw both from scratch...
         self.clear_artists()
-        self.scatter_artist = self.ax.scatter3D(
-            xs, ys, zs, c=colors, cmap=self.cmap, s=sz)
+        self.scatter_artist = self.ax.scatter3D(*coords, c=colors,
+                                                cmap=self.cmap, s=sz)
         self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
         self.draw()
 
@@ -145,6 +200,8 @@ class FitGrainsResultsDialog(QObject):
             w.valueChanged.connect(self.update_range_constraints)
 
         self.ui.reset_ranges.pressed.connect(self.reset_ranges)
+        self.ui.convert_strain_to_stress.toggled.connect(
+            self.convert_strain_to_stress_toggled)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -247,22 +304,38 @@ class FitGrainsResultsDialog(QObject):
 
         self.draw()
 
-    def setup_selectors(self):
+    def update_selectors(self):
+        tensor_type = self.tensor_type.capitalize()
+
         # Build combo boxes in code to assign columns in grains data
+        items = [
+            ('Completeness', 1),
+            ('Goodness of Fit', 2),
+            (f'Equivalent {tensor_type}', 21),
+            (f'XX {tensor_type}', 15),
+            (f'YY {tensor_type}', 16),
+            (f'ZZ {tensor_type}', 17),
+            (f'YZ {tensor_type}', 18),
+            (f'XZ {tensor_type}', 19),
+            (f'XY {tensor_type}', 20)
+        ]
+
+        prev_ind = self.ui.plot_color_option.currentIndex()
+
         blocker = QSignalBlocker(self.ui.plot_color_option)  # noqa: F841
         self.ui.plot_color_option.clear()
-        self.ui.plot_color_option.addItem('Completeness', 1)
-        self.ui.plot_color_option.addItem('Goodness of Fit', 2)
-        self.ui.plot_color_option.addItem('Equivalent Strain', -1)
-        self.ui.plot_color_option.addItem('XX Strain', 15)
-        self.ui.plot_color_option.addItem('YY Strain', 16)
-        self.ui.plot_color_option.addItem('ZZ Strain', 17)
-        self.ui.plot_color_option.addItem('YZ Strain', 18)
-        self.ui.plot_color_option.addItem('XZ Strain', 19)
-        self.ui.plot_color_option.addItem('XY Strain', 20)
 
-        index = self.ui.plot_color_option.findData(-1)
-        self.ui.plot_color_option.setCurrentIndex(index)
+        for item in items:
+            self.ui.plot_color_option.addItem(*item)
+
+        del blocker
+
+        if hasattr(self, '_first_selector_update'):
+            self.ui.plot_color_option.setCurrentIndex(prev_ind)
+        else:
+            self._first_selector_update = True
+            index = self.ui.plot_color_option.findData(21)
+            self.ui.plot_color_option.setCurrentIndex(index)
 
     def setup_tableview(self):
         view = self.ui.table_view
@@ -289,6 +362,11 @@ class FitGrainsResultsDialog(QObject):
 
     def show(self):
         self.ui.show()
+
+    @property
+    def tensor_type(self):
+        stress = self.ui.convert_strain_to_stress.isChecked()
+        return 'stress' if stress else 'strain'
 
     @property
     def range_widgets(self):
@@ -345,6 +423,10 @@ class FitGrainsResultsDialog(QObject):
         self.ranges_mpl = self._ranges_backup
         self.update_ranges_gui()
 
+    def convert_strain_to_stress_toggled(self):
+        self.update_selectors()
+        self.update_plot()
+
     def remove_range_constraints(self):
         widgets = self.range_widgets
         for w1, w2 in zip(widgets[0::2], widgets[1::2]):
@@ -373,12 +455,10 @@ if __name__ == '__main__':
         print()
         sys.exit(-1)
 
-    # print(sys.argv)
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
     app = QApplication(sys.argv)
 
     data = np.loadtxt(sys.argv[1])
-    # print(data)
 
     dialog = FitGrainsResultsDialog(data)
 
