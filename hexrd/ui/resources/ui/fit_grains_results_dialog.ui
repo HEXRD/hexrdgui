@@ -228,7 +228,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="0" colspan="2">
+             <item row="5" column="0" colspan="2">
               <widget class="QGroupBox" name="ranges_group">
                <property name="title">
                 <string>Ranges</string>
@@ -427,6 +427,19 @@
                </layout>
               </widget>
              </item>
+             <item row="4" column="0" colspan="2">
+              <widget class="QCheckBox" name="convert_strain_to_stress">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Convert strain to stress. Requires a material where the elastic stiffness tensor is defined (see the properties tab in the materials panel).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Convert Strain to Stress</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -469,6 +482,14 @@
   <tabstop>plot_color_option</tabstop>
   <tabstop>hide_axes</tabstop>
   <tabstop>set_view_direction</tabstop>
+  <tabstop>convert_strain_to_stress</tabstop>
+  <tabstop>range_x_0</tabstop>
+  <tabstop>range_x_1</tabstop>
+  <tabstop>range_y_0</tabstop>
+  <tabstop>range_y_1</tabstop>
+  <tabstop>range_z_0</tabstop>
+  <tabstop>range_z_1</tabstop>
+  <tabstop>reset_ranges</tabstop>
  </tabstops>
  <resources/>
  <connections>

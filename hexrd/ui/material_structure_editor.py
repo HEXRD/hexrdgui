@@ -239,12 +239,18 @@ class MaterialStructureEditor:
         mat._atomtype = np.array(type_array)
         mat._U = np.array(U_array)
 
+        old_unitcell = mat.unitcell
+
         # Re-create the unit cell from scratch. This is easier to do
         # right now than setting the variables and figuring out which
         # properties need to be updated and in what order...
         mat.unitcell = unitcell(mat._lparms, mat.sgnum, mat._atomtype,
                                 mat._atominfo, mat._U, mat._dmin.getVal('nm'),
                                 mat._beamEnergy.value, mat._sgsetting)
+
+        # Set the stiffness back on it if it existed
+        if hasattr(old_unitcell, 'stiffness'):
+            mat.unitcell.stiffness = old_unitcell.stiffness
 
         # Update the structure factor of the PData
         mat.update_structure_factor()

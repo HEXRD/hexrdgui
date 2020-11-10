@@ -180,6 +180,16 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="properties_tab">
+        <attribute name="title">
+         <string>Properties</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="0" column="0">
+          <layout class="QVBoxLayout" name="material_properties_editor_layout"/>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
      <item row="1" column="1">
