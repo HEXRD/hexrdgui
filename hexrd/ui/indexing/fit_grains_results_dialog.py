@@ -99,7 +99,7 @@ class FitGrainsResultsDialog(QObject):
 
                 # Compute the equivalent stress
                 m = vecMVToSymm(grain[15:21], scale=False)
-                grain[21] = 2 * np.sqrt(np.sum(m**2)) / 3
+                grain[21] = 3 * np.sqrt(np.sum(m**2)) / 2
 
         return data
 
