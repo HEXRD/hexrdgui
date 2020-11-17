@@ -5,6 +5,9 @@ from PySide2.QtWidgets import QGridLayout, QWidget
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 
+DEFAULT_ENABLED_STYLE_SHEET = 'background-color: white'
+DEFAULT_DISABLED_STYLE_SHEET = 'background-color: #F0F0F0'
+
 
 class MatrixEditor(QWidget):
 
@@ -22,6 +25,12 @@ class MatrixEditor(QWidget):
         # If this is set, it will be called every time the data updates
         # to apply equality constraints.
         self._apply_constraints_func = None
+
+        # The style sheet for the enabled spin boxes
+        self.enabled_style_sheet = DEFAULT_ENABLED_STYLE_SHEET
+
+        # The style sheet for the disabled spin boxes
+        self.disabled_style_sheet = DEFAULT_DISABLED_STYLE_SHEET
 
         self.setLayout(QGridLayout())
         self.add_spin_boxes()
@@ -107,8 +116,13 @@ class MatrixEditor(QWidget):
         enable_all = self.enabled_elements is None
         for i in range(self.rows):
             for j in range(self.cols):
+                w = self.widget(i, j)
                 enable = enable_all or (i, j) in self.enabled_elements
-                self.widget(i, j).setEnabled(enable)
+                w.setEnabled(enable)
+
+                enabled_str = 'enabled' if enable else 'disabled'
+                style_sheet = getattr(self, f'{enabled_str}_style_sheet')
+                w.setStyleSheet(style_sheet)
 
     @property
     def enabled_elements(self):
