@@ -62,7 +62,7 @@ jobs:
 
     - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
       run: |
-          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "::set-env name=HEXRD_PACKAGE_CHANNEL::HEXRD" || echo "::set-env name=HEXRD_PACKAGE_CHANNEL::HEXRD/label/hexrd-prerelease"
+          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "HEXRD_PACKAGE_CHANNEL=HEXRD" >> $GITHUB_ENV || echo "HEXRD_PACKAGE_CHANNEL=HEXRD/label/hexrd-prerelease" >> $GITHUB_ENV
 
     - name: Create conda environment to build HEXRDGUI
       working-directory: hexrdgui
@@ -120,7 +120,7 @@ jobs:
 
     - name: Set label ( main or hexrdgui-prerelease )
       run: |
-          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "::set-env name=HEXRDGUI_PACKAGE_LABEL::hexrdgui-prerelease" || echo "::set-env name=HEXRDGUI_PACKAGE_LABEL::main"
+          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "HEXRDGUI_PACKAGE_LABEL=hexrdgui-prerelease" >> $GITHUB_ENV || echo "HEXRDGUI_PACKAGE_LABEL=main" >> $GITHUB_ENV
 
     - name: Upload the package to anaconda channel (only on master)
       if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/')
