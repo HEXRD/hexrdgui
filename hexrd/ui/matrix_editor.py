@@ -65,7 +65,7 @@ class MatrixEditor(QWidget):
                 raise AttributeError(msg)
 
             self._data = v
-            self.apply_constraints()
+            self.reset_disabled_values()
             self.update_gui()
 
     @property
@@ -124,6 +124,16 @@ class MatrixEditor(QWidget):
                 style_sheet = getattr(self, f'{enabled_str}_style_sheet')
                 w.setStyleSheet(style_sheet)
 
+    def reset_disabled_values(self):
+        # Resets all disabled values to zero, then applies constraints
+        for i in range(self.rows):
+            for j in range(self.cols):
+                if not self.widget(i, j).isEnabled():
+                    self.data[i, j] = 0.0
+
+        self.apply_constraints()
+        self.update_gui()
+
     @property
     def enabled_elements(self):
         return self._enabled_elements
@@ -133,6 +143,7 @@ class MatrixEditor(QWidget):
         if self._enabled_elements != v:
             self._enabled_elements = v
             self.update_enable_states()
+            self.reset_disabled_values()
 
     @property
     def apply_constraints_func(self):
@@ -145,8 +156,7 @@ class MatrixEditor(QWidget):
             self.apply_constraints()
 
     def apply_constraints(self):
-        func = self.apply_constraints_func
-        if func is None:
+        if (func := self.apply_constraints_func) is None:
             return
 
         func(self.data)
