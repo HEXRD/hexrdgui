@@ -1,10 +1,11 @@
-# Script that takes the output of git describe --tag and a version component string
-# 'full'|'major'|'minor'|'patch' and spits out the appropriate ::set-env commands
-# to set environment variable for that version component to be using
-# within the github action workflow.
+# Script that takes the output of git describe --tag and a version component
+# string 'full'|'major'|'minor'|'patch' and append the environment variable to
+# the env file to set environment variable for that version component to be
+# using within the github action workflow.
 import sys
 import re
 import platform
+import os
 
 if len(sys.argv) != 3:
     print('Please provide version string and component.')
@@ -34,17 +35,22 @@ if platform.system() == 'Windows':
         build = parts[1]
         version = '%s.%s.%s.%s' % (major, minor, patch, build)
 
-if component == 'full':
-    print('::set-env name=VERSION::%s' % version)
-elif component  == 'major':
-    print('::set-env name=VERSION_MAJOR::%s' % major)
-elif component == 'minor':
-    print('::set-env name=VERSION_MINOR::%s' % minor)
-elif component == 'patch':
-    print('::set-env name=VERSION_PATCH::%s' % patch)
-else:
-    print('Invalid version component.')
+# Get the env file
+if 'GITHUB_ENV' not in os.environ:
+    print('GITHUB_ENV not in environment.')
     sys.exit(3)
 
+github_env = os.environ['GITHUB_ENV']
 
-
+with open(github_env, 'a') as fp:
+    if component == 'full':
+        fp.write('VERSION=%s\n' % version)
+    elif component == 'major':
+        fp.write('VERSION_MAJOR=%s\n' % major)
+    elif component == 'minor':
+        fp.write('VERSION_MINOR=%s\n' % minor)
+    elif component == 'patch':
+        fp.write('VERSION_PATCH=%s\n' % patch)
+    else:
+        print('Invalid version component.')
+        sys.exit(4)
