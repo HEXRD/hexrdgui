@@ -98,8 +98,9 @@ class FitGrainsResultsDialog(QObject):
                 grain[15:21] = np.dot(self.compliance, grain[15:21])
 
                 # Compute the equivalent stress
-                m = vecMVToSymm(grain[15:21], scale=False)
-                grain[21] = 2 * np.sqrt(np.sum(m**2)) / 3
+                sigma = vecMVToSymm(grain[15:21], scale=False)
+                deviator = sigma - (1/3) * np.trace(sigma) * np.identity(3)
+                grain[21] = 3 * np.sqrt(np.sum(deviator**2)) / 2
 
         return data
 
