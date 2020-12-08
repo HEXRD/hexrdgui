@@ -61,8 +61,9 @@ class FitGrainsResultsDialog(QObject):
         # Add column for equivalent strain
         eqv_strain = np.zeros(self.num_grains)
         for i, grain in enumerate(self.data):
-            emat = vecMVToSymm(grain[15:21], scale=False)
-            eqv_strain[i] = 2 * np.sqrt(np.sum(emat**2)) / 3
+            epsilon = vecMVToSymm(grain[15:21], scale=False)
+            deviator = epsilon - (1/3) * np.trace(epsilon) * np.identity(3)
+            eqv_strain[i] = 2 * np.sqrt(np.sum(deviator**2)) / 3
         # Reshape so we can hstack it
         self.data = np.hstack((self.data, eqv_strain[:, np.newaxis]))
 
