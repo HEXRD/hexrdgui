@@ -52,7 +52,7 @@ class LinePickerDialog(QObject):
         self.linebuilder = None
         self.lines = []
 
-        self.two_click_mode = False
+        self.two_click_mode = self.ui.two_click_mode.isChecked()
 
         self.zoom_canvas = ZoomCanvas(canvas)
         self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()

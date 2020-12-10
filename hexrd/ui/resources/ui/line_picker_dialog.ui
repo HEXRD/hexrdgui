@@ -107,7 +107,7 @@
         <double>0.200000000000000</double>
        </property>
        <property name="value">
-        <double>0.500000000000000</double>
+        <double>5.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -121,6 +121,12 @@
        </property>
        <property name="text">
         <string>Two click mode</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="tristate">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
