@@ -24,7 +24,14 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="0">
+   <item row="0" column="0">
+    <widget class="QLabel" name="elastic_tensor_type_label">
+     <property name="text">
+      <string>Elastic Tensor type:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
     <spacer name="vertical_spacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -37,17 +44,21 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="density_label">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Roboto,arial,sans-serif'; font-size:14px; color:#4d5156; background-color:#ffffff;&quot;&gt;Computed from lattice parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Density:</string>
-     </property>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="elastic_tensor_type">
+     <item>
+      <property name="text">
+       <string>Stiffness</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Compliance</string>
+      </property>
+     </item>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="2" column="1">
     <widget class="ScientificDoubleSpinBox" name="density">
      <property name="enabled">
       <bool>true</bool>
@@ -78,17 +89,30 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QGroupBox" name="stiffness_tensor_group">
+   <item row="2" column="0">
+    <widget class="QLabel" name="density_label">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Roboto,arial,sans-serif'; font-size:14px; color:#4d5156; background-color:#ffffff;&quot;&gt;Computed from lattice parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Density:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QGroupBox" name="elastic_tensor_group">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The elastic stiffness tensor in Voigt notation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Stiffness Tensor</string>
+      <string>Elastic Tensor</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="1" column="0">
-       <layout class="QVBoxLayout" name="stiffness_tensor_editor_layout"/>
+       <layout class="QVBoxLayout" name="elastic_tensor_editor_layout"/>
       </item>
      </layout>
     </widget>
@@ -102,6 +126,10 @@
    <header>scientificspinbox.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>elastic_tensor_type</tabstop>
+  <tabstop>density</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
