@@ -8,6 +8,8 @@ from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 DEFAULT_ENABLED_STYLE_SHEET = 'background-color: white'
 DEFAULT_DISABLED_STYLE_SHEET = 'background-color: #F0F0F0'
 
+INVALID_MATRIX_STYLE_SHEET = 'background-color: red'
+
 
 class MatrixEditor(QWidget):
 
@@ -26,11 +28,11 @@ class MatrixEditor(QWidget):
         # to apply equality constraints.
         self._apply_constraints_func = None
 
-        # The style sheet for the enabled spin boxes
-        self.enabled_style_sheet = DEFAULT_ENABLED_STYLE_SHEET
+        # Whether or not the matrix is currently invalid
+        self.matrix_invalid = False
 
-        # The style sheet for the disabled spin boxes
-        self.disabled_style_sheet = DEFAULT_DISABLED_STYLE_SHEET
+        # Reason the matrix is currently invalid
+        self.matrix_invalid_reason = ''
 
         self.setLayout(QGridLayout())
         self.add_spin_boxes()
@@ -103,6 +105,16 @@ class MatrixEditor(QWidget):
         col_range = range(self.cols)
         return [self.widget(i, j) for j in col_range for i in row_range]
 
+    @property
+    def enabled_widgets(self):
+        widgets = []
+        for i in range(self.rows):
+            for j in range(self.cols):
+                if (i, j) in self.enabled_elements:
+                    widgets.append(self.widget(i, j))
+
+        return widgets
+
     def widget(self, row, col):
         return self.layout().itemAtPosition(row, col).widget()
 
@@ -111,6 +123,27 @@ class MatrixEditor(QWidget):
 
     def set_gui_value(self, row, col, val):
         self.widget(row, col).setValue(val)
+
+    def set_matrix_invalid(self, s):
+        self.matrix_invalid = True
+        self.matrix_invalid_reason = s
+        self.update_tooltips()
+        self.update_enable_states()
+
+    def set_matrix_valid(self):
+        self.matrix_invalid = False
+        self.matrix_invalid_reason = ''
+        self.update_tooltips()
+        self.update_enable_states()
+
+    def update_tooltips(self):
+        if self.matrix_invalid:
+            tooltip = self.matrix_invalid_reason
+        else:
+            tooltip = ''
+
+        for w in self.enabled_widgets:
+            w.setToolTip(tooltip)
 
     def update_enable_states(self):
         enable_all = self.enabled_elements is None
@@ -133,6 +166,17 @@ class MatrixEditor(QWidget):
 
         self.apply_constraints()
         self.update_gui()
+
+    @property
+    def enabled_style_sheet(self):
+        if self.matrix_invalid:
+            return INVALID_MATRIX_STYLE_SHEET
+
+        return DEFAULT_ENABLED_STYLE_SHEET
+
+    @property
+    def disabled_style_sheet(self):
+        return DEFAULT_DISABLED_STYLE_SHEET
 
     @property
     def enabled_elements(self):
