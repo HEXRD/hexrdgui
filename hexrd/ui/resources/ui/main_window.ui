@@ -100,6 +100,8 @@
     <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
     <addaction name="action_show_detector_borders"/>
+    <addaction name="action_view_indexing_config"/>
+    <addaction name="action_view_fit_grains_config"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
@@ -535,6 +537,16 @@
   <action name="action_open_grain_fitting_results">
    <property name="text">
     <string>Grain Fitting Results</string>
+   </property>
+  </action>
+  <action name="action_view_indexing_config">
+   <property name="text">
+    <string>Indexing Config</string>
+   </property>
+  </action>
+  <action name="action_view_fit_grains_config">
+   <property name="text">
+    <string>Fit Grains Config</string>
    </property>
   </action>
  </widget>

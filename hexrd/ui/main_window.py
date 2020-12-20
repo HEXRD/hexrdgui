@@ -38,6 +38,7 @@ from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.transform_dialog import TransformDialog
+from hexrd.ui.tree_views.dict_tree_view import DictTreeViewDialog
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
@@ -169,6 +170,10 @@ class MainWindow(QObject):
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
             HexrdConfig().set_show_detector_borders)
+        self.ui.action_view_indexing_config.triggered.connect(
+            self.view_indexing_config)
+        self.ui.action_view_fit_grains_config.triggered.connect(
+            self.view_fit_grains_config)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
@@ -839,6 +844,19 @@ class MainWindow(QObject):
         # Only disconnect if we were previously enabled. i.e. the signal was connected
         elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)
+
+    def view_indexing_config(self):
+        config = HexrdConfig().indexing_config['find_orientations']
+        view = self._indexing_config_view = DictTreeViewDialog(config, self.ui)
+        view.setWindowTitle('Indexing Config')
+        view.show()
+
+    def view_fit_grains_config(self):
+        config = HexrdConfig().indexing_config['fit_grains']
+        view = self._fit_grains_config_view = DictTreeViewDialog(config,
+                                                                 self.ui)
+        view.setWindowTitle('Fit Grains Config')
+        view.show()
 
     def new_mouse_position(self, info):
         labels = []
