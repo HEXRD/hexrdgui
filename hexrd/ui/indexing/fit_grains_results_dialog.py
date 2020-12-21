@@ -57,6 +57,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.splitter.setStretchFactor(1, 10)
 
         self.setup_tableview()
+        self.set_glyph_size(reset=False)
 
         # Add column for equivalent strain
         eqv_strain = np.zeros(self.num_grains)
@@ -142,7 +143,7 @@ class FitGrainsResultsDialog(QObject):
         colors = self.converted_data[:, column]
 
         coords = self.data[:, 6:9]
-        sz = matplotlib.rcParams['lines.markersize'] ** 3
+        sz = self.ui.glyph_size_slider.value()
 
         # I could not find a way to update scatter plot marker colors and
         # the colorbar mappable. So we must re-draw both from scratch...
@@ -193,6 +194,8 @@ class FitGrainsResultsDialog(QObject):
             self.on_colorby_changed)
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
         self.ui.finished.connect(self.finished)
+        self.ui.glyph_size_slider.valueChanged.connect(self.update_plot)
+        self.ui.reset_glyph_size.clicked.connect(self.set_glyph_size)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -441,6 +444,12 @@ class FitGrainsResultsDialog(QObject):
         for w1, w2 in zip(widgets[0::2], widgets[1::2]):
             w1.setMaximum(w2.value())
             w2.setMinimum(w1.value())
+
+    def set_glyph_size(self, reset=True):
+        default = matplotlib.rcParams['lines.markersize'] ** 3
+        self.ui.glyph_size_slider.setSliderPosition(default)
+        if reset:
+            self.update_plot()
 
     def draw(self):
         self.canvas.draw()
