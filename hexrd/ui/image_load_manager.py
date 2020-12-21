@@ -36,6 +36,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     progress_text = Signal(str)
     update_needed = Signal()
     new_images_loaded = Signal()
+    images_transformed = Signal()
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
@@ -284,6 +285,13 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             frames = self.get_range(ims_dict[key])
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'pixels', 'columns', 'value'],
+                ims_dict[key].shape[1])
+            HexrdConfig().set_instrument_config_val(
+                ['detectors', key, 'pixels', 'rows', 'value'],
+                ims_dict[key].shape[0])
+        self.images_transformed.emit()
 
     def display_aggregation(self, ims_dict):
         self.update_progress_text('Aggregating images...')
