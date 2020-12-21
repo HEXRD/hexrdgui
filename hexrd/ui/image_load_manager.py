@@ -40,6 +40,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
         self.unaggregated_images = None
+        self.transformed_images = False
 
     def load_images(self, fnames):
         files = self.explict_selection(fnames)
@@ -198,6 +199,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Display processed images on completion
         self.update_needed.emit()
         self.new_images_loaded.emit()
+        if self.transformed_images:
+            HexrdConfig().instrument_config_loaded.emit()
+            HexrdConfig().deep_rerender_needed.emit()
 
     def get_dark_aggr_op(self, ims, idx):
         """
@@ -330,6 +334,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         if self.state['trans'][idx] == UI_TRANS_INDEX_NONE:
             return
 
+        self.transformed_images = True
         if self.state['trans'][idx] == UI_TRANS_INDEX_FLIP_VERTICALLY:
             key = 'v'
         elif self.state['trans'][idx] == UI_TRANS_INDEX_FLIP_HORIZONTALLY:
