@@ -228,7 +228,7 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="0" colspan="2">
+             <item row="6" column="0" colspan="2">
               <widget class="QGroupBox" name="ranges_group">
                <property name="title">
                 <string>Ranges</string>
@@ -440,6 +440,16 @@
                </property>
               </widget>
              </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="color_map_label">
+               <property name="text">
+                <string>Color Map</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QComboBox" name="color_maps"/>
+             </item>
             </layout>
            </widget>
           </item>
@@ -473,6 +483,7 @@
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>scientificspinbox.py</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
