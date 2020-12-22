@@ -184,9 +184,6 @@ class ImportDataPanel(QObject):
                 # Only reset the color map range for first detector processed
                 self.cmap.block_updates(True)
             ImageLoadManager().read_data(files, parent=self.ui)
-            img_shape = HexrdConfig().image(self.detector, 0).shape
-            self.canvas.axes_images[0].set_extent(
-                (-0.5, img_shape[1], img_shape[0], -0.5))
             self.cmap.block_updates(False)
 
             file_names = [os.path.split(f[0])[1] for f in files]
@@ -214,9 +211,6 @@ class ImportDataPanel(QObject):
             self.edited_images[self.detector]['img'] = img
             self.edited_images[self.detector]['height'] = img.shape[0]
             self.edited_images[self.detector]['width'] = img.shape[1]
-            self.canvas.axes_images[0].set_extent(
-                (0, img.shape[1], img.shape[0], 0))
-            self.canvas.draw()
 
         if self.it:
             self.it.update_image(img)
@@ -253,7 +247,8 @@ class ImportDataPanel(QObject):
                             self.ui.color_label, self.ui.size_label,
                             self.ui.style_label, enabled=True)
         self.enable_widgets(self.ui.detectors, self.ui.add_template,
-                            self.ui.load, enabled=False)
+                            self.ui.load, self.ui.transforms,
+                            self.ui.add_transform, enabled=False)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.enable_widgets(self.ui.height_label, self.ui.bb_height,
                                 self.ui.bb_width, self.ui.width_label,
@@ -302,7 +297,8 @@ class ImportDataPanel(QObject):
         self.completed_detectors.append(self.detector)
         self.enable_widgets(self.ui.detectors, self.ui.load, self.ui.complete,
                             self.ui.completed_dets, self.ui.save,
-                            self.ui.finalize, enabled=True)
+                            self.ui.finalize, self.ui.transforms,
+                            self.ui.add_transform, enabled=True)
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.add_template, self.ui.bb_label,
                             self.ui.bb_height, self.ui.height_label,
@@ -335,16 +331,13 @@ class ImportDataPanel(QObject):
             'width': img.shape[1],
             'tilt': self.it.rotation
         }
-        self.canvas.axes_images[0].set_extent(
-            (0, img.shape[1], img.shape[0], 0))
-
-        self.it.redraw()
         self.clear_boundry()
 
     def clear(self):
         self.clear_boundry()
         self.enable_widgets(self.ui.detectors, self.ui.load,
-                            self.ui.add_template, enabled=True)
+                            self.ui.add_template, self.ui.transforms,
+                            self.ui.add_transform, enabled=True)
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
                             self.ui.save, self.ui.complete, enabled=False)
 

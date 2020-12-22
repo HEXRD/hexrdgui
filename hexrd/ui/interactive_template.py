@@ -78,8 +78,9 @@ class InteractiveTemplate:
         return self.total_rotation
 
     def clear(self):
-        self.raw_axes.patches.remove(self.shape)
-        self.redraw()
+        if self.shape in self.raw_axes.patches:
+            self.raw_axes.patches.remove(self.shape)
+            self.redraw()
 
     def mask(self):
         col, row = self.shape.xy.T
