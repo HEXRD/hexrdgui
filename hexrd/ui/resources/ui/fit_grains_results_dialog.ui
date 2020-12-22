@@ -507,16 +507,19 @@
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>scientificspinbox.py</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>table_view</tabstop>
   <tabstop>export_button</tabstop>
   <tabstop>projection</tabstop>
   <tabstop>plot_color_option</tabstop>
   <tabstop>hide_axes</tabstop>
   <tabstop>set_view_direction</tabstop>
   <tabstop>convert_strain_to_stress</tabstop>
+  <tabstop>table_view</tabstop>
+  <tabstop>glyph_size_slider</tabstop>
+  <tabstop>reset_glyph_size</tabstop>
   <tabstop>range_x_0</tabstop>
   <tabstop>range_x_1</tabstop>
   <tabstop>range_y_0</tabstop>
