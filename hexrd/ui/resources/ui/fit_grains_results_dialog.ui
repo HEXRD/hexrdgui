@@ -123,13 +123,7 @@
             <property name="title">
              <string>Options</string>
             </property>
-            <layout class="QFormLayout" name="formLayout_2">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
+            <layout class="QFormLayout" name="formLayout">
              <item row="0" column="0">
               <widget class="QLabel" name="projection_label">
                <property name="text">
@@ -202,7 +196,14 @@
                </item>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="2" column="0">
+              <widget class="QCheckBox" name="hide_axes">
+               <property name="text">
+                <string>Hide Axes</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
               <widget class="QToolButton" name="set_view_direction">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -221,12 +222,58 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
-              <widget class="QCheckBox" name="hide_axes">
+             <item row="3" column="0" colspan="2">
+              <widget class="QCheckBox" name="convert_strain_to_stress">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Convert strain to stress. Requires a material where the elastic stiffness tensor is defined (see the properties tab in the materials panel).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
-                <string>Hide Axes</string>
+                <string>Convert Strain to Stress</string>
                </property>
               </widget>
+             </item>
+             <item row="4" column="0" colspan="2">
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLabel" name="glyph_size_label">
+                 <property name="text">
+                  <string>Glyph Size</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSlider" name="glyph_size_slider">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>2000</number>
+                 </property>
+                 <property name="singleStep">
+                  <number>1</number>
+                 </property>
+                 <property name="pageStep">
+                  <number>2</number>
+                 </property>
+                 <property name="value">
+                  <number>1</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="reset_glyph_size">
+                 <property name="text">
+                  <string>Reset</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item row="5" column="0" colspan="2">
               <widget class="QGroupBox" name="ranges_group">
@@ -427,19 +474,6 @@
                </layout>
               </widget>
              </item>
-             <item row="4" column="0" colspan="2">
-              <widget class="QCheckBox" name="convert_strain_to_stress">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Convert strain to stress. Requires a material where the elastic stiffness tensor is defined (see the properties tab in the materials panel).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Convert Strain to Stress</string>
-               </property>
-              </widget>
-             </item>
             </layout>
            </widget>
           </item>
@@ -473,16 +507,19 @@
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>scientificspinbox.py</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>table_view</tabstop>
   <tabstop>export_button</tabstop>
   <tabstop>projection</tabstop>
   <tabstop>plot_color_option</tabstop>
   <tabstop>hide_axes</tabstop>
   <tabstop>set_view_direction</tabstop>
   <tabstop>convert_strain_to_stress</tabstop>
+  <tabstop>table_view</tabstop>
+  <tabstop>glyph_size_slider</tabstop>
+  <tabstop>reset_glyph_size</tabstop>
   <tabstop>range_x_0</tabstop>
   <tabstop>range_x_1</tabstop>
   <tabstop>range_y_0</tabstop>
