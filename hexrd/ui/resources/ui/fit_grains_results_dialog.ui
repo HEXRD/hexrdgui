@@ -275,7 +275,27 @@
                </item>
               </layout>
              </item>
-             <item row="5" column="0" colspan="2">
+             <item row="5" column="0">
+              <widget class="QLabel" name="color_map_label">
+               <property name="text">
+                <string>Color Map</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QComboBox" name="color_maps">
+               <property name="styleSheet">
+                <string notr="true">combobox-popup: 0;</string>
+               </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <property name="maxVisibleItems">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0" colspan="2">
               <widget class="QGroupBox" name="ranges_group">
                <property name="title">
                 <string>Ranges</string>
@@ -293,7 +313,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <double>0.010000000000000</double>
+                   <number>0</number>
                   </property>
                  </widget>
                 </item>
@@ -309,7 +329,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <double>0.010000000000000</double>
+                   <number>0</number>
                   </property>
                  </widget>
                 </item>
@@ -325,7 +345,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <double>0.010000000000000</double>
+                   <number>0</number>
                   </property>
                  </widget>
                 </item>
@@ -341,7 +361,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <double>0.010000000000000</double>
+                   <number>0</number>
                   </property>
                  </widget>
                 </item>
@@ -389,7 +409,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <double>0.010000000000000</double>
+                   <number>0</number>
                   </property>
                  </widget>
                 </item>
@@ -418,7 +438,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <double>0.010000000000000</double>
+                   <number>0</number>
                   </property>
                  </widget>
                 </item>
@@ -505,8 +525,8 @@
  <customwidgets>
   <customwidget>
    <class>ScientificDoubleSpinBox</class>
-   <extends>QDoubleSpinBox</extends>
-   <header>scientificspinbox.py</header>
+   <extends>QSpinBox</extends>
+   <header>hexrd/ui/scientificspinbox</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
@@ -517,9 +537,9 @@
   <tabstop>hide_axes</tabstop>
   <tabstop>set_view_direction</tabstop>
   <tabstop>convert_strain_to_stress</tabstop>
-  <tabstop>table_view</tabstop>
   <tabstop>glyph_size_slider</tabstop>
   <tabstop>reset_glyph_size</tabstop>
+  <tabstop>color_maps</tabstop>
   <tabstop>range_x_0</tabstop>
   <tabstop>range_x_1</tabstop>
   <tabstop>range_y_0</tabstop>
@@ -527,6 +547,7 @@
   <tabstop>range_z_0</tabstop>
   <tabstop>range_z_1</tabstop>
   <tabstop>reset_ranges</tabstop>
+  <tabstop>table_view</tabstop>
  </tabstops>
  <resources/>
  <connections>

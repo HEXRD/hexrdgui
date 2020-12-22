@@ -57,6 +57,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.splitter.setStretchFactor(1, 10)
 
         self.setup_tableview()
+        self.load_cmaps()
         self.reset_glyph_size(update_plot=False)
 
         # Add column for equivalent strain
@@ -194,8 +195,9 @@ class FitGrainsResultsDialog(QObject):
             self.on_colorby_changed)
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
         self.ui.finished.connect(self.finished)
+        self.ui.color_maps.currentIndexChanged.connect(self.update_cmap)
         self.ui.glyph_size_slider.valueChanged.connect(self.update_plot)
-        self.ui.reset_glyph_size.clicked.connect(self.set_glyph_size)
+        self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -445,6 +447,17 @@ class FitGrainsResultsDialog(QObject):
             w1.setMaximum(w2.value())
             w2.setMinimum(w1.value())
 
+    def load_cmaps(self):
+        cmaps = sorted(i[:-2] for i in dir(matplotlib.cm) if i.endswith('_r'))
+        self.ui.color_maps.addItems(cmaps)
+
+        # Set the combobox to be the default
+        self.ui.color_maps.setCurrentText(hexrd.ui.constants.DEFAULT_CMAP)
+
+    def update_cmap(self):
+        # Get the Colormap object from the name
+        self.cmap = matplotlib.cm.get_cmap(self.ui.color_maps.currentText())
+        self.update_plot()
     def reset_glyph_size(self, update_plot=True):
         default = matplotlib.rcParams['lines.markersize'] ** 3
         self.ui.glyph_size_slider.setSliderPosition(default)
