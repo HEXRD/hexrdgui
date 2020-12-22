@@ -57,7 +57,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.splitter.setStretchFactor(1, 10)
 
         self.setup_tableview()
-        self.set_glyph_size(reset=False)
+        self.reset_glyph_size(update_plot=False)
 
         # Add column for equivalent strain
         eqv_strain = np.zeros(self.num_grains)
@@ -445,10 +445,10 @@ class FitGrainsResultsDialog(QObject):
             w1.setMaximum(w2.value())
             w2.setMinimum(w1.value())
 
-    def set_glyph_size(self, reset=True):
+    def reset_glyph_size(self, update_plot=True):
         default = matplotlib.rcParams['lines.markersize'] ** 3
         self.ui.glyph_size_slider.setSliderPosition(default)
-        if reset:
+        if update_plot:
             self.update_plot()
 
     def draw(self):
