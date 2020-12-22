@@ -60,14 +60,17 @@ class FitGrainsResultsDialog(QObject):
         self.load_cmaps()
         self.reset_glyph_size(update_plot=False)
 
-        # Add column for equivalent strain
+        # Add columns for equivalent strain and hydrostatic strain
         eqv_strain = np.zeros(self.num_grains)
+        hydrostatic_strain = np.zeros(self.num_grains)
         for i, grain in enumerate(self.data):
             epsilon = vecMVToSymm(grain[15:21], scale=False)
             deviator = epsilon - (1/3) * np.trace(epsilon) * np.identity(3)
             eqv_strain[i] = 2 * np.sqrt(np.sum(deviator**2)) / 3
-        # Reshape so we can hstack it
+            hydrostatic_strain[i] = 1 / 3 * np.trace(epsilon)
+
         self.data = np.hstack((self.data, eqv_strain[:, np.newaxis]))
+        self.data = np.hstack((self.data, hydrostatic_strain[:, np.newaxis]))
 
         self.setup_gui()
 
@@ -104,6 +107,9 @@ class FitGrainsResultsDialog(QObject):
                 sigma = vecMVToSymm(grain[15:21], scale=False)
                 deviator = sigma - (1/3) * np.trace(sigma) * np.identity(3)
                 grain[21] = 3 * np.sqrt(np.sum(deviator**2)) / 2
+
+                # Compute the hydrostatic stress
+                grain[22] = 1 / 3 * np.trace(sigma)
 
         return data
 
@@ -321,6 +327,7 @@ class FitGrainsResultsDialog(QObject):
             ('Completeness', 1),
             ('Goodness of Fit', 2),
             (f'Equivalent {tensor_type}', 21),
+            (f'Hydrostatic {tensor_type}', 22),
             (f'XX {tensor_type}', 15),
             (f'YY {tensor_type}', 16),
             (f'ZZ {tensor_type}', 17),
@@ -459,6 +466,7 @@ class FitGrainsResultsDialog(QObject):
         # Get the Colormap object from the name
         self.cmap = matplotlib.cm.get_cmap(self.ui.color_maps.currentText())
         self.update_plot()
+
     def reset_glyph_size(self, update_plot=True):
         default = matplotlib.rcParams['lines.markersize'] ** 3
         self.ui.glyph_size_slider.setSliderPosition(default)
