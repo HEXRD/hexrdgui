@@ -448,7 +448,17 @@
               </widget>
              </item>
              <item row="5" column="1">
-              <widget class="QComboBox" name="color_maps"/>
+              <widget class="QComboBox" name="color_maps">
+               <property name="styleSheet">
+                <string notr="true">combobox-popup: 0;</string>
+               </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <property name="maxVisibleItems">
+                <number>5</number>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
