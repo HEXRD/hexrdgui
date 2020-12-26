@@ -1,6 +1,7 @@
 import copy
 from functools import partial
 import os
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -168,6 +169,25 @@ class FitGrainsResultsDialog(QObject):
 
             self.data_model.save(selected_file)
 
+    def on_export_stresses_button_pressed(self):
+        if self.tensor_type != 'stress':
+            raise Exception('Tensor type must be stress')
+
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Export Fit-Grains Stresses', HexrdConfig().working_dir,
+            'Npz Files (*.npz)')
+
+        if not selected_file:
+            return
+
+        stresses = self.converted_data[:, 15:21]
+        HexrdConfig().working_dir = str(Path(selected_file).parent)
+        ext = Path(selected_file).suffix
+        if ext != '.npz':
+            selected_file += '.npz'
+
+        np.savez_compressed(selected_file, stresses=stresses)
+
     def on_sort_indicator_changed(self, index, order):
         """Shows sort indicator for columns 0-2, hides for all others."""
         if index < 3:
@@ -191,6 +211,8 @@ class FitGrainsResultsDialog(QObject):
 
     def setup_connections(self):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
+        self.ui.export_stresses.clicked.connect(
+            self.on_export_stresses_button_pressed)
         self.ui.projection.currentIndexChanged.connect(self.projection_changed)
         self.ui.plot_color_option.currentIndexChanged.connect(
             self.on_colorby_changed)

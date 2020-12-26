@@ -235,7 +235,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="0" colspan="2">
+             <item row="5" column="0" colspan="2">
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
                 <widget class="QLabel" name="glyph_size_label">
@@ -275,14 +275,14 @@
                </item>
               </layout>
              </item>
-             <item row="5" column="0">
+             <item row="6" column="0">
               <widget class="QLabel" name="color_map_label">
                <property name="text">
                 <string>Color Map</string>
                </property>
               </widget>
              </item>
-             <item row="5" column="1">
+             <item row="6" column="1">
               <widget class="QComboBox" name="color_maps">
                <property name="styleSheet">
                 <string notr="true">combobox-popup: 0;</string>
@@ -295,7 +295,7 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="0" colspan="2">
+             <item row="7" column="0" colspan="2">
               <widget class="QGroupBox" name="ranges_group">
                <property name="title">
                 <string>Ranges</string>
@@ -494,6 +494,19 @@
                </layout>
               </widget>
              </item>
+             <item row="4" column="0" colspan="2">
+              <widget class="QPushButton" name="export_stresses">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Export stresses to a compressed npz file as Mandel-Voigt vectors. The data is saved in the &amp;quot;stresses&amp;quot; key as an (n, 6) shape, where `n` is the number of grains.&lt;/p&gt;&lt;p&gt;&amp;quot;Convert Strain to Stress&amp;quot; must be enabled to use this.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Export Stresses</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -531,12 +544,14 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>table_view</tabstop>
   <tabstop>export_button</tabstop>
   <tabstop>projection</tabstop>
   <tabstop>plot_color_option</tabstop>
-  <tabstop>hide_axes</tabstop>
   <tabstop>set_view_direction</tabstop>
+  <tabstop>hide_axes</tabstop>
   <tabstop>convert_strain_to_stress</tabstop>
+  <tabstop>export_stresses</tabstop>
   <tabstop>glyph_size_slider</tabstop>
   <tabstop>reset_glyph_size</tabstop>
   <tabstop>color_maps</tabstop>
@@ -547,7 +562,6 @@
   <tabstop>range_z_0</tabstop>
   <tabstop>range_z_1</tabstop>
   <tabstop>reset_ranges</tabstop>
-  <tabstop>table_view</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -580,6 +594,22 @@
     <hint type="destinationlabel">
      <x>286</x>
      <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>convert_strain_to_stress</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>export_stresses</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>144</x>
+     <y>432</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>144</x>
+     <y>462</y>
     </hint>
    </hints>
   </connection>
