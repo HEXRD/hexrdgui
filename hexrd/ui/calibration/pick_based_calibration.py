@@ -83,7 +83,7 @@ class LaueCalibrator(object):
         )
         assert len(flags) == len(self._full_params), \
             "flags must have %d elements; you gave %d" \
-            % len(self._full_params, len(flags))
+            % (len(self._full_params), len(flags))
         self._flags = flags
         self._energy_cutoffs = [min_energy, max_energy]
 
