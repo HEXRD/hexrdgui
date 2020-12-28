@@ -24,6 +24,13 @@ from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 
 
+# Sortable columns are grain id, completeness, chi^2, and t_vec_c
+SORTABLE_COLUMNS = [
+    *range(0, 3),
+    *range(6, 9),
+]
+
+
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
@@ -169,13 +176,13 @@ class FitGrainsResultsDialog(QObject):
             self.data_model.save(selected_file)
 
     def on_sort_indicator_changed(self, index, order):
-        """Shows sort indicator for columns 0-2, hides for all others."""
-        if index < 3:
-            self.ui.table_view.horizontalHeader().setSortIndicatorShown(True)
-            self.ui.table_view.horizontalHeader().setSortIndicator(
-                index, order)
+        """Shows sort indicator for sortable columns, hides for all others."""
+        horizontal_header = self.ui.table_view.horizontalHeader()
+        if index in SORTABLE_COLUMNS:
+            horizontal_header.setSortIndicatorShown(True)
+            horizontal_header.setSortIndicator(index, order)
         else:
-            self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
+            horizontal_header.setSortIndicatorShown(False)
 
     @property
     def projection(self):
@@ -352,10 +359,9 @@ class FitGrainsResultsDialog(QObject):
         # Subclass QSortFilterProxyModel to restrict sorting by column
         class GrainsTableSorter(QSortFilterProxyModel):
             def sort(self, column, order):
-                if column > 2:
+                if column not in SORTABLE_COLUMNS:
                     return
-                else:
-                    super().sort(column, order)
+                return super().sort(column, order)
 
         proxy_model = GrainsTableSorter(self.ui)
         proxy_model.setSourceModel(self.data_model)
@@ -459,6 +465,7 @@ class FitGrainsResultsDialog(QObject):
         # Get the Colormap object from the name
         self.cmap = matplotlib.cm.get_cmap(self.ui.color_maps.currentText())
         self.update_plot()
+
     def reset_glyph_size(self, update_plot=True):
         default = matplotlib.rcParams['lines.markersize'] ** 3
         self.ui.glyph_size_slider.setSliderPosition(default)
