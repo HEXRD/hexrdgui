@@ -1,5 +1,10 @@
+from functools import partial
+
 from PySide2.QtCore import QModelIndex, Qt
-from PySide2.QtWidgets import QDialog, QMessageBox, QTreeView, QVBoxLayout
+from PySide2.QtGui import QCursor
+from PySide2.QtWidgets import (
+    QDialog, QMenu, QMessageBox, QTreeView, QVBoxLayout
+)
 
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui.tree_views.tree_item import TreeItem
@@ -15,6 +20,11 @@ class DictTreeItemModel(BaseTreeItemModel):
 
     def __init__(self, dictionary, parent=None):
         super().__init__(parent)
+
+        # These can be modified anytime
+        self.lists_resizable = True
+        self._blacklisted_paths = []
+
         self.root_item = TreeItem(['key', 'value'])
         self.config = dictionary
         self.rebuild_tree()
@@ -88,6 +98,10 @@ class DictTreeItemModel(BaseTreeItemModel):
             return
 
         for key in keys:
+            path = self.get_path_from_root(cur_tree_item, 0) + [key]
+            if path in self.blacklisted_paths:
+                continue
+
             tree_item = self.add_tree_item(key, None, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
@@ -128,12 +142,26 @@ class DictTreeItemModel(BaseTreeItemModel):
             msg = f'Path: {path}\nwas not found in dict: {self.config}'
             raise Exception(msg)
 
+    @property
+    def blacklisted_paths(self):
+        return self._blacklisted_paths
+
+    @blacklisted_paths.setter
+    def blacklisted_paths(self, v):
+        # Make sure it is a list of lists, so we can do things like
+        # "x in self.blacklisted_paths", where x is a list.
+        self._blacklisted_paths = [list(x) for x in v]
+        self.rebuild_tree()
+
 
 class DictTreeView(QTreeView):
 
     def __init__(self, dictionary, parent=None):
         super().__init__(parent)
-        self.setModel(DictTreeItemModel(dictionary, self))
+
+        self._combo_keys = []
+
+        self.setModel(DictTreeItemModel(dictionary, parent=self))
         self.setItemDelegateForColumn(
             VALUE_COL, ValueColumnDelegate(self))
 
@@ -154,6 +182,125 @@ class DictTreeView(QTreeView):
             index = self.model().index(i, KEY_COL, parent)
             self.expand(index)
             self.expand_rows(index)
+
+    @property
+    def lists_resizable(self):
+        return self.model().lists_resizable
+
+    @property
+    def blacklisted_paths(self):
+        return self.model().blacklisted_paths
+
+    @blacklisted_paths.setter
+    def blacklisted_paths(self, v):
+        self.model().blacklisted_paths = v
+        self.expand_rows()
+
+    @property
+    def combo_keys(self):
+        return self._combo_keys
+
+    @combo_keys.setter
+    def combo_keys(self, v):
+        """Should have the following structure:
+            {
+                ('path', 'to', 'parent'): {
+                    'option1': option1_defaults,
+                    'option2': option2_defaults,
+                }
+            }
+        """
+
+        self._combo_keys = v
+        self.rebuild_tree()
+        self.expand_rows()
+
+    def contextMenuEvent(self, event):
+        # Generate the actions
+        actions = {}
+
+        index = self.indexAt(event.pos())
+        model = self.model()
+        item = model.get_item(index)
+        path = tuple(model.get_path_from_root(item, index.column()))
+        parent_element = model.get_config_val(path[:-1]) if path else None
+        menu = QMenu(self)
+
+        # Helper functions
+        def add_actions(d: dict):
+            actions.update({menu.addAction(k): v for k, v in d.items()})
+
+        def add_separator():
+            if not actions:
+                return
+            menu.addSeparator()
+
+        def rebuild_gui():
+            self.rebuild_tree()
+            self.expand_rows()
+
+        # Callbacks for different actions
+        def insert_list_item():
+            value_type = type(parent_element[0]) if parent_element else int
+            parent_element.insert(path[-1], value_type(0))
+            rebuild_gui()
+
+        def remove_list_item():
+            parent_element.pop(path[-1])
+            rebuild_gui()
+
+        def change_combo_item(old, new, value):
+            del parent_element[old]
+            parent_element[new] = value
+            rebuild_gui()
+
+        # Add any actions that need to be added
+        if isinstance(path[-1], int) and self.lists_resizable:
+            # The item right-clicked is part of a list
+            new_actions = {
+                'Insert Item': insert_list_item,
+            }
+
+            # Don't let the user remove the last item from the list,
+            # or they may get stuck with an invalid config.
+            if len(parent_element) > 1:
+                new_actions['Remove Item'] = remove_list_item
+
+            add_separator()
+            add_actions(new_actions)
+
+        # "path" must be a tuple for this to work
+        if path[:-1] in self.combo_keys:
+            options = self.combo_keys[path[:-1]]
+            old_key = path[-1]
+            if old_key in options:
+                new_actions = {}
+                for name, default in options.items():
+                    if name == old_key:
+                        continue
+
+                    label = f'Change to {name}'
+                    func = partial(change_combo_item, old_key, name, default)
+                    new_actions[label] = func
+
+                add_separator()
+                add_actions(new_actions)
+
+        if not actions:
+            # No context menu
+            return super().contextMenuEvent(event)
+
+        # Open up the context menu
+        action_chosen = menu.exec_(QCursor.pos())
+
+        if action_chosen is None:
+            # No action chosen
+            return super().contextMenuEvent(event)
+
+        # Run the function for the action that was chosen
+        actions[action_chosen]()
+
+        return super().contextMenuEvent(event)
 
 
 class DictTreeViewDialog(QDialog):

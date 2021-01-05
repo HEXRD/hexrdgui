@@ -38,7 +38,10 @@ from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.transform_dialog import TransformDialog
-from hexrd.ui.tree_views.dict_tree_view import DictTreeViewDialog
+from hexrd.ui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
+from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
+    FitGrainsTreeViewDialog
+)
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
@@ -846,16 +849,17 @@ class MainWindow(QObject):
             HexrdConfig().rerender_needed.disconnect(self.update_all)
 
     def view_indexing_config(self):
-        config = HexrdConfig().indexing_config['find_orientations']
-        view = self._indexing_config_view = DictTreeViewDialog(config, self.ui)
-        view.setWindowTitle('Indexing Config')
+        if hasattr(self, '_indexing_config_view'):
+            self._indexing_config_view.reject()
+
+        view = self._indexing_config_view = IndexingTreeViewDialog(self.ui)
         view.show()
 
     def view_fit_grains_config(self):
-        config = HexrdConfig().indexing_config['fit_grains']
-        view = self._fit_grains_config_view = DictTreeViewDialog(config,
-                                                                 self.ui)
-        view.setWindowTitle('Fit Grains Config')
+        if hasattr(self, '_fit_grains_config_view'):
+            self._fit_grains_config_view.reject()
+
+        view = self._fit_grains_config_view = FitGrainsTreeViewDialog(self.ui)
         view.show()
 
     def new_mouse_position(self, info):
