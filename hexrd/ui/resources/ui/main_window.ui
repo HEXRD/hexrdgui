@@ -85,7 +85,7 @@
      <property name="title">
       <string>Export</string>
      </property>
-     <addaction name="action_export_polar_plot"/>
+     <addaction name="action_export_current_plot"/>
     </widget>
     <addaction name="menu_open"/>
     <addaction name="menu_save"/>
@@ -431,12 +431,12 @@
     <string>Show Detector Borders</string>
    </property>
   </action>
-  <action name="action_export_polar_plot">
+  <action name="action_export_current_plot">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Polar Plot</string>
+    <string>Current View</string>
    </property>
   </action>
   <action name="action_run_calibration">

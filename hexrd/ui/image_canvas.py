@@ -713,9 +713,10 @@ class ImageCanvas(FigureCanvas):
             HexrdConfig().flag_overlay_updates_for_all_materials()
             self.update_overlays()
 
-    def export_polar_plot(self, filename):
-        if self.mode != ViewType.polar:
-            raise Exception('Not in polar mode. Cannot export polar plot')
+    def export_current_plot(self, filename):
+        if self.mode == ViewType.raw:
+            msg = 'Must be in cartesisan or polar mode. Cannot export plot.'
+            raise Exception(msg)
 
         if not self.iviewer:
             raise Exception('No iviewer. Cannot export polar plot')

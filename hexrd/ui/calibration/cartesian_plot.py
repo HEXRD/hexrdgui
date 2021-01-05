@@ -1,3 +1,5 @@
+import h5py
+import os
 import copy
 import itertools
 
@@ -305,3 +307,26 @@ class InstrumentViewer:
 
         # Generate the final image
         self.generate_image()
+
+    def write_image(self, filename='cartesian_image.npz'):
+        # Prepare the data to write out
+        data = {
+            'intensities': self.img,
+        }
+
+        # Delete the file if it already exists
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        # Check the file extension
+        _, ext = os.path.splitext(filename)
+        ext = ext.lower()
+
+        if ext == '.npz':
+            # If it looks like npz, save as npz
+            np.savez(filename, **data)
+        else:
+            # Default to HDF5 format
+            f = h5py.File(filename, 'w')
+            for key, value in data.items():
+                f.create_dataset(key, data=value)
