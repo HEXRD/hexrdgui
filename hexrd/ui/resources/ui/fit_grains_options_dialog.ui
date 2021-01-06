@@ -160,6 +160,9 @@
    </item>
    <item>
     <widget class="QTableView" name="tolerances_view">
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
      <attribute name="horizontalHeaderMinimumSectionSize">
       <number>26</number>
      </attribute>
