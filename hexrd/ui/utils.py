@@ -233,3 +233,14 @@ def compose(*functions):
     # Combine a series of functions together.
     # Note that the functions are called from right to left.
     return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+
+
+class lazy_property:
+    """Cache and always return the results of the first fetch"""
+    def __init__(self, function):
+        self.function = function
+        self.name = function.__name__
+
+    def __get__(self, obj, type=None) -> object:
+        obj.__dict__[self.name] = self.function(obj)
+        return obj.__dict__[self.name]
