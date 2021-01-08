@@ -47,6 +47,9 @@
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
      </widget>
      <widget class="QWidget" name="plot_widget" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout">

@@ -231,6 +231,7 @@ class FitGrainsResultsDialog(QObject):
             'cmap': self.cmap,
             's': sz,
             'depthshade': self.depth_shading,
+            'picker': True,
         }
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.update_color_settings()
@@ -340,6 +341,8 @@ class FitGrainsResultsDialog(QObject):
         # Get the canvas to take up the majority of the screen most of the time
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        canvas.mpl_connect('pick_event', self.point_picked)
+
         fig = canvas.figure
         ax = fig.add_subplot(111, projection='3d', proj_type=self.projection)
 
@@ -355,6 +358,25 @@ class FitGrainsResultsDialog(QObject):
         self.canvas = canvas
 
         self.update_axes_labels()
+
+    def point_picked(self, event):
+        self.select_grain_in_table(event.ind[0])
+
+    def select_grain_in_table(self, grain_id):
+        table_model = self.ui.table_view.model()
+        for i in range(self.data_model.rowCount()):
+            if grain_id == table_model.index(i, 0).data():
+                return self.select_row(i)
+
+        raise Exception(f'Failed to find grain_id {grain_id} in table')
+
+    def select_row(self, i):
+        if i is None or i >= self.data_model.rowCount():
+            # Out of range. Don't do anything.
+            return
+
+        # Select the row
+        self.ui.table_view.selectRow(i)
 
     def setup_toolbar(self):
         # These don't work for 3D plots
