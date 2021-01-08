@@ -222,7 +222,7 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0" colspan="2">
+             <item row="4" column="0" colspan="2">
               <widget class="QCheckBox" name="convert_strain_to_stress">
                <property name="enabled">
                 <bool>false</bool>
@@ -235,7 +235,7 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="0" colspan="2">
+             <item row="6" column="0" colspan="2">
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
                 <widget class="QLabel" name="glyph_size_label">
@@ -275,14 +275,14 @@
                </item>
               </layout>
              </item>
-             <item row="6" column="0">
+             <item row="7" column="0">
               <widget class="QLabel" name="color_map_label">
                <property name="text">
                 <string>Color Map</string>
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
+             <item row="7" column="1">
               <widget class="QComboBox" name="color_maps">
                <property name="styleSheet">
                 <string notr="true">combobox-popup: 0;</string>
@@ -295,7 +295,7 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="0" colspan="2">
+             <item row="8" column="0" colspan="2">
               <widget class="QGroupBox" name="ranges_group">
                <property name="title">
                 <string>Ranges</string>
@@ -494,7 +494,7 @@
                </layout>
               </widget>
              </item>
-             <item row="4" column="0" colspan="2">
+             <item row="5" column="0" colspan="2">
               <widget class="QPushButton" name="export_stresses">
                <property name="enabled">
                 <bool>false</bool>
@@ -504,6 +504,16 @@
                </property>
                <property name="text">
                 <string>Export Stresses</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QCheckBox" name="depth_shading">
+               <property name="text">
+                <string>Depth Shading</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -548,8 +558,9 @@
   <tabstop>export_button</tabstop>
   <tabstop>projection</tabstop>
   <tabstop>plot_color_option</tabstop>
-  <tabstop>set_view_direction</tabstop>
   <tabstop>hide_axes</tabstop>
+  <tabstop>set_view_direction</tabstop>
+  <tabstop>depth_shading</tabstop>
   <tabstop>convert_strain_to_stress</tabstop>
   <tabstop>export_stresses</tabstop>
   <tabstop>glyph_size_slider</tabstop>

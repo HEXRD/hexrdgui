@@ -164,8 +164,13 @@ class FitGrainsResultsDialog(QObject):
         # I could not find a way to update scatter plot marker colors and
         # the colorbar mappable. So we must re-draw both from scratch...
         self.clear_artists()
-        self.scatter_artist = self.ax.scatter3D(*coords, c=colors,
-                                                cmap=self.cmap, s=sz)
+        kwargs = {
+            'c': colors,
+            'cmap': self.cmap,
+            's': sz,
+            'depthshade': self.depth_shading,
+        }
+        self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
         self.draw()
 
@@ -211,6 +216,14 @@ class FitGrainsResultsDialog(QObject):
             horizontal_header.setSortIndicatorShown(False)
 
     @property
+    def depth_shading(self):
+        return self.ui.depth_shading.isChecked()
+
+    @depth_shading.setter
+    def depth_shading(self, v):
+        self.ui.depth_shading.setChecked(v)
+
+    @property
     def projection(self):
         name_map = {
             'Perspective': 'persp',
@@ -230,6 +243,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.plot_color_option.currentIndexChanged.connect(
             self.on_colorby_changed)
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
+        self.ui.depth_shading.toggled.connect(self.update_plot)
         self.ui.finished.connect(self.finished)
         self.ui.color_maps.currentIndexChanged.connect(self.update_cmap)
         self.ui.glyph_size_slider.valueChanged.connect(self.update_plot)
