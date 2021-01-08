@@ -517,6 +517,16 @@
                </property>
               </widget>
              </item>
+             <item row="3" column="1">
+              <widget class="QCheckBox" name="cylindrical_reference">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For the 3D coordinates, use a cylindrical reference frame (ρ, φ, Y) instead of cartesian coordinates.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Cylindrical  Reference</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -561,6 +571,7 @@
   <tabstop>hide_axes</tabstop>
   <tabstop>set_view_direction</tabstop>
   <tabstop>depth_shading</tabstop>
+  <tabstop>cylindrical_reference</tabstop>
   <tabstop>convert_strain_to_stress</tabstop>
   <tabstop>export_stresses</tabstop>
   <tabstop>glyph_size_slider</tabstop>
