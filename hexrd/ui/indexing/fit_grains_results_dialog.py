@@ -25,6 +25,12 @@ from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 
 
+COORDS_SLICE = slice(6, 9)
+ELASTIC_SLICE = slice(15, 21)
+ELASTIC_OFF_DIAGONAL_SLICE = slice(18, 21)
+EQUIVALENT_IND = 21
+HYDROSTATIC_IND = 22
+
 # Sortable columns are grain id, completeness, chi^2, and t_vec_c
 SORTABLE_COLUMNS = [
     *range(0, 3),
@@ -72,7 +78,7 @@ class FitGrainsResultsDialog(QObject):
         eqv_strain = np.zeros(self.num_grains)
         hydrostatic_strain = np.zeros(self.num_grains)
         for i, grain in enumerate(self.data):
-            epsilon = vecMVToSymm(grain[15:21], scale=False)
+            epsilon = vecMVToSymm(grain[ELASTIC_SLICE], scale=False)
             deviator = epsilon - (1/3) * np.trace(epsilon) * np.identity(3)
             eqv_strain[i] = 2 * np.sqrt(np.sum(deviator**2)) / 3
             hydrostatic_strain[i] = 1 / 3 * np.trace(epsilon)
@@ -104,22 +110,44 @@ class FitGrainsResultsDialog(QObject):
         tensor_type = self.tensor_type
         data = copy.deepcopy(self.data)
 
+        if self.cylindrical_reference:
+            for grain in data:
+                x, y, z = grain[COORDS_SLICE]
+                rho = np.sqrt(x**2 + z**2)
+                phi = np.arctan2(z, x)
+                grain[COORDS_SLICE] = (rho, phi, y)
+
         if tensor_type == 'stress':
             for grain in data:
                 # Convert strain to stress
                 # Multiply last three numbers by factor of 2
-                grain[18:21] *= 2
-                grain[15:21] = np.dot(self.compliance, grain[15:21])
+                grain[ELASTIC_OFF_DIAGONAL_SLICE] *= 2
+                grain[ELASTIC_SLICE] = np.dot(self.compliance,
+                                              grain[ELASTIC_SLICE])
 
                 # Compute the equivalent stress
-                sigma = vecMVToSymm(grain[15:21], scale=False)
+                sigma = vecMVToSymm(grain[ELASTIC_SLICE], scale=False)
                 deviator = sigma - (1/3) * np.trace(sigma) * np.identity(3)
-                grain[21] = 3 * np.sqrt(np.sum(deviator**2)) / 2
+                grain[EQUIVALENT_IND] = 3 * np.sqrt(np.sum(deviator**2)) / 2
 
                 # Compute the hydrostatic stress
-                grain[22] = 1 / 3 * np.trace(sigma)
+                grain[HYDROSTATIC_IND] = 1 / 3 * np.trace(sigma)
 
         return data
+
+    @property
+    def axes_labels(self):
+        if self.cylindrical_reference:
+            return ('ρ', 'φ', 'Y')
+        return ('X', 'Y', 'Z')
+
+    @property
+    def cylindrical_reference(self):
+        return self.ui.cylindrical_reference.isChecked()
+
+    @cylindrical_reference.setter
+    def cylindrical_reference(self, v):
+        self.ui.cylindricalreference.setChecked(v)
 
     @property
     def stiffness(self):
@@ -155,17 +183,23 @@ class FitGrainsResultsDialog(QObject):
         self.update_plot()
 
     def update_plot(self):
+        data = self.converted_data
         column = self.ui.plot_color_option.currentData()
-        colors = self.converted_data[:, column]
+        colors = data[:, column]
 
-        coords = self.data[:, 6:9]
+        coords = data[:, COORDS_SLICE].T
         sz = self.ui.glyph_size_slider.value()
 
         # I could not find a way to update scatter plot marker colors and
         # the colorbar mappable. So we must re-draw both from scratch...
         self.clear_artists()
-        self.scatter_artist = self.ax.scatter3D(*coords, c=colors,
-                                                cmap=self.cmap, s=sz)
+        kwargs = {
+            'c': colors,
+            'cmap': self.cmap,
+            's': sz,
+            'depthshade': self.depth_shading,
+        }
+        self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
         self.draw()
 
@@ -193,7 +227,7 @@ class FitGrainsResultsDialog(QObject):
         if not selected_file:
             return
 
-        stresses = self.converted_data[:, 15:21]
+        stresses = self.converted_data[:, ELASTIC_SLICE]
         HexrdConfig().working_dir = str(Path(selected_file).parent)
         ext = Path(selected_file).suffix
         if ext != '.npz':
@@ -211,6 +245,14 @@ class FitGrainsResultsDialog(QObject):
             horizontal_header.setSortIndicatorShown(False)
 
     @property
+    def depth_shading(self):
+        return self.ui.depth_shading.isChecked()
+
+    @depth_shading.setter
+    def depth_shading(self, v):
+        self.ui.depth_shading.setChecked(v)
+
+    @property
     def projection(self):
         name_map = {
             'Perspective': 'persp',
@@ -222,6 +264,10 @@ class FitGrainsResultsDialog(QObject):
         self.ax.set_proj_type(self.projection)
         self.draw()
 
+    def cylindrical_reference_toggled(self):
+        self.update_axes_labels()
+        self.update_plot()
+
     def setup_connections(self):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
         self.ui.export_stresses.clicked.connect(
@@ -230,10 +276,13 @@ class FitGrainsResultsDialog(QObject):
         self.ui.plot_color_option.currentIndexChanged.connect(
             self.on_colorby_changed)
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
+        self.ui.depth_shading.toggled.connect(self.update_plot)
         self.ui.finished.connect(self.finished)
         self.ui.color_maps.currentIndexChanged.connect(self.update_cmap)
         self.ui.glyph_size_slider.valueChanged.connect(self.update_plot)
         self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
+        self.ui.cylindrical_reference.toggled.connect(
+            self.cylindrical_reference_toggled)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -256,14 +305,14 @@ class FitGrainsResultsDialog(QObject):
 
         fig = canvas.figure
         ax = fig.add_subplot(111, projection='3d', proj_type=self.projection)
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+
         self.ui.canvas_layout.addWidget(canvas)
 
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
+
+        self.update_axes_labels()
 
     def setup_toolbar(self):
         # These don't work for 3D plots
@@ -348,6 +397,13 @@ class FitGrainsResultsDialog(QObject):
 
         self.draw()
 
+    def update_axes_labels(self):
+        axes = ('x', 'y', 'z')
+        labels = self.axes_labels
+        for axis, label in zip(axes, labels):
+            func = getattr(self.ax, f'set_{axis}label')
+            func(label)
+
     def update_selectors(self):
         tensor_type = self.tensor_type.capitalize()
 
@@ -355,8 +411,8 @@ class FitGrainsResultsDialog(QObject):
         items = [
             ('Completeness', 1),
             ('Goodness of Fit', 2),
-            (f'Equivalent {tensor_type}', 21),
-            (f'Hydrostatic {tensor_type}', 22),
+            (f'Equivalent {tensor_type}', EQUIVALENT_IND),
+            (f'Hydrostatic {tensor_type}', HYDROSTATIC_IND),
             (f'XX {tensor_type}', 15),
             (f'YY {tensor_type}', 16),
             (f'ZZ {tensor_type}', 17),
@@ -379,7 +435,7 @@ class FitGrainsResultsDialog(QObject):
             self.ui.plot_color_option.setCurrentIndex(prev_ind)
         else:
             self._first_selector_update = True
-            index = self.ui.plot_color_option.findData(21)
+            index = self.ui.plot_color_option.findData(EQUIVALENT_IND)
             self.ui.plot_color_option.setCurrentIndex(index)
 
     def setup_tableview(self):
