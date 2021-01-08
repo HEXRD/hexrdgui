@@ -187,7 +187,7 @@ class FitGrainsResultsDialog(QObject):
         column = self.ui.plot_color_option.currentData()
         colors = data[:, column]
 
-        coords = data[:, COORDS_SLICE]
+        coords = data[:, COORDS_SLICE].T
         sz = self.ui.glyph_size_slider.value()
 
         # I could not find a way to update scatter plot marker colors and
