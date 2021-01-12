@@ -230,6 +230,9 @@
           <property name="currentText">
            <string>detector_1</string>
           </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QComboBox::AdjustToContents</enum>
+          </property>
           <item>
            <property name="text">
             <string>detector_1</string>
