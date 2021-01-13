@@ -238,7 +238,7 @@ class ImportDataPanel(QObject):
             det=self.detector)
         self.update_template_style()
         if self.instrument == 'PXRDIP':
-            self.it.rotate_shape(angle=-90)
+            self.it.rotate_shape(angle=90)
 
         self.display_bounds()
         self.enable_widgets(self.ui.trans, self.ui.rotate, self.ui.button_box,
