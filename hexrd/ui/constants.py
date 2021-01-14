@@ -7,7 +7,7 @@ from hexrd import constants
 WAVELENGTH_TO_KEV = constants.keVToAngstrom(1.)
 KEV_TO_WAVELENGTH = constants.keVToAngstrom(1.)
 
-DEFAULT_CMAP = 'plasma'
+DEFAULT_CMAP = 'Greys'
 
 UI_DARK_INDEX_MEDIAN = 0
 UI_DARK_INDEX_EMPTY_FRAMES = 1
