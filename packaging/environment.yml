@@ -6,6 +6,6 @@ dependencies:
   - coloredlogs
   - conda
   - cmake
-  - conda-build=3.21.1
+  - conda-build
   - conda-pack
   - click
