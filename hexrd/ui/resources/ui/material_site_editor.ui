@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>511</width>
+    <width>562</width>
     <height>502</height>
    </rect>
   </property>
@@ -91,7 +91,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="1" colspan="3">
-       <widget class="QDoubleSpinBox" name="total_occupancy">
+       <widget class="ScientificDoubleSpinBox" name="total_occupancy">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -99,7 +99,7 @@
          <bool>false</bool>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>8</number>
         </property>
         <property name="maximum">
          <double>10000.000000000000000</double>
@@ -107,12 +107,12 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="coords_x">
+       <widget class="ScientificDoubleSpinBox" name="coords_x">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -133,12 +133,12 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="coords_y">
+       <widget class="ScientificDoubleSpinBox" name="coords_y">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -152,12 +152,12 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QDoubleSpinBox" name="coords_z">
+       <widget class="ScientificDoubleSpinBox" name="coords_z">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-10000.000000000000000</double>
@@ -203,6 +203,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.py</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>total_occupancy</tabstop>
   <tabstop>coords_x</tabstop>

@@ -5,7 +5,7 @@ import numpy as np
 
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
 from PySide2.QtWidgets import (
-    QItemEditorFactory, QStyledItemDelegate, QTableWidgetItem
+    QLineEdit, QItemEditorFactory, QStyledItemDelegate, QTableWidgetItem
 )
 
 from hexrd.constants import ptable, ptableinverse
@@ -64,6 +64,20 @@ class MaterialStructureEditor:
         site = copy.deepcopy(self.material_site_editor.site)
         self.sites[self.selected_row] = site
         self.update_material()
+
+    def ensure_scalar_U(self):
+        # When we allow editing a tensor U, we can remove this function.
+        tensor_encountered = False
+        for site in self.sites:
+            for atom in site['atoms']:
+                if isinstance(atom['U'], np.ndarray) and atom['U'].size > 1:
+                    tensor_encountered = True
+                    atom['U'] = atom['U'].mean()
+
+        if tensor_encountered:
+            name = self.material.name
+            print(f'Warning: converting U tensors in {name} to scalars')
+            self.update_material()
 
     def name_changed(self, row, column):
         new_name = self.ui.table.item(row, column).text()
@@ -320,6 +334,10 @@ class MaterialStructureEditor:
                 site['atoms'].append(atom)
 
             self.sites.append(site)
+
+        # FIXME: allow editing a tensor U as well.
+        # We can remove this function when that is done.
+        self.ensure_scalar_U()
 
 
 class Delegate(QStyledItemDelegate):
