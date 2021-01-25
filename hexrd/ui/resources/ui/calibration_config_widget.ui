@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>506</width>
+    <width>560</width>
     <height>595</height>
    </rect>
   </property>
@@ -69,7 +69,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QDoubleSpinBox" name="cal_energy_wavelength">
+          <widget class="ScientificDoubleSpinBox" name="cal_energy_wavelength">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -80,7 +80,7 @@
             <string> Å</string>
            </property>
            <property name="decimals">
-            <number>6</number>
+            <number>8</number>
            </property>
            <property name="minimum">
             <double>0.000001000000000</double>
@@ -97,7 +97,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="cal_energy">
+          <widget class="ScientificDoubleSpinBox" name="cal_energy">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -108,10 +108,10 @@
             <string> keV</string>
            </property>
            <property name="decimals">
-            <number>4</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>0.100000000000000</double>
+            <double>0.000001000000000</double>
            </property>
            <property name="maximum">
             <double>1000000.000000000000000</double>
@@ -149,7 +149,7 @@
           <number>0</number>
          </property>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="cal_vector_azimuth">
+          <widget class="ScientificDoubleSpinBox" name="cal_vector_azimuth">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -163,7 +163,7 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="maximum">
             <double>360.000000000000000</double>
@@ -177,7 +177,7 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="cal_vector_polar">
+          <widget class="ScientificDoubleSpinBox" name="cal_vector_polar">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -191,7 +191,7 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="maximum">
             <double>360.000000000000000</double>
@@ -252,7 +252,7 @@
        <number>0</number>
       </property>
       <item row="4" column="1" colspan="2">
-       <widget class="QDoubleSpinBox" name="cal_det_saturation">
+       <widget class="ScientificDoubleSpinBox" name="cal_det_saturation">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -260,10 +260,10 @@
          <bool>false</bool>
         </property>
         <property name="decimals">
-         <number>1</number>
+         <number>8</number>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>10000000.000000000000000</double>
         </property>
         <property name="value">
          <double>14000.000000000000000</double>
@@ -299,7 +299,7 @@
           <number>0</number>
          </property>
          <item row="0" column="2">
-          <widget class="QDoubleSpinBox" name="cal_det_translation_1">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -310,13 +310,13 @@
             <string/>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -334,7 +334,7 @@
           </widget>
          </item>
          <item row="0" column="3">
-          <widget class="QDoubleSpinBox" name="cal_det_translation_2">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_2">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -345,13 +345,13 @@
             <string/>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -359,7 +359,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="cal_det_translation_0">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -370,13 +370,13 @@
             <string/>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -394,7 +394,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="cal_det_tilt_0">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -405,13 +405,13 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -419,7 +419,7 @@
           </widget>
          </item>
          <item row="1" column="2">
-          <widget class="QDoubleSpinBox" name="cal_det_tilt_1">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -430,13 +430,13 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -444,7 +444,7 @@
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QDoubleSpinBox" name="cal_det_tilt_2">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_2">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -455,13 +455,13 @@
             <string>°</string>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -552,13 +552,13 @@
             <string/>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -580,13 +580,13 @@
             <string/>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -608,13 +608,13 @@
             <string/>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -633,13 +633,13 @@
             <bool>false</bool>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -658,13 +658,13 @@
             <bool>false</bool>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -683,13 +683,13 @@
             <bool>false</bool>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>-10000.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>10000.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -741,7 +741,7 @@
           <number>0</number>
          </property>
          <item row="2" column="2">
-          <widget class="QDoubleSpinBox" name="cal_det_size_0">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_size_0">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -749,13 +749,13 @@
             <bool>false</bool>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>0.100000000000000</double>
+            <double>0.000001000000000</double>
            </property>
            <property name="maximum">
-            <double>100.000000000000000</double>
+            <double>1000000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -786,7 +786,7 @@
           </widget>
          </item>
          <item row="2" column="3">
-          <widget class="QDoubleSpinBox" name="cal_det_size_1">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_size_1">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
@@ -794,13 +794,13 @@
             <bool>false</bool>
            </property>
            <property name="decimals">
-            <number>5</number>
+            <number>8</number>
            </property>
            <property name="minimum">
-            <double>0.100000000000000</double>
+            <double>0.000001000000000</double>
            </property>
            <property name="maximum">
-            <double>100.000000000000000</double>
+            <double>1000000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -913,7 +913,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="cal_osc_translation_0">
+       <widget class="ScientificDoubleSpinBox" name="cal_osc_translation_0">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -924,7 +924,7 @@
          <string/>
         </property>
         <property name="decimals">
-         <number>5</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
@@ -938,7 +938,7 @@
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="QDoubleSpinBox" name="cal_osc_translation_2">
+       <widget class="ScientificDoubleSpinBox" name="cal_osc_translation_2">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -949,7 +949,7 @@
          <string/>
         </property>
         <property name="decimals">
-         <number>5</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
@@ -963,7 +963,7 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="cal_osc_translation_1">
+       <widget class="ScientificDoubleSpinBox" name="cal_osc_translation_1">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -974,7 +974,7 @@
          <string/>
         </property>
         <property name="decimals">
-         <number>5</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
@@ -988,7 +988,7 @@
        </widget>
       </item>
       <item row="0" column="1" colspan="3">
-       <widget class="QDoubleSpinBox" name="cal_osc_chi">
+       <widget class="ScientificDoubleSpinBox" name="cal_osc_chi">
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
@@ -999,7 +999,7 @@
          <string>°</string>
         </property>
         <property name="decimals">
-         <number>5</number>
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>-100000.000000000000000</double>
