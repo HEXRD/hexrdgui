@@ -477,9 +477,18 @@ class LoadPanel(QObject):
 
         self.ui.file_options.blockSignals(False)
 
-    # Process files
+    def confirm_omega_range(self):
+        omega_range = abs(self.omega_max[0] - self.omega_min[0])
+        if not (r := omega_range <= 360):
+            msg = f'The omega range is greater than 360°.'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+        return r
 
+    # Process files
     def read_data(self):
+        if not self.confirm_omega_range():
+            return
+
         data = {
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
