@@ -384,6 +384,7 @@ class LoadPanel(QObject):
                 item.setTextAlignment(Qt.AlignCenter)
                 self.ui.file_options.setItem(row, column, item)
 
+        self.ui.file_options.blockSignals(True)
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
             curr = table_files[self.idx][i]
@@ -392,7 +393,7 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
-            self.ui.file_options.item(i, 5).setText(str(self.delta[i]))
+            self.ui.file_options.item(i, 5).setText(str(round(self.delta[i], 6)))
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(curr)
@@ -409,6 +410,7 @@ class LoadPanel(QObject):
             if self.ext == '.yml':
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
 
+        self.ui.file_options.blockSignals(False)
         self.ui.file_options.resizeColumnsToContents()
 
     def contextMenuEvent(self, event):
@@ -440,7 +442,7 @@ class LoadPanel(QObject):
 
     def omega_data_changed(self, row, column):
         # Update the values for equivalent files when the data is changed
-        self.blockSignals(True)
+        self.ui.file_options.blockSignals(True)
 
         curr_val = self.ui.file_options.item(row, column).text()
         total_frames = self.total_frames[row] - self.empty_frames
@@ -462,7 +464,7 @@ class LoadPanel(QObject):
                     delta = diff / total_frames
                     self.delta[row] = delta
                     self.ui.file_options.item(row, 5).setText(
-                        str(round(delta, 2)))
+                        str(round(delta, 6)))
             elif column == 5:
                 self.delta[row] = float(curr_val)
                 if self.omega_min[row] != '':
@@ -473,7 +475,7 @@ class LoadPanel(QObject):
                         str(float(maximum)))
             self.enable_read()
 
-        self.blockSignals(False)
+        self.ui.file_options.blockSignals(False)
 
     # Process files
 
