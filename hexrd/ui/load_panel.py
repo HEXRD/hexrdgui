@@ -70,9 +70,8 @@ class LoadPanel(QObject):
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):
-        HexrdConfig().load_panel_state_reset.connect(
-            self.setup_processing_options)
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
+        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
@@ -94,7 +93,7 @@ class LoadPanel(QObject):
     def setup_processing_options(self):
         self.state = copy.copy(HexrdConfig().load_panel_state)
         num_dets = len(HexrdConfig().detector_names)
-        self.state.setdefault('agg', 0)
+        self.state.setdefault('agg', 1)
         self.state.setdefault('trans', [0 for x in range(num_dets)])
         self.state.setdefault('dark', [0 for x in range(num_dets)])
         self.state.setdefault('dark_files', [None for x in range(num_dets)])
