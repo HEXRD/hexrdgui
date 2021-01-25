@@ -268,7 +268,10 @@ class LoadPanel(QObject):
                     self.omega_min = ['0'] * len(self.yml_files[0])
                     self.omega_max = ['0.25'] * len(self.yml_files[0])
                     self.delta = [''] * len(self.yml_files[0])
-                self.empty_frames = data['options']['empty-frames']
+                options = data.get('options', {})
+                self.empty_frames = 0
+                if isinstance(options, dict):
+                    self.empty_frames = options.get('empty-frames', 0)
         else:
             for ims in tmp_ims:
                 has_omega = 'omega' in ims.metadata
@@ -413,6 +416,7 @@ class LoadPanel(QObject):
 
         self.ui.file_options.blockSignals(False)
         self.ui.file_options.resizeColumnsToContents()
+        self.ui.file_options.sortByColumn(0, Qt.AscendingOrder)
 
     def contextMenuEvent(self, event):
         # Allow user to delete selected file(s)
