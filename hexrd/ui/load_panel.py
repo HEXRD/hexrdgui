@@ -71,6 +71,7 @@ class LoadPanel(QObject):
 
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
+        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
