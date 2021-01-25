@@ -413,6 +413,7 @@ class LoadPanel(QObject):
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
 
         self.ui.file_options.resizeColumnsToContents()
+        self.ui.file_options.sortByColumn(0, Qt.AscendingOrder)
 
     def contextMenuEvent(self, event):
         # Allow user to delete selected file(s)
