@@ -70,8 +70,6 @@ class LoadPanel(QObject):
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):
-        HexrdConfig().load_panel_state_reset.connect(
-            self.setup_processing_options)
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
