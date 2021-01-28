@@ -8,7 +8,7 @@ from PySide2.QtGui import QCursor
 from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
-from hexrd.ui.constants import UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE
+from hexrd.ui.constants import UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -103,7 +103,7 @@ class LoadPanel(QObject):
     def dark_mode_changed(self):
         self.state['dark'][self.idx] = self.ui.darkMode.currentIndex()
 
-        if self.state['dark'][self.idx] == 4:
+        if self.state['dark'][self.idx] == UI_DARK_INDEX_FILE:
             self.ui.selectDark.setEnabled(True)
             if self.dark_files[self.idx]:
                 self.ui.dark_file.setText(self.dark_files[self.idx])
@@ -123,7 +123,7 @@ class LoadPanel(QObject):
 
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
-        if self.ui.aggregation.currentIndex() == 0:
+        if self.ui.aggregation.currentIndex() == UI_AGG_INDEX_NONE:
             ImageLoadManager().reset_unagg_imgs()
 
     def trans_changed(self):
@@ -230,7 +230,7 @@ class LoadPanel(QObject):
                     [UI_DARK_INDEX_NONE for x in range(num_dets)])
                 self.ui.darkMode.setCurrentIndex(UI_DARK_INDEX_NONE)
             # Update aggregation settings
-            self.state['agg'] = 0
+            self.state['agg'] = UI_AGG_INDEX_NONE
             self.ui.aggregation.setCurrentIndex(0)
 
     def load_image_data(self, selected_files):
@@ -355,7 +355,7 @@ class LoadPanel(QObject):
     def enable_read(self):
         if (self.ext == '.tiff'
                 or '' not in self.omega_min and '' not in self.omega_max):
-            if (self.state['dark'][self.idx] == 4
+            if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
                     and self.dark_files[self.idx] is not None):
                 self.ui.read.setEnabled(len(self.files))
                 return
