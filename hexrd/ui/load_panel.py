@@ -278,9 +278,9 @@ class LoadPanel(QObject):
                 if has_omega:
                     self.get_omega_data(ims)
                 else:
-                    self.omega_min.append('0')
-                    self.omega_max.append('0.25')
-                    self.delta.append('')
+                    self.omega_min.append(0)
+                    self.omega_max.append(0.25)
+                    self.delta.append(0.25)
 
     def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
