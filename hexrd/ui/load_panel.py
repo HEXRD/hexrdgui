@@ -78,7 +78,8 @@ class LoadPanel(QObject):
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
         HexrdConfig().instrument_config_loaded.connect(self.config_changed)
-        HexrdConfig().load_panel_state_reset.connect(self.setup_processing_options)
+        HexrdConfig().load_panel_state_reset.connect(
+            self.setup_processing_options)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
@@ -101,8 +102,10 @@ class LoadPanel(QObject):
         self.state = HexrdConfig().load_panel_state
         num_dets = len(HexrdConfig().detector_names)
         self.state.setdefault('agg', UI_AGG_INDEX_NONE)
-        self.state.setdefault('trans', [UI_TRANS_INDEX_NONE for x in range(num_dets)])
-        self.state.setdefault('dark', [UI_DARK_INDEX_NONE for x in range(num_dets)])
+        self.state.setdefault(
+            'trans', [UI_TRANS_INDEX_NONE for x in range(num_dets)])
+        self.state.setdefault(
+            'dark', [UI_DARK_INDEX_NONE for x in range(num_dets)])
         self.state.setdefault('dark_files', [None for x in range(num_dets)])
 
     # Handle GUI changes
