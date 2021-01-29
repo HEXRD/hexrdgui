@@ -222,6 +222,7 @@ class MainWindow(QObject):
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
+        ImageLoadManager().live_update_status.connect(self.live_update)
 
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)

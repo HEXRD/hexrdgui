@@ -506,4 +506,3 @@ class LoadPanel(QObject):
             data['yml_files'] = self.yml_files
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
-        self.images_loaded.emit()
