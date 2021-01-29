@@ -1,8 +1,8 @@
 import copy
-import os
 import yaml
 import glob
 import numpy as np
+from pathlib import Path
 
 from PySide2.QtGui import QCursor
 from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
@@ -131,8 +131,7 @@ class LoadPanel(QObject):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
-        new_dir = os.path.commonpath(
-            [fname for fnames in self.files for fname in fnames])
+        new_dir = str(Path(self.files[0][0]).parent)
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
         self.ui.img_directory.setText(self.parent_dir)
@@ -235,7 +234,7 @@ class LoadPanel(QObject):
             self.ui.aggregation.setCurrentIndex(0)
 
     def load_image_data(self, selected_files):
-        self.ext = os.path.splitext(selected_files[0])[1]
+        self.ext = Path(selected_files[0]).suffix
         has_omega = False
 
         # Select the path if the file(s) are HDF5
@@ -302,7 +301,7 @@ class LoadPanel(QObject):
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
-                fname = os.path.join(self.parent_dir, words[2])
+                fname = Path(self.parent_dir, words[-1])
                 nparray = np.load(fname)
             else:
                 nparray = data['meta']['omega']
@@ -350,7 +349,7 @@ class LoadPanel(QObject):
                 raw_images = data['files'].split()
                 for raw_image in raw_images:
                     files.extend(glob.glob(
-                        os.path.join(data['directory'], raw_image)))
+                        PurePath(data['directory'], raw_image)))
             self.yml_files.append(files)
 
     def enable_read(self):
@@ -388,7 +387,7 @@ class LoadPanel(QObject):
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
             curr = table_files[self.idx][i]
-            self.ui.file_options.item(i, 0).setText(os.path.split(curr)[1])
+            self.ui.file_options.item(i, 0).setText(curr.name)
             self.ui.file_options.item(i, 1).setText(str(self.empty_frames))
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
@@ -397,7 +396,7 @@ class LoadPanel(QObject):
                 str(round(self.delta[i], 6)))
 
             # Set tooltips
-            self.ui.file_options.item(i, 0).setToolTip(curr)
+            self.ui.file_options.item(i, 0).setToolTip(curr.name)
             self.ui.file_options.item(i, 3).setToolTip('Minimum must be set')
             self.ui.file_options.item(i, 4).setToolTip(
                 'Must set either maximum or delta')
