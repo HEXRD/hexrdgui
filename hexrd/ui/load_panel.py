@@ -354,16 +354,13 @@ class LoadPanel(QObject):
             self.yml_files.append(files)
 
     def enable_read(self):
-        if (self.ext == '.tiff'
-                or '' not in self.omega_min and '' not in self.omega_max):
+        files = self.yml_files if self.ext in YAML_EXTS else self.files
+        enabled = True
+        if len(files) and all(len(f) for f in files):
             if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
-                    and self.dark_files[self.idx] is not None):
-                self.ui.read.setEnabled(len(self.files))
-                return
-            elif self.state['dark'][self.idx] != 4 and len(self.files):
-                self.ui.read.setEnabled(True)
-                return
-        self.ui.read.setEnabled(False)
+                    and self.dark_files[self.idx] is None):
+                enabled = False
+            self.ui.read.setEnabled(enabled)
 
     # Handle table setup and changes
 
