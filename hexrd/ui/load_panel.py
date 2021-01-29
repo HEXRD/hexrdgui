@@ -9,7 +9,7 @@ from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
-    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE)
+    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE, YAML_EXTS)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -246,7 +246,7 @@ class LoadPanel(QObject):
 
         tmp_ims = []
         for img in selected_files:
-            if self.ext != '.yml':
+            if self.ext not in YAML_EXTS:
                 tmp_ims.append(ImageFileManager().open_file(img))
 
         self.find_images(selected_files)
@@ -254,7 +254,7 @@ class LoadPanel(QObject):
         if not self.files:
             return
 
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             for yf in self.yml_files[0]:
                 ims = ImageFileManager().open_file(yf)
                 self.total_frames.append(len(ims) if len(ims) > 0 else 1)
@@ -337,7 +337,7 @@ class LoadPanel(QObject):
 
         self.dir_changed()
 
-        if self.files and self.ext == '.yml':
+        if self.files and self.ext in YAML_EXTS:
             self.get_yml_files()
 
     def get_yml_files(self):
@@ -372,7 +372,7 @@ class LoadPanel(QObject):
         if not len(self.files):
             return
 
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             table_files = self.yml_files
         else:
             table_files = self.files
@@ -411,7 +411,7 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
             # If raw data offset can only be changed in YAML file
-            if self.ext == '.yml':
+            if self.ext in YAML_EXTS:
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
 
         self.ui.file_options.blockSignals(False)
@@ -502,7 +502,7 @@ class LoadPanel(QObject):
             }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
