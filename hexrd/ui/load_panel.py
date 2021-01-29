@@ -36,7 +36,7 @@ class LoadPanel(QObject):
         self.ui = loader.load_file('load_panel.ui', parent)
 
         self.ims = HexrdConfig().imageseries_dict
-        self.parent_dir = HexrdConfig().images_dir if HexrdConfig().images_dir else ''
+        self.parent_dir = HexrdConfig().images_dir
 
         self.files = []
         self.omega_min = []
@@ -65,7 +65,10 @@ class LoadPanel(QObject):
         if not self.parent_dir:
             self.ui.img_directory.setText('No directory set')
         else:
-            self.ui.img_directory.setText(self.parent_dir)
+            directory = self.parent_dir
+            if os.path.isfile(directory):
+                directory = os.path.basename(directory)
+            self.ui.img_directory.setText(directory)
 
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
@@ -135,7 +138,7 @@ class LoadPanel(QObject):
             [fname for fnames in self.files for fname in fnames])
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
-        self.ui.img_directory.setText(self.parent_dir)
+        self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
 
     def config_changed(self):
         self.setup_processing_options()
