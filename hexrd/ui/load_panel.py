@@ -348,8 +348,8 @@ class LoadPanel(QObject):
                     data = yaml.safe_load(yml_file)['image-files']
                 raw_images = data['files'].split()
                 for raw_image in raw_images:
-                    files.extend(glob.glob(
-                        PurePath(data['directory'], raw_image)))
+                    path = Path(self.parent_dir, data['directory'])
+                    files.extend(path.glob(raw_image))
             self.yml_files.append(files)
 
     def enable_read(self):
