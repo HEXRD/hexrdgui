@@ -495,4 +495,14 @@ class LoadPanel(QObject):
         self.images_loaded.emit()
 
     def load_image_stacks(self):
-        ImageStackDialog(self.parent()).exec_()
+        if data := ImageStackDialog(self.parent()).exec_():
+            self.files = data['files']
+            self.yml_files = data['yml_files']
+            self.omega_min = data['omega_min']
+            self.omega_max = data['omega_max']
+            self.delta = data['delta']
+            self.empty_frames = data['empty_frames']
+            self.total_frames = data['total_frames']
+            self.ext = '.yml'
+            self.create_table()
+            self.enable_read()

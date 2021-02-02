@@ -1,4 +1,7 @@
 import copy
+import tempfile
+import yaml
+import numpy as np
 from pathlib import Path
 
 from PySide2.QtWidgets import QFileDialog
@@ -165,6 +168,61 @@ class ImageStackDialog:
         self.ui.stop_omega.setMaximum(
             (self.ui.start_omega.value() + MAXIMUM_OMEGA_RANGE))
 
+    def get_files(self):
+        temp, imgs = [], []
+        for det in self.detectors:
+            d = self.state[det]['directory']
+            f = self.state[det]['files'] if self.state[det]['files'] else '*'
+            t = tempfile.NamedTemporaryFile(suffix='.yml', delete=False)
+            input_dict = {
+                'image-files': {},
+                'options': {},
+                'meta': {}
+            }
+            input_dict['image-files']['directory'] = d
+            input_dict['image-files']['files'] = f
+            input_dict['options']['empty-frames'] = self.state['empty-frames']
+            input_dict['options']['max-frame-file'] = (
+                self.state['max-frame-file'])
+            input_dict['options']['max-frames'] = self.state['max-frames']
+            input_dict['meta']['panel'] = det
+            if self.state['omega-from-file']:
+                input_dict['meta']['omega'] = (
+                    f'! load-numpy-array {self.state["omega"]}')
+            else:
+                input_dict['meta']['ostart'] = self.state['ostart']
+                input_dict['meta']['ostop'] = self.state['ostop']
+            data = yaml.dump(input_dict).encode('utf-8')
+            t.write(data)
+            t.close()
+            temp.append([t.name])
+            imgs.append(sorted([str(p) for p in Path(d).glob(f)]))
+        num_files = len(imgs[0])
+        return temp, imgs, num_files
+
+    def get_omega_values(self, num_files):
+        start = self.state['ostart']
+        stop = self.state['ostop']
+        delta = self.state['delta']
+        frames = self.state['total-frames']
+        omega = np.linspace(
+            [start, start + delta],
+            [stop - delta, stop],
+            (frames * num_files))
+        return omega[:,0], omega[:,1]
+
     def exec_(self):
         if self.ui.exec_():
-            return True
+            HexrdConfig().stack_state = copy.deepcopy(self.state)
+            temp_files, img_files, num_files = self.get_files()
+            start, stop = self.get_omega_values(num_files)
+            data = {
+                'files': temp_files,
+                'yml_files': img_files,
+                'omega_min': start,
+                'omega_max': stop,
+                'delta': [self.state['delta']] * num_files,
+                'empty_frames': self.state['empty-frames'],
+                'total_frames': [self.state['total-frames']] * num_files,
+            }
+            return data
