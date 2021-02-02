@@ -164,3 +164,7 @@ class ImageStackDialog:
             (self.ui.start_omega.value() - MAXIMUM_OMEGA_RANGE))
         self.ui.stop_omega.setMaximum(
             (self.ui.start_omega.value() + MAXIMUM_OMEGA_RANGE))
+
+    def exec_(self):
+        if self.ui.exec_():
+            return True

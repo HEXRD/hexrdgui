@@ -12,6 +12,7 @@ from hexrd.ui.constants import UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.image_stack_dialog import ImageStackDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.ui_loader import UiLoader
 
@@ -78,6 +79,7 @@ class LoadPanel(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
+        self.ui.image_stack.clicked.connect(self.load_image_stacks)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.switch_detector)
@@ -491,3 +493,6 @@ class LoadPanel(QObject):
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
         self.images_loaded.emit()
+
+    def load_image_stacks(self):
+        ImageStackDialog(self.parent()).exec_()
