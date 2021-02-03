@@ -1,5 +1,5 @@
 from PySide2.QtCore import (
-    QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal, Slot)
+    QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal)
 from PySide2.QtWidgets import QDialogButtonBox, QHeaderView
 
 from hexrd.ui import enter_key_filter
@@ -71,13 +71,11 @@ class FitGrainsOptionsDialog(QObject):
     def show(self):
         self.ui.show()
 
-    @Slot()
     def on_accepted(self):
         # Save the selected options on the config
         self.update_config()
         self.accepted.emit()
 
-    @Slot()
     def on_tolerances_add_row(self):
         new_row_num = self.tolerances_model.rowCount()
         self.tolerances_model.add_row()
@@ -91,28 +89,24 @@ class FitGrainsOptionsDialog(QObject):
         # Have to repaint - is that because we are in a modal dialog?
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    @Slot()
     def on_tolerances_delete_row(self):
         rows = self._get_selected_rows()
         self.tolerances_model.delete_rows(rows)
         self.ui.tolerances_view.selectionModel().clear()
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    @Slot()
     def on_tolerances_move_down(self):
         rows = self._get_selected_rows()
         self.tolerances_model.move_rows(rows, 1)
         self.ui.tolerances_view.selectionModel().clear()
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    @Slot()
     def on_tolerances_move_up(self):
         rows = self._get_selected_rows()
         self.tolerances_model.move_rows(rows, -1)
         self.ui.tolerances_view.selectionModel().clear()
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    @Slot()
     def on_tolerances_select(self):
         """Sets button enable states based on current selection"""
         delete_enable = False
@@ -139,7 +133,6 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.move_up.setEnabled(up_enable)
         self.ui.move_down.setEnabled(down_enable)
 
-    @Slot(bool)
     def on_tth_max_toggled(self, checked):
         enabled = checked
         self.ui.tth_max_instrument.setEnabled(enabled)
@@ -147,7 +140,6 @@ class FitGrainsOptionsDialog(QObject):
         specify = self.ui.tth_max_specify.isChecked()
         self.ui.tth_max_value.setEnabled(enabled and specify)
 
-    @Slot(bool)
     def on_tth_specify_toggled(self, checked):
         self.ui.tth_max_value.setEnabled(checked)
 

@@ -1,16 +1,15 @@
 import copy
-import os
 import yaml
-import glob
 import numpy as np
+from pathlib import Path
 
 from PySide2.QtGui import QCursor
 from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
-    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE,
-    UI_AGG_INDEX_NONE, UI_TRANS_INDEX_NONE)
+    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE,
+    UI_TRANS_INDEX_NONE, YAML_EXTS)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -141,8 +140,7 @@ class LoadPanel(QObject):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
-        new_dir = os.path.commonpath(
-            [fname for fnames in self.files for fname in fnames])
+        new_dir = str(Path(self.files[0][0]).parent)
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
         self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
@@ -245,7 +243,7 @@ class LoadPanel(QObject):
             self.ui.aggregation.setCurrentIndex(0)
 
     def load_image_data(self, selected_files):
-        self.ext = os.path.splitext(selected_files[0])[1]
+        self.ext = Path(selected_files[0]).suffix
         has_omega = False
 
         # Select the path if the file(s) are HDF5
@@ -256,7 +254,7 @@ class LoadPanel(QObject):
 
         tmp_ims = []
         for img in selected_files:
-            if self.ext != '.yml':
+            if self.ext not in YAML_EXTS:
                 tmp_ims.append(ImageFileManager().open_file(img))
 
         self.find_images(selected_files)
@@ -264,7 +262,7 @@ class LoadPanel(QObject):
         if not self.files:
             return
 
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             for yf in self.yml_files[0]:
                 ims = ImageFileManager().open_file(yf)
                 self.total_frames.append(len(ims) if len(ims) > 0 else 1)
@@ -312,7 +310,7 @@ class LoadPanel(QObject):
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
-                fname = os.path.join(self.parent_dir, words[2])
+                fname = Path(self.parent_dir, words[-1])
                 nparray = np.load(fname)
             else:
                 nparray = data['meta']['omega']
@@ -347,7 +345,7 @@ class LoadPanel(QObject):
 
         self.dir_changed()
 
-        if self.files and self.ext == '.yml':
+        if self.files and self.ext in YAML_EXTS:
             self.get_yml_files()
 
     def get_yml_files(self):
@@ -359,21 +357,18 @@ class LoadPanel(QObject):
                     data = yaml.safe_load(yml_file)['image-files']
                 raw_images = data['files'].split()
                 for raw_image in raw_images:
-                    files.extend(glob.glob(
-                        os.path.join(data['directory'], raw_image)))
+                    path = Path(self.parent_dir, data['directory'])
+                    files.extend(path.glob(raw_image))
             self.yml_files.append(files)
 
     def enable_read(self):
-        if (self.ext == '.tiff'
-                or '' not in self.omega_min and '' not in self.omega_max):
+        files = self.yml_files if self.ext in YAML_EXTS else self.files
+        enabled = True
+        if len(files) and all(len(f) for f in files):
             if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
-                    and self.dark_files[self.idx] is not None):
-                self.ui.read.setEnabled(len(self.files))
-                return
-            elif self.state['dark'][self.idx] != 4 and len(self.files):
-                self.ui.read.setEnabled(True)
-                return
-        self.ui.read.setEnabled(False)
+                    and self.dark_files[self.idx] is None):
+                enabled = False
+            self.ui.read.setEnabled(enabled)
 
     # Handle table setup and changes
 
@@ -382,7 +377,7 @@ class LoadPanel(QObject):
         if not len(self.files):
             return
 
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             table_files = self.yml_files
         else:
             table_files = self.files
@@ -401,7 +396,7 @@ class LoadPanel(QObject):
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
             curr = table_files[self.idx][i]
-            self.ui.file_options.item(i, 0).setText(os.path.split(curr)[1])
+            self.ui.file_options.item(i, 0).setText(curr.name)
             self.ui.file_options.item(i, 1).setText(str(self.empty_frames))
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
@@ -410,7 +405,7 @@ class LoadPanel(QObject):
                 str(round(self.delta[i], 6)))
 
             # Set tooltips
-            self.ui.file_options.item(i, 0).setToolTip(curr)
+            self.ui.file_options.item(i, 0).setToolTip(curr.name)
             self.ui.file_options.item(i, 3).setToolTip('Minimum must be set')
             self.ui.file_options.item(i, 4).setToolTip(
                 'Must set either maximum or delta')
@@ -421,7 +416,7 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
             # If raw data offset can only be changed in YAML file
-            if self.ext == '.yml':
+            if self.ext in YAML_EXTS:
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
 
         self.ui.file_options.blockSignals(False)
@@ -512,7 +507,6 @@ class LoadPanel(QObject):
             }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
         ImageLoadManager().read_data(self.files, data, self.parent())
-        self.images_loaded.emit()

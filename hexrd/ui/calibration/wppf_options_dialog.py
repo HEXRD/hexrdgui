@@ -51,7 +51,7 @@ class WppfOptionsDialog(QObject):
 
         self.load_initial_params()
         self.load_settings()
-        self.update_extra_params()
+        self.reset_extra_params()
 
         self.value_spinboxes = []
         self.minimum_spinboxes = []
@@ -100,7 +100,7 @@ class WppfOptionsDialog(QObject):
         self.default_params = yaml.load(text, Loader=yaml.FullLoader)
         self.params = copy.deepcopy(self.default_params)
 
-    def update_extra_params(self):
+    def reset_extra_params(self):
         # First, make a copy of the old params object. We will remove all
         # extra params currently in place.
         old_params = copy.deepcopy(self.params)
@@ -172,7 +172,7 @@ class WppfOptionsDialog(QObject):
         dialog = SelectItemsDialog(items, self.ui)
         if dialog.exec_():
             self.selected_materials = dialog.selected_items
-            self.update_extra_params()
+            self.reset_extra_params()
             self.update_table()
 
     def update_visible_background_parameters(self):
@@ -281,7 +281,7 @@ class WppfOptionsDialog(QObject):
 
     def reset_table_to_defaults(self):
         self.params = copy.deepcopy(self.default_params)
-        self.update_extra_params()
+        self.reset_extra_params()
         self.update_table()
 
     def create_label(self, v):
@@ -365,16 +365,15 @@ class WppfOptionsDialog(QObject):
 
     def update_params(self):
         for i, (name, vals) in enumerate(self.params.items()):
-            if any(name.endswith(x) for x in LENGTH_SUFFIXES):
-                # Convert from angstrom to nm for WPPF
-                vals = copy.deepcopy(vals)
-                for j in range(3):
-                    vals[j] /= 10.0
-
             vals[0] = self.value_spinboxes[i].value()
             vals[1] = self.minimum_spinboxes[i].value()
             vals[2] = self.maximum_spinboxes[i].value()
             vals[3] = self.vary_checkboxes[i].isChecked()
+
+            if any(name.endswith(x) for x in LENGTH_SUFFIXES):
+                # Convert from angstrom to nm for WPPF
+                for j in range(3):
+                    vals[j] /= 10.0
 
     @property
     def all_widgets(self):
@@ -423,7 +422,6 @@ class WppfOptionsDialog(QObject):
     def create_wppf_object(self, add_params=False):
         # If add_params is True, it allows WPPF to add more parameters
         # This is mostly for material lattice parameters
-
         method = self.wppf_method
         if method == 'LeBail':
             class_type = LeBail
@@ -433,8 +431,10 @@ class WppfOptionsDialog(QObject):
             raise Exception(f'Unknown method: {method}')
 
         if add_params:
+            # WPPF will add parameters if params is a dict
             params = self.params
         else:
+            # WPPF will not add parameters if params is a Parameters object
             params = self.create_wppf_params_object()
 
         wavelength = {

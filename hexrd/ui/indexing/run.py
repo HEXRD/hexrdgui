@@ -1,19 +1,14 @@
-import os
-
 import numpy as np
 
 from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
-from hexrd import constants as const
-from hexrd import fitgrains, indexer, instrument
+from hexrd import indexer, instrument
 from hexrd.findorientations import (
-    create_clustering_parameters, find_orientations,
-    generate_eta_ome_maps, generate_orientation_fibers,
-    run_cluster
+    create_clustering_parameters, generate_eta_ome_maps,
+    generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
-from hexrd.transforms import xfcapi
 from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.async_worker import AsyncWorker
@@ -21,34 +16,46 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
+from hexrd.ui.indexing.fit_grains_select_dialog import FitGrainsSelectDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
+from hexrd.ui.indexing.utils import generate_grains_table
 from hexrd.ui.progress_dialog import ProgressDialog
 
 
-class IndexingRunner(QObject):
+class Runner(QObject):
     progress_text = Signal(str)
 
     def __init__(self, parent=None):
-        super(IndexingRunner, self).__init__(parent)
-
+        super().__init__(parent)
         self.parent = parent
-        self.ome_maps_select_dialog = None
-        self.ome_maps_viewer_dialog = None
-        self.fit_grains_dialog = None
-        self.fit_grains_results = None
+
         self.thread_pool = QThreadPool(self.parent)
         self.progress_dialog = ProgressDialog(self.parent)
 
-        self.ome_maps = None
         self.progress_text.connect(self.progress_dialog.setLabelText)
+
+    def update_progress_text(self, text):
+        self.progress_text.emit(text)
+
+    def on_async_error(self, t):
+        exctype, value, traceback = t
+        msg = f'An ERROR occurred: {exctype}: {value}.'
+        msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
+        msg_box.setDetailedText(traceback)
+        msg_box.exec_()
+
+
+class IndexingRunner(Runner):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.clear()
 
     def clear(self):
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
-        self.fit_grains_dialog = None
-
         self.ome_maps = None
+        self.grains_table = None
 
     def run(self):
         # We will go through these steps:
@@ -120,7 +127,7 @@ class IndexingRunner(QObject):
         worker = AsyncWorker(self.run_indexer, config)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.view_fit_grains_options)
+        worker.signals.result.connect(self.start_fit_grains_runner)
         worker.signals.finished.connect(self.progress_dialog.accept)
         self.progress_dialog.exec_()
 
@@ -142,47 +149,13 @@ class IndexingRunner(QObject):
             threshold=config.find_orientations.threshold,
             doMultiProc=ncpus > 1,
             nCPUs=ncpus)
-        print('Indexing complete')
+        print('paintGrid complete')
+        self.run_clustering()
 
-    def view_fit_grains_options(self):
-        # Run dialog for user options
-        dialog = FitGrainsOptionsDialog(self.parent)
-        dialog.accepted.connect(self.fit_grains_options_accepted)
-        dialog.rejected.connect(self.clear)
-        self.fit_grains_options_dialog = dialog
-        dialog.show()
-
-    def fit_grains_options_accepted(self):
-        # Create a full indexing config
+    def run_clustering(self):
         config = create_indexing_config()
-
-        # Setup to run in background
-        self.progress_dialog.setWindowTitle('Fit Grains')
-        self.progress_dialog.setRange(0, 0)  # no numerical updates
-
-        worker = AsyncWorker(self.run_fit_grains, config)
-        self.thread_pool.start(worker)
-
-        worker.signals.result.connect(self.view_fit_grains_results)
-        worker.signals.error.connect(self.on_async_error)
-        worker.signals.finished.connect(self.progress_dialog.accept)
-        self.progress_dialog.exec_()
-
-    def run_fit_grains(self, config):
-        self.fit_grains_results = None
         min_samples, mean_rpg = create_clustering_parameters(config,
                                                              self.ome_maps)
-
-        # Add fit_grains config
-        dialog_config = HexrdConfig().indexing_config['fit_grains']
-        config.set('fitgrains:npdiv', dialog_config['npdiv'])
-        config.set('fitgrains:refit', dialog_config['refit'])
-        config.set('fitgrains:threshold', dialog_config['threshold'])
-        config.set('fitgrains:tth_max', dialog_config['tth_max'])
-        config.set('fitgrains:tolerance:tth', dialog_config['tth_tolerances'])
-        config.set('fitgrains:tolerance:eta', dialog_config['eta_tolerances'])
-        config.set(
-            'fitgrains:tolerance:omega', dialog_config['omega_tolerances'])
 
         kwargs = {
             'compl': self.completeness,
@@ -194,62 +167,152 @@ class IndexingRunner(QObject):
             'radius': config.find_orientations.clustering.radius
         }
         self.update_progress_text('Running clustering')
-        qbar, cl = run_cluster(**kwargs)
+        self.qbar, cl = run_cluster(**kwargs)
 
-        # Generate grains table
-        num_grains = qbar.shape[1]
+        print('Clustering complete...')
+        self.generate_grains_table()
+
+    def generate_grains_table(self):
+        self.update_progress_text('Generating grains table')
+        num_grains = self.qbar.shape[1]
         if num_grains == 0:
-            print('Fit Grains Complete - no grains were found')
+            print('No grains found')
             return
 
-        shape = (num_grains, 21)
-        grains_table = np.empty(shape)
-        gw = instrument.GrainDataWriter(array=grains_table)
-        for gid, q in enumerate(qbar.T):
-            phi = 2*np.arccos(q[0])
-            n = xfcapi.unitRowVector(q[1:])
-            grain_params = np.hstack([phi*n, const.zeros_3, const.identity_6x1])
-            gw.dump_grain(gid, 1., 0., grain_params)
-        gw.close()
+        msg = f'{num_grains} grains found'
+        self.update_progress_text(msg)
+        print(msg)
 
-        self.update_progress_text(f'Found {num_grains} grains. Running fit optimization.')
+        self.grains_table = generate_grains_table(self.qbar)
 
-        self.fit_grains_results = fit_grains(config, grains_table, write_spots_files=False)
+    def start_fit_grains_runner(self):
+        # We will automatically start fit grains after the indexing
+        # is complete. The user can cancel this if they don't want to do it.
+        if self.grains_table is None:
+            msg = 'No grains found'
+            QMessageBox.critical(self.parent, msg, msg)
+            return
+
+        kwargs = {
+            'grains_table': self.grains_table,
+            'indexing_runner': self,
+            'parent': self.parent,
+        }
+        runner = self._fit_grains_runner = FitGrainsRunner(**kwargs)
+        runner.run()
+
+
+class FitGrainsRunner(Runner):
+
+    def __init__(self, grains_table=None, indexing_runner=None, parent=None):
+        """
+        If the grains_table is set, the user will not be asked to specify a
+        grains table. Otherwise, a dialog will appear asking the user to
+        provide a grains table.
+
+        If the indexing_runner is set, and the grains_table is not set, then
+        an option for the grains table will be to use the one found on the
+        indexing runner.
+        """
+        super().__init__(parent)
+        self.grains_table = grains_table
+        self.indexing_runner = indexing_runner
+        self.clear()
+
+    def clear(self):
+        self.fit_grains_select_dialog = None
+        self.fit_grains_options_dialog = None
+        self.fit_grains_results = None
+
+    def run(self):
+        # We will go through these steps:
+        # 1. If the table is not set, get the user to select one
+        # 2. Display the fit grains options
+        # 3. Run fit grains
+        # 4. View the results
+        self.select_grains_table()
+
+    def select_grains_table(self):
+        if self.grains_table is not None:
+            # The grains table is already set. Go ahead to the options.
+            self.view_fit_grains_options()
+            return
+
+        dialog = FitGrainsSelectDialog(self.indexing_runner, self.parent)
+        dialog.accepted.connect(self.grains_table_selected)
+        dialog.rejected.connect(self.clear)
+        dialog.show()
+        self.fit_grains_select_dialog = dialog
+
+    def grains_table_selected(self):
+        self.grains_table = self.fit_grains_select_dialog.grains_table
+        self.view_fit_grains_options()
+
+    def view_fit_grains_options(self):
+        # Run dialog for user options
+        dialog = FitGrainsOptionsDialog(self.parent)
+        dialog.accepted.connect(self.fit_grains_options_accepted)
+        dialog.rejected.connect(self.clear)
+        self.fit_grains_options_dialog = dialog
+        dialog.show()
+
+    def fit_grains_options_accepted(self):
+        # Setup to run in background
+        self.progress_dialog.setWindowTitle('Running Fit Grains')
+        self.progress_dialog.setRange(0, 0)  # no numerical updates
+
+        worker = AsyncWorker(self.run_fit_grains)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.view_fit_grains_results)
+        worker.signals.error.connect(self.on_async_error)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
+
+    def run_fit_grains(self):
+        num_grains = self.grains_table.shape[0]
+        self.update_progress_text(f'Running fit grains on {num_grains} grains')
+        kwargs = {
+            'cfg': create_indexing_config(),
+            'grains_table': self.grains_table,
+            'write_spots_files': False,
+        }
+        self.fit_grains_results = fit_grains(**kwargs)
         print('Fit Grains Complete')
 
     def view_fit_grains_results(self):
         if self.fit_grains_results is None:
-            QMessageBox.information(
-                self.parent, "No Grains Fond", "No grains were found")
+            msg = 'Grain fitting failed'
+            QMessageBox.information(self.parent, msg, msg)
             return
 
         for result in self.fit_grains_results:
             print(result)
 
-        # Build grains table
-        num_grains = len(self.fit_grains_results)
-        shape = (num_grains, 21)
-        grains_table = np.empty(shape)
-        gw = instrument.GrainDataWriter(array=grains_table)
-        for result in self.fit_grains_results:
-            gw.dump_grain(*result)
-        gw.close()
-
-        # Use the material to compute stress from strain
-        material = HexrdConfig().active_material
-
-        # Display results dialog
-        dialog = FitGrainsResultsDialog(grains_table, material, self.parent)
-        dialog.ui.resize(1200, 800)
+        kwargs = {
+            'fit_grains_results': self.fit_grains_results,
+            'parent': self.parent,
+        }
+        dialog = create_fit_grains_results_dialog(**kwargs)
         self.fit_grains_results_dialog = dialog
         dialog.show()
 
-    def update_progress_text(self, text):
-        self.progress_text.emit(text)
 
-    def on_async_error(self, t):
-        exctype, value, traceback = t
-        msg = f'An ERROR occurred: {exctype}: {value}.'
-        msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
-        msg_box.setDetailedText(traceback)
-        msg_box.exec_()
+def create_fit_grains_results_dialog(fit_grains_results, parent=None):
+    # Build grains table
+    num_grains = len(fit_grains_results)
+    shape = (num_grains, 21)
+    grains_table = np.empty(shape)
+    gw = instrument.GrainDataWriter(array=grains_table)
+    for result in fit_grains_results:
+        gw.dump_grain(*result)
+    gw.close()
+
+    # Use the material to compute stress from strain
+    material = HexrdConfig().active_material
+
+    # Create the dialog
+    dialog = FitGrainsResultsDialog(grains_table, material, parent)
+    dialog.ui.resize(1200, 800)
+
+    return dialog

@@ -9,9 +9,9 @@ class FitGrainsToleranceModel(QAbstractTableModel):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.tth_tolerances = list()
-        self.eta_tolerances = list()
-        self.omega_tolerances = list()
+        self.tth_tolerances = []
+        self.eta_tolerances = []
+        self.omega_tolerances = []
 
     # Override methods:
 
@@ -19,23 +19,35 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         return 3
 
     def data(self, model_index, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
-            return None
+        if role not in (Qt.DisplayRole, Qt.EditRole):
+            return
 
-        row = model_index.row()
+        row, column = model_index.row(), model_index.column()
         if row < 0 or row >= len(self.tth_tolerances):
-            return None
+            return
 
-        table = [self.tth_tolerances,
-                 self.eta_tolerances, self.omega_tolerances]
-        column = model_index.column()
-        if column < 0 or column >= len(table):
-            return None
+        if column < 0 or column >= len(self.data_columns):
+            return
 
         # Note that conventional [row][col] is reversed here
-        element = table[column][row]
+        return self.data_columns[column][row]
 
-        return element
+    def setData(self, model_index, value, role=Qt.EditRole):
+        # This should always be a float
+        try:
+            value = float(value)
+        except ValueError:
+            return False
+
+        row, column = model_index.row(), model_index.column()
+        # Note that conventional [row][col] is reversed here
+        self.data_columns[column][row] = value
+
+        return True
+
+    def flags(self, model_index):
+        # All items are editable
+        return super().flags(model_index) | Qt.ItemIsEditable
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
@@ -50,6 +62,14 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         return len(self.tth_tolerances)
 
     # Custom methods:
+
+    @property
+    def data_columns(self):
+        return (
+            self.tth_tolerances,
+            self.eta_tolerances,
+            self.omega_tolerances,
+        )
 
     def add_row(self):
         new_row = self.rowCount()
@@ -76,39 +96,31 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         """
         first = rows[0]
         last = rows[-1]
-        sourceIndex = QModelIndex()
-        destinationIndex = QModelIndex()
         destination = first + delta
         # Qt's destination depends on the direction of the move
         offset = 1 if delta > 0 else 0
-        self.beginMoveRows(sourceIndex, first, last,
-                           sourceIndex, destination + offset)
-        table = [self.tth_tolerances,
-                 self.eta_tolerances, self.omega_tolerances]
-        for i in range(len(table)):
-            data = table[i]
+        self.beginMoveRows(QModelIndex(), first, last,
+                           QModelIndex(), destination + offset)
+        for data in self.data_columns:
             moving_section = data[first:last+1]
             remaining_list = data[:first] + data[last+1:]
             first_section = remaining_list[:destination]
             last_section = remaining_list[destination:]
-            table[i] = first_section + moving_section + last_section
-        self.tth_tolerances, self.eta_tolerances, self.omega_tolerances = table
+            data[:] = first_section + moving_section + last_section
         self.endMoveRows()
 
     def copy_to_config(self, config):
-        config['tth_tolerances'] = self.tth_tolerances
-        config['eta_tolerances'] = self.eta_tolerances
-        config['omega_tolerances'] = self.omega_tolerances
+        config['tolerance'] = {
+            'tth': self.tth_tolerances,
+            'eta': self.eta_tolerances,
+            'omega': self.omega_tolerances,
+        }
 
     def update_from_config(self, config):
         # This method should generally be called *before* the instance
         # is assigned to a view, but just in case, we emit the internal
         # signals to notify views.
         self.beginResetModel()
-
-        del self.tth_tolerances[:]
-        del self.eta_tolerances[:]
-        del self.omega_tolerances[:]
 
         self.tth_tolerances = config.get('tth')
         self.eta_tolerances = config.get('eta')
