@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>fit_grains_select_dialog</class>
+ <widget class="QDialog" name="fit_grains_select_dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>635</width>
+    <height>241</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="1">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>Indexing</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Estimate</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Orientations</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QTabWidget" name="tab_widget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="indexing_tab">
+      <attribute name="title">
+       <string>Indexing</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="indexing_label">
+         <property name="text">
+          <string>Use grains from most recent indexing</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="estimate_tab">
+      <attribute name="title">
+       <string>Estimate</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="1" column="0">
+        <widget class="QLineEdit" name="estimate_file_name"/>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="select_estimate_file_button">
+         <property name="text">
+          <string>Select File</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="estimate_label">
+         <property name="text">
+          <string>Load grains.out file</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="orientations_tab">
+      <attribute name="title">
+       <string>Orientations</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="1" column="0">
+        <widget class="QLineEdit" name="orientations_file_name"/>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="select_orientations_file_button">
+         <property name="text">
+          <string>Select File</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="orientations_label">
+         <property name="text">
+          <string>Load accepted_orientations.dat file</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Method:</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>method</tabstop>
+  <tabstop>tab_widget</tabstop>
+  <tabstop>estimate_file_name</tabstop>
+  <tabstop>select_estimate_file_button</tabstop>
+  <tabstop>orientations_file_name</tabstop>
+  <tabstop>select_orientations_file_button</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>button_box</sender>
+   <signal>accepted()</signal>
+   <receiver>fit_grains_select_dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>217</x>
+     <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>button_box</sender>
+   <signal>rejected()</signal>
+   <receiver>fit_grains_select_dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>217</x>
+     <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

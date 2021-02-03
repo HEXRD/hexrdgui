@@ -37,6 +37,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     update_needed = Signal()
     new_images_loaded = Signal()
     images_transformed = Signal()
+    live_update_status = Signal(bool)
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
@@ -139,6 +140,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.begin_processing()
 
     def begin_processing(self, postprocess=False):
+        self.update_status = HexrdConfig().live_update
+        self.live_update_status.emit(False)
+
         # Create threads and loading dialog
         thread_pool = QThreadPool(self.parent)
         progress_dialog = ProgressDialog(self.parent)
@@ -198,8 +202,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def finish_processing_ims(self):
         # Display processed images on completion
-        self.update_needed.emit()
         self.new_images_loaded.emit()
+        self.live_update_status.emit(self.update_status)
+        if not self.update_status:
+            self.update_needed.emit()
         if self.transformed_images:
             HexrdConfig().instrument_config_loaded.emit()
             HexrdConfig().deep_rerender_needed.emit()
@@ -266,9 +272,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 return
 
         # Now run the dark aggregation
-        self.update_progress_text('Aggregating dark images...')
         dark_images = {}
         if dark_aggr_ops:
+            self.update_progress_text('Aggregating dark images...')
             dark_images = self.aggregate_dark_multithread(dark_aggr_ops)
 
         # Apply the operations to the imageseries

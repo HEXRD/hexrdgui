@@ -8,7 +8,8 @@ from PySide2.QtGui import QCursor
 from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
-from hexrd.ui.constants import UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE
+from hexrd.ui.constants import (
+    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -71,9 +72,8 @@ class LoadPanel(QObject):
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):
-        HexrdConfig().load_panel_state_reset.connect(
-            self.setup_processing_options)
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
+        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
@@ -96,7 +96,7 @@ class LoadPanel(QObject):
     def setup_processing_options(self):
         self.state = copy.copy(HexrdConfig().load_panel_state)
         num_dets = len(HexrdConfig().detector_names)
-        self.state.setdefault('agg', 0)
+        self.state.setdefault('agg', 1)
         self.state.setdefault('trans', [0 for x in range(num_dets)])
         self.state.setdefault('dark', [0 for x in range(num_dets)])
         self.state.setdefault('dark_files', [None for x in range(num_dets)])
@@ -106,7 +106,7 @@ class LoadPanel(QObject):
     def dark_mode_changed(self):
         self.state['dark'][self.idx] = self.ui.darkMode.currentIndex()
 
-        if self.state['dark'][self.idx] == 4:
+        if self.state['dark'][self.idx] == UI_DARK_INDEX_FILE:
             self.ui.selectDark.setEnabled(True)
             if self.dark_files[self.idx]:
                 self.ui.dark_file.setText(self.dark_files[self.idx])
@@ -126,7 +126,7 @@ class LoadPanel(QObject):
 
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
-        if self.ui.aggregation.currentIndex() == 0:
+        if self.ui.aggregation.currentIndex() == UI_AGG_INDEX_NONE:
             ImageLoadManager().reset_unagg_imgs()
 
     def trans_changed(self):
@@ -233,7 +233,7 @@ class LoadPanel(QObject):
                     [UI_DARK_INDEX_NONE for x in range(num_dets)])
                 self.ui.darkMode.setCurrentIndex(UI_DARK_INDEX_NONE)
             # Update aggregation settings
-            self.state['agg'] = 0
+            self.state['agg'] = UI_AGG_INDEX_NONE
             self.ui.aggregation.setCurrentIndex(0)
 
     def load_image_data(self, selected_files):
@@ -267,10 +267,13 @@ class LoadPanel(QObject):
                 if 'ostart' in data['meta'] or 'omega' in data['meta']:
                     self.get_yaml_omega_data(data)
                 else:
-                    self.omega_min = ['0'] * len(self.yml_files[0])
-                    self.omega_max = ['0.25'] * len(self.yml_files[0])
-                    self.delta = [''] * len(self.yml_files[0])
-                self.empty_frames = data['options']['empty-frames']
+                    self.omega_min = [0] * len(self.yml_files[0])
+                    self.omega_max = [0.25] * len(self.yml_files[0])
+                    self.delta = [0.25] * len(self.yml_files[0])
+                options = data.get('options', {})
+                self.empty_frames = 0
+                if isinstance(options, dict):
+                    self.empty_frames = options.get('empty-frames', 0)
         else:
             for ims in tmp_ims:
                 has_omega = 'omega' in ims.metadata
@@ -278,9 +281,9 @@ class LoadPanel(QObject):
                 if has_omega:
                     self.get_omega_data(ims)
                 else:
-                    self.omega_min.append('0')
-                    self.omega_max.append('0.25')
-                    self.delta.append('')
+                    self.omega_min.append(0)
+                    self.omega_max.append(0.25)
+                    self.delta.append(0.25)
 
     def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
@@ -355,7 +358,7 @@ class LoadPanel(QObject):
     def enable_read(self):
         if (self.ext == '.tiff'
                 or '' not in self.omega_min and '' not in self.omega_max):
-            if (self.state['dark'][self.idx] == 4
+            if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
                     and self.dark_files[self.idx] is not None):
                 self.ui.read.setEnabled(len(self.files))
                 return
@@ -386,6 +389,7 @@ class LoadPanel(QObject):
                 item.setTextAlignment(Qt.AlignCenter)
                 self.ui.file_options.setItem(row, column, item)
 
+        self.ui.file_options.blockSignals(True)
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
             curr = table_files[self.idx][i]
@@ -394,7 +398,8 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
-            self.ui.file_options.item(i, 5).setText(str(self.delta[i]))
+            self.ui.file_options.item(i, 5).setText(
+                str(round(self.delta[i], 6)))
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(curr)
@@ -411,7 +416,9 @@ class LoadPanel(QObject):
             if self.ext == '.yml':
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
 
+        self.ui.file_options.blockSignals(False)
         self.ui.file_options.resizeColumnsToContents()
+        self.ui.file_options.sortByColumn(0, Qt.AscendingOrder)
 
     def contextMenuEvent(self, event):
         # Allow user to delete selected file(s)
@@ -442,7 +449,7 @@ class LoadPanel(QObject):
 
     def omega_data_changed(self, row, column):
         # Update the values for equivalent files when the data is changed
-        self.blockSignals(True)
+        self.ui.file_options.blockSignals(True)
 
         curr_val = self.ui.file_options.item(row, column).text()
         total_frames = self.total_frames[row] - self.empty_frames
@@ -464,7 +471,7 @@ class LoadPanel(QObject):
                     delta = diff / total_frames
                     self.delta[row] = delta
                     self.ui.file_options.item(row, 5).setText(
-                        str(round(delta, 2)))
+                        str(round(delta, 6)))
             elif column == 5:
                 self.delta[row] = float(curr_val)
                 if self.omega_min[row] != '':
@@ -475,11 +482,20 @@ class LoadPanel(QObject):
                         str(float(maximum)))
             self.enable_read()
 
-        self.blockSignals(False)
+        self.ui.file_options.blockSignals(False)
+
+    def confirm_omega_range(self):
+        omega_range = abs(self.omega_max[0] - self.omega_min[0])
+        if not (r := omega_range <= 360):
+            msg = f'The omega range is greater than 360°.'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+        return r
 
     # Process files
-
     def read_data(self):
+        if not self.confirm_omega_range():
+            return
+
         data = {
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
@@ -492,7 +508,6 @@ class LoadPanel(QObject):
             data['yml_files'] = self.yml_files
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
-        self.images_loaded.emit()
 
     def load_image_stacks(self):
         if data := ImageStackDialog(self.parent()).exec_():

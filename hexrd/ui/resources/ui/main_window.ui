@@ -128,8 +128,10 @@
     </property>
     <addaction name="action_run_powder_calibration"/>
     <addaction name="action_run_calibration"/>
-    <addaction name="action_run_indexing"/>
     <addaction name="action_run_wppf"/>
+    <addaction name="separator"/>
+    <addaction name="action_run_indexing"/>
+    <addaction name="action_run_fit_grains"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
@@ -547,6 +549,14 @@
   <action name="action_view_fit_grains_config">
    <property name="text">
     <string>Fit Grains Config</string>
+   </property>
+  </action>
+  <action name="action_run_fit_grains">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Fit Grains</string>
    </property>
   </action>
  </widget>

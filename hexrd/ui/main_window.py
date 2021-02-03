@@ -17,7 +17,7 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
-from hexrd.ui.indexing.run import IndexingRunner
+from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.powder_calibration import run_powder_calibration
@@ -189,9 +189,11 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
+        self.ui.action_run_fit_grains.triggered.connect(
+            self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
         self.new_images_loaded.connect(self.update_color_map_bounds)
-        self.new_images_loaded.connect(self.update_indexing_menu)
+        self.new_images_loaded.connect(self.update_hedm_enable_states)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.new_images_loaded.connect(self.image_mode_widget.reset_masking)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
@@ -222,6 +224,7 @@ class MainWindow(QObject):
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
+        ImageLoadManager().live_update_status.connect(self.live_update)
 
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
@@ -590,6 +593,15 @@ class MainWindow(QObject):
         self._indexing_runner = IndexingRunner(self.ui)
         self._indexing_runner.run()
 
+    def on_action_run_fit_grains_triggered(self):
+        kwargs = {
+            'grains_table': None,
+            'indexing_runner': getattr(self, '_indexing_runner', None),
+            'parent': self.ui,
+        }
+        runner = self._grain_fitting_runner = FitGrainsRunner(**kwargs)
+        runner.run()
+
     def run_wppf(self):
         self._wppf_runner = WppfRunner(self.ui)
         try:
@@ -892,16 +904,26 @@ class MainWindow(QObject):
     def on_action_switch_workflow_triggered(self):
         self.workflow_selection_dialog.show()
 
+    def update_hedm_enable_states(self):
+        actions = (self.ui.action_run_indexing, self.ui.action_run_fit_grains)
+        for action in actions:
+            action.setEnabled(False)
 
-    def update_indexing_menu(self):
-        enabled = False
         image_series_dict = ImageLoadManager().unaggregated_images
-        image_series_dict = HexrdConfig().imageseries_dict if image_series_dict is None else image_series_dict
-        if image_series_dict:
-            # Check length of first series
-            series = next(iter(image_series_dict.values()))
-            enabled = len(series) > 1
-        self.ui.action_run_indexing.setEnabled(enabled)
+        if image_series_dict is None:
+            image_series_dict = HexrdConfig().imageseries_dict
+
+        if not image_series_dict:
+            return
+
+        # Check length of first series
+        series = next(iter(image_series_dict.values()))
+        if not len(series) > 1:
+            return
+
+        # If we made it here, they should be enabled.
+        for action in actions:
+            action.setEnabled(True)
 
     def on_action_open_mask_manager_triggered(self):
         self.mask_manager_dialog.show()
