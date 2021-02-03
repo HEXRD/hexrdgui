@@ -321,7 +321,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
         for key in ims_dict.keys():
             nframes = len(ims_dict[key])
-            omw = imageseries.omega.OmegaWedges(nframes)
+            omw = imageseries.omega.OmegaWedges(nframes - self.empty_frames)
             for i in range(len(files[0])):
                 nsteps = self.data['total_frames'][i] - self.empty_frames
                 start = self.data['omega_min'][i]
