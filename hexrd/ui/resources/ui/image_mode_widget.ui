@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <property name="iconSize">
       <size>
@@ -511,10 +511,10 @@
                  <number>3</number>
                 </property>
                 <property name="maximum">
-                 <double>99.989999999999995</double>
+                 <double>360.000000000000000</double>
                 </property>
                 <property name="singleStep">
-                 <double>0.005000000000000</double>
+                 <double>5.000000000000000</double>
                 </property>
                 <property name="value">
                  <double>0.200000000000000</double>
@@ -650,10 +650,10 @@
                  <number>3</number>
                 </property>
                 <property name="maximum">
-                 <double>10000.000000000000000</double>
+                 <double>179.998999999999995</double>
                 </property>
                 <property name="singleStep">
-                 <double>0.010000000000000</double>
+                 <double>1.000000000000000</double>
                 </property>
                 <property name="value">
                  <double>20.000000000000000</double>
