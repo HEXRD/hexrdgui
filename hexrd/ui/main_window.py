@@ -885,12 +885,10 @@ class MainWindow(QObject):
         intensity = info['intensity']
         if intensity is not None:
             labels.append('value = {:8.3f}'.format(info['intensity']))
-
-            if info['mode'] in [ViewType.cartesian, ViewType.polar]:
-                labels.append('tth = {:8.3f}'.format(info['tth']))
-                labels.append('eta = {:8.3f}'.format(info['eta']))
-                labels.append('dsp = {:8.3f}'.format(info['dsp']))
-                labels.append('hkl = ' + info['hkl'])
+            labels.append('tth = {:8.3f}'.format(info['tth']))
+            labels.append('eta = {:8.3f}'.format(info['eta']))
+            labels.append('dsp = {:8.3f}'.format(info['dsp']))
+            labels.append('hkl = ' + info['hkl'])
 
         msg = delimiter.join(labels)
         self.ui.status_bar.showMessage(msg)

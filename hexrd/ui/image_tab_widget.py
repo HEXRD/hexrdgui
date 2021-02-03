@@ -245,7 +245,7 @@ class ImageTabWidget(QTabWidget):
         mode = self.image_canvases[0].mode
 
         if mode is None:
-            mode = 'images'
+            mode = ViewType.raw
 
         info = {
             'x': event.x,
@@ -272,14 +272,20 @@ class ImageTabWidget(QTabWidget):
 
         # intensity being None implies here that the mouse is on top of the
         # azimuthal integration plot in the polar view.
-        if (mode in [ViewType.cartesian, ViewType.polar] and
-                intensity is not None):
+        if intensity is not None:
 
             iviewer = self.image_canvases[0].iviewer
 
-            if mode == ViewType.cartesian:
-                xy_data = iviewer.dpanel.pixelToCart(np.vstack([i, j]).T)
-                ang_data, gvec = iviewer.dpanel.cart_to_angles(xy_data)
+            if mode in (ViewType.cartesian, ViewType.raw):
+                if mode == ViewType.cartesian:
+                    dpanel = iviewer.dpanel
+                else:
+                    # The title is the name of the detector
+                    key = event.inaxes.get_title()
+                    dpanel = iviewer.instr.detectors[key]
+
+                xy_data = dpanel.pixelToCart(np.vstack([i, j]).T)
+                ang_data, gvec = dpanel.cart_to_angles(xy_data)
                 tth = ang_data[:, 0][0]
                 eta = ang_data[:, 1][0]
             else:
