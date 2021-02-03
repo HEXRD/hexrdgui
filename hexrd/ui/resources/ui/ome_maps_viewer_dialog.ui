@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>725</height>
+    <height>728</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -56,9 +56,15 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="omega_tolerance">
+          <widget class="ScientificDoubleSpinBox" name="omega_tolerance">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="suffix">
             <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
            </property>
            <property name="minimum">
             <double>0.000000000000000</double>
@@ -78,9 +84,15 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="fiber_step">
+       <widget class="ScientificDoubleSpinBox" name="fiber_step">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="suffix">
          <string>°</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
         </property>
         <property name="minimum">
          <double>0.000000000000000</double>
@@ -114,33 +126,13 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>2</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="label_tab">
             <attribute name="title">
              <string>Label</string>
             </attribute>
             <layout class="QGridLayout" name="gridLayout_2">
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="label_threshold">
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>1</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QSpinBox" name="filter_radius">
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>1</number>
-               </property>
-              </widget>
-             </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label_threshold_label">
                <property name="text">
@@ -168,6 +160,38 @@
                </property>
               </spacer>
              </item>
+             <item row="0" column="1">
+              <widget class="ScientificDoubleSpinBox" name="filter_radius">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="maximum">
+                <double>10000000.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="ScientificDoubleSpinBox" name="label_threshold">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="maximum">
+                <double>1000000.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.000000000000000</double>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
            <widget class="QWidget" name="blob_dog_tab">
@@ -176,9 +200,18 @@
             </attribute>
             <layout class="QGridLayout" name="gridLayout_3">
              <item row="0" column="1">
-              <widget class="QDoubleSpinBox" name="bd_min_sigma">
+              <widget class="ScientificDoubleSpinBox" name="bd_min_sigma">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -203,9 +236,18 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="bd_max_sigma">
+              <widget class="ScientificDoubleSpinBox" name="bd_max_sigma">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -223,9 +265,18 @@
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="bd_sigma_ratio">
+              <widget class="ScientificDoubleSpinBox" name="bd_sigma_ratio">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -243,12 +294,18 @@
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QDoubleSpinBox" name="bd_threshold">
+              <widget class="ScientificDoubleSpinBox" name="bd_threshold">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="decimals">
-                <number>3</number>
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.010000000000000</double>
@@ -266,9 +323,18 @@
               </widget>
              </item>
              <item row="4" column="1">
-              <widget class="QDoubleSpinBox" name="bd_overlap">
+              <widget class="ScientificDoubleSpinBox" name="bd_overlap">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="value">
                 <double>0.100000000000000</double>
@@ -297,9 +363,18 @@
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="bl_max_sigma">
+              <widget class="ScientificDoubleSpinBox" name="bl_max_sigma">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -331,9 +406,18 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="bl_min_sigma">
+              <widget class="ScientificDoubleSpinBox" name="bl_min_sigma">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -345,6 +429,9 @@
              </item>
              <item row="3" column="1">
               <widget class="QSpinBox" name="bl_num_sigma">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="minimum">
                 <number>1</number>
                </property>
@@ -357,12 +444,18 @@
               </widget>
              </item>
              <item row="4" column="1">
-              <widget class="QDoubleSpinBox" name="bl_threshold">
+              <widget class="ScientificDoubleSpinBox" name="bl_threshold">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="decimals">
-                <number>3</number>
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.010000000000000</double>
@@ -373,9 +466,18 @@
               </widget>
              </item>
              <item row="5" column="1">
-              <widget class="QDoubleSpinBox" name="bl_overlap">
+              <widget class="ScientificDoubleSpinBox" name="bl_overlap">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
                <property name="maximum">
-                <double>1000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="value">
                 <double>0.100000000000000</double>
@@ -422,9 +524,15 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="eta_tolerance">
+          <widget class="ScientificDoubleSpinBox" name="eta_tolerance">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="suffix">
             <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
            </property>
            <property name="minimum">
             <double>0.000000000000000</double>
@@ -448,9 +556,15 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="eta_mask">
+          <widget class="ScientificDoubleSpinBox" name="eta_mask">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="suffix">
             <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
            </property>
            <property name="minimum">
             <double>0.000000000000000</double>
@@ -498,9 +612,15 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QDoubleSpinBox" name="clustering_radius">
+          <widget class="ScientificDoubleSpinBox" name="clustering_radius">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
            <property name="maximum">
-            <double>1000.000000000000000</double>
+            <double>10000000.000000000000000</double>
            </property>
            <property name="value">
             <double>1.000000000000000</double>
@@ -532,9 +652,12 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="clustering_completeness">
+          <widget class="ScientificDoubleSpinBox" name="clustering_completeness">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
-            <number>3</number>
+            <number>8</number>
            </property>
            <property name="maximum">
             <double>1.000000000000000</double>
@@ -609,6 +732,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>method</tabstop>
   <tabstop>tab_widget</tabstop>
