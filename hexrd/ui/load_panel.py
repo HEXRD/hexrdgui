@@ -8,7 +8,8 @@ from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
-    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE, YAML_EXTS)
+    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE,
+    UI_TRANS_INDEX_NONE, YAML_EXTS)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -35,7 +36,8 @@ class LoadPanel(QObject):
         self.ui = loader.load_file('load_panel.ui', parent)
 
         self.ims = HexrdConfig().imageseries_dict
-        self.parent_dir = HexrdConfig().images_dir if HexrdConfig().images_dir else ''
+        self.parent_dir = HexrdConfig().images_dir
+        self.state = HexrdConfig().load_panel_state
 
         self.files = []
         self.omega_min = []
@@ -64,7 +66,10 @@ class LoadPanel(QObject):
         if not self.parent_dir:
             self.ui.img_directory.setText('No directory set')
         else:
-            self.ui.img_directory.setText(self.parent_dir)
+            directory = self.parent_dir
+            if os.path.isfile(directory):
+                directory = os.path.basename(directory)
+            self.ui.img_directory.setText(directory)
 
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
@@ -72,6 +77,8 @@ class LoadPanel(QObject):
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
         HexrdConfig().instrument_config_loaded.connect(self.config_changed)
+        HexrdConfig().load_panel_state_reset.connect(
+            self.setup_processing_options)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
@@ -91,11 +98,13 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
-        self.state = copy.copy(HexrdConfig().load_panel_state)
+        self.state = HexrdConfig().load_panel_state
         num_dets = len(HexrdConfig().detector_names)
-        self.state.setdefault('agg', 1)
-        self.state.setdefault('trans', [0 for x in range(num_dets)])
-        self.state.setdefault('dark', [0 for x in range(num_dets)])
+        self.state.setdefault('agg', UI_AGG_INDEX_NONE)
+        self.state.setdefault(
+            'trans', [UI_TRANS_INDEX_NONE for x in range(num_dets)])
+        self.state.setdefault(
+            'dark', [UI_DARK_INDEX_NONE for x in range(num_dets)])
         self.state.setdefault('dark_files', [None for x in range(num_dets)])
 
     # Handle GUI changes
@@ -119,6 +128,7 @@ class LoadPanel(QObject):
 
     def detectors_changed(self):
         self.ui.detector.clear()
+        self.dets = HexrdConfig().detector_names
         self.ui.detector.addItems(HexrdConfig().detector_names)
 
     def agg_changed(self):
@@ -133,15 +143,15 @@ class LoadPanel(QObject):
         new_dir = str(Path(self.files[0][0]).parent)
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
-        self.ui.img_directory.setText(self.parent_dir)
+        self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
 
     def config_changed(self):
-        self.setup_processing_options()
-        self.detectors_changed()
-        self.ui.file_options.setRowCount(0)
-        self.reset_data()
-        self.enable_read()
-        self.setup_gui()
+        if HexrdConfig().detector_names != self.dets:
+            self.detectors_changed()
+            self.ui.file_options.setRowCount(0)
+            self.reset_data()
+            self.enable_read()
+            self.setup_gui()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
@@ -499,5 +509,4 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
-        HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
