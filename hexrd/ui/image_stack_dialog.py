@@ -44,8 +44,10 @@ class ImageStackDialog:
 
     def setup_gui(self):
         self.ui.detectors.addItems(self.detectors)
-        self.ui.current_directory.setText(self.state[self.detector]['directory'])
-        self.ui.current_directory.setToolTip(self.state[self.detector]['directory'])
+        self.ui.current_directory.setText(
+            self.state[self.detector]['directory'])
+        self.ui.current_directory.setToolTip(
+            self.state[self.detector]['directory'])
         self.ui.files.setText(self.state[self.detector]['files'])
         self.ui.empty_frames.setValue(self.state['empty-frames'])
         self.ui.max_file_frames.setValue(self.state['max-frame-file'])
@@ -153,8 +155,10 @@ class ImageStackDialog:
 
     def change_detector(self, det):
         self.detector = det
-        self.ui.current_directory.setText(self.state[self.detector]['directory'])
-        self.ui.current_directory.setToolTip(self.state[self.detector]['directory'])
+        self.ui.current_directory.setText(
+            self.state[self.detector]['directory'])
+        self.ui.current_directory.setToolTip(
+            self.state[self.detector]['directory'])
         self.ui.files.setText(self.state[self.detector]['files'])
 
     def set_ranges(self, frames, num_files):
@@ -209,7 +213,7 @@ class ImageStackDialog:
             [start, start + delta],
             [stop - delta, stop],
             (frames * num_files))
-        return omega[:,0], omega[:,1]
+        return omega[:, 0], omega[:, 1]
 
     def exec_(self):
         if self.ui.exec_():
