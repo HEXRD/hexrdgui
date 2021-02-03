@@ -67,8 +67,8 @@ class LoadPanel(QObject):
             self.ui.img_directory.setText('No directory set')
         else:
             directory = self.parent_dir
-            if os.path.isfile(directory):
-                directory = os.path.basename(directory)
+            if Path(directory).is_file():
+                directory = str(Path(directory).parent)
             self.ui.img_directory.setText(directory)
 
         self.detectors_changed()
@@ -143,7 +143,7 @@ class LoadPanel(QObject):
         new_dir = str(Path(self.files[0][0]).parent)
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
-        self.ui.img_directory.setText(os.path.dirname(self.parent_dir))
+        self.ui.img_directory.setText(str(Path(self.parent_dir).parent))
 
     def config_changed(self):
         if HexrdConfig().detector_names != self.dets:
@@ -358,7 +358,7 @@ class LoadPanel(QObject):
                 raw_images = data['files'].split()
                 for raw_image in raw_images:
                     path = Path(self.parent_dir, data['directory'])
-                    files.extend(path.glob(raw_image))
+                    files.extend([str(p) for p in path.glob(raw_image)])
             self.yml_files.append(files)
 
     def enable_read(self):
@@ -396,7 +396,7 @@ class LoadPanel(QObject):
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
             curr = table_files[self.idx][i]
-            self.ui.file_options.item(i, 0).setText(curr.name)
+            self.ui.file_options.item(i, 0).setText(Path(curr).name)
             self.ui.file_options.item(i, 1).setText(str(self.empty_frames))
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
@@ -405,7 +405,7 @@ class LoadPanel(QObject):
                 str(round(self.delta[i], 6)))
 
             # Set tooltips
-            self.ui.file_options.item(i, 0).setToolTip(curr.name)
+            self.ui.file_options.item(i, 0).setToolTip(Path(curr).name)
             self.ui.file_options.item(i, 3).setToolTip('Minimum must be set')
             self.ui.file_options.item(i, 4).setToolTip(
                 'Must set either maximum or delta')
