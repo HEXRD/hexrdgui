@@ -17,7 +17,7 @@ def create_indexing_config():
     indexing_config = copy.deepcopy(HexrdConfig().indexing_config)
     material = HexrdConfig().active_material
     omaps = indexing_config['find_orientations']['orientation_maps']
-    omaps['active_hkls'] = active_hkl_indices(material.planeData)
+    omaps['active_hkls'] = list(range(len(material.planeData.getHKLs())))
 
     # Set the active material on the config
     tmp = indexing_config.setdefault('material', {})
@@ -57,17 +57,3 @@ def create_indexing_config():
     config.image_series = ims_dict
 
     return config
-
-
-def active_hkl_indices(plane_data):
-    # Return a list of active indices, taking into account exclusions and
-    # tTh limitations.
-
-    # These need to be lists, or the `in` operator won't work properly
-    hkls = plane_data.getHKLs().tolist()
-    full_hkl_list = [x['hkl'].tolist() for x in plane_data.hklDataList]
-
-    def hkl_is_active(i):
-        return full_hkl_list[i] in hkls
-
-    return [i for i in range(len(full_hkl_list)) if hkl_is_active(i)]
