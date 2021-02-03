@@ -112,11 +112,6 @@ class IndexingRunner(Runner):
         # The dialog should have automatically updated our internal config
         # Let's go ahead and run the indexing!
 
-        # For now, always use all hkls from eta omega maps
-        hkls = list(range(len(self.ome_maps.iHKLList)))
-        indexing_config = HexrdConfig().indexing_config
-        indexing_config['find_orientations']['seed_search']['hkl_seeds'] = hkls
-
         # Create a full indexing config
         config = create_indexing_config()
 

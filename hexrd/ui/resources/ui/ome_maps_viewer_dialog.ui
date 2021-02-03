@@ -11,9 +11,6 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="2">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
    <item row="3" column="2">
     <widget class="QDialogButtonBox" name="button_box">
      <property name="standardButtons">
@@ -126,7 +123,7 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="label_tab">
             <attribute name="title">
@@ -673,26 +670,22 @@
      </layout>
     </widget>
    </item>
+   <item row="2" column="2">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
    <item row="0" column="2" rowspan="2">
     <layout class="QGridLayout" name="grid_layout">
-     <item row="0" column="2">
-      <widget class="QComboBox" name="active_hkl">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="label_spots">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
        </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="active_hkl_label">
        <property name="text">
-        <string>hkl</string>
+        <string>Label Spots</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="2">
+     <item row="3" column="2">
       <widget class="QPushButton" name="export_button">
        <property name="text">
         <string>Export</string>
@@ -702,30 +695,45 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeType">
-        <enum>QSizePolicy::Fixed</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
+     <item row="0" column="0" rowspan="4">
+      <layout class="QVBoxLayout" name="color_map_editor_layout"/>
      </item>
-     <item row="2" column="2">
-      <widget class="QCheckBox" name="label_spots">
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
+     <item row="1" column="2">
+      <widget class="QComboBox" name="active_hkl">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="active_hkl_label">
        <property name="text">
-        <string>Label Spots</string>
+        <string>Displayed hkl</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" rowspan="4">
+      <widget class="QGroupBox" name="select_hkls_group">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>HKL Seeds</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QVBoxLayout" name="select_hkls_widget_layout"/>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>

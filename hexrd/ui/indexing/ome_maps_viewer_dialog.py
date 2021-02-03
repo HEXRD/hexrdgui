@@ -9,7 +9,7 @@ import yaml
 
 from PySide2.QtCore import Signal, QObject, QSignalBlocker, Qt
 from PySide2.QtWidgets import (
-    QComboBox, QDoubleSpinBox, QFileDialog, QSizePolicy, QSpinBox
+    QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox, QSizePolicy, QSpinBox
 )
 
 from hexrd.findorientations import label_spots
@@ -19,6 +19,7 @@ from hexrd.ui import enter_key_filter, resource_loader
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
+from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
 
 import hexrd.ui.constants
@@ -52,6 +53,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.setup_plot()
         self.setup_color_map()
+        self.setup_hkls_table()
 
         self.update_gui()
 
@@ -66,8 +68,11 @@ class OmeMapsViewerDialog(QObject):
 
         self.ui.method.currentIndexChanged.connect(self.update_method_tab)
         self.ui.method.currentIndexChanged.connect(self.update_config)
+        self.ui.method.currentIndexChanged.connect(self.update_spots)
         self.color_map_editor.ui.minimum.valueChanged.connect(
             self.update_config)
+
+        self.select_hkls_widget.selection_changed.connect(self.update_config)
 
         # A plot reset is needed for log scale to handle the NaN values
         self.color_map_editor.ui.log_scale.toggled.connect(self.reset_plot)
@@ -85,8 +90,6 @@ class OmeMapsViewerDialog(QObject):
 
         for w in self.method_parameter_widgets:
             changed_signal(w).connect(self.update_spots)
-
-        self.ui.method.currentIndexChanged.connect(self.update_spots)
 
     def setup_combo_box_item_data(self):
         # Set the item data for the combo boxes to be the names we want
@@ -115,14 +118,25 @@ class OmeMapsViewerDialog(QObject):
         self.ui.show()
 
     def on_accepted(self):
-        # Any validation may be performed here first
-        # Update the config one last time before saving...
+        # Update the config just in case...
         self.update_config()
+        try:
+            self.validate()
+        except ValidationException as e:
+            QMessageBox.critical(self.ui, 'HEXRD', str(e))
+            self.ui.show()
+            return
+
         self.save_config()
         self.accepted.emit()
 
     def on_rejected(self):
         self.rejected.emit()
+
+    def validate(self):
+        hkls = self.config['find_orientations']['seed_search']['hkl_seeds']
+        if not hkls:
+            raise ValidationException('No hkls selected')
 
     def setup_widget_paths(self):
         text = resource_loader.load_resource(hexrd.ui.resources.indexing,
@@ -170,15 +184,17 @@ class OmeMapsViewerDialog(QObject):
         method_tab = getattr(self.ui, self.method_name + '_tab')
         self.ui.tab_widget.setCurrentWidget(method_tab)
 
-    def update_hkl_options(self):
-        # This won't trigger a re-draw. Can change in the future if needed.
+    @property
+    def hkls(self):
         hkl_indices = self.data.iHKLList
         all_hkls = self.data.planeData.getHKLs(asStr=True)
-        hkls = [all_hkls[i] for i in hkl_indices]
+        return [all_hkls[i] for i in hkl_indices]
 
+    def update_hkl_options(self):
+        # This won't trigger a re-draw. Can change in the future if needed.
         blocker = QSignalBlocker(self.ui.active_hkl)  # noqa: F841
         self.ui.active_hkl.clear()
-        self.ui.active_hkl.addItems(hkls)
+        self.ui.active_hkl.addItems(self.hkls)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -207,11 +223,29 @@ class OmeMapsViewerDialog(QObject):
 
     def setup_color_map(self):
         self.color_map_editor = ColorMapEditor(self, self.ui)
-        self.ui.grid_layout.addWidget(self.color_map_editor.ui, 0, 0, -1, 1)
+        self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
         self.update_cmap_bounds()
 
         # Set the initial max as 20
         self.color_map_editor.ui.maximum.setValue(20)
+
+    def setup_hkls_table(self):
+        selected = self.config['find_orientations']['seed_search']['hkl_seeds']
+        hkls = self.hkls
+        items = [(x, i in selected) for i, x in enumerate(hkls)]
+        self.select_hkls_widget = SelectItemsWidget(items, self.ui)
+        layout = self.ui.select_hkls_widget_layout
+        layout.addWidget(self.select_hkls_widget.ui)
+
+        # Fix the height so it doesn't take up too much space
+        size = layout.sizeHint()
+        height_adjustment = min(3, len(hkls)) / len(hkls)
+        size.setHeight(size.height() * height_adjustment)
+        layout.parentWidget().setFixedSize(size)
+
+    @property
+    def selected_hkls(self):
+        return self.select_hkls_widget.selected_indices
 
     @property
     def data(self):
@@ -455,5 +489,12 @@ class OmeMapsViewerDialog(QObject):
         # Also set the threshold to the minimum color map value...
         config['find_orientations']['threshold'] = self.threshold
 
+        hkls = self.selected_hkls
+        config['find_orientations']['seed_search']['hkl_seeds'] = hkls
+
     def save_config(self):
         HexrdConfig().config['indexing'] = copy.deepcopy(self.config)
+
+
+class ValidationException(Exception):
+    pass

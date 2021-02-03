@@ -14,9 +14,6 @@ class IndexingTreeViewDialog(DictTreeViewDialog):
         super().__init__(config, parent)
         self.setWindowTitle('Indexing Config')
 
-        # Don't display these paths if they are present
-        self.dict_tree_view.blacklisted_paths = [('seed_search', 'hkl_seeds')]
-
         # Allow options to be selected for the key here
         combo_keys = {
             ('seed_search', 'method'): self.seed_search_defaults,
