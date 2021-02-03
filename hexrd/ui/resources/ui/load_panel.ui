@@ -325,12 +325,12 @@
         </column>
         <column>
          <property name="text">
-          <string>Omega Min</string>
+          <string>Omega Start</string>
          </property>
         </column>
         <column>
          <property name="text">
-          <string>Omega Max</string>
+          <string>Omega Stop</string>
          </property>
         </column>
         <column>

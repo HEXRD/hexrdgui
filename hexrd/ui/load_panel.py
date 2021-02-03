@@ -458,7 +458,9 @@ class LoadPanel(QObject):
                 self.empty_frames = int(curr_val)
                 for r in range(self.ui.file_options.rowCount()):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
-                self.omega_data_changed(row, 3)
+                    self.ui.file_options.item(r, 2).setText(
+                        str(self.total_frames[r] - self.empty_frames))
+                    self.omega_data_changed(r, 3)
             # Update delta when min or max omega are changed
             elif column == 3:
                 self.omega_min[row] = float(curr_val)
