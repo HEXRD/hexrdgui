@@ -96,7 +96,7 @@ class WppfOptionsDialog(QObject):
 
     def load_initial_params(self):
         text = importlib.resources.read_text(calibration_resources,
-                                             'wppf_params.yml')
+                                             'lebail.yml')
         self.default_params = yaml.load(text, Loader=yaml.FullLoader)
         self.params = copy.deepcopy(self.default_params)
 
@@ -438,7 +438,8 @@ class WppfOptionsDialog(QObject):
             params = self.create_wppf_params_object()
 
         wavelength = {
-            'synchrotron': _angstroms(HexrdConfig().beam_wavelength)
+            'synchrotron': [_angstroms(
+                HexrdConfig().beam_wavelength), 1.0]
         }
 
         if self.use_experiment_file:
