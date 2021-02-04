@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 from pathlib import Path
 
-from PySide2.QtWidgets import QFileDialog
+from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -24,6 +24,7 @@ class ImageStackDialog:
         self.state = copy.copy(HexrdConfig().stack_state)
 
         self.setup_state()
+        self.ui.detectors.addItems(self.detectors)
         self.setup_gui()
         self.setup_connections()
 
@@ -34,21 +35,22 @@ class ImageStackDialog:
         self.ui.start_omega.valueChanged.connect(self.update_delta_omega)
         self.ui.stop_omega.valueChanged.connect(self.update_delta_omega)
         self.ui.delta_omega.valueChanged.connect(self.update_stop_omega)
-        self.ui.files.textChanged.connect(self.select_files)
+        self.ui.search.clicked.connect(self.search)
         self.ui.empty_frames.valueChanged.connect(self.set_empty_frames)
         self.ui.max_file_frames.valueChanged.connect(self.set_max_file_frames)
         self.ui.max_total_frames.valueChanged.connect(
             self.set_max_total_frames)
         self.ui.detectors.currentTextChanged.connect(self.change_detector)
         self.ui.total_frames.valueChanged.connect(self.update_delta_omega)
+        self.ui.files_by_selection.toggled.connect(self.file_selection_changed)
+        self.ui.select_files.clicked.connect(self.select_files_manually)
 
     def setup_gui(self):
-        self.ui.detectors.addItems(self.detectors)
         self.ui.current_directory.setText(
             self.state[self.detector]['directory'])
         self.ui.current_directory.setToolTip(
             self.state[self.detector]['directory'])
-        self.ui.files.setText(self.state[self.detector]['files'])
+        self.ui.search_text.setText(self.state[self.detector]['search'])
         self.ui.empty_frames.setValue(self.state['empty-frames'])
         self.ui.max_file_frames.setValue(self.state['max-frame-file'])
         self.ui.max_total_frames.setValue(self.state['max-frames'])
@@ -59,31 +61,39 @@ class ImageStackDialog:
         self.ui.start_omega.setValue(self.state['ostart'])
         self.ui.delta_omega.setValue(self.state['delta'])
         self.ui.stop_omega.setValue(self.state['ostop'])
+        self.ui.files_by_selection.setChecked(self.state['manual-file'])
+        self.ui.files_by_search.setChecked(not self.state['manual-file'])
+        self.ui.file_count.setText(str(self.state[self.detector]['file-count']))
+        self.ui.apply_to_all.setChecked(self.state['apply-to-all'])
 
     def setup_state(self):
         if sorted(self.state.get('dets', [])) == sorted(self.detectors):
-            self.select_files()
+            self.search()
             self.load_omega_from_file(self.state['omega-from-file'])
-            return
-
-        self.state.clear()
-        self.state = {
-            'dets': self.detectors,
-            'empty-frames': 0,
-            'max-frame-file': 0,
-            'max-frames': 0,
-            'omega': '',
-            'ostart': 0,
-            'ostop': 360,
-            'delta': 360,
-            'omega-from-file': False,
-            'total-frames': 1,
-        }
-        for det in self.detectors:
-            self.state[det] = {
-                'directory': '',
-                'files': ''
+            self.file_selection_changed(self.state['manual-file'])
+        else:
+            self.state.clear()
+            self.state = {
+                'dets': self.detectors,
+                'empty-frames': 0,
+                'max-frame-file': 0,
+                'max-frames': 0,
+                'omega': '',
+                'ostart': 0,
+                'ostop': 360,
+                'delta': 360,
+                'omega-from-file': False,
+                'total-frames': 1,
+                'manual-file': True,
+                'apply-to-all': True,
             }
+            for det in self.detectors:
+                self.state[det] = {
+                    'directory': '',
+                    'files': '',
+                    'search': '',
+                    'file-count': 0,
+                }
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
@@ -92,19 +102,30 @@ class ImageStackDialog:
         self.parent_dir = d.rsplit('/', 1)[0]
         self.ui.current_directory.setText(d)
         self.ui.current_directory.setToolTip(d)
+        if not self.state['manual-file'] and self.state['apply-to-all']:
+            self.search_directory(self.detector)
 
-    def select_files(self):
-        self.state[self.detector]['files'] = self.ui.files.text()
-        directory = self.state[self.detector]['directory']
-        if not (search := self.ui.files.text()):
+    def search(self):
+        if self.ui.apply_to_all.isChecked() and self.ui.search.isChecked():
+            for det in self.detectors:
+                self.search_directory(det)
+        else:
+            self.search_directory(self.detector)
+
+    def search_directory(self, det):
+        self.state[det]['search'] = self.ui.search_text.text()
+        if not (search := self.ui.search_text.text()):
             search = '*'
-        files = list(Path(directory).glob(search))
-        if files:
-            ims = ImageFileManager().open_file(str(files[0]))
-            frames = len(ims) if len(ims) else 1
-            self.ui.total_frames.setValue(frames * len(files))
-            self.state['total-frames'] = frames
-            self.set_ranges(frames, len(files))
+        if directory := self.state[det]['directory']:
+            if files := list(Path(directory).glob(search)):
+                self.state[det]['files'] = sorted([str(f) for f in files])
+                self.state[det]['file-count'] = len(files)
+                ims = ImageFileManager().open_file(str(files[0]))
+                frames = len(ims) if len(ims) else 1
+                self.ui.total_frames.setValue(frames * len(files))
+                self.ui.file_count.setText(str(len(files)))
+                self.set_ranges(frames, len(files))
+                self.state['total-frames'] = frames
 
     def load_omega_from_file(self, checked):
         self.state['omega-from-file'] = checked
@@ -121,7 +142,7 @@ class ImageStackDialog:
 
     def select_omega_file(self):
         omega_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select file(s)',
+            self.ui, 'Select file',
             HexrdConfig().images_dir, 'NPY files (*.npy)')
         self.ui.omega_file.setText(omega_file)
         self.state[self.detector]['omega'] = omega_file
@@ -155,11 +176,9 @@ class ImageStackDialog:
 
     def change_detector(self, det):
         self.detector = det
-        self.ui.current_directory.setText(
-            self.state[self.detector]['directory'])
-        self.ui.current_directory.setToolTip(
-            self.state[self.detector]['directory'])
-        self.ui.files.setText(self.state[self.detector]['files'])
+        self.setup_gui()
+        if self.state['apply-to-all']:
+            self.state[det]['search'] = self.ui.search_text.text()
 
     def set_ranges(self, frames, num_files):
         self.ui.empty_frames.setMaximum(frames)
@@ -172,11 +191,30 @@ class ImageStackDialog:
         self.ui.stop_omega.setMaximum(
             (self.ui.start_omega.value() + MAXIMUM_OMEGA_RANGE))
 
+    def file_selection_changed(self, checked):
+        self.state['manual-file'] = checked
+        self.ui.select_files.setEnabled(checked)
+        self.ui.search_text.setDisabled(checked)
+        self.ui.search.setDisabled(checked)
+        self.ui.apply_to_all.setDisabled(checked)
+
+    def select_files_manually(self):
+        files, selected_filter = QFileDialog.getOpenFileNames(
+            self.ui, 'Select file(s)',
+            dir=self.state[self.detector]['directory'])
+        self.state[self.detector]['files'] = files
+        self.state[self.detector]['file-count'] = len(files)
+        self.ui.file_count.setText(str(len(files)))
+        ims = ImageFileManager().open_file(files[0])
+        frames = len(ims) if len(ims) else 1
+        self.ui.total_frames.setValue(frames * len(files))
+        self.set_ranges(frames, len(files))
+        self.state['total-frames'] = frames
+
     def get_files(self):
         temp, imgs = [], []
         for det in self.detectors:
             d = self.state[det]['directory']
-            f = self.state[det]['files'] if self.state[det]['files'] else '*'
             t = tempfile.NamedTemporaryFile(suffix='.yml', delete=False)
             input_dict = {
                 'image-files': {},
@@ -184,7 +222,7 @@ class ImageStackDialog:
                 'meta': {}
             }
             input_dict['image-files']['directory'] = d
-            input_dict['image-files']['files'] = f
+            input_dict['image-files']['files'] = ' '.join(self.state[det]['files'])
             input_dict['options']['empty-frames'] = self.state['empty-frames']
             input_dict['options']['max-frame-file'] = (
                 self.state['max-frame-file'])
@@ -200,7 +238,7 @@ class ImageStackDialog:
             t.write(data)
             t.close()
             temp.append([t.name])
-            imgs.append(sorted([str(p) for p in Path(d).glob(f)]))
+            imgs.append(self.state[det]['files'])
         num_files = len(imgs[0])
         return temp, imgs, num_files
 
@@ -215,18 +253,45 @@ class ImageStackDialog:
             (frames * num_files))
         return omega[:, 0], omega[:, 1]
 
+    def build_data(self):
+        HexrdConfig().stack_state = copy.deepcopy(self.state)
+        temp_files, img_files, num_files = self.get_files()
+        start, stop = self.get_omega_values(num_files)
+        data = {
+            'files': temp_files,
+            'yml_files': img_files,
+            'omega_min': start,
+            'omega_max': stop,
+            'delta': [self.state['delta']] * num_files,
+            'empty_frames': self.state['empty-frames'],
+            'total_frames': [self.state['total-frames']] * num_files,
+        }
+        return data
+
     def exec_(self):
-        if self.ui.exec_():
-            HexrdConfig().stack_state = copy.deepcopy(self.state)
-            temp_files, img_files, num_files = self.get_files()
-            start, stop = self.get_omega_values(num_files)
-            data = {
-                'files': temp_files,
-                'yml_files': img_files,
-                'omega_min': start,
-                'omega_max': stop,
-                'delta': [self.state['delta']] * num_files,
-                'empty_frames': self.state['empty-frames'],
-                'total_frames': [self.state['total-frames']] * num_files,
-            }
-            return data
+        while True:
+            error = False
+            if self.ui.exec_():
+                f, d = [], []
+                for det in self.detectors:
+                    f.append(self.state[det]['file-count'])
+                    d.append(self.state[det]['directory'])
+                if dets := [det for det in d if not det]:
+                    msg = (
+                        f'The directory have not been set for '
+                        f'the following detector(s):\n{" ".join(dets)}.')
+                    QMessageBox.warning(self.ui, 'HEXRD', msg)
+                    error = True
+                    continue
+                elif idx := [i for i, n in enumerate(f) if f[0] != n]:
+                    dets = [self.state['dets'][i] for i in idx]
+                    msg = (
+                        f'The number of files for each detector must match. '
+                        f'The following detector(s) do not:\n{" ".join(dets)}')
+                    QMessageBox.warning(None, 'HEXRD', msg)
+                    error = True
+                    continue
+                if error:
+                    return True
+                else:
+                    return self.build_data()
