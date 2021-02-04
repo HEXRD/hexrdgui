@@ -13,8 +13,9 @@ from PySide2.QtWidgets import (
 )
 
 from hexrd.material import _angstroms
-from hexrd.WPPF import LeBail, Rietveld, Parameters
-
+from hexrd.WPPF import LeBail, Rietveld, \
+Parameters, _lpname, _rqpDict,  _getnumber
+from hexrd import constants
 from hexrd.ui import enter_key_filter
 
 import hexrd.ui.resources.calibration as calibration_resources
@@ -419,6 +420,138 @@ class WppfOptionsDialog(QObject):
             }
             params.add(**kwargs)
         return params
+
+    def add_material_parameters(self):
+        """
+        @AUTHOR:    Saransh Singh, Lawrence Livermore National Lab
+        @DATE:      02/03/2021 SS 1.0 original
+        @DETAILS:   a simple function to add the material parameters
+        from the list of material file. this depends on which
+        method i chosen. for the LeBail class the parameters
+        added are the minimum set of lattice parameters. For 
+        the Rietveld class, the lattice parameters, fractional
+        coordinates, occupancy and debye waller factors are 
+        added.
+        """
+        method = self.wppf_method
+
+        for x in self.selected_materials:
+            mat = HexrdConfig().material(x)
+
+            # if method is LeBail
+            if method == 'LeBail':
+                """
+                add lattice parameters
+                """
+                lp = np.array(mat.planeData.lparms)
+                rid = list(_rqpDict[mat.unitcell.latticeType][0])
+
+                name = _lpname[rid]
+
+                for i, (n, l) in enumerate(zip(name, lp)):
+                    nn = p+'_'+n
+
+                    """
+                    first 3 are lengths, next three are angles
+                    """
+                    if(rid[i] <= 2):
+                        self.params.add(nn, value=l, lb=l-0.05,
+                                   ub=l+0.05, vary=False)
+                    else:
+                        self.params.add(nn, value=l, lb=l-1.,
+                                   ub=l+1., vary=False)
+
+            elif method == 'Rietveld':
+                """
+                add lattice parameters
+                """
+                lp = np.array(mat.planeData.lparms)
+                rid = list(_rqpDict[mat.unitcell.latticeType][0])
+
+                name = _lpname[rid]
+                for i, (n, l) in enumerate(zip(name, lp)):
+                    nn = p+'_'+n
+
+                    """
+                    first 3 are lengths, next three are angles
+                    """
+                    if(rid[i] <= 2):
+                        params.add(nn, value=l, lb=l-0.05,
+                                   ub=l+0.05, vary=False)
+                    else:
+                        params.add(nn, value=l, lb=l-1.,
+                                   ub=l+1., vary=False)
+
+                """
+                now adding the atom positions and 
+                occupancy
+                """
+                atom_pos = mat.unitcell.atom_pos[:, 0:3]
+                occ = mat.unitcell.atom_pos[:, 3]
+
+                atom_type = mat.atom_type
+                atom_label = _getnumber(atom_type)
+                
+                #self.atom_label = atom_label
+
+                """
+                now for each atom type append the fractional
+                coordinates, occupation fraction and debye-waller
+                factors to the list of parameters
+                """
+                for i in range(atom_type.shape[0]):
+                    Z = atom_type[i]
+                    elem = constants.ptableinverse[Z]
+                    # x-coordinate
+                    nn = p+'_'+elem+str(atom_label[i])+'_x'
+                    params.add(
+                        nn, value=atom_pos[i, 0],
+                        lb=0.0, ub=1.0,
+                        vary=False)
+
+                    # y-coordinate
+                    nn = p+'_'+elem+str(atom_label[i])+'_y'
+                    params.add(
+                        nn, value=atom_pos[i, 1],
+                        lb=0.0, ub=1.0,
+                        vary=False)
+
+                    # z-coordinate
+                    nn = p+'_'+elem+str(atom_label[i])+'_z'
+                    params.add(
+                        nn, value=atom_pos[i, 2],
+                        lb=0.0, ub=1.0,
+                        vary=False)
+
+                    # occupation
+                    nn = p+'_'+elem+str(atom_label[i])+'_occ'
+                    params.add(nn, value=occ[i],
+                               lb=0.0, ub=1.0,
+                               vary=False)
+
+
+                    if(mat.unitcell.aniU):
+                        U = mat.unitcell.U
+                        for j in range(6):
+                            nn = p+'_'+elem + \
+                                str(atom_label[i])+'_'+_nameU[j]
+                            params.add(
+                                nn, value=U[i, j],
+                                lb=-1e-3,
+                                ub=np.inf,
+                                vary=False)
+                    else:
+                        nn = p+'_'+elem+str(atom_label[i])+'_dw'
+                        params.add(
+                            nn, value=mat.unitcell.U[i],
+                            lb=0.0, ub=np.inf,
+                            vary=False)
+
+            else:
+                raise Exception(f'Unknown method: {method}')
+
+            # if method is Rietveld
+
 
     def create_wppf_object(self, add_params=False):
         # If add_params is True, it allows WPPF to add more parameters
