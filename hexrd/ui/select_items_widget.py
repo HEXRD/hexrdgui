@@ -84,3 +84,7 @@ class SelectItemsWidget(QObject):
     @property
     def selected_items(self):
         return [x[0] for x in self.items if x[1] is True]
+
+    @property
+    def selected_indices(self):
+        return [i for i, x in enumerate(self.items) if x[1] is True]
