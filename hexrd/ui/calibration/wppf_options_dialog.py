@@ -489,7 +489,7 @@ class WppfOptionsDialog(QObject):
                 atom_pos = mat.unitcell.atom_pos[:, 0:3]
                 occ = mat.unitcell.atom_pos[:, 3]
 
-                atom_type = mat.atom_type
+                atom_type = mat.unitcell.atom_type
                 atom_label = _getnumber(atom_type)
                 
                 #self.atom_label = atom_label
@@ -549,8 +549,6 @@ class WppfOptionsDialog(QObject):
 
             else:
                 raise Exception(f'Unknown method: {method}')
-
-            # if method is Rietveld
 
 
     def create_wppf_object(self, add_params=False):
