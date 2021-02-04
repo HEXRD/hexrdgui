@@ -63,7 +63,8 @@ class ImageStackDialog:
         self.ui.stop_omega.setValue(self.state['ostop'])
         self.ui.files_by_selection.setChecked(self.state['manual-file'])
         self.ui.files_by_search.setChecked(not self.state['manual-file'])
-        self.ui.file_count.setText(str(self.state[self.detector]['file-count']))
+        self.ui.file_count.setText(
+            str(self.state[self.detector]['file-count']))
         self.ui.apply_to_all.setChecked(self.state['apply-to-all'])
 
     def setup_state(self):
@@ -222,7 +223,8 @@ class ImageStackDialog:
                 'meta': {}
             }
             input_dict['image-files']['directory'] = d
-            input_dict['image-files']['files'] = ' '.join(self.state[det]['files'])
+            input_dict['image-files']['files'] = (
+                ' '.join(self.state[det]['files']))
             input_dict['options']['empty-frames'] = self.state['empty-frames']
             input_dict['options']['max-frame-file'] = (
                 self.state['max-frame-file'])
