@@ -47,6 +47,9 @@ elseif(WIN32)
 #    "@CMAKE_CURRENT_LIST_DIR@/ui_dialog.jpg"
 #    )
 
+  # Auto-generate a GUID each time so that each new install completely
+  # replaces the old install.
+  set(CPACK_WIX_PRODUCT_GUID "*")
   set(CPACK_WIX_UPGRADE_GUID "5F369ED0-05D7-4CBA-B533-D1A1B3F445C3")
   set(CPACK_WIX_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/windows/WIX.template.in")
   # We set this because it normally defaults to CMAKE_SIZEOF_VOID_P, but we aren't
