@@ -16,9 +16,9 @@
 
         <Media Id="1" Cabinet="media1.cab" EmbedCab="yes"/>
 
-        <MajorUpgrade
-            Schedule="afterInstallInitialize"
-            AllowDowngrades="yes"/>
+        <InstallExecuteSequence>
+            <RemoveExistingProducts After="InstallInitialize" />
+        </InstallExecuteSequence>
 
         <WixVariable Id="WixUILicenseRtf" Value="$(var.CPACK_WIX_LICENSE_RTF)"/>
         <Property Id="WIXUI_INSTALLDIR" Value="INSTALL_ROOT"/>
