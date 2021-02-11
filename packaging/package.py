@@ -150,6 +150,17 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     ]
     Conda.run_command(*params)
 
+    # Override the libgfortran so we get a version that is
+    # build with a SDK that is acceptable to the notary!
+    if platform.system() == 'Darwin':
+        params = [
+            Conda.Commands.INSTALL,
+            '--prefix', env_prefix,
+            '--channel', 'conda-forge',
+            'libgfortran=4.0.0'
+        ]
+        Conda.run_command(*params)
+
     logger.info('Generating tar from environment using conda-pack.')
     # Now use conda-pack to create relocatable archive
     archive_path = str(tmp / ('hexrdgui.%s' % archive_format))
