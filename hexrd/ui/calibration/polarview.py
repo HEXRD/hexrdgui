@@ -215,9 +215,13 @@ class PolarView:
                 beamVec=panel.bvec)
         xypts[on_plane] = valid_xys
 
-        self.warp_dict[det] = panel.interpolate_bilinear(
-            xypts, img, pad_with_nans=False
+        wimg = panel.interpolate_bilinear(
+            xypts, img, pad_with_nans=True,
         ).reshape(self.shape)
+        nan_mask = np.isnan(wimg)
+        self.warp_dict[det] = np.ma.masked_array(
+            data=wimg, mask=nan_mask, fill_value=0.
+        )
         return self.warp_dict[det]
 
     def generate_image(self):
@@ -229,7 +233,11 @@ class PolarView:
         # img = log_scale_img(log_scale_img(sqrt_scale_img(img)))
 
         # Rescale the data to match the scale of the original dataset
+        # import pdb; pdb.set_trace()
+        nan_idx = np.isnan(img)
+        img[nan_idx] = 0.
         img = rescale_intensity(img, out_range=(self.min, self.max))
+        img[nan_idx] = np.nan
 
         if HexrdConfig().polar_apply_snip1d:
             self.snip1d_background = run_snip1d(img)
