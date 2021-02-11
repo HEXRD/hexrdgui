@@ -1125,6 +1125,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         for name in self.materials:
             self.flag_overlay_updates_for_material(name)
 
+    @property
+    def visible_polar_masks(self):
+        masks = self.polar_masks.items()
+        visible = self.visible_masks
+        return [mask for name, mask in masks if name in visible]
+
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
 
