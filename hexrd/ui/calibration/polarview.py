@@ -215,34 +215,56 @@ class PolarView:
                 beamVec=panel.bvec)
         xypts[on_plane] = valid_xys
 
-        self.warp_dict[det] = panel.interpolate_bilinear(
-            xypts, img, pad_with_nans=False
+        wimg = panel.interpolate_bilinear(
+            xypts, img, pad_with_nans=True,
         ).reshape(self.shape)
+        nan_mask = np.isnan(wimg)
+
+        # Store as masked array
+        self.warp_dict[det] = np.ma.masked_array(
+            data=wimg, mask=nan_mask, fill_value=0.
+        )
         return self.warp_dict[det]
 
     def generate_image(self):
-        img = np.zeros(self.shape)
-        for key in self.images_dict.keys():
-            img += self.warp_dict[key]
-
-        # ??? do log scaling here
-        # img = log_scale_img(log_scale_img(sqrt_scale_img(img)))
+        # sum masked images in self.warp_dict using np.ma ufuncs
+        #
+        # !!! checked that np.ma.sum is applying logical OR across masks (JVB)
+        # !!! assignment to img fills NaNs with zeros
+        # !!! NOTE: cannot set `data` attribute on masked_array,
+        #           but can manipulate mask
+        maimg = np.ma.sum(np.ma.stack(self.warp_dict.values()), axis=0)
+        img = maimg.data
 
         # Rescale the data to match the scale of the original dataset
-        img = rescale_intensity(img, out_range=(self.min, self.max))
+        kwargs = {
+            'image': img,
+            'in_range': (np.nanmin(img), np.nanmax(img)),
+            'out_range': (self.min, self.max),
+        }
+        img = rescale_intensity(**kwargs)
 
+        # do SNIP if requested
+        # !!! Fast snip1d (ndimage) cannot handle nans
+        # from hexrdgui.hexrd.ui.utils:
+        #     Fast_SNIP_1D = 0
+        #     SNIP_1D = 1
+        #     SNIP_2D = 2
         if HexrdConfig().polar_apply_snip1d:
+            if HexrdConfig().polar_snip1d_algorithm in [1, 2]:
+                img[maimg.mask] = np.nan
             self.snip1d_background = run_snip1d(img)
             # Perform the background subtraction
             img -= self.snip1d_background
         else:
             self.snip1d_background = None
 
-        # Apply masks if they are present
+        # Apply user-specified masks if they are present
         for mask in HexrdConfig().visible_polar_masks:
-            img[~mask] = 0
+            maimg.mask = np.logical_or(maimg.mask, ~mask)
+        img[maimg.mask] = np.nan
 
-        self.img = img
+        self.img = img  # just a normal ndarry with NaNs
 
     def warp_all_images(self):
         # Cache the image max and min for later use
