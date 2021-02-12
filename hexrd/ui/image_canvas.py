@@ -646,9 +646,10 @@ class ImageCanvas(FigureCanvas):
             # do not produce artificial drops.
             total_mask = reduce(np.logical_and, map(np.logical_not, masks))
             masked = np.ma.masked_array(self.iviewer.img, mask=total_mask)
-            return masked.sum(axis=0) / masked.count(axis=0) * masked.shape[0]
+            total_sum = np.nansum(masked, axis=0)
+            return total_sum / masked.count(axis=0) * masked.shape[0]
         else:
-            return self.iviewer.img.sum(axis=0)
+            return np.nansum(self.iviewer.img, axis=0)
 
     def update_azimuthal_integral_plot(self):
         if self.mode != ViewType.polar:

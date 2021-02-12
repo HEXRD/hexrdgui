@@ -233,11 +233,12 @@ class PolarView:
         # img = log_scale_img(log_scale_img(sqrt_scale_img(img)))
 
         # Rescale the data to match the scale of the original dataset
-        # import pdb; pdb.set_trace()
-        nan_idx = np.isnan(img)
-        img[nan_idx] = 0.
-        img = rescale_intensity(img, out_range=(self.min, self.max))
-        img[nan_idx] = np.nan
+        kwargs = {
+            'image': img,
+            'in_range': (np.nanmin(img), np.nanmax(img)),
+            'out_range': (self.min, self.max),
+        }
+        img = rescale_intensity(**kwargs)
 
         if HexrdConfig().polar_apply_snip1d:
             self.snip1d_background = run_snip1d(img)
