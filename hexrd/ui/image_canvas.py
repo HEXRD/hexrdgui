@@ -641,21 +641,13 @@ class ImageCanvas(FigureCanvas):
         self.draw()
 
     def compute_azimuthal_integral_sum(self):
+        # grab the polar image
+        # !!! NOTE: currenlty not a masked image; just nans
         pimg = self.iviewer.img
-        if masks := HexrdConfig().visible_polar_masks:
-            # If there are masks, normalize the sum so that the masks
-            # do not produce artificial drops.
-            # FIXME: probably not the correct place to do this!
-            masks.append(~np.isnan(pimg))
-            total_mask = reduce(np.logical_or, map(np.logical_not, masks))
-            masked = np.ma.masked_array(pimg, mask=total_mask)
-            return masked.sum(axis=0) / masked.count(axis=0) * masked.shape[0]
-        else:
-            # FIXME: this give the desired result, but prbably needs to move
-            # elsewhere
-            masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
-            return masked.sum(axis=0) / masked.count(axis=0) * masked.shape[0]
-            # return self.iviewer.img.sum(axis=0)
+        # !!! NOTE: visible polar masks have already been applied
+        #           in polarview.py
+        masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
+        return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
 
     def update_azimuthal_integral_plot(self):
         if self.mode != ViewType.polar:
