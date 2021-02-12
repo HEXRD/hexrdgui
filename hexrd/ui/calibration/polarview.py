@@ -225,18 +225,22 @@ class PolarView:
         return self.warp_dict[det]
 
     def generate_image(self):
-        img = np.zeros(self.shape)
-        for key in self.images_dict.keys():
-            img += self.warp_dict[key]
+        # img = np.zeros(self.shape)
+        # for key in self.images_dict.keys():
+        #     img += self.warp_dict[key]
+
+        # !!! this fills NaNs with zeros
+        maimg = np.ma.sum(np.ma.stack(self.warp_dict.values()), axis=0)
 
         # ??? do log scaling here
         # img = log_scale_img(log_scale_img(sqrt_scale_img(img)))
 
         # Rescale the data to match the scale of the original dataset
         # import pdb; pdb.set_trace()
-        nan_idx = np.isnan(img)
-        img[nan_idx] = 0.
-        img = rescale_intensity(img, out_range=(self.min, self.max))
+        img = rescale_intensity(maimg.data, out_range=(self.min, self.max))
+
+        # need to add nans back in
+        nan_idx = maimg.mask
         img[nan_idx] = np.nan
 
         if HexrdConfig().polar_apply_snip1d:
