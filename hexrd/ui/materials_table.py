@@ -79,6 +79,7 @@ class MaterialsTable:
         hkls = plane_data.getHKLs(asStr=True)
         d_spacings = plane_data.getPlaneSpacings()
         tth = plane_data.getTTh()
+        sf = plane_data.structFact
 
         # Restore the previous exclusions
         plane_data.exclusions = previous_exclusions
@@ -90,13 +91,17 @@ class MaterialsTable:
             table_item.setTextAlignment(Qt.AlignCenter)
             self.ui.table.setItem(i, 0, table_item)
 
-            table_item = QTableWidgetItem('%.2f' % d_spacings[i])
+            table_item = QTableWidgetItem(f'{d_spacings[i]:.2f}')
             table_item.setTextAlignment(Qt.AlignCenter)
             self.ui.table.setItem(i, 1, table_item)
 
-            table_item = QTableWidgetItem('%.2f' % math.degrees(tth[i]))
+            table_item = QTableWidgetItem(f'{math.degrees(tth[i]):.2f}')
             table_item.setTextAlignment(Qt.AlignCenter)
             self.ui.table.setItem(i, 2, table_item)
+
+            table_item = QTableWidgetItem(f'{sf[i]:.2f}')
+            table_item.setTextAlignment(Qt.AlignCenter)
+            self.ui.table.setItem(i, 3, table_item)
 
         self.update_table_selections()
         self.update_material_name()
