@@ -225,9 +225,9 @@ class ZoomCanvas(FigureCanvas):
             self.axes_images[2].set_data(a3_data)
 
             self.axes[1].relim()
-            self.axes[1].autoscale_view(scalex=False)
+            self.axes[1].autoscale_view()
             self.axes[2].relim()
-            self.axes[2].autoscale_view(scaley=False)
+            self.axes[2].autoscale_view()
 
         if self.draw_crosshairs:
             self.plot_crosshairs(xlims, ylims)
