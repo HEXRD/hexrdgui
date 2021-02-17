@@ -1,5 +1,6 @@
 # Some general utilities that are used in multiple places
 
+from contextlib import contextmanager
 from enum import IntEnum
 from functools import reduce
 import math
@@ -244,3 +245,13 @@ class lazy_property:
     def __get__(self, obj, type=None) -> object:
         obj.__dict__[self.name] = self.function(obj)
         return obj.__dict__[self.name]
+
+
+@contextmanager
+def exclusions_off(plane_data):
+    prev = plane_data.exclusions
+    plane_data.exclusions = [False] * len(plane_data.exclusions)
+    try:
+        yield
+    finally:
+        plane_data.exclusions = prev
