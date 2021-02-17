@@ -113,6 +113,13 @@ class MaterialsTable:
             sf = plane_data.structFact
             multiplicity = plane_data.getMultiplicity()
 
+            if len(sf) != len(hkls):
+                # The structure factor must have been generated with the wrong
+                # number of hkls. Generated it again now that the exclusions
+                # are turned off.
+                material.update_structure_factor()
+                sf = plane_data.structFact
+
         self.update_hkl_index_maps(hkls)
 
         table.clearContents()
