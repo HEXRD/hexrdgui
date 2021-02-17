@@ -470,7 +470,8 @@ class MainWindow(QObject):
         selected_dirs = []
         for name in detector_names:
             caption = 'Select directory for detector: ' + name
-            d = QFileDialog.getExistingDirectory(self.ui, caption, dir=images_dir)
+            d = QFileDialog.getExistingDirectory(self.ui, caption,
+                                                 dir=images_dir)
             if not d:
                 return
 
@@ -545,8 +546,9 @@ class MainWindow(QObject):
                 # to be the same as the file name...
                 kwargs['cache_file'] = selected_file
 
-            HexrdConfig().save_imageseries(ims_dict.get(name), name, selected_file,
-                                           selected_format, **kwargs)
+            HexrdConfig().save_imageseries(ims_dict.get(name), name,
+                                           selected_file, selected_format,
+                                           **kwargs)
 
     def on_action_save_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -719,7 +721,6 @@ class MainWindow(QObject):
 
     def update_image_mode_enable_states(self):
         # This is for enable states that depend on the image mode
-        is_raw = self.image_mode == ViewType.raw
         is_cartesian = self.image_mode == ViewType.cartesian
         is_polar = self.image_mode == ViewType.polar
 
@@ -728,7 +729,8 @@ class MainWindow(QObject):
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian) and has_images)
         self.ui.action_run_calibration.setEnabled(is_polar and has_images)
-        self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and has_images)
+        self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and
+                                                        has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
 
@@ -757,8 +759,11 @@ class MainWindow(QObject):
         worker.signals.result.connect(self.finish_powder_calibration)
         worker.signals.finished.connect(self.progress_dialog.accept)
         msg = 'Powder calibration finished!'
-        f = lambda: HexrdConfig().emit_update_status_bar(msg)
-        worker.signals.finished.connect(f)
+
+        def callback():
+            HexrdConfig().emit_update_status_bar(msg)
+
+        worker.signals.finished.connect(callback)
         self.progress_dialog.exec_()
 
     def finish_powder_calibration(self):
@@ -858,7 +863,8 @@ class MainWindow(QObject):
             HexrdConfig().rerender_needed.connect(self.update_all)
             # Go ahead and trigger an update as well
             self.update_all()
-        # Only disconnect if we were previously enabled. i.e. the signal was connected
+        # Only disconnect if we were previously enabled. i.e. the signal was
+        # connected
         elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)
 
@@ -896,7 +902,7 @@ class MainWindow(QObject):
     def on_action_transform_detectors_triggered(self):
         mask_state = HexrdConfig().threshold_mask_status
         self.image_mode_widget.reset_masking()
-        td = TransformDialog(self.ui).exec_()
+        _ = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
 
     def on_action_switch_workflow_triggered(self):
