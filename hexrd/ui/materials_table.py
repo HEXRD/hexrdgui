@@ -16,6 +16,7 @@ class COLUMNS:
     D_SPACING = 1
     TTH = 2
     SF = 3
+    MULTIPLICITY = 4
 
 
 class MaterialsTable:
@@ -110,6 +111,7 @@ class MaterialsTable:
             d_spacings = plane_data.getPlaneSpacings()
             tth = plane_data.getTTh()
             sf = plane_data.structFact
+            multiplicity = plane_data.getMultiplicity()
 
         self.update_hkl_index_maps(hkls)
 
@@ -132,6 +134,9 @@ class MaterialsTable:
 
                 table_item = FloatTableItem(sf[i])
                 table.setItem(i, COLUMNS.SF, table_item)
+
+                table_item = IntTableItem(multiplicity[i])
+                table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
 
         self.update_selected_rows()
         self.update_material_name()
@@ -189,6 +194,23 @@ class FloatTableItem(QTableWidgetItem):
 
     def __init__(self, data):
         super().__init__(f'{data:.2f}')
+        self.setTextAlignment(Qt.AlignCenter)
+        self.setData(self.DATA_ROLE, data)
+
+    @property
+    def sort_value(self):
+        return self.data(self.DATA_ROLE)
+
+    def __lt__(self, other):
+        return self.sort_value < other.sort_value
+
+
+class IntTableItem(QTableWidgetItem):
+    """Subclass so we can sort as ints instead of strings"""
+    DATA_ROLE = Qt.UserRole
+
+    def __init__(self, data):
+        super().__init__(f'{data}')
         self.setTextAlignment(Qt.AlignCenter)
         self.setData(self.DATA_ROLE, data)
 

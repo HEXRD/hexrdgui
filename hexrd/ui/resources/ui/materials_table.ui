@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>470</width>
+    <width>545</width>
     <height>173</height>
    </rect>
   </property>
@@ -53,7 +53,7 @@
       <number>5</number>
      </property>
      <property name="columnCount">
-      <number>4</number>
+      <number>5</number>
      </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
@@ -90,6 +90,11 @@
      <column>
       <property name="text">
        <string>|F|²</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Multiplicity</string>
       </property>
      </column>
     </widget>
