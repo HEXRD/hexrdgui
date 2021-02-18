@@ -250,7 +250,7 @@ class lazy_property:
 @contextmanager
 def exclusions_off(plane_data):
     prev = plane_data.exclusions
-    plane_data.exclusions = [False] * len(plane_data.exclusions)
+    plane_data.exclusions = None
     try:
         yield
     finally:
