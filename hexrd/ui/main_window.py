@@ -884,12 +884,7 @@ class MainWindow(QObject):
 
         intensity = info['intensity']
         if intensity is not None:
-            if isinstance(intensity, np.ma.MaskedArray):
-                masked_label = '--'
-                labels.append(f'value = {masked_label:>8}')
-            else:
-                labels.append(f'value = {info["intensity"]:8.3f}')
-
+            labels.append(f'value = {info["intensity"]:8.3f}')
             labels.append(f'tth = {info["tth"]:8.3f}')
             labels.append(f'eta = {info["eta"]:8.3f}')
             labels.append(f'dsp = {info["dsp"]:8.3f}')
