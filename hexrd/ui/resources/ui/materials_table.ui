@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>468</width>
+    <width>545</width>
     <height>173</height>
    </rect>
   </property>
@@ -46,17 +46,23 @@
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
      <property name="rowCount">
+      <number>5</number>
+     </property>
+     <property name="columnCount">
       <number>5</number>
      </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
      </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>150</number>
-     </attribute>
      <attribute name="horizontalHeaderMinimumSectionSize">
       <number>70</number>
+     </attribute>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>100</number>
      </attribute>
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
@@ -79,6 +85,16 @@
      <column>
       <property name="text">
        <string>2θ (°)</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>|F|²</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Multiplicity</string>
       </property>
      </column>
     </widget>
