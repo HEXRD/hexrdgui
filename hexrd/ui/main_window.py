@@ -878,17 +878,17 @@ class MainWindow(QObject):
 
     def new_mouse_position(self, info):
         labels = []
-        labels.append('x = {:8.3f}'.format(info['x_data']))
-        labels.append('y = {:8.3f}'.format(info['y_data']))
+        labels.append(f'x = {info["x_data"]:8.3f}')
+        labels.append(f'y = {info["y_data"]:8.3f}')
         delimiter = ',  '
 
         intensity = info['intensity']
         if intensity is not None:
-            labels.append('value = {:8.3f}'.format(info['intensity']))
-            labels.append('tth = {:8.3f}'.format(info['tth']))
-            labels.append('eta = {:8.3f}'.format(info['eta']))
-            labels.append('dsp = {:8.3f}'.format(info['dsp']))
-            labels.append('hkl = ' + info['hkl'])
+            labels.append(f'value = {info["intensity"]:8.3f}')
+            labels.append(f'tth = {info["tth"]:8.3f}')
+            labels.append(f'eta = {info["eta"]:8.3f}')
+            labels.append(f'dsp = {info["dsp"]:8.3f}')
+            labels.append(f'hkl = {info["hkl"]}')
 
         msg = delimiter.join(labels)
         self.ui.status_bar.showMessage(msg)

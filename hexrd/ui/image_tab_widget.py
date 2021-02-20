@@ -263,7 +263,7 @@ class ImageTabWidget(QTabWidget):
             # Image was created with imshow()
             artist = event.inaxes.get_images()[0]
             i, j = utils.coords2index(artist, info['x_data'], info['y_data'])
-            intensity = artist.get_array()[i, j]
+            intensity = artist.get_array().data[i, j]
         else:
             # This is probably just a plot. Do not calculate intensity.
             intensity = None
