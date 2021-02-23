@@ -103,9 +103,6 @@ class ImportDataPanel(QObject):
                                 enabled=True)
 
     def set_convention(self):
-        if self.instrument != 'TARDIS':
-            return
-
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
         HexrdConfig().set_euler_angle_convention(new_conv)
 
