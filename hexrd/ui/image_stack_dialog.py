@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 from pathlib import Path
 
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -40,6 +40,7 @@ class ImageStackDialog:
         self.ui.detectors.currentTextChanged.connect(self.change_detector)
         self.ui.files_by_selection.toggled.connect(self.file_selection_changed)
         self.ui.select_files.clicked.connect(self.select_files_manually)
+        self.ui.add_wedge.clicked.connect(self.add_wedge)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -59,6 +60,8 @@ class ImageStackDialog:
         self.ui.file_count.setText(
             str(self.state[self.detector]['file-count']))
         self.ui.apply_to_all.setChecked(self.state['apply-to-all'])
+        if self.state['wedges']:
+            self.set_wedges()
 
     def setup_state(self):
         if sorted(self.state.get('dets', [])) == sorted(self.detectors):
@@ -73,10 +76,11 @@ class ImageStackDialog:
                 'max-frame-file': 0,
                 'max-frames': 0,
                 'omega': '',
-                'omega-from-file': False,
+                'omega-from-file': True,
                 'total-frames': 1,
                 'manual-file': True,
                 'apply-to-all': True,
+                'wedges': []
             }
             for det in self.detectors:
                 self.state[det] = {
@@ -85,6 +89,12 @@ class ImageStackDialog:
                     'search': '',
                     'file-count': 0,
                 }
+
+    def set_wedges(self):
+        for i, wedge in enumerate(self.state['wedges']):
+            self.ui.omega_wedges.insertRow(i)
+            for j, value in enumerate(wedge):
+                self.ui.masks_table.setItem(i, j, QTableWidgetItem(value))
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
@@ -171,6 +181,12 @@ class ImageStackDialog:
         self.ui.total_frames.setValue(frames * len(files))
         self.set_ranges(frames, len(files))
         self.state['total-frames'] = frames
+
+    def add_wedge(self):
+        row = self.ui.omega_wedges.rowCount()
+        self.ui.omega_wedges.insertRow(row)
+        self.ui.omega_wedges.setFocus()
+        self.ui.omega_wedges.setCurrentCell(row, 0)
 
     def get_files(self):
         temp, imgs = [], []
