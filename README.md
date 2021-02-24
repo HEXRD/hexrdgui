@@ -1,6 +1,8 @@
 # Installing
 
 ## conda (release)
+Requires Python 3.8+
+
 To install the latest stable release
 
 ```bash
