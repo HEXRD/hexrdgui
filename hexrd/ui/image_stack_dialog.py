@@ -41,6 +41,7 @@ class ImageStackDialog:
         self.ui.files_by_selection.toggled.connect(self.file_selection_changed)
         self.ui.select_files.clicked.connect(self.select_files_manually)
         self.ui.add_wedge.clicked.connect(self.add_wedge)
+        self.ui.clear_wedges.clicked.connect(self.clear_wedges)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -132,6 +133,7 @@ class ImageStackDialog:
         self.state['omega-from-file'] = checked
         self.ui.omega_wedges.setDisabled(checked)
         self.ui.add_wedge.setDisabled(checked)
+        self.ui.clear_wedges.setDisabled(checked)
         self.ui.load_omega_file.setEnabled(checked)
         self.ui.omega_file.setEnabled(checked)
 
@@ -187,6 +189,9 @@ class ImageStackDialog:
         self.ui.omega_wedges.insertRow(row)
         self.ui.omega_wedges.setFocus()
         self.ui.omega_wedges.setCurrentCell(row, 0)
+
+    def clear_wedges(self):
+        self.ui.omega_wedges.setRowCount(0)
 
     def get_files(self):
         temp, imgs = [], []
