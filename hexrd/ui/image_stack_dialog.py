@@ -42,6 +42,7 @@ class ImageStackDialog:
         self.ui.select_files.clicked.connect(self.select_files_manually)
         self.ui.add_wedge.clicked.connect(self.add_wedge)
         self.ui.clear_wedges.clicked.connect(self.clear_wedges)
+        self.ui.omega_wedges.cellChanged.connect(self.update_wedges)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -95,7 +96,8 @@ class ImageStackDialog:
         for i, wedge in enumerate(self.state['wedges']):
             self.ui.omega_wedges.insertRow(i)
             for j, value in enumerate(wedge):
-                self.ui.masks_table.setItem(i, j, QTableWidgetItem(value))
+                self.ui.omega_wedges.setItem(
+                    i, j, QTableWidgetItem(str(value)))
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
@@ -142,7 +144,7 @@ class ImageStackDialog:
             self.ui, 'Select file',
             HexrdConfig().images_dir, 'NPY files (*.npy)')
         self.ui.omega_file.setText(omega_file)
-        self.state[self.detector]['omega'] = omega_file
+        self.state['omega'] = omega_file
 
     def set_empty_frames(self, value):
         self.state['empty-frames'] = value
@@ -189,9 +191,15 @@ class ImageStackDialog:
         self.ui.omega_wedges.insertRow(row)
         self.ui.omega_wedges.setFocus()
         self.ui.omega_wedges.setCurrentCell(row, 0)
+        self.state['wedges'].append([])
 
     def clear_wedges(self):
         self.ui.omega_wedges.setRowCount(0)
+        self.state['wedges'].clear()
+
+    def update_wedges(self, row, column):
+        if value := self.ui.omega_wedges.item(row, column).text():
+            self.state['wedges'][row].insert(column, int(value))
 
     def get_files(self):
         temp, imgs = [], []
@@ -223,20 +231,39 @@ class ImageStackDialog:
         return temp, imgs, num_files
 
     def get_omega_values(self, num_files):
-        return
+        if self.state['omega-from-file']:
+            omega = np.load(self.state['omega'])
+        else:
+            omega = []
+            for i in range(self.ui.omega_wedges.rowCount()):
+                start = int(self.ui.omega_wedges.item(i, 0).text())
+                stop = int(self.ui.omega_wedges.item(i, 1).text())
+                steps = int(self.ui.omega_wedges.item(i, 2).text())
+                delta = (stop - start) / steps
+                omega.extend(np.linspace(
+                    [start, start + delta],
+                    [stop - delta, stop],
+                    steps))
+            omega = np.array(omega)
+        nframes = [self.state['total-frames'] - self.state['empty-frames']]
+        nsteps = nframes * num_files
+        return omega[:, 0], omega[:, 1], nsteps
 
     def build_data(self):
         HexrdConfig().stack_state = copy.deepcopy(self.state)
         temp_files, img_files, num_files = self.get_files()
-        start, stop = self.get_omega_values(num_files)
+        start, stop, nsteps = self.get_omega_values(num_files)
         data = {
             'files': temp_files,
             'yml_files': img_files,
             'omega_min': start,
             'omega_max': stop,
+            'nsteps': nsteps,
             'empty_frames': self.state['empty-frames'],
-            'total_frames': [self.state['total-frames']] * num_files,
+            'total_frames': [self.state['total-frames']] * num_files
         }
+        if not self.state['omega-from-file']:
+            data['wedges'] = self.state['wedges']
         return data
 
     def exec_(self):

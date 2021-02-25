@@ -501,6 +501,7 @@ class LoadPanel(QObject):
         data = {
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
+            'nsteps': self.nsteps,
             'empty_frames': self.empty_frames,
             'total_frames': self.total_frames,
             }
@@ -521,5 +522,7 @@ class LoadPanel(QObject):
             self.empty_frames = data['empty_frames']
             self.total_frames = data['total_frames']
             self.ext = '.yml'
+            if 'wedges' in data:
+                self.wedges = data['wedges']
             self.create_table()
             self.enable_read()
