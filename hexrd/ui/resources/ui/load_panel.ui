@@ -303,7 +303,7 @@
          <bool>false</bool>
         </property>
         <attribute name="horizontalHeaderDefaultSectionSize">
-         <number>85</number>
+         <number>100</number>
         </attribute>
         <attribute name="horizontalHeaderStretchLastSection">
          <bool>true</bool>
@@ -335,7 +335,7 @@
         </column>
         <column>
          <property name="text">
-          <string>Delta</string>
+          <string>Steps</string>
          </property>
         </column>
        </widget>

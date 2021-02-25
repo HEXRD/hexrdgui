@@ -210,7 +210,7 @@ class LoadPanel(QObject):
         self.total_frames = []
         self.omega_min = []
         self.omega_max = []
-        self.delta = []
+        self.nsteps = []
         self.files = []
 
     def enable_aggregations(self, row, column):
@@ -269,7 +269,7 @@ class LoadPanel(QObject):
                 else:
                     self.omega_min = [0] * len(self.yml_files[0])
                     self.omega_max = [0.25] * len(self.yml_files[0])
-                    self.delta = [0.25] * len(self.yml_files[0])
+                self.nsteps = [self.total_frames[0]] * len(self.yml_files[0])
                 options = data.get('options', {})
                 self.empty_frames = 0
                 if isinstance(options, dict):
@@ -283,24 +283,19 @@ class LoadPanel(QObject):
                 else:
                     self.omega_min.append(0)
                     self.omega_max.append(0.25)
-                    self.delta.append(0.25)
+                self.nsteps.append(len(ims))
 
     def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
-        size = len(ims.metadata['omega']) - 1
-        maximum = ims.metadata['omega'][size][1]
+        maximum = ims.metadata['omega'][-1][1]
 
         self.omega_min.append(minimum)
         self.omega_max.append(maximum)
-        self.delta.append((maximum - minimum)/len(ims))
 
     def get_yaml_omega_data(self, data):
         if 'ostart' in data['meta']:
             self.omega_min.append(data['meta']['ostart'])
             self.omega_max.append(data['meta']['ostop'])
-            num = data['meta']['ostop'] - data['meta']['ostart']
-            denom = self.total_frames[0]
-            self.delta.append(num / denom)
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
@@ -312,7 +307,6 @@ class LoadPanel(QObject):
             for idx, vals in enumerate(nparray):
                 self.omega_min.append(vals[0])
                 self.omega_max.append(vals[1])
-                self.delta.append((vals[1] - vals[0]) / self.total_frames[idx])
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
@@ -398,16 +392,13 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
-            self.ui.file_options.item(i, 5).setText(
-                str(round(self.delta[i], 6)))
+            self.ui.file_options.item(i, 5).setText(str(self.nsteps[i]))
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(curr)
-            self.ui.file_options.item(i, 3).setToolTip('Minimum must be set')
-            self.ui.file_options.item(i, 4).setToolTip(
-                'Must set either maximum or delta')
-            self.ui.file_options.item(i, 5).setToolTip(
-                'Must set either maximum or delta')
+            self.ui.file_options.item(i, 3).setToolTip('Start must be set')
+            self.ui.file_options.item(i, 4).setToolTip('Stop must be set')
+            self.ui.file_options.item(i, 5).setToolTip('Number of steps')
 
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
@@ -460,28 +451,13 @@ class LoadPanel(QObject):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
                     self.ui.file_options.item(r, 2).setText(
                         str(self.total_frames[r] - self.empty_frames))
-                    self.omega_data_changed(r, 3)
             # Update delta when min or max omega are changed
             elif column == 3:
                 self.omega_min[row] = float(curr_val)
-                if self.omega_max[row] or self.delta[row]:
-                    self.omega_data_changed(row, 4)
             elif column == 4:
                 self.omega_max[row] = float(curr_val)
-                if self.omega_min[row] != '':
-                    diff = abs(self.omega_max[row] - self.omega_min[row])
-                    delta = diff / total_frames
-                    self.delta[row] = delta
-                    self.ui.file_options.item(row, 5).setText(
-                        str(round(delta, 6)))
             elif column == 5:
                 self.delta[row] = float(curr_val)
-                if self.omega_min[row] != '':
-                    diff = self.delta[row] * total_frames
-                    maximum = self.omega_min[row] + diff
-                    self.omega_max[row] = maximum
-                    self.ui.file_options.item(row, 4).setText(
-                        str(float(maximum)))
             self.enable_read()
 
         self.ui.file_options.blockSignals(False)
@@ -509,6 +485,8 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext == '.yml':
             data['yml_files'] = self.yml_files
+        if hasattr(self, 'wedges'):
+            data['wedges'] = self.wedges
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
 
@@ -518,9 +496,10 @@ class LoadPanel(QObject):
             self.yml_files = data['yml_files']
             self.omega_min = data['omega_min']
             self.omega_max = data['omega_max']
-            self.delta = data['delta']
+            self.nsteps = data['nsteps']
             self.empty_frames = data['empty_frames']
             self.total_frames = data['total_frames']
+            self.wedges = data['wedges']
             self.ext = '.yml'
             if 'wedges' in data:
                 self.wedges = data['wedges']
