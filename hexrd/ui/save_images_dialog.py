@@ -1,5 +1,3 @@
-import os
-
 from PySide2.QtWidgets import QFileDialog, QInputDialog
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -29,15 +27,15 @@ class SaveImagesDialog:
         self.ui.change_directory.clicked.connect(self.change_directory)
 
     def change_directory(self):
-          caption = HexrdConfig().images_dirtion = 'Select directory for images'
-          new_dir = QFileDialog.getExistingDirectory(
-              self.ui, caption, dir=self.parent_dir)
+        caption = HexrdConfig().images_dirtion = 'Select directory for images'
+        new_dir = QFileDialog.getExistingDirectory(
+            self.ui, caption, dir=self.parent_dir)
 
-          if new_dir:
-              HexrdConfig().working_dir = new_dir
-              self.parent_dir = new_dir
-              self.ui.pwd.setText(self.parent_dir)
-              self.ui.pwd.setToolTip(self.parent_dir)
+        if new_dir:
+            HexrdConfig().working_dir = new_dir
+            self.parent_dir = new_dir
+            self.ui.pwd.setText(self.parent_dir)
+            self.ui.pwd.setToolTip(self.parent_dir)
 
     def save_images(self):
         if ImageLoadManager().unaggregated_images:
@@ -75,9 +73,8 @@ class SaveImagesDialog:
                 # to be the same as the file name...
                 kwargs['cache_file'] = path
 
-            HexrdConfig().save_imageseries(ims_dict.get(det), det,
-                                            path, selected_format,
-                                            **kwargs)
+            HexrdConfig().save_imageseries(
+              ims_dict.get(det), det, path, selected_format, **kwargs)
 
     def exec_(self):
         if self.ui.exec_():
