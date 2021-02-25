@@ -185,7 +185,7 @@ class PowderLineOverlay:
                 if display_mode == ViewType.raw:
                     # !!! distortion
                     if panel.distortion is not None:
-                        xys_full = panel.distortion.apply_inverse(xys_full)
+                        xys = panel.distortion.apply_inverse(xys)
 
                     # Convert to pixel coordinates
                     # ??? keep in pixels?

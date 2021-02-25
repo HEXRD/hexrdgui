@@ -8,6 +8,7 @@ from hexrd.ui import resource_loader
 from hexrd.ui.main_window import MainWindow
 import hexrd.ui.resources.icons
 
+
 def main():
     # Kill the program when ctrl-c is used
     signal.signal(signal.SIGINT, signal.SIG_DFL)

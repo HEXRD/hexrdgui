@@ -1,15 +1,15 @@
 import copy
-import os
 import yaml
-import glob
 import numpy as np
+from pathlib import Path
 
 from PySide2.QtGui import QCursor
 from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
-    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE)
+    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE,
+    UI_TRANS_INDEX_NONE, YAML_EXTS)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -37,7 +37,8 @@ class LoadPanel(QObject):
         self.ui = loader.load_file('load_panel.ui', parent)
 
         self.ims = HexrdConfig().imageseries_dict
-        self.parent_dir = HexrdConfig().images_dir if HexrdConfig().images_dir else ''
+        self.parent_dir = HexrdConfig().images_dir
+        self.state = HexrdConfig().load_panel_state
 
         self.files = []
         self.omega_min = []
@@ -66,7 +67,10 @@ class LoadPanel(QObject):
         if not self.parent_dir:
             self.ui.img_directory.setText('No directory set')
         else:
-            self.ui.img_directory.setText(self.parent_dir)
+            directory = self.parent_dir
+            if Path(directory).is_file():
+                directory = str(Path(directory).parent)
+            self.ui.img_directory.setText(directory)
 
         self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
@@ -74,6 +78,8 @@ class LoadPanel(QObject):
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
         HexrdConfig().instrument_config_loaded.connect(self.config_changed)
+        HexrdConfig().load_panel_state_reset.connect(
+            self.setup_processing_options)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
@@ -94,11 +100,13 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
-        self.state = copy.copy(HexrdConfig().load_panel_state)
+        self.state = HexrdConfig().load_panel_state
         num_dets = len(HexrdConfig().detector_names)
-        self.state.setdefault('agg', 1)
-        self.state.setdefault('trans', [0 for x in range(num_dets)])
-        self.state.setdefault('dark', [0 for x in range(num_dets)])
+        self.state.setdefault('agg', UI_AGG_INDEX_NONE)
+        self.state.setdefault(
+            'trans', [UI_TRANS_INDEX_NONE for x in range(num_dets)])
+        self.state.setdefault(
+            'dark', [UI_DARK_INDEX_NONE for x in range(num_dets)])
         self.state.setdefault('dark_files', [None for x in range(num_dets)])
 
     # Handle GUI changes
@@ -122,6 +130,7 @@ class LoadPanel(QObject):
 
     def detectors_changed(self):
         self.ui.detector.clear()
+        self.dets = HexrdConfig().detector_names
         self.ui.detector.addItems(HexrdConfig().detector_names)
 
     def agg_changed(self):
@@ -133,19 +142,18 @@ class LoadPanel(QObject):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
 
     def dir_changed(self):
-        new_dir = os.path.commonpath(
-            [fname for fnames in self.files for fname in fnames])
+        new_dir = str(Path(self.files[0][0]).parent)
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
-        self.ui.img_directory.setText(self.parent_dir)
+        self.ui.img_directory.setText(str(Path(self.parent_dir).parent))
 
     def config_changed(self):
-        self.setup_processing_options()
-        self.detectors_changed()
-        self.ui.file_options.setRowCount(0)
-        self.reset_data()
-        self.enable_read()
-        self.setup_gui()
+        if HexrdConfig().detector_names != self.dets:
+            self.detectors_changed()
+            self.ui.file_options.setRowCount(0)
+            self.reset_data()
+            self.enable_read()
+            self.setup_gui()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
@@ -237,7 +245,7 @@ class LoadPanel(QObject):
             self.ui.aggregation.setCurrentIndex(0)
 
     def load_image_data(self, selected_files):
-        self.ext = os.path.splitext(selected_files[0])[1]
+        self.ext = Path(selected_files[0]).suffix
         has_omega = False
 
         # Select the path if the file(s) are HDF5
@@ -248,7 +256,7 @@ class LoadPanel(QObject):
 
         tmp_ims = []
         for img in selected_files:
-            if self.ext != '.yml':
+            if self.ext not in YAML_EXTS:
                 tmp_ims.append(ImageFileManager().open_file(img))
 
         self.find_images(selected_files)
@@ -256,7 +264,7 @@ class LoadPanel(QObject):
         if not self.files:
             return
 
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             for yf in self.yml_files[0]:
                 ims = ImageFileManager().open_file(yf)
                 self.total_frames.append(len(ims) if len(ims) > 0 else 1)
@@ -299,7 +307,7 @@ class LoadPanel(QObject):
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
-                fname = os.path.join(self.parent_dir, words[2])
+                fname = Path(self.parent_dir, words[-1])
                 nparray = np.load(fname)
             else:
                 nparray = data['meta']['omega']
@@ -333,7 +341,7 @@ class LoadPanel(QObject):
 
         self.dir_changed()
 
-        if self.files and self.ext == '.yml':
+        if self.files and self.ext in YAML_EXTS:
             self.get_yml_files()
 
     def get_yml_files(self):
@@ -345,21 +353,18 @@ class LoadPanel(QObject):
                     data = yaml.safe_load(yml_file)['image-files']
                 raw_images = data['files'].split()
                 for raw_image in raw_images:
-                    files.extend(glob.glob(
-                        os.path.join(data['directory'], raw_image)))
+                    path = Path(self.parent_dir, data['directory'])
+                    files.extend([str(p) for p in path.glob(raw_image)])
             self.yml_files.append(files)
 
     def enable_read(self):
-        if (self.ext == '.tiff'
-                or '' not in self.omega_min and '' not in self.omega_max):
+        files = self.yml_files if self.ext in YAML_EXTS else self.files
+        enabled = True
+        if len(files) and all(len(f) for f in files):
             if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
-                    and self.dark_files[self.idx] is not None):
-                self.ui.read.setEnabled(len(self.files))
-                return
-            elif self.state['dark'][self.idx] != 4 and len(self.files):
-                self.ui.read.setEnabled(True)
-                return
-        self.ui.read.setEnabled(False)
+                    and self.dark_files[self.idx] is None):
+                enabled = False
+            self.ui.read.setEnabled(enabled)
 
     # Handle table setup and changes
 
@@ -368,7 +373,7 @@ class LoadPanel(QObject):
         if not len(self.files):
             return
 
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             table_files = self.yml_files
         else:
             table_files = self.files
@@ -387,7 +392,7 @@ class LoadPanel(QObject):
         # Populate the rows
         for i in range(self.ui.file_options.rowCount()):
             curr = table_files[self.idx][i]
-            self.ui.file_options.item(i, 0).setText(os.path.split(curr)[1])
+            self.ui.file_options.item(i, 0).setText(Path(curr).name)
             self.ui.file_options.item(i, 1).setText(str(self.empty_frames))
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
@@ -395,7 +400,7 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 5).setText(str(self.nsteps[i]))
 
             # Set tooltips
-            self.ui.file_options.item(i, 0).setToolTip(curr)
+            self.ui.file_options.item(i, 0).setToolTip(Path(curr).name)
             self.ui.file_options.item(i, 3).setToolTip('Start must be set')
             self.ui.file_options.item(i, 4).setToolTip('Stop must be set')
             self.ui.file_options.item(i, 5).setToolTip('Number of steps')
@@ -404,7 +409,7 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
             # If raw data offset can only be changed in YAML file
-            if self.ext == '.yml':
+            if self.ext in YAML_EXTS:
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
 
         self.ui.file_options.blockSignals(False)
@@ -483,7 +488,7 @@ class LoadPanel(QObject):
             }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
-        if self.ext == '.yml':
+        if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
         if hasattr(self, 'wedges'):
             data['wedges'] = self.wedges

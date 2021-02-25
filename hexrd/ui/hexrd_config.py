@@ -208,7 +208,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('working_dir', self.working_dir)
         settings.setValue('hdf5_path', self.hdf5_path)
         settings.setValue('live_update', self.live_update)
-        settings.setValue('euler_angle_convention', self.euler_angle_convention)
+        settings.setValue('euler_angle_convention',
+                          self.euler_angle_convention)
         settings.setValue('active_material', self.active_material_name)
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
@@ -384,7 +385,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         return ret
 
-    def save_imageseries(self, ims, name, write_file, selected_format, **kwargs):
+    def save_imageseries(self, ims, name, write_file, selected_format,
+                         **kwargs):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
                                      **kwargs)
 
@@ -729,7 +731,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 cur_val = cur_val[val]
 
             cur_val[path[-1]] = value
-        except:
+        except KeyError:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
                    str(self.config['instrument']))
             raise Exception(msg)
@@ -780,7 +782,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         try:
             for val in path:
                 cur_val = cur_val[val]
-        except:
+        except KeyError:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
                    str(self.config['instrument']))
             raise Exception(msg)
@@ -1127,6 +1129,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def flag_overlay_updates_for_all_materials(self):
         for name in self.materials:
             self.flag_overlay_updates_for_material(name)
+
+    @property
+    def visible_polar_masks(self):
+        masks = self.polar_masks.items()
+        visible = self.visible_masks
+        return [mask for name, mask in masks if name in visible]
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']

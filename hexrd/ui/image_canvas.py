@@ -1,4 +1,5 @@
 import copy
+from functools import reduce
 import math
 
 from PySide2.QtCore import QThreadPool, QTimer
@@ -572,7 +573,7 @@ class ImageCanvas(FigureCanvas):
 
             if self.azimuthal_integral_axis is None:
                 axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
-                data = (tth, np.sum(img, axis=0))
+                data = (tth, self.compute_azimuthal_integral_sum())
                 self.azimuthal_line_artist, = axis.plot(*data)
                 HexrdConfig().last_azimuthal_integral_data = data
 
@@ -639,6 +640,15 @@ class ImageCanvas(FigureCanvas):
         self.update_azimuthal_integral_plot_y_scale()
         self.draw()
 
+    def compute_azimuthal_integral_sum(self):
+        # grab the polar image
+        # !!! NOTE: currenlty not a masked image; just nans
+        pimg = self.iviewer.img
+        # !!! NOTE: visible polar masks have already been applied
+        #           in polarview.py
+        masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
+        return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
+
     def update_azimuthal_integral_plot(self):
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
@@ -654,7 +664,7 @@ class ImageCanvas(FigureCanvas):
         tth = np.degrees(self.iviewer.angular_grid[1][0])
 
         # Set the new data
-        data = (tth, np.sum(self.iviewer.img, axis=0))
+        data = (tth, self.compute_azimuthal_integral_sum())
         line.set_data(*data)
 
         HexrdConfig().last_azimuthal_integral_data = data

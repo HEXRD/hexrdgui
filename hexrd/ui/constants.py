@@ -34,6 +34,7 @@ UI_THRESHOLD_LESS_THAN = 0
 UI_THRESHOLD_GREATER_THAN = 1
 UI_THRESHOLD_EQUAL_TO = 2
 
+YAML_EXTS = ['.yaml', '.yml']
 
 class ViewType:
     raw = 'raw'
