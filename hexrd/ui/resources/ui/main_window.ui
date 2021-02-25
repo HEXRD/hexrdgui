@@ -342,7 +342,7 @@
   </action>
   <action name="action_save_imageseries">
    <property name="text">
-    <string>&amp;ImageSeries</string>
+    <string>&amp;Images</string>
    </property>
   </action>
   <action name="action_open_materials">
