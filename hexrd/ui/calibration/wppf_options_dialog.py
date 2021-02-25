@@ -14,7 +14,7 @@ from PySide2.QtWidgets import (
 
 from hexrd.material import _angstroms
 from hexrd.WPPF import LeBail, Rietveld, \
-Parameters, _lpname, _rqpDict,  _getnumber
+    Parameters, _lpname, _rqpDict,  _getnumber, _nameU
 from hexrd import constants
 from hexrd.ui import enter_key_filter
 
@@ -438,50 +438,32 @@ class WppfOptionsDialog(QObject):
         for x in self.selected_materials:
             mat = HexrdConfig().material(x)
 
+            """
+            add lattice parameters
+            """
+            lp = np.array(mat.planeData.lparms)
+            rid = list(_rqpDict[mat.unitcell.latticeType][0])
+
+            name = _lpname[rid]
+
+            for i, (n, l) in enumerate(zip(name, lp)):
+                nn = p+'_'+n
+
+                """
+                first 3 are lengths, next three are angles
+                """
+                if(rid[i] <= 2):
+                    self.params.add(nn, value=l, lb=l-0.05,
+                                    ub=l+0.05, vary=False)
+                else:
+                    self.params.add(nn, value=l, lb=l-1.,
+                                    ub=l+1., vary=False)
+
             # if method is LeBail
             if method == 'LeBail':
-                """
-                add lattice parameters
-                """
-                lp = np.array(mat.planeData.lparms)
-                rid = list(_rqpDict[mat.unitcell.latticeType][0])
-
-                name = _lpname[rid]
-
-                for i, (n, l) in enumerate(zip(name, lp)):
-                    nn = p+'_'+n
-
-                    """
-                    first 3 are lengths, next three are angles
-                    """
-                    if(rid[i] <= 2):
-                        self.params.add(nn, value=l, lb=l-0.05,
-                                   ub=l+0.05, vary=False)
-                    else:
-                        self.params.add(nn, value=l, lb=l-1.,
-                                   ub=l+1., vary=False)
+                pass
 
             elif method == 'Rietveld':
-                """
-                add lattice parameters
-                """
-                lp = np.array(mat.planeData.lparms)
-                rid = list(_rqpDict[mat.unitcell.latticeType][0])
-
-                name = _lpname[rid]
-                for i, (n, l) in enumerate(zip(name, lp)):
-                    nn = p+'_'+n
-
-                    """
-                    first 3 are lengths, next three are angles
-                    """
-                    if(rid[i] <= 2):
-                        params.add(nn, value=l, lb=l-0.05,
-                                   ub=l+0.05, vary=False)
-                    else:
-                        params.add(nn, value=l, lb=l-1.,
-                                   ub=l+1., vary=False)
-
                 """
                 now adding the atom positions and 
                 occupancy
@@ -491,8 +473,6 @@ class WppfOptionsDialog(QObject):
 
                 atom_type = mat.unitcell.atom_type
                 atom_label = _getnumber(atom_type)
-                
-                #self.atom_label = atom_label
 
                 """
                 now for each atom type append the fractional
@@ -503,53 +483,50 @@ class WppfOptionsDialog(QObject):
                     Z = atom_type[i]
                     elem = constants.ptableinverse[Z]
                     # x-coordinate
-                    nn = p+'_'+elem+str(atom_label[i])+'_x'
-                    params.add(
+                    nn = f'{p}_{elem}{atom_label[i]}_x'
+                    self.params.add(
                         nn, value=atom_pos[i, 0],
                         lb=0.0, ub=1.0,
                         vary=False)
 
                     # y-coordinate
-                    nn = p+'_'+elem+str(atom_label[i])+'_y'
-                    params.add(
+                    nn = f'{p}_{elem}{atom_label[i]}_y'
+                    self.params.add(
                         nn, value=atom_pos[i, 1],
                         lb=0.0, ub=1.0,
                         vary=False)
 
                     # z-coordinate
-                    nn = p+'_'+elem+str(atom_label[i])+'_z'
-                    params.add(
+                    nn = f'{p}_{elem}{atom_label[i]}_z'
+                    self.params.add(
                         nn, value=atom_pos[i, 2],
                         lb=0.0, ub=1.0,
                         vary=False)
 
                     # occupation
-                    nn = p+'_'+elem+str(atom_label[i])+'_occ'
-                    params.add(nn, value=occ[i],
-                               lb=0.0, ub=1.0,
-                               vary=False)
-
+                    nn = f'{p}_{elem}{atom_label[i]}_occ'
+                    self.params.add(nn, value=occ[i],
+                                    lb=0.0, ub=1.0,
+                                    vary=False)
 
                     if(mat.unitcell.aniU):
                         U = mat.unitcell.U
                         for j in range(6):
-                            nn = p+'_'+elem + \
-                                str(atom_label[i])+'_'+_nameU[j]
-                            params.add(
+                            nn = f'{p}_{elem}{atom_label[i]}_{_nameU[j]}'
+                            self.params.add(
                                 nn, value=U[i, j],
                                 lb=-1e-3,
                                 ub=np.inf,
                                 vary=False)
                     else:
-                        nn = p+'_'+elem+str(atom_label[i])+'_dw'
-                        params.add(
+                        nn = f'{p}_{elem}{atom_label[i]}_dw'
+                        self.params.add(
                             nn, value=mat.unitcell.U[i],
                             lb=0.0, ub=np.inf,
                             vary=False)
 
             else:
                 raise Exception(f'Unknown method: {method}')
-
 
     def create_wppf_object(self, add_params=False):
         # If add_params is True, it allows WPPF to add more parameters
