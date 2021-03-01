@@ -37,6 +37,7 @@ from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
+from hexrd.ui.save_images_dialog import SaveImagesDialog
 from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
 from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
@@ -504,51 +505,7 @@ class MainWindow(QObject):
         else:
             ims_dict = HexrdConfig().imageseries_dict
 
-        if len(ims_dict) > 1:
-            # Have the user choose an imageseries to save
-            names = list(ims_dict.keys())
-            name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
-                                            'Select ImageSeries', names, 0,
-                                            False)
-            if not ok:
-                # User canceled...
-                return
-        else:
-            name = list(ims_dict.keys())[0]
-
-        selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save ImageSeries', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
-
-        if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
-            if selected_filter.startswith('HDF5'):
-                selected_format = 'hdf5'
-            elif selected_filter.startswith('NPZ'):
-                selected_format = 'frame-cache'
-
-            kwargs = {}
-            if selected_format == 'hdf5':
-                # A path must be specified. Set it ourselves for now.
-                kwargs['path'] = 'imageseries'
-            elif selected_format == 'frame-cache':
-                # Get the user to pick a threshold
-                result, ok = QInputDialog.getDouble(self.ui, 'HEXRD',
-                                                    'Choose Threshold',
-                                                    10, 0, 1e12, 3)
-                if not ok:
-                    # User canceled...
-                    return
-
-                kwargs['threshold'] = result
-
-                # This needs to be specified, but I think it just needs
-                # to be the same as the file name...
-                kwargs['cache_file'] = selected_file
-
-            HexrdConfig().save_imageseries(ims_dict.get(name), name,
-                                           selected_file, selected_format,
-                                           **kwargs)
+        SaveImagesDialog(self.ui).exec_()
 
     def on_action_save_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
