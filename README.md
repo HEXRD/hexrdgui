@@ -1,7 +1,18 @@
 # Installing
 
-## conda (release)
 Requires Python 3.8+
+
+### OSX
+
+On OSX HEXRDGUI requires Python from conda-forge, to ensure it is built with the
+latest SDK. See the following issue for more details: https://github.com/HEXRD/hexrdgui/issues/505.
+This can be installed using the following command:
+
+```bash
+conda install -c conda-forge python=3.8
+```
+
+## conda (release)
 
 To install the latest stable release
 
@@ -60,9 +71,9 @@ CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrdgui
 ### Mac OS
 ```bash
 # First, make sure python3.8+ is installed in your target env.
-# On OSX you will need to use the Python package from the HEXRD channel
+# On OSX you will need to use the Python package from conda-forge
 # See the following issue for more details: https://github.com/HEXRD/hexrdgui/issues/505
-conda install -c HEXRD python=3.8.4
+conda install -c conda-forge python=3.8
 # Install deps using conda package
 conda install -c HEXRD -c anaconda -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
