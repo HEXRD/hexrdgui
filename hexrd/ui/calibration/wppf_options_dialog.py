@@ -13,8 +13,9 @@ from PySide2.QtWidgets import (
 )
 
 from hexrd.material import _angstroms
-from hexrd.WPPF import LeBail, Rietveld, Parameters
-
+from hexrd.WPPF import LeBail, Rietveld, \
+    Parameters, _lpname, _rqpDict,  _getnumber, _nameU
+from hexrd import constants
 from hexrd.ui import enter_key_filter
 
 import hexrd.ui.resources.calibration as calibration_resources
@@ -96,7 +97,7 @@ class WppfOptionsDialog(QObject):
 
     def load_initial_params(self):
         text = importlib.resources.read_text(calibration_resources,
-                                             'wppf_params.yml')
+                                             'lebail.yml')
         self.default_params = yaml.load(text, Loader=yaml.FullLoader)
         self.params = copy.deepcopy(self.default_params)
 
@@ -419,6 +420,113 @@ class WppfOptionsDialog(QObject):
             params.add(**kwargs)
         return params
 
+    def add_material_parameters(self):
+        """
+        @AUTHOR:    Saransh Singh, Lawrence Livermore National Lab
+        @DATE:      02/03/2021 SS 1.0 original
+        @DETAILS:   a simple function to add the material parameters
+        from the list of material file. this depends on which
+        method i chosen. for the LeBail class the parameters
+        added are the minimum set of lattice parameters. For 
+        the Rietveld class, the lattice parameters, fractional
+        coordinates, occupancy and debye waller factors are 
+        added.
+        """
+        method = self.wppf_method
+
+        for x in self.selected_materials:
+            mat = HexrdConfig().material(x)
+
+            """
+            add lattice parameters
+            """
+            lp = np.array(mat.planeData.lparms)
+            rid = list(_rqpDict[mat.unitcell.latticeType][0])
+
+            name = _lpname[rid]
+
+            for i, (n, l) in enumerate(zip(name, lp)):
+                nn = p+'_'+n
+
+                """
+                first 3 are lengths, next three are angles
+                """
+                if(rid[i] <= 2):
+                    self.params.add(nn, value=l, lb=l-0.05,
+                                    ub=l+0.05, vary=False)
+                else:
+                    self.params.add(nn, value=l, lb=l-1.,
+                                    ub=l+1., vary=False)
+
+            # if method is LeBail
+            if method == 'LeBail':
+                pass
+
+            elif method == 'Rietveld':
+                """
+                now adding the atom positions and 
+                occupancy
+                """
+                atom_pos = mat.unitcell.atom_pos[:, 0:3]
+                occ = mat.unitcell.atom_pos[:, 3]
+
+                atom_type = mat.unitcell.atom_type
+                atom_label = _getnumber(atom_type)
+
+                """
+                now for each atom type append the fractional
+                coordinates, occupation fraction and debye-waller
+                factors to the list of parameters
+                """
+                for i in range(atom_type.shape[0]):
+                    Z = atom_type[i]
+                    elem = constants.ptableinverse[Z]
+                    # x-coordinate
+                    nn = f'{p}_{elem}{atom_label[i]}_x'
+                    self.params.add(
+                        nn, value=atom_pos[i, 0],
+                        lb=0.0, ub=1.0,
+                        vary=False)
+
+                    # y-coordinate
+                    nn = f'{p}_{elem}{atom_label[i]}_y'
+                    self.params.add(
+                        nn, value=atom_pos[i, 1],
+                        lb=0.0, ub=1.0,
+                        vary=False)
+
+                    # z-coordinate
+                    nn = f'{p}_{elem}{atom_label[i]}_z'
+                    self.params.add(
+                        nn, value=atom_pos[i, 2],
+                        lb=0.0, ub=1.0,
+                        vary=False)
+
+                    # occupation
+                    nn = f'{p}_{elem}{atom_label[i]}_occ'
+                    self.params.add(nn, value=occ[i],
+                                    lb=0.0, ub=1.0,
+                                    vary=False)
+
+                    if(mat.unitcell.aniU):
+                        U = mat.unitcell.U
+                        for j in range(6):
+                            nn = f'{p}_{elem}{atom_label[i]}_{_nameU[j]}'
+                            self.params.add(
+                                nn, value=U[i, j],
+                                lb=-1e-3,
+                                ub=np.inf,
+                                vary=False)
+                    else:
+                        nn = f'{p}_{elem}{atom_label[i]}_dw'
+                        self.params.add(
+                            nn, value=mat.unitcell.U[i],
+                            lb=0.0, ub=np.inf,
+                            vary=False)
+
+            else:
+                raise Exception(f'Unknown method: {method}')
+
     def create_wppf_object(self, add_params=False):
         # If add_params is True, it allows WPPF to add more parameters
         # This is mostly for material lattice parameters
@@ -438,7 +546,8 @@ class WppfOptionsDialog(QObject):
             params = self.create_wppf_params_object()
 
         wavelength = {
-            'synchrotron': _angstroms(HexrdConfig().beam_wavelength)
+            'synchrotron': [_angstroms(
+                HexrdConfig().beam_wavelength), 1.0]
         }
 
         if self.use_experiment_file:
