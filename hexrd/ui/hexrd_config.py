@@ -157,6 +157,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.workflow = None
         self.last_azimuthal_integral_data = None
         self._threshold_data = {}
+        self.stack_state = {}
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
@@ -212,6 +213,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('active_material', self.active_material_name)
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
+        settings.setValue('image_stack_state', self.stack_state)
 
         # Clear the overlay data and save the overlays as well
         HexrdConfig().clear_overlay_data()
@@ -247,6 +249,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.previous_active_material = settings.value('active_material', None)
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', {})
+        self.stack_state = settings.value('image_stack_state', {})
 
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []

@@ -13,6 +13,7 @@ from hexrd.ui.constants import (
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.image_stack_dialog import ImageStackDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.ui_loader import UiLoader
 
@@ -84,6 +85,7 @@ class LoadPanel(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.selectDark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
+        self.ui.image_stack.clicked.connect(self.load_image_stacks)
 
         self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.switch_detector)
@@ -216,7 +218,7 @@ class LoadPanel(QObject):
         self.total_frames = []
         self.omega_min = []
         self.omega_max = []
-        self.delta = []
+        self.nsteps = []
         self.files = []
 
     def enable_aggregations(self, row, column):
@@ -275,7 +277,7 @@ class LoadPanel(QObject):
                 else:
                     self.omega_min = [0] * len(self.yml_files[0])
                     self.omega_max = [0.25] * len(self.yml_files[0])
-                    self.delta = [0.25] * len(self.yml_files[0])
+                self.nsteps = [self.total_frames[0]] * len(self.yml_files[0])
                 options = data.get('options', {})
                 self.empty_frames = 0
                 if isinstance(options, dict):
@@ -289,24 +291,19 @@ class LoadPanel(QObject):
                 else:
                     self.omega_min.append(0)
                     self.omega_max.append(0.25)
-                    self.delta.append(0.25)
+                self.nsteps.append(len(ims))
 
     def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
-        size = len(ims.metadata['omega']) - 1
-        maximum = ims.metadata['omega'][size][1]
+        maximum = ims.metadata['omega'][-1][1]
 
         self.omega_min.append(minimum)
         self.omega_max.append(maximum)
-        self.delta.append((maximum - minimum)/len(ims))
 
     def get_yaml_omega_data(self, data):
         if 'ostart' in data['meta']:
             self.omega_min.append(data['meta']['ostart'])
             self.omega_max.append(data['meta']['ostop'])
-            num = data['meta']['ostop'] - data['meta']['ostart']
-            denom = self.total_frames[0]
-            self.delta.append(num / denom)
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
@@ -318,7 +315,6 @@ class LoadPanel(QObject):
             for idx, vals in enumerate(nparray):
                 self.omega_min.append(vals[0])
                 self.omega_max.append(vals[1])
-                self.delta.append((vals[1] - vals[0]) / self.total_frames[idx])
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
@@ -401,16 +397,13 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
-            self.ui.file_options.item(i, 5).setText(
-                str(round(self.delta[i], 6)))
+            self.ui.file_options.item(i, 5).setText(str(self.nsteps[i]))
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(Path(curr).name)
-            self.ui.file_options.item(i, 3).setToolTip('Minimum must be set')
-            self.ui.file_options.item(i, 4).setToolTip(
-                'Must set either maximum or delta')
-            self.ui.file_options.item(i, 5).setToolTip(
-                'Must set either maximum or delta')
+            self.ui.file_options.item(i, 3).setToolTip('Start must be set')
+            self.ui.file_options.item(i, 4).setToolTip('Stop must be set')
+            self.ui.file_options.item(i, 5).setToolTip('Number of steps')
 
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
@@ -461,28 +454,15 @@ class LoadPanel(QObject):
                 self.empty_frames = int(curr_val)
                 for r in range(self.ui.file_options.rowCount()):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
-                self.omega_data_changed(row, 3)
+                    self.ui.file_options.item(r, 2).setText(
+                        str(self.total_frames[r] - self.empty_frames))
             # Update delta when min or max omega are changed
             elif column == 3:
                 self.omega_min[row] = float(curr_val)
-                if self.omega_max[row] or self.delta[row]:
-                    self.omega_data_changed(row, 4)
             elif column == 4:
                 self.omega_max[row] = float(curr_val)
-                if self.omega_min[row] != '':
-                    diff = abs(self.omega_max[row] - self.omega_min[row])
-                    delta = diff / total_frames
-                    self.delta[row] = delta
-                    self.ui.file_options.item(row, 5).setText(
-                        str(round(delta, 6)))
             elif column == 5:
                 self.delta[row] = float(curr_val)
-                if self.omega_min[row] != '':
-                    diff = self.delta[row] * total_frames
-                    maximum = self.omega_min[row] + diff
-                    self.omega_max[row] = maximum
-                    self.ui.file_options.item(row, 4).setText(
-                        str(float(maximum)))
             self.enable_read()
 
         self.ui.file_options.blockSignals(False)
@@ -502,6 +482,7 @@ class LoadPanel(QObject):
         data = {
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
+            'nsteps': self.nsteps,
             'empty_frames': self.empty_frames,
             'total_frames': self.total_frames,
             }
@@ -509,4 +490,23 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
+        if hasattr(self, 'wedges'):
+            data['wedges'] = self.wedges
+        HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
+
+    def load_image_stacks(self):
+        if data := ImageStackDialog(self.parent()).exec_():
+            self.files = data['files']
+            self.yml_files = data['yml_files']
+            self.omega_min = data['omega_min']
+            self.omega_max = data['omega_max']
+            self.nsteps = data['nsteps']
+            self.empty_frames = data['empty_frames']
+            self.total_frames = data['total_frames']
+            self.wedges = data['wedges']
+            self.ext = '.yml'
+            if 'wedges' in data:
+                self.wedges = data['wedges']
+            self.create_table()
+            self.enable_read()
