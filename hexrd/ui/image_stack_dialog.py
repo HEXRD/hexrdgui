@@ -258,7 +258,7 @@ class ImageStackDialog:
     def get_omega_values(self, num_files):
         if self.state['omega-from-file'] and self.state['omega']:
             omega = np.load(self.state['omega'])
-        else:
+        elif not self.state['omega-from-file']:
             omega = []
             for i in range(self.ui.omega_wedges.rowCount()):
                 start = int(self.ui.omega_wedges.item(i, 0).text())
@@ -272,7 +272,7 @@ class ImageStackDialog:
             omega = np.array(omega)
         nframes = [self.state['total-frames'] - self.state['empty-frames']]
         nsteps = nframes * num_files
-        if not omega:
+        if not len(omega):
             steps = nsteps[0] * num_files
             delta = 360 / steps
             omega = np.linspace(
@@ -298,6 +298,16 @@ class ImageStackDialog:
             data['wedges'] = self.state['wedges']
         return data
 
+    def check_steps(self):
+        steps = 0
+        for i in range(self.ui.omega_wedges.rowCount()):
+            for j in range(self.ui.omega_wedges.columnCount()):
+                if not self.ui.omega_wedges.item(i, j).text():
+                    return -1
+            steps += int(self.ui.omega_wedges.item(i, 2).text())
+
+        return steps if self.ui.total_frames.value() != steps else 0
+
     def exec_(self):
         while True:
             error = False
@@ -318,6 +328,18 @@ class ImageStackDialog:
                     msg = (
                         f'The number of files for each detector must match. '
                         f'The following detector(s) do not:\n{" ".join(dets)}')
+                    QMessageBox.warning(None, 'HEXRD', msg)
+                    error = True
+                    continue
+                elif (steps := self.check_steps()) != 0:
+                    print(steps)
+                    if steps > 0:
+                        msg = (
+                            f'The total number of steps must be equal to the total '
+                            f'number of frames: {steps} total steps, '
+                            f'{self.ui.total_frames.value()} total frames.')
+                    else:
+                        msg = f'The omega wedges are incomplete.'
                     QMessageBox.warning(None, 'HEXRD', msg)
                     error = True
                     continue
