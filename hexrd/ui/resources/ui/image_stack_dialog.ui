@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>463</width>
-    <height>571</height>
+    <height>599</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,39 +20,14 @@
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
-   <item row="0" column="0">
-    <widget class="QGroupBox" name="detector_group">
-     <property name="title">
-      <string>Detector</string>
+   <item row="4" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="1">
-       <widget class="QPushButton" name="select_directory">
-        <property name="text">
-         <string>Select Directory</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QComboBox" name="detectors"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLineEdit" name="current_directory">
-        <property name="contextMenuPolicy">
-         <enum>Qt::DefaultContextMenu</enum>
-        </property>
-        <property name="text">
-         <string>(No Directory Selected)</string>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-        <property name="clearButtonEnabled">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
     </widget>
    </item>
    <item row="1" column="0">
@@ -61,17 +36,11 @@
       <string>Files</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="0">
-       <widget class="QRadioButton" name="files_by_selection">
+      <item row="0" column="2" colspan="2">
+       <widget class="QPushButton" name="select_files">
         <property name="text">
-         <string>Manual Selection</string>
+         <string>Select Files</string>
         </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">buttonGroup</string>
-        </attribute>
        </widget>
       </item>
       <item row="2" column="0">
@@ -81,20 +50,49 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="files_by_selection">
+        <property name="text">
+         <string>Manual Selection</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">file_options</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="search">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Search</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="1">
        <widget class="QRadioButton" name="files_by_search">
         <property name="text">
          <string>Search</string>
         </property>
         <attribute name="buttonGroup">
-         <string notr="true">buttonGroup</string>
+         <string notr="true">file_options</string>
         </attribute>
        </widget>
       </item>
-      <item row="2" column="2" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="file_count">
+      <item row="1" column="3">
+       <widget class="QCheckBox" name="apply_to_all">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="text">
-         <string>0</string>
+         <string>Apply to All</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -114,33 +112,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="search">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="2" column="2" alignment="Qt::AlignHCenter">
+       <widget class="QLabel" name="file_count">
         <property name="text">
-         <string>Search</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QCheckBox" name="apply_to_all">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Apply to All</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2" colspan="2">
-       <widget class="QPushButton" name="select_files">
-        <property name="text">
-         <string>Select Files</string>
+         <string>0</string>
         </property>
        </widget>
       </item>
@@ -229,16 +204,6 @@
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
     </widget>
    </item>
    <item row="3" column="0">
@@ -349,9 +314,95 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="detector_group">
+     <property name="title">
+      <string>Detector</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="all_detectors">
+        <property name="text">
+         <string>All Detectors</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">detector_options</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="3">
+       <widget class="QLineEdit" name="detector_search">
+        <property name="placeholderText">
+         <string>Search Pattern</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="search_directories">
+        <property name="text">
+         <string>Search</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QRadioButton" name="single_detector">
+        <property name="text">
+         <string>Single Detector</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">detector_options</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="detectors">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3" colspan="2">
+       <widget class="QPushButton" name="select_directory">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Select Directory</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="5">
+       <widget class="QLineEdit" name="current_directory">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="contextMenuPolicy">
+         <enum>Qt::DefaultContextMenu</enum>
+        </property>
+        <property name="text">
+         <string>(No Directory Selected)</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="clearButtonEnabled">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
+  <tabstop>all_detectors</tabstop>
+  <tabstop>detector_search</tabstop>
+  <tabstop>search_directories</tabstop>
+  <tabstop>single_detector</tabstop>
   <tabstop>detectors</tabstop>
   <tabstop>select_directory</tabstop>
   <tabstop>current_directory</tabstop>
@@ -369,6 +420,7 @@
   <tabstop>load_omega_file</tabstop>
   <tabstop>omega_file</tabstop>
   <tabstop>omega_wedges</tabstop>
+  <tabstop>clear_wedges</tabstop>
   <tabstop>add_wedge</tabstop>
  </tabstops>
  <resources/>
@@ -407,10 +459,11 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup">
+  <buttongroup name="file_options">
    <property name="exclusive">
     <bool>true</bool>
    </property>
   </buttongroup>
+  <buttongroup name="detector_options"/>
  </buttongroups>
 </ui>

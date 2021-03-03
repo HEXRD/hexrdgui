@@ -43,6 +43,8 @@ class ImageStackDialog:
         self.ui.add_wedge.clicked.connect(self.add_wedge)
         self.ui.clear_wedges.clicked.connect(self.clear_wedges)
         self.ui.omega_wedges.cellChanged.connect(self.update_wedges)
+        self.ui.all_detectors.toggled.connect(self.detector_selection)
+        self.ui.search_directories.clicked.connect(self.search_directories)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -62,6 +64,7 @@ class ImageStackDialog:
         self.ui.file_count.setText(
             str(self.state[self.detector]['file-count']))
         self.ui.apply_to_all.setChecked(self.state['apply-to-all'])
+        self.ui.all_detectors.setChecked(self.state['all_detectors'])
         if self.state['wedges']:
             self.set_wedges()
 
@@ -70,9 +73,11 @@ class ImageStackDialog:
             self.search()
             self.load_omega_from_file(self.state['omega-from-file'])
             self.file_selection_changed(self.state['manual-file'])
+            self.detector_selection(self.state['all_detectors'])
         else:
             self.state.clear()
             self.state = {
+                'all_detectors': True,
                 'dets': self.detectors,
                 'empty-frames': 0,
                 'max-frame-file': 0,
@@ -110,7 +115,7 @@ class ImageStackDialog:
             self.search_directory(self.detector)
 
     def search(self):
-        if self.ui.apply_to_all.isChecked() and self.ui.search.isChecked():
+        if self.ui.apply_to_all.isChecked() and self.ui.files_by_search.isChecked():
             for det in self.detectors:
                 self.search_directory(det)
         else:
@@ -138,6 +143,12 @@ class ImageStackDialog:
         self.ui.clear_wedges.setDisabled(checked)
         self.ui.load_omega_file.setEnabled(checked)
         self.ui.omega_file.setEnabled(checked)
+
+    def detector_selection(self, checked):
+        self.state['all_detectors'] = checked
+        self.ui.detector_search.setEnabled(checked)
+        self.ui.detectors.setDisabled(checked)
+        self.ui.select_directory.setDisabled(checked)
 
     def select_omega_file(self):
         omega_file, selected_filter = QFileDialog.getOpenFileName(
@@ -201,6 +212,20 @@ class ImageStackDialog:
         if value := self.ui.omega_wedges.item(row, column).text():
             self.state['wedges'][row].insert(column, int(value))
 
+    def search_directories(self):
+        pattern = self.ui.detector_search.text()
+        for det in self.detectors:
+            p = f'{pattern}/{det}' if Path(pattern).is_dir() else f'{pattern}_{det}'
+            if Path(p).exists():
+                p = f'{pattern}/{det}'
+                self.state[det]['directory'] = p
+                if det == self.ui.detectors.currentText():
+                    self.ui.current_directory.setText(p)
+            else:
+                msg = (f'Could not find the directory for {det}:\n{p}')
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
+                break
+
     def get_files(self):
         temp, imgs = [], []
         for det in self.detectors:
@@ -231,7 +256,7 @@ class ImageStackDialog:
         return temp, imgs, num_files
 
     def get_omega_values(self, num_files):
-        if self.state['omega-from-file']:
+        if self.state['omega-from-file'] and self.state['omega']:
             omega = np.load(self.state['omega'])
         else:
             omega = []
@@ -247,6 +272,13 @@ class ImageStackDialog:
             omega = np.array(omega)
         nframes = [self.state['total-frames'] - self.state['empty-frames']]
         nsteps = nframes * num_files
+        if not omega:
+            steps = nsteps[0] * num_files
+            delta = 360 / steps
+            omega = np.linspace(
+                [0, 0 + delta],
+                [360 - delta, 360],
+                steps)
         return omega[:, 0], omega[:, 1], nsteps
 
     def build_data(self):
