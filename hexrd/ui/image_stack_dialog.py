@@ -325,3 +325,5 @@ class ImageStackDialog:
                     return True
                 else:
                     return self.build_data()
+            else:
+                return False
