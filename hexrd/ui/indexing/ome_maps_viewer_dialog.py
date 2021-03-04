@@ -9,10 +9,14 @@ import yaml
 
 from PySide2.QtCore import Signal, QObject, QSignalBlocker, Qt
 from PySide2.QtWidgets import (
-    QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox, QSizePolicy, QSpinBox
+    QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox,
+    QSizePolicy, QSpinBox
 )
 
-from hexrd.findorientations import label_spots
+from hexrd.constants import sigma_to_fwhm
+from hexrd.findorientations import (
+    filter_maps_if_requested, filter_stdev_DFLT, label_spots
+)
 
 from hexrd.ui import enter_key_filter, resource_loader
 
@@ -20,10 +24,14 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.select_items_widget import SelectItemsWidget
+from hexrd.ui.utils import has_nan
 from hexrd.ui.ui_loader import UiLoader
 
 import hexrd.ui.constants
 import hexrd.ui.resources.indexing
+
+
+DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
 
 
 class OmeMapsViewerDialog(QObject):
@@ -51,6 +59,8 @@ class OmeMapsViewerDialog(QObject):
         # Hide the method tab bar. The user selects it via the combo box.
         self.ui.tab_widget.tabBar().hide()
 
+        self.create_tooltips()
+
         self.setup_plot()
         self.setup_color_map()
         self.setup_hkls_table()
@@ -59,8 +69,11 @@ class OmeMapsViewerDialog(QObject):
 
         self.setup_connections()
 
+        # This will trigger a re-draw and update of everything
+        self.filter_modified()
+
     def setup_connections(self):
-        self.ui.active_hkl.currentIndexChanged.connect(self.reset_plot)
+        self.ui.active_hkl.currentIndexChanged.connect(self.update_plot)
         self.ui.label_spots.toggled.connect(self.update_spots)
         self.ui.export_button.pressed.connect(self.on_export_button_pressed)
         self.ui.accepted.connect(self.on_accepted)
@@ -75,15 +88,20 @@ class OmeMapsViewerDialog(QObject):
         self.select_hkls_widget.selection_changed.connect(self.update_config)
 
         # A plot reset is needed for log scale to handle the NaN values
-        self.color_map_editor.ui.log_scale.toggled.connect(self.reset_plot)
+        self.color_map_editor.ui.log_scale.toggled.connect(self.update_plot)
 
         def changed_signal(w):
-            if isinstance(w, QComboBox):
-                return w.currentIndexChanged
-            elif isinstance(w, (QDoubleSpinBox, QSpinBox)):
+            if isinstance(w, (QDoubleSpinBox, QSpinBox)):
                 return w.valueChanged
+            elif isinstance(w, QComboBox):
+                return w.currentIndexChanged
+            elif isinstance(w, QCheckBox):
+                return w.toggled
             else:
                 raise Exception(f'Unhandled widget type: {type(w)}')
+
+        for w in self.filter_widgets:
+            changed_signal(w).connect(self.filter_modified)
 
         for w in self.yaml_widgets:
             changed_signal(w).connect(self.update_config)
@@ -110,11 +128,26 @@ class OmeMapsViewerDialog(QObject):
         for i, data in enumerate(item_data):
             self.ui.clustering_algorithm.setItemData(i, data)
 
+    def create_tooltips(self):
+        tooltip = ('Full width at half maximum (FWHM) to use for the Gaussian '
+                   f'Laplace filter.\nDefault: {DEFAULT_FWHM:.2f}')
+        self.ui.filtering_fwhm.setToolTip(tooltip)
+        self.ui.filtering_fwhm_label.setToolTip(tooltip)
+
+    def update_enable_states(self):
+        filtering = self.ui.apply_filtering.isChecked()
+        apply_gl = self.ui.filtering_apply_gaussian_laplace.isChecked()
+        fwhm_enabled = filtering and apply_gl
+
+        self.ui.filtering_apply_gaussian_laplace.setEnabled(filtering)
+        self.ui.filtering_fwhm.setEnabled(fwhm_enabled)
+        self.ui.filtering_fwhm_label.setEnabled(fwhm_enabled)
+
     def reset_internal_config(self):
         self.config = copy.deepcopy(HexrdConfig().indexing_config)
 
     def show(self):
-        self.reset_plot()
+        self.update_plot()
         self.ui.show()
 
     def on_accepted(self):
@@ -178,6 +211,46 @@ class OmeMapsViewerDialog(QObject):
                 return
 
         raise Exception(f'Unable to set method: {v}')
+
+    def filter_modified(self):
+        self.update_enable_states()
+        self.update_config()
+        self.reset_filters()
+        self.update_plot()
+
+    @property
+    def filter_widgets(self):
+        return [
+            self.ui.apply_filtering,
+            self.ui.filtering_apply_gaussian_laplace,
+            self.ui.filtering_fwhm,
+        ]
+
+    @property
+    def filter_maps(self):
+        if not self.ui.apply_filtering.isChecked():
+            return False
+
+        if not self.ui.filtering_apply_gaussian_laplace.isChecked():
+            return True
+
+        # Keep this as a native type...
+        return float(self.ui.filtering_fwhm.value() / sigma_to_fwhm)
+
+    @filter_maps.setter
+    def filter_maps(self, v):
+        if isinstance(v, bool):
+            filtering = v
+            apply_gl = False
+            fwhm = DEFAULT_FWHM
+        else:
+            filtering = True
+            apply_gl = True
+            fwhm = v * sigma_to_fwhm
+
+        self.ui.apply_filtering.setChecked(filtering)
+        self.ui.filtering_apply_gaussian_laplace.setChecked(apply_gl)
+        self.ui.filtering_fwhm.setValue(fwhm)
 
     def update_method_tab(self):
         # Take advantage of the naming scheme...
@@ -256,7 +329,14 @@ class OmeMapsViewerDialog(QObject):
         if hasattr(self, '_data') and d == self._data:
             return
 
-        self._data = d
+        self.raw_data = d
+
+        # This data will have filters applied to it
+        # We will make a shallow copy, and deep copy the data store
+        # when filters are applied.
+        self._data = copy.copy(self.raw_data)
+        self.reset_filters()
+
         self.update_extent()
         self.update_cmap_bounds()
 
@@ -303,11 +383,11 @@ class OmeMapsViewerDialog(QObject):
 
         self.draw()
 
-    def reset_plot(self):
+    def update_plot(self):
         ax = self.ax
 
         data = self.image_data
-        if isinstance(self.norm, matplotlib.colors.LogNorm):
+        if isinstance(self.norm, matplotlib.colors.LogNorm) and has_nan(data):
             # The log norm can't handle NaNs. Set them to -1.
             data = copy.deepcopy(data)
             data[np.isnan(data)] = -1
@@ -353,11 +433,12 @@ class OmeMapsViewerDialog(QObject):
             self.draw()
 
     def create_spots(self):
-        # Make a deep copy to modify
-        data = copy.deepcopy(self.image_data)
+        data = self.image_data
 
-        # Get rid of nans to make our work easier
-        data[np.isnan(data)] = 0
+        if has_nan(data):
+            # Get rid of nans to make our work easier
+            data = copy.deepcopy(data)
+            data[np.isnan(data)] = 0
 
         method_name = self.method_name
         method_dict = self.config['find_orientations']['seed_search']['method']
@@ -408,7 +489,7 @@ class OmeMapsViewerDialog(QObject):
 
     @property
     def all_widgets(self):
-        return self.yaml_widgets + [
+        return self.yaml_widgets + self.filter_widgets + [
             self.ui.method,
             self.ui.tab_widget,
             self.ui.active_hkl
@@ -442,20 +523,24 @@ class OmeMapsViewerDialog(QObject):
             w = getattr(self.ui, w)
             set_val(w, path)
 
+        find_orientations = config['find_orientations']
         # Update the method name
-        method = config['find_orientations']['seed_search']['method']
+        method = find_orientations['seed_search']['method']
         self.method_name = next(iter(method))
         self.update_method_tab()
 
         # Also set the color map minimum to the threshold value...
-        self.threshold = config['find_orientations']['threshold']
+        self.threshold = find_orientations['threshold']
+
+        self.filter_maps = find_orientations['orientation_maps']['filter_maps']
 
     def update_config(self):
         # Update all of the config with their settings from the widgets
         config = self.config
+        find_orientations = config['find_orientations']
 
         # Clear the method so it can be set to a different one
-        method = config['find_orientations']['seed_search']['method']
+        method = find_orientations['seed_search']['method']
         method.clear()
 
         # Give it some dummy contents so the setter below will run
@@ -487,13 +572,36 @@ class OmeMapsViewerDialog(QObject):
             set_val(val, path)
 
         # Also set the threshold to the minimum color map value...
-        config['find_orientations']['threshold'] = self.threshold
-
-        hkls = self.selected_hkls
-        config['find_orientations']['seed_search']['hkl_seeds'] = hkls
+        find_orientations['threshold'] = self.threshold
+        find_orientations['seed_search']['hkl_seeds'] = self.selected_hkls
+        find_orientations['orientation_maps']['filter_maps'] = self.filter_maps
 
     def save_config(self):
         HexrdConfig().config['indexing'] = copy.deepcopy(self.config)
+
+    def reset_filters(self):
+        # Reset the data store
+        if hasattr(self.data, '_dataStore'):
+            name = '_dataStore'
+        else:
+            name = 'dataStore'
+        setattr(self.data, name, copy.deepcopy(self.raw_data.dataStore))
+
+        # Make a fake config to pass to hexrd
+        class Cfg:
+            pass
+
+        path = ['find_orientations', 'orientation_maps', 'filter_maps']
+        cfg = Cfg()
+        cur = cfg
+        for name in path[:-1]:
+            setattr(cur, name, Cfg())
+            cur = getattr(cur, name)
+
+        setattr(cur, path[-1], self.filter_maps)
+
+        # Perform the filtering
+        filter_maps_if_requested(self.data, cfg)
 
 
 class ValidationException(Exception):

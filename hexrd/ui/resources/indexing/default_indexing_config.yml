@@ -17,6 +17,8 @@ find_orientations:
     threshold: 250
     bin_frames: 1 # defaults to 1
 
+    filter_maps: False
+
     # "all", or a list of hkl orders used to find orientations
     # defaults to all orders listed in the material definition
     # *** These are set automatically by hexrdgui based on the materials table

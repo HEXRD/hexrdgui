@@ -255,3 +255,8 @@ def exclusions_off(plane_data):
         yield
     finally:
         plane_data.exclusions = prev
+
+
+def has_nan(x):
+    # Utility function to check if there are any NaNs in x
+    return np.isnan(np.min(x))
