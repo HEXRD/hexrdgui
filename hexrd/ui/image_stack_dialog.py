@@ -52,6 +52,8 @@ class ImageStackDialog:
         self.ui.current_directory.setToolTip(
             self.state[self.detector]['directory'])
         self.ui.search_text.setText(self.state[self.detector]['search'])
+        self.ui.total_frames.setValue(
+            self.state['total-frames'] * int(self.state[self.detector]['file-count']))
         self.ui.empty_frames.setValue(self.state['empty-frames'])
         self.ui.max_file_frames.setValue(self.state['max-frame-file'])
         self.ui.max_total_frames.setValue(self.state['max-frames'])
@@ -70,7 +72,6 @@ class ImageStackDialog:
 
     def setup_state(self):
         if sorted(self.state.get('dets', [])) == sorted(self.detectors):
-            self.search()
             self.load_omega_from_file(self.state['omega-from-file'])
             self.file_selection_changed(self.state['manual-file'])
             self.detector_selection(self.state['all_detectors'])
@@ -131,7 +132,8 @@ class ImageStackDialog:
                 self.state[det]['file-count'] = len(files)
                 ims = ImageFileManager().open_file(str(files[0]))
                 frames = len(ims) if len(ims) else 1
-                self.ui.total_frames.setValue(frames * len(files))
+                self.ui.total_frames.setValue(
+                    (frames - self.state['empty-frames']) * len(files))
                 self.ui.file_count.setText(str(len(files)))
                 self.set_ranges(frames, len(files))
                 self.state['total-frames'] = frames
@@ -159,6 +161,9 @@ class ImageStackDialog:
 
     def set_empty_frames(self, value):
         self.state['empty-frames'] = value
+        empty = self.ui.file_count.value() * value
+        total = self.ui.total_frames.value() - empty
+        self.ui.total_frames.setValue(total)
 
     def set_max_file_frames(self, value):
         self.state['max-frame-file'] = value
@@ -193,7 +198,8 @@ class ImageStackDialog:
         self.ui.file_count.setText(str(len(files)))
         ims = ImageFileManager().open_file(files[0])
         frames = len(ims) if len(ims) else 1
-        self.ui.total_frames.setValue(frames * len(files))
+        self.ui.total_frames.setValue(
+            (frames - self.state['empty-frames']) * len(files))
         self.set_ranges(frames, len(files))
         self.state['total-frames'] = frames
 
@@ -305,8 +311,9 @@ class ImageStackDialog:
                 if not self.ui.omega_wedges.item(i, j).text():
                     return -1
             steps += int(self.ui.omega_wedges.item(i, 2).text())
-
-        return steps if self.ui.total_frames.value() != steps else 0
+        if not (total_frames := self.ui.max_total_frames.value()):
+            total_frames = self.ui.total_frames.value()
+        return steps if total_frames != steps else 0
 
     def exec_(self):
         while True:
