@@ -15,7 +15,7 @@ from PySide2.QtWidgets import (
 
 from hexrd.constants import sigma_to_fwhm
 from hexrd.findorientations import (
-    filter_maps_if_requested, filter_stdev_DFLT, label_spots
+    clean_map, filter_maps_if_requested, filter_stdev_DFLT, label_spots
 )
 
 from hexrd.ui import enter_key_filter, resource_loader
@@ -329,7 +329,12 @@ class OmeMapsViewerDialog(QObject):
         if hasattr(self, '_data') and d == self._data:
             return
 
-        self.raw_data = d
+        # Make a deep copy, and clean the data. Hexrd will do this
+        # cleaning on the original data on its own in
+        # generate_orientation_fibers().
+        self.raw_data = copy.deepcopy(d)
+        for map in self.raw_data.dataStore:
+            clean_map(map)
 
         # This data will have filters applied to it
         # We will make a shallow copy, and deep copy the data store

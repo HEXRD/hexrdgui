@@ -5,8 +5,8 @@ from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
 from hexrd.findorientations import (
-    clean_map, create_clustering_parameters, generate_eta_ome_maps,
-    generate_orientation_fibers, run_cluster
+    create_clustering_parameters, filter_maps_if_requested,
+    generate_eta_ome_maps, generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
 from hexrd.xrdutil import EtaOmeMaps
@@ -99,10 +99,6 @@ class IndexingRunner(Runner):
         self.ome_maps = generate_eta_ome_maps(config, save=False)
 
     def ome_maps_loaded(self):
-        # Perform cleaning on the maps
-        for map in self.ome_maps.dataStore:
-            clean_map(map)
-
         self.view_ome_maps()
 
     def view_ome_maps(self):
@@ -121,6 +117,10 @@ class IndexingRunner(Runner):
 
         # Create a full indexing config
         config = create_indexing_config()
+
+        # Hexrd normally applies filtering immediately after eta omega
+        # maps are loaded. We will perform the user-selected filtering now.
+        filter_maps_if_requested(self.ome_maps, config)
 
         # Setup to run indexing in background
         self.progress_dialog.setWindowTitle('Find Orientations')
