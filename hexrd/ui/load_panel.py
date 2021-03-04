@@ -97,7 +97,6 @@ class LoadPanel(QObject):
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
-
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
@@ -456,15 +455,16 @@ class LoadPanel(QObject):
                 self.empty_frames = int(curr_val)
                 for r in range(self.ui.file_options.rowCount()):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
-                    self.ui.file_options.item(r, 2).setText(
-                        str(self.total_frames[r] - self.empty_frames))
-            # Update delta when min or max omega are changed
+                    new_total = str(self.total_frames[r] - self.empty_frames)
+                    self.nsteps[r] = int(new_total)
+                    self.ui.file_options.item(r, 2).setText(new_total)
+                    self.ui.file_options.item(r, 5).setText(new_total)
             elif column == 3:
                 self.omega_min[row] = float(curr_val)
             elif column == 4:
                 self.omega_max[row] = float(curr_val)
             elif column == 5:
-                self.delta[row] = float(curr_val)
+                self.nsteps[row] = int(curr_val)
             self.enable_read()
 
         self.ui.file_options.blockSignals(False)
