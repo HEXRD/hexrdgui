@@ -53,41 +53,41 @@ class ImageStackDialog:
             self.state[self.detector]['directory'])
         self.ui.search_text.setText(self.state[self.detector]['search'])
         self.ui.total_frames.setValue(
-            self.state['total-frames'] * int(self.state[self.detector]['file-count']))
-        self.ui.empty_frames.setValue(self.state['empty-frames'])
-        self.ui.max_file_frames.setValue(self.state['max-frame-file'])
-        self.ui.max_total_frames.setValue(self.state['max-frames'])
-        self.ui.omega_from_file.setChecked(self.state['omega-from-file'])
+            self.state['total_frames'] * int(self.state[self.detector]['file_count']))
+        self.ui.empty_frames.setValue(self.state['empty_frames'])
+        self.ui.max_file_frames.setValue(self.state['max_frame_file'])
+        self.ui.max_total_frames.setValue(self.state['max_frames'])
+        self.ui.omega_from_file.setChecked(self.state['omega_from_file'])
         if self.state['omega']:
             self.ui.omega_file.setText(self.state['omega'].split(' ')[-1])
-        self.ui.omega_from_file.setChecked(self.state['omega-from-file'])
-        self.ui.files_by_selection.setChecked(self.state['manual-file'])
-        self.ui.files_by_search.setChecked(not self.state['manual-file'])
+        self.ui.omega_from_file.setChecked(self.state['omega_from_file'])
+        self.ui.files_by_selection.setChecked(self.state['manual_file'])
+        self.ui.files_by_search.setChecked(not self.state['manual_file'])
         self.ui.file_count.setText(
-            str(self.state[self.detector]['file-count']))
-        self.ui.apply_to_all.setChecked(self.state['apply-to-all'])
+            str(self.state[self.detector]['file_count']))
+        self.ui.apply_to_all.setChecked(self.state['apply_to_all'])
         self.ui.all_detectors.setChecked(self.state['all_detectors'])
         if self.state['wedges']:
             self.set_wedges()
 
     def setup_state(self):
         if sorted(self.state.get('dets', [])) == sorted(self.detectors):
-            self.load_omega_from_file(self.state['omega-from-file'])
-            self.file_selection_changed(self.state['manual-file'])
+            self.load_omega_from_file(self.state['omega_from_file'])
+            self.file_selection_changed(self.state['manual_file'])
             self.detector_selection(self.state['all_detectors'])
         else:
             self.state.clear()
             self.state = {
                 'all_detectors': True,
                 'dets': self.detectors,
-                'empty-frames': 0,
-                'max-frame-file': 0,
-                'max-frames': 0,
+                'empty_frames': 0,
+                'max_frame_file': 0,
+                'max_frames': 0,
                 'omega': '',
-                'omega-from-file': True,
-                'total-frames': 1,
-                'manual-file': True,
-                'apply-to-all': True,
+                'omega_from_file': True,
+                'total_frames': 1,
+                'manual_file': True,
+                'apply_to_all': True,
                 'wedges': []
             }
             for det in self.detectors:
@@ -95,7 +95,7 @@ class ImageStackDialog:
                     'directory': '',
                     'files': '',
                     'search': '',
-                    'file-count': 0,
+                    'file_count': 0,
                 }
 
     def set_wedges(self):
@@ -112,7 +112,7 @@ class ImageStackDialog:
         self.parent_dir = d.rsplit('/', 1)[0]
         self.ui.current_directory.setText(d)
         self.ui.current_directory.setToolTip(d)
-        if not self.state['manual-file'] and self.state['apply-to-all']:
+        if not self.state['manual_file'] and self.state['apply_to_all']:
             self.search_directory(self.detector)
 
     def search(self):
@@ -129,17 +129,17 @@ class ImageStackDialog:
         if directory := self.state[det]['directory']:
             if files := list(Path(directory).glob(search)):
                 self.state[det]['files'] = sorted([str(f) for f in files])
-                self.state[det]['file-count'] = len(files)
+                self.state[det]['file_count'] = len(files)
                 ims = ImageFileManager().open_file(str(files[0]))
                 frames = len(ims) if len(ims) else 1
                 self.ui.total_frames.setValue(
-                    (frames - self.state['empty-frames']) * len(files))
+                    (frames - self.state['empty_frames']) * len(files))
                 self.ui.file_count.setText(str(len(files)))
                 self.set_ranges(frames, len(files))
-                self.state['total-frames'] = frames
+                self.state['total_frames'] = frames
 
     def load_omega_from_file(self, checked):
-        self.state['omega-from-file'] = checked
+        self.state['omega_from_file'] = checked
         self.ui.omega_wedges.setDisabled(checked)
         self.ui.add_wedge.setDisabled(checked)
         self.ui.clear_wedges.setDisabled(checked)
@@ -160,21 +160,21 @@ class ImageStackDialog:
         self.state['omega'] = omega_file
 
     def set_empty_frames(self, value):
-        self.state['empty-frames'] = value
+        self.state['empty_frames'] = value
         empty = self.ui.file_count.value() * value
         total = self.ui.total_frames.value() - empty
         self.ui.total_frames.setValue(total)
 
     def set_max_file_frames(self, value):
-        self.state['max-frame-file'] = value
+        self.state['max_frame_file'] = value
 
     def set_max_total_frames(self, value):
-        self.state['max-frames'] = value
+        self.state['max_frames'] = value
 
     def change_detector(self, det):
         self.detector = det
         self.setup_gui()
-        if self.state['apply-to-all']:
+        if self.state['apply_to_all']:
             self.state[det]['search'] = self.ui.search_text.text()
 
     def set_ranges(self, frames, num_files):
@@ -183,7 +183,7 @@ class ImageStackDialog:
         self.ui.max_total_frames.setMaximum(frames * num_files)
 
     def file_selection_changed(self, checked):
-        self.state['manual-file'] = checked
+        self.state['manual_file'] = checked
         self.ui.select_files.setEnabled(checked)
         self.ui.search_text.setDisabled(checked)
         self.ui.search.setDisabled(checked)
@@ -194,14 +194,14 @@ class ImageStackDialog:
             self.ui, 'Select file(s)',
             dir=self.state[self.detector]['directory'])
         self.state[self.detector]['files'] = files
-        self.state[self.detector]['file-count'] = len(files)
+        self.state[self.detector]['file_count'] = len(files)
         self.ui.file_count.setText(str(len(files)))
         ims = ImageFileManager().open_file(files[0])
         frames = len(ims) if len(ims) else 1
         self.ui.total_frames.setValue(
-            (frames - self.state['empty-frames']) * len(files))
+            (frames - self.state['empty_frames']) * len(files))
         self.set_ranges(frames, len(files))
-        self.state['total-frames'] = frames
+        self.state['total_frames'] = frames
 
     def add_wedge(self):
         row = self.ui.omega_wedges.rowCount()
@@ -245,12 +245,12 @@ class ImageStackDialog:
             input_dict['image-files']['directory'] = d
             input_dict['image-files']['files'] = (
                 ' '.join(self.state[det]['files']))
-            input_dict['options']['empty-frames'] = self.state['empty-frames']
+            input_dict['options']['empty-frames'] = self.state['empty_frames']
             input_dict['options']['max-frame-file'] = (
-                self.state['max-frame-file'])
-            input_dict['options']['max-frames'] = self.state['max-frames']
+                self.state['max_frame_file'])
+            input_dict['options']['max-frames'] = self.state['max_frames']
             input_dict['meta']['panel'] = det
-            if self.state['omega-from-file']:
+            if self.state['omega_from_file']:
                 input_dict['meta']['omega'] = (
                     f'! load-numpy-array {self.state["omega"]}')
             data = yaml.dump(input_dict).encode('utf-8')
@@ -262,9 +262,9 @@ class ImageStackDialog:
         return temp, imgs, num_files
 
     def get_omega_values(self, num_files):
-        if self.state['omega-from-file'] and self.state['omega']:
+        if self.state['omega_from_file'] and self.state['omega']:
             omega = np.load(self.state['omega'])
-        elif not self.state['omega-from-file']:
+        elif not self.state['omega_from_file']:
             omega = []
             for i in range(self.ui.omega_wedges.rowCount()):
                 start = int(self.ui.omega_wedges.item(i, 0).text())
@@ -276,7 +276,7 @@ class ImageStackDialog:
                     [stop - delta, stop],
                     steps))
             omega = np.array(omega)
-        nframes = [self.state['total-frames'] - self.state['empty-frames']]
+        nframes = [self.state['total_frames'] - self.state['empty_frames']]
         nsteps = nframes * num_files
         if not len(omega):
             steps = nsteps[0] * num_files
@@ -297,10 +297,10 @@ class ImageStackDialog:
             'omega_min': start,
             'omega_max': stop,
             'nsteps': nsteps,
-            'empty_frames': self.state['empty-frames'],
-            'total_frames': [self.state['total-frames']] * num_files
+            'empty_frames': self.state['empty_frames'],
+            'total_frames': [self.state['total_frames']] * num_files
         }
-        if not self.state['omega-from-file']:
+        if not self.state['omega_from_file']:
             data['wedges'] = self.state['wedges']
         return data
 
@@ -321,7 +321,7 @@ class ImageStackDialog:
             if self.ui.exec_():
                 f, d = [], []
                 for det in self.detectors:
-                    f.append(self.state[det]['file-count'])
+                    f.append(self.state[det]['file_count'])
                     d.append(self.state[det]['directory'])
                 if dets := [det for det in d if not det]:
                     msg = (
