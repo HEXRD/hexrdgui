@@ -5,7 +5,7 @@ from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
 from hexrd.findorientations import (
-    create_clustering_parameters, generate_eta_ome_maps,
+    clean_map, create_clustering_parameters, generate_eta_ome_maps,
     generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
@@ -79,7 +79,7 @@ class IndexingRunner(Runner):
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
-            self.view_ome_maps()
+            self.ome_maps_loaded()
         else:
             # Create a full indexing config
             config = create_indexing_config()
@@ -91,12 +91,19 @@ class IndexingRunner(Runner):
             worker = AsyncWorker(self.run_eta_ome_maps, config)
             self.thread_pool.start(worker)
 
-            worker.signals.result.connect(self.view_ome_maps)
+            worker.signals.result.connect(self.ome_maps_loaded)
             worker.signals.finished.connect(self.progress_dialog.accept)
             self.progress_dialog.exec_()
 
     def run_eta_ome_maps(self, config):
         self.ome_maps = generate_eta_ome_maps(config, save=False)
+
+    def ome_maps_loaded(self):
+        # Perform cleaning on the maps
+        for map in self.ome_maps.dataStore:
+            clean_map(map)
+
+        self.view_ome_maps()
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
