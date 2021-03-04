@@ -45,6 +45,7 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.idx = 0
         self.ext = ''
+        self.wedges = None
         self.progress_dialog = None
         self.current_progress_step = 0
         self.progress_macro_steps = 0
@@ -220,6 +221,7 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.nsteps = []
         self.files = []
+        self.wedges = None
 
     def enable_aggregations(self, row, column):
         if not (column == 1 or column == 2):
@@ -490,7 +492,7 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
-        if hasattr(self, 'wedges'):
+        if self.wedges is not None:
             data['wedges'] = self.wedges
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
@@ -504,7 +506,6 @@ class LoadPanel(QObject):
             self.nsteps = data['nsteps']
             self.empty_frames = data['empty_frames']
             self.total_frames = data['total_frames']
-            self.wedges = data['wedges']
             self.ext = '.yml'
             if 'wedges' in data:
                 self.wedges = data['wedges']
