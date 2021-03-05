@@ -213,13 +213,19 @@ class ImageStackDialog:
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
             self.ui.file_count.setText(str(len(files)))
-        ims = ImageFileManager().open_file(files[0])
-        frames = len(ims) if len(ims) else 1
-        total = (frames - self.state['empty_frames']) * len(files)
-        self.ui.total_frames.setValue(total)
-        self.set_ranges(frames, len(files))
-        self.state['total_frames'] = frames
-        self.total_frames()
+        try:
+            ims = ImageFileManager().open_file(files[0])
+            frames = len(ims) if len(ims) else 1
+            total = (frames - self.state['empty_frames']) * len(files)
+            self.ui.total_frames.setValue(total)
+            self.set_ranges(frames, len(files))
+            self.state['total_frames'] = frames
+            self.total_frames()
+        except Exception as e:
+            print('Unable to open previously loaded images: ', e)
+            for det in self.detectors:
+                self.state[det]['files'] = ''
+                self.state[det]['file_count'] = 0
 
     def add_wedge(self):
         row = self.ui.omega_wedges.rowCount()
