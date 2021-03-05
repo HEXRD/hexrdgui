@@ -77,8 +77,7 @@ class LoadPanel(QObject):
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):
-        HexrdConfig().detectors_changed.connect(self.detectors_changed)
-        HexrdConfig().instrument_config_loaded.connect(self.config_changed)
+        HexrdConfig().detectors_changed.connect(self.config_changed)
         HexrdConfig().load_panel_state_reset.connect(
             self.setup_processing_options)
 
