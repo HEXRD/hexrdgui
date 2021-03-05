@@ -282,7 +282,9 @@ class LoadPanel(QObject):
                 options = data.get('options', {})
                 self.empty_frames = 0
                 if isinstance(options, dict):
-                    self.empty_frames = options.get('empty-frames', 0)
+                    empty = options.get('empty-frames', 0)
+                    self.empty_frames = empty
+                    self.total_frames = [f-empty for f in self.total_frames]
         else:
             for ims in tmp_ims:
                 has_omega = 'omega' in ims.metadata
