@@ -459,6 +459,7 @@ class LoadPanel(QObject):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
                     new_total = str(self.total_frames[r] - self.empty_frames)
                     self.nsteps[r] = int(new_total)
+                    self.total_frames[r] = int(new_total)
                     self.ui.file_options.item(r, 2).setText(new_total)
                     self.ui.file_options.item(r, 5).setText(new_total)
             elif column == 3:
