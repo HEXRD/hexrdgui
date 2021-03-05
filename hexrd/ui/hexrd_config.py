@@ -90,7 +90,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
-    """Emitted when an instrument config has been loaded"""
+    """Emitted when an instrument config has been loaded
+
+    Warning: this will cause cartesian and polar parameters to be
+    automatically regenerated, which are time consuming functions.
+    """
     instrument_config_loaded = Signal()
 
     """Convenience signal to update the main window's status bar
@@ -285,6 +289,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.euler_angle_convention)
 
     def restore_instrument_config_backup(self):
+        old_detectors = self.detector_names
         self.config['instrument'] = copy.deepcopy(
             self.instrument_config_backup)
 
@@ -295,8 +300,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
             utils.convert_tilt_convention(self.config['instrument'], old_eac,
                                           new_eac)
 
-        self.instrument_config_loaded.emit()
-        self.deep_rerender_needed.emit()
+        # Because it is a time-consuming process, don't emit
+        # instrument_config_loaded, which will re-generate Cartesian and
+        # polar parameters. We'll just leave them at whatever they were
+        # last set to (either auto-generated or user set).
+
+        new_detectors = self.detector_names
+        if old_detectors != new_detectors:
+            self.detectors_changed.emit()
+        else:
+            # Still need a deep rerender
+            self.deep_rerender_needed.emit()
+
         self.update_visible_material_energies()
         self.update_active_material_energy()
 
