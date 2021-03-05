@@ -297,10 +297,10 @@ class ImageStackDialog:
                     num_files))
             omega = np.array(omega)
         if not len(omega):
-            delta = 360 / num_files
+            delta = MAXIMUM_OMEGA_RANGE / num_files
             omega = np.linspace(
                 [0, 0 + delta],
-                [360 - delta, 360],
+                [MAXIMUM_OMEGA_RANGE - delta, MAXIMUM_OMEGA_RANGE],
                 num_files)
         return omega[:, 0], omega[:, 1], nsteps
 

@@ -8,8 +8,8 @@ from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
-    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE,
-    UI_TRANS_INDEX_NONE, YAML_EXTS)
+    MAXIMUM_OMEGA_RANGE, UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE,
+    UI_AGG_INDEX_NONE, UI_TRANS_INDEX_NONE, YAML_EXTS)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -473,7 +473,7 @@ class LoadPanel(QObject):
 
     def confirm_omega_range(self):
         omega_range = abs(self.omega_max[0] - self.omega_min[0])
-        if not (r := omega_range <= 360):
+        if not (r := omega_range <= MAXIMUM_OMEGA_RANGE):
             msg = f'The omega range is greater than 360°.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
         return r
