@@ -257,33 +257,11 @@ class ImageStackDialog:
                 break
 
     def get_files(self):
-        temp, imgs = [], []
+        imgs = []
         for det in self.detectors:
-            d = self.state[det]['directory']
-            t = tempfile.NamedTemporaryFile(suffix='.yml', delete=False)
-            input_dict = {
-                'image-files': {},
-                'options': {},
-                'meta': {}
-            }
-            input_dict['image-files']['directory'] = d
-            input_dict['image-files']['files'] = (
-                ' '.join(self.state[det]['files']))
-            input_dict['options']['empty-frames'] = self.state['empty_frames']
-            input_dict['options']['max-frame-file'] = (
-                self.state['max_frame_file'])
-            input_dict['options']['max-frames'] = self.state['max_frames']
-            input_dict['meta']['panel'] = det
-            if self.state['omega_from_file']:
-                input_dict['meta']['omega'] = (
-                    f'! load-numpy-array {self.state["omega"]}')
-            data = yaml.dump(input_dict).encode('utf-8')
-            t.write(data)
-            t.close()
-            temp.append([t.name])
             imgs.append(self.state[det]['files'])
         num_files = len(imgs[0])
-        return temp, imgs, num_files
+        return imgs, num_files
 
     def get_omega_values(self, num_files):
         if self.state['omega_from_file'] and self.state['omega']:
@@ -312,20 +290,23 @@ class ImageStackDialog:
 
     def build_data(self):
         HexrdConfig().stack_state = copy.deepcopy(self.state)
-        temp_files, img_files, num_files = self.get_files()
+        img_files, num_files = self.get_files()
         start, stop, nsteps = self.get_omega_values(num_files)
         self.state['total_frames'] = self.ui.total_frames.value() // num_files
         data = {
-            'files': temp_files,
-            'yml_files': img_files,
+            'files': img_files,
             'omega_min': start,
             'omega_max': stop,
             'nsteps': nsteps,
             'empty_frames': self.state['empty_frames'],
-            'total_frames': [self.state['total_frames']] * num_files
+            'total_frames': [self.state['total_frames']] * num_files,
+            'frame_data': {
+                'max_frame_file': self.state['max_frame_file'],
+                'max_frames': self.state['max_frames']
+            }
         }
         if not self.state['omega_from_file']:
-            data['wedges'] = self.state['wedges']
+            data['frame_data']['wedges'] = self.state['wedges']
         return data
 
     def check_steps(self):

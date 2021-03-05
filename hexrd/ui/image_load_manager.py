@@ -177,9 +177,13 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
             if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
-                    dirs = self.parent_dir
-
-                    ims = ImageFileManager().open_directory(dirs, self.files[i])
+                    dirs = os.path.dirname(self.files[i][0])
+                    options = {
+                        'empty-frames': self.data.get('empty_frames', 0),
+                        'max-file-frames': self.data.get('max_frame_file', 0),
+                        'max-total-frames': self.data.get('max_frames', 0)
+                    }
+                    ims = ImageFileManager().open_directory(dirs, self.files[i], options)
                     HexrdConfig().imageseries_dict[det] = ims
             else:
                 ImageFileManager().load_images(det_names, self.files)
@@ -333,14 +337,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                     stop = self.data['omega_max'][i]
 
                     omw.addwedge(start, stop, nsteps)
-
             ims_dict[key].metadata['omega'] = omw.omegas
 
     def get_range(self, ims):
-        if self.data and 'yml_files' in self.data:
-            return range(len(ims))
-        else:
-            return range(self.empty_frames, len(ims))
+        return range(len(ims))
 
     def get_flip_op(self, oplist, idx):
         if self.data:
