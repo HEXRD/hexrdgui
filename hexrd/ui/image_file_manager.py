@@ -124,7 +124,7 @@ class ImageFileManager(metaclass=Singleton):
         #     ims = imageseries.open(f, 'array')
         return ims
 
-    def open_directory(self, d, files=None):
+    def open_directory(self, d, files=None, options=None):
         if files is None:
             files = os.listdir(d)
 
@@ -139,7 +139,7 @@ class ImageFileManager(metaclass=Singleton):
                 file_str += ' '
 
         input_dict['image-files']['files'] = file_str
-        input_dict['options'] = {}
+        input_dict['options'] = {} if options is None else options
         input_dict['meta'] = {}
         temp = tempfile.NamedTemporaryFile(delete=False)
         try:

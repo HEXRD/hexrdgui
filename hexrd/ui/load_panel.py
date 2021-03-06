@@ -8,8 +8,8 @@ from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
-    UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE, UI_AGG_INDEX_NONE,
-    UI_TRANS_INDEX_NONE, YAML_EXTS)
+    MAXIMUM_OMEGA_RANGE, UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE,
+    UI_AGG_INDEX_NONE, UI_TRANS_INDEX_NONE, YAML_EXTS)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -45,7 +45,7 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.idx = 0
         self.ext = ''
-        self.wedges = None
+        self.frame_data = None
         self.progress_dialog = None
         self.current_progress_step = 0
         self.progress_macro_steps = 0
@@ -96,7 +96,6 @@ class LoadPanel(QObject):
         self.ui.file_options.customContextMenuRequested.connect(
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
-
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
 
     def setup_processing_options(self):
@@ -220,7 +219,7 @@ class LoadPanel(QObject):
         self.omega_max = []
         self.nsteps = []
         self.files = []
-        self.wedges = None
+        self.frame_data = None
 
     def enable_aggregations(self, row, column):
         if not (column == 1 or column == 2):
@@ -282,7 +281,9 @@ class LoadPanel(QObject):
                 options = data.get('options', {})
                 self.empty_frames = 0
                 if isinstance(options, dict):
-                    self.empty_frames = options.get('empty-frames', 0)
+                    empty = options.get('empty-frames', 0)
+                    self.empty_frames = empty
+                    self.total_frames = [f-empty for f in self.total_frames]
         else:
             for ims in tmp_ims:
                 has_omega = 'omega' in ims.metadata
@@ -455,22 +456,24 @@ class LoadPanel(QObject):
                 self.empty_frames = int(curr_val)
                 for r in range(self.ui.file_options.rowCount()):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
-                    self.ui.file_options.item(r, 2).setText(
-                        str(self.total_frames[r] - self.empty_frames))
-            # Update delta when min or max omega are changed
+                    new_total = str(self.total_frames[r] - self.empty_frames)
+                    self.nsteps[r] = int(new_total)
+                    self.total_frames[r] = int(new_total)
+                    self.ui.file_options.item(r, 2).setText(new_total)
+                    self.ui.file_options.item(r, 5).setText(new_total)
             elif column == 3:
                 self.omega_min[row] = float(curr_val)
             elif column == 4:
                 self.omega_max[row] = float(curr_val)
             elif column == 5:
-                self.delta[row] = float(curr_val)
+                self.nsteps[row] = int(curr_val)
             self.enable_read()
 
         self.ui.file_options.blockSignals(False)
 
     def confirm_omega_range(self):
         omega_range = abs(self.omega_max[0] - self.omega_min[0])
-        if not (r := omega_range <= 360):
+        if not (r := omega_range <= MAXIMUM_OMEGA_RANGE):
             msg = f'The omega range is greater than 360°.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
         return r
@@ -479,7 +482,6 @@ class LoadPanel(QObject):
     def read_data(self):
         if not self.confirm_omega_range():
             return
-
         data = {
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
@@ -491,22 +493,19 @@ class LoadPanel(QObject):
             data['idx'] = self.idx
         if self.ext in YAML_EXTS:
             data['yml_files'] = self.yml_files
-        if self.wedges is not None:
-            data['wedges'] = self.wedges
+        if self.frame_data is not None:
+            data.update(self.frame_data)
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
 
     def load_image_stacks(self):
         if data := ImageStackDialog(self.parent()).exec_():
             self.files = data['files']
-            self.yml_files = data['yml_files']
             self.omega_min = data['omega_min']
             self.omega_max = data['omega_max']
             self.nsteps = data['nsteps']
             self.empty_frames = data['empty_frames']
             self.total_frames = data['total_frames']
-            self.ext = '.yml'
-            if 'wedges' in data:
-                self.wedges = data['wedges']
+            self.frame_data = data['frame_data']
             self.create_table()
             self.enable_read()

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>463</width>
+    <width>471</width>
     <height>599</height>
    </rect>
   </property>
@@ -136,6 +136,9 @@
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="maximum">
+         <number>1000000</number>
+        </property>
         <property name="value">
          <number>0</number>
         </property>
@@ -147,7 +150,11 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QSpinBox" name="empty_frames"/>
+       <widget class="QSpinBox" name="empty_frames">
+        <property name="maximum">
+         <number>1000000</number>
+        </property>
+       </widget>
       </item>
       <item row="0" column="2">
        <widget class="QLabel" name="frames_label">
@@ -168,6 +175,9 @@
       </item>
       <item row="1" column="3">
        <widget class="QSpinBox" name="max_total_frames">
+        <property name="maximum">
+         <number>1000000</number>
+        </property>
         <property name="value">
          <number>0</number>
         </property>

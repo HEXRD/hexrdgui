@@ -177,9 +177,13 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
             if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
-                    dirs = self.parent_dir
-
-                    ims = ImageFileManager().open_directory(dirs, self.files[i])
+                    dirs = os.path.dirname(self.files[i][0])
+                    options = {
+                        'empty-frames': self.data.get('empty_frames', 0),
+                        'max-file-frames': self.data.get('max_frame_file', 0),
+                        'max-total-frames': self.data.get('max_frames', 0)
+                    }
+                    ims = ImageFileManager().open_directory(dirs, self.files[i], options)
                     HexrdConfig().imageseries_dict[det] = ims
             else:
                 ImageFileManager().load_images(det_names, self.files)
@@ -319,33 +323,23 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Add on the omega metadata if there is any
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
         for key in ims_dict.keys():
+            nframes = self.data['total_frames'][0] * len(files[0])
+            omw = imageseries.omega.OmegaWedges(nframes)
             if 'wedges' in self.data:
-                nframes = self.data['total_frames'][0] - self.empty_frames
-                omw = imageseries.omega.OmegaWedges(nframes * len(files[0]))
                 for wedge in self.data['wedges']:
                     start, stop, nsteps = wedge
                     omw.addwedge(start, stop, nsteps)
             else:
-                nframes = len(ims_dict[key])
-                omw = imageseries.omega.OmegaWedges(nframes - self.empty_frames)
                 for i in range(len(files[0])):
                     nsteps = self.data['nsteps'][i]
                     start = self.data['omega_min'][i]
                     stop = self.data['omega_max'][i]
 
-                    # Don't add wedges if defaults are unchanged
-                    if not (start - stop):
-                        return
-
                     omw.addwedge(start, stop, nsteps)
-
             ims_dict[key].metadata['omega'] = omw.omegas
 
     def get_range(self, ims):
-        if self.data and 'yml_files' in self.data:
-            return range(len(ims))
-        else:
-            return range(self.empty_frames, len(ims))
+        return range(len(ims))
 
     def get_flip_op(self, oplist, idx):
         if self.data:
