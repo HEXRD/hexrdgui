@@ -222,13 +222,14 @@ class HexrdConfig(QObject, metaclass=Singleton):
         # Clear the overlay data and save the overlays as well
         HexrdConfig().clear_overlay_data()
         settings.setValue('overlays', self.overlays)
+        settings.setValue('workflow', self.workflow)
 
-    def save_workflow(self):
-        settings = QSettings()
-        old_workflow = settings.value('workflow', None)
-        if old_workflow != self.workflow:
-            settings.setValue('workflow', self.workflow)
-            self.workflow_changed.emit()
+    def set_workflow(self, workflow):
+        if workflow == self.workflow:
+            return
+
+        self.workflow = workflow
+        self.workflow_changed.emit()
 
     def load_settings(self):
         settings = QSettings()
