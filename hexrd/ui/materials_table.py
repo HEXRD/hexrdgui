@@ -113,6 +113,10 @@ class MaterialsTable:
             sf = plane_data.structFact
             multiplicity = plane_data.getMultiplicity()
 
+        # Since structure factors use arbitrary scaling, re-scale them
+        # to a range that's easier on the eyes.
+        rescale_structure_factors(sf)
+
         self.update_hkl_index_maps(hkls)
 
         table.clearContents()
@@ -230,3 +234,8 @@ def sorting_disabled(table):
         yield
     finally:
         table.setSortingEnabled(prev)
+
+
+def rescale_structure_factors(sf):
+    # Rescale the structure factors to be between 0 and 100
+    sf[:] = np.interp(sf, (sf.min(), sf.max()), (0, 100))
