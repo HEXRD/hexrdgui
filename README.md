@@ -12,6 +12,15 @@ This can be installed using the following command:
 conda install -c conda-forge python=3.8
 ```
 
+#### Big Sur (OS X 11)
+
+OS X 11 does not work with the Python from conda-forge. Please install a the version
+from the HEXRD channel
+
+```bash
+conda install -c HEXRD python=3.8.4
+```
+
 ## conda (release)
 
 To install the latest stable release
