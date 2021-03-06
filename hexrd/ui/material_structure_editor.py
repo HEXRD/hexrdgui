@@ -3,7 +3,9 @@ import re
 
 import numpy as np
 
-from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
+from PySide2.QtCore import (
+    Qt, QItemSelectionModel, QObject, QSignalBlocker, Signal
+)
 from PySide2.QtWidgets import (
     QLineEdit, QItemEditorFactory, QStyledItemDelegate, QTableWidgetItem
 )
@@ -34,9 +36,13 @@ DEFAULT_SITE = {
 }
 
 
-class MaterialStructureEditor:
+class MaterialStructureEditor(QObject):
+
+    material_modified = Signal()
 
     def __init__(self, parent=None):
+        super().__init__(parent)
+
         loader = UiLoader()
         self.ui = loader.load_file('material_structure_editor.ui', parent)
 
@@ -266,8 +272,13 @@ class MaterialStructureEditor:
         if hasattr(old_unitcell, 'stiffness'):
             mat.unitcell.stiffness = old_unitcell.stiffness
 
+        # Compute the density
+        mat.unitcell.CalcDensity()
+
         # Update the structure factor of the PData
         mat.update_structure_factor()
+
+        self.material_modified.emit()
 
     def generate_sites(self):
         """The sites have a structure like the following:

@@ -98,6 +98,9 @@ class MaterialsPanel(QObject):
         HexrdConfig().active_material_modified.connect(
             self.material_editor_widget.update_gui_from_material)
 
+        self.material_structure_editor.material_modified.connect(
+            self.material_structure_edited)
+
     def update_enable_states(self):
         limit_active = self.ui.limit_active.isChecked()
         self.ui.max_tth.setEnabled(limit_active)
@@ -178,6 +181,9 @@ class MaterialsPanel(QObject):
     def material_modified(self):
         self.update_table()
         self.update_refinement_options()
+        self.update_properties_tab()
+
+    def material_structure_edited(self):
         self.update_properties_tab()
 
     def update_structure_tab(self):

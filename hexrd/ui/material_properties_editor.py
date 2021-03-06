@@ -36,7 +36,6 @@ class MaterialPropertiesEditor:
             self.elastic_tensor_type_changed)
         self.elastic_tensor_editor.data_modified.connect(
             self.elastic_tensor_edited)
-        self.ui.density.valueChanged.connect(self.density_edited)
 
     @property
     def material(self):
@@ -120,9 +119,6 @@ class MaterialPropertiesEditor:
         else:
             self.elastic_tensor_editor.set_matrix_valid()
         self.update_enable_states()
-
-    def density_edited(self):
-        self.material.unitcell.density = self.ui.density.value()
 
     @property
     def misc_widgets(self):
