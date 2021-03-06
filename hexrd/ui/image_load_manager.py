@@ -211,7 +211,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         if not self.update_status:
             self.update_needed.emit()
         if self.transformed_images:
-            HexrdConfig().instrument_config_loaded.emit()
             HexrdConfig().deep_rerender_needed.emit()
 
     def get_dark_aggr_op(self, ims, idx):

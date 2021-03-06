@@ -5,8 +5,8 @@ from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
 from hexrd.findorientations import (
-    create_clustering_parameters, generate_eta_ome_maps,
-    generate_orientation_fibers, run_cluster
+    create_clustering_parameters, filter_maps_if_requested,
+    generate_eta_ome_maps, generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
 from hexrd.xrdutil import EtaOmeMaps
@@ -79,7 +79,7 @@ class IndexingRunner(Runner):
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
-            self.view_ome_maps()
+            self.ome_maps_loaded()
         else:
             # Create a full indexing config
             config = create_indexing_config()
@@ -91,12 +91,15 @@ class IndexingRunner(Runner):
             worker = AsyncWorker(self.run_eta_ome_maps, config)
             self.thread_pool.start(worker)
 
-            worker.signals.result.connect(self.view_ome_maps)
+            worker.signals.result.connect(self.ome_maps_loaded)
             worker.signals.finished.connect(self.progress_dialog.accept)
             self.progress_dialog.exec_()
 
     def run_eta_ome_maps(self, config):
         self.ome_maps = generate_eta_ome_maps(config, save=False)
+
+    def ome_maps_loaded(self):
+        self.view_ome_maps()
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
@@ -114,6 +117,10 @@ class IndexingRunner(Runner):
 
         # Create a full indexing config
         config = create_indexing_config()
+
+        # Hexrd normally applies filtering immediately after eta omega
+        # maps are loaded. We will perform the user-selected filtering now.
+        filter_maps_if_requested(self.ome_maps, config)
 
         # Setup to run indexing in background
         self.progress_dialog.setWindowTitle('Find Orientations')

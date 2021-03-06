@@ -53,7 +53,6 @@ class ImportDataPanel(QObject):
         self.ui.button_box.rejected.connect(self.clear)
         self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
-        self.new_config_loaded.connect(HexrdConfig().instrument_config_loaded)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
         self.ui.line_style.currentIndexChanged.connect(
@@ -121,7 +120,6 @@ class ImportDataPanel(QObject):
         for key, value in self.detector_defaults[det].items():
             HexrdConfig().set_instrument_config_val(
                 ['detectors', det, 'transform', key, 'value'], value)
-            self.detector_defaults[det]
         eac = {'axes_order': 'zxz', 'extrinsic': False}
         convert_tilt_convention(HexrdConfig().config['instrument'], None, eac)
         self.detector_defaults[det]['tilt'] = (

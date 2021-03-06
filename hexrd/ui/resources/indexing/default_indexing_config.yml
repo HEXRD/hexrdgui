@@ -17,6 +17,8 @@ find_orientations:
     threshold: 250
     bin_frames: 1 # defaults to 1
 
+    filter_maps: False
+
     # "all", or a list of hkl orders used to find orientations
     # defaults to all orders listed in the material definition
     # *** These are set automatically by hexrdgui based on the materials table
@@ -29,8 +31,7 @@ find_orientations:
   #
   # otherwise defaults to seeded search:
   seed_search: # this section is ignored if use_quaternion_grid is defined
-    # *** This is automatically set from the eta omega maps
-    # hkl_seeds: [0,1,2] # hkls ids to use, must be defined for seeded search
+    hkl_seeds: [0, 1, 2] # hkls ids to use, must be defined for seeded search
     fiber_step: 0.5 # degrees, defaults to ome tolerance
     # Method selection:
     #   Now 3 choices: label (the original), 'blob_dog', and 'blob_log'

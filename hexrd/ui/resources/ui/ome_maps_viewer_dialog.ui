@@ -7,21 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>728</height>
+    <height>868</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" rowspan="3">
+   <item row="4" column="1">
     <widget class="QGroupBox" name="seed_search_group_box">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -39,48 +29,7 @@
       <string>Seed Search</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
-      <item row="2" column="0" colspan="2">
-       <widget class="QGroupBox" name="omega_group_box">
-        <property name="title">
-         <string>Omega</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_7">
-         <item row="0" column="0">
-          <widget class="QLabel" name="tolerance_label">
-           <property name="text">
-            <string>Tolerance:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="ScientificDoubleSpinBox" name="omega_tolerance">
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="suffix">
-            <string>°</string>
-           </property>
-           <property name="decimals">
-            <number>8</number>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>360.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="ScientificDoubleSpinBox" name="fiber_step">
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -105,7 +54,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="2">
+      <item row="1" column="0" colspan="2">
        <widget class="QGroupBox" name="method_group_box">
         <property name="title">
          <string>Method</string>
@@ -507,7 +456,14 @@
         </layout>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
+      <item row="2" column="0">
+       <widget class="QLabel" name="fiber_step_label">
+        <property name="text">
+         <string>Fiber Step:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
        <widget class="QGroupBox" name="eta_group_box">
         <property name="title">
          <string>Eta</string>
@@ -574,14 +530,48 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="fiber_step_label">
-        <property name="text">
-         <string>Fiber Step:</string>
+      <item row="3" column="0" colspan="2">
+       <widget class="QGroupBox" name="omega_group_box">
+        <property name="title">
+         <string>Omega</string>
         </property>
+        <layout class="QGridLayout" name="gridLayout_7">
+         <item row="0" column="0">
+          <widget class="QLabel" name="tolerance_label">
+           <property name="text">
+            <string>Tolerance:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="ScientificDoubleSpinBox" name="omega_tolerance">
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="suffix">
+            <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="minimum">
+            <double>0.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>360.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>1.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
-      <item row="4" column="0" colspan="2">
+      <item row="5" column="0" colspan="2">
        <widget class="QGroupBox" name="clustering_group_box">
         <property name="title">
          <string>Clustering</string>
@@ -670,9 +660,6 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="2">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
    <item row="0" column="2" rowspan="2">
     <layout class="QGridLayout" name="grid_layout">
      <item row="2" column="2">
@@ -738,6 +725,83 @@
      </item>
     </layout>
    </item>
+   <item row="0" column="1" rowspan="2">
+    <widget class="QGroupBox" name="filtering_group">
+     <property name="title">
+      <string>Filtering</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_10">
+      <item row="2" column="0">
+       <widget class="QLabel" name="filtering_fwhm_label">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>FWHM:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="filtering_apply_gaussian_laplace">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply Laplace filter using Gaussian second derivatives&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Apply Gaussian Laplace?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="apply_filtering">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply filtering to the eta omega maps?&lt;/p&gt;&lt;p&gt;Subtracts a row-wise median, and optionally performs a Laplace filter using Gaussian second derivatives&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Apply filtering?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="ScientificDoubleSpinBox" name="filtering_fwhm">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-100000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="5" column="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2" rowspan="3">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -748,6 +812,9 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>apply_filtering</tabstop>
+  <tabstop>filtering_apply_gaussian_laplace</tabstop>
+  <tabstop>filtering_fwhm</tabstop>
   <tabstop>method</tabstop>
   <tabstop>tab_widget</tabstop>
   <tabstop>filter_radius</tabstop>
