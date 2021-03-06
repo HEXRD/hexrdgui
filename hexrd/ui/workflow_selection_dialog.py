@@ -25,11 +25,15 @@ class WorkflowSelectionDialog:
         self.ui.workflowComboBox.setCurrentText(HexrdConfig().workflow)
 
     def accepted(self):
-        HexrdConfig().workflow = self.ui.workflowComboBox.currentText()
-        HexrdConfig().save_workflow()
+        HexrdConfig().set_workflow(self.ui.workflowComboBox.currentText())
 
     def rejected(self):
-        pass
+        # If the user cancels this by accident the first time they start the
+        # program, they will be running without a workflow!
+        # Avoid this by ensuring a workflow gets set.
+        if HexrdConfig().workflow is None:
+            HexrdConfig().set_workflow(self.ui.workflowComboBox.currentText())
 
     def show(self):
+        self.update_gui_from_config()
         self.ui.show()
