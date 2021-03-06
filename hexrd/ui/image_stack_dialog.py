@@ -268,17 +268,19 @@ class ImageStackDialog:
             omega = np.load(self.state['omega'])
         elif not self.state['omega_from_file']:
             omega = []
-            nframes = self.ui.total_frames.value()
+            nframes = self.ui.total_frames.value() // num_files
             nsteps = [nframes] * num_files
-            for i in range(self.ui.omega_wedges.rowCount()):
+            row_count = self.ui.omega_wedges.rowCount()
+            length = num_files if row_count == 1 else 1
+            for i in range(row_count):
                 start = int(self.ui.omega_wedges.item(i, 0).text())
                 stop = int(self.ui.omega_wedges.item(i, 1).text())
                 steps = int(self.ui.omega_wedges.item(i, 2).text())
-                delta = (stop - start) / num_files
+                delta = (stop - start) / length
                 omega.extend(np.linspace(
                     [start, start + delta],
                     [stop - delta, stop],
-                    num_files))
+                    length))
             omega = np.array(omega)
         if not len(omega):
             delta = MAXIMUM_OMEGA_RANGE / num_files
