@@ -987,7 +987,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return
 
         mat.beamEnergy = energy
-        utils.make_new_pdata(mat)
         self.flag_overlay_updates_for_material(mat.name)
 
     def update_active_material_energy(self):

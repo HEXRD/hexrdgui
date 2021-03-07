@@ -6,7 +6,7 @@ from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import default_overlay_refinements
-from hexrd.ui.utils import convert_tilt_convention, make_new_pdata
+from hexrd.ui.utils import convert_tilt_convention
 
 
 class CalibrationRunner:
@@ -231,7 +231,6 @@ class CalibrationRunner:
                 mat_name = overlay['material']
                 mat = materials[mat_name]
                 mat.latticeParameters = calibrator.params
-                make_new_pdata(mat)
                 HexrdConfig().flag_overlay_updates_for_material(mat_name)
                 if mat is HexrdConfig().active_material:
                     HexrdConfig().active_material_modified.emit()

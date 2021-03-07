@@ -5,7 +5,6 @@ from hexrd import spacegroup
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import make_new_pdata
 
 
 class MaterialEditorWidget(QObject):
@@ -158,7 +157,6 @@ class MaterialEditorWidget(QObject):
         # already equal before setting.
         if self.material.sgnum != sgid:
             self.material.sgnum = sgid
-            make_new_pdata(self.material)
             self.material_modified.emit()
 
     def set_min_d_spacing(self):
@@ -167,7 +165,6 @@ class MaterialEditorWidget(QObject):
         val = self.ui.min_d_spacing.value()
         if self.material.dmin.getVal('angstrom') != val:
             self.material.dmin = _angstroms(val)
-            make_new_pdata(self.material)
             self.material_modified.emit()
 
     @property

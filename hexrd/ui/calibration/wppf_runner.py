@@ -6,7 +6,6 @@ from hexrd.ui.calibration.wppf_options_dialog import WppfOptionsDialog
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.progress_dialog import ProgressDialog
-from hexrd.ui.utils import make_new_pdata
 
 
 class WppfRunner(QObject):
@@ -102,7 +101,6 @@ class WppfRunner(QObject):
                 lparms[i] *= 10.0
 
             mat.latticeParameters = lparms
-            make_new_pdata(mat)
             HexrdConfig().flag_overlay_updates_for_material(name)
 
             if mat is HexrdConfig().active_material:
