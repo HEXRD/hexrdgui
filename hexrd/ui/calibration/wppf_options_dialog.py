@@ -434,6 +434,14 @@ class WppfOptionsDialog(QObject):
         """
         method = self.wppf_method
 
+        def add_params(name, vary, value, lb, ub):
+            self.params[name] = {
+                'value': value,
+                'lb': lb,
+                'ub': ub,
+                'vary': vary,
+            }
+
         for x in self.selected_materials:
             mat = HexrdConfig().material(x)
             p = mat.name
@@ -453,11 +461,9 @@ class WppfOptionsDialog(QObject):
                 first 3 are lengths, next three are angles
                 """
                 if rid[i] <= 2:
-                    self.params.add(nn, value=l, lb=l-0.05,
-                                    ub=l+0.05, vary=False)
+                    add_params(nn, value=l, lb=l-0.05, ub=l+0.05, vary=False)
                 else:
-                    self.params.add(nn, value=l, lb=l-1.,
-                                    ub=l+1., vary=False)
+                    add_params(nn, value=l, lb=l-1., ub=l+1., vary=False)
 
             # if method is LeBail
             if method == 'LeBail':
@@ -484,46 +490,34 @@ class WppfOptionsDialog(QObject):
                     elem = constants.ptableinverse[Z]
                     # x-coordinate
                     nn = f'{p}_{elem}{atom_label[i]}_x'
-                    self.params.add(
-                        nn, value=atom_pos[i, 0],
-                        lb=0.0, ub=1.0,
-                        vary=False)
+                    add_params(nn, value=atom_pos[i, 0],
+                               lb=0.0, ub=1.0, vary=False)
 
                     # y-coordinate
                     nn = f'{p}_{elem}{atom_label[i]}_y'
-                    self.params.add(
-                        nn, value=atom_pos[i, 1],
-                        lb=0.0, ub=1.0,
-                        vary=False)
+                    add_params(nn, value=atom_pos[i, 1],
+                               lb=0.0, ub=1.0, vary=False)
 
                     # z-coordinate
                     nn = f'{p}_{elem}{atom_label[i]}_z'
-                    self.params.add(
-                        nn, value=atom_pos[i, 2],
-                        lb=0.0, ub=1.0,
-                        vary=False)
+                    add_params(nn, value=atom_pos[i, 2],
+                               lb=0.0, ub=1.0, vary=False)
 
                     # occupation
                     nn = f'{p}_{elem}{atom_label[i]}_occ'
-                    self.params.add(nn, value=occ[i],
-                                    lb=0.0, ub=1.0,
-                                    vary=False)
+                    add_params(nn, value=occ[i],
+                               lb=0.0, ub=1.0, vary=False)
 
                     if mat.unitcell.aniU:
                         U = mat.unitcell.U
                         for j in range(6):
                             nn = f'{p}_{elem}{atom_label[i]}_{_nameU[j]}'
-                            self.params.add(
-                                nn, value=U[i, j],
-                                lb=-1e-3,
-                                ub=np.inf,
-                                vary=False)
+                            add_params(nn, value=U[i, j],
+                                       lb=-1e-3, ub=np.inf, vary=False)
                     else:
                         nn = f'{p}_{elem}{atom_label[i]}_dw'
-                        self.params.add(
-                            nn, value=mat.unitcell.U[i],
-                            lb=0.0, ub=np.inf,
-                            vary=False)
+                        add_params(nn, value=mat.unitcell.U[i],
+                                   lb=0.0, ub=np.inf, vary=False)
 
             else:
                 raise Exception(f'Unknown method: {method}')
