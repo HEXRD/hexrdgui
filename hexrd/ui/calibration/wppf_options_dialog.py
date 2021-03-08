@@ -97,7 +97,7 @@ class WppfOptionsDialog(QObject):
 
     def load_initial_params(self):
         text = importlib.resources.read_text(calibration_resources,
-                                             'lebail.yml')
+                                             'default_wppf_lebail_params.yml')
         self.default_params = yaml.load(text, Loader=yaml.FullLoader)
         self.params = copy.deepcopy(self.default_params)
 
