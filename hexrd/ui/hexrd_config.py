@@ -1447,3 +1447,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                      set_threshold_mask_status)
     threshold_mask = property(threshold_mask,
                               set_threshold_mask)
+
+    @property
+    def display_wppf_plot(self):
+        settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
+        return settings.setdefault('display_plot', True)
+
+    @display_wppf_plot.setter
+    def display_wppf_plot(self, b):
+        if self.display_wppf_plot != b:
+            settings = HexrdConfig().config['calibration']['wppf']
+            settings['display_plot'] = b
+            self.rerender_wppf.emit()

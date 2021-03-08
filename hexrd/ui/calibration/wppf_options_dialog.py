@@ -71,6 +71,8 @@ class WppfOptionsDialog(QObject):
             self.select_experiment_file)
         self.ui.reset_table_to_defaults.pressed.connect(
             self.reset_table_to_defaults)
+        self.ui.display_wppf_plot.toggled.connect(
+            self.display_wppf_plot_toggled)
 
         self.ui.accepted.connect(self.accept)
         self.ui.rejected.connect(self.reject)
@@ -272,6 +274,9 @@ class WppfOptionsDialog(QObject):
         self.reset_extra_params()
         self.update_table()
 
+    def display_wppf_plot_toggled(self):
+        HexrdConfig().display_wppf_plot = self.ui.display_wppf_plot.isChecked()
+
     def create_label(self, v):
         w = QTableWidgetItem(v)
         w.setTextAlignment(Qt.AlignCenter)
@@ -320,6 +325,9 @@ class WppfOptionsDialog(QObject):
         return tw
 
     def update_gui(self):
+        blocker = QSignalBlocker(self.ui.display_wppf_plot)  # noqa: F841
+        self.ui.display_wppf_plot.setChecked(HexrdConfig().display_wppf_plot)
+
         self.update_visible_background_parameters()
         self.update_table()
 
