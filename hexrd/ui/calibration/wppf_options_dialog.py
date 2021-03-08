@@ -427,15 +427,16 @@ class WppfOptionsDialog(QObject):
         @DETAILS:   a simple function to add the material parameters
         from the list of material file. this depends on which
         method i chosen. for the LeBail class the parameters
-        added are the minimum set of lattice parameters. For 
+        added are the minimum set of lattice parameters. For
         the Rietveld class, the lattice parameters, fractional
-        coordinates, occupancy and debye waller factors are 
+        coordinates, occupancy and debye waller factors are
         added.
         """
         method = self.wppf_method
 
         for x in self.selected_materials:
             mat = HexrdConfig().material(x)
+            p = mat.name
 
             """
             add lattice parameters
@@ -446,12 +447,12 @@ class WppfOptionsDialog(QObject):
             name = _lpname[rid]
 
             for i, (n, l) in enumerate(zip(name, lp)):
-                nn = p+'_'+n
+                nn = f'{p}_{n}'
 
                 """
                 first 3 are lengths, next three are angles
                 """
-                if(rid[i] <= 2):
+                if rid[i] <= 2:
                     self.params.add(nn, value=l, lb=l-0.05,
                                     ub=l+0.05, vary=False)
                 else:
@@ -464,7 +465,7 @@ class WppfOptionsDialog(QObject):
 
             elif method == 'Rietveld':
                 """
-                now adding the atom positions and 
+                now adding the atom positions and
                 occupancy
                 """
                 atom_pos = mat.unitcell.atom_pos[:, 0:3]
@@ -508,7 +509,7 @@ class WppfOptionsDialog(QObject):
                                     lb=0.0, ub=1.0,
                                     vary=False)
 
-                    if(mat.unitcell.aniU):
+                    if mat.unitcell.aniU:
                         U = mat.unitcell.U
                         for j in range(6):
                             nn = f'{p}_{elem}{atom_label[i]}_{_nameU[j]}'
