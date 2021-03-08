@@ -50,7 +50,7 @@ class WppfOptionsDialog(QObject):
         self.ui.setWindowTitle('WPPF Options Dialog')
         self.ui.installEventFilter(enter_key_filter)
 
-        self.load_initial_params()
+        self.reset_initial_params()
         self.load_settings()
         self.update_extra_params()
 
@@ -64,6 +64,7 @@ class WppfOptionsDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
+        self.ui.wppf_method.currentIndexChanged.connect(self.on_method_changed)
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.background_method.currentIndexChanged.connect(
             self.update_visible_background_parameters)
@@ -97,11 +98,19 @@ class WppfOptionsDialog(QObject):
             raise Exception(f'Experiment file, {self.experiment_file}, '
                             'does not exist')
 
-    def load_initial_params(self):
-        text = importlib.resources.read_text(calibration_resources,
-                                             'default_wppf_lebail_params.yml')
-        self.default_params = yaml.load(text, Loader=yaml.FullLoader)
+    @property
+    def method_defaults_file(self):
+        return f'default_wppf_{self.wppf_method.lower()}_params.yml'
+
+    def reset_initial_params(self):
+        self.reset_default_params()
         self.params = copy.deepcopy(self.default_params)
+
+    def reset_default_params(self):
+        self._loaded_defaults_file = self.method_defaults_file
+        text = importlib.resources.read_text(calibration_resources,
+                                             self.method_defaults_file)
+        self.default_params = yaml.load(text, Loader=yaml.FullLoader)
 
     def update_extra_params(self):
         # This will add extra parameters that should be there, and
@@ -236,6 +245,14 @@ class WppfOptionsDialog(QObject):
     def experiment_file(self, v):
         self.ui.experiment_file.setText(v)
 
+    @property
+    def display_wppf_plot(self):
+        return self.ui.display_wppf_plot.isChecked()
+
+    @display_wppf_plot.setter
+    def display_wppf_plot(self, v):
+        self.ui.display_wppf_plot.setChecked(v)
+
     def load_settings(self):
         settings = HexrdConfig().config['calibration'].get('wppf')
         if not settings:
@@ -244,6 +261,10 @@ class WppfOptionsDialog(QObject):
         blockers = [QSignalBlocker(w) for w in self.all_widgets]  # noqa: F841
         for k, v in settings.items():
             setattr(self, k, v)
+
+        if self.method_was_changed():
+            # Reset the default parameters if they have changed.
+            self.reset_default_params()
 
     def save_settings(self):
         settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
@@ -254,7 +275,8 @@ class WppfOptionsDialog(QObject):
             'chebyshev_polynomial_degree',
             'use_experiment_file',
             'experiment_file',
-            'params'
+            'display_wppf_plot',
+            'params',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -275,7 +297,7 @@ class WppfOptionsDialog(QObject):
         self.update_table()
 
     def display_wppf_plot_toggled(self):
-        HexrdConfig().display_wppf_plot = self.ui.display_wppf_plot.isChecked()
+        HexrdConfig().display_wppf_plot = self.display_wppf_plot
 
     def create_label(self, v):
         w = QTableWidgetItem(v)
@@ -324,9 +346,21 @@ class WppfOptionsDialog(QObject):
         layout.setContentsMargins(0, 0, 0, 0)
         return tw
 
+    def method_was_changed(self):
+        return self.method_defaults_file != self._loaded_defaults_file
+
+    def on_method_changed(self):
+        if not self.method_was_changed():
+            # Didn't actually change. Nothing to do...
+            return
+
+        self.reset_initial_params()
+        self.update_extra_params()
+        self.update_table()
+
     def update_gui(self):
         blocker = QSignalBlocker(self.ui.display_wppf_plot)  # noqa: F841
-        self.ui.display_wppf_plot.setChecked(HexrdConfig().display_wppf_plot)
+        self.display_wppf_plot = HexrdConfig().display_wppf_plot
 
         self.update_visible_background_parameters()
         self.update_table()
@@ -379,7 +413,8 @@ class WppfOptionsDialog(QObject):
             'background_method',
             'chebyshev_polynomial_degree',
             'experiment_file',
-            'table'
+            'table',
+            'display_wppf_plot',
         ]
         return [getattr(self.ui, x) for x in names]
 
