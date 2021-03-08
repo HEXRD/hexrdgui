@@ -52,7 +52,7 @@ class WppfOptionsDialog(QObject):
 
         self.load_initial_params()
         self.load_settings()
-        self.reset_extra_params()
+        self.update_extra_params()
 
         self.value_spinboxes = []
         self.minimum_spinboxes = []
@@ -101,46 +101,33 @@ class WppfOptionsDialog(QObject):
         self.default_params = yaml.load(text, Loader=yaml.FullLoader)
         self.params = copy.deepcopy(self.default_params)
 
-    def reset_extra_params(self):
-        # First, make a copy of the old params object. We will remove all
-        # extra params currently in place.
+    def update_extra_params(self):
+        # This will add extra parameters that should be there, and
+        # remove extra parameters that should not.
+
+        # First, make a deep copy of the original parameters.
         old_params = copy.deepcopy(self.params)
+
+        # Now, reset the extra parameters.
+        self.reset_extra_params()
+
+        # Now, restore any previous settings for extra parameters
+        for key in old_params:
+            if key in self.default_params or key not in self.params:
+                # Not an extra parameter, or the key was removed
+                continue
+
+            # Restore the previous settings
+            self.params[key] = old_params[key]
+
+    def reset_extra_params(self):
+        # First, remove all extra params currently in place.
         for key in list(self.params.keys()):
             if key not in self.default_params:
                 del self.params[key]
 
-        # Temporarily set the background method to chebyshev
-        # so that the spline lineplot won't pop up
-        blocker = QSignalBlocker(self.ui.background_method)  # noqa: F841
-        previous = self.background_method
-        self.background_method = 'chebyshev'
-
-        try:
-            # Next, create the WPPF object and allow it to add whatever params
-            # it wants to. Then we will add them to the new params.
-            wppf_object = self.create_wppf_object(add_params=True)
-        finally:
-            # Restore the old background method
-            self.background_method = previous
-
-        for key, obj in wppf_object.params.param_dict.items():
-            if key in self.params:
-                # Already present. Continue
-                continue
-
-            if all(key in x for x in [old_params, self.default_params]):
-                # Copy over the previous info for the key
-                # Only copy over default params, no extra params
-                self.params[key] = old_params[key]
-                continue
-
-            # Otherwise, copy it straight from the WPPF object.
-            self.params[key] = [
-                obj.value,
-                obj.lb,
-                obj.ub,
-                obj.vary
-            ]
+        # Now add the material parameters
+        self.add_material_parameters()
 
     def show(self):
         self.ui.show()
@@ -171,9 +158,9 @@ class WppfOptionsDialog(QObject):
         selected = self.selected_materials
         items = [(name, name in selected) for name in materials]
         dialog = SelectItemsDialog(items, self.ui)
-        if dialog.exec_():
+        if dialog.exec_() and self.selected_materials != dialog.selected_items:
             self.selected_materials = dialog.selected_items
-            self.reset_extra_params()
+            self.update_extra_params()
             self.update_table()
 
     def update_visible_background_parameters(self):
@@ -435,12 +422,7 @@ class WppfOptionsDialog(QObject):
         method = self.wppf_method
 
         def add_params(name, vary, value, lb, ub):
-            self.params[name] = {
-                'value': value,
-                'lb': lb,
-                'ub': ub,
-                'vary': vary,
-            }
+            self.params[name] = [value, lb, ub, vary]
 
         for x in self.selected_materials:
             mat = HexrdConfig().material(x)
@@ -461,7 +443,9 @@ class WppfOptionsDialog(QObject):
                 first 3 are lengths, next three are angles
                 """
                 if rid[i] <= 2:
-                    add_params(nn, value=l, lb=l-0.05, ub=l+0.05, vary=False)
+                    # Convert to Angstroms
+                    v = l / 10
+                    add_params(nn, value=v, lb=v-0.05, ub=v+0.05, vary=False)
                 else:
                     add_params(nn, value=l, lb=l-1., ub=l+1., vary=False)
 
@@ -522,9 +506,7 @@ class WppfOptionsDialog(QObject):
             else:
                 raise Exception(f'Unknown method: {method}')
 
-    def create_wppf_object(self, add_params=False):
-        # If add_params is True, it allows WPPF to add more parameters
-        # This is mostly for material lattice parameters
+    def create_wppf_object(self):
         method = self.wppf_method
         if method == 'LeBail':
             class_type = LeBail
@@ -533,12 +515,7 @@ class WppfOptionsDialog(QObject):
         else:
             raise Exception(f'Unknown method: {method}')
 
-        if add_params:
-            # WPPF will add parameters if params is a dict
-            params = self.params
-        else:
-            # WPPF will not add parameters if params is a Parameters object
-            params = self.create_wppf_params_object()
+        params = self.create_wppf_params_object()
 
         wavelength = {
             'synchrotron': [_angstroms(
