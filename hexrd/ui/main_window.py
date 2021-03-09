@@ -500,11 +500,6 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        if ImageLoadManager().unaggregated_images:
-            ims_dict = ImageLoadManager().unaggregated_images
-        else:
-            ims_dict = HexrdConfig().imageseries_dict
-
         SaveImagesDialog(self.ui).exec_()
 
     def on_action_save_materials_triggered(self):
@@ -870,7 +865,7 @@ class MainWindow(QObject):
         for action in actions:
             action.setEnabled(False)
 
-        image_series_dict = ImageLoadManager().unaggregated_images
+        image_series_dict = HexrdConfig().unagg_images
         if image_series_dict is None:
             image_series_dict = HexrdConfig().imageseries_dict
 

@@ -41,7 +41,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
-        self.unaggregated_images = None
         self.transformed_images = False
 
     def load_images(self, fnames):
@@ -187,9 +186,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                     HexrdConfig().imageseries_dict[det] = ims
             else:
                 ImageFileManager().load_images(det_names, self.files)
-        elif self.unaggregated_images is not None:
-            HexrdConfig().imageseries_dict = copy.copy(self.unaggregated_images)
-            self.reset_unagg_imgs()
+        HexrdConfig().reset_unagg_imgs()
 
         # Now that self.state is set, setup the progress variables
         self.setup_progress_variables()
@@ -305,7 +302,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def display_aggregation(self, ims_dict):
         self.update_progress_text('Aggregating images...')
         # Remember unaggregated images
-        self.unaggregated_images = copy.copy(ims_dict)
+        HexrdConfig().set_unagg_images()
 
         if self.state['agg'] == UI_AGG_INDEX_MAXIMUM:
             agg_func = imageseries.stats.max_iter
@@ -366,9 +363,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def get_dark_op(self, oplist, dark):
         oplist.append(('dark', dark))
-
-    def reset_unagg_imgs(self):
-        self.unaggregated_images = None
 
     def setup_progress_variables(self):
         self.current_progress_step = 0

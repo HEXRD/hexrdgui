@@ -135,7 +135,7 @@ class LoadPanel(QObject):
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
         if self.ui.aggregation.currentIndex() == UI_AGG_INDEX_NONE:
-            ImageLoadManager().reset_unagg_imgs()
+            HexrdConfig().reset_unagg_imgs()
 
     def trans_changed(self):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
