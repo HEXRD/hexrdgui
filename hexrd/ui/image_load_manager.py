@@ -322,8 +322,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
-        for key in ims_dict.keys():
-            nframes = self.data['total_frames'][0] * len(files[0])
+        for key, ims in ims_dict.items():
+            nframes = len(ims)
             omw = imageseries.omega.OmegaWedges(nframes)
             if 'wedges' in self.data:
                 for wedge in self.data['wedges']:
