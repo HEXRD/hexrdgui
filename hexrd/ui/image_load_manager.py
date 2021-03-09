@@ -180,8 +180,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                     dirs = os.path.dirname(self.files[i][0])
                     options = {
                         'empty-frames': self.data.get('empty_frames', 0),
-                        'max-file-frames': self.data.get('max_frame_file', 0),
-                        'max-total-frames': self.data.get('max_frames', 0)
+                        'max-file-frames': self.data.get('max_file_frames', 0),
+                        'max-total-frames': self.data.get('max_total_frames', 0)
                     }
                     ims = ImageFileManager().open_directory(dirs, self.files[i], options)
                     HexrdConfig().imageseries_dict[det] = ims

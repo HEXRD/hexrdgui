@@ -53,8 +53,8 @@ class ImageStackDialog:
             self.state[self.detector]['directory'])
         self.ui.search_text.setText(self.state[self.detector]['search'])
         self.ui.empty_frames.setValue(self.state['empty_frames'])
-        self.ui.max_file_frames.setValue(self.state['max_frame_file'])
-        self.ui.max_total_frames.setValue(self.state['max_frames'])
+        self.ui.max_file_frames.setValue(self.state['max_file_frames'])
+        self.ui.max_total_frames.setValue(self.state['max_total_frames'])
         self.ui.omega_from_file.setChecked(self.state['omega_from_file'])
         if self.state['omega']:
             self.ui.omega_file.setText(self.state['omega'].split(' ')[-1])
@@ -85,8 +85,8 @@ class ImageStackDialog:
                 'all_detectors': True,
                 'dets': self.detectors,
                 'empty_frames': 0,
-                'max_frame_file': 0,
-                'max_frames': 0,
+                'max_file_frames': 0,
+                'max_total_frames': 0,
                 'omega': '',
                 'omega_from_file': True,
                 'total_frames': 1,
@@ -169,11 +169,11 @@ class ImageStackDialog:
         self.total_frames()
 
     def set_max_file_frames(self, value):
-        self.state['max_frame_file'] = value
+        self.state['max_file_frames'] = value
         self.total_frames()
 
     def set_max_total_frames(self, value):
-        self.state['max_frames'] = value
+        self.state['max_total_frames'] = value
         self.total_frames()
 
     def total_frames(self):
@@ -303,8 +303,8 @@ class ImageStackDialog:
             'empty_frames': self.state['empty_frames'],
             'total_frames': [self.state['total_frames']] * num_files,
             'frame_data': {
-                'max_frame_file': self.state['max_frame_file'],
-                'max_frames': self.state['max_frames']
+                'max_file_frames': self.state['max_file_frames'],
+                'max_total_frames': self.state['max_total_frames']
             }
         }
         if not self.state['omega_from_file']:
