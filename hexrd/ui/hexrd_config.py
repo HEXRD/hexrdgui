@@ -162,6 +162,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.last_azimuthal_integral_data = None
         self._threshold_data = {}
         self.stack_state = {}
+        self.unaggregated_images = None
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
