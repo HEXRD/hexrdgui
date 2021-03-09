@@ -74,7 +74,10 @@ class ImageStackDialog:
         self.total_frames()
 
     def setup_state(self):
-        if sorted(self.state.get('dets', [])) == sorted(self.detectors):
+        if (sorted(self.state.get('dets', [])) != sorted(self.detectors)
+                or 'max_frame_file' in self.state.keys()):
+            self.state.clear()
+        if self.state:
             self.select_files_manually(self.state[self.detector]['files'])
             self.load_omega_from_file(self.state['omega_from_file'])
             self.file_selection_changed(self.state['manual_file'])
