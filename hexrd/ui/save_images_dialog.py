@@ -21,6 +21,8 @@ class SaveImagesDialog:
         self.ui.detectors.addItems(HexrdConfig().detector_names)
         self.ui.pwd.setText(self.parent_dir)
         self.ui.pwd.setToolTip(self.parent_dir)
+        if HexrdConfig().unagg_images:
+            self.ui.ignore_agg.setEnabled(True)
 
     def setup_connections(self):
         self.ui.single_detector.toggled.connect(self.ui.detectors.setEnabled)
@@ -38,8 +40,8 @@ class SaveImagesDialog:
             self.ui.pwd.setToolTip(self.parent_dir)
 
     def save_images(self):
-        if ImageLoadManager().unaggregated_images:
-            ims_dict = ImageLoadManager().unaggregated_images
+        if self.ui.ignore_agg.isChecked():
+            ims_dict = HexrdConfig().unagg_images
         else:
             ims_dict = HexrdConfig().imageseries_dict
         selected_format = self.ui.format.currentText()
@@ -49,9 +51,9 @@ class SaveImagesDialog:
         for det in dets:
             filename = f'{self.ui.file_stem.text()}_{det}.{selected_format}'
             path = f'{self.parent_dir}/{filename}'
-            if selected_format.startswith('HDF5'):
+            if selected_format.startswith('hdf5'):
                 selected_format = 'hdf5'
-            elif selected_format.startswith('NPZ'):
+            elif selected_format.startswith('npz'):
                 selected_format = 'frame-cache'
 
             kwargs = {}
@@ -74,7 +76,7 @@ class SaveImagesDialog:
                 kwargs['cache_file'] = path
 
             HexrdConfig().save_imageseries(
-              ims_dict.get(det), det, path, selected_format, **kwargs)
+                ims_dict.get(det), det, path, selected_format, **kwargs)
 
     def exec_(self):
         if self.ui.exec_():

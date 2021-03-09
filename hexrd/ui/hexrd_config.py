@@ -1456,7 +1456,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def reset_unagg_imgs(self):
         if self.unagg_images is not None:
             HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
-            self.unagg_images = None
+            self.unaggregated_images = None
 
     def set_unagg_images(self):
-        self.unagg_images = copy.copy(self.imageseries_dict)
+        self.unaggregated_images = copy.copy(self.imageseries_dict)
