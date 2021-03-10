@@ -271,7 +271,9 @@ class MaterialsPanel(QObject):
         HexrdConfig().remove_material(name)
 
     def modify_material_name(self):
-        new_name = self.ui.materials_combo.currentText()
+        combo = self.ui.materials_combo
+
+        new_name = combo.currentText()
         names = HexrdConfig().materials.keys()
 
         if new_name in names:
@@ -280,6 +282,9 @@ class MaterialsPanel(QObject):
 
         old_name = HexrdConfig().active_material_name
         HexrdConfig().rename_material(old_name, new_name)
+
+        # Update the text of the combo box item in the list
+        combo.setItemText(combo.currentIndex(), new_name)
 
     def show_materials_table(self):
         self.materials_table.show()
