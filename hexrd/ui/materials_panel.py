@@ -6,6 +6,8 @@ from PySide2.QtCore import QObject, QSignalBlocker, Qt
 from PySide2.QtGui import QFocusEvent, QKeyEvent
 from PySide2.QtWidgets import QComboBox, QFileDialog, QMenu, QMessageBox
 
+from hexrd.material import Material
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
@@ -18,7 +20,7 @@ from hexrd.ui.ui_loader import UiLoader
 class MaterialsPanel(QObject):
 
     def __init__(self, parent=None):
-        super(MaterialsPanel, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('materials_panel.ui', parent)
@@ -218,6 +220,9 @@ class MaterialsPanel(QObject):
 
     def set_active_material(self):
         HexrdConfig().active_material = self.current_material()
+        self.active_material_changed()
+
+    def active_material_changed(self):
         self.material_editor_widget.material = HexrdConfig().active_material
         self.update_structure_tab()
         self.update_properties_tab()
@@ -226,22 +231,21 @@ class MaterialsPanel(QObject):
         return self.ui.materials_combo.currentText()
 
     def add_material(self):
-        # Copy all of the active material properties to the dialog
-        new_mat = copy.deepcopy(HexrdConfig().active_material)
+        # Create a default material
+        new_mat = Material()
 
         # Get a unique name
         base_name = 'new_material'
-        names = HexrdConfig().materials.keys()
-        for i in range(1, 10000):
-            new_name = base_name + '_' + str(i)
+        names = list(HexrdConfig().materials.keys())
+        for i in range(1, 100000):
+            new_name = f'{base_name}_{i}'
             if new_name not in names:
                 new_mat.name = new_name
                 break
 
         HexrdConfig().add_material(new_name, new_mat)
         HexrdConfig().active_material = new_name
-        self.material_editor_widget.material = new_mat
-        self.update_gui_from_config()
+        self.active_material_changed()
 
     def import_material(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
