@@ -1,4 +1,3 @@
-import copy
 import math
 import os
 
@@ -76,7 +75,7 @@ class MaterialsPanel(QObject):
             self.modify_material_name)
 
         self.material_editor_widget.material_modified.connect(
-            self.material_modified)
+            self.material_edited)
 
         self.ui.show_materials_table.pressed.connect(self.show_materials_table)
         self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
@@ -95,10 +94,10 @@ class MaterialsPanel(QObject):
         self.ui.limit_active.toggled.connect(self.update_material_limits)
         self.ui.limit_active.toggled.connect(self.update_table)
 
+        HexrdConfig().active_material_changed.connect(
+            self.active_material_changed)
         HexrdConfig().active_material_modified.connect(
-            self.update_gui_from_config)
-        HexrdConfig().active_material_modified.connect(
-            self.material_editor_widget.update_gui_from_material)
+            self.active_material_modified)
 
         self.material_structure_editor.material_modified.connect(
             self.material_structure_edited)
@@ -180,7 +179,13 @@ class MaterialsPanel(QObject):
         self.update_table()
         self.update_enable_states()
 
-    def material_modified(self):
+    def active_material_modified(self):
+        self.update_gui_from_config()
+        self.material_editor_widget.update_gui_from_material()
+        self.update_structure_tab()
+        self.update_properties_tab()
+
+    def material_edited(self):
         self.update_table()
         self.update_refinement_options()
         self.update_properties_tab()
@@ -220,10 +225,9 @@ class MaterialsPanel(QObject):
 
     def set_active_material(self):
         HexrdConfig().active_material = self.current_material()
-        self.active_material_changed()
 
     def active_material_changed(self):
-        self.material_editor_widget.material = HexrdConfig().active_material
+        self.update_gui_from_config()
         self.update_structure_tab()
         self.update_properties_tab()
 
@@ -245,7 +249,6 @@ class MaterialsPanel(QObject):
 
         HexrdConfig().add_material(new_name, new_mat)
         HexrdConfig().active_material = new_name
-        self.active_material_changed()
 
     def import_material(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -254,10 +257,8 @@ class MaterialsPanel(QObject):
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
-            HexrdConfig().import_material(selected_file)
-            self.update_gui_from_config()
-            self.update_structure_tab()
-            self.update_properties_tab()
+            new_name = HexrdConfig().import_material(selected_file)
+            HexrdConfig().active_material = new_name
 
     def remove_current_material(self):
         # Don't allow the user to remove all of the materials
@@ -268,10 +269,6 @@ class MaterialsPanel(QObject):
 
         name = self.current_material()
         HexrdConfig().remove_material(name)
-        self.material_editor_widget.material = HexrdConfig().active_material
-        self.update_gui_from_config()
-        self.update_structure_tab()
-        self.update_properties_tab()
 
     def modify_material_name(self):
         new_name = self.ui.materials_combo.currentText()
@@ -283,7 +280,6 @@ class MaterialsPanel(QObject):
 
         old_name = HexrdConfig().active_material_name
         HexrdConfig().rename_material(old_name, new_name)
-        self.update_gui_from_config()
 
     def show_materials_table(self):
         self.materials_table.show()
