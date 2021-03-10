@@ -125,6 +125,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
 
+    """Emitted when a material is renamed"""
+    material_renamed = Signal()
+
+    """Emitted when a material is removed"""
+    material_removed = Signal()
+
     """Emitted when a new raw mask has been created"""
     raw_masks_changed = Signal()
 
@@ -909,7 +915,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 # if we did self.active_material = new_name
                 self.config['materials']['active_material'] = new_name
 
-            self.remove_material(old_name)
+            # Avoid calling self.remove_material() to avoid pruning
+            # overlays and such.
+            del self.config['materials']['materials'][old_name]
+
+            self.material_renamed.emit()
 
     def modify_material(self, name, material):
         if name not in self.materials:
@@ -930,6 +940,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.active_material = list(self.materials.keys())[0]
             else:
                 self.active_material = None
+
+        self.material_removed.emit()
 
     def _materials(self):
         return self.config['materials'].get('materials', {})

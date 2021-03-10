@@ -32,6 +32,8 @@ class MaterialsTable:
         self.ui.table.selectionModel().selectionChanged.connect(
             self.update_selections)
 
+        HexrdConfig().material_renamed.connect(self.update_material_name)
+
     def show(self):
         if not hasattr(self, 'already_shown'):
             self.already_shown = True
