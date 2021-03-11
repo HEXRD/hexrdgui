@@ -194,10 +194,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
         if self.data:
+            self.add_omega_metadata(HexrdConfig().imageseries_dict)
             if 'agg' in self.state and self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
-            else:
-                self.add_omega_metadata(HexrdConfig().imageseries_dict)
 
         self.update_progress(100)
 
@@ -315,6 +314,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
             ims_dict[key] = ImageFileManager().open_file(aggr_img)
+            self.add_omega_metadata(HexrdConfig().imageseries_dict)
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
