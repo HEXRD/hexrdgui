@@ -183,7 +183,7 @@ class ImportDataPanel(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
-            self.enable_widgets(self.ui.outline, self.ui.add_template,
+            self.enable_widgets(self.ui.outline_appearance, self.ui.add_template,
                                 self.ui.transforms, self.ui.add_transform,
                                 enabled=True)
             self.enable_widgets(self.parent().action_show_toolbar,
@@ -355,7 +355,7 @@ class ImportDataPanel(QObject):
         self.ui.detectors.setCurrentIndex(0)
         self.ui.files_label.setText('')
         self.ui.completed_dets.setText('')
-        self.enable_widgets(self.ui.detectors, self.ui.data, self.ui.outline,
+        self.enable_widgets(self.ui.detectors, self.ui.data, self.ui.outline_appearance,
                             self.ui.finalize, enabled=False)
         self.completed_detectors = []
 
