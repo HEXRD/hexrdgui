@@ -360,7 +360,9 @@ class MainWindow(QObject):
         if Path(selected_file).suffix != '.hexrd':
             # if it wasn't in the listing before the QFileDialog, we can
             # be pretty confident that is was create by the QFileDialog.
-            if selected_file not in listing:
+            # On Windows the directory is not created for us, hence the
+            # checking it exists.
+            if selected_file not in listing and Path(selected_file).exists():
                 selected_file = Path(selected_file).rename(
                                     f'{selected_file}.hexrd')
             # else just added the suffix
