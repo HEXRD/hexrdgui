@@ -1,7 +1,6 @@
 from PySide2.QtCore import Signal, QObject
 from PySide2.QtWidgets import QMessageBox
 
-from hexrd.material import _angstroms
 from hexrd import spacegroup
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -37,8 +36,6 @@ class MaterialEditorWidget(QObject):
             widget.currentIndexChanged.connect(self.set_space_group)
             widget.currentIndexChanged.connect(self.enable_lattice_params)
 
-        self.ui.min_d_spacing.valueChanged.connect(self.set_min_d_spacing)
-
         # Flag overlays using this material for an update
         self.material_modified.connect(
             lambda: HexrdConfig().flag_overlay_updates_for_material(
@@ -61,13 +58,6 @@ class MaterialEditorWidget(QObject):
 
         self.set_space_group(sgid)
         self.enable_lattice_params()  # This updates the values also
-
-        prev_blocked = self.ui.min_d_spacing.blockSignals(True)
-        try:
-            self.ui.min_d_spacing.setValue(
-                self.material.dmin.getVal('angstrom'))
-        finally:
-            self.ui.min_d_spacing.blockSignals(prev_blocked)
 
     @property
     def lattice_length_widgets(self):
