@@ -200,6 +200,12 @@ class PolarView:
         panel = self.detectors[det]
         img = self.images_dict[det]
 
+        if isinstance(panel.panel_buffer, np.ndarray):
+            if img.shape == panel.panel_buffer.shape:
+                # Assume it's a mask array
+                img = np.ma.masked_array(img, mask=panel.panel_buffer,
+                                         fill_value=0)
+
         gvec_angs = np.vstack([
                 angpts[1].flatten(),
                 angpts[0].flatten(),
