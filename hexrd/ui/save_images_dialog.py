@@ -49,9 +49,9 @@ class SaveImagesDialog:
         for det in dets:
             filename = f'{self.ui.file_stem.text()}_{det}.{selected_format}'
             path = f'{self.parent_dir}/{filename}'
-            if selected_format.startswith('HDF5'):
+            if selected_format.startswith('hdf5'):
                 selected_format = 'hdf5'
-            elif selected_format.startswith('NPZ'):
+            elif selected_format.startswith('npz'):
                 selected_format = 'frame-cache'
 
             kwargs = {}
