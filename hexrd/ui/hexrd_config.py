@@ -412,10 +412,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
 
-    def load_instrument_config(self, yml_file):
+    def load_instrument_config(self, yml_file, yml_dict=None):
         old_detectors = self.detector_names
-        with open(yml_file, 'r') as f:
-            self.config['instrument'] = yaml.load(f, Loader=NumPyIncludeLoader)
+        if yml_dict is None:
+            with open(yml_file, 'r') as f:
+                self.config['instrument'] = yaml.load(f, Loader=NumPyIncludeLoader)
+        else:
+            self.config['instrument'] = yml_dict
 
         eac = self.euler_angle_convention
         if eac is not None:

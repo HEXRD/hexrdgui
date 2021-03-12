@@ -36,6 +36,7 @@ class ImportDataPanel(QObject):
         self.canvas = parent.image_tab_widget.image_canvases[0]
         self.detector_defaults = {}
         self.cmap = cmap
+        self.detectors = []
 
         self.set_default_color()
         self.setup_connections()
@@ -51,7 +52,6 @@ class ImportDataPanel(QObject):
         self.ui.add_transform.clicked.connect(self.add_transform)
         self.ui.button_box.accepted.connect(self.crop_and_mask)
         self.ui.button_box.rejected.connect(self.clear)
-        # self.ui.save.clicked.connect(self.save_file)
         self.ui.complete.clicked.connect(self.completed)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
@@ -79,8 +79,11 @@ class ImportDataPanel(QObject):
             fname = f'{self.instrument.lower()}_reference_config.yml'
             text = resource_loader.load_resource(hexrd_resources, fname)
         defaults = yaml.load(text, Loader=yaml.FullLoader)
+        self.set_detector_defaults(defaults)
+        self.detector_defaults['default_config'] = defaults
         for det, vals in defaults['detectors'].items():
             self.detector_defaults[det] = vals['transform']
+            self.detectors.append(det)
 
     def instrument_selected(self, idx):
         self.detector_defaults.clear()
@@ -93,8 +96,7 @@ class ImportDataPanel(QObject):
                                 enabled=False)
         else:
             self.get_instrument_defaults()
-            self.set_convention()
-            det_list = list(self.detector_defaults.keys())
+            det_list = list(self.detectors)
             self.load_instrument_config()
             self.ui.detectors.clear()
             self.ui.detectors.addItems(det_list)
@@ -112,24 +114,13 @@ class ImportDataPanel(QObject):
                 overlay['visible'] = False
             HexrdConfig().load_instrument_config(f)
 
-    def set_detector_defaults(self, det):
-        if det not in self.detector_defaults.keys():
-            return
-
-        for key, value in self.detector_defaults[det].items():
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', 'default', 'transform', key, 'value'], value)
+    def set_detector_defaults(self, config):
         eac = {'axes_order': 'zxz', 'extrinsic': False}
-        convert_tilt_convention(HexrdConfig().config['instrument'], None, eac)
-        self.detector_defaults[det]['tilt'] = (
-            HexrdConfig().get_instrument_config_val(
-                ['detectors', 'default', 'transform', 'tilt', 'value']))
-        self.new_config_loaded.emit()
+        convert_tilt_convention(config, None, eac)
 
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)
         self.detector = self.ui.detectors.currentText()
-        self.set_detector_defaults(self.detector)
 
     def update_bbox_height(self, val):
         y0, y1, *x = self.it.bounds
@@ -293,7 +284,6 @@ class ImportDataPanel(QObject):
         self.clear_boundry()
 
     def crop_images(self, img):
-        # FIXME: Need to return cropped and rotated image without re-drawing the canvas
         ilm = ImageLoadManager()
         self.cmap.block_updates(True)
         # Do not re-apply transform if selected in load file dialog
@@ -313,9 +303,6 @@ class ImportDataPanel(QObject):
                             self.ui.file_selection, enabled=True)
         self.enable_widgets(self.ui.outline_position,
                             self.ui.outline_appearance, enabled=False)
-
-    # def save_file(self):
-    #     self.parent().action_save_imageseries.trigger()
 
     def check_for_unsaved_changes(self):
         if self.it is None and self.detector in self.completed_detectors:
@@ -340,30 +327,28 @@ class ImportDataPanel(QObject):
         self.completed_detectors = []
 
     def completed(self):
+        self.set_convention()
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
         files = []
+        detectors = self.detector_defaults['default_config'].get('detectors', {})
+        not_set = [d for d in detectors if d not in self.completed_detectors]
+        for det in not_set:
+            del(detectors[det])
+
         for key, val in self.edited_images.items():
-            HexrdConfig().add_detector(key, 'default')
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'pixels', 'columns', 'value'],
-                int(val['width']))
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'pixels', 'rows', 'value'],
-                int(val['height']))
+            det = detectors.setdefault(key, {})
+            pixels = det.setdefault('pixels', {})
+            pixels['columns'] = val['width']
+            pixels['rows'] = val['height']
+            transform = det.setdefault('transform', {})
             *zx, z = self.detector_defaults[key]['tilt']
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'transform', 'tilt', 'value'],
-                [*zx, (z + float(val['tilt']))])
-            translation = self.detector_defaults[key]['translation']
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'transform', 'translation', 'value'],
-                translation)
-            # TODO: Fix crop images function
+            transform['tilt'] = [*zx, (z + float(val['tilt']))]
+            transform['translation'] = self.detector_defaults[key]['translation']
             files.append([val['img']])
-        HexrdConfig().remove_detector('default')
-        self.new_config_loaded.emit()
+        HexrdConfig().load_instrument_config(
+            yml_file=None, yml_dict=self.detector_defaults['default_config'])
 
         ImageLoadManager().read_data(files, parent=self.ui)
 
