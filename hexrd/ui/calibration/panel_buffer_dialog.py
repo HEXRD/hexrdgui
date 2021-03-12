@@ -133,7 +133,7 @@ class PanelBufferDialog(QObject):
 
             if isinstance(buffer, np.ndarray):
                 self.mode = CONFIG_MODE_NUMPY
-            else:
+            elif isinstance(buffer, list):
                 self.mode = CONFIG_MODE_BORDER
                 if np.isscalar(buffer):
                     buffer = [buffer]*2

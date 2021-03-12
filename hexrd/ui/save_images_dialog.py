@@ -44,7 +44,7 @@ class SaveImagesDialog:
             ims_dict = HexrdConfig().unagg_images
         else:
             ims_dict = HexrdConfig().imageseries_dict
-        selected_format = self.ui.format.currentText()
+        selected_format = self.ui.format.currentText().lower()
         dets = HexrdConfig().detector_names
         if self.ui.single_detector.isChecked():
             dets = [self.ui.detectors.currentText()]

@@ -360,7 +360,9 @@ class MainWindow(QObject):
         if Path(selected_file).suffix != '.hexrd':
             # if it wasn't in the listing before the QFileDialog, we can
             # be pretty confident that is was create by the QFileDialog.
-            if selected_file not in listing:
+            # On Windows the directory is not created for us, hence the
+            # checking it exists.
+            if selected_file not in listing and Path(selected_file).exists():
                 selected_file = Path(selected_file).rename(
                                     f'{selected_file}.hexrd')
             # else just added the suffix
@@ -491,8 +493,6 @@ class MainWindow(QObject):
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_materials(selected_file)
-            self.materials_panel.update_gui_from_config()
-            self.materials_panel.update_structure_tab()
 
     def on_action_save_imageseries_triggered(self):
         if not HexrdConfig().has_images():
@@ -562,7 +562,7 @@ class MainWindow(QObject):
             self._wppf_runner.run()
         except Exception as e:
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
-            return
+            raise
 
     def update_color_map_bounds(self):
         self.color_map_editor.update_bounds(
