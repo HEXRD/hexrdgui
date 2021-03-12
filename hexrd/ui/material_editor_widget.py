@@ -14,7 +14,7 @@ class MaterialEditorWidget(QObject):
     material_modified = Signal()
 
     def __init__(self, material, parent=None):
-        super(MaterialEditorWidget, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('material_editor_widget.ui', parent)

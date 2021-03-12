@@ -119,8 +119,17 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the threshold mask status changes via mask manager"""
     mgr_threshold_mask_changed = Signal(bool)
 
+    """Emitted when the active material is changed to a different material"""
+    active_material_changed = Signal()
+
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
+
+    """Emitted when a material is renamed"""
+    material_renamed = Signal()
+
+    """Emitted when a material is removed"""
+    material_removed = Signal()
 
     """Emitted when a new raw mask has been created"""
     raw_masks_changed = Signal()
@@ -483,8 +492,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         material = Material(name, f, kev=beam_energy)
         self.add_material(name, material)
 
-        # Make it the active material
-        self.active_material = name
+        return name
 
     def set_live_update(self, status):
         self.live_update = status
@@ -903,9 +911,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
             if self.active_material_name == old_name:
                 # Change the active material before removing the old one
-                self.active_material = new_name
+                # Set the dict directly to bypass the updates that occur
+                # if we did self.active_material = new_name
+                self.config['materials']['active_material'] = new_name
 
-            self.remove_material(old_name)
+            # Avoid calling self.remove_material() to avoid pruning
+            # overlays and such.
+            del self.config['materials']['materials'][old_name]
+
+            self.material_renamed.emit()
 
     def modify_material(self, name, material):
         if name not in self.materials:
@@ -926,6 +940,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.active_material = list(self.materials.keys())[0]
             else:
                 self.active_material = None
+
+        self.material_removed.emit()
 
     def _materials(self):
         return self.config['materials'].get('materials', {})
@@ -955,6 +971,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
+        self.active_material_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
