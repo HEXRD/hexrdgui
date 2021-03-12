@@ -41,7 +41,7 @@ class ImportDataPanel(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.instruments.currentIndexChanged.connect(
+        self.ui.instruments.currentTextChanged.connect(
             self.instrument_selected)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
         self.ui.load.clicked.connect(self.load_images)
@@ -82,10 +82,9 @@ class ImportDataPanel(QObject):
         for det, vals in defaults['detectors'].items():
             self.detector_defaults[det] = vals['transform']
 
-    def instrument_selected(self, idx):
+    def instrument_selected(self, instrument):
         self.detector_defaults.clear()
-        instruments = {1: 'TARDIS', 2: 'PXRDIP'}
-        self.instrument = instruments.get(idx, None)
+        self.instrument = instrument
 
         if self.instrument is None:
             self.ui.detectors.setCurrentIndex(0)

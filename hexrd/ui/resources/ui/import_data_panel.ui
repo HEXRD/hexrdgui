@@ -68,6 +68,11 @@
             <string>PXRDIP</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>BBXRD</string>
+           </property>
+          </item>
          </widget>
         </item>
        </layout>
