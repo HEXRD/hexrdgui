@@ -180,8 +180,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                     dirs = os.path.dirname(self.files[i][0])
                     options = {
                         'empty-frames': self.data.get('empty_frames', 0),
-                        'max-file-frames': self.data.get('max_frame_file', 0),
-                        'max-total-frames': self.data.get('max_frames', 0)
+                        'max-file-frames': self.data.get('max_file_frames', 0),
+                        'max-total-frames': self.data.get(
+                            'max_total_frames', 0),
                     }
                     ims = ImageFileManager().open_directory(dirs, self.files[i], options)
                     HexrdConfig().imageseries_dict[det] = ims
@@ -322,8 +323,8 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
-        for key in ims_dict.keys():
-            nframes = self.data['total_frames'][0] * len(files[0])
+        for key, ims in ims_dict.items():
+            nframes = len(ims)
             omw = imageseries.omega.OmegaWedges(nframes)
             if 'wedges' in self.data:
                 for wedge in self.data['wedges']:
