@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>635</width>
-    <height>393</height>
+    <height>451</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
@@ -186,6 +186,13 @@
      </property>
     </widget>
    </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QCheckBox" name="display_wppf_plot">
+     <property name="text">
+      <string>Display WPPF plot in polar view?</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
@@ -197,6 +204,7 @@
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
   <tabstop>select_experiment_file_button</tabstop>
+  <tabstop>display_wppf_plot</tabstop>
   <tabstop>table</tabstop>
   <tabstop>reset_table_to_defaults</tabstop>
  </tabstops>

@@ -684,6 +684,9 @@ class ImageCanvas(FigureCanvas):
     def update_wppf_plot(self):
         self.clear_wppf_plot()
 
+        if not HexrdConfig().display_wppf_plot:
+            return
+
         wppf_data = HexrdConfig().wppf_data
         axis = self.azimuthal_integral_axis
         line = self.azimuthal_line_artist
