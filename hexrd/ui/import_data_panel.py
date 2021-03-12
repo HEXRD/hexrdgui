@@ -118,23 +118,17 @@ class ImportDataPanel(QObject):
 
         for key, value in self.detector_defaults[det].items():
             HexrdConfig().set_instrument_config_val(
-                ['detectors', det, 'transform', key, 'value'], value)
+                ['detectors', 'default', 'transform', key, 'value'], value)
         eac = {'axes_order': 'zxz', 'extrinsic': False}
         convert_tilt_convention(HexrdConfig().config['instrument'], None, eac)
         self.detector_defaults[det]['tilt'] = (
             HexrdConfig().get_instrument_config_val(
-                ['detectors', det, 'transform', 'tilt', 'value']))
+                ['detectors', 'default', 'transform', 'tilt', 'value']))
         self.new_config_loaded.emit()
 
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)
         self.detector = self.ui.detectors.currentText()
-        old_det = HexrdConfig().detector_names[0]
-
-        self.cmap.block_updates(True)
-        HexrdConfig().rename_detector(old_det, self.detector)
-        self.cmap.block_updates(False)
-
         self.set_detector_defaults(self.detector)
 
     def update_bbox_height(self, val):
@@ -195,7 +189,7 @@ class ImportDataPanel(QObject):
 
         self.ui.transforms.setCurrentIndex(0)
 
-        img = HexrdConfig().image(self.detector, 0)
+        img = HexrdConfig().image('default', 0)
         if self.detector in self.edited_images.keys():
             # This transform is being done post-processing
             self.edited_images[self.detector]['img'] = img
@@ -221,11 +215,10 @@ class ImportDataPanel(QObject):
 
     def add_template(self):
         self.it = InteractiveTemplate(
-            HexrdConfig().image(self.detector, 0), self.parent())
+            HexrdConfig().image('default', 0), self.parent())
         self.it.create_shape(
             module=hexrd_resources,
-            file_name=f'{self.instrument}_{self.detector}_bnd.txt',
-            det=self.detector)
+            file_name=f'{self.instrument}_{self.detector}_bnd.txt')
         self.update_template_style()
         if self.instrument == 'PXRDIP':
             self.it.rotate_shape(angle=90)
@@ -309,7 +302,7 @@ class ImportDataPanel(QObject):
         if self.instrument == 'PXRDIP':
             ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
             ilm.begin_processing(postprocess=True)
-            img = HexrdConfig().image(self.detector, 0)
+            img = HexrdConfig().image('default', 0)
         self.cmap.block_updates(False)
 
         return img
@@ -351,7 +344,6 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
-        HexrdConfig().rename_detector(self.detector, 'default')
         for key, val in self.edited_images.items():
             HexrdConfig().add_detector(key, 'default')
             HexrdConfig().set_instrument_config_val(
@@ -368,6 +360,7 @@ class ImportDataPanel(QObject):
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'transform', 'translation', 'value'],
                 translation)
+            # TODO: Fix crop images function
             files.append([val['img']])
         HexrdConfig().remove_detector('default')
         self.new_config_loaded.emit()

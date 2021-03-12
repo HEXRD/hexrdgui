@@ -30,10 +30,10 @@ class InteractiveTemplate:
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
-    def create_shape(self, module, file_name, det):
+    def create_shape(self, module, file_name):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
-        verts = self.panels[det].cartToPixel(data)
+        verts = self.panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
         self.center = self.get_midpoint()
