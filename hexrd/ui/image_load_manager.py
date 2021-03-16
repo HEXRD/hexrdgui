@@ -175,7 +175,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.parent_dir = HexrdConfig().images_dir
             det_names = HexrdConfig().detector_names
 
-            if len(self.files[0]) > 1:
+            if len(self.files[0]) > 1 or self.data is not None:
                 for i, det in enumerate(det_names):
                     dirs = os.path.dirname(self.files[i][0])
                     options = {
