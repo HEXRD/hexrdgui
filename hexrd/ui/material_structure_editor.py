@@ -264,9 +264,9 @@ class MaterialStructureEditor(QObject):
         # Re-create the unit cell from scratch. This is easier to do
         # right now than setting the variables and figuring out which
         # properties need to be updated and in what order...
-        mat.unitcell = unitcell(mat._lparms, mat.sgnum, mat._atomtype,
-                                mat._atominfo, mat._U, mat._dmin.getVal('nm'),
-                                mat._beamEnergy.value, mat._sgsetting)
+        mat._unitcell = unitcell(mat._lparms, mat.sgnum, mat._atomtype,
+                                 mat._atominfo, mat._U, mat._dmin.getVal('nm'),
+                                 mat._beamEnergy.value, mat._sgsetting)
 
         # Set the stiffness back on it if it existed
         if hasattr(old_unitcell, 'stiffness'):
