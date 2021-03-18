@@ -78,8 +78,7 @@ class LoadPanel(QObject):
 
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.config_changed)
-        HexrdConfig().load_panel_state_reset.connect(
-            self.setup_processing_options)
+        HexrdConfig().load_panel_state_reset.connect(self.config_changed)
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
@@ -147,12 +146,11 @@ class LoadPanel(QObject):
         self.ui.img_directory.setText(str(Path(self.parent_dir).parent))
 
     def config_changed(self):
-        if HexrdConfig().detector_names != self.dets:
-            self.detectors_changed()
-            self.ui.file_options.setRowCount(0)
-            self.reset_data()
-            self.enable_read()
-            self.setup_gui()
+        self.setup_gui()
+        self.detectors_changed()
+        self.ui.file_options.setRowCount(0)
+        self.reset_data()
+        self.enable_read()
 
     def switch_detector(self):
         self.idx = self.ui.detector.currentIndex()
@@ -472,15 +470,18 @@ class LoadPanel(QObject):
         self.ui.file_options.blockSignals(False)
 
     def confirm_omega_range(self):
-        omega_range = abs(self.omega_max[0] - self.omega_min[0])
-        if not (r := omega_range <= MAXIMUM_OMEGA_RANGE):
-            msg = f'The omega range is greater than 360°.'
-            QMessageBox.warning(self.ui, 'HEXRD', msg)
-        return r
+        files = self.yml_files if self.ext in YAML_EXTS else self.files
+        omegas_set = len(self.omega_max) == len(self.omega_min) == len(files)
+        omega_range = abs(max(self.omega_max) - min(self.omega_min))
+        return omegas_set and omega_range <= MAXIMUM_OMEGA_RANGE
 
     # Process files
     def read_data(self):
         if not self.confirm_omega_range():
+            msg = (
+                f'All omegas must be set and the '
+                f'range must be no greater than 360°.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
         data = {
             'omega_min': self.omega_min,

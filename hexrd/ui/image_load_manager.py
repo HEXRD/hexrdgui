@@ -175,7 +175,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.parent_dir = HexrdConfig().images_dir
             det_names = HexrdConfig().detector_names
 
-            if len(self.files[0]) > 1:
+            if len(self.files[0]) > 1 or self.data is not None:
                 for i, det in enumerate(det_names):
                     dirs = os.path.dirname(self.files[i][0])
                     options = {
@@ -258,7 +258,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                             and self.empty_frames == 0):
                         msg = ('ERROR: \n No empty frames set. '
                                + 'No dark subtracion will be performed.')
-                        raise NoEmptyFramesException(msg)
+                        QMessageBox.warning(None, 'HEXRD', msg)
                     else:
                         op = self.get_dark_aggr_op(ims_dict[key], idx)
                         ops[key] = op
@@ -269,11 +269,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # First perform dark aggregation if we need to
         dark_aggr_ops = {}
         if 'dark' in self.state:
-            try:
-                dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
-            except NoEmptyFramesException as ex:
-                QMessageBox.warning(None, 'HEXRD', str(ex))
-                return
+            dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
 
         # Now run the dark aggregation
         dark_images = {}
