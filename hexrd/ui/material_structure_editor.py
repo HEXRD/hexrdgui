@@ -259,28 +259,9 @@ class MaterialStructureEditor(QObject):
                 U_array.append(atom['U'])
 
         mat = self.material
-        mat._atominfo = np.array(info_array)
-        mat._atomtype = np.array(type_array)
-        mat._U = np.array(U_array)
-
-        old_unitcell = mat.unitcell
-
-        # Re-create the unit cell from scratch. This is easier to do
-        # right now than setting the variables and figuring out which
-        # properties need to be updated and in what order...
-        mat._unitcell = unitcell(mat._lparms, mat.sgnum, mat._atomtype,
-                                 mat._atominfo, mat._U, mat._dmin.getVal('nm'),
-                                 mat._beamEnergy.value, mat._sgsetting)
-
-        # Set the stiffness back on it if it existed
-        if hasattr(old_unitcell, 'stiffness'):
-            mat.unitcell.stiffness = old_unitcell.stiffness
-
-        # Compute the density
-        mat.unitcell.CalcDensity()
-
-        # Update the structure factor of the PData
-        mat.update_structure_factor()
+        mat.atominfo = np.array(info_array)
+        mat.atomtype = np.array(type_array)
+        mat.U = np.array(U_array)
 
         self.material_modified.emit()
 
