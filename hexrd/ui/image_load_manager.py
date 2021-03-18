@@ -175,19 +175,20 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.parent_dir = HexrdConfig().images_dir
             det_names = HexrdConfig().detector_names
 
-            if len(self.files[0]) > 1 or self.data is not None:
+            options = {
+                'empty-frames': self.data.get('empty_frames', 0),
+                'max-file-frames': self.data.get('max_file_frames', 0),
+                'max-total-frames': self.data.get(
+                    'max_total_frames', 0),
+            }
+
+            if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
                     dirs = os.path.dirname(self.files[i][0])
-                    options = {
-                        'empty-frames': self.data.get('empty_frames', 0),
-                        'max-file-frames': self.data.get('max_file_frames', 0),
-                        'max-total-frames': self.data.get(
-                            'max_total_frames', 0),
-                    }
                     ims = ImageFileManager().open_directory(dirs, self.files[i], options)
                     HexrdConfig().imageseries_dict[det] = ims
             else:
-                ImageFileManager().load_images(det_names, self.files)
+                ImageFileManager().load_images(det_names, self.files, options)
         elif self.unaggregated_images is not None:
             HexrdConfig().imageseries_dict = copy.copy(self.unaggregated_images)
             self.reset_unagg_imgs()
