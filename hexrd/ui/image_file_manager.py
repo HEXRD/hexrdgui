@@ -48,13 +48,13 @@ class ImageFileManager(metaclass=Singleton):
             ims = imageseries.open(None, 'array', data=data)
             HexrdConfig().imageseries_dict[det] = ims
 
-    def load_images(self, detectors, file_names):
+    def load_images(self, detectors, file_names, options=None):
         HexrdConfig().imageseries_dict.clear()
         for name, f in zip(detectors, file_names):
             try:
                 if isinstance(f, list):
                     f = f[0]
-                ims = self.open_file(f)
+                ims = self.open_file(f, options)
                 HexrdConfig().imageseries_dict[name] = ims
             except (Exception, IOError) as error:
                 msg = ('ERROR - Could not read file: \n' + str(error))
@@ -76,7 +76,7 @@ class ImageFileManager(metaclass=Singleton):
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return
 
-    def open_file(self, f):
+    def open_file(self, f, options=None):
         # f could be either a file or numpy array
         ext = os.path.splitext(f)[1] if isinstance(f, str) else None
         if ext is None:
@@ -109,7 +109,7 @@ class ImageFileManager(metaclass=Singleton):
             }
             input_dict['image-files']['directory'] = os.path.dirname(f)
             input_dict['image-files']['files'] = os.path.basename(f)
-            input_dict['options'] = {}
+            input_dict['options'] = {} if options is None else options
             input_dict['meta'] = {}
             temp = tempfile.NamedTemporaryFile(delete=False)
             try:
