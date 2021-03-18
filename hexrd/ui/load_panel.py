@@ -471,7 +471,7 @@ class LoadPanel(QObject):
 
     def confirm_omega_range(self):
         files = self.yml_files if self.ext in YAML_EXTS else self.files
-        omegas_set = len(self.omega_max) == len(self.omega_min) == len(files)
+        omegas_set = len(self.omega_max) == len(self.omega_min) == len(files[0])
         omega_range = abs(max(self.omega_max) - min(self.omega_min))
         return omegas_set and omega_range <= MAXIMUM_OMEGA_RANGE
 
