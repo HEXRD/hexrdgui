@@ -601,7 +601,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 else:
                     statuses.append(status)
 
-        return np.asarray(statuses)
+        return np.asarray(statuses, dtype=bool)
 
     def set_statuses_from_prev_iconfig(self, prev_iconfig):
         # This function seems to be much faster than
