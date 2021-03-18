@@ -1,5 +1,4 @@
 import copy
-from functools import reduce
 import math
 
 from PySide2.QtCore import QThreadPool, QTimer
@@ -27,7 +26,7 @@ class ImageCanvas(FigureCanvas):
 
     def __init__(self, parent=None, image_names=None):
         self.figure = Figure()
-        super(ImageCanvas, self).__init__(self.figure)
+        super().__init__(self.figure)
 
         self.raw_axes = []  # only used for raw currently
         self.axes_images = []
@@ -40,6 +39,7 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.wppf_plot = None
+        self.auto_picked_data_artists = []
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -67,6 +67,8 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
         HexrdConfig().rerender_wppf.connect(self.draw_wppf)
+        HexrdConfig().rerender_auto_picked_data.connect(
+            self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
         HexrdConfig().polar_masks_changed.connect(self.update_polar)
 
@@ -97,6 +99,10 @@ class ImageCanvas(FigureCanvas):
         if self.wppf_plot:
             self.wppf_plot.remove()
             self.wppf_plot = None
+
+    def clear_auto_picked_data_artists(self):
+        while self.auto_picked_data_artists:
+            self.auto_picked_data_artists.pop(0).remove()
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -149,6 +155,7 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = raw_iviewer()
         # Set the detectors to draw
         self.iviewer.detectors = [x.get_title() for x in self.raw_axes]
+        self.update_auto_picked_data()
         self.update_overlays()
 
         msg = 'Image view loaded!'
@@ -384,6 +391,10 @@ class ImageCanvas(FigureCanvas):
         self.update_wppf_plot()
         self.draw()
 
+    def draw_auto_picked_data(self):
+        self.update_auto_picked_data()
+        self.draw()
+
     def extract_ring_coords(self, data):
         if self.mode == ViewType.cartesian:
             # These are in x, y coordinates. Do not swap them.
@@ -473,7 +484,7 @@ class ImageCanvas(FigureCanvas):
             self.figure.clear()
             self.axes_images.clear()
 
-        # Run the calibration in a background thread
+        # Run the view generation in a background thread
         worker = AsyncWorker(cartesian_viewer)
         self.thread_pool.start(worker)
 
@@ -507,6 +518,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.autoscale(False)
             self.figure.tight_layout()
 
+        self.update_auto_picked_data()
         self.update_overlays()
         self.draw_detector_borders()
 
@@ -527,7 +539,7 @@ class ImageCanvas(FigureCanvas):
 
         self.polar_res_config = polar_res_config.copy()
 
-        # Run the calibration in a background thread
+        # Run the view generation in a background thread
         worker = AsyncWorker(polar_viewer)
         self.thread_pool.start(worker)
 
@@ -604,6 +616,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.autoscale_view()
             self.figure.tight_layout()
 
+        self.update_auto_picked_data()
         self.update_overlays()
         self.draw_detector_borders()
 
@@ -699,6 +712,35 @@ class ImageCanvas(FigureCanvas):
             'edgecolors': 'r'
         }
         self.wppf_plot = axis.scatter(*wppf_data, **style)
+
+    def detector_axis(self, detector_name):
+        if self.mode in (ViewType.cartesian, ViewType.polar):
+            # Only one axis for all detectors...
+            return self.axis
+        elif self.mode == ViewType.raw:
+            titles = [x.get_title() for x in self.raw_axes]
+            if detector_name not in titles:
+                return None
+            return self.raw_axes[titles.index(detector_name)]
+
+    def update_auto_picked_data(self):
+        self.clear_auto_picked_data_artists()
+
+        xys = HexrdConfig().auto_picked_data
+        if xys is None:
+            return
+
+        for det_key, panel in self.iviewer.instr.detectors.items():
+            axis = self.detector_axis(det_key)
+            if axis is None:
+                # Probably, we are in tabbed view, and this is not the
+                # right canvas for this detector...
+                continue
+
+            transform_func = transform_from_plain_cartesian_func(self.mode)
+            rijs = transform_func(xys[det_key], panel, self.iviewer)
+            artist, = axis.plot(rijs[:, 0], rijs[:, 1], 'm+')
+            self.auto_picked_data_artists.append(artist)
 
     def on_detector_transform_modified(self, det):
         if self.mode is None:
@@ -802,3 +844,33 @@ class ImageCanvas(FigureCanvas):
 
         fig.canvas.draw()
         fig.show()
+
+
+def transform_from_plain_cartesian_func(mode):
+    # Get a function to transform from plain cartesian coordinates
+    # to whatever type of view we are in.
+
+    # The functions all have arguments like the following:
+    # xys, panel, iviewer
+
+    def cart_to_pixel(xys, panel, iviewer):
+        return panel.cartToPixel(xys)[:, [1, 0]]
+
+    def transform_cart(xys, panel, iviewer):
+        dplane = iviewer.dplane
+        return panel.map_to_plane(xys, dplane.rmat, dplane.tvec)
+
+    def cart_to_angles(xys, panel, iviewer):
+        ang_crds, _ = panel.cart_to_angles(xys, tvec_c=iviewer.instr.tvec)
+        return np.degrees(ang_crds)
+
+    funcs = {
+        ViewType.raw: cart_to_pixel,
+        ViewType.cartesian: transform_cart,
+        ViewType.polar: cart_to_angles,
+    }
+
+    if mode not in funcs:
+        raise Exception(f'Unknown mode: {mode}')
+
+    return funcs[mode]
