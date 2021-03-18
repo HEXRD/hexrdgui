@@ -191,6 +191,7 @@ class MaterialsPanel(QObject):
         self.update_properties_tab()
 
     def material_structure_edited(self):
+        self.update_table()
         self.update_properties_tab()
 
     def update_structure_tab(self):
