@@ -26,7 +26,7 @@ class MaterialsPanel(QObject):
 
         m = HexrdConfig().active_material
         self.material_editor_widget = MaterialEditorWidget(m, self.ui)
-        self.materials_table = MaterialsTable(self.ui)
+        self.materials_table = MaterialsTable(m, parent=self.ui)
 
         self.ui.material_editor_layout.addWidget(
             self.material_editor_widget.ui)
@@ -228,6 +228,7 @@ class MaterialsPanel(QObject):
         HexrdConfig().active_material = self.current_material()
 
     def active_material_changed(self):
+        self.materials_table.material = HexrdConfig().active_material
         self.update_gui_from_config()
         self.update_structure_tab()
         self.update_properties_tab()
