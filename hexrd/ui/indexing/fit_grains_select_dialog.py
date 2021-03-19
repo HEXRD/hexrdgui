@@ -63,7 +63,7 @@ class FitGrainsSelectDialog(QObject):
             self.grains_table = self.indexing_runner.grains_table
         elif self.method == 'estimate':
             # It is a grains.out file
-            self.grains_table = np.loadtxt(self.file_name)
+            self.grains_table = np.loadtxt(self.file_name, ndmin=2)
         elif self.method == 'orientations':
             # It is an accepted_orientations*.dat file
             qbar = np.loadtxt(self.file_name, ndmin=2).T
