@@ -11,34 +11,10 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="3" column="1">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="method">
-     <item>
-      <property name="text">
-       <string>Load</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Generate</string>
-      </property>
-     </item>
-    </widget>
-   </item>
    <item row="2" column="0" colspan="2">
     <widget class="QTabWidget" name="tab_widget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="load_tab">
       <attribute name="title">
@@ -62,9 +38,6 @@
        <string>Generate</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="1">
-        <widget class="QComboBox" name="material"/>
-       </item>
        <item row="5" column="0">
         <widget class="QLabel" name="bin_frames_label">
          <property name="text">
@@ -92,13 +65,6 @@
          </property>
          <property name="value">
           <double>250.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="material_label">
-         <property name="text">
-          <string>Material:</string>
          </property>
         </widget>
        </item>
@@ -137,14 +103,48 @@
      </property>
     </widget>
    </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>Load</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Generate</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="material_label">
+     <property name="text">
+      <string>Selected Material:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="material"/>
+   </item>
   </layout>
  </widget>
  <tabstops>
+  <tabstop>material</tabstop>
   <tabstop>method</tabstop>
   <tabstop>tab_widget</tabstop>
   <tabstop>file_name</tabstop>
   <tabstop>select_file_button</tabstop>
-  <tabstop>material</tabstop>
   <tabstop>choose_hkls</tabstop>
   <tabstop>apply_threshold</tabstop>
   <tabstop>threshold</tabstop>
