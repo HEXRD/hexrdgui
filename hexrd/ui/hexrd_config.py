@@ -73,6 +73,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when wppf needs to be re-rendered"""
     rerender_wppf = Signal()
 
+    """Emitted when auto picked data needs to be re-rendered"""
+    rerender_auto_picked_data = Signal()
+
     """Emitted for any config changes EXCEPT detector transform changes
 
     Indicates that the image needs to be re-drawn from scratch.
@@ -167,6 +170,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None
+        self._auto_picked_data = None
         self.workflow = None
         self.last_azimuthal_integral_data = None
         self._threshold_data = {}
@@ -597,7 +601,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 else:
                     statuses.append(status)
 
-        return np.asarray(statuses)
+        return np.asarray(statuses, dtype=bool)
 
     def set_statuses_from_prev_iconfig(self, prev_iconfig):
         # This function seems to be much faster than
@@ -1475,3 +1479,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
             settings = HexrdConfig().config['calibration']['wppf']
             settings['display_plot'] = b
             self.rerender_wppf.emit()
+
+    @property
+    def auto_picked_data(self):
+        return self._auto_picked_data
+
+    @auto_picked_data.setter
+    def auto_picked_data(self, data):
+        self._auto_picked_data = data
+        self.rerender_auto_picked_data.emit()

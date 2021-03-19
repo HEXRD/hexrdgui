@@ -20,7 +20,7 @@ from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
-from hexrd.ui.calibration.powder_calibration import run_powder_calibration
+from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
@@ -36,7 +36,6 @@ from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
-from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.save_images_dialog import SaveImagesDialog
 from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
@@ -697,31 +696,9 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        d = PowderCalibrationDialog(self.ui)
-        if not d.exec_():
-            return
-
-        HexrdConfig().emit_update_status_bar('Running powder calibration...')
-
-        # Run the calibration in a background thread
-        worker = AsyncWorker(run_powder_calibration)
-        self.thread_pool.start(worker)
-
-        # We currently don't have any progress updates, so make the
-        # progress bar indeterminate.
-        self.progress_dialog.setRange(0, 0)
-        self.progress_dialog.setWindowTitle('Calibration Running')
-
-        # Get the results and close the progress dialog when finished
-        worker.signals.result.connect(self.finish_powder_calibration)
-        worker.signals.finished.connect(self.progress_dialog.accept)
-        msg = 'Powder calibration finished!'
-
-        def callback():
-            HexrdConfig().emit_update_status_bar(msg)
-
-        worker.signals.finished.connect(callback)
-        self.progress_dialog.exec_()
+        self._powder_runner = PowderRunner(self.ui)
+        self._powder_runner.finished.connect(self.finish_powder_calibration)
+        self._powder_runner.run()
 
     def finish_powder_calibration(self):
         self.update_config_gui()

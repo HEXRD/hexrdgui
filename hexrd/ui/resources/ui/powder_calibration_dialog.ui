@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>302</width>
-    <height>140</height>
+    <height>163</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -26,18 +26,18 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="eta_label">
-       <property name="text">
-        <string>η tolerance:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="tth_label">
-       <property name="text">
-        <string>2θ tolerance:</string>
-       </property>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="peak_fit_type">
+       <item>
+        <property name="text">
+         <string>PVoigt</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Gaussian</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item row="0" column="1">
@@ -53,24 +53,31 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QComboBox" name="peak_fit_type">
-       <item>
-        <property name="text">
-         <string>PVoigt</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Gaussian</string>
-        </property>
-       </item>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Peak fitting type:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="tth_label">
+       <property name="text">
+        <string>2θ tolerance:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="eta_label">
+       <property name="text">
+        <string>η tolerance:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="2">
+      <widget class="QCheckBox" name="robust">
+       <property name="text">
+        <string>Use robust optimization?</string>
        </property>
       </widget>
      </item>
@@ -92,6 +99,7 @@
   <tabstop>tth_tolerance</tabstop>
   <tabstop>eta_tolerance</tabstop>
   <tabstop>peak_fit_type</tabstop>
+  <tabstop>robust</tabstop>
  </tabstops>
  <resources/>
  <connections>

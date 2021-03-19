@@ -2,6 +2,7 @@ powder:
   tth_tol: 0.2
   eta_tol: 2.0
   pk_type: 'pvoigt'
+  use_robust_optimization: false
 crystal:
   grain_id: 2
   inv_stretch: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
