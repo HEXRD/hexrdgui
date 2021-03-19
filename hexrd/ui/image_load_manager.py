@@ -312,7 +312,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
         for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
             ims_dict[key] = ImageFileManager().open_file(aggr_img)
-            self.add_omega_metadata(HexrdConfig().imageseries_dict)
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
