@@ -1,5 +1,7 @@
 import copy
 
+import numpy as np
+
 from hexrd.config.root import RootConfig
 from hexrd.config.material import MaterialConfig
 from hexrd.config.instrument import Instrument as InstrumentConfig
@@ -42,6 +44,9 @@ def create_indexing_config():
     mconfig = MaterialConfig(config)
     mconfig.materials = HexrdConfig().materials
     config.material = mconfig
+
+    # Set this so the config won't over-write our tThWidth
+    config.set('material:tth_width', np.degrees(material.planeData.tThWidth))
 
     # Use unaggregated images if possible
     ims_dict = ImageLoadManager().unaggregated_images
