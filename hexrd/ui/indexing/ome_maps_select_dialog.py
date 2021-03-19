@@ -5,8 +5,8 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.ui import enter_key_filter
 
-from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -145,7 +145,8 @@ class OmeMapsSelectDialog(QObject):
         maps_config['file'] = self.file_name
         maps_config['threshold'] = self.threshold
         maps_config['bin_frames'] = self.bin_frames
-        maps_config['_selected_material'] = self.selected_material
+
+        indexing_config['_selected_material'] = self.selected_material
 
     def update_gui(self):
         blockers = [QSignalBlocker(x) for x in self.widgets]  # noqa: F841
@@ -158,7 +159,8 @@ class OmeMapsSelectDialog(QObject):
         self.ui.file_name.setText(file_name)
         self.threshold = maps_config['threshold']
         self.ui.bin_frames.setValue(maps_config['bin_frames'])
-        self.selected_material = maps_config.get('_selected_material')
+
+        self.selected_material = indexing_config.get('_selected_material')
 
         self.update_method_tab()
 
