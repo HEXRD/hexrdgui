@@ -15,13 +15,19 @@ def create_indexing_config():
 
     # Make a copy to modify
     indexing_config = copy.deepcopy(HexrdConfig().indexing_config)
-    material = HexrdConfig().active_material
     omaps = indexing_config['find_orientations']['orientation_maps']
+    available_materials = list(HexrdConfig().materials.keys())
+    selected_material = omaps.get('_selected_material')
+
+    if selected_material not in available_materials:
+        raise Exception(f'Selected material {selected_material} not available')
+
+    material = HexrdConfig().material(selected_material)
     omaps['active_hkls'] = list(range(len(material.planeData.getHKLs())))
 
     # Set the active material on the config
     tmp = indexing_config.setdefault('material', {})
-    tmp['active'] = HexrdConfig().active_material_name
+    tmp['active'] = material.name
 
     # Create the root config from the indexing config dict
     config = RootConfig(indexing_config)
