@@ -65,12 +65,18 @@ class InstrumentViewer:
         self.img = self.pv.img
 
     def write_image(self, filename='polar_image.npz'):
+        azimuthal_integration = HexrdConfig().last_azimuthal_integral_data
+
+        # Re-format the data so that it is in 2 columns
+        azimuthal_integration = np.array(azimuthal_integration).T
+
         # Prepare the data to write out
         data = {
             'tth_coordinates': self.angular_grid[1],
             'eta_coordinates': self.angular_grid[0],
             'intensities': self.img,
-            'extent': np.radians(self._extent)
+            'extent': np.radians(self._extent),
+            'azimuthal_integration': azimuthal_integration,
         }
 
         # Delete the file if it already exists
