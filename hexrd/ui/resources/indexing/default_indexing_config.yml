@@ -14,7 +14,7 @@ find_orientations:
     # A file name must be specified. If it doesn't exist, one will be created
     file: null
 
-    threshold: 250
+    threshold: null
     bin_frames: 1 # defaults to 1
 
     filter_maps: False

@@ -78,7 +78,17 @@ class OmeMapsSelectDialog(QObject):
 
     @property
     def threshold(self):
+        if not self.ui.apply_threshold.isChecked():
+            return None
+
         return self.ui.threshold.value()
+
+    @threshold.setter
+    def threshold(self, v):
+        apply_threshold = v is not None
+        self.ui.apply_threshold.setChecked(apply_threshold)
+        if apply_threshold:
+            self.ui.threshold.setValue(v)
 
     @property
     def bin_frames(self):
@@ -109,7 +119,7 @@ class OmeMapsSelectDialog(QObject):
         file_name = maps_config['file'] if maps_config['file'] else ''
 
         self.ui.file_name.setText(file_name)
-        self.ui.threshold.setValue(maps_config['threshold'])
+        self.threshold = maps_config['threshold']
         self.ui.bin_frames.setValue(maps_config['bin_frames'])
 
         self.update_method_tab()
