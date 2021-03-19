@@ -40,6 +40,8 @@ class OmeMapsSelectDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
+        HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
+
     def setup_combo_box_data(self):
         item_data = [
             'load',
@@ -108,10 +110,10 @@ class OmeMapsSelectDialog(QObject):
         return [w.itemText(i) for i in range(w.count())]
 
     def selected_material_changed(self):
-        if not hasattr(self, '_table'):
-            return
+        if hasattr(self, '_table'):
+            self._table.material = self.material
 
-        self._table.material = HexrdConfig().material(self.selected_material)
+        self.update_num_hkls()
 
     @property
     def selected_material(self):
@@ -123,6 +125,10 @@ class OmeMapsSelectDialog(QObject):
             return
 
         self.ui.material.setCurrentText(name)
+
+    @property
+    def material(self):
+        return HexrdConfig().material(self.selected_material)
 
     @property
     def widgets(self):
@@ -156,6 +162,8 @@ class OmeMapsSelectDialog(QObject):
 
         self.update_method_tab()
 
+        self.update_num_hkls()
+
     @property
     def method_name(self):
         return self.ui.method.currentData()
@@ -177,9 +185,14 @@ class OmeMapsSelectDialog(QObject):
 
     def choose_hkls(self):
         kwargs = {
-            'material': HexrdConfig().material(self.selected_material),
+            'material': self.material,
             'title_prefix': 'Select hkls for eta omega map generation: ',
             'parent': self.ui,
         }
         self._table = MaterialsTable(**kwargs)
         self._table.show()
+
+    def update_num_hkls(self):
+        num_hkls = len(self.material.planeData.getHKLs())
+        text = f'Number of hkls selected:  {num_hkls}'
+        self.ui.num_hkls_selected.setText(text)
