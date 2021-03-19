@@ -189,6 +189,7 @@ class ImportDataPanel(QObject):
 
         if self.it:
             self.it.update_image(img)
+            self.add_template()
 
     def display_bounds(self):
         self.ui.bb_height.blockSignals(True)
@@ -218,7 +219,7 @@ class ImportDataPanel(QObject):
         self.enable_widgets(self.ui.outline_position,
                             self.ui.outline_appearance, enabled=True)
         self.enable_widgets(self.ui.association, self.ui.file_selection,
-                            self.ui.transform_img, enabled=False)
+                            enabled=False)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
         self.ui.trans.setChecked(True)
