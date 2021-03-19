@@ -102,7 +102,6 @@ class IndexingRunner(Runner):
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
-
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
         dialog.rejected.connect(self.clear)
@@ -310,7 +309,11 @@ def create_fit_grains_results_dialog(fit_grains_results, parent=None):
     gw.close()
 
     # Use the material to compute stress from strain
-    material = HexrdConfig().active_material
+    indexing_config = HexrdConfig().indexing_config
+    name = indexing_config.get('_selected_material')
+    if name not in HexrdConfig().materials:
+        name = HexrdConfig().active_material_name
+    material = HexrdConfig().material(name)
 
     # Create the dialog
     dialog = FitGrainsResultsDialog(grains_table, material, parent)
