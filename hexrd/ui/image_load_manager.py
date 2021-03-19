@@ -134,7 +134,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.set_state()
         self.parent = parent
         self.files = files
-        self.data = data
+        self.data = {} if data is None else data
         self.empty_frames = data['empty_frames'] if data else 0
 
         self.begin_processing()
