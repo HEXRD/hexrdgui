@@ -360,6 +360,12 @@ class OmeMapsViewerDialog(QObject):
 
         self.color_map_editor.update_bounds(self.image_data)
 
+        w = self.color_map_editor.ui.minimum
+        w.setStyleSheet('background-color: yellow')
+        note = 'NOTE: this is used to set find_orientations:threshold'
+        if note not in w.toolTip():
+            w.setToolTip(f'{w.toolTip()}\n\n{note}')
+
     @property
     def display_spots(self):
         return self.ui.label_spots.isChecked()
