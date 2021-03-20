@@ -9,7 +9,7 @@ from hexrd.findorientations import (
     generate_eta_ome_maps, generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
-from hexrd.xrdutil import EtaOmeMaps
+from hexrd.xrdutil import EtaOmeMaps, _memo_hkls
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -223,6 +223,7 @@ class FitGrainsRunner(Runner):
         self.fit_grains_select_dialog = None
         self.fit_grains_options_dialog = None
         self.fit_grains_results = None
+        _memo_hkls.clear()
 
     def run(self):
         # We will go through these steps:
