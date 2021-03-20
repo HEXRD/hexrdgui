@@ -82,7 +82,7 @@ class FitGrainsOptionsDialog(QObject):
 
     def setup_material_options(self):
         self.ui.material.clear()
-        self.ui.material.addItems(HexrdConfig().materials.keys())
+        self.ui.material.addItems(list(HexrdConfig().materials.keys()))
         self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def on_accepted(self):
