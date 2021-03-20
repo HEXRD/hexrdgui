@@ -7,42 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>635</width>
-    <height>241</height>
+    <height>267</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="2" column="1">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QComboBox" name="method">
-     <item>
-      <property name="text">
-       <string>Load</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Generate</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Method:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
+   <item row="2" column="0" colspan="2">
     <widget class="QTabWidget" name="tab_widget">
      <property name="currentIndex">
       <number>0</number>
@@ -69,22 +38,25 @@
        <string>Generate</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="0">
-        <widget class="QLabel" name="threshold_label">
-         <property name="text">
-          <string>Threshold:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="bin_frames_label">
          <property name="text">
           <string>Bin Frames:</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="apply_threshold">
+         <property name="text">
+          <string>Threshold data?</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
         <widget class="QDoubleSpinBox" name="threshold">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="decimals">
           <number>4</number>
          </property>
@@ -96,7 +68,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="5" column="1">
         <widget class="QSpinBox" name="bin_frames">
          <property name="minimum">
           <number>1</number>
@@ -106,17 +78,75 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="num_hkls_selected">
+         <property name="text">
+          <string>Number of hkls selected:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="choose_hkls">
+         <property name="text">
+          <string>Choose HKLs</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>
    </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="method_label">
+     <property name="text">
+      <string>Method:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>Load</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Generate</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="material_label">
+     <property name="text">
+      <string>Selected Material:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="material"/>
+   </item>
   </layout>
  </widget>
  <tabstops>
+  <tabstop>material</tabstop>
   <tabstop>method</tabstop>
   <tabstop>tab_widget</tabstop>
   <tabstop>file_name</tabstop>
   <tabstop>select_file_button</tabstop>
+  <tabstop>choose_hkls</tabstop>
+  <tabstop>apply_threshold</tabstop>
   <tabstop>threshold</tabstop>
   <tabstop>bin_frames</tabstop>
  </tabstops>
@@ -151,6 +181,22 @@
     <hint type="destinationlabel">
      <x>217</x>
      <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>apply_threshold</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>threshold</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>167</x>
+     <y>105</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>467</x>
+     <y>105</y>
     </hint>
    </hints>
   </connection>

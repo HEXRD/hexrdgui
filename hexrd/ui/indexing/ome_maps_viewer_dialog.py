@@ -333,13 +333,14 @@ class OmeMapsViewerDialog(QObject):
         # cleaning on the original data on its own in
         # generate_orientation_fibers().
         self.raw_data = copy.deepcopy(d)
-        for map in self.raw_data.dataStore:
+        self.cleaned_data = copy.deepcopy(d)
+        for map in self.cleaned_data.dataStore:
             clean_map(map)
 
         # This data will have filters applied to it
         # We will make a shallow copy, and deep copy the data store
         # when filters are applied.
-        self._data = copy.copy(self.raw_data)
+        self._data = copy.copy(self.cleaned_data)
         self.reset_filters()
 
         self.update_extent()
@@ -359,6 +360,12 @@ class OmeMapsViewerDialog(QObject):
             return
 
         self.color_map_editor.update_bounds(self.image_data)
+
+        w = self.color_map_editor.ui.minimum
+        w.setStyleSheet('background-color: yellow')
+        note = 'NOTE: this is used to set find_orientations:threshold'
+        if note not in w.toolTip():
+            w.setToolTip(f'{w.toolTip()}\n\n{note}')
 
     @property
     def display_spots(self):
@@ -474,7 +481,8 @@ class OmeMapsViewerDialog(QObject):
             if not selected_file.endswith('.npz'):
                 selected_file += '.npz'
 
-            self.data.save(selected_file)
+            # Save the raw data out...
+            self.raw_data.save(selected_file)
 
     @property
     def threshold(self):
@@ -590,7 +598,7 @@ class OmeMapsViewerDialog(QObject):
             name = '_dataStore'
         else:
             name = 'dataStore'
-        setattr(self.data, name, copy.deepcopy(self.raw_data.dataStore))
+        setattr(self.data, name, copy.deepcopy(self.cleaned_data.dataStore))
 
         # Make a fake config to pass to hexrd
         class Cfg:

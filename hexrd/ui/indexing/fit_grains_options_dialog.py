@@ -5,6 +5,7 @@ from PySide2.QtWidgets import QDialogButtonBox, QHeaderView
 from hexrd.ui import enter_key_filter
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.ui_loader import UiLoader
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
@@ -27,6 +28,8 @@ class FitGrainsOptionsDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
         self.ui.installEventFilter(enter_key_filter)
+
+        self.setup_material_options()
 
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')
@@ -53,6 +56,12 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.move_up.clicked.connect(self.on_tolerances_move_up)
         self.ui.move_down.clicked.connect(self.on_tolerances_move_down)
 
+        self.ui.material.currentIndexChanged.connect(
+            self.selected_material_changed)
+        self.ui.choose_hkls.pressed.connect(self.choose_hkls)
+
+        HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
+
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
         widgets = [
@@ -70,6 +79,11 @@ class FitGrainsOptionsDialog(QObject):
 
     def show(self):
         self.ui.show()
+
+    def setup_material_options(self):
+        self.ui.material.clear()
+        self.ui.material.addItems(HexrdConfig().materials.keys())
+        self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def on_accepted(self):
         # Save the selected options on the config
@@ -159,6 +173,9 @@ class FitGrainsOptionsDialog(QObject):
 
         self.tolerances_model.copy_to_config(config)
 
+        indexing_config = HexrdConfig().indexing_config
+        indexing_config['_selected_material'] = self.selected_material
+
     def update_gui_from_config(self, config):
         blocked = [QSignalBlocker(x) for x in self.all_widgets()]
         self.ui.npdiv.setValue(config.get('npdiv'))
@@ -190,6 +207,11 @@ class FitGrainsOptionsDialog(QObject):
         tolerances = config.get('tolerance')
         self.tolerances_model.update_from_config(tolerances)
 
+        indexing_config = HexrdConfig().indexing_config
+        self.selected_material = indexing_config.get('_selected_material')
+
+        self.update_num_hkls()
+
     def run(self):
         self.ui.show()
 
@@ -212,3 +234,43 @@ class FitGrainsOptionsDialog(QObject):
                 break
 
         return selected_rows
+
+    @property
+    def material_options(self):
+        w = self.ui.material
+        return [w.itemText(i) for i in range(w.count())]
+
+    def selected_material_changed(self):
+        if hasattr(self, '_table'):
+            self._table.material = self.material
+
+        self.update_num_hkls()
+
+    @property
+    def selected_material(self):
+        return self.ui.material.currentText()
+
+    @selected_material.setter
+    def selected_material(self, name):
+        if name is None or name not in self.material_options:
+            return
+
+        self.ui.material.setCurrentText(name)
+
+    @property
+    def material(self):
+        return HexrdConfig().material(self.selected_material)
+
+    def choose_hkls(self):
+        kwargs = {
+            'material': self.material,
+            'title_prefix': 'Select hkls for grain fitting: ',
+            'parent': self.ui,
+        }
+        self._table = MaterialsTable(**kwargs)
+        self._table.show()
+
+    def update_num_hkls(self):
+        num_hkls = len(self.material.planeData.getHKLs())
+        text = f'Number of hkls selected:  {num_hkls}'
+        self.ui.num_hkls_selected.setText(text)

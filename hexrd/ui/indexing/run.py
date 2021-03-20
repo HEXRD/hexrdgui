@@ -9,7 +9,7 @@ from hexrd.findorientations import (
     generate_eta_ome_maps, generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
-from hexrd.xrdutil import EtaOmeMaps
+from hexrd.xrdutil import EtaOmeMaps, _memo_hkls
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -102,7 +102,6 @@ class IndexingRunner(Runner):
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
-
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
         dialog.rejected.connect(self.clear)
@@ -224,6 +223,7 @@ class FitGrainsRunner(Runner):
         self.fit_grains_select_dialog = None
         self.fit_grains_options_dialog = None
         self.fit_grains_results = None
+        _memo_hkls.clear()
 
     def run(self):
         # We will go through these steps:
@@ -310,7 +310,11 @@ def create_fit_grains_results_dialog(fit_grains_results, parent=None):
     gw.close()
 
     # Use the material to compute stress from strain
-    material = HexrdConfig().active_material
+    indexing_config = HexrdConfig().indexing_config
+    name = indexing_config.get('_selected_material')
+    if name not in HexrdConfig().materials:
+        name = HexrdConfig().active_material_name
+    material = HexrdConfig().material(name)
 
     # Create the dialog
     dialog = FitGrainsResultsDialog(grains_table, material, parent)

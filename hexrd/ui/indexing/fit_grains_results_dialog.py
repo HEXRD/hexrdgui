@@ -306,6 +306,11 @@ class FitGrainsResultsDialog(QObject):
         fig = canvas.figure
         ax = fig.add_subplot(111, projection='3d', proj_type=self.projection)
 
+        # Set default limits to -0.5 to 0.5
+        for name in ('x', 'y', 'z'):
+            func = getattr(ax, f'set_{name}lim')
+            func(-0.5, 0.5)
+
         self.ui.canvas_layout.addWidget(canvas)
 
         self.fig = fig
