@@ -64,7 +64,8 @@ def create_indexing_config():
 
     # Convert image series into OmegaImageSeries
     for key, ims in ims_dict.items():
-        ims_dict[key] = OmegaImageSeries(ims)
+        if not isinstance(ims, OmegaImageSeries):
+            ims_dict[key] = OmegaImageSeries(ims)
 
     config.image_series = ims_dict
 
