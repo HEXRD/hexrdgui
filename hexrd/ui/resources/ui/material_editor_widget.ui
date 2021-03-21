@@ -215,7 +215,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="min_d_spacing">
+         <widget class="ScientificDoubleSpinBox" name="min_d_spacing">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -226,13 +226,13 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>5</number>
+           <number>8</number>
           </property>
           <property name="minimum">
            <double>0.000010000000000</double>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>100000.000000000000000</double>
           </property>
           <property name="singleStep">
            <double>0.100000000000000</double>
@@ -306,7 +306,7 @@
          </widget>
         </item>
         <item row="3" column="5">
-         <widget class="QDoubleSpinBox" name="lattice_beta">
+         <widget class="ScientificDoubleSpinBox" name="lattice_beta">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -319,13 +319,16 @@
           <property name="suffix">
            <string>°</string>
           </property>
+          <property name="decimals">
+           <number>8</number>
+          </property>
           <property name="maximum">
-           <double>180.000000000000000</double>
+           <double>360.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="1" column="3">
-         <widget class="QDoubleSpinBox" name="lattice_a">
+         <widget class="ScientificDoubleSpinBox" name="lattice_a">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -339,10 +342,10 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>5</number>
+           <number>8</number>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>1000000.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -380,7 +383,7 @@
          </widget>
         </item>
         <item row="1" column="5">
-         <widget class="QDoubleSpinBox" name="lattice_alpha">
+         <widget class="ScientificDoubleSpinBox" name="lattice_alpha">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -393,8 +396,11 @@
           <property name="suffix">
            <string>°</string>
           </property>
+          <property name="decimals">
+           <number>8</number>
+          </property>
           <property name="maximum">
-           <double>180.000000000000000</double>
+           <double>360.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -415,7 +421,7 @@
          </widget>
         </item>
         <item row="3" column="3">
-         <widget class="QDoubleSpinBox" name="lattice_b">
+         <widget class="ScientificDoubleSpinBox" name="lattice_b">
           <property name="autoFillBackground">
            <bool>true</bool>
           </property>
@@ -432,15 +438,15 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>5</number>
+           <number>8</number>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>1000000.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="5" column="3">
-         <widget class="QDoubleSpinBox" name="lattice_c">
+         <widget class="ScientificDoubleSpinBox" name="lattice_c">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -454,15 +460,15 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>5</number>
+           <number>8</number>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>1000000.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="5" column="5">
-         <widget class="QDoubleSpinBox" name="lattice_gamma">
+         <widget class="ScientificDoubleSpinBox" name="lattice_gamma">
           <property name="alignment">
            <set>Qt::AlignCenter</set>
           </property>
@@ -475,8 +481,11 @@
           <property name="suffix">
            <string>°</string>
           </property>
+          <property name="decimals">
+           <number>8</number>
+          </property>
           <property name="maximum">
-           <double>180.000000000000000</double>
+           <double>360.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -500,6 +509,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>space_group</tabstop>
   <tabstop>hall_symbol</tabstop>
