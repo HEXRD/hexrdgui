@@ -51,7 +51,7 @@ class OmeMapsSelectDialog(QObject):
             self.ui.method.setItemData(i, data)
 
         self.ui.material.clear()
-        self.ui.material.addItems(HexrdConfig().materials.keys())
+        self.ui.material.addItems(list(HexrdConfig().materials.keys()))
         self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def show(self):
