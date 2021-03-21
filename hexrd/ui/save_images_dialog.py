@@ -1,8 +1,11 @@
+from PySide2.QtCore import QThreadPool
 from PySide2.QtWidgets import QFileDialog, QInputDialog
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.progress_dialog import ProgressDialog
+from hexrd.ui.async_worker import AsyncWorker
 
 
 class SaveImagesDialog:
@@ -12,6 +15,8 @@ class SaveImagesDialog:
         self.ui = loader.load_file('save_images_dialog.ui', parent)
 
         self.parent_dir = HexrdConfig().working_dir
+        self.thread_pool = QThreadPool()
+        self.progress_dialog = ProgressDialog(self.ui)
 
         self.setup_gui()
         self.setup_connections()
@@ -75,8 +80,14 @@ class SaveImagesDialog:
                 # to be the same as the file name...
                 kwargs['cache_file'] = path
 
-            HexrdConfig().save_imageseries(
+            worker = AsyncWorker(
+                HexrdConfig().save_imageseries,
                 ims_dict.get(det), det, path, selected_format, **kwargs)
+            self.thread_pool.start(worker)
+            self.progress_dialog.setWindowTitle(f'Saving {filename}')
+            self.progress_dialog.setRange(0, 0)
+            worker.signals.finished.connect(self.progress_dialog.accept)
+            self.progress_dialog.exec_()
 
     def exec_(self):
         if self.ui.exec_():
