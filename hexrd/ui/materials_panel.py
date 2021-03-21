@@ -155,10 +155,9 @@ class MaterialsPanel(QObject):
         ]
         blockers = [QSignalBlocker(x) for x in block_list]
 
-        current_items = sorted(
-            [self.ui.materials_combo.itemText(x) for x in
-             range(self.ui.materials_combo.count())])
-        materials_keys = sorted(list(HexrdConfig().materials.keys()))
+        combo = self.ui.materials_combo
+        current_items = [combo.itemText(x) for x in range(combo.count())]
+        materials_keys = list(HexrdConfig().materials.keys())
 
         # If the materials in the config have changed, re-build the list
         if current_items != materials_keys:
