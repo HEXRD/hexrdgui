@@ -51,6 +51,7 @@ class LoadPanel(QObject):
         self.progress_macro_steps = 0
 
         self.setup_gui()
+        self.detectors_changed()
         self.setup_connections()
 
     # Setup GUI
@@ -60,8 +61,8 @@ class LoadPanel(QObject):
 
         self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
-        self.ui.transform.setCurrentIndex(self.state['trans'][0])
-        self.ui.darkMode.setCurrentIndex(self.state['dark'][0])
+        self.ui.transform.setCurrentIndex(self.state['trans'][self.ui.detector.currentIndex()])
+        self.ui.darkMode.setCurrentIndex(self.state['dark'][self.ui.detector.currentIndex()])
         self.dark_files = self.state['dark_files']
 
         self.dark_mode_changed()
@@ -73,7 +74,6 @@ class LoadPanel(QObject):
                 directory = str(Path(directory).parent)
             self.ui.img_directory.setText(directory)
 
-        self.detectors_changed()
         self.ui.file_options.resizeColumnsToContents()
 
     def setup_connections(self):

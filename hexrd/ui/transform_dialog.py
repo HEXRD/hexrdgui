@@ -20,8 +20,8 @@ class TransformDialog:
 
     def update_gui(self):
         options = [
-            '(None)', 'Flip Vertically', 'Flip Horizontally', 'Transpose',
-            'Rotate 90°', 'Rotate 180°', 'Rotate 270°']
+            '(None)', 'Mirror about Vertical', 'Mirror about Horizontal',
+            'Transpose', 'Rotate 90°', 'Rotate 180°', 'Rotate 270°']
         for i, det in enumerate(HexrdConfig().detector_names):
             hbox = QHBoxLayout()
             # Add label
@@ -67,5 +67,6 @@ class TransformDialog:
                 trans.append(combo.currentIndex())
         ilm = ImageLoadManager()
         state = HexrdConfig().load_panel_state
+        state['trans'] = trans
         ilm.set_state({ 'trans': trans , 'agg': state.get('agg', 0) })
         ilm.begin_processing(postprocess=True)
