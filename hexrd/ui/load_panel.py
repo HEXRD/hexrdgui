@@ -61,8 +61,10 @@ class LoadPanel(QObject):
 
         self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
-        self.ui.transform.setCurrentIndex(self.state['trans'][self.ui.detector.currentIndex()])
-        self.ui.darkMode.setCurrentIndex(self.state['dark'][self.ui.detector.currentIndex()])
+        self.ui.transform.setCurrentIndex(
+            self.state['trans'][self.ui.detector.currentIndex()])
+        self.ui.darkMode.setCurrentIndex(
+            self.state['dark'][self.ui.detector.currentIndex()])
         self.dark_files = self.state['dark_files']
 
         self.dark_mode_changed()
