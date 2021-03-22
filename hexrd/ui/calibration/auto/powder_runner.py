@@ -32,6 +32,11 @@ class PowderRunner(QObject):
     def clear(self):
         self.remove_lines()
 
+        if hasattr(self, '_ask_if_lines_are_acceptable_box'):
+            # Remove the box if it is still there...
+            self._ask_if_lines_are_acceptable_box.reject()
+            del self._ask_if_lines_are_acceptable_box
+
     def run(self):
         try:
             self.validate()
