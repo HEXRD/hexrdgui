@@ -49,7 +49,7 @@ def create_indexing_config():
     config.set('material:tth_width', np.degrees(material.planeData.tThWidth))
 
     # Use unaggregated images if possible
-    ims_dict = ImageLoadManager().unaggregated_images
+    ims_dict = HexrdConfig().unagg_images
     if ims_dict is None:
         # This probably means the image series was never aggregated.
         # Try using the imageseries dict.

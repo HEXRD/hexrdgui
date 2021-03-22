@@ -41,7 +41,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
-        self.unaggregated_images = None
         self.transformed_images = False
 
     def load_images(self, fnames):
@@ -189,9 +188,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                     HexrdConfig().imageseries_dict[det] = ims
             else:
                 ImageFileManager().load_images(det_names, self.files, options)
-        elif self.unaggregated_images is not None:
-            HexrdConfig().imageseries_dict = copy.copy(self.unaggregated_images)
-            self.reset_unagg_imgs()
+        HexrdConfig().reset_unagg_imgs()
 
         # Now that self.state is set, setup the progress variables
         self.setup_progress_variables()
@@ -199,10 +196,9 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
         if self.data:
+            self.add_omega_metadata(HexrdConfig().imageseries_dict)
             if 'agg' in self.state and self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
-            else:
-                self.add_omega_metadata(HexrdConfig().imageseries_dict)
 
         self.update_progress(100)
 
@@ -303,7 +299,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def display_aggregation(self, ims_dict):
         self.update_progress_text('Aggregating images...')
         # Remember unaggregated images
-        self.unaggregated_images = copy.copy(ims_dict)
+        HexrdConfig().set_unagg_images()
 
         if self.state['agg'] == UI_AGG_INDEX_MAXIMUM:
             agg_func = imageseries.stats.max_iter
@@ -315,7 +311,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         f = functools.partial(self.aggregate_images, agg_func=agg_func)
 
         for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
-            ims_dict[key] = aggr_img
+            ims_dict[key] = ImageFileManager().open_file(aggr_img)
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
@@ -364,9 +360,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def get_dark_op(self, oplist, dark):
         oplist.append(('dark', dark))
-
-    def reset_unagg_imgs(self):
-        self.unaggregated_images = None
 
     def setup_progress_variables(self):
         self.current_progress_step = 0

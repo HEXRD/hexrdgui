@@ -175,6 +175,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.last_azimuthal_integral_data = None
         self._threshold_data = {}
         self.stack_state = {}
+        self.unaggregated_images = None
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
@@ -1467,6 +1468,18 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                      set_threshold_mask_status)
     threshold_mask = property(threshold_mask,
                               set_threshold_mask)
+
+    @property
+    def unagg_images(self):
+        return self.unaggregated_images
+
+    def reset_unagg_imgs(self):
+        if self.unagg_images is not None:
+            HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
+            self.unaggregated_images = None
+
+    def set_unagg_images(self):
+        self.unaggregated_images = copy.copy(self.imageseries_dict)
 
     @property
     def display_wppf_plot(self):

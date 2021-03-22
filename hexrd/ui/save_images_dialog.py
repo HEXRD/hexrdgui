@@ -1,8 +1,11 @@
+from PySide2.QtCore import QThreadPool
 from PySide2.QtWidgets import QFileDialog, QInputDialog
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.progress_dialog import ProgressDialog
+from hexrd.ui.async_worker import AsyncWorker
 
 
 class SaveImagesDialog:
@@ -12,6 +15,8 @@ class SaveImagesDialog:
         self.ui = loader.load_file('save_images_dialog.ui', parent)
 
         self.parent_dir = HexrdConfig().working_dir
+        self.thread_pool = QThreadPool()
+        self.progress_dialog = ProgressDialog(self.ui)
 
         self.setup_gui()
         self.setup_connections()
@@ -21,6 +26,8 @@ class SaveImagesDialog:
         self.ui.detectors.addItems(HexrdConfig().detector_names)
         self.ui.pwd.setText(self.parent_dir)
         self.ui.pwd.setToolTip(self.parent_dir)
+        if HexrdConfig().unagg_images:
+            self.ui.ignore_agg.setEnabled(True)
 
     def setup_connections(self):
         self.ui.single_detector.toggled.connect(self.ui.detectors.setEnabled)
@@ -38,15 +45,15 @@ class SaveImagesDialog:
             self.ui.pwd.setToolTip(self.parent_dir)
 
     def save_images(self):
-        if ImageLoadManager().unaggregated_images:
-            ims_dict = ImageLoadManager().unaggregated_images
+        if self.ui.ignore_agg.isChecked():
+            ims_dict = HexrdConfig().unagg_images
         else:
             ims_dict = HexrdConfig().imageseries_dict
-        selected_format = self.ui.format.currentText().lower()
         dets = HexrdConfig().detector_names
         if self.ui.single_detector.isChecked():
             dets = [self.ui.detectors.currentText()]
         for det in dets:
+            selected_format = self.ui.format.currentText().lower()
             filename = f'{self.ui.file_stem.text()}_{det}.{selected_format}'
             path = f'{self.parent_dir}/{filename}'
             if selected_format.startswith('hdf5'):
@@ -73,8 +80,14 @@ class SaveImagesDialog:
                 # to be the same as the file name...
                 kwargs['cache_file'] = path
 
-            HexrdConfig().save_imageseries(
-              ims_dict.get(det), det, path, selected_format, **kwargs)
+            worker = AsyncWorker(
+                HexrdConfig().save_imageseries,
+                ims_dict.get(det), det, path, selected_format, **kwargs)
+            self.thread_pool.start(worker)
+            self.progress_dialog.setWindowTitle(f'Saving {filename}')
+            self.progress_dialog.setRange(0, 0)
+            worker.signals.finished.connect(self.progress_dialog.accept)
+            self.progress_dialog.exec_()
 
     def exec_(self):
         if self.ui.exec_():
