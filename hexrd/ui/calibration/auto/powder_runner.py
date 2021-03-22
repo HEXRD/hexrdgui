@@ -232,7 +232,7 @@ class PowderRunner(QObject):
     def overlay_refinements(self, overlay):
         refinements = overlay.get('refinements')
         if refinements is None:
-            refinements = default_overlay_refinements(overlay['type'])
+            refinements = default_overlay_refinements(overlay)
         return refinements
 
     @property
