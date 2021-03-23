@@ -26,7 +26,11 @@ class PowderCalibrator(object):
         self._flags = flags
 
         # for polar interpolation
-        self._tth_tol = tth_tol or np.degrees(plane_data.tThWidth)
+        if tth_tol is None:
+            self._tth_tol = np.degrees(plane_data.tThWidth)
+        else:
+            self._tth_tol = tth_tol
+            self._plane_data.tThWidth = np.radians(tth_tol)
         self._eta_tol = eta_tol
 
         # for peak fitting
@@ -44,6 +48,7 @@ class PowderCalibrator(object):
     @property
     def plane_data(self):
         self._plane_data.wavelength = self._instr.beam_energy
+        self._plane_data.tThWidth = np.radians(self.tth_tol)
         return self._plane_data
 
     @property
