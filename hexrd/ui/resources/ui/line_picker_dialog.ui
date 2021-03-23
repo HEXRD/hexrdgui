@@ -62,7 +62,7 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QDoubleSpinBox" name="zoom_eta_width">
+      <widget class="ScientificDoubleSpinBox" name="zoom_eta_width">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -70,13 +70,13 @@
         <string>°</string>
        </property>
        <property name="decimals">
-        <number>3</number>
+        <number>8</number>
        </property>
        <property name="minimum">
-        <double>0.001000000000000</double>
+        <double>0.000001000000000</double>
        </property>
        <property name="maximum">
-        <double>360.000000000000000</double>
+        <double>10000.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.200000000000000</double>
@@ -87,7 +87,7 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QDoubleSpinBox" name="zoom_tth_width">
+      <widget class="ScientificDoubleSpinBox" name="zoom_tth_width">
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
@@ -95,13 +95,13 @@
         <string>°</string>
        </property>
        <property name="decimals">
-        <number>3</number>
+        <number>8</number>
        </property>
        <property name="minimum">
-        <double>0.001000000000000</double>
+        <double>0.000001000000000</double>
        </property>
        <property name="maximum">
-        <double>1000.000000000000000</double>
+        <double>10000.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.200000000000000</double>
@@ -144,6 +144,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>zoom_tth_width</tabstop>
   <tabstop>zoom_eta_width</tabstop>

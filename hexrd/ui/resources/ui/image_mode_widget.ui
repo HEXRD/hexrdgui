@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>432</width>
+    <width>508</width>
     <height>159</height>
    </rect>
   </property>
@@ -110,18 +110,21 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="raw_threshold_value">
+          <widget class="ScientificDoubleSpinBox" name="raw_threshold_value">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="keyboardTracking">
             <bool>false</bool>
            </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
            <property name="minimum">
-            <double>-99999.000000000000000</double>
+            <double>-100000.000000000000000</double>
            </property>
            <property name="maximum">
-            <double>99999.000000000000000</double>
+            <double>100000.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -176,15 +179,18 @@
           <item>
            <layout class="QGridLayout" name="gridLayout_5">
             <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="cartesian_virtual_plane_distance">
+             <widget class="ScientificDoubleSpinBox" name="cartesian_virtual_plane_distance">
               <property name="toolTip">
                <string>The distance from the source to the virtual plane.</string>
               </property>
               <property name="keyboardTracking">
                <bool>false</bool>
               </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
               <property name="maximum">
-               <double>100000.000000000000000</double>
+               <double>1000000.000000000000000</double>
               </property>
               <property name="value">
                <double>1000.000000000000000</double>
@@ -192,12 +198,15 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QDoubleSpinBox" name="cartesian_pixel_size">
+             <widget class="ScientificDoubleSpinBox" name="cartesian_pixel_size">
               <property name="keyboardTracking">
                <bool>false</bool>
               </property>
               <property name="decimals">
-               <number>3</number>
+               <number>8</number>
+              </property>
+              <property name="maximum">
+               <double>1000000.000000000000000</double>
               </property>
               <property name="singleStep">
                <double>0.010000000000000</double>
@@ -208,18 +217,21 @@
              </widget>
             </item>
             <item row="1" column="3">
-             <widget class="QDoubleSpinBox" name="cartesian_plane_normal_rotate_y">
+             <widget class="ScientificDoubleSpinBox" name="cartesian_plane_normal_rotate_y">
               <property name="keyboardTracking">
                <bool>false</bool>
               </property>
               <property name="suffix">
                <string>°</string>
               </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
               <property name="minimum">
-               <double>-180.000000000000000</double>
+               <double>-360.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>180.000000000000000</double>
+               <double>360.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -234,18 +246,21 @@
              </widget>
             </item>
             <item row="0" column="3">
-             <widget class="QDoubleSpinBox" name="cartesian_plane_normal_rotate_x">
+             <widget class="ScientificDoubleSpinBox" name="cartesian_plane_normal_rotate_x">
               <property name="keyboardTracking">
                <bool>false</bool>
               </property>
               <property name="suffix">
                <string>°</string>
               </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
               <property name="minimum">
-               <double>-180.000000000000000</double>
+               <double>-360.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>180.000000000000000</double>
+               <double>360.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -357,7 +372,7 @@
                <number>0</number>
               </property>
               <item row="2" column="7">
-               <widget class="QDoubleSpinBox" name="polar_res_eta_max">
+               <widget class="ScientificDoubleSpinBox" name="polar_res_eta_max">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -368,13 +383,13 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
                 </property>
                 <property name="minimum">
-                 <double>-540.000000000000000</double>
+                 <double>-100000.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>540.000000000000000</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="value">
                  <double>180.000000000000000</double>
@@ -399,7 +414,7 @@
                </widget>
               </item>
               <item row="2" column="4">
-               <widget class="QDoubleSpinBox" name="polar_res_eta_min">
+               <widget class="ScientificDoubleSpinBox" name="polar_res_eta_min">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -410,13 +425,13 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
                 </property>
                 <property name="minimum">
-                 <double>-540.000000000000000</double>
+                 <double>-100000.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>540.000000000000000</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="value">
                  <double>-180.000000000000000</double>
@@ -434,7 +449,7 @@
                </widget>
               </item>
               <item row="3" column="4">
-               <widget class="QDoubleSpinBox" name="polar_snip1d_width">
+               <widget class="ScientificDoubleSpinBox" name="polar_snip1d_width">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -448,10 +463,10 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
                 </property>
                 <property name="maximum">
-                 <double>360.000000000000000</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.100000000000000</double>
@@ -462,7 +477,7 @@
                </widget>
               </item>
               <item row="1" column="4">
-               <widget class="QDoubleSpinBox" name="polar_res_tth_min">
+               <widget class="ScientificDoubleSpinBox" name="polar_res_tth_min">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -473,10 +488,13 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-100000.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>10000.000000000000000</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.010000000000000</double>
@@ -497,7 +515,7 @@
                </widget>
               </item>
               <item row="0" column="7">
-               <widget class="QDoubleSpinBox" name="polar_pixel_size_eta">
+               <widget class="ScientificDoubleSpinBox" name="polar_pixel_size_eta">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -508,10 +526,13 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-100000.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>360.000000000000000</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>5.000000000000000</double>
@@ -636,7 +657,7 @@
                </widget>
               </item>
               <item row="1" column="7">
-               <widget class="QDoubleSpinBox" name="polar_res_tth_max">
+               <widget class="ScientificDoubleSpinBox" name="polar_res_tth_max">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -647,10 +668,13 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-100000.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>179.998999999999995</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>1.000000000000000</double>
@@ -661,7 +685,7 @@
                </widget>
               </item>
               <item row="0" column="4">
-               <widget class="QDoubleSpinBox" name="polar_pixel_size_tth">
+               <widget class="ScientificDoubleSpinBox" name="polar_pixel_size_tth">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -672,10 +696,13 @@
                  <string>°</string>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-100000.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>99.989999999999995</double>
+                 <double>100000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.005000000000000</double>
@@ -748,6 +775,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>tab_widget</tabstop>
   <tabstop>raw_tabbed_view</tabstop>

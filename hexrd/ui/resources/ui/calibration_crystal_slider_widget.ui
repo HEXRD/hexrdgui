@@ -62,7 +62,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="slider_range">
+      <widget class="ScientificDoubleSpinBox" name="slider_range">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -71,6 +71,9 @@
        </property>
        <property name="suffix">
         <string>°</string>
+       </property>
+       <property name="decimals">
+        <number>8</number>
        </property>
        <property name="minimum">
         <double>0.000000000000000</double>
@@ -126,7 +129,7 @@
       </widget>
      </item>
      <item row="0" column="2">
-      <widget class="QDoubleSpinBox" name="spinbox_0">
+      <widget class="ScientificDoubleSpinBox" name="spinbox_0">
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
@@ -134,13 +137,13 @@
         <bool>false</bool>
        </property>
        <property name="decimals">
-        <number>5</number>
+        <number>8</number>
        </property>
        <property name="minimum">
-        <double>-10000.000000000000000</double>
+        <double>-10000000.000000000000000</double>
        </property>
        <property name="maximum">
-        <double>10000.000000000000000</double>
+        <double>10000000.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.100000000000000</double>
@@ -171,7 +174,7 @@
       </widget>
      </item>
      <item row="1" column="2">
-      <widget class="QDoubleSpinBox" name="spinbox_1">
+      <widget class="ScientificDoubleSpinBox" name="spinbox_1">
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
@@ -179,13 +182,13 @@
         <bool>false</bool>
        </property>
        <property name="decimals">
-        <number>5</number>
+        <number>8</number>
        </property>
        <property name="minimum">
-        <double>-10000.000000000000000</double>
+        <double>-10000000.000000000000000</double>
        </property>
        <property name="maximum">
-        <double>10000.000000000000000</double>
+        <double>10000000.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.100000000000000</double>
@@ -216,7 +219,7 @@
       </widget>
      </item>
      <item row="2" column="2">
-      <widget class="QDoubleSpinBox" name="spinbox_2">
+      <widget class="ScientificDoubleSpinBox" name="spinbox_2">
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
@@ -224,13 +227,13 @@
         <bool>false</bool>
        </property>
        <property name="decimals">
-        <number>5</number>
+        <number>8</number>
        </property>
        <property name="minimum">
-        <double>-10000.000000000000000</double>
+        <double>-10000000.000000000000000</double>
        </property>
        <property name="maximum">
-        <double>10000.000000000000000</double>
+        <double>10000000.000000000000000</double>
        </property>
        <property name="singleStep">
         <double>0.100000000000000</double>
@@ -241,6 +244,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
