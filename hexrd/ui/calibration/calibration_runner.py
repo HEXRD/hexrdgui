@@ -139,7 +139,7 @@ class CalibrationRunner:
     def get_refinements(self, overlay):
         refinements = overlay.get('refinements')
         if refinements is None:
-            refinements = default_overlay_refinements(overlay['type'])
+            refinements = default_overlay_refinements(overlay)
         return refinements
 
     def generate_pick_results(self):
