@@ -1,4 +1,6 @@
 import numpy as np
+
+from lmfit import Minimizer, Parameters
 from scipy.optimize import leastsq, least_squares
 
 
@@ -22,7 +24,7 @@ class InstrumentCalibrator(object):
     # =========================================================================
 
     def run_calibration(self,
-                        conv_tol=1e-4, fit_tth_tol=None,
+                        conv_tol=1e-4, fit_tth_tol=None, max_iter=5,
                         use_robust_optimization=False):
         """
         FIXME: only coding serial powder case to get things going.  Will
@@ -36,37 +38,48 @@ class InstrumentCalibrator(object):
 
         delta_r = np.inf
         step_successful = True
-        while delta_r > conv_tol and step_successful:
+        iter_count = 0
+        while delta_r > conv_tol \
+            and step_successful \
+                and iter_count <= max_iter:
             data_dict = calib_class._extract_powder_lines(
                 fit_tth_tol=fit_tth_tol)
 
             # grab reduced optimizaion parameter set
             x0 = self._instr.calibration_parameters[
-                    self._instr.calibration_flags
-                ]
-    
+                self._instr.calibration_flags
+            ]
+
             resd0 = obj_func(x0, data_dict)
-    
+
             if use_robust_optimization:
-                oresult = least_squares(
-                    obj_func, x0, args=(data_dict, ),
-                    method='trf', loss='soft_l1'
-                )
-                x1 = oresult['x']
+                if isinstance(use_robust_optimization, bool):
+                    oresult = least_squares(
+                        obj_func, x0, args=(data_dict, ),
+                        method='trf', loss='soft_l1'
+                    )
+                    x1 = oresult['x']
+                else:
+                    params = Parameters()  # noqa: F841
+                    lm = Minimizer()  # noqa: F841
             else:
                 x1, cox_x, infodict, mesg, ierr = leastsq(
                     obj_func, x0, args=(data_dict, ),
                     full_output=True
                 )
             resd1 = obj_func(x1, data_dict)
-    
+
             delta_r = sum(resd0**2)/float(len(resd0)) - \
                 sum(resd1**2)/float(len(resd1))
-    
+
             if delta_r > 0:
-                print(('OPTIMIZATION SUCCESSFUL\nfinal ssr: %f' % sum(resd1**2)))
-                print(('delta_r: %f' % delta_r))
+                print('OPTIMIZATION SUCCESSFUL\nfinal ssr: %f'
+                      % sum(resd1**2)/float(len(resd1)))
+                print('delta_r: %f' % delta_r)
             else:
                 print('no improvement in residual!!!')
                 step_successful = False
+
+            iter_count += 1
+
         return x1
