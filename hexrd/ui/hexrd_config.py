@@ -134,6 +134,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when a material is removed"""
     material_removed = Signal()
 
+    """Emitted to update the tth width in the powder overlay editor"""
+    material_tth_width_modified = Signal(str)
+
     """Emitted when a new raw mask has been created"""
     raw_masks_changed = Signal()
 

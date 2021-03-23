@@ -50,7 +50,7 @@ class PowderRunner(QObject):
 
     def _run(self):
         # First, have the user pick some options
-        if not PowderCalibrationDialog(self.parent).exec_():
+        if not PowderCalibrationDialog(self.material, self.parent).exec_():
             # User canceled...
             return
 
@@ -70,7 +70,6 @@ class PowderRunner(QObject):
             'plane_data': self.material.planeData,
             'img_dict': img_dict,
             'flags': self.refinement_flags,
-            'tth_tol': options['tth_tol'],
             'eta_tol': options['eta_tol'],
             'pktype': options['pk_type'],
         }

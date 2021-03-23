@@ -17,7 +17,7 @@ class PowderCalibrator(object):
         self._plane_data = plane_data
         self._plane_data.wavelength = self._instr.beam_energy  # force
         self._img_dict = img_dict
-        self._params = np.asarray(self.plane_data.lparms, dtype=float)
+        self._params = np.asarray(plane_data.lparms, dtype=float)
         self._full_params = np.hstack(
             [self._instr.calibration_parameters, self._params]
         )

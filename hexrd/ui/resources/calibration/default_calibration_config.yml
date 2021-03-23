@@ -1,5 +1,4 @@
 powder:
-  tth_tol: 0.2
   eta_tol: 2.0
   fit_tth_tol: 0.05
   max_iter: 5
