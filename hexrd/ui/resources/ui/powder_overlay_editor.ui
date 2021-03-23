@@ -38,7 +38,7 @@
     </spacer>
    </item>
    <item row="1" column="2" colspan="3">
-    <widget class="QDoubleSpinBox" name="tth_width">
+    <widget class="ScientificDoubleSpinBox" name="tth_width">
      <property name="enabled">
       <bool>false</bool>
      </property>
@@ -58,13 +58,13 @@
       <string>°</string>
      </property>
      <property name="decimals">
-      <number>3</number>
+      <number>8</number>
      </property>
      <property name="minimum">
       <double>0.000000000000000</double>
      </property>
      <property name="maximum">
-      <double>10.000000000000000</double>
+      <double>1000000.000000000000000</double>
      </property>
      <property name="singleStep">
       <double>0.005000000000000</double>
@@ -79,6 +79,15 @@
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="minimum">
+      <double>-100000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>1000000.000000000000000</double>
+     </property>
     </widget>
    </item>
    <item row="2" column="3">
@@ -86,12 +95,30 @@
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="minimum">
+      <double>-100000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>1000000.000000000000000</double>
+     </property>
     </widget>
    </item>
    <item row="2" column="2">
     <widget class="ScientificDoubleSpinBox" name="offset_0">
      <property name="keyboardTracking">
       <bool>false</bool>
+     </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="minimum">
+      <double>-100000.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>1000000.000000000000000</double>
      </property>
     </widget>
    </item>

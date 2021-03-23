@@ -64,7 +64,7 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="tth_width">
+       <widget class="ScientificDoubleSpinBox" name="tth_width">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -75,10 +75,10 @@
          <string>°</string>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>8</number>
         </property>
         <property name="maximum">
-         <double>180.000000000000000</double>
+         <double>360.000000000000000</double>
         </property>
         <property name="value">
          <double>5.000000000000000</double>
@@ -86,7 +86,7 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="eta_width">
+       <widget class="ScientificDoubleSpinBox" name="eta_width">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -97,10 +97,10 @@
          <string>°</string>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>8</number>
         </property>
         <property name="maximum">
-         <double>180.000000000000000</double>
+         <double>360.000000000000000</double>
         </property>
         <property name="value">
          <double>5.000000000000000</double>
@@ -111,12 +111,15 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QDoubleSpinBox" name="max_energy">
+    <widget class="ScientificDoubleSpinBox" name="max_energy">
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
      <property name="maximum">
-      <double>10000.000000000000000</double>
+      <double>100000.000000000000000</double>
      </property>
      <property name="value">
       <double>35.000000000000000</double>
@@ -138,12 +141,15 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QDoubleSpinBox" name="min_energy">
+    <widget class="ScientificDoubleSpinBox" name="min_energy">
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
      <property name="maximum">
-      <double>10000.000000000000000</double>
+      <double>100000.000000000000000</double>
      </property>
      <property name="value">
       <double>5.000000000000000</double>
@@ -168,6 +174,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>min_energy</tabstop>
   <tabstop>max_energy</tabstop>

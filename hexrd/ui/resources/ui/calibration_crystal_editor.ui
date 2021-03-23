@@ -50,7 +50,7 @@
          </attribute>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="3">
-           <widget class="QDoubleSpinBox" name="orientation_2">
+           <widget class="ScientificDoubleSpinBox" name="orientation_2">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -61,13 +61,13 @@
              <string/>
             </property>
             <property name="decimals">
-             <number>5</number>
+             <number>8</number>
             </property>
             <property name="minimum">
-             <double>-10000.000000000000000</double>
+             <double>-1000000.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>10000.000000000000000</double>
+             <double>1000000.000000000000000</double>
             </property>
             <property name="singleStep">
              <double>0.100000000000000</double>
@@ -75,7 +75,7 @@
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QDoubleSpinBox" name="position_1">
+           <widget class="ScientificDoubleSpinBox" name="position_1">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -83,13 +83,13 @@
              <bool>false</bool>
             </property>
             <property name="decimals">
-             <number>5</number>
+             <number>8</number>
             </property>
             <property name="minimum">
-             <double>-10000.000000000000000</double>
+             <double>-1000000.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>10000.000000000000000</double>
+             <double>1000000.000000000000000</double>
             </property>
             <property name="singleStep">
              <double>0.100000000000000</double>
@@ -97,7 +97,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="orientation_0">
+           <widget class="ScientificDoubleSpinBox" name="orientation_0">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -108,13 +108,13 @@
              <string/>
             </property>
             <property name="decimals">
-             <number>5</number>
+             <number>8</number>
             </property>
             <property name="minimum">
-             <double>-10000.000000000000000</double>
+             <double>-1000000.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>10000.000000000000000</double>
+             <double>1000000.000000000000000</double>
             </property>
             <property name="singleStep">
              <double>0.100000000000000</double>
@@ -145,7 +145,7 @@
            </spacer>
           </item>
           <item row="0" column="2">
-           <widget class="QDoubleSpinBox" name="orientation_1">
+           <widget class="ScientificDoubleSpinBox" name="orientation_1">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -156,13 +156,13 @@
              <string/>
             </property>
             <property name="decimals">
-             <number>5</number>
+             <number>8</number>
             </property>
             <property name="minimum">
-             <double>-10000.000000000000000</double>
+             <double>-1000000.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>10000.000000000000000</double>
+             <double>1000000.000000000000000</double>
             </property>
             <property name="singleStep">
              <double>0.100000000000000</double>
@@ -182,7 +182,7 @@
             </property>
             <layout class="QGridLayout" name="gridLayout">
              <item row="0" column="0">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_0">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_0">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -196,13 +196,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -213,7 +213,7 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_1">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_1">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -224,13 +224,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -241,7 +241,7 @@
               </widget>
              </item>
              <item row="0" column="2">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_2">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_2">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -252,13 +252,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -269,7 +269,7 @@
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_3">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_3">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -280,13 +280,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -294,7 +294,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_4">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_4">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -305,13 +305,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -319,7 +319,7 @@
               </widget>
              </item>
              <item row="1" column="2">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_5">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_5">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -330,13 +330,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -344,7 +344,7 @@
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_6">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_6">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -355,13 +355,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -369,7 +369,7 @@
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_7">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_7">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -380,13 +380,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -394,7 +394,7 @@
               </widget>
              </item>
              <item row="2" column="2">
-              <widget class="QDoubleSpinBox" name="stretch_matrix_8">
+              <widget class="ScientificDoubleSpinBox" name="stretch_matrix_8">
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
@@ -405,13 +405,13 @@
                 <string/>
                </property>
                <property name="decimals">
-                <number>5</number>
+                <number>8</number>
                </property>
                <property name="minimum">
-                <double>-10000.000000000000000</double>
+                <double>-1000000.000000000000000</double>
                </property>
                <property name="maximum">
-                <double>10000.000000000000000</double>
+                <double>1000000.000000000000000</double>
                </property>
                <property name="singleStep">
                 <double>0.100000000000000</double>
@@ -432,7 +432,7 @@
            </widget>
           </item>
           <item row="1" column="3">
-           <widget class="QDoubleSpinBox" name="position_2">
+           <widget class="ScientificDoubleSpinBox" name="position_2">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -440,13 +440,13 @@
              <bool>false</bool>
             </property>
             <property name="decimals">
-             <number>5</number>
+             <number>8</number>
             </property>
             <property name="minimum">
-             <double>-10000.000000000000000</double>
+             <double>-1000000.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>10000.000000000000000</double>
+             <double>1000000.000000000000000</double>
             </property>
             <property name="singleStep">
              <double>0.100000000000000</double>
@@ -454,7 +454,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="position_0">
+           <widget class="ScientificDoubleSpinBox" name="position_0">
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -462,13 +462,13 @@
              <bool>false</bool>
             </property>
             <property name="decimals">
-             <number>5</number>
+             <number>8</number>
             </property>
             <property name="minimum">
-             <double>-10000.000000000000000</double>
+             <double>-1000000.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>10000.000000000000000</double>
+             <double>1000000.000000000000000</double>
             </property>
             <property name="singleStep">
              <double>0.100000000000000</double>
@@ -548,6 +548,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>tab_widget</tabstop>
   <tabstop>orientation_0</tabstop>

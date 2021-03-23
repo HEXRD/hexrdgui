@@ -36,7 +36,7 @@
         </attribute>
         <layout class="QGridLayout" name="gridLayout">
          <item row="4" column="2">
-          <widget class="QDoubleSpinBox" name="min_d_spacing">
+          <widget class="ScientificDoubleSpinBox" name="min_d_spacing">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -51,6 +51,12 @@
            </property>
            <property name="suffix">
             <string> Å</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="maximum">
+            <double>1000000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -128,7 +134,7 @@
           </widget>
          </item>
          <item row="3" column="2">
-          <widget class="QDoubleSpinBox" name="max_tth">
+          <widget class="ScientificDoubleSpinBox" name="max_tth">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -144,8 +150,11 @@
            <property name="suffix">
             <string>°</string>
            </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
            <property name="maximum">
-            <double>360.000000000000000</double>
+            <double>1000000.000000000000000</double>
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -271,6 +280,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>materials_combo</tabstop>
   <tabstop>materials_tool_button</tabstop>

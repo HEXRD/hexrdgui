@@ -370,15 +370,21 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="line_size">
+         <widget class="ScientificDoubleSpinBox" name="line_size">
           <property name="enabled">
            <bool>false</bool>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
+          <property name="decimals">
+           <number>8</number>
+          </property>
           <property name="minimum">
-           <double>0.010000000000000</double>
+           <double>0.000001000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000.000000000000000</double>
           </property>
           <property name="singleStep">
            <double>0.100000000000000</double>
@@ -536,6 +542,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
  <buttongroups>
