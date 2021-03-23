@@ -41,6 +41,9 @@ class PowderOverlayEditor:
         self.refinements_selector.selection_changed.connect(
             self.update_refinements)
 
+        HexrdConfig().material_tth_width_modified.connect(
+            self.material_tth_width_modified_externally)
+
     def update_refinement_options(self):
         if self.overlay is None:
             return
@@ -137,6 +140,9 @@ class PowderOverlayEditor:
 
         self.material.planeData.tThWidth = v
 
+        # All overlays that use this material will be affected
+        HexrdConfig().flag_overlay_updates_for_material(self.material.name)
+
     @property
     def tth_width_gui(self):
         if not self.ui.enable_width.isChecked():
@@ -190,3 +196,9 @@ class PowderOverlayEditor:
             self.ui.enable_width,
             self.ui.tth_width
         ] + self.offset_widgets
+
+    def material_tth_width_modified_externally(self, material_name):
+        if material_name != self.material.name:
+            return
+
+        self.update_gui()

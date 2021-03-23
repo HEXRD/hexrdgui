@@ -50,7 +50,7 @@ class PowderRunner(QObject):
 
     def _run(self):
         # First, have the user pick some options
-        if not PowderCalibrationDialog(self.parent).exec_():
+        if not PowderCalibrationDialog(self.material, self.parent).exec_():
             # User canceled...
             return
 
@@ -70,16 +70,11 @@ class PowderRunner(QObject):
             'plane_data': self.material.planeData,
             'img_dict': img_dict,
             'flags': self.refinement_flags,
-            'tth_tol': options['tth_tol'],
             'eta_tol': options['eta_tol'],
             'pktype': options['pk_type'],
         }
 
         self.pc = PowderCalibrator(**kwargs)
-
-        # take a look at the ideal and "measured" line positions
-        self.fit_tth_tol = np.degrees(self.pc.tth_tol / 6)
-
         self.extract_powder_lines()
 
     def extract_powder_lines(self):
@@ -88,9 +83,10 @@ class PowderRunner(QObject):
         self.async_runner.run(self.run_extract_powder_lines)
 
     def run_extract_powder_lines(self):
+        options = HexrdConfig().config['calibration']['powder']
         kwargs = {
-            'fit_tth_tol': self.fit_tth_tol,
-            'int_cutoff': 0.01,
+            'fit_tth_tol': options['fit_tth_tol'],
+            'int_cutoff': options['int_cutoff'],
         }
         self.data_dict = self.pc._extract_powder_lines(**kwargs)
 
@@ -146,13 +142,15 @@ class PowderRunner(QObject):
     def run_calibration(self):
         options = HexrdConfig().config['calibration']['powder']
 
-        use_robust_optimization = options['use_robust_optimization']
-
         ic = InstrumentCalibrator(self.pc)
         x0 = self.pc.instr.calibration_parameters[self.cf]
-        ic.run_calibration(conv_tol=0.0001,
-                           fit_tth_tol=self.fit_tth_tol,
-                           use_robust_optimization=use_robust_optimization)
+        kwargs = {
+            'conv_tol': options['conv_tol'],
+            'fit_tth_tol': options['fit_tth_tol'],
+            'max_iter': options['max_iter'],
+            'use_robust_optimization': options['use_robust_optimization'],
+        }
+        ic.run_calibration(**kwargs)
         x1 = self.pc.instr.calibration_parameters[self.cf]
 
         results_message = 'Calibration Results:\n'
