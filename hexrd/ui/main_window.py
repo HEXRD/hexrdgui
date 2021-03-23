@@ -196,6 +196,7 @@ class MainWindow(QObject):
         self.new_images_loaded.connect(self.update_hedm_enable_states)
         self.new_images_loaded.connect(self.color_map_editor.reset_range)
         self.new_images_loaded.connect(self.image_mode_widget.reset_masking)
+        self.new_images_loaded.connect(self.images_loaded)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
@@ -226,6 +227,7 @@ class MainWindow(QObject):
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.live_update)
         ImageLoadManager().state_updated.connect(self.load_widget.setup_gui)
+        ImageLoadManager().enable_transforms.connect(self.images_loaded)
 
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
@@ -406,6 +408,7 @@ class MainWindow(QObject):
         self.update_all(clear_canvases=True)
         self.ui.action_transform_detectors.setEnabled(False)
         self.new_images_loaded.emit()
+        self.images_loaded(False)
 
     def open_image_file(self):
         images_dir = HexrdConfig().images_dir
@@ -461,10 +464,9 @@ class MainWindow(QObject):
                     pos = HexrdConfig().detector_names.index(d)
                     files[pos].append(f)
                 ImageLoadManager().read_data(files, parent=self.ui)
-                self.images_loaded()
 
-    def images_loaded(self):
-        self.ui.action_transform_detectors.setEnabled(True)
+    def images_loaded(self, enabled=True):
+        self.ui.action_transform_detectors.setEnabled(enabled)
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
