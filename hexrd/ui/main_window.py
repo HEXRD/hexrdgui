@@ -692,6 +692,9 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
+        if hasattr(self, '_powder_runner'):
+            self._powder_runner.clear()
+
         self._powder_runner = PowderRunner(self.ui)
         self._powder_runner.finished.connect(self.finish_powder_calibration)
         self._powder_runner.run()
