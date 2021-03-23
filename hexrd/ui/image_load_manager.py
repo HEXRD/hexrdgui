@@ -38,6 +38,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     new_images_loaded = Signal()
     images_transformed = Signal()
     live_update_status = Signal(bool)
+    state_updated = Signal()
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
@@ -164,6 +165,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.state = HexrdConfig().load_panel_state
         else:
             self.state = state
+        self.state_updated.emit()
 
     def process_ims(self, postprocess, update_progress):
         self.update_progress = update_progress
