@@ -15,32 +15,31 @@ class PowderCalibrationDialog:
 
     def update_gui(self):
         options = HexrdConfig().config['calibration']['powder']
-        tth_tol = options['tth_tol']
-        eta_tol = options['eta_tol']
         pk_type = options['pk_type']
-        robust = options['use_robust_optimization']
 
-        if pk_type == 'pvoigt':
-            pk_type = 'PVoigt'
-        elif pk_type == 'gaussian':
-            pk_type = 'Gaussian'
-
-        self.ui.tth_tolerance.setValue(tth_tol)
-        self.ui.eta_tolerance.setValue(eta_tol)
-        self.ui.peak_fit_type.setCurrentText(pk_type)
-        self.ui.robust.setChecked(robust)
+        reformat = {
+            'pvoigt': 'PVoigt',
+            'gaussian': 'Gaussian',
+        }
+        self.ui.tth_tolerance.setValue(options['tth_tol'])
+        self.ui.eta_tolerance.setValue(options['eta_tol'])
+        self.ui.fit_tth_tol.setValue(options['fit_tth_tol'])
+        self.ui.max_iter.setValue(options['max_iter'])
+        self.ui.int_cutoff.setValue(options['int_cutoff'])
+        self.ui.conv_tol.setValue(options['conv_tol'])
+        self.ui.peak_fit_type.setCurrentText(reformat.get(pk_type, pk_type))
+        self.ui.robust.setChecked(options['use_robust_optimization'])
 
     def update_config(self):
-        tth_tol = self.ui.tth_tolerance.value()
-        eta_tol = self.ui.eta_tolerance.value()
-        pk_type = self.ui.peak_fit_type.currentText().lower()
-        robust = self.ui.robust.isChecked()
-
         options = HexrdConfig().config['calibration']['powder']
-        options['tth_tol'] = tth_tol
-        options['eta_tol'] = eta_tol
-        options['pk_type'] = pk_type
-        options['use_robust_optimization'] = robust
+        options['tth_tol'] = self.ui.tth_tolerance.value()
+        options['eta_tol'] = self.ui.eta_tolerance.value()
+        options['fit_tth_tol'] = self.ui.fit_tth_tol.value()
+        options['max_iter'] = self.ui.max_iter.value()
+        options['int_cutoff'] = self.ui.int_cutoff.value()
+        options['conv_tol'] = self.ui.conv_tol.value()
+        options['pk_type'] = self.ui.peak_fit_type.currentText().lower()
+        options['use_robust_optimization'] = self.ui.robust.isChecked()
 
     def exec_(self):
         if not self.ui.exec_():
