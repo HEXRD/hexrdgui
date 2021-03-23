@@ -73,9 +73,9 @@ class InstrumentCalibrator(object):
                 sum(resd1**2)/float(len(resd1))
 
             if delta_r > 0:
-                print('OPTIMIZATION SUCCESSFUL\nfinal ssr: %f'
-                      % sum(resd1**2)/float(len(resd1)))
-                print('delta_r: %f' % delta_r)
+                print('OPTIMIZATION SUCCESSFUL\nfinal ssr: '
+                      f'{sum(resd1**2)/float(len(resd1))}')
+                print(f'delta_r: {delta_r}')
             else:
                 print('no improvement in residual!!!')
                 step_successful = False
