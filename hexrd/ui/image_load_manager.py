@@ -39,6 +39,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     images_transformed = Signal()
     live_update_status = Signal(bool)
     state_updated = Signal()
+    enable_transforms = Signal()
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
@@ -207,6 +208,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def finish_processing_ims(self):
         # Display processed images on completion
         self.new_images_loaded.emit()
+        self.enable_transforms.emit()
         self.live_update_status.emit(self.update_status)
         if not self.update_status:
             self.update_needed.emit()
