@@ -65,8 +65,19 @@ class TransformDialog:
         else:
             for combo in self.det_cboxes:
                 trans.append(combo.currentIndex())
+
         ilm = ImageLoadManager()
         state = HexrdConfig().load_panel_state
         state['trans'] = trans
-        ilm.set_state({ 'trans': trans , 'agg': state.get('agg', 0) })
+
+        new_state = {
+            'trans': trans,
+            'agg': state.get('agg', 0),
+        }
+
+        if self.ui.subtract_minimum.isChecked():
+            new_state['zero-min'] = None
+            state['zero-min'] = None
+
+        ilm.set_state(new_state)
         ilm.begin_processing(postprocess=True)
