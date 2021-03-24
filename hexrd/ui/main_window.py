@@ -192,17 +192,12 @@ class MainWindow(QObject):
         self.ui.action_run_fit_grains.triggered.connect(
             self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
-        self.new_images_loaded.connect(self.update_color_map_bounds)
-        self.new_images_loaded.connect(self.update_hedm_enable_states)
-        self.new_images_loaded.connect(self.color_map_editor.reset_range)
-        self.new_images_loaded.connect(self.image_mode_widget.reset_masking)
         self.new_images_loaded.connect(self.images_loaded)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
-        self.load_widget.images_loaded.connect(self.images_loaded)
         self.import_data_widget.new_config_loaded.connect(
             self.update_config_gui)
 
@@ -227,7 +222,6 @@ class MainWindow(QObject):
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.live_update)
         ImageLoadManager().state_updated.connect(self.load_widget.setup_gui)
-        ImageLoadManager().enable_transforms.connect(self.images_loaded)
 
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
@@ -408,7 +402,6 @@ class MainWindow(QObject):
         self.update_all(clear_canvases=True)
         self.ui.action_transform_detectors.setEnabled(False)
         self.new_images_loaded.emit()
-        self.images_loaded(False)
 
     def open_image_file(self):
         images_dir = HexrdConfig().images_dir
@@ -467,6 +460,10 @@ class MainWindow(QObject):
 
     def images_loaded(self, enabled=True):
         self.ui.action_transform_detectors.setEnabled(enabled)
+        self.update_color_map_bounds
+        self.update_hedm_enable_states
+        self.color_map_editor.reset_range
+        self.image_mode_widget.reset_masking
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
