@@ -11,6 +11,8 @@ from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
+from hexrd.ui.extra_ops_processed_image_series import (
+    ExtraOpsProcessedImageSeries)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.progress_dialog import ProgressDialog
@@ -278,6 +280,11 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.update_progress_text('Aggregating dark images...')
             dark_images = self.aggregate_dark_multithread(dark_aggr_ops)
 
+        if 'zero-min' in self.state:
+            # Get the minimum over all the detectors
+            all_mins = [imageseries.stats.min(x) for x in ims_dict.values()]
+            global_min = min([x.min() for x in all_mins])
+
         # Apply the operations to the imageseries
         for idx, key in enumerate(ims_dict.keys()):
             ops = []
@@ -288,9 +295,11 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 self.get_flip_op(ops, idx)
             if 'rect' in self.state:
                 ops.append(('rectangle', self.state['rect'][idx]))
+            if 'zero-min' in self.state:
+                ops.append(('subtract', global_min))
 
             frames = self.get_range(ims_dict[key])
-            ims_dict[key] = imageseries.process.ProcessedImageSeries(
+            ims_dict[key] = ExtraOpsProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'columns', 'value'],
