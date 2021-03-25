@@ -174,6 +174,8 @@ class ImportDataPanel(QObject):
     def add_transform(self):
         # Prevent color map reset on transform
         self.cmap.block_updates(True)
+        if self.it: self.editing = True
+        self.clear_boundry()
         ilm = ImageLoadManager()
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
@@ -188,9 +190,9 @@ class ImportDataPanel(QObject):
             self.edited_images[self.detector]['height'] = img.shape[0]
             self.edited_images[self.detector]['width'] = img.shape[1]
 
-        if self.it:
-            self.it.update_image(img)
+        if self.editing:
             self.add_template()
+            self.it.update_image(img)
 
     def display_bounds(self):
         self.ui.bb_height.blockSignals(True)
