@@ -123,6 +123,10 @@ class PowderRunner(QObject):
         box.setStandardButtons(standard_buttons.Yes | standard_buttons.No)
         box.setWindowModality(Qt.NonModal)
 
+        # Keep the message box in front
+        flags = box.windowFlags()
+        box.setWindowFlags(flags | Qt.Tool)
+
         # Add a checkbox
         cb = QCheckBox('Show auto picks?')
         cb.setStyleSheet('margin-left:50%; margin-right:50%;')
