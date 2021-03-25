@@ -174,7 +174,8 @@ class ImportDataPanel(QObject):
     def add_transform(self):
         # Prevent color map reset on transform
         self.cmap.block_updates(True)
-        if self.it: self.editing = True
+        if self.it:
+            self.editing = True
         self.clear_boundry()
         ilm = ImageLoadManager()
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
