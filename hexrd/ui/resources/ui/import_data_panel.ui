@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>476</width>
-    <height>548</height>
+    <height>572</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -332,7 +332,7 @@
          <bool>true</bool>
         </property>
         <property name="flat">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="buttonGroup">
          <string notr="true">adjust_template</string>
@@ -355,20 +355,7 @@
         </attribute>
        </widget>
       </item>
-      <item row="1" column="0">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>205</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="1">
+      <item row="1" column="1" alignment="Qt::AlignRight">
        <widget class="QDialogButtonBox" name="button_box">
         <property name="enabled">
          <bool>true</bool>
@@ -495,7 +482,7 @@
       <item>
        <widget class="QFrame" name="style">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
@@ -535,7 +522,7 @@
             <string/>
            </property>
            <property name="autoDefault">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -592,7 +579,7 @@
             <bool>true</bool>
            </property>
            <property name="keyboardTracking">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="minimum">
             <double>0.010000000000000</double>
@@ -691,6 +678,8 @@
   <tabstop>add_transform</tabstop>
   <tabstop>detectors</tabstop>
   <tabstop>add_template</tabstop>
+  <tabstop>trans</tabstop>
+  <tabstop>rotate</tabstop>
   <tabstop>bb_width</tabstop>
   <tabstop>bb_height</tabstop>
   <tabstop>line_color</tabstop>
