@@ -186,7 +186,7 @@ DEFAULT_CRYSTAL_REFINEMENTS = default_crystal_refinements()
 
 def default_powder_refinements():
     names = ['a', 'b', 'c', 'α', 'β', 'γ']
-    default_refine = True
+    default_refine = False
     return [(x, default_refine) for x in names]
 
 
