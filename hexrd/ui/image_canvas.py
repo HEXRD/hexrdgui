@@ -12,6 +12,8 @@ from matplotlib.colors import LogNorm
 
 import numpy as np
 
+from hexrd.transforms.xfcapi import mapAngle
+
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
@@ -862,7 +864,11 @@ def transform_from_plain_cartesian_func(mode):
 
     def cart_to_angles(xys, panel, iviewer):
         ang_crds, _ = panel.cart_to_angles(xys, tvec_c=iviewer.instr.tvec)
-        return np.degrees(ang_crds)
+        ang_crds = np.degrees(ang_crds)
+        ang_crds[:, 1] = mapAngle(ang_crds[:, 1],
+                                  HexrdConfig().polar_res_eta_period,
+                                  units='degrees')
+        return ang_crds
 
     funcs = {
         ViewType.raw: cart_to_pixel,
