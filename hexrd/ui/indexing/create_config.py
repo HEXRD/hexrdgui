@@ -1,5 +1,7 @@
 import copy
 
+import numpy as np
+
 from hexrd.config.root import RootConfig
 from hexrd.config.material import MaterialConfig
 from hexrd.config.instrument import Instrument as InstrumentConfig
@@ -15,13 +17,20 @@ def create_indexing_config():
 
     # Make a copy to modify
     indexing_config = copy.deepcopy(HexrdConfig().indexing_config)
-    material = HexrdConfig().active_material
+    available_materials = list(HexrdConfig().materials.keys())
+    selected_material = indexing_config.get('_selected_material')
+
+    if selected_material not in available_materials:
+        raise Exception(f'Selected material {selected_material} not available')
+
+    material = HexrdConfig().material(selected_material)
+
     omaps = indexing_config['find_orientations']['orientation_maps']
     omaps['active_hkls'] = list(range(len(material.planeData.getHKLs())))
 
     # Set the active material on the config
     tmp = indexing_config.setdefault('material', {})
-    tmp['active'] = HexrdConfig().active_material_name
+    tmp['active'] = material.name
 
     # Create the root config from the indexing config dict
     config = RootConfig(indexing_config)
@@ -36,8 +45,11 @@ def create_indexing_config():
     mconfig.materials = HexrdConfig().materials
     config.material = mconfig
 
+    # Set this so the config won't over-write our tThWidth
+    config.set('material:tth_width', np.degrees(material.planeData.tThWidth))
+
     # Use unaggregated images if possible
-    ims_dict = ImageLoadManager().unaggregated_images
+    ims_dict = HexrdConfig().unagg_images
     if ims_dict is None:
         # This probably means the image series was never aggregated.
         # Try using the imageseries dict.
@@ -52,7 +64,8 @@ def create_indexing_config():
 
     # Convert image series into OmegaImageSeries
     for key, ims in ims_dict.items():
-        ims_dict[key] = OmegaImageSeries(ims)
+        if not isinstance(ims, OmegaImageSeries):
+            ims_dict[key] = OmegaImageSeries(ims)
 
     config.image_series = ims_dict
 

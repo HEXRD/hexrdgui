@@ -9,7 +9,7 @@ from hexrd.findorientations import (
     generate_eta_ome_maps, generate_orientation_fibers, run_cluster
 )
 from hexrd.fitgrains import fit_grains
-from hexrd.xrdutil import EtaOmeMaps
+from hexrd.xrdutil import EtaOmeMaps, _memo_hkls
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -21,7 +21,6 @@ from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.indexing.utils import generate_grains_table
 from hexrd.ui.progress_dialog import ProgressDialog
-
 
 class Runner(QObject):
     progress_text = Signal(str)
@@ -56,6 +55,9 @@ class IndexingRunner(Runner):
         self.ome_maps_viewer_dialog = None
         self.ome_maps = None
         self.grains_table = None
+
+        # Reset memo hkls in case they were set earlier with different hkls
+        _memo_hkls.clear()
 
     def run(self):
         # We will go through these steps:
@@ -103,7 +105,6 @@ class IndexingRunner(Runner):
 
     def view_ome_maps(self):
         # Now, show the Ome Map viewer
-
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
         dialog.rejected.connect(self.clear)
@@ -226,6 +227,9 @@ class FitGrainsRunner(Runner):
         self.fit_grains_options_dialog = None
         self.fit_grains_results = None
 
+        # Reset memo hkls in case they were set earlier with different hkls
+        _memo_hkls.clear()
+
     def run(self):
         # We will go through these steps:
         # 1. If the table is not set, get the user to select one
@@ -311,7 +315,11 @@ def create_fit_grains_results_dialog(fit_grains_results, parent=None):
     gw.close()
 
     # Use the material to compute stress from strain
-    material = HexrdConfig().active_material
+    indexing_config = HexrdConfig().indexing_config
+    name = indexing_config.get('_selected_material')
+    if name not in HexrdConfig().materials:
+        name = HexrdConfig().active_material_name
+    material = HexrdConfig().material(name)
 
     # Create the dialog
     dialog = FitGrainsResultsDialog(grains_table, material, parent)

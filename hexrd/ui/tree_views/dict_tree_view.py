@@ -99,7 +99,7 @@ class DictTreeItemModel(BaseTreeItemModel):
 
         for key in keys:
             path = self.get_path_from_root(cur_tree_item, 0) + [key]
-            if path in self.blacklisted_paths:
+            if path in self.blacklisted_paths or str(key).startswith('_'):
                 continue
 
             tree_item = self.add_tree_item(key, None, cur_tree_item)

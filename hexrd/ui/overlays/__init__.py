@@ -1,5 +1,7 @@
 import copy
 
+from hexrd import unitcell
+
 from hexrd.ui.overlays.laue_diffraction import LaueSpotOverlay
 from hexrd.ui.overlays.mono_rotation_series import (
     MonoRotationSeriesSpotOverlay
@@ -51,7 +53,12 @@ def default_overlay_options(overlay_type):
     return copy.deepcopy(default_options[overlay_type])
 
 
-def default_overlay_refinements(overlay_type):
+def default_overlay_refinements(overlay):
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    material = HexrdConfig().material(overlay['material'])
+    overlay_type = overlay['type']
+
     default_refinements = {
         OverlayType.powder: constants.DEFAULT_POWDER_REFINEMENTS,
         OverlayType.laue: constants.DEFAULT_CRYSTAL_REFINEMENTS,
@@ -61,7 +68,12 @@ def default_overlay_refinements(overlay_type):
     if overlay_type not in default_refinements:
         raise Exception(f'Unknown overlay type: {overlay_type}')
 
-    return copy.deepcopy(default_refinements[overlay_type])
+    refinements = copy.deepcopy(default_refinements[overlay_type])
+
+    # Only give it the required indices
+    indices = unitcell._rqpDict[material.unitcell.latticeType][0]
+
+    return [refinements[i] for i in indices]
 
 
 def update_overlay_data(instr, display_mode):

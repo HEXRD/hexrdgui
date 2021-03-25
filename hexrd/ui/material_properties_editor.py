@@ -101,7 +101,12 @@ class MaterialPropertiesEditor:
         material = self.material
 
         density = getattr(material.unitcell, 'density', 0)
+        volume = getattr(material, 'vol', 0)
+        volume_per_atom = getattr(material, 'vol_per_atom', 0)
+
         self.ui.density.setValue(density)
+        self.ui.volume.setValue(volume)
+        self.ui.volume_per_atom.setValue(volume_per_atom)
 
     def update_enable_states(self):
         matrix_valid = not self.elastic_tensor_editor.matrix_invalid
@@ -123,7 +128,9 @@ class MaterialPropertiesEditor:
     @property
     def misc_widgets(self):
         return [
-           self.ui.density
+            self.ui.density,
+            self.ui.volume,
+            self.ui.volume_per_atom,
         ]
 
 

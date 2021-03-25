@@ -37,18 +37,21 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="sb_tilt_0">
+       <widget class="ScientificDoubleSpinBox" name="sb_tilt_0">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -76,18 +79,21 @@
        </widget>
       </item>
       <item row="3" column="2">
-       <widget class="QDoubleSpinBox" name="sb_tilt_2">
+       <widget class="ScientificDoubleSpinBox" name="sb_tilt_2">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -108,18 +114,21 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="sb_tilt_1">
+       <widget class="ScientificDoubleSpinBox" name="sb_tilt_1">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -147,18 +156,21 @@
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QDoubleSpinBox" name="sb_tilt_range">
+       <widget class="ScientificDoubleSpinBox" name="sb_tilt_range">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>0.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>360.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -195,15 +207,18 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_1">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_1">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -211,15 +226,18 @@
        </widget>
       </item>
       <item row="3" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_2">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_2">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -240,15 +258,18 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_0">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_0">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -296,18 +317,21 @@
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QDoubleSpinBox" name="sb_translation_range">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_range">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>0.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -367,18 +391,21 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="sb_azimuth_0">
+       <widget class="ScientificDoubleSpinBox" name="sb_azimuth_0">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -386,18 +413,21 @@
        </widget>
       </item>
       <item row="3" column="2">
-       <widget class="QDoubleSpinBox" name="sb_polar_0">
+       <widget class="ScientificDoubleSpinBox" name="sb_polar_0">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="suffix">
          <string>°</string>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -418,18 +448,21 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="sb_energy_0">
+       <widget class="ScientificDoubleSpinBox" name="sb_energy_0">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
         <property name="suffix">
          <string> keV</string>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>-10000.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>10000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -477,18 +510,21 @@
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QDoubleSpinBox" name="sb_beam_range">
+       <widget class="ScientificDoubleSpinBox" name="sb_beam_range">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
         <property name="minimum">
-         <double>0.000000000000000</double>
+         <double>-1000000.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
+         <double>1000000.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
@@ -523,6 +559,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>detector</tabstop>
   <tabstop>sb_translation_range</tabstop>

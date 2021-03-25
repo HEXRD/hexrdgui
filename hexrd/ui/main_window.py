@@ -20,7 +20,7 @@ from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
-from hexrd.ui.calibration.powder_calibration import run_powder_calibration
+from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
@@ -36,7 +36,6 @@ from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
-from hexrd.ui.powder_calibration_dialog import PowderCalibrationDialog
 from hexrd.ui.save_images_dialog import SaveImagesDialog
 from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
@@ -193,16 +192,12 @@ class MainWindow(QObject):
         self.ui.action_run_fit_grains.triggered.connect(
             self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
-        self.new_images_loaded.connect(self.update_color_map_bounds)
-        self.new_images_loaded.connect(self.update_hedm_enable_states)
-        self.new_images_loaded.connect(self.color_map_editor.reset_range)
-        self.new_images_loaded.connect(self.image_mode_widget.reset_masking)
+        self.new_images_loaded.connect(self.images_loaded)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
-        self.load_widget.images_loaded.connect(self.images_loaded)
         self.import_data_widget.new_config_loaded.connect(
             self.update_config_gui)
 
@@ -226,6 +221,7 @@ class MainWindow(QObject):
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.live_update)
+        ImageLoadManager().state_updated.connect(self.load_widget.setup_gui)
 
         self.ui.action_switch_workflow.triggered.connect(
             self.on_action_switch_workflow_triggered)
@@ -461,10 +457,13 @@ class MainWindow(QObject):
                     pos = HexrdConfig().detector_names.index(d)
                     files[pos].append(f)
                 ImageLoadManager().read_data(files, parent=self.ui)
-                self.images_loaded()
 
-    def images_loaded(self):
-        self.ui.action_transform_detectors.setEnabled(True)
+    def images_loaded(self, enabled=True):
+        self.ui.action_transform_detectors.setEnabled(enabled)
+        self.update_color_map_bounds
+        self.update_hedm_enable_states
+        self.color_map_editor.reset_range
+        self.image_mode_widget.reset_masking
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
@@ -493,19 +492,12 @@ class MainWindow(QObject):
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             HexrdConfig().load_materials(selected_file)
-            self.materials_panel.update_gui_from_config()
-            self.materials_panel.update_structure_tab()
 
     def on_action_save_imageseries_triggered(self):
         if not HexrdConfig().has_images():
             msg = ('No ImageSeries available for saving.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
-
-        if ImageLoadManager().unaggregated_images:
-            ims_dict = ImageLoadManager().unaggregated_images
-        else:
-            ims_dict = HexrdConfig().imageseries_dict
 
         SaveImagesDialog(self.ui).exec_()
 
@@ -569,7 +561,7 @@ class MainWindow(QObject):
             self._wppf_runner.run()
         except Exception as e:
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
-            return
+            raise
 
     def update_color_map_bounds(self):
         self.color_map_editor.update_bounds(
@@ -699,31 +691,12 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        d = PowderCalibrationDialog(self.ui)
-        if not d.exec_():
-            return
+        if hasattr(self, '_powder_runner'):
+            self._powder_runner.clear()
 
-        HexrdConfig().emit_update_status_bar('Running powder calibration...')
-
-        # Run the calibration in a background thread
-        worker = AsyncWorker(run_powder_calibration)
-        self.thread_pool.start(worker)
-
-        # We currently don't have any progress updates, so make the
-        # progress bar indeterminate.
-        self.progress_dialog.setRange(0, 0)
-        self.progress_dialog.setWindowTitle('Calibration Running')
-
-        # Get the results and close the progress dialog when finished
-        worker.signals.result.connect(self.finish_powder_calibration)
-        worker.signals.finished.connect(self.progress_dialog.accept)
-        msg = 'Powder calibration finished!'
-
-        def callback():
-            HexrdConfig().emit_update_status_bar(msg)
-
-        worker.signals.finished.connect(callback)
-        self.progress_dialog.exec_()
+        self._powder_runner = PowderRunner(self.ui)
+        self._powder_runner.finished.connect(self.finish_powder_calibration)
+        self._powder_runner.run()
 
     def finish_powder_calibration(self):
         self.update_config_gui()
@@ -872,7 +845,7 @@ class MainWindow(QObject):
         for action in actions:
             action.setEnabled(False)
 
-        image_series_dict = ImageLoadManager().unaggregated_images
+        image_series_dict = HexrdConfig().unagg_images
         if image_series_dict is None:
             image_series_dict = HexrdConfig().imageseries_dict
 

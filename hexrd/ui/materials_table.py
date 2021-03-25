@@ -21,26 +21,44 @@ class COLUMNS:
 
 class MaterialsTable:
 
-    def __init__(self, parent=None):
+    def __init__(self, material, title_prefix='', parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('materials_table.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
         self.setup_connections()
 
+        self.title_prefix = title_prefix
+        self._material = material
+        self.update_material_name()
+        self.update_table()
+
     def setup_connections(self):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.update_selections)
 
-    def show(self):
-        if not hasattr(self, 'already_shown'):
-            self.already_shown = True
-            self.move_dialog_to_left()
+        HexrdConfig().active_material_modified.connect(
+            self.active_material_modified)
+        HexrdConfig().material_renamed.connect(self.update_material_name)
 
+    @property
+    def material(self):
+        return self._material
+
+    @material.setter
+    def material(self, m):
+        if m is self._material:
+            return
+
+        self._material = m
+        self.update_material_name()
+        self.update_table()
+
+    def show(self):
         self.ui.show()
 
     def update_material_name(self):
-        self.ui.setWindowTitle(HexrdConfig().active_material_name)
+        self.ui.setWindowTitle(f'{self.title_prefix}{self.material.name}')
 
     def update_selections(self):
         # This updates the exclusions based upon the selected rows
@@ -52,15 +70,15 @@ class MaterialsTable:
 
     @property
     def exclusions(self):
-        return HexrdConfig().active_material.planeData.exclusions
+        return self.material.planeData.exclusions
 
     @exclusions.setter
     def exclusions(self, exclusions):
         if np.array_equal(exclusions, self.exclusions):
             return
 
-        HexrdConfig().active_material.planeData.exclusions = exclusions
-        HexrdConfig().flag_overlay_updates_for_active_material()
+        self.material.planeData.exclusions = exclusions
+        HexrdConfig().flag_overlay_updates_for_material(self.material.name)
         HexrdConfig().overlay_config_changed.emit()
 
     @property
@@ -91,8 +109,12 @@ class MaterialsTable:
             model_index = selection_model.model().index(i, 0)
             selection_model.select(model_index, command)
 
+    def active_material_modified(self):
+        if HexrdConfig().active_material is self.material:
+            self.update_table()
+
     def update_table(self):
-        material = HexrdConfig().active_material
+        material = self.material
         table = self.ui.table
 
         block_list = [
@@ -164,19 +186,6 @@ class MaterialsTable:
 
         return rows
 
-    def move_dialog_to_left(self):
-        # This moves the dialog to the left border of the parent
-        parent = self.ui.parent()
-        if not parent:
-            return
-
-        ph = parent.geometry().height()
-        px = parent.geometry().x()
-        py = parent.geometry().y()
-        dw = self.ui.width()
-        dh = self.ui.height()
-        self.ui.setGeometry(px, py + (ph - dh) / 2.0, dw, dh)
-
 
 class HklTableItem(QTableWidgetItem):
     """Subclass so we can sort by HKLs instead of strings"""
@@ -237,5 +246,8 @@ def sorting_disabled(table):
 
 
 def rescale_structure_factors(sf):
+    if len(sf) == 0:
+        return
+
     # Rescale the structure factors to be between 0 and 100
     sf[:] = np.interp(sf, (sf.min(), sf.max()), (0, 100))

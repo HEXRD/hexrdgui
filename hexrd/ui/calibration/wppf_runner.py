@@ -2,11 +2,12 @@ import copy
 
 from PySide2.QtCore import QCoreApplication, QObject, QThreadPool, Signal
 
+from hexrd.WPPF import Rietveld
+
 from hexrd.ui.calibration.wppf_options_dialog import WppfOptionsDialog
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.progress_dialog import ProgressDialog
-from hexrd.ui.utils import make_new_pdata
 
 
 class WppfRunner(QObject):
@@ -74,8 +75,14 @@ class WppfRunner(QObject):
         dialog = self.wppf_options_dialog
         self.wppf_object = dialog.create_wppf_object()
 
+        # Work around differences in WPPF objects
+        if isinstance(self.wppf_object, Rietveld):
+            refine_func = self.wppf_object.Refine
+        else:
+            refine_func = self.wppf_object.RefineCycle
+
         for i in range(dialog.refinement_steps):
-            self.wppf_object.RefineCycle()
+            refine_func()
             self.rerender_wppf()
 
         self.write_lattice_params_to_materials()
@@ -96,13 +103,18 @@ class WppfRunner(QObject):
         for name, wppf_mat in self.wppf_object.phases.phase_dict.items():
             mat = HexrdConfig().material(name)
 
+            # Work around differences in WPPF objects
+            if isinstance(self.wppf_object, Rietveld):
+                lparms = wppf_mat['synchrotron'].lparms
+            else:
+                lparms = wppf_mat.lparms
+
             # Convert units from nm to angstroms
-            lparms = copy.deepcopy(wppf_mat.lparms)
+            lparms = copy.deepcopy(lparms)
             for i in range(3):
                 lparms[i] *= 10.0
 
             mat.latticeParameters = lparms
-            make_new_pdata(mat)
             HexrdConfig().flag_overlay_updates_for_material(name)
 
             if mat is HexrdConfig().active_material:

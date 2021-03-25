@@ -73,6 +73,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when wppf needs to be re-rendered"""
     rerender_wppf = Signal()
 
+    """Emitted when auto picked data needs to be re-rendered"""
+    rerender_auto_picked_data = Signal()
+
     """Emitted for any config changes EXCEPT detector transform changes
 
     Indicates that the image needs to be re-drawn from scratch.
@@ -119,8 +122,20 @@ class HexrdConfig(QObject, metaclass=Singleton):
     """Emitted when the threshold mask status changes via mask manager"""
     mgr_threshold_mask_changed = Signal(bool)
 
+    """Emitted when the active material is changed to a different material"""
+    active_material_changed = Signal()
+
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
+
+    """Emitted when a material is renamed"""
+    material_renamed = Signal()
+
+    """Emitted when a material is removed"""
+    material_removed = Signal()
+
+    """Emitted to update the tth width in the powder overlay editor"""
+    material_tth_width_modified = Signal(str)
 
     """Emitted when a new raw mask has been created"""
     raw_masks_changed = Signal()
@@ -158,10 +173,12 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None
+        self._auto_picked_data = None
         self.workflow = None
         self.last_azimuthal_integral_data = None
         self._threshold_data = {}
         self.stack_state = {}
+        self.unaggregated_images = None
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
@@ -487,8 +504,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         material = Material(name, f, kev=beam_energy)
         self.add_material(name, material)
 
-        # Make it the active material
-        self.active_material = name
+        return name
 
     def set_live_update(self, status):
         self.live_update = status
@@ -593,7 +609,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 else:
                     statuses.append(status)
 
-        return np.asarray(statuses)
+        return np.asarray(statuses, dtype=bool)
 
     def set_statuses_from_prev_iconfig(self, prev_iconfig):
         # This function seems to be much faster than
@@ -907,9 +923,15 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
             if self.active_material_name == old_name:
                 # Change the active material before removing the old one
-                self.active_material = new_name
+                # Set the dict directly to bypass the updates that occur
+                # if we did self.active_material = new_name
+                self.config['materials']['active_material'] = new_name
 
-            self.remove_material(old_name)
+            # Avoid calling self.remove_material() to avoid pruning
+            # overlays and such.
+            del self.config['materials']['materials'][old_name]
+
+            self.material_renamed.emit()
 
     def modify_material(self, name, material):
         if name not in self.materials:
@@ -930,6 +952,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 self.active_material = list(self.materials.keys())[0]
             else:
                 self.active_material = None
+
+        self.material_removed.emit()
 
     def _materials(self):
         return self.config['materials'].get('materials', {})
@@ -959,6 +983,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
+        self.active_material_changed.emit()
 
     active_material = property(_active_material, _set_active_material)
 
@@ -991,7 +1016,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
             return
 
         mat.beamEnergy = energy
-        utils.make_new_pdata(mat)
         self.flag_overlay_updates_for_material(mat.name)
 
     def update_active_material_energy(self):
@@ -1108,9 +1132,9 @@ class HexrdConfig(QObject, metaclass=Singleton):
             'style': style,
             'visible': visible,
             'options': overlays.default_overlay_options(type),
-            'refinements': overlays.default_overlay_refinements(type),
-            'data': {}
+            'data': {},
         }
+        overlay['refinements'] = overlays.default_overlay_refinements(overlay)
         self.overlays.append(overlay)
         self.overlay_config_changed.emit()
 
@@ -1127,7 +1151,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         overlay['type'] = type
         overlay['style'] = overlays.default_overlay_style(type)
         overlay['options'] = overlays.default_overlay_options(type)
-        overlay['refinements'] = overlays.default_overlay_refinements(type)
+        overlay['refinements'] = overlays.default_overlay_refinements(overlay)
         overlay['update_needed'] = True
 
     def clear_overlay_data(self):
@@ -1451,3 +1475,36 @@ class HexrdConfig(QObject, metaclass=Singleton):
                                      set_threshold_mask_status)
     threshold_mask = property(threshold_mask,
                               set_threshold_mask)
+
+    @property
+    def unagg_images(self):
+        return self.unaggregated_images
+
+    def reset_unagg_imgs(self):
+        if self.unagg_images is not None:
+            HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
+            self.unaggregated_images = None
+
+    def set_unagg_images(self):
+        self.unaggregated_images = copy.copy(self.imageseries_dict)
+
+    @property
+    def display_wppf_plot(self):
+        settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
+        return settings.setdefault('display_plot', True)
+
+    @display_wppf_plot.setter
+    def display_wppf_plot(self, b):
+        if self.display_wppf_plot != b:
+            settings = HexrdConfig().config['calibration']['wppf']
+            settings['display_plot'] = b
+            self.rerender_wppf.emit()
+
+    @property
+    def auto_picked_data(self):
+        return self._auto_picked_data
+
+    @auto_picked_data.setter
+    def auto_picked_data(self, data):
+        self._auto_picked_data = data
+        self.rerender_auto_picked_data.emit()

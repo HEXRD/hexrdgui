@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>373</width>
-    <height>128</height>
+    <height>136</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
      </attribute>
     </widget>
    </item>
-   <item row="0" column="2">
+   <item row="0" column="2" colspan="2">
     <widget class="QRadioButton" name="single_detector">
      <property name="text">
       <string>Single Detector</string>
@@ -37,7 +37,7 @@
      </attribute>
     </widget>
    </item>
-   <item row="0" column="3">
+   <item row="0" column="4">
     <widget class="QComboBox" name="detectors">
      <property name="enabled">
       <bool>false</bool>
@@ -51,21 +51,21 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="2">
+   <item row="1" column="1" colspan="3">
     <widget class="QLineEdit" name="pwd">
      <property name="readOnly">
       <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="1" column="3">
+   <item row="1" column="4">
     <widget class="QPushButton" name="change_directory">
      <property name="text">
       <string>Change</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="3">
+   <item row="2" column="0" colspan="4">
     <widget class="QLineEdit" name="file_stem">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The detector name will be appeneded to the file stem on save.&lt;br/&gt;Example:&lt;/p&gt;&lt;p&gt;FF_Ruby_000039-fc.npz -&amp;gt; FF_Ruby_000039-fc_ge1.npz&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -75,7 +75,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="3">
+   <item row="2" column="4">
     <widget class="QComboBox" name="format">
      <item>
       <property name="text">
@@ -89,7 +89,17 @@
      </item>
     </widget>
    </item>
-   <item row="3" column="2" colspan="2">
+   <item row="3" column="0" colspan="3">
+    <widget class="QCheckBox" name="ignore_agg">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Ignore Aggregation</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="3" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -101,6 +111,16 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>all_detectors</tabstop>
+  <tabstop>single_detector</tabstop>
+  <tabstop>detectors</tabstop>
+  <tabstop>pwd</tabstop>
+  <tabstop>change_directory</tabstop>
+  <tabstop>file_stem</tabstop>
+  <tabstop>format</tabstop>
+  <tabstop>ignore_agg</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

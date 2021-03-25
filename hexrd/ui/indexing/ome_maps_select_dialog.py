@@ -6,6 +6,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 from hexrd.ui import enter_key_filter
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.materials_table import MaterialsTable
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -33,8 +34,13 @@ class OmeMapsSelectDialog(QObject):
     def setup_connections(self):
         self.ui.select_file_button.pressed.connect(self.select_file)
         self.ui.method.currentIndexChanged.connect(self.update_method_tab)
+        self.ui.material.currentIndexChanged.connect(
+            self.selected_material_changed)
+        self.ui.choose_hkls.pressed.connect(self.choose_hkls)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
+
+        HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
 
     def setup_combo_box_data(self):
         item_data = [
@@ -43,6 +49,10 @@ class OmeMapsSelectDialog(QObject):
         ]
         for i, data in enumerate(item_data):
             self.ui.method.setItemData(i, data)
+
+        self.ui.material.clear()
+        self.ui.material.addItems(list(HexrdConfig().materials.keys()))
+        self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def show(self):
         self.ui.show()
@@ -78,11 +88,47 @@ class OmeMapsSelectDialog(QObject):
 
     @property
     def threshold(self):
+        if not self.ui.apply_threshold.isChecked():
+            return None
+
         return self.ui.threshold.value()
+
+    @threshold.setter
+    def threshold(self, v):
+        apply_threshold = v is not None
+        self.ui.apply_threshold.setChecked(apply_threshold)
+        if apply_threshold:
+            self.ui.threshold.setValue(v)
 
     @property
     def bin_frames(self):
         return self.ui.bin_frames.value()
+
+    @property
+    def material_options(self):
+        w = self.ui.material
+        return [w.itemText(i) for i in range(w.count())]
+
+    def selected_material_changed(self):
+        if hasattr(self, '_table'):
+            self._table.material = self.material
+
+        self.update_num_hkls()
+
+    @property
+    def selected_material(self):
+        return self.ui.material.currentText()
+
+    @selected_material.setter
+    def selected_material(self, name):
+        if name is None or name not in self.material_options:
+            return
+
+        self.ui.material.setCurrentText(name)
+
+    @property
+    def material(self):
+        return HexrdConfig().material(self.selected_material)
 
     @property
     def widgets(self):
@@ -100,6 +146,8 @@ class OmeMapsSelectDialog(QObject):
         maps_config['threshold'] = self.threshold
         maps_config['bin_frames'] = self.bin_frames
 
+        indexing_config['_selected_material'] = self.selected_material
+
     def update_gui(self):
         blockers = [QSignalBlocker(x) for x in self.widgets]  # noqa: F841
 
@@ -109,10 +157,14 @@ class OmeMapsSelectDialog(QObject):
         file_name = maps_config['file'] if maps_config['file'] else ''
 
         self.ui.file_name.setText(file_name)
-        self.ui.threshold.setValue(maps_config['threshold'])
+        self.threshold = maps_config['threshold']
         self.ui.bin_frames.setValue(maps_config['bin_frames'])
 
+        self.selected_material = indexing_config.get('_selected_material')
+
         self.update_method_tab()
+
+        self.update_num_hkls()
 
     @property
     def method_name(self):
@@ -132,3 +184,17 @@ class OmeMapsSelectDialog(QObject):
         # Take advantage of the naming scheme...
         method_tab = getattr(self.ui, self.method_name + '_tab')
         self.ui.tab_widget.setCurrentWidget(method_tab)
+
+    def choose_hkls(self):
+        kwargs = {
+            'material': self.material,
+            'title_prefix': 'Select hkls for eta omega map generation: ',
+            'parent': self.ui,
+        }
+        self._table = MaterialsTable(**kwargs)
+        self._table.show()
+
+    def update_num_hkls(self):
+        num_hkls = len(self.material.planeData.getHKLs())
+        text = f'Number of hkls selected:  {num_hkls}'
+        self.ui.num_hkls_selected.setText(text)

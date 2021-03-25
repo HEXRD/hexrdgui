@@ -139,7 +139,8 @@ class PowderLineOverlay:
 
             if display_mode == ViewType.polar:
                 # !!! apply offset correction
-                ang_crds, _ = panel.cart_to_angles(xys, self.instrument.tvec)
+                ang_crds, _ = panel.cart_to_angles(xys,
+                                                   tvec_c=self.instrument.tvec)
 
                 if len(ang_crds) == 0:
                     skipped_tth.append(i)

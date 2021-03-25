@@ -11,6 +11,8 @@ from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
+from hexrd.ui.extra_ops_processed_image_series import (
+    ExtraOpsProcessedImageSeries)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.progress_dialog import ProgressDialog
@@ -38,10 +40,11 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     new_images_loaded = Signal()
     images_transformed = Signal()
     live_update_status = Signal(bool)
+    state_updated = Signal()
+    enable_transforms = Signal()
 
     def __init__(self):
         super(ImageLoadManager, self).__init__(None)
-        self.unaggregated_images = None
         self.transformed_images = False
 
     def load_images(self, fnames):
@@ -134,7 +137,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         self.set_state()
         self.parent = parent
         self.files = files
-        self.data = data
+        self.data = {} if data is None else data
         self.empty_frames = data['empty_frames'] if data else 0
 
         self.begin_processing()
@@ -165,6 +168,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.state = HexrdConfig().load_panel_state
         else:
             self.state = state
+        self.state_updated.emit()
 
     def process_ims(self, postprocess, update_progress):
         self.update_progress = update_progress
@@ -175,21 +179,21 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             self.parent_dir = HexrdConfig().images_dir
             det_names = HexrdConfig().detector_names
 
+            options = {
+                'empty-frames': self.data.get('empty_frames', 0),
+                'max-file-frames': self.data.get('max_file_frames', 0),
+                'max-total-frames': self.data.get(
+                    'max_total_frames', 0),
+            }
+
             if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
                     dirs = os.path.dirname(self.files[i][0])
-                    options = {
-                        'empty-frames': self.data.get('empty_frames', 0),
-                        'max-file-frames': self.data.get('max_frame_file', 0),
-                        'max-total-frames': self.data.get('max_frames', 0)
-                    }
                     ims = ImageFileManager().open_directory(dirs, self.files[i], options)
                     HexrdConfig().imageseries_dict[det] = ims
             else:
-                ImageFileManager().load_images(det_names, self.files)
-        elif self.unaggregated_images is not None:
-            HexrdConfig().imageseries_dict = copy.copy(self.unaggregated_images)
-            self.reset_unagg_imgs()
+                ImageFileManager().load_images(det_names, self.files, options)
+        HexrdConfig().reset_unagg_imgs()
 
         # Now that self.state is set, setup the progress variables
         self.setup_progress_variables()
@@ -197,16 +201,16 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # Process the imageseries
         self.apply_operations(HexrdConfig().imageseries_dict)
         if self.data:
+            self.add_omega_metadata(HexrdConfig().imageseries_dict)
             if 'agg' in self.state and self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
-            else:
-                self.add_omega_metadata(HexrdConfig().imageseries_dict)
 
         self.update_progress(100)
 
     def finish_processing_ims(self):
         # Display processed images on completion
         self.new_images_loaded.emit()
+        self.enable_transforms.emit()
         self.live_update_status.emit(self.update_status)
         if not self.update_status:
             self.update_needed.emit()
@@ -257,7 +261,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                             and self.empty_frames == 0):
                         msg = ('ERROR: \n No empty frames set. '
                                + 'No dark subtracion will be performed.')
-                        raise NoEmptyFramesException(msg)
+                        QMessageBox.warning(None, 'HEXRD', msg)
                     else:
                         op = self.get_dark_aggr_op(ims_dict[key], idx)
                         ops[key] = op
@@ -268,17 +272,18 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         # First perform dark aggregation if we need to
         dark_aggr_ops = {}
         if 'dark' in self.state:
-            try:
-                dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
-            except NoEmptyFramesException as ex:
-                QMessageBox.warning(None, 'HEXRD', str(ex))
-                return
+            dark_aggr_ops = self.get_dark_aggr_ops(ims_dict)
 
         # Now run the dark aggregation
         dark_images = {}
         if dark_aggr_ops:
             self.update_progress_text('Aggregating dark images...')
             dark_images = self.aggregate_dark_multithread(dark_aggr_ops)
+
+        if 'zero-min' in self.state:
+            # Get the minimum over all the detectors
+            all_mins = [imageseries.stats.min(x) for x in ims_dict.values()]
+            global_min = min([x.min() for x in all_mins])
 
         # Apply the operations to the imageseries
         for idx, key in enumerate(ims_dict.keys()):
@@ -290,9 +295,11 @@ class ImageLoadManager(QObject, metaclass=Singleton):
                 self.get_flip_op(ops, idx)
             if 'rect' in self.state:
                 ops.append(('rectangle', self.state['rect'][idx]))
+            if 'zero-min' in self.state:
+                ops.append(('subtract', global_min))
 
             frames = self.get_range(ims_dict[key])
-            ims_dict[key] = imageseries.process.ProcessedImageSeries(
+            ims_dict[key] = ExtraOpsProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'columns', 'value'],
@@ -305,7 +312,7 @@ class ImageLoadManager(QObject, metaclass=Singleton):
     def display_aggregation(self, ims_dict):
         self.update_progress_text('Aggregating images...')
         # Remember unaggregated images
-        self.unaggregated_images = copy.copy(ims_dict)
+        HexrdConfig().set_unagg_images()
 
         if self.state['agg'] == UI_AGG_INDEX_MAXIMUM:
             agg_func = imageseries.stats.max_iter
@@ -317,13 +324,13 @@ class ImageLoadManager(QObject, metaclass=Singleton):
         f = functools.partial(self.aggregate_images, agg_func=agg_func)
 
         for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
-            ims_dict[key] = aggr_img
+            ims_dict[key] = ImageFileManager().open_file(aggr_img)
 
     def add_omega_metadata(self, ims_dict):
         # Add on the omega metadata if there is any
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
-        for key in ims_dict.keys():
-            nframes = self.data['total_frames'][0] * len(files[0])
+        for key, ims in ims_dict.items():
+            nframes = len(ims)
             omw = imageseries.omega.OmegaWedges(nframes)
             if 'wedges' in self.data:
                 for wedge in self.data['wedges']:
@@ -366,9 +373,6 @@ class ImageLoadManager(QObject, metaclass=Singleton):
 
     def get_dark_op(self, oplist, dark):
         oplist.append(('dark', dark))
-
-    def reset_unagg_imgs(self):
-        self.unaggregated_images = None
 
     def setup_progress_variables(self):
         self.current_progress_step = 0
