@@ -167,7 +167,8 @@ class ImportDataPanel(QObject):
             self.ui.files_label.setText(', '.join(file_names))
             self.enable_widgets(self.ui.transform_img, self.ui.association,
                                 enabled=True)
-            self.parent().action_show_toolbar.setDisabled(True)
+            self.enable_widgets(self.parent().action_show_toolbar,
+                                self.ui.instrument, enabled=False)
             self.parent().action_show_toolbar.setChecked(False)
 
     def add_transform(self):
@@ -317,10 +318,11 @@ class ImportDataPanel(QObject):
 
     def reset_panel(self):
         self.clear_boundry()
-        self.ui.instruments.setCurrentIndex(3)
+        self.ui.instruments.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
         self.ui.files_label.setText('')
         self.ui.completed_dets.setText('')
+        self.edited_images.clear()
         self.enable_widgets(self.ui.association, self.ui.file_selection,
                             self.ui.transform_img, self.ui.outline_appearance,
                             self.ui.outline_position, self.ui.finalize,
@@ -346,7 +348,6 @@ class ImportDataPanel(QObject):
             transform = det.setdefault('transform', {})
             *zx, z = self.detector_defaults[key]['tilt']
             transform['tilt'] = [*zx, (z + float(val['tilt']))]
-            transform['translation'] = self.detector_defaults[key]['translation']
             files.append([val['img']])
         HexrdConfig().load_instrument_config(
             yml_file=None, yml_dict=self.detector_defaults['default_config'])
