@@ -246,5 +246,8 @@ def sorting_disabled(table):
 
 
 def rescale_structure_factors(sf):
+    if len(sf) == 0:
+        return
+
     # Rescale the structure factors to be between 0 and 100
     sf[:] = np.interp(sf, (sf.min(), sf.max()), (0, 100))

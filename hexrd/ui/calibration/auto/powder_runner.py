@@ -118,9 +118,10 @@ class PowderRunner(QObject):
 
     def ask_if_lines_are_acceptable(self):
         msg = 'Perform calibration with the points drawn?'
-        box = QMessageBox(QMessageBox.Question, 'HEXRD', msg)
         standard_buttons = QMessageBox.StandardButton
-        box.setStandardButtons(standard_buttons.Yes | standard_buttons.No)
+        buttons = standard_buttons.Yes | standard_buttons.No
+        box = QMessageBox(QMessageBox.Question, 'HEXRD', msg, buttons,
+                          self.parent)
         box.setWindowModality(Qt.NonModal)
 
         # Add a checkbox
