@@ -416,7 +416,8 @@ class HexrdConfig(QObject, metaclass=Singleton):
         old_detectors = self.detector_names
         if yml_dict is None:
             with open(yml_file, 'r') as f:
-                self.config['instrument'] = yaml.load(f, Loader=NumPyIncludeLoader)
+                self.config['instrument'] = yaml.load(
+                    f, Loader=NumPyIncludeLoader)
         else:
             self.config['instrument'] = yml_dict
 

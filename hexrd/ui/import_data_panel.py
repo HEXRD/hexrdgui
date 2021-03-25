@@ -326,7 +326,7 @@ class ImportDataPanel(QObject):
         self.enable_widgets(self.ui.association, self.ui.file_selection,
                             self.ui.transform_img, self.ui.outline_appearance,
                             self.ui.outline_position, self.ui.finalize,
-                            enabled=False)
+                            self.instrument, enabled=False)
         self.completed_detectors = []
 
     def completed(self):
@@ -335,7 +335,8 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
-        detectors = self.detector_defaults['default_config'].get('detectors', {})
+        detectors = self.detector_defaults['default_config'].get(
+            'detectors', {})
         not_set = [d for d in detectors if d not in self.completed_detectors]
         for det in not_set:
             del(detectors[det])
