@@ -460,10 +460,10 @@ class MainWindow(QObject):
 
     def images_loaded(self, enabled=True):
         self.ui.action_transform_detectors.setEnabled(enabled)
-        self.update_color_map_bounds
-        self.update_hedm_enable_states
-        self.color_map_editor.reset_range
-        self.image_mode_widget.reset_masking
+        self.update_color_map_bounds()
+        self.update_hedm_enable_states()
+        self.color_map_editor.reset_range()
+        self.image_mode_widget.reset_masking(enabled)
 
     def open_aps_imageseries(self):
         # Get the most recent images dir
