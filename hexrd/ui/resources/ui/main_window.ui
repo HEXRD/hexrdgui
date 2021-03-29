@@ -52,15 +52,8 @@
      <property name="title">
       <string>&amp;Open</string>
      </property>
-     <widget class="QMenu" name="menu_load_config">
-      <property name="title">
-       <string>Configuration</string>
-      </property>
-      <addaction name="action_open_config_yaml"/>
-      <addaction name="action_open_config_dir"/>
-     </widget>
      <addaction name="action_open_images"/>
-     <addaction name="menu_load_config"/>
+     <addaction name="action_open_config_file"/>
      <addaction name="action_open_materials"/>
      <addaction name="action_open_aps_imageseries"/>
      <addaction name="separator"/>
@@ -74,8 +67,8 @@
       <property name="title">
        <string>&amp;Configuration</string>
       </property>
+      <addaction name="action_save_config_hexrd"/>
       <addaction name="action_save_config_yaml"/>
-      <addaction name="action_save_config_dir"/>
      </widget>
      <addaction name="action_save_imageseries"/>
      <addaction name="menu_save_config"/>
@@ -493,24 +486,14 @@
     <string>Apply Laue Mask to Polar</string>
    </property>
   </action>
-  <action name="action_open_config_yaml">
+  <action name="action_open_config_file">
    <property name="text">
-    <string>YAML</string>
-   </property>
-  </action>
-  <action name="action_open_config_dir">
-   <property name="text">
-    <string>HEXRD Directory</string>
+    <string>Configuration</string>
    </property>
   </action>
   <action name="action_save_config_yaml">
    <property name="text">
     <string>YAML</string>
-   </property>
-  </action>
-  <action name="action_save_config_dir">
-   <property name="text">
-    <string>HEXRD Directory</string>
    </property>
   </action>
   <action name="action_open_manager">
@@ -557,6 +540,11 @@
    </property>
    <property name="text">
     <string>Fit Grains</string>
+   </property>
+  </action>
+  <action name="action_save_config_hexrd">
+   <property name="text">
+    <string>HEXRD</string>
    </property>
   </action>
  </widget>

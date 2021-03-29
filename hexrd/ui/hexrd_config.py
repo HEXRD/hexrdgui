@@ -1,16 +1,18 @@
 import copy
 import os
+from pathlib import Path
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
 
+import h5py
 import numpy as np
 import yaml
 
 import hexrd.imageseries.save
-from hexrd.rotations import RotMatEuler
 from hexrd.config.loader import NumPyIncludeLoader
-from hexrd.config.dumper import NumPyIncludeDumper
+from hexrd.instrument import HEDMInstrument
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
+from hexrd.rotations import RotMatEuler
 from hexrd.valunits import valWUnit
 
 from hexrd.ui import constants
@@ -429,10 +431,34 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
 
-    def load_instrument_config(self, yml_file):
+    def load_instrument_config(self, path):
         old_detectors = self.detector_names
-        with open(yml_file, 'r') as f:
-            self.config['instrument'] = yaml.load(f, Loader=NumPyIncludeLoader)
+
+        rme = self.rotation_matrix_euler()
+
+        def read_yaml():
+            with open(path, 'r') as f:
+                conf = yaml.load(f, Loader=NumPyIncludeLoader)
+
+            instr = HEDMInstrument(conf, tilt_calibration_mapping=rme)
+            return instr.write_config()
+
+        def read_hexrd():
+            with h5py.File(path, 'r') as f:
+                instr = HEDMInstrument(f, tilt_calibration_mapping=rme)
+
+            return instr.write_config()
+
+        formats = {
+            '.yml': read_yaml,
+            '.hexrd': read_hexrd,
+        }
+
+        ext = Path(path).suffix
+        if ext not in formats:
+            raise Exception(f'Unknown extension: {ext}')
+
+        self.config['instrument'] = formats[ext]()
 
         eac = self.euler_angle_convention
         if eac is not None:
@@ -470,14 +496,19 @@ class HexrdConfig(QObject, metaclass=Singleton):
         return self.config['instrument']
 
     def save_instrument_config(self, output_file):
-        default = self.filter_instrument_config(self.config['instrument'])
-        eac = self.euler_angle_convention
-        if eac is not None:
-            # Convert it to None convention before saving
-            utils.convert_tilt_convention(default, eac, None)
+        from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 
-        with open(output_file, 'w') as f:
-            yaml.dump(default, f, Dumper=NumPyIncludeDumper)
+        styles = {
+            '.yml': 'yaml',
+            '.hexrd': 'hdf5',
+        }
+
+        ext = Path(output_file).suffix
+        if ext not in styles:
+            raise Exception(f'Unknown output extension: {ext}')
+
+        instr = create_hedm_instrument()
+        instr.write_config(output_file, style=styles[ext])
 
     def load_materials(self, f):
         beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
