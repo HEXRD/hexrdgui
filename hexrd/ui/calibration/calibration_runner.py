@@ -6,7 +6,7 @@ from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import default_overlay_refinements
-from hexrd.ui.utils import convert_tilt_convention
+from hexrd.ui.utils import instr_to_internal_dict
 
 
 class CalibrationRunner:
@@ -242,21 +242,7 @@ class CalibrationRunner:
         HexrdConfig().calibration_complete.emit()
 
     def write_instrument_to_hexrd_config(self, instr):
-        iconfig = HexrdConfig().instrument_config_none_euler_convention
-
-        # Add this so the calibration crystal gets written
-        cal_crystal = iconfig.get('calibration_crystal')
-        output_dict = instr.write_config(calibration_dict=cal_crystal)
-
-        # Convert back to whatever convention we were using before
-        eac = HexrdConfig().euler_angle_convention
-        if eac is not None:
-            convert_tilt_convention(output_dict, None, eac)
-
-        # Add the saturation levels, as they seem to be missing
-        sl = 'saturation_level'
-        for det in output_dict['detectors'].keys():
-            output_dict['detectors'][det][sl] = iconfig['detectors'][det][sl]
+        output_dict = instr_to_internal_dict(instr)
 
         # Save the previous iconfig to restore the statuses
         prev_iconfig = HexrdConfig().config['instrument']

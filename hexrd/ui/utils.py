@@ -245,3 +245,39 @@ def exclusions_off(plane_data):
 def has_nan(x):
     # Utility function to check if there are any NaNs in x
     return np.isnan(np.min(x))
+
+
+def instr_to_internal_dict(instr, calibration_dict=None):
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    # Convert an HEDMInstrument object into an internal dict we can
+    # use for HexrdConfig.
+
+    if calibration_dict is None:
+        calibration_dict = {}
+
+    # First, in case the panel buffers are numpy arrays, save the panel
+    # buffers for each detector and remove them. This is so we won't
+    # get a warning when hexrd clobbers the numpy arrays.
+    panel_buffers = {}
+    for key, panel in instr.detectors.items():
+        panel_buffers[key] = panel.panel_buffer
+        panel.panel_buffer = None
+
+    try:
+        config = instr.write_config(calibration_dict=calibration_dict)
+    finally:
+        # Restore the panel buffers
+        for key, panel in instr.detectors.items():
+            panel.panel_buffer = panel_buffers[key]
+
+    # Set the panel buffers on the detectors
+    for key, val in panel_buffers.items():
+        config['detectors'][key]['buffer'] = val
+
+    # Convert to the selected tilt convention
+    eac = HexrdConfig().euler_angle_convention
+    if eac is not None:
+        convert_tilt_convention(config, None, eac)
+
+    return config
