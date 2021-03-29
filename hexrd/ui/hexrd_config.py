@@ -441,13 +441,13 @@ class HexrdConfig(QObject, metaclass=Singleton):
                 conf = yaml.load(f, Loader=NumPyIncludeLoader)
 
             instr = HEDMInstrument(conf, tilt_calibration_mapping=rme)
-            return instr.write_config()
+            return utils.instr_to_internal_dict(instr)
 
         def read_hexrd():
             with h5py.File(path, 'r') as f:
                 instr = HEDMInstrument(f, tilt_calibration_mapping=rme)
 
-            return instr.write_config()
+            return utils.instr_to_internal_dict(instr)
 
         formats = {
             '.yml': read_yaml,
@@ -459,11 +459,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
             raise Exception(f'Unknown extension: {ext}')
 
         self.config['instrument'] = formats[ext]()
-
-        eac = self.euler_angle_convention
-        if eac is not None:
-            # Convert it to whatever convention we are using
-            utils.convert_tilt_convention(self.config['instrument'], None, eac)
 
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
