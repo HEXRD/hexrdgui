@@ -6,7 +6,7 @@ from scipy import stats
 from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import convert_tilt_convention
+from hexrd.ui.utils import instr_to_internal_dict
 
 # =============================================================================
 # %% Functions and parameters
@@ -168,19 +168,7 @@ def run_line_picked_calibration(line_data):
 
     print('Optimization succeeded!')
 
-    # Add this so the calibration crystal gets written
-    cal_crystal = iconfig.get('calibration_crystal')
-    output_dict = instr.write_config(calibration_dict=cal_crystal)
-
-    # Convert back to whatever convention we were using before
-    eac = HexrdConfig().euler_angle_convention
-    if eac is not None:
-        convert_tilt_convention(output_dict, None, eac)
-
-    # Add the saturation levels, as they seem to be missing
-    sl = 'saturation_level'
-    for det in output_dict['detectors'].keys():
-        output_dict['detectors'][det][sl] = iconfig['detectors'][det][sl]
+    output_dict = instr_to_internal_dict(instr)
 
     print('Updating the config')
 

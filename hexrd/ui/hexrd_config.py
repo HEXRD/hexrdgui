@@ -440,11 +440,6 @@ class HexrdConfig(QObject, metaclass=Singleton):
         else:
             self.config['instrument'] = yml_dict
 
-        eac = self.euler_angle_convention
-        if eac is not None:
-            # Convert it to whatever convention we are using
-            utils.convert_tilt_convention(self.config['instrument'], None, eac)
-
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
 
