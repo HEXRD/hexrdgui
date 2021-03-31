@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>339</width>
+    <width>360</width>
     <height>121</height>
    </rect>
   </property>
@@ -88,16 +88,6 @@
           </property>
           <property name="value">
            <number>429</number>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QPushButton" name="reset_range">
-          <property name="toolTip">
-           <string>Reset the range to the boundary values of the images</string>
-          </property>
-          <property name="text">
-           <string>Reset Range</string>
           </property>
          </widget>
         </item>
@@ -219,6 +209,19 @@
           </property>
          </spacer>
         </item>
+        <item row="4" column="1">
+         <widget class="QPushButton" name="bc_editor_button">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Brightness and Contrast editor&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>B&amp;&amp;C</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
      </layout>
@@ -240,7 +243,6 @@
   <tabstop>show_under</tabstop>
   <tabstop>maximum</tabstop>
   <tabstop>show_over</tabstop>
-  <tabstop>reset_range</tabstop>
   <tabstop>log_scale</tabstop>
  </tabstops>
  <resources/>
