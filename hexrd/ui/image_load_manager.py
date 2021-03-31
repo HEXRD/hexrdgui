@@ -17,22 +17,14 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.constants import *
+from hexrd.ui.singletons import QSingleton
 
-
-class Singleton(type(QObject)):
-
-    _instance = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
-
-        return cls._instance
 
 class NoEmptyFramesException(Exception):
     pass
 
-class ImageLoadManager(QObject, metaclass=Singleton):
+
+class ImageLoadManager(QObject, metaclass=QSingleton):
 
     # Emitted when new images are loaded
     progress_text = Signal(str)

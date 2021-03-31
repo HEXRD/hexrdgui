@@ -19,27 +19,15 @@ from hexrd.ui import constants
 from hexrd.ui import overlays
 from hexrd.ui import resource_loader
 from hexrd.ui import utils
+from hexrd.ui.singletons import QSingleton
 
 import hexrd.ui.resources.calibration
 import hexrd.ui.resources.indexing
 import hexrd.ui.resources.materials
 
 
-# This metaclass must inherit from `type(QObject)` for classes that use
-# it to inherit from QObject.
-class Singleton(type(QObject)):
-
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args,
-                                                                 **kwargs)
-        return cls._instances[cls]
-
-
 # This is a singleton class that contains the configuration
-class HexrdConfig(QObject, metaclass=Singleton):
+class HexrdConfig(QObject, metaclass=QSingleton):
     """The central configuration class for the program
 
     This class contains properties where possible, and it uses the
