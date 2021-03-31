@@ -1,5 +1,6 @@
 import os
 import yaml
+import tempfile
 
 from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
@@ -37,6 +38,7 @@ class ImportDataPanel(QObject):
         self.detector_defaults = {}
         self.cmap = cmap
         self.detectors = []
+        self.editing = False
 
         self.set_default_color()
         self.setup_connections()
@@ -193,6 +195,8 @@ class ImportDataPanel(QObject):
 
         if self.editing:
             self.add_template()
+
+        if self.it is not None:
             self.it.update_image(img)
 
     def display_bounds(self):
@@ -326,11 +330,12 @@ class ImportDataPanel(QObject):
         self.ui.files_label.setText('')
         self.ui.completed_dets.setText('')
         self.edited_images.clear()
+        self.ui.instrument.setEnabled(True)
         self.enable_widgets(self.ui.association, self.ui.file_selection,
                             self.ui.transform_img, self.ui.outline_appearance,
-                            self.ui.outline_position, self.ui.finalize,
-                            self.instrument, enabled=False)
-        self.completed_detectors = []
+                            self.ui.outline_position, self.ui.finalize, enabled=False)
+        self.completed_detectors.clear()
+        self.detectors.clear()
 
     def completed(self):
         self.set_convention()
@@ -353,8 +358,12 @@ class ImportDataPanel(QObject):
             *zx, z = self.detector_defaults[key]['tilt']
             transform['tilt'] = [*zx, (z + float(val['tilt']))]
             files.append([val['img']])
-        HexrdConfig().load_instrument_config(
-            yml_file=None, yml_dict=self.detector_defaults['default_config'])
+
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
+        data = yaml.dump(self.detector_defaults['default_config'])
+        temp.write(data.encode('utf-8'))
+        temp.close()
+        HexrdConfig().load_instrument_config(temp.name)
 
         ImageLoadManager().read_data(files, parent=self.ui)
 
