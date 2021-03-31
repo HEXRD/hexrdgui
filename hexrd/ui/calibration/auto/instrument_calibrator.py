@@ -31,8 +31,7 @@ class InstrumentCalibrator(object):
         for calib in self._calibrators:
             assert calib.instr is self._instr, \
                 "all calibrators must refer to the same instrument"
-            self.full_params += calib.params
-        self.full_params = np.asarray(self.full_params)
+            self.full_params = np.hstack([self.full_params, calib.params])
 
     @property
     def instr(self):
@@ -59,7 +58,7 @@ class InstrumentCalibrator(object):
     # =========================================================================
 
     def _reduced_params_flag(self, cidx):
-        assert cidx > 0 and cidx < len(self.calibrators), \
+        assert cidx >= 0 and cidx < len(self.calibrators), \
             "index must be in %s" % str(np.arange(len(self.calibrators)))
 
         calib_class = self.calibrators[cidx]
@@ -141,7 +140,7 @@ class InstrumentCalibrator(object):
 
             # grab reduced params for optimizer
             x0 = np.array(self.reduced_params)  # !!! copy
-            resd0 = self.resdiual(x0, master_data_dict_list)
+            resd0 = self.residual(x0, master_data_dict_list)
 
             if use_robust_optimization:
                 if isinstance(use_robust_optimization, bool):
@@ -166,11 +165,13 @@ class InstrumentCalibrator(object):
                 sum(resd1**2)/float(len(resd1))
 
             if delta_r > 0:
-                print('OPTIMIZATION SUCCESSFUL\nfinal ssr: '
-                      f'{sum(resd1**2)/float(len(resd1))}')
-                print(f'delta_r: {delta_r}')
+                print('OPTIMIZATION SUCCESSFUL!!!')
             else:
                 print('no improvement in residual!!!')
+            print('initial ssr: '
+                  f'{sum(resd0**2)/float(len(resd0))}')
+            print('final ssr: '
+                  f'{sum(resd1**2)/float(len(resd1))}')
                 step_successful = False
 
             iter_count += 1
