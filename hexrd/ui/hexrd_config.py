@@ -431,14 +431,34 @@ class HexrdConfig(QObject, metaclass=Singleton):
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
 
-    def load_instrument_config(self, yml_file, yml_dict=None):
+    def load_instrument_config(self, path):
         old_detectors = self.detector_names
-        if yml_dict is None:
-            with open(yml_file, 'r') as f:
-                self.config['instrument'] = yaml.load(
-                    f, Loader=NumPyIncludeLoader)
-        else:
-            self.config['instrument'] = yml_dict
+
+        rme = self.rotation_matrix_euler()
+
+        def read_yaml():
+            with open(path, 'r') as f:
+                conf = yaml.load(f, Loader=NumPyIncludeLoader)
+
+            instr = HEDMInstrument(conf, tilt_calibration_mapping=rme)
+            return utils.instr_to_internal_dict(instr)
+
+        def read_hexrd():
+            with h5py.File(path, 'r') as f:
+                instr = HEDMInstrument(f, tilt_calibration_mapping=rme)
+
+            return utils.instr_to_internal_dict(instr)
+
+        formats = {
+            '.yml': read_yaml,
+            '.hexrd': read_hexrd,
+        }
+
+        ext = Path(path).suffix
+        if ext not in formats:
+            raise Exception(f'Unknown extension: {ext}')
+
+        self.config['instrument'] = formats[ext]()
 
         # Set any required keys that might be missing to prevent key errors
         self.set_defaults_if_missing()
