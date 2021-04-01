@@ -80,6 +80,7 @@ class PowderRunner(QObject):
         }
 
         self.pc = PowderCalibrator(**kwargs)
+        self.ic = InstrumentCalibrator(self.pc)
         self.extract_powder_lines()
 
     def extract_powder_lines(self):
@@ -93,7 +94,9 @@ class PowderRunner(QObject):
             'fit_tth_tol': options['fit_tth_tol'],
             'int_cutoff': options['int_cutoff'],
         }
-        self.data_dict = self.pc._extract_powder_lines(**kwargs)
+        # FIXME: currently coded to handle only a single material
+        #        so grabbing first (only) element
+        self.data_dict = self.ic.extract_points(**kwargs)[0]
 
     def extract_powder_lines_finished(self):
         try:
@@ -148,16 +151,15 @@ class PowderRunner(QObject):
     def run_calibration(self):
         options = HexrdConfig().config['calibration']['powder']
 
-        ic = InstrumentCalibrator(self.pc)
-        x0 = self.pc.instr.calibration_parameters[self.cf]
+        x0 = self.ic.reduced_params
         kwargs = {
             'conv_tol': options['conv_tol'],
             'fit_tth_tol': options['fit_tth_tol'],
+            'int_cutoff': options['int_cutoff'],
             'max_iter': options['max_iter'],
             'use_robust_optimization': options['use_robust_optimization'],
         }
-        ic.run_calibration(**kwargs)
-        x1 = self.pc.instr.calibration_parameters[self.cf]
+        x1 = self.ic.run_calibration(**kwargs)
 
         results_message = 'Calibration Results:\n'
         for params in np.vstack([x0, x1]).T:
@@ -190,6 +192,24 @@ class PowderRunner(QObject):
 
         # Set the previous statuses to be the current statuses
         HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
+
+        # the other parameters
+        if np.any(self.ic.flags[self.ic.npi:]):
+            # this means we asked to refine lattice parameters
+            # FIXME: currently, there is only 1 phase/calibrator allowed, so
+            #        this array is the reduce lattice parameter set.
+            refined_lattice_params = self.ic.full_params[self.ic.npi:]
+            self.material.latticeParameters = refined_lattice_params
+
+        # Tell GUI that the overlays need to be re-computed
+        HexrdConfig().flag_overlay_updates_for_material(self.material.name)
+
+        # update the materials panel
+        if self.material is HexrdConfig().active_material:
+            HexrdConfig().active_material_modified.emit()
+
+        # redraw updated overlays
+        HexrdConfig().overlay_config_changed.emit()
 
         self.finished.emit()
 
