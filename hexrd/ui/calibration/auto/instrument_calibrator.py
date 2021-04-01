@@ -90,9 +90,14 @@ class InstrumentCalibrator(object):
         # !!! list in the same order as dict looping
         resd = []
         for i, calib_class in enumerate(self.calibrators):
+            # !!! need to grab the param set
+            #     specific to this calibrator class
+            fp = np.array(self.full_params)  # copy full_params
+            fp[self.flags] = x0  # assign new global values
+            this_x0 = fp[self._reduced_params_flag(i)]  # select these
             resd.append(
                 calib_class.residual(
-                    self.full_params[self._reduced_params_flag(i)],
+                    this_x0,
                     master_data_dict_list[i]
                 )
             )
@@ -166,14 +171,17 @@ class InstrumentCalibrator(object):
 
             if delta_r > 0:
                 print('OPTIMIZATION SUCCESSFUL!!!')
+                print('Change in residual: '
+                      f'{delta_r}')
             else:
                 print('no improvement in residual!!!')
+                step_successful = False
+
             print('initial ssr: '
                   f'{sum(resd0**2)/float(len(resd0))}')
             print('final ssr: '
                   f'{sum(resd1**2)/float(len(resd1))}')
 
-            step_successful = False
             iter_count += 1
 
         return x1
