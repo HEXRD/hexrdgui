@@ -570,7 +570,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             if isinstance(value, dict):
                 self.add_status(value)
             else:
-                if isinstance(value, list):
+                if isinstance(value, (list, np.ndarray)):
                     stat_default = [0] * len(value)
                 else:
                     stat_default = 0
