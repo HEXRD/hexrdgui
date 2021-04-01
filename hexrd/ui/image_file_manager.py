@@ -10,17 +10,7 @@ from hexrd import imageseries
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.load_hdf5_dialog import LoadHDF5Dialog
-
-
-class Singleton(type):
-
-    _instance = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
-
-        return cls._instance
+from hexrd.ui.singletons import Singleton
 
 
 class ImageFileManager(metaclass=Singleton):
