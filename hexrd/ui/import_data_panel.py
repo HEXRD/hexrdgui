@@ -282,13 +282,21 @@ class ImportDataPanel(QObject):
             ', '.join(set(self.completed_detectors)))
 
     def finalize(self):
-        self.it.cropped_image
+        detectors = self.detector_defaults['default_config'].get(
+            'detectors', {})
+        det = detectors.setdefault(self.detector, {})
+        width = det.setdefault('pixels', {}).get('columns', 0)
+        height = det.setdefault('pixels', {}).get('rows', 0)
+
+        if self.instrument == 'PXRDIP':
+            # Boundary is currently rotated 90 degrees
+            width, height = height, width
+        self.it.cropped_image(height, width)
+
         img = self.it.masked_image
 
         self.edited_images[self.detector] = {
             'img': img,
-            'height': img.shape[0],
-            'width': img.shape[1],
             'tilt': self.it.rotation
         }
         self.clear_boundry()
@@ -336,18 +344,16 @@ class ImportDataPanel(QObject):
         for det in not_set:
             del(detectors[det])
 
-        for key, val in self.edited_images.items():
-            det = detectors.setdefault(key, {})
-            pixels = det.setdefault('pixels', {})
-            pixels['columns'] = val['width']
-            pixels['rows'] = val['height']
-            transform = det.setdefault('transform', {})
-            *zx, z = self.detector_defaults[key]['tilt']
-            transform['tilt'] = [*zx, (z + float(val['tilt']))]
-            files.append([val['img']])
+        for key, val in detectors.items():
+            pixels = val.setdefault('pixels', {})
+            transform = val.setdefault('transform', {})
+            *zx, z = transform['tilt']
+            transform['tilt'] = (
+                [*zx, (z + float(self.edited_images[key]['tilt']))])
+            files.append([self.edited_images[key]['img']])
 
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
-        data = yaml.dump(self.detector_defaults['default_config'])
+        data = yaml.dump(self.detector_defaults['default_config'], sort_keys=False)
         temp.write(data.encode('utf-8'))
         temp.close()
         HexrdConfig().load_instrument_config(temp.name)

@@ -66,9 +66,10 @@ class InteractiveTemplate:
                          max(np.floor(x0), l),
                          min(np.ceil(x1), r)]).astype(int)
 
-    @property
-    def cropped_image(self):
+    def cropped_image(self, height, width):
         y0, y1, x0, x1 = self.bounds
+        y1 = y0+height if height else y1
+        x1 = x0+width if width else x1
         self.img = self.img[y0:y1, x0:x1]
         self.shape.set_xy(self.shape.xy - np.array([x0, y0]))
         return self.img
