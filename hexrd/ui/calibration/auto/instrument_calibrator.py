@@ -172,8 +172,8 @@ class InstrumentCalibrator(object):
                   f'{sum(resd0**2)/float(len(resd0))}')
             print('final ssr: '
                   f'{sum(resd1**2)/float(len(resd1))}')
-                step_successful = False
 
+            step_successful = False
             iter_count += 1
 
         return x1
