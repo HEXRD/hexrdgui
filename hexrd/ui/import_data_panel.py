@@ -88,6 +88,7 @@ class ImportDataPanel(QObject):
             self.detectors.append(det)
 
     def instrument_selected(self, idx):
+        self.detectors.clear()
         self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
         self.instrument = instruments.get(idx, None)
@@ -292,20 +293,6 @@ class ImportDataPanel(QObject):
         }
         self.clear_boundry()
 
-    def crop_images(self, img):
-        ilm = ImageLoadManager()
-        self.cmap.block_updates(True)
-        # Do not re-apply transform if selected in load file dialog
-        HexrdConfig().load_panel_state.clear()
-        ilm.read_data([[img]], parent=self.ui)
-        if self.instrument == 'PXRDIP':
-            ilm.set_state({'trans': [UI_TRANS_INDEX_ROTATE_90]})
-            ilm.begin_processing(postprocess=True)
-            img = HexrdConfig().image('default', 0)
-        self.cmap.block_updates(False)
-
-        return img
-
     def clear(self):
         self.clear_boundry()
         self.enable_widgets(self.ui.association, self.ui.transform_img,
@@ -365,6 +352,8 @@ class ImportDataPanel(QObject):
         temp.close()
         HexrdConfig().load_instrument_config(temp.name)
 
+        if self.instrument == 'PXRDIP':
+            HexrdConfig().load_panel_state['trans'] = [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors)
         ImageLoadManager().read_data(files, parent=self.ui)
 
         self.reset_panel()
