@@ -16,7 +16,8 @@ from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.constants import UI_TRANS_INDEX_ROTATE_90
+from hexrd.ui.constants import (
+    UI_TRANS_INDEX_ROTATE_90, UI_TRANS_INDEX_FLIP_HORIZONTALLY)
 
 import hexrd.ui.resources.calibration
 
@@ -104,6 +105,9 @@ class ImportDataPanel(QObject):
             self.ui.detectors.clear()
             self.ui.detectors.addItems(det_list)
             self.enable_widgets(self.ui.file_selection, enabled=True)
+            if self.instrument == 'PXRDIP':
+                HexrdConfig().load_panel_state['trans'] = (
+                    [UI_TRANS_INDEX_FLIP_HORIZONTALLY])
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
