@@ -138,6 +138,25 @@ class InteractiveTemplate:
             'button_release_event', self.on_release)
         self.motion_cid = self.parent.mpl_connect(
             'motion_notify_event', self.on_translate)
+        self.key_press_cid = self.parent.mpl_connect(
+            'key_press_event', self.on_key_translate)
+        self.parent.setFocus()
+
+    def on_key_translate(self, event):
+        dx, dy = 0, 0
+        if event.key == 'right':
+            dx = 1
+        elif event.key == 'left':
+            dx = -1
+        elif event.key == 'up':
+            dy = -1
+        elif event.key == 'down':
+            dy = 1
+        else:
+            return
+
+        self.shape.set_xy(self.shape.xy + np.array([dx, dy]))
+        self.redraw()
 
     def on_press_translate(self, event):
         if event.inaxes != self.shape.axes:
@@ -177,6 +196,7 @@ class InteractiveTemplate:
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
         self.parent.mpl_disconnect(self.motion_cid)
+        self.parent.mpl_disconnect(self.key_press_cid)
 
     def connect_rotate(self):
         self.button_press_cid = self.parent.mpl_connect(
@@ -185,6 +205,9 @@ class InteractiveTemplate:
             'motion_notify_event', self.on_rotate)
         self.button_release_cid = self.parent.mpl_connect(
             'button_release_event', self.on_rotate_release)
+        self.key_press_cid = self.parent.mpl_connect(
+            'key_press_event', self.on_key_rotate)
+        self.parent.setFocus()
 
     def on_press_rotate(self, event):
         if event.inaxes != self.shape.axes:
@@ -211,6 +234,16 @@ class InteractiveTemplate:
         xy, xpress, ypress = self.press
         angle = self.get_angle(event)
         self.rotate_template(xy, angle)
+        self.redraw()
+
+    def on_key_rotate(self, event):
+        angle = 0.01
+        if event.key == 'left' or event.key == 'up':
+            angle *= -1
+        elif event.key != 'right' and event.key != 'down':
+            return
+
+        self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
     def get_midpoint(self):
@@ -263,3 +296,4 @@ class InteractiveTemplate:
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_drag_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
+        self.parent.mpl_disconnect(self.key_press_cid)
