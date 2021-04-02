@@ -207,10 +207,10 @@ class ImageModeWidget(QObject):
 
         # Set these manually so no rerender signals are fired
         params = {
-            'pixel_size_tth': np.degrees(max(results['max_tth_ps'])),
-            'pixel_size_eta': np.degrees(max(results['max_eta_ps'])),
-            'tth_min': np.degrees(min(results['min_tth'])),
-            'tth_max': np.degrees(max(results['max_tth']))
+            'pixel_size_tth': max(results['max_tth_ps']),
+            'pixel_size_eta': max(results['max_eta_ps']),
+            'tth_min': min(results['min_tth']),
+            'tth_max': max(results['max_tth'])
         }
 
         # Sometimes, this is too big. Bring it down if it is.
@@ -291,13 +291,13 @@ def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     # FIXME: currently ignoring any non-trivial tvec set on instrument!
     #        This would get set via the `origin` kwarg
     max_tth_ps.append(
-        np.power(10, np.round(np.log10(100*np.median(panel.pixel_tth_gradient()))))
+        np.power(10, np.round(np.log10(10*np.degrees(np.median(panel.pixel_tth_gradient())))))
     )
     max_eta_ps.append(
-        np.power(10, np.round(np.log10(100*np.median(panel.pixel_eta_gradient()))))
+        np.power(10, np.round(np.log10(10*np.degrees(np.median(panel.pixel_eta_gradient())))))
     )
 
     # tth ranges
     ptth, peta = panel.pixel_angles()
-    min_tth.append(np.min(ptth))
-    max_tth.append(np.max(ptth))
+    min_tth.append(np.degrees(np.min(ptth)))
+    max_tth.append(np.degrees(np.max(ptth)))
