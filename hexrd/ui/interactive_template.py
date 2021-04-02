@@ -30,12 +30,13 @@ class InteractiveTemplate:
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
-    def create_shape(self, module, file_name, det):
+    def create_shape(self, module, file_name, det, instr):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
         verts = self.panels[det].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
+        self.update_position(instr, det)
         self.center = self.get_midpoint()
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
@@ -46,6 +47,13 @@ class InteractiveTemplate:
         self.shape.set_linewidth(width)
         self.shape.set_edgecolor(color)
         self.redraw()
+
+    def update_position(self, instr, det):
+        pos = HexrdConfig().boundary_position(instr, det)
+        if pos is not None:
+            self.shape.set_xy(pos)
+        elif self.instrument == 'PXRDIP':
+            self.it.rotate_shape(angle=90)
 
     @property
     def template(self):
