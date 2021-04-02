@@ -82,7 +82,6 @@ class ImportDataPanel(QObject):
             fname = f'{self.instrument.lower()}_reference_config.yml'
             text = resource_loader.load_resource(hexrd_resources, fname)
         defaults = yaml.load(text, Loader=yaml.FullLoader)
-        self.set_detector_defaults(defaults)
         self.detector_defaults['default_config'] = defaults
         for det, vals in defaults['detectors'].items():
             self.detector_defaults[det] = vals['transform']
@@ -120,10 +119,6 @@ class ImportDataPanel(QObject):
             for overlay in HexrdConfig().overlays:
                 overlay['visible'] = False
             HexrdConfig().load_instrument_config(f)
-
-    def set_detector_defaults(self, config):
-        eac = {'axes_order': 'zxz', 'extrinsic': False}
-        convert_tilt_convention(config, None, eac)
 
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)
@@ -337,7 +332,6 @@ class ImportDataPanel(QObject):
         self.detectors.clear()
 
     def completed(self):
-        self.set_convention()
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
@@ -348,19 +342,20 @@ class ImportDataPanel(QObject):
         for det in not_set:
             del(detectors[det])
 
-        for key, val in detectors.items():
-            pixels = val.setdefault('pixels', {})
-            transform = val.setdefault('transform', {})
+        for det in self.completed_detectors:
+            pixels = detectors[det].setdefault('pixels', {})
+            transform = detectors[det].setdefault('transform', {})
             *zx, z = transform['tilt']
             transform['tilt'] = (
-                [*zx, (z + float(self.edited_images[key]['tilt']))])
-            files.append([self.edited_images[key]['img']])
+                [*zx, (z + float(self.edited_images[det]['tilt']))])
+            files.append([self.edited_images[det]['img']])
 
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
         data = yaml.dump(self.detector_defaults['default_config'], sort_keys=False)
         temp.write(data.encode('utf-8'))
         temp.close()
         HexrdConfig().load_instrument_config(temp.name)
+        self.set_convention()
 
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors)
