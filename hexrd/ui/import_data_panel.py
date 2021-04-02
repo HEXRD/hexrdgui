@@ -217,10 +217,10 @@ class ImportDataPanel(QObject):
             HexrdConfig().image('default', 0), self.parent())
         self.it.create_shape(
             module=hexrd_resources,
-            file_name=f'{self.instrument}_{self.detector}_bnd.txt')
+            file_name=f'{self.instrument}_{self.detector}_bnd.txt',
+            det=self.detector,
+            instr=self.instrument)
         self.update_template_style()
-        if self.instrument == 'PXRDIP':
-            self.it.rotate_shape(angle=90)
 
         self.display_bounds()
         self.enable_widgets(self.ui.outline_position,
@@ -264,7 +264,12 @@ class ImportDataPanel(QObject):
         self.it.clear()
         self.it = None
 
+    def save_boundary_position(self):
+        HexrdConfig().set_boundary_position(
+            self.instrument, self.detector, self.it.template.xy)
+
     def crop_and_mask(self):
+        self.save_boundary_position()
         if self.ui.trans.isChecked():
             self.it.disconnect_translate()
         else:

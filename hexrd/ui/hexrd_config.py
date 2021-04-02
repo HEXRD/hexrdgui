@@ -19,27 +19,15 @@ from hexrd.ui import constants
 from hexrd.ui import overlays
 from hexrd.ui import resource_loader
 from hexrd.ui import utils
+from hexrd.ui.singletons import QSingleton
 
 import hexrd.ui.resources.calibration
 import hexrd.ui.resources.indexing
 import hexrd.ui.resources.materials
 
 
-# This metaclass must inherit from `type(QObject)` for classes that use
-# it to inherit from QObject.
-class Singleton(type(QObject)):
-
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args,
-                                                                 **kwargs)
-        return cls._instances[cls]
-
-
 # This is a singleton class that contains the configuration
-class HexrdConfig(QObject, metaclass=Singleton):
+class HexrdConfig(QObject, metaclass=QSingleton):
     """The central configuration class for the program
 
     This class contains properties where possible, and it uses the
@@ -181,6 +169,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self._threshold_data = {}
         self.stack_state = {}
         self.unaggregated_images = None
+        self.llnl_boundary_positions = {}
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
@@ -237,6 +226,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
         settings.setValue('image_stack_state', self.stack_state)
+        settings.setValue('boundary_positions', self.llnl_boundary_positions)
 
         # Clear the overlay data and save the overlays as well
         HexrdConfig().clear_overlay_data()
@@ -274,6 +264,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', {})
         self.stack_state = settings.value('image_stack_state', {})
+        self.llnl_boundary_positions = settings.value('boundary_positions', {})
 
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []
@@ -570,7 +561,7 @@ class HexrdConfig(QObject, metaclass=Singleton):
             if isinstance(value, dict):
                 self.add_status(value)
             else:
-                if isinstance(value, list):
+                if isinstance(value, (list, np.ndarray)):
                     stat_default = [0] * len(value)
                 else:
                     stat_default = 0
@@ -1530,3 +1521,11 @@ class HexrdConfig(QObject, metaclass=Singleton):
     def auto_picked_data(self, data):
         self._auto_picked_data = data
         self.rerender_auto_picked_data.emit()
+
+    def boundary_position(self, instrument, detector):
+        return self.llnl_boundary_positions.get(
+            instrument, {}).get(detector, None)
+
+    def set_boundary_position(self, instrument, detector, position):
+        self.llnl_boundary_positions.setdefault(instrument, {})
+        self.llnl_boundary_positions[instrument][detector] = position

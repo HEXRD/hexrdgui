@@ -3,16 +3,17 @@ from PySide2.QtUiTools import QUiLoader
 
 from hexrd.ui import resource_loader
 
-from .image_canvas import ImageCanvas
-from .image_tab_widget import ImageTabWidget
-from .scientificspinbox import ScientificDoubleSpinBox
+from hexrd.ui.image_canvas import ImageCanvas
+from hexrd.ui.image_tab_widget import ImageTabWidget
+from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
+from hexrd.ui.singletons import QSingleton
 
 import hexrd.ui.resources.ui
 
 
-class UiLoader(QUiLoader):
+class UiLoader(QUiLoader, metaclass=QSingleton):
     def __init__(self, parent=None):
-        super(UiLoader, self).__init__(parent)
+        super().__init__(parent)
 
         self.registerCustomWidget(ImageCanvas)
         self.registerCustomWidget(ImageTabWidget)

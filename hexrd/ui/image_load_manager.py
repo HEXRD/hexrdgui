@@ -11,28 +11,18 @@ from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
-from hexrd.ui.extra_ops_processed_image_series import (
-    ExtraOpsProcessedImageSeries)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.constants import *
+from hexrd.ui.singletons import QSingleton
 
-
-class Singleton(type(QObject)):
-
-    _instance = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
-
-        return cls._instance
 
 class NoEmptyFramesException(Exception):
     pass
 
-class ImageLoadManager(QObject, metaclass=Singleton):
+
+class ImageLoadManager(QObject, metaclass=QSingleton):
 
     # Emitted when new images are loaded
     progress_text = Signal(str)
@@ -296,10 +286,10 @@ class ImageLoadManager(QObject, metaclass=Singleton):
             if 'rect' in self.state:
                 ops.append(('rectangle', self.state['rect'][idx]))
             if 'zero-min' in self.state:
-                ops.append(('subtract', global_min))
+                ops.append(('add', -global_min))
 
             frames = self.get_range(ims_dict[key])
-            ims_dict[key] = ExtraOpsProcessedImageSeries(
+            ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
             HexrdConfig().set_instrument_config_val(
                 ['detectors', key, 'pixels', 'columns', 'value'],
