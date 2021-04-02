@@ -7,7 +7,6 @@ from matplotlib.transforms import Affine2D
 from skimage.draw import polygon
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
 
 

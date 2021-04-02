@@ -8,7 +8,6 @@ from PySide2.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
 
-from hexrd.ui.utils import convert_tilt_convention
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -327,7 +326,8 @@ class ImportDataPanel(QObject):
         self.ui.instrument.setEnabled(True)
         self.enable_widgets(self.ui.association, self.ui.file_selection,
                             self.ui.transform_img, self.ui.outline_appearance,
-                            self.ui.outline_position, self.ui.finalize, enabled=False)
+                            self.ui.outline_position, self.ui.finalize,
+                            enabled=False)
         self.completed_detectors.clear()
         self.detectors.clear()
 
@@ -343,7 +343,6 @@ class ImportDataPanel(QObject):
             del(detectors[det])
 
         for det in self.completed_detectors:
-            pixels = detectors[det].setdefault('pixels', {})
             transform = detectors[det].setdefault('transform', {})
             *zx, z = transform['tilt']
             transform['tilt'] = (
@@ -351,14 +350,16 @@ class ImportDataPanel(QObject):
             files.append([self.edited_images[det]['img']])
 
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
-        data = yaml.dump(self.detector_defaults['default_config'], sort_keys=False)
+        data = yaml.dump(
+            self.detector_defaults['default_config'], sort_keys=False)
         temp.write(data.encode('utf-8'))
         temp.close()
         HexrdConfig().load_instrument_config(temp.name)
         self.set_convention()
 
         if self.instrument == 'PXRDIP':
-            HexrdConfig().load_panel_state['trans'] = [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors)
+            HexrdConfig().load_panel_state['trans'] = (
+                [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
         ImageLoadManager().read_data(files, parent=self.ui)
 
         self.reset_panel()
