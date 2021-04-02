@@ -169,6 +169,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._threshold_data = {}
         self.stack_state = {}
         self.unaggregated_images = None
+        self.llnl_boundary_positions = {}
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
@@ -225,6 +226,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         settings.setValue('collapsed_state', self.collapsed_state)
         settings.setValue('load_panel_state', self.load_panel_state)
         settings.setValue('image_stack_state', self.stack_state)
+        settings.setValue('boundary_positions', self.llnl_boundary_positions)
 
         # Clear the overlay data and save the overlays as well
         HexrdConfig().clear_overlay_data()
@@ -262,6 +264,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.collapsed_state = settings.value('collapsed_state', [])
         self.load_panel_state = settings.value('load_panel_state', {})
         self.stack_state = settings.value('image_stack_state', {})
+        self.llnl_boundary_positions = settings.value('boundary_positions', {})
 
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []
@@ -1518,3 +1521,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def auto_picked_data(self, data):
         self._auto_picked_data = data
         self.rerender_auto_picked_data.emit()
+
+    def boundary_position(self, instrument, detector):
+        return self.llnl_boundary_positions.get(
+            instrument, {}).get(detector, None)
+
+    def set_boundary_position(self, instrument, detector, position):
+        self.llnl_boundary_positions.setdefault(instrument, {})
+        self.llnl_boundary_positions[instrument][detector] = position
