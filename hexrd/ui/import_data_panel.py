@@ -117,7 +117,7 @@ class ImportDataPanel(QObject):
                 hexrd.ui.resources.calibration, fname) as f:
             for overlay in HexrdConfig().overlays:
                 overlay['visible'] = False
-            HexrdConfig().load_instrument_config(f)
+            HexrdConfig().load_instrument_config(f, import_raw=True)
 
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)
