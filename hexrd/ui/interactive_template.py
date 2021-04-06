@@ -7,8 +7,8 @@ from matplotlib.transforms import Affine2D
 from skimage.draw import polygon
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import resource_loader
+from hexrd.ui.hexrd_config import HexrdConfig
 
 
 class InteractiveTemplate:
@@ -33,11 +33,11 @@ class InteractiveTemplate:
     def create_shape(self, module, file_name, det, instr):
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
-        verts = self.panels[det].cartToPixel(data)
+        verts = self.panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
-        self.update_position(instr, det)
         self.center = self.get_midpoint()
+        self.update_position(instr, det)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
@@ -52,8 +52,9 @@ class InteractiveTemplate:
         pos = HexrdConfig().boundary_position(instr, det)
         if pos is not None:
             self.shape.set_xy(pos)
-        elif self.instrument == 'PXRDIP':
-            self.it.rotate_shape(angle=90)
+            self.center = self.get_midpoint()
+        elif instr == 'PXRDIP':
+            self.rotate_shape(angle=90)
 
     @property
     def template(self):
@@ -74,9 +75,10 @@ class InteractiveTemplate:
                          max(np.floor(x0), l),
                          min(np.ceil(x1), r)]).astype(int)
 
-    @property
-    def cropped_image(self):
+    def cropped_image(self, height, width):
         y0, y1, x0, x1 = self.bounds
+        y1 = y0+height if height else y1
+        x1 = x0+width if width else x1
         self.img = self.img[y0:y1, x0:x1]
         self.shape.set_xy(self.shape.xy - np.array([x0, y0]))
         return self.img

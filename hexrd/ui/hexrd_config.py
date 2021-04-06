@@ -422,7 +422,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
 
-    def load_instrument_config(self, path):
+    def load_instrument_config(self, path, import_raw=False):
         old_detectors = self.detector_names
 
         rme = self.rotation_matrix_euler()
@@ -470,7 +470,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.update_active_material_energy()
         self.config['materials']['show_overlays'] = prev
 
-        self.instrument_config_loaded.emit()
+        if not import_raw:
+            self.instrument_config_loaded.emit()
 
         new_detectors = self.detector_names
         if old_detectors != new_detectors:
