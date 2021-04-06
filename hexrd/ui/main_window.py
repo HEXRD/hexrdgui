@@ -197,6 +197,9 @@ class MainWindow(QObject):
             self.ui.status_bar.clearMessage)
         self.import_data_widget.new_config_loaded.connect(
             self.update_config_gui)
+        self.import_data_widget.cancel_workflow.connect(
+            self.load_dummy_images)
+
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)

@@ -26,6 +26,8 @@ class ImportDataPanel(QObject):
     # Emitted when new config is loaded
     new_config_loaded = Signal()
 
+    cancel_workflow = Signal()
+
     def __init__(self, cmap=None, parent=None):
         super(ImportDataPanel, self).__init__(parent)
 
@@ -61,6 +63,8 @@ class ImportDataPanel(QObject):
             self.update_template_style)
         self.ui.line_color.clicked.connect(self.pick_line_color)
         self.ui.line_size.valueChanged.connect(self.update_template_style)
+        self.ui.cancel.clicked.connect(self.reset_panel)
+        self.ui.cancel.clicked.connect(self.cancel_workflow.emit)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -167,7 +171,7 @@ class ImportDataPanel(QObject):
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
             self.enable_widgets(self.ui.transform_img, self.ui.association,
-                                enabled=True)
+                                self.ui.finalize, enabled=True)
             self.enable_widgets(self.parent().action_show_toolbar,
                                 self.ui.instrument, enabled=False)
             self.parent().action_show_toolbar.setChecked(False)
@@ -277,7 +281,7 @@ class ImportDataPanel(QObject):
         self.finalize()
         self.completed_detectors.append(self.detector)
         self.enable_widgets(self.ui.association, self.ui.file_selection,
-                            self.ui.transform_img, self.ui.finalize,
+                            self.ui.transform_img, self.ui.complete,
                             enabled=True)
         self.enable_widgets(self.ui.outline_appearance,
                             self.ui.outline_position, enabled=False)
