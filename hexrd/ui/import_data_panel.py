@@ -207,8 +207,8 @@ class ImportDataPanel(QObject):
         self.ui.bb_width.blockSignals(True)
 
         y0, y1, x0, x1 = self.it.bounds
-        self.ui.bb_width.setMaximum(x1 - x0)
-        self.ui.bb_height.setMaximum(y1 - y0)
+        self.ui.bb_width.setMaximum(self.it.img.shape[1])
+        self.ui.bb_height.setMaximum(self.it.img.shape[0])
 
         self.ui.bb_width.setValue(x1)
         self.ui.bb_height.setValue(y1)
