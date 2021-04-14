@@ -1,5 +1,7 @@
 import numpy as np
 
+from PySide2.QtCore import Qt
+
 from matplotlib import patches
 from matplotlib.path import Path
 from matplotlib.transforms import Affine2D
@@ -21,6 +23,8 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
         self.total_rotation = 0
+
+        self.parent.setFocusPolicy(Qt.ClickFocus)
 
     def update_image(self, img):
         self.img = img
