@@ -35,7 +35,8 @@ class DictTreeItemModel(BaseDictTreeItemModel):
             if path in self.blacklisted_paths or str(key).startswith('_'):
                 continue
 
-            tree_item = self.add_tree_item(key, None, cur_tree_item)
+            data = [key, None]
+            tree_item = self.add_tree_item(data, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
     def path_to_value(self, tree_item, column):

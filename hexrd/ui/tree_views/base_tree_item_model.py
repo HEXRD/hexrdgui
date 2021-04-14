@@ -71,7 +71,5 @@ class BaseTreeItemModel(QAbstractItemModel):
         root.clear_children()
         self.endRemoveRows()
 
-    def add_tree_item(self, key, value, parent):
-        data = [key, value]
-        tree_item = TreeItem(data, parent)
-        return tree_item
+    def add_tree_item(self, data, parent):
+        return TreeItem(data, parent)

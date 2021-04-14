@@ -48,9 +48,8 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         item.set_data(index.column(), value)
 
-        if item.child_count() == 0:
-            self.set_config_val(path, value)
-            self.dict_modified.emit()
+        self.set_config_val(path, value)
+        self.dict_modified.emit()
 
         return True
 
@@ -71,7 +70,8 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         # Rebuild the tree from scratch
         self.clear()
         for key in self.config:
-            tree_item = self.add_tree_item(key, None, self.root_item)
+            data = [key, None]
+            tree_item = self.add_tree_item(data, self.root_item)
             self.recursive_add_tree_items(self.config[key], tree_item)
 
     def path_to_item(self, tree_item):
