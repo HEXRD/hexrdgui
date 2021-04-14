@@ -78,7 +78,8 @@ class CalTreeItemModel(BaseTreeItemModel):
         if item.child_count() == 0:
             parent = item.parent_item.data(KEY_COL)
             if (parent == 'tilt' and
-                    HexrdConfig().rotation_matrix_euler() is not None):
+                    HexrdConfig().rotation_matrix_euler() is not None and
+                    len(path) > 1 and path[-2] == 'value'):
                 # Convert tilt values to radians before saving
                 value = np.radians(value).item()
             self.cfg.set_instrument_config_val(path, value)
