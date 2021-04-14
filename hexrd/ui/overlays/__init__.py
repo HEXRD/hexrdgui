@@ -70,10 +70,12 @@ def default_overlay_refinements(overlay):
 
     refinements = copy.deepcopy(default_refinements[overlay_type])
 
-    # Only give it the required indices
-    indices = unitcell._rqpDict[material.unitcell.latticeType][0]
+    if overlay_type == OverlayType.powder:
+        # Only give it the required indices
+        indices = unitcell._rqpDict[material.unitcell.latticeType][0]
+        refinements = [refinements[i] for i in indices]
 
-    return [refinements[i] for i in indices]
+    return refinements
 
 
 def update_overlay_data(instr, display_mode):
