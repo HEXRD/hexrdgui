@@ -281,3 +281,12 @@ def instr_to_internal_dict(instr, calibration_dict=None):
         convert_tilt_convention(config, None, eac)
 
     return config
+
+
+def is_int(s):
+    """Check if a string is an int"""
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
