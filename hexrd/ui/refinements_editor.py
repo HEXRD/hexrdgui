@@ -176,10 +176,24 @@ class RefinementsEditor:
     @property
     def actions(self):
         return {
+            'Clear refinements': self.clear_refinements,
             'Mirror first detector': self.mirror_first_detector,
         }
 
     # Refinement actions
+    def clear_refinements(self):
+        def recurse(x):
+            if '_refinable' in x:
+                x['_refinable'] = False
+
+            for key in x:
+                if isinstance(x[key], dict):
+                    recurse(x[key])
+
+        recurse(self.dict)
+
+        self.update_tree_view()
+
     def mirror_first_detector(self):
         detectors = self.dict['instrument']['detectors']
         first = next(iter(detectors.values()))
