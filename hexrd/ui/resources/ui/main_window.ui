@@ -114,6 +114,7 @@
     <addaction name="menu_masks"/>
     <addaction name="action_transform_detectors"/>
     <addaction name="action_switch_workflow"/>
+    <addaction name="action_edit_refinements"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -545,6 +546,11 @@
   <action name="action_save_config_hexrd">
    <property name="text">
     <string>HEXRD</string>
+   </property>
+  </action>
+  <action name="action_edit_refinements">
+   <property name="text">
+    <string>Refinements</string>
    </property>
   </action>
  </widget>

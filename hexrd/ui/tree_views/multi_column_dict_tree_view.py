@@ -99,9 +99,11 @@ class MultiColumnDictTreeView(BaseDictTreeView):
         self.setModel(MultiColumnDictTreeItemModel(dictionary, columns,
                                                    parent=self))
 
-        for i in range(len(columns) + 1):
+        self.resizeColumnToContents(0)
+        self.header().resizeSection(0, 200)
+        for i in range(1, len(columns) + 1):
             self.resizeColumnToContents(i)
-            self.header().resizeSection(i, 100)
+            self.header().resizeSection(i, 150)
             self.setItemDelegateForColumn(i, ColumnDelegate(self))
 
         self.open_persistent_editors()
@@ -131,6 +133,11 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
     def setup_connections(self):
         self.model().dict_modified.connect(self.dict_modified.emit)
+
+    def reset_gui(self):
+        self.rebuild_tree()
+        self.open_persistent_editors()
+        self.expand_rows()
 
 
 class MultiColumnDictTreeViewDialog(QDialog):
