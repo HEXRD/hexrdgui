@@ -15,8 +15,9 @@ from PySide2.QtWidgets import (
 
 from hexrd.constants import sigma_to_fwhm
 from hexrd.findorientations import (
-    clean_map, filter_maps_if_requested, filter_stdev_DFLT, label_spots
+    clean_map, filter_maps_if_requested, filter_stdev_DFLT
 )
+from hexrd.imageutil import find_peaks_2d
 
 from hexrd.ui import enter_key_filter, resource_loader
 
@@ -456,7 +457,7 @@ class OmeMapsViewerDialog(QObject):
         method_dict = self.config['find_orientations']['seed_search']['method']
         method_kwargs = method_dict[method_name]
 
-        _, spots = label_spots(data, method_name, method_kwargs)
+        _, spots = find_peaks_2d(data, method_name, method_kwargs)
 
         if spots.size:
             # Rescale the points to match the extents
