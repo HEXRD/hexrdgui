@@ -35,6 +35,7 @@ from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
+from hexrd.ui.refinements_editor import RefinementsEditor
 from hexrd.ui.save_images_dialog import SaveImagesDialog
 from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
@@ -162,6 +163,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
+        self.ui.action_edit_refinements.triggered.connect(
+            self.edit_refinements)
         self.ui.action_transform_detectors.triggered.connect(
             self.on_action_transform_detectors_triggered)
         self.ui.action_open_mask_manager.triggered.connect(
@@ -199,7 +202,6 @@ class MainWindow(QObject):
             self.update_config_gui)
         self.import_data_widget.cancel_workflow.connect(
             self.load_dummy_images)
-
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -577,6 +579,22 @@ class MainWindow(QObject):
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
         self.update_config_gui()
+
+    def edit_refinements(self):
+        w = self._refinements_editor = RefinementsEditor(self.ui)
+        if not w.ui.exec_():
+            return
+
+        # Update the UI in case settings have changed
+        self.update_config_gui()
+        self.materials_panel.update_overlay_editor()
+
+        if w.material_values_modified:
+            HexrdConfig().active_material_modified.emit()
+
+        update_canvas = w.iconfig_values_modified or w.material_values_modified
+        if update_canvas:
+            self.update_all(clear_canvases=True)
 
     def change_image_mode(self, mode):
         self.image_mode = mode

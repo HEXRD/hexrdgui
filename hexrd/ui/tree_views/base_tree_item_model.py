@@ -3,13 +3,11 @@ from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
 from hexrd.ui.tree_views.tree_item import TreeItem
 
 KEY_COL = 0
-VALUE_COL = 1
 
 
 class BaseTreeItemModel(QAbstractItemModel):
 
     KEY_COL = KEY_COL
-    VALUE_COL = VALUE_COL
 
     def columnCount(self, parent):
         return self.root_item.column_count()
@@ -19,6 +17,16 @@ class BaseTreeItemModel(QAbstractItemModel):
             return self.root_item.data(section)
 
         return None
+
+    def data(self, index, role):
+        if not index.isValid():
+            return
+
+        if role not in (Qt.DisplayRole, Qt.EditRole):
+            return
+
+        item = self.get_item(index)
+        return item.data(index.column())
 
     def index(self, row, column, parent):
         if not self.hasIndex(row, column, parent):
@@ -63,17 +71,5 @@ class BaseTreeItemModel(QAbstractItemModel):
         root.clear_children()
         self.endRemoveRows()
 
-    def add_tree_item(self, key, value, parent):
-        data = [key, value]
-        tree_item = TreeItem(data, parent)
-        return tree_item
-
-    def set_value(self, key, cur_config, cur_tree_item):
-        if isinstance(cur_config, list):
-            children = cur_tree_item.child_items
-            for child in children:
-                value = cur_config[child.data(KEY_COL)]
-                child.set_data(VALUE_COL, value)
-        else:
-            cur_tree_item.set_data(VALUE_COL, cur_config)
-        return
+    def add_tree_item(self, data, parent):
+        return TreeItem(data, parent)

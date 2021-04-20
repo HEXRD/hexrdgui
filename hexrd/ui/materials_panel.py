@@ -301,6 +301,12 @@ class MaterialsPanel(QObject):
     def update_table(self):
         self.materials_table.update_table()
 
+    def update_overlay_editor(self):
+        if not hasattr(self, '_overlay_manager'):
+            return
+
+        self._overlay_manager.update_overlay_editor()
+
     def update_refinement_options(self):
         if not hasattr(self, '_overlay_manager'):
             return

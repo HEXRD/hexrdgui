@@ -11,20 +11,21 @@ from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
 from hexrd.ui import constants
+from hexrd.ui.utils import is_int
 
 # Global constants
 FIXED = 0
 REFINABLE = 1
 
 KEY_COL = BaseTreeItemModel.KEY_COL
-VALUE_COL = BaseTreeItemModel.VALUE_COL
+VALUE_COL = KEY_COL + 1
 STATUS_COL = VALUE_COL + 1
 
 
 class CalTreeItemModel(BaseTreeItemModel):
 
     def __init__(self, parent=None):
-        super(CalTreeItemModel, self).__init__(parent)
+        super().__init__(parent)
         self.root_item = TreeItem(['key', 'value', 'refinable'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
@@ -48,7 +49,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
     def setData(self, index, value, role):
         item = self.get_item(index)
-        path = self.get_path_from_root(item, index.column())
+        path = self.path_to_value(item, index.column())
 
         # If they are identical, don't do anything
         # (we exclude np.ndarray's from this)
@@ -158,12 +159,12 @@ class CalTreeItemModel(BaseTreeItemModel):
             if child.data(STATUS_COL):
                 parent.set_data(STATUS_COL, FIXED)
 
-    def get_path_from_root(self, tree_item, column):
+    def path_to_value(self, tree_item, column):
         path = ['value'] if column == VALUE_COL else ['status']
         cur_tree_item = tree_item
         while True:
             text = cur_tree_item.data(KEY_COL)
-            if _is_int(text):
+            if is_int(text):
                 path.append(int(text))
             else:
                 path.insert(0, text)
@@ -172,6 +173,16 @@ class CalTreeItemModel(BaseTreeItemModel):
                 break
 
         return path
+
+    def set_value(self, key, cur_config, cur_tree_item):
+        if isinstance(cur_config, list):
+            children = cur_tree_item.child_items
+            for child in children:
+                value = cur_config[child.data(KEY_COL)]
+                child.set_data(VALUE_COL, value)
+        else:
+            cur_tree_item.set_data(VALUE_COL, cur_config)
+        return
 
 
 class CheckBoxDelegate(QStyledItemDelegate):
@@ -201,8 +212,7 @@ class CheckBoxDelegate(QStyledItemDelegate):
         for child in children:
             child.set_data(STATUS_COL, value)
             if child.child_count() == 0:
-                path = self.parent().model().get_path_from_root(child,
-                                                                STATUS_COL)
+                path = self.parent().model().path_to_value(child, STATUS_COL)
                 self.parent().model().cfg.set_instrument_config_val(path,
                                                                     value)
             else:
@@ -285,7 +295,7 @@ class CalTreeView(QTreeView):
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
             item = self.model().get_item(index)
-            path = self.model().get_path_from_root(item, KEY_COL)
+            path = self.model().path_to_value(item, KEY_COL)
 
             # Force open the editor for the panel buffer values
             if item.data(KEY_COL) == constants.BUFFER_KEY:
@@ -316,7 +326,7 @@ class CalTreeView(QTreeView):
 
     def update_collapsed_status(self, index):
         item = self.model().get_item(index)
-        path = self.model().get_path_from_root(item, KEY_COL)
+        path = self.model().path_to_value(item, KEY_COL)
 
         HexrdConfig().update_collapsed_state(path)
 
@@ -351,11 +361,3 @@ class CalTreeView(QTreeView):
         # Show the checkbox
         editor_idx = self.model().index(row, STATUS_COL, parent)
         self.openPersistentEditor(editor_idx)
-
-
-def _is_int(s):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False

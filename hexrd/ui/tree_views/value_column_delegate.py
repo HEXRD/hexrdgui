@@ -39,7 +39,7 @@ class ValueColumnDelegate(QStyledItemDelegate):
                 _set_enable(False)
 
                 # Extract out the detector, so we can update the right config
-                path = model.get_path_from_root(item, index.column())
+                path = model.path_to_value(item, index.column())
                 detector = path[path.index('detectors') + 1]
                 dialog = PanelBufferDialog(detector, self)
                 dialog.show()
