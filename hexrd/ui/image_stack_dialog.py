@@ -45,6 +45,7 @@ class ImageStackDialog:
         self.ui.omega_wedges.cellChanged.connect(self.update_wedges)
         self.ui.all_detectors.toggled.connect(self.detector_selection)
         self.ui.search_directories.clicked.connect(self.search_directories)
+        self.ui.clear_file_selections.clicked.connect(self.clear_selected_files)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -266,6 +267,12 @@ class ImageStackDialog:
         num_files = len(imgs[0])
         return imgs, num_files
 
+    def clear_selected_files(self):
+        for det in self.detectors:
+            self.state[det]['files'].clear()
+            self.state[det]['file_count'] = 0
+        self.ui.file_count.setText('0')
+
     def get_omega_values(self, num_files):
         if self.state['omega_from_file'] and self.state['omega']:
             omega = np.load(self.state['omega'])
@@ -338,6 +345,11 @@ class ImageStackDialog:
                         f'The directory have not been set for '
                         f'the following detector(s):\n{" ".join(dets)}.')
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
+                    error = True
+                    continue
+                if idx := [i for i, n in enumerate(f) if f[0] == 0]:
+                    msg = (f'No files have been selected for the detectors.')
+                    QMessageBox.warning(None, 'HEXRD', msg)
                     error = True
                     continue
                 if idx := [i for i, n in enumerate(f) if f[0] != n]:
