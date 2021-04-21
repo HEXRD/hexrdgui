@@ -45,7 +45,8 @@ class ImageStackDialog:
         self.ui.omega_wedges.cellChanged.connect(self.update_wedges)
         self.ui.all_detectors.toggled.connect(self.detector_selection)
         self.ui.search_directories.clicked.connect(self.search_directories)
-        self.ui.clear_file_selections.clicked.connect(self.clear_selected_files)
+        self.ui.clear_file_selections.clicked.connect(
+            self.clear_selected_files)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
