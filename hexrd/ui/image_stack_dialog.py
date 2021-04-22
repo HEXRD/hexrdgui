@@ -243,7 +243,10 @@ class ImageStackDialog:
 
     def update_wedges(self, row, column):
         if value := self.ui.omega_wedges.item(row, column).text():
-            self.state['wedges'][row][column] = int(value)
+            data = float(value)
+            self.state['wedges'][row][column] = data
+            if column == 2:
+                self.state['wedges'][row][column] = int(data)
 
     def search_directories(self):
         pattern = self.ui.detector_search.text()
@@ -276,9 +279,9 @@ class ImageStackDialog:
             row_count = self.ui.omega_wedges.rowCount()
             length = num_files if row_count == 1 else 1
             for i in range(row_count):
-                start = int(self.ui.omega_wedges.item(i, 0).text())
-                stop = int(self.ui.omega_wedges.item(i, 1).text())
-                steps = int(self.ui.omega_wedges.item(i, 2).text())
+                start = float(self.ui.omega_wedges.item(i, 0).text())
+                stop = float(self.ui.omega_wedges.item(i, 1).text())
+                steps = int(float(self.ui.omega_wedges.item(i, 2).text()))
                 delta = (stop - start) / length
                 omega.extend(np.linspace(
                     [start, start + delta],
@@ -322,7 +325,7 @@ class ImageStackDialog:
             for j in range(self.ui.omega_wedges.columnCount()):
                 if not self.ui.omega_wedges.item(i, j).text():
                     return -1
-            steps += int(self.ui.omega_wedges.item(i, 2).text())
+            steps += int(float(self.ui.omega_wedges.item(i, 2).text()))
         return steps if self.ui.total_frames.value() != steps else 0
 
     def exec_(self):
