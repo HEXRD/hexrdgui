@@ -14,12 +14,12 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 
 class InteractiveTemplate:
-    def __init__(self, img, parent=None):
+    def __init__(self, parent=None):
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
         self.panels = create_hedm_instrument().detectors
-        self.img = img
+        self.img = None
         self.shape = None
         self.press = None
         self.total_rotation = 0
@@ -84,7 +84,7 @@ class InteractiveTemplate:
         y1 = y0+height if height else y1
         x1 = x0+width if width else x1
         self.img = self.img[y0:y1, x0:x1]
-        self.shape.set_xy(self.shape.xy - np.array([x0, y0]))
+        self.cropped_shape = self.shape.xy - np.array([x0, y0])
         return self.img
 
     @property
@@ -96,8 +96,34 @@ class InteractiveTemplate:
             self.raw_axes.patches.remove(self.shape)
             self.redraw()
 
+    def save_boundary(self, color):
+        if self.shape in self.raw_axes.patches:
+            self.update_style('--', 1, color)
+
+    def toggle_boundaries(self):
+        # TODO: Need to disconnect/reconnect signals?
+        if self.raw_axes.patches:
+            self.previous_bounds = self.raw_axes.patches
+            self.raw_axes.patches.clear()
+        elif self.previous_bounds:
+            self.raw_axes.patches = self.previous_bounds
+            self.previous_bounds.clear()
+
+    def disconnect(self):
+        if self.translating:
+            self.disconnect_translate()
+        else:
+            self.disconnect_rotate()
+
+    def completed(self):
+        self.disconnect()
+        self.img = None
+        self.shape = None
+        self.press = None
+        self.total_rotation = 0
+
     def mask(self):
-        col, row = self.shape.xy.T
+        col, row = self.cropped_shape.T
         col_nans = np.where(np.isnan(col))[0]
         row_nans = np.where(np.isnan(row))[0]
         cols = np.split(col, col_nans)
@@ -155,6 +181,7 @@ class InteractiveTemplate:
         self.key_press_cid = self.parent.mpl_connect(
             'key_press_event', self.on_key_translate)
         self.parent.setFocus()
+        self.translating = True
 
     def on_key_translate(self, event):
         dx, dy = 0, 0
@@ -204,13 +231,11 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect_translate(self):
-        if not self.button_press_cid:
-            return
-
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
         self.parent.mpl_disconnect(self.motion_cid)
         self.parent.mpl_disconnect(self.key_press_cid)
+        self.translating = False
 
     def connect_rotate(self):
         self.button_press_cid = self.parent.mpl_connect(
@@ -304,9 +329,6 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect_rotate(self):
-        if not self.button_press_cid:
-            return
-
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_drag_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
