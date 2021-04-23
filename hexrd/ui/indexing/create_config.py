@@ -36,7 +36,7 @@ def create_indexing_config():
     config = RootConfig(indexing_config)
 
     # Create and set instrument config
-    iconfig = InstrumentConfig()
+    iconfig = InstrumentConfig(config)
     iconfig._hedm = create_hedm_instrument()
     config.instrument = iconfig
 
