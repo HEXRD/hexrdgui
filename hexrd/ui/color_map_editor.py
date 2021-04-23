@@ -6,7 +6,10 @@ import matplotlib.colors
 import numpy as np
 
 import hexrd.ui.constants
+from hexrd.ui.brightness_contrast_editor import BrightnessContrastEditor
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class ColorMapEditor:
@@ -22,10 +25,26 @@ class ColorMapEditor:
         self.ui = loader.load_file('color_map_editor.ui', parent)
 
         self.bounds = (0, 16384)
+        self._data = None
+
+        self.bc_editor = None
 
         self.load_cmaps()
 
         self.setup_connections()
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, v):
+        self._data = v
+        self.update_bc_enable_state()
+
+        if self.bc_editor:
+            self.bc_editor.data = v
+            self.update_bc_editor()
 
     def load_cmaps(self):
         cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
@@ -35,18 +54,66 @@ class ColorMapEditor:
         self.ui.color_map.setCurrentText(hexrd.ui.constants.DEFAULT_CMAP)
 
     def setup_connections(self):
-        self.ui.maximum.valueChanged.connect(self.update_mins_and_maxes)
-        self.ui.minimum.valueChanged.connect(self.update_mins_and_maxes)
+        self.ui.bc_editor_button.pressed.connect(self.bc_editor_button_pressed)
+
+        self.ui.minimum.valueChanged.connect(self.range_edited)
+        self.ui.maximum.valueChanged.connect(self.range_edited)
 
         self.ui.color_map.currentIndexChanged.connect(self.update_cmap)
         self.ui.reverse.toggled.connect(self.update_cmap)
         self.ui.show_under.toggled.connect(self.update_cmap)
         self.ui.show_over.toggled.connect(self.update_cmap)
 
-        self.ui.maximum.valueChanged.connect(self.update_norm)
-        self.ui.minimum.valueChanged.connect(self.update_norm)
-        self.ui.reset_range.pressed.connect(self.reset_range)
         self.ui.log_scale.toggled.connect(self.update_norm)
+
+    def range_edited(self):
+        self.update_bc_editor()
+        self.update_mins_and_maxes()
+        self.update_norm()
+
+    def update_bc_enable_state(self):
+        has_data = self.data is not None
+        self.ui.bc_editor_button.setEnabled(has_data)
+
+    def bc_editor_button_pressed(self):
+        bc = self.bc_editor = BrightnessContrastEditor(self.ui)
+        bc.data = self.data
+        bc.edited.connect(self.bc_editor_modified)
+        bc.reset.connect(self.reset_range)
+        bc.ui.finished.connect(self.remove_bc_editor)
+
+        # Hide overlays while the BC editor is open
+        self._bc_previous_show_overlays = HexrdConfig().show_overlays
+        if self._bc_previous_show_overlays:
+            HexrdConfig().show_overlays = False
+            HexrdConfig().active_material_modified.emit()
+
+        self.update_bc_editor()
+
+        self.bc_editor.ui.show()
+
+    def update_bc_editor(self):
+        if not self.bc_editor:
+            return
+
+        widgets = (self.ui.minimum, self.ui.maximum)
+        new_range = [x.value() for x in widgets]
+        with block_signals(self.bc_editor):
+            self.bc_editor.ui_range = new_range
+
+    def remove_bc_editor(self):
+        self.bc_editor = None
+
+        if self._bc_previous_show_overlays and not HexrdConfig().show_overlays:
+            # Show the overlays again
+            HexrdConfig().show_overlays = True
+            HexrdConfig().active_material_modified.emit()
+
+    def bc_editor_modified(self):
+        with block_signals(self.ui.minimum, self.ui.maximum):
+            self.ui.minimum.setValue(self.bc_editor.ui_min)
+            self.ui.maximum.setValue(self.bc_editor.ui_max)
+            self.range_edited()
 
     def update_mins_and_maxes(self):
         # We can't do this in PySide2 for some reason:
@@ -70,6 +137,7 @@ class ColorMapEditor:
         self.ui.maximum.setToolTip('Max: ' + str(bounds[1]))
 
         self.bounds = bounds
+        self.data = data
 
     @staticmethod
     def percentile_range(data, low=69.0, high=99.9):
