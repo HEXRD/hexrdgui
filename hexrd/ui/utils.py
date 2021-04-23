@@ -305,3 +305,10 @@ def block_signals(*objects):
         yield
     finally:
         blocked.clear()
+
+
+def reversed_enumerate(sequence):
+    return zip(
+        reversed(range(len(sequence))),
+        reversed(sequence),
+    )
