@@ -9,6 +9,7 @@ from hexrd import unitcell
 
 from hexrd.ui.constants import DEFAULT_POWDER_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
 
@@ -40,6 +41,8 @@ class PowderOverlayEditor:
         self.ui.enable_width.toggled.connect(self.update_enable_states)
         self.refinements_selector.selection_changed.connect(
             self.update_refinements)
+
+        self.ui.reflections_table.pressed.connect(self.show_reflections_table)
 
         HexrdConfig().material_tth_width_modified.connect(
             self.material_tth_width_modified_externally)
@@ -110,6 +113,7 @@ class PowderOverlayEditor:
 
         self.update_enable_states()
         self.update_refinement_options()
+        self.update_reflections_table()
 
     def update_config(self):
         self.tth_width_config = self.tth_width_gui
@@ -202,3 +206,20 @@ class PowderOverlayEditor:
             return
 
         self.update_gui()
+
+    def update_reflections_table(self):
+        if hasattr(self, '_table'):
+            self._table.material = self.material
+
+    def show_reflections_table(self):
+        if not hasattr(self, '_table'):
+            kwargs = {
+                'material': self.material,
+                'parent': self.ui,
+            }
+            self._table = ReflectionsTable(**kwargs)
+        else:
+            # Make sure the material is up to date
+            self._table.material = self.material
+
+        self._table.show()

@@ -40,6 +40,8 @@ class ReflectionsTable:
         HexrdConfig().active_material_modified.connect(
             self.active_material_modified)
         HexrdConfig().material_renamed.connect(self.update_material_name)
+        HexrdConfig().update_reflections_tables.connect(
+            self.update_table_if_name_matches)
 
     @property
     def material(self):
@@ -111,6 +113,10 @@ class ReflectionsTable:
 
     def active_material_modified(self):
         if HexrdConfig().active_material is self.material:
+            self.update_table()
+
+    def update_table_if_name_matches(self, name):
+        if self.material.name == name:
             self.update_table()
 
     def update_table(self):

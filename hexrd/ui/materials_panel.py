@@ -300,7 +300,7 @@ class MaterialsPanel(QObject):
         self._overlay_manager.show()
 
     def update_table(self):
-        self.reflections_table.update_table()
+        HexrdConfig().update_reflections_tables.emit(self.current_material())
 
     def update_overlay_editor(self):
         if not hasattr(self, '_overlay_manager'):
