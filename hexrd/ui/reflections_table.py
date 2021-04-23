@@ -19,11 +19,11 @@ class COLUMNS:
     MULTIPLICITY = 4
 
 
-class MaterialsTable:
+class ReflectionsTable:
 
     def __init__(self, material, title_prefix='', parent=None):
         loader = UiLoader()
-        self.ui = loader.load_file('materials_table.ui', parent)
+        self.ui = loader.load_file('reflections_table.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
         self.setup_connections()
