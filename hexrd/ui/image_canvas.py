@@ -133,8 +133,13 @@ class ImageCanvas(FigureCanvas):
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
                 axis.set_title(name)
-                self.axes_images.append(axis.imshow(img, cmap=self.cmap,
-                                                    norm=self.norm))
+                kwargs = {
+                    'X': img,
+                    'cmap': self.cmap,
+                    'norm': self.norm,
+                    'interpolation': 'none',
+                }
+                self.axes_images.append(axis.imshow(**kwargs))
                 axis.autoscale(False)
                 self.raw_axes.append(axis)
 
@@ -502,10 +507,15 @@ class ImageCanvas(FigureCanvas):
         rescale_image = True
         if len(self.axes_images) == 0:
             self.axis = self.figure.add_subplot(111)
-            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                     norm=self.norm,
-                                                     vmin=None, vmax=None,
-                                                     interpolation="none"))
+            kwargs = {
+                'X': img,
+                'cmap': self.cmap,
+                'norm': self.norm,
+                'vmin': None,
+                'vmax': None,
+                'interpolation': 'none',
+            }
+            self.axes_images.append(self.axis.imshow(**kwargs))
             self.axis.set_xlabel(r'x (mm)')
             self.axis.set_ylabel(r'y (mm)')
         else:
@@ -566,11 +576,15 @@ class ImageCanvas(FigureCanvas):
             # scale.
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(grid[:3, 0])
-                self.axes_images.append(self.axis.imshow(img, extent=extent,
-                                                         cmap=self.cmap,
-                                                         norm=self.norm,
-                                                         picker=True,
-                                                         interpolation='none'))
+                kwargs = {
+                    'X': img,
+                    'extent': extent,
+                    'cmap': self.cmap,
+                    'norm': self.norm,
+                    'picker': True,
+                    'interpolation': 'none',
+                }
+                self.axes_images.append(self.axis.imshow(**kwargs))
                 self.axis.axis('auto')
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
@@ -603,10 +617,14 @@ class ImageCanvas(FigureCanvas):
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
-                self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                         norm=self.norm,
-                                                         picker=True,
-                                                         interpolation='none'))
+                kwargs = {
+                    'X': img,
+                    'cmap': self.cmap,
+                    'norm': self.norm,
+                    'picker': True,
+                    'interpolation': 'none',
+                }
+                self.axes_images.append(self.axis.imshow(**kwargs))
                 self.axis.set_xlabel(r'2$\theta$ (deg)')
                 self.axis.set_ylabel(r'$\eta$ (deg)')
             else:
