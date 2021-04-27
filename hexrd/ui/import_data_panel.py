@@ -151,6 +151,9 @@ class ImportDataPanel(QObject):
         if not checked:
             self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
                                 enabled=False)
+        elif not self.ui.default_config.isChecked():
+            self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
+                                enabled=True)
 
     def update_config_load(self, checked):
         self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
