@@ -6,7 +6,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 from hexrd.ui import enter_key_filter
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.materials_table import MaterialsTable
+from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -191,7 +191,7 @@ class OmeMapsSelectDialog(QObject):
             'title_prefix': 'Select hkls for eta omega map generation: ',
             'parent': self.ui,
         }
-        self._table = MaterialsTable(**kwargs)
+        self._table = ReflectionsTable(**kwargs)
         self._table.show()
 
     def update_num_hkls(self):

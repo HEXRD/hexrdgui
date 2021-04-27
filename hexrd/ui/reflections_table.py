@@ -19,11 +19,11 @@ class COLUMNS:
     MULTIPLICITY = 4
 
 
-class MaterialsTable:
+class ReflectionsTable:
 
     def __init__(self, material, title_prefix='', parent=None):
         loader = UiLoader()
-        self.ui = loader.load_file('materials_table.ui', parent)
+        self.ui = loader.load_file('reflections_table.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
         self.setup_connections()
@@ -40,6 +40,8 @@ class MaterialsTable:
         HexrdConfig().active_material_modified.connect(
             self.active_material_modified)
         HexrdConfig().material_renamed.connect(self.update_material_name)
+        HexrdConfig().update_reflections_tables.connect(
+            self.update_table_if_name_matches)
 
     @property
     def material(self):
@@ -111,6 +113,10 @@ class MaterialsTable:
 
     def active_material_modified(self):
         if HexrdConfig().active_material is self.material:
+            self.update_table()
+
+    def update_table_if_name_matches(self, name):
+        if self.material.name == name:
             self.update_table()
 
     def update_table(self):

@@ -5,7 +5,7 @@ from PySide2.QtWidgets import QDialogButtonBox, QHeaderView
 from hexrd.ui import enter_key_filter
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.materials_table import MaterialsTable
+from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
@@ -267,7 +267,7 @@ class FitGrainsOptionsDialog(QObject):
             'title_prefix': 'Select hkls for grain fitting: ',
             'parent': self.ui,
         }
-        self._table = MaterialsTable(**kwargs)
+        self._table = ReflectionsTable(**kwargs)
         self._table.show()
 
     def update_num_hkls(self):

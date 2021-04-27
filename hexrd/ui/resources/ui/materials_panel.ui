@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>382</width>
+    <width>440</width>
     <height>241</height>
    </rect>
   </property>
@@ -117,9 +117,9 @@
           </widget>
          </item>
          <item row="0" column="0" colspan="4">
-          <widget class="QPushButton" name="show_materials_table">
+          <widget class="QPushButton" name="show_reflections_table">
            <property name="text">
-            <string>Materials Table</string>
+            <string>Reflections Table</string>
            </property>
           </widget>
          </item>
@@ -291,7 +291,7 @@
   <tabstop>materials_combo</tabstop>
   <tabstop>materials_tool_button</tabstop>
   <tabstop>tab_widget</tabstop>
-  <tabstop>show_materials_table</tabstop>
+  <tabstop>show_reflections_table</tabstop>
   <tabstop>show_overlay_manager</tabstop>
   <tabstop>show_overlays</tabstop>
   <tabstop>limit_active</tabstop>
