@@ -66,10 +66,13 @@ class MaterialStructureEditor(QObject):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.selection_changed)
 
+        self.ui.apply.pressed.connect(self.update_material)
+        self.ui.reset.pressed.connect(self.update_gui)
+
     def site_modified(self):
         site = copy.deepcopy(self.material_site_editor.site)
         self.sites[self.selected_row] = site
-        self.update_material()
+        self.material_edited()
 
     def ensure_scalar_U(self):
         # When we allow editing a tensor U, we can remove this function.
@@ -83,7 +86,7 @@ class MaterialStructureEditor(QObject):
         if tensor_encountered:
             name = self.material.name
             print(f'Warning: converting U tensors in {name} to scalars')
-            self.update_material()
+            self.material_edited()
 
     def name_changed(self, row, column):
         new_name = self.ui.table.item(row, column).text()
@@ -102,6 +105,7 @@ class MaterialStructureEditor(QObject):
     def update_gui(self):
         self.generate_sites()
         self.update_table()
+        self.modified = False
 
     def update_enable_states(self):
         enable_remove = self.num_rows > 1 and self.selected_row is not None
@@ -191,7 +195,7 @@ class MaterialStructureEditor(QObject):
         # Select the newly added row
         self.select_row(len(self.sites) - 1)
 
-        self.update_material()
+        self.material_edited()
 
     def remove_site(self):
         selected_row = self.selected_row
@@ -205,7 +209,7 @@ class MaterialStructureEditor(QObject):
             # Select the last row
             self.select_row(len(self.sites) - 1)
 
-        self.update_material()
+        self.material_edited()
 
     def create_table_widget(self, v):
         w = QTableWidgetItem(v)
@@ -255,30 +259,13 @@ class MaterialStructureEditor(QObject):
                 U_array.append(atom['U'])
 
         mat = self.material
-        mat._atominfo = np.array(info_array)
-        mat._atomtype = np.array(type_array)
-        mat._U = np.array(U_array)
-
-        old_unitcell = mat.unitcell
-
-        # Re-create the unit cell from scratch. This is easier to do
-        # right now than setting the variables and figuring out which
-        # properties need to be updated and in what order...
-        mat._unitcell = unitcell(mat._lparms, mat.sgnum, mat._atomtype,
-                                 mat._atominfo, mat._U, mat._dmin.getVal('nm'),
-                                 mat._beamEnergy.value, mat._sgsetting)
-
-        # Set the stiffness back on it if it existed
-        if hasattr(old_unitcell, 'stiffness'):
-            mat.unitcell.stiffness = old_unitcell.stiffness
-
-        # Compute the density
-        mat.unitcell.CalcDensity()
-
-        # Update the structure factor of the PData
-        mat.update_structure_factor()
+        mat.atominfo = np.array(info_array)
+        mat.atomtype = np.array(type_array)
+        mat.U = np.array(U_array)
 
         self.material_modified.emit()
+
+        self.modified = False
 
     def generate_sites(self):
         """The sites have a structure like the following:
@@ -349,6 +336,19 @@ class MaterialStructureEditor(QObject):
         # FIXME: allow editing a tensor U as well.
         # We can remove this function when that is done.
         self.ensure_scalar_U()
+
+    def material_edited(self):
+        self.modified = True
+
+    @property
+    def modified(self):
+        return self._modified
+
+    @modified.setter
+    def modified(self, b):
+        self._modified = b
+        self.ui.apply.setEnabled(b)
+        self.ui.reset.setEnabled(b)
 
 
 class Delegate(QStyledItemDelegate):

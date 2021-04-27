@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>548</width>
-    <height>502</height>
+    <height>597</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -29,40 +29,6 @@
      <property name="text">
       <string>+</string>
      </property>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QTabWidget" name="site_editor_tab_widget">
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="site_editor_tab">
-      <attribute name="title">
-       <string>Site Editor</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <layout class="QVBoxLayout" name="material_site_editor_layout"/>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="empty_tab">
-      <attribute name="title">
-       <string>Empty</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>No Site Selected</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
     </widget>
    </item>
    <item row="2" column="1">
@@ -102,6 +68,60 @@
      </column>
     </widget>
    </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QTabWidget" name="site_editor_tab_widget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="site_editor_tab">
+      <attribute name="title">
+       <string>Site Editor</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QVBoxLayout" name="material_site_editor_layout"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="empty_tab">
+      <attribute name="title">
+       <string>Empty</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>No Site Selected</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QPushButton" name="apply">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QPushButton" name="reset">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Reset</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
@@ -109,6 +129,8 @@
   <tabstop>add_site</tabstop>
   <tabstop>remove_site</tabstop>
   <tabstop>site_editor_tab_widget</tabstop>
+  <tabstop>apply</tabstop>
+  <tabstop>reset</tabstop>
  </tabstops>
  <resources/>
  <connections/>
