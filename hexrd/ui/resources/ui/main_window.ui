@@ -86,10 +86,16 @@
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
-   <widget class="QMenu" name="menuView">
+   <widget class="QMenu" name="menu_view">
     <property name="title">
      <string>View</string>
     </property>
+    <widget class="QMenu" name="view_dock_widgets">
+     <property name="title">
+      <string>Dock Widgets</string>
+     </property>
+    </widget>
+    <addaction name="view_dock_widgets"/>
     <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
     <addaction name="action_show_detector_borders"/>
@@ -129,7 +135,7 @@
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
-   <addaction name="menuView"/>
+   <addaction name="menu_view"/>
    <addaction name="menu_run"/>
   </widget>
   <widget class="QStatusBar" name="status_bar">
