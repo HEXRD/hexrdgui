@@ -115,11 +115,12 @@ class ImageStackDialog(QObject):
                 }
 
     def set_wedges(self):
-        for i, wedge in enumerate(self.state['wedges']):
-            self.ui.omega_wedges.insertRow(i)
-            for j, value in enumerate(wedge):
-                self.ui.omega_wedges.setItem(
-                    i, j, QTableWidgetItem(str(value)))
+        if self.ui.omega_wedges.rowCount() == 0:
+            for i, wedge in enumerate(self.state['wedges']):
+                self.ui.omega_wedges.insertRow(i)
+                for j, value in enumerate(wedge):
+                    self.ui.omega_wedges.setItem(
+                        i, j, QTableWidgetItem(str(value)))
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
