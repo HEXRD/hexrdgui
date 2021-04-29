@@ -4,6 +4,7 @@ import yaml
 import numpy as np
 from pathlib import Path
 
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
@@ -12,12 +13,17 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.image_file_manager import ImageFileManager
 
 
-class ImageStackDialog:
+class ImageStackDialog(QObject):
 
-    def __init__(self, parent=None):
+    # Emitted when images are cleared
+    clear_images = Signal()
+
+    def __init__(self, parent=None, load_panel=None):
+        super(ImageStackDialog, self).__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
 
+        self.load_panel = load_panel
         self.parent_dir = HexrdConfig().working_dir
         self.detectors = HexrdConfig().detector_names
         self.detector = self.detectors[0]
@@ -47,6 +53,7 @@ class ImageStackDialog:
         self.ui.search_directories.clicked.connect(self.search_directories)
         self.ui.clear_file_selections.clicked.connect(
             self.clear_selected_files)
+        self.clear_images.connect(self.load_panel.clear_from_stack_dialog)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -273,6 +280,7 @@ class ImageStackDialog:
             self.state[det]['files'].clear()
             self.state[det]['file_count'] = 0
         self.ui.file_count.setText('0')
+        self.clear_images.emit()
 
     def get_omega_values(self, num_files):
         if self.state['omega_from_file'] and self.state['omega']:
