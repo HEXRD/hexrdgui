@@ -87,7 +87,7 @@ class ImageStackDialog(QObject):
                 or 'max_frame_file' in self.state.keys()):
             self.state.clear()
         if self.state:
-            self.select_files_manually(self.state[self.detector]['files'])
+            self.find_previous_images(self.state[self.detector]['files'])
             self.load_omega_from_file(self.state['omega_from_file'])
             self.file_selection_changed(self.state['manual_file'])
             self.detector_selection(self.state['all_detectors'])
@@ -225,6 +225,8 @@ class ImageStackDialog(QObject):
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
             self.ui.file_count.setText(str(len(files)))
+
+    def find_previous_images(self, files):
         try:
             ims = ImageFileManager().open_file(files[0])
             frames = len(ims) if len(ims) else 1
@@ -234,7 +236,10 @@ class ImageStackDialog(QObject):
             self.state['total_frames'] = frames
             self.total_frames()
         except Exception as e:
-            print('Unable to open previously loaded images: ', e)
+            msg = (
+                f'Unable to open previously loaded images, please make sure '
+                f'directory path is correct and that images still exist.')
+            QMessageBox.warning(self.parent(), 'HEXRD', msg)
             for det in self.detectors:
                 self.state[det]['files'] = ''
                 self.state[det]['file_count'] = 0
