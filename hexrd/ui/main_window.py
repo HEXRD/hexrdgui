@@ -35,6 +35,7 @@ from hexrd.ui.load_panel import LoadPanel
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
+from hexrd.ui.messages_widget import MessagesWidget
 from hexrd.ui.refinements_editor import RefinementsEditor
 from hexrd.ui.save_images_dialog import SaveImagesDialog
 from hexrd.ui.transform_dialog import TransformDialog
@@ -56,7 +57,7 @@ class MainWindow(QObject):
     new_mask_added = Signal(str)
 
     def __init__(self, parent=None, image_files=None):
-        super(MainWindow, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -65,6 +66,11 @@ class MainWindow(QObject):
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
         self.progress_dialog.setWindowTitle('Calibration Running')
+
+        self.messages_widget = MessagesWidget(self.ui)
+        dock_widget_contents = self.ui.messages_dock_widget_contents
+        dock_widget_contents.layout().addWidget(self.messages_widget.ui)
+        self.ui.resizeDocks([self.ui.messages_dock_widget], [80], Qt.Vertical)
 
         # Let the left dock widget take up the whole left side
         self.ui.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
