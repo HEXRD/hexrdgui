@@ -166,6 +166,8 @@ class ImageStackDialog(QObject):
 
     def detector_selection(self, checked):
         self.state['all_detectors'] = checked
+        self.ui.single_detector.setChecked(not checked)
+        self.ui.search_directories.setEnabled(checked)
         self.ui.detector_search.setEnabled(checked)
         self.ui.detectors.setDisabled(checked)
         self.ui.select_directory.setDisabled(checked)
