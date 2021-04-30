@@ -115,6 +115,9 @@ class ImageCanvas(FigureCanvas):
             self.clear()
             self.mode = ViewType.raw
 
+            # This will be used for drawing the rings
+            self.iviewer = raw_iviewer()
+
             cols = 1
             if len(image_names) > 1:
                 cols = 2
@@ -124,6 +127,10 @@ class ImageCanvas(FigureCanvas):
             idx = HexrdConfig().current_imageseries_idx
             for i, name in enumerate(image_names):
                 img = HexrdConfig().image(name, idx)
+
+                if HexrdConfig().apply_pixel_solid_angle_correction:
+                    panel = self.iviewer.instr.detectors[name]
+                    img = img / panel.pixel_solid_angles
 
                 # Apply any masks
                 for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
@@ -158,8 +165,6 @@ class ImageCanvas(FigureCanvas):
         # This will call self.draw_idle()
         self.show_saturation()
 
-        # This will be used for drawing the rings
-        self.iviewer = raw_iviewer()
         # Set the detectors to draw
         self.iviewer.detectors = [x.get_title() for x in self.raw_axes]
         self.update_auto_picked_data()

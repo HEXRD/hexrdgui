@@ -1363,6 +1363,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         _cartesian_plane_normal_rotate_y,
         set_cartesian_plane_normal_rotate_y)
 
+    def _apply_pixel_solid_angle_correction(self):
+        return self.config['image']['apply_pixel_solid_angle_correction']
+
+    def set_apply_pixel_solid_angle_correction(self, v):
+        if v != self.apply_pixel_solid_angle_correction:
+            self.config['image']['apply_pixel_solid_angle_correction'] = v
+            self.deep_rerender_needed.emit()
+
+    apply_pixel_solid_angle_correction = property(
+        _apply_pixel_solid_angle_correction,
+        set_apply_pixel_solid_angle_correction)
+
     def get_show_saturation_level(self):
         return self._show_saturation_level
 
