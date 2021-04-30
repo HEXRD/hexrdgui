@@ -201,7 +201,7 @@ class FitGrainsResultsDialog(QObject):
         }
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
-        self.draw()
+        self.draw_idle()
 
     def on_export_button_pressed(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -262,7 +262,7 @@ class FitGrainsResultsDialog(QObject):
 
     def projection_changed(self):
         self.ax.set_proj_type(self.projection)
-        self.draw()
+        self.draw_idle()
 
     def cylindrical_reference_toggled(self):
         self.update_axes_labels()
@@ -369,7 +369,7 @@ class FitGrainsResultsDialog(QObject):
         if self.axes_visible:
             self.hide_axis(direction)
 
-        self.draw()
+        self.draw_idle()
 
         # As soon as the image is re-drawn, the perpendicular axis will
         # be visible again.
@@ -400,7 +400,7 @@ class FitGrainsResultsDialog(QObject):
         for name in ('x', 'y', 'z'):
             self.set_axis_visible(name, self.axes_visible)
 
-        self.draw()
+        self.draw_idle()
 
     def update_axes_labels(self):
         axes = ('x', 'y', 'z')
@@ -512,7 +512,7 @@ class FitGrainsResultsDialog(QObject):
         # buttons will know about the range change.
         self.toolbar.push_current()
 
-        self.draw()
+        self.draw_idle()
 
     def update_ranges_mpl(self):
         self.ranges_mpl = self.ranges_gui
@@ -563,7 +563,7 @@ class FitGrainsResultsDialog(QObject):
             self.update_plot()
 
     def draw(self):
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
 
 if __name__ == '__main__':

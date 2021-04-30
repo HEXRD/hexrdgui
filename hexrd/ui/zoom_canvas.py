@@ -93,7 +93,7 @@ class ZoomCanvas(FigureCanvas):
         # Clear the crosshairs when the mouse is moving over the canvas
         self.clear_crosshairs()
         self.update_vhlines(event)
-        self.draw()
+        self.draw_idle()
 
     def update_vhlines(self, event):
         # These are vertical and horizontal lines on the integral axes
@@ -236,5 +236,5 @@ class ZoomCanvas(FigureCanvas):
         ys = np.append(roi_deg[:, 1], roi_deg[0, 1])
         self.box_overlay_line.set_data(xs, ys)
 
-        self.main_canvas.draw()
-        self.draw()
+        self.main_canvas.draw_idle()
+        self.draw_idle()

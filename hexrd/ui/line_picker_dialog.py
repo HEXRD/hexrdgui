@@ -110,7 +110,7 @@ class LinePickerDialog(QObject):
 
         self.canvas.mpl_disconnect(self.bp_id)
         self.bp_id = None
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def zoom_width_changed(self):
         self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
@@ -176,7 +176,7 @@ class LinePickerDialog(QObject):
         self.update_enable_states()
 
         self.lines.append(line)
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def line_finished(self):
         linebuilder = self.linebuilder
@@ -274,4 +274,4 @@ class LineBuilder(QObject):
 
     def update_line_data(self):
         self.line.set_data(self.xs, self.ys)
-        self.canvas.draw()
+        self.canvas.draw_idle()

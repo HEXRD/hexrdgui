@@ -380,7 +380,7 @@ class OmeMapsViewerDialog(QObject):
     def update_spots(self):
         self.clear_spot_lines()
         if not self.display_spots:
-            self.draw()
+            self.draw_idle()
             return
 
         self.create_spots()
@@ -394,7 +394,7 @@ class OmeMapsViewerDialog(QObject):
             }
             self._spot_lines = self.ax.scatter(**kwargs)
 
-        self.draw()
+        self.draw_idle()
 
     def update_plot(self):
         ax = self.ax
@@ -424,10 +424,10 @@ class OmeMapsViewerDialog(QObject):
         ax.autoscale_view()
         ax.axis('auto')
 
-        self.draw()
+        self.draw_idle()
 
     def draw(self):
-        self.fig.canvas.draw()
+        self.fig.canvas.draw_idle()
 
     @property
     def current_hkl_index(self):
@@ -437,13 +437,13 @@ class OmeMapsViewerDialog(QObject):
         self.cmap = cmap
         if hasattr(self, 'im'):
             self.im.set_cmap(cmap)
-            self.draw()
+            self.draw_idle()
 
     def set_norm(self, norm):
         self.norm = norm
         if hasattr(self, 'im'):
             self.im.set_norm(norm)
-            self.draw()
+            self.draw_idle()
 
     def create_spots(self):
         data = self.image_data
