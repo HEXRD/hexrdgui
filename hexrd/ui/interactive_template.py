@@ -23,7 +23,8 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
         self.total_rotation = 0
-
+        self.translating = True
+        self.shape_styles = []
         self.parent.setFocusPolicy(Qt.ClickFocus)
 
     def update_image(self, img):
@@ -40,13 +41,16 @@ class InteractiveTemplate:
         verts = self.panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
+        self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
         self.center = self.get_midpoint()
         self.update_position(instr, det)
         self.connect_translate()
+        self.raw_axes = self.parent.raw_axes[0]
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
     def update_style(self, style, width, color):
+        self.shape_styles[-1] = {'line': style, 'width': width, 'color': color}
         self.shape.set_linestyle(style)
         self.shape.set_linewidth(width)
         self.shape.set_edgecolor(color)
@@ -98,16 +102,35 @@ class InteractiveTemplate:
 
     def save_boundary(self, color):
         if self.shape in self.raw_axes.patches:
-            self.update_style('--', 1, color)
+            self.shape.set_linestyle('--')
+            self.redraw()
 
-    def toggle_boundaries(self):
-        # TODO: Need to disconnect/reconnect signals?
-        if self.raw_axes.patches:
-            self.previous_bounds = self.raw_axes.patches
-            self.raw_axes.patches.clear()
-        elif self.previous_bounds:
-            self.raw_axes.patches = self.previous_bounds
-            self.previous_bounds.clear()
+    def toggle_boundaries(self, show):
+        if show:
+            self.raw_axes = self.parent.raw_axes[0]
+            for patch, style in zip(self.patches, self.shape_styles):
+                shape = patches.Polygon(
+                    patch.xy,
+                    fill=False,
+                    ls='--',
+                    lw=style['width'],
+                    color=style['color']
+                )
+                self.raw_axes.add_patch(shape)
+            if self.shape:
+                self.shape = self.raw_axes.patches.pop()
+                self.shape.set_linestyle(self.shape_styles[-1]['line'])
+                self.raw_axes.add_patch(self.shape)
+                if self.translating:
+                    self.connect_translate()
+                else:
+                    self.connect_rotate()
+            self.redraw()
+        else:
+            if self.shape:
+                self.disconnect()
+            self.patches = self.raw_axes.patches
+        self.redraw()
 
     def disconnect(self):
         if self.translating:
@@ -157,7 +180,7 @@ class InteractiveTemplate:
         return all_paths
 
     def redraw(self):
-        self.parent.draw()
+        self.parent.draw_idle()
 
     def scale_template(self, sx=1, sy=1):
         xy = self.shape.xy
@@ -235,7 +258,6 @@ class InteractiveTemplate:
         self.parent.mpl_disconnect(self.button_release_cid)
         self.parent.mpl_disconnect(self.motion_cid)
         self.parent.mpl_disconnect(self.key_press_cid)
-        self.translating = False
 
     def connect_rotate(self):
         self.button_press_cid = self.parent.mpl_connect(
@@ -247,6 +269,7 @@ class InteractiveTemplate:
         self.key_press_cid = self.parent.mpl_connect(
             'key_press_event', self.on_key_rotate)
         self.parent.setFocus()
+        self.translating = False
 
     def on_press_rotate(self, event):
         if event.inaxes != self.shape.axes:

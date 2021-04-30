@@ -179,7 +179,7 @@ class ImportDataPanel(QObject):
     def add_transform(self):
         # Prevent color map reset on transform
         self.cmap.block_updates(True)
-        self.toggle_boundaries()
+        self.it.toggle_boundaries(show=False)
         ilm = ImageLoadManager()
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
@@ -194,7 +194,7 @@ class ImportDataPanel(QObject):
             self.edited_images[self.detector]['height'] = img.shape[0]
             self.edited_images[self.detector]['width'] = img.shape[1]
 
-        self.toggle_boundaries()
+        self.it.toggle_boundaries(show=True)
         if self.it.shape is not None:
             self.it.update_image(img)
 
@@ -307,10 +307,6 @@ class ImportDataPanel(QObject):
                             self.ui.file_selection, enabled=True)
         self.enable_widgets(self.ui.outline_position,
                             self.ui.outline_appearance, enabled=False)
-
-    def toggle_boundaries(self):
-        if self.it.shape:
-            self.it.toggle_boundaries()
 
     def check_for_unsaved_changes(self):
         if self.it.shape is None and self.detector in self.completed_detectors:
