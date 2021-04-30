@@ -107,7 +107,8 @@ class LoadPanel(QObject):
             'trans', [UI_TRANS_INDEX_NONE for x in range(self.num_dets)])
         self.state.setdefault(
             'dark', [UI_DARK_INDEX_NONE for x in range(self.num_dets)])
-        self.state.setdefault('dark_files', [None for x in range(self.num_dets)])
+        self.state.setdefault(
+            'dark_files', [None for x in range(self.num_dets)])
 
     # Handle GUI changes
 
@@ -204,10 +205,10 @@ class LoadPanel(QObject):
                     self.dark_files = [selected_file] * self.num_dets
                     self.state['dark_files'] = [selected_file] * self.num_dets
                     msg = (
-                        f'Unable to match files - using the same dark file for '
-                        f'each detector.\nIf this is incorrect please de-select'
-                        f' \"Apply Selections to All Detectors\" and select '
-                        f'the dark file manually for each detector.')
+                        f'Unable to match files - using the same dark file'
+                        f'for each detector.\nIf this is incorrect please '
+                        f'de-select \"Apply Selections to All Detectors\" and '
+                        f'select the dark file manually for each detector.')
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
             else:
                 self.dark_files[self.idx] = selected_file
