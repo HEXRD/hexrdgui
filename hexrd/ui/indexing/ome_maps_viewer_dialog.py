@@ -426,7 +426,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.draw_idle()
 
-    def draw(self):
+    def draw_idle(self):
         self.fig.canvas.draw_idle()
 
     @property
