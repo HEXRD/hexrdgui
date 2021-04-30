@@ -10,6 +10,7 @@ import matplotlib.transforms as mtransforms
 import numpy as np
 
 from PySide2.QtCore import QObject, QSignalBlocker
+from PySide2.QtWidgets import QLayout
 
 from hexrd import imageutil
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
@@ -327,3 +328,13 @@ def default_stdout_stderr():
     finally:
         sys.stdout = prev_stdout
         sys.stderr = prev_stderr
+
+
+def clear_layout(layout):
+    # Recursively removes all child layouts and deletes all child widgets
+    while child := layout.takeAt(0):
+        if isinstance(child, QLayout):
+            clear_layout(child)
+            child.deleteLater()
+        else:
+            child.widget().deleteLater()

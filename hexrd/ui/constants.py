@@ -36,6 +36,7 @@ UI_THRESHOLD_EQUAL_TO = 2
 
 YAML_EXTS = ['.yaml', '.yml']
 
+
 class ViewType:
     raw = 'raw'
     cartesian = 'cartesian'
@@ -148,6 +149,13 @@ DEFAULT_LAUE_OPTIONS = {
 }
 
 DEFAULT_MONO_ROTATION_SERIES_OPTIONS = {}
+
+DEFAULT_WPPF_PLOT_STYLE = {
+    'marker': 'o',
+    's': 30,
+    'facecolors': '#ffffff',
+    'edgecolors': '#ff0000',
+}
 
 WORKFLOW_HEDM = 'HEDM'
 WORKFLOW_LLNL = 'LLNL'

@@ -731,11 +731,7 @@ class ImageCanvas(FigureCanvas):
         if any(x is None for x in (wppf_data, axis, line)):
             return
 
-        style = {
-            's': 30,
-            'facecolors': 'none',
-            'edgecolors': 'r'
-        }
+        style = HexrdConfig().wppf_plot_style
         self.wppf_plot = axis.scatter(*wppf_data, **style)
 
     def detector_axis(self, detector_name):
