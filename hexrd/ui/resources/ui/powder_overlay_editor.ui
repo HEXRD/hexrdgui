@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>548</width>
+    <width>626</width>
     <height>502</height>
    </rect>
   </property>
@@ -151,6 +151,13 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="1" colspan="4">
+    <widget class="QPushButton" name="reflections_table">
+     <property name="text">
+      <string>Reflections Table</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -161,6 +168,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>reflections_table</tabstop>
   <tabstop>enable_width</tabstop>
   <tabstop>tth_width</tabstop>
   <tabstop>offset_0</tabstop>

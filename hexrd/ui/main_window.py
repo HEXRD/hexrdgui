@@ -5,8 +5,8 @@ import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtWidgets import (
-    QApplication, QFileDialog, QInputDialog, QMainWindow, QMessageBox,
-    QVBoxLayout
+    QApplication, QDockWidget, QFileDialog, QInputDialog, QMainWindow,
+    QMessageBox, QVBoxLayout
 )
 
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
@@ -129,6 +129,8 @@ class MainWindow(QObject):
         # the first paint event has occurred (see MainWindow.eventFilter).
 
         self.workflow_selection_dialog = WorkflowSelectionDialog(self.ui)
+
+        self.add_view_dock_widget_actions()
 
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
@@ -798,3 +800,10 @@ class MainWindow(QObject):
 
     def on_action_open_mask_manager_triggered(self):
         self.mask_manager_dialog.show()
+
+    def add_view_dock_widget_actions(self):
+        # Add actions to show/hide all of the dock widgets
+        dock_widgets = self.ui.findChildren(QDockWidget)
+        titles = [w.windowTitle() for w in dock_widgets]
+        for title, w in sorted(zip(titles, dock_widgets)):
+            self.ui.view_dock_widgets.addAction(w.toggleViewAction())

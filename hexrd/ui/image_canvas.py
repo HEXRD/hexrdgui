@@ -133,8 +133,13 @@ class ImageCanvas(FigureCanvas):
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
                 axis.set_title(name)
-                self.axes_images.append(axis.imshow(img, cmap=self.cmap,
-                                                    norm=self.norm))
+                kwargs = {
+                    'X': img,
+                    'cmap': self.cmap,
+                    'norm': self.norm,
+                    'interpolation': 'none',
+                }
+                self.axes_images.append(axis.imshow(**kwargs))
                 axis.autoscale(False)
                 self.raw_axes.append(axis)
 
@@ -150,7 +155,7 @@ class ImageCanvas(FigureCanvas):
                         img[~mask] = 0
                 self.axes_images[i].set_data(img)
 
-        # This will call self.draw()
+        # This will call self.draw_idle()
         self.show_saturation()
 
         # This will be used for drawing the rings
@@ -329,7 +334,7 @@ class ImageCanvas(FigureCanvas):
 
         if not HexrdConfig().show_overlays:
             self.remove_all_overlay_artists()
-            self.draw()
+            self.draw_idle()
             return
 
         def overlay_with_data_id(data_id):
@@ -360,7 +365,7 @@ class ImageCanvas(FigureCanvas):
         for overlay in HexrdConfig().overlays:
             self.draw_overlay(overlay)
 
-        self.draw()
+        self.draw_idle()
 
     def clear_detector_borders(self):
         while self.cached_detector_borders:
@@ -372,12 +377,12 @@ class ImageCanvas(FigureCanvas):
         # If there is no iviewer, we are not currently viewing a
         # calibration. Just return.
         if not self.iviewer:
-            self.draw()
+            self.draw_idle()
             return
 
         # Make sure this is allowed by the configuration
         if not HexrdConfig().show_detector_borders:
-            self.draw()
+            self.draw_idle()
             return
 
         borders = self.iviewer.all_detector_borders
@@ -387,15 +392,15 @@ class ImageCanvas(FigureCanvas):
                 plot, = self.axis.plot(*line, color='y', lw=2)
                 self.cached_detector_borders.append(plot)
 
-        self.draw()
+        self.draw_idle()
 
     def draw_wppf(self):
         self.update_wppf_plot()
-        self.draw()
+        self.draw_idle()
 
     def draw_auto_picked_data(self):
         self.update_auto_picked_data()
-        self.draw()
+        self.draw_idle()
 
     def extract_ring_coords(self, data):
         if self.mode == ViewType.cartesian:
@@ -408,7 +413,7 @@ class ImageCanvas(FigureCanvas):
         for t in self.saturation_texts:
             t.remove()
         self.saturation_texts.clear()
-        self.draw()
+        self.draw_idle()
 
     def show_saturation(self):
         self.clear_saturation()
@@ -444,7 +449,7 @@ class ImageCanvas(FigureCanvas):
                         transform=ax.transAxes)
             self.saturation_texts.append(t)
 
-        self.draw()
+        self.draw_idle()
 
     def beam_vector_changed(self):
         if self.mode == ViewType.polar:
@@ -502,10 +507,15 @@ class ImageCanvas(FigureCanvas):
         rescale_image = True
         if len(self.axes_images) == 0:
             self.axis = self.figure.add_subplot(111)
-            self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                     norm=self.norm,
-                                                     vmin=None, vmax=None,
-                                                     interpolation="none"))
+            kwargs = {
+                'X': img,
+                'cmap': self.cmap,
+                'norm': self.norm,
+                'vmin': None,
+                'vmax': None,
+                'interpolation': 'none',
+            }
+            self.axes_images.append(self.axis.imshow(**kwargs))
             self.axis.set_xlabel(r'x (mm)')
             self.axis.set_ylabel(r'y (mm)')
         else:
@@ -566,11 +576,15 @@ class ImageCanvas(FigureCanvas):
             # scale.
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(grid[:3, 0])
-                self.axes_images.append(self.axis.imshow(img, extent=extent,
-                                                         cmap=self.cmap,
-                                                         norm=self.norm,
-                                                         picker=True,
-                                                         interpolation='none'))
+                kwargs = {
+                    'X': img,
+                    'extent': extent,
+                    'cmap': self.cmap,
+                    'norm': self.norm,
+                    'picker': True,
+                    'interpolation': 'none',
+                }
+                self.axes_images.append(self.axis.imshow(**kwargs))
                 self.axis.axis('auto')
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
@@ -603,10 +617,14 @@ class ImageCanvas(FigureCanvas):
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
-                self.axes_images.append(self.axis.imshow(img, cmap=self.cmap,
-                                                         norm=self.norm,
-                                                         picker=True,
-                                                         interpolation='none'))
+                kwargs = {
+                    'X': img,
+                    'cmap': self.cmap,
+                    'norm': self.norm,
+                    'picker': True,
+                    'interpolation': 'none',
+                }
+                self.axes_images.append(self.axis.imshow(**kwargs))
                 self.axis.set_xlabel(r'2$\theta$ (deg)')
                 self.axis.set_ylabel(r'$\eta$ (deg)')
             else:
@@ -640,20 +658,20 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().emit_update_status_bar(msg)
 
         self.clear_figure()
-        self.draw()
+        self.draw_idle()
 
     def set_cmap(self, cmap):
         self.cmap = cmap
         for axes_image in self.axes_images:
             axes_image.set_cmap(cmap)
-        self.draw()
+        self.draw_idle()
 
     def set_norm(self, norm):
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
         self.update_azimuthal_integral_plot_y_scale()
-        self.draw()
+        self.draw_idle()
 
     def compute_azimuthal_integral_sum(self):
         # grab the polar image
@@ -761,7 +779,7 @@ class ImageCanvas(FigureCanvas):
         self.update_azimuthal_integral_plot()
 
         # Update the detector borders if we are showing them
-        # This will call self.draw()
+        # This will call self.draw_idle()
         self.draw_detector_borders()
 
         # In polar mode, the overlays are clipped to the detectors, so
@@ -844,7 +862,7 @@ class ImageCanvas(FigureCanvas):
         ax.axis('auto')
         fig.tight_layout()
 
-        fig.canvas.draw()
+        fig.canvas.draw_idle()
         fig.show()
 
 

@@ -136,6 +136,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when point picked calibration is complete"""
     calibration_complete = Signal()
 
+    """Emitted when reflections tables for a given material should update
+
+    The string argument is the material name.
+    """
+    update_reflections_tables = Signal(str)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)

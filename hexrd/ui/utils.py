@@ -6,7 +6,7 @@ from functools import reduce
 import math
 import numpy as np
 
-from PySide2.QtCore import QObject
+from PySide2.QtCore import QObject, QSignalBlocker
 
 import matplotlib.transforms as mtransforms
 
@@ -290,3 +290,25 @@ def is_int(s):
         return True
     except ValueError:
         return False
+
+
+@contextmanager
+def block_signals(*objects):
+    """Block signals of objects via a with block:
+
+    with block_signals(object):
+        ...
+
+    """
+    blocked = [QSignalBlocker(o) for o in objects]
+    try:
+        yield
+    finally:
+        blocked.clear()
+
+
+def reversed_enumerate(sequence):
+    return zip(
+        reversed(range(len(sequence))),
+        reversed(sequence),
+    )

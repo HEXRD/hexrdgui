@@ -8,7 +8,7 @@ from PySide2.QtWidgets import QComboBox, QFileDialog, QMenu, QMessageBox
 from hexrd.material import Material
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.materials_table import MaterialsTable
+from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
 from hexrd.ui.material_properties_editor import MaterialPropertiesEditor
 from hexrd.ui.material_structure_editor import MaterialStructureEditor
@@ -26,7 +26,7 @@ class MaterialsPanel(QObject):
 
         m = HexrdConfig().active_material
         self.material_editor_widget = MaterialEditorWidget(m, self.ui)
-        self.materials_table = MaterialsTable(m, parent=self.ui)
+        self.reflections_table = ReflectionsTable(m, parent=self.ui)
 
         self.ui.material_editor_layout.addWidget(
             self.material_editor_widget.ui)
@@ -77,7 +77,8 @@ class MaterialsPanel(QObject):
         self.material_editor_widget.material_modified.connect(
             self.material_edited)
 
-        self.ui.show_materials_table.pressed.connect(self.show_materials_table)
+        self.ui.show_reflections_table.pressed.connect(
+            self.show_reflections_table)
         self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
 
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
@@ -227,7 +228,7 @@ class MaterialsPanel(QObject):
         HexrdConfig().active_material = self.current_material()
 
     def active_material_changed(self):
-        self.materials_table.material = HexrdConfig().active_material
+        self.reflections_table.material = HexrdConfig().active_material
         self.update_gui_from_config()
         self.update_structure_tab()
         self.update_properties_tab()
@@ -287,8 +288,8 @@ class MaterialsPanel(QObject):
         # Update the text of the combo box item in the list
         combo.setItemText(combo.currentIndex(), new_name)
 
-    def show_materials_table(self):
-        self.materials_table.show()
+    def show_reflections_table(self):
+        self.reflections_table.show()
 
     def show_overlay_manager(self):
         if hasattr(self, '_overlay_manager'):
@@ -299,7 +300,7 @@ class MaterialsPanel(QObject):
         self._overlay_manager.show()
 
     def update_table(self):
-        self.materials_table.update_table()
+        HexrdConfig().update_reflections_tables.emit(self.current_material())
 
     def update_overlay_editor(self):
         if not hasattr(self, '_overlay_manager'):
