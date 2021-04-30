@@ -562,7 +562,7 @@ class FitGrainsResultsDialog(QObject):
         if update_plot:
             self.update_plot()
 
-    def draw(self):
+    def draw_idle(self):
         self.canvas.draw_idle()
 
 
