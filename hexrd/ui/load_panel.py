@@ -247,6 +247,11 @@ class LoadPanel(QObject):
         self.files = []
         self.frame_data = None
 
+    def clear_from_stack_dialog(self):
+        self.reset_data()
+        self.ui.file_options.setRowCount(0)
+        self.enable_read()
+
     def enable_aggregations(self, row, column):
         if not (column == 1 or column == 2):
             return
@@ -387,12 +392,12 @@ class LoadPanel(QObject):
 
     def enable_read(self):
         files = self.yml_files if self.ext in YAML_EXTS else self.files
-        enabled = True
+        enabled = len(files) > 0
         if len(files) and all(len(f) for f in files):
             if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
                     and self.dark_files[self.idx] is None):
                 enabled = False
-            self.ui.read.setEnabled(enabled)
+        self.ui.read.setEnabled(enabled)
 
     # Handle table setup and changes
 
@@ -531,7 +536,7 @@ class LoadPanel(QObject):
         self.update_allowed = True
 
     def load_image_stacks(self):
-        if data := ImageStackDialog(self.parent()).exec_():
+        if data := ImageStackDialog(self.parent(), self).exec_():
             self.files = data['files']
             self.omega_min = data['omega_min']
             self.omega_max = data['omega_max']

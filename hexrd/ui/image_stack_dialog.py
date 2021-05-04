@@ -4,6 +4,7 @@ import yaml
 import numpy as np
 from pathlib import Path
 
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
@@ -12,12 +13,17 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.image_file_manager import ImageFileManager
 
 
-class ImageStackDialog:
+class ImageStackDialog(QObject):
 
-    def __init__(self, parent=None):
+    # Emitted when images are cleared
+    clear_images = Signal()
+
+    def __init__(self, parent=None, load_panel=None):
+        super(ImageStackDialog, self).__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
 
+        self.load_panel = load_panel
         self.parent_dir = HexrdConfig().working_dir
         self.detectors = HexrdConfig().detector_names
         self.detector = self.detectors[0]
@@ -45,6 +51,9 @@ class ImageStackDialog:
         self.ui.omega_wedges.cellChanged.connect(self.update_wedges)
         self.ui.all_detectors.toggled.connect(self.detector_selection)
         self.ui.search_directories.clicked.connect(self.search_directories)
+        self.ui.clear_file_selections.clicked.connect(
+            self.clear_selected_files)
+        self.clear_images.connect(self.load_panel.clear_from_stack_dialog)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -78,7 +87,7 @@ class ImageStackDialog:
                 or 'max_frame_file' in self.state.keys()):
             self.state.clear()
         if self.state:
-            self.select_files_manually(self.state[self.detector]['files'])
+            self.find_previous_images(self.state[self.detector]['files'])
             self.load_omega_from_file(self.state['omega_from_file'])
             self.file_selection_changed(self.state['manual_file'])
             self.detector_selection(self.state['all_detectors'])
@@ -106,11 +115,12 @@ class ImageStackDialog:
                 }
 
     def set_wedges(self):
-        for i, wedge in enumerate(self.state['wedges']):
-            self.ui.omega_wedges.insertRow(i)
-            for j, value in enumerate(wedge):
-                self.ui.omega_wedges.setItem(
-                    i, j, QTableWidgetItem(str(value)))
+        if self.ui.omega_wedges.rowCount() == 0:
+            for i, wedge in enumerate(self.state['wedges']):
+                self.ui.omega_wedges.insertRow(i)
+                for j, value in enumerate(wedge):
+                    self.ui.omega_wedges.setItem(
+                        i, j, QTableWidgetItem(str(value)))
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
@@ -156,6 +166,8 @@ class ImageStackDialog:
 
     def detector_selection(self, checked):
         self.state['all_detectors'] = checked
+        self.ui.single_detector.setChecked(not checked)
+        self.ui.search_directories.setEnabled(checked)
         self.ui.detector_search.setEnabled(checked)
         self.ui.detectors.setDisabled(checked)
         self.ui.select_directory.setDisabled(checked)
@@ -216,6 +228,8 @@ class ImageStackDialog:
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
             self.ui.file_count.setText(str(len(files)))
+
+    def find_previous_images(self, files):
         try:
             ims = ImageFileManager().open_file(files[0])
             frames = len(ims) if len(ims) else 1
@@ -225,7 +239,10 @@ class ImageStackDialog:
             self.state['total_frames'] = frames
             self.total_frames()
         except Exception as e:
-            print('Unable to open previously loaded images: ', e)
+            msg = (
+                f'Unable to open previously loaded images, please make sure '
+                f'directory path is correct and that images still exist.')
+            QMessageBox.warning(self.parent(), 'HEXRD', msg)
             for det in self.detectors:
                 self.state[det]['files'] = ''
                 self.state[det]['file_count'] = 0
@@ -268,6 +285,13 @@ class ImageStackDialog:
             imgs.append(self.state[det]['files'])
         num_files = len(imgs[0])
         return imgs, num_files
+
+    def clear_selected_files(self):
+        for det in self.detectors:
+            self.state[det]['files'].clear()
+            self.state[det]['file_count'] = 0
+        self.ui.file_count.setText('0')
+        self.clear_images.emit()
 
     def get_omega_values(self, num_files):
         if self.state['omega_from_file'] and self.state['omega']:
@@ -341,6 +365,11 @@ class ImageStackDialog:
                         f'The directory have not been set for '
                         f'the following detector(s):\n{" ".join(dets)}.')
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
+                    error = True
+                    continue
+                if idx := [i for i, n in enumerate(f) if f[0] == 0]:
+                    msg = (f'No files have been selected for the detectors.')
+                    QMessageBox.warning(None, 'HEXRD', msg)
                     error = True
                     continue
                 if idx := [i for i, n in enumerate(f) if f[0] != n]:
