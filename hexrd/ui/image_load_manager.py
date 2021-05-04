@@ -316,21 +316,22 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
             ims_dict[key] = ImageFileManager().open_file(aggr_img)
 
-    def add_omega_metadata(self, ims_dict):
+    def add_omega_metadata(self, ims_dict, data=None):
         # Add on the omega metadata if there is any
+        data = self.data if data is None else data
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
         for key, ims in ims_dict.items():
             nframes = len(ims)
             omw = imageseries.omega.OmegaWedges(nframes)
-            if 'wedges' in self.data:
-                for wedge in self.data['wedges']:
+            if 'wedges' in data:
+                for wedge in data['wedges']:
                     start, stop, nsteps = wedge
                     omw.addwedge(start, stop, nsteps)
             else:
                 for i in range(len(files[0])):
-                    nsteps = self.data['nsteps'][i]
-                    start = self.data['omega_min'][i]
-                    stop = self.data['omega_max'][i]
+                    nsteps = data['nsteps'][i]
+                    start = data['omega_min'][i]
+                    stop = data['omega_max'][i]
 
                     omw.addwedge(start, stop, nsteps)
             ims_dict[key].metadata['omega'] = omw.omegas
