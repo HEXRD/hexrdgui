@@ -11,9 +11,14 @@ STDOUT_COLOR = 'green'
 STDERR_COLOR = 'red'
 
 
-class MessagesWidget:
+class MessagesWidget(QObject):
+
+    # Signal args are the type ("stdout" or "stderr") and the message
+    message_written = Signal(str, str)
 
     def __init__(self, parent=None):
+        super().__init__(parent)
+
         loader = UiLoader()
         self.ui = loader.load_file('messages_widget.ui', parent)
 
@@ -23,7 +28,9 @@ class MessagesWidget:
         self.prev_stdout = None
         self.prev_stderr = None
 
-        self.capture_output()
+        # Hold trailing returns to remove extra white space from the
+        # bottom of the QTextEdit.
+        self._holding_return = False
 
         self.setup_connections()
 
@@ -51,6 +58,16 @@ class MessagesWidget:
             self.prev_stderr = None
 
     def insert_text(self, text):
+        # Remove trailing returns so there isn't extra white
+        # space that always exists at the bottom of the text edit.
+        if self._holding_return:
+            text = '\n' + text
+            self._holding_return = False
+
+        if text.endswith('\n'):
+            text = text[:-1]
+            self._holding_return = True
+
         # Autoscroll if the scrollbar is at the end. Otherwise, do not.
         scrollbar = self.ui.text.verticalScrollBar()
         current = scrollbar.value()
@@ -62,20 +79,32 @@ class MessagesWidget:
         scrollbar.setValue(scrollbar.maximum() if autoscroll else current)
 
     def write_stdout(self, text):
-        with self.with_color(STDOUT_COLOR):
-            self.insert_text(text)
-
-        # Also write to the previous stdout
+        # First write to the previous stdout
         if self.prev_stdout is not None:
             self.prev_stdout.write(text)
 
+        with self.with_color(STDOUT_COLOR):
+            self.insert_text(text)
+
+        self.message_written.emit('stdout', text)
+
     def write_stderr(self, text):
+        # First write to the previous stderr
+        if self.prev_stderr is not None:
+            self.prev_stderr.write(text)
+
         with self.with_color(STDERR_COLOR):
             self.insert_text(text)
 
-        # Also write to the regular stderr
-        if self.prev_stderr is not None:
-            self.prev_stderr.write(text)
+        self.message_written.emit('stderr', text)
+
+    @property
+    def allow_clear(self):
+        return self.ui.clear.isVisible()
+
+    @allow_clear.setter
+    def allow_clear(self, b):
+        self.ui.clear.setVisible(b)
 
     def clear_text(self):
         self.ui.text.clear()

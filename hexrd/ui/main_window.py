@@ -68,6 +68,7 @@ class MainWindow(QObject):
         self.progress_dialog.setWindowTitle('Calibration Running')
 
         self.messages_widget = MessagesWidget(self.ui)
+        self.messages_widget.capture_output()
         dock_widget_contents = self.ui.messages_dock_widget_contents
         dock_widget_contents.layout().addWidget(self.messages_widget.ui)
         self.ui.resizeDocks([self.ui.messages_dock_widget], [80], Qt.Vertical)
