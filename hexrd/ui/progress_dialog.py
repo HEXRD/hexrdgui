@@ -11,7 +11,6 @@ class ProgressDialog:
         self.ui = loader.load_file('progress_dialog.ui', parent)
 
         self.messages_widget = MessagesWidget(self.ui)
-        self.messages_widget.capture_output()
         # Disable the clear button
         self.messages_widget.allow_clear = False
         self.ui.messages_widget_layout.addWidget(self.messages_widget.ui)
@@ -31,6 +30,7 @@ class ProgressDialog:
         self.setup_connections()
 
     def setup_connections(self):
+        # Show the messages widget if a message is received
         self.messages_widget.message_written.connect(self.show_messages_widget)
 
     def show_messages_widget(self):

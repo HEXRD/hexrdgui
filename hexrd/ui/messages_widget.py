@@ -16,6 +16,12 @@ class MessagesWidget(QObject):
     # Signal args are the type ("stdout" or "stderr") and the message
     message_written = Signal(str, str)
 
+    # Keep track of the call stacks so when one MessagesWidget is
+    # deleted, it can properly assign sys.stdout and sys.stderr to
+    # the next one in the stack.
+    STDOUT_CALL_STACK = [sys.__stdout__]
+    STDERR_CALL_STACK = [sys.__stderr__]
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -29,6 +35,8 @@ class MessagesWidget(QObject):
         # bottom of the QTextEdit.
         self._holding_return = False
 
+        self.capture_output()
+
         self.setup_connections()
 
     def __del__(self):
@@ -39,20 +47,28 @@ class MessagesWidget(QObject):
         self.ui.destroyed.connect(self.release_output)
 
     def capture_output(self):
-        self.prev_stdout = sys.stdout
-        self.prev_stderr = sys.stderr
+        if self.stdout_writer not in self.STDOUT_CALL_STACK:
+            self.stdout_writer.call_stack = self.STDOUT_CALL_STACK
+            sys.stdout = self.stdout_writer
+            self.STDOUT_CALL_STACK.append(self.stdout_writer)
 
-        sys.stdout = self.stdout_writer
-        sys.stderr = self.stderr_writer
+        if self.stderr_writer not in self.STDERR_CALL_STACK:
+            self.stderr_writer.call_stack = self.STDERR_CALL_STACK
+            sys.stderr = self.stderr_writer
+            self.STDERR_CALL_STACK.append(self.stderr_writer)
 
     def release_output(self):
-        if self.prev_stdout is not None:
-            sys.stdout = self.prev_stdout
-            self.prev_stdout = None
+        stack = self.STDOUT_CALL_STACK
+        if self.stdout_writer in stack:
+            i = stack.index(self.stdout_writer)
+            sys.stdout = stack[i - 1]
+            stack.pop(i)
 
-        if self.prev_stderr is not None:
-            sys.stderr = self.prev_stderr
-            self.prev_stderr = None
+        stack = self.STDERR_CALL_STACK
+        if self.stderr_writer in stack:
+            i = stack.index(self.stderr_writer)
+            sys.stderr = stack[i - 1]
+            stack.pop(i)
 
     def insert_text(self, text):
         # Remove trailing returns so there isn't extra white
@@ -109,22 +125,6 @@ class MessagesWidget(QObject):
         finally:
             text_edit.setTextColor(prev_qcolor)
 
-    @property
-    def prev_stdout(self):
-        return self.stdout_writer.prev_writer
-
-    @prev_stdout.setter
-    def prev_stdout(self, v):
-        self.stdout_writer.prev_writer = v
-
-    @property
-    def prev_stderr(self):
-        return self.stderr_writer.prev_writer
-
-    @prev_stderr.setter
-    def prev_stderr(self, v):
-        self.stderr_writer.prev_writer = v
-
 
 class Writer(QObject):
 
@@ -134,8 +134,8 @@ class Writer(QObject):
         super().__init__(parent)
         self.write_func = write_func
 
-        # Always write to the previous writer first
-        self.prev_writer = None
+        # Call the previous writer in the call stack first
+        self.call_stack = []
 
         self.setup_connections()
 
@@ -149,11 +149,12 @@ class Writer(QObject):
         self.write_func(text)
 
     def write(self, text):
-        if self.prev_writer is not None:
+        if self in self.call_stack:
             # First, write to the previous writer.
             # This is so that messages will always get to the original stdout
             # and stderr, even if events do not get processed in the Qt event
             # loop, which can happen if an exception or seg fault occurs.
-            self.prev_writer.write(text)
+            i = self.call_stack.index(self)
+            self.call_stack[i - 1].write(text)
 
         self.text_received.emit(text)
