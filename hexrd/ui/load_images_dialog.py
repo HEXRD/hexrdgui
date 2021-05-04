@@ -4,8 +4,6 @@ import os
 
 from PySide2.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
 
-from hexrd.ui import enter_key_filter
-
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -17,7 +15,6 @@ class LoadImagesDialog:
 
         loader = UiLoader()
         self.ui = loader.load_file('load_images_dialog.ui', parent)
-        self.ui.installEventFilter(enter_key_filter)
 
         self.setup_connections()
         self.setup_state()

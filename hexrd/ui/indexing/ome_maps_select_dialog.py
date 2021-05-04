@@ -3,8 +3,6 @@ import os
 from PySide2.QtCore import Signal, QObject, QSignalBlocker
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
-from hexrd.ui import enter_key_filter
-
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
@@ -21,7 +19,6 @@ class OmeMapsSelectDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('ome_maps_select_dialog.ui', parent)
         self.ui.setWindowTitle('Load/Generate Eta Omega Maps')
-        self.ui.installEventFilter(enter_key_filter)
 
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()

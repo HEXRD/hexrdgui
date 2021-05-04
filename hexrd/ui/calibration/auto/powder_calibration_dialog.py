@@ -1,7 +1,5 @@
 import numpy as np
 
-from hexrd.ui import enter_key_filter
-
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -11,7 +9,6 @@ class PowderCalibrationDialog:
     def __init__(self, material, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('powder_calibration_dialog.ui', parent)
-        self.ui.installEventFilter(enter_key_filter)
 
         self.material = material
 

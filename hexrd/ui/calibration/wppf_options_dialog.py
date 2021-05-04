@@ -16,7 +16,6 @@ from hexrd.material import _angstroms
 from hexrd.WPPF import LeBail, Rietveld, \
     Parameters, _lpname, _rqpDict,  _getnumber, _nameU
 from hexrd import constants
-from hexrd.ui import enter_key_filter
 
 import hexrd.ui.resources.calibration as calibration_resources
 from hexrd.ui.constants import OverlayType
@@ -48,7 +47,6 @@ class WppfOptionsDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('wppf_options_dialog.ui', parent)
         self.ui.setWindowTitle('WPPF Options Dialog')
-        self.ui.installEventFilter(enter_key_filter)
 
         self.reset_initial_params()
         self.load_settings()

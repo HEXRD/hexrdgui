@@ -19,7 +19,7 @@ from hexrd.findorientations import (
 )
 from hexrd.imageutil import find_peaks_2d
 
-from hexrd.ui import enter_key_filter, resource_loader
+from hexrd.ui import resource_loader
 
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -45,7 +45,6 @@ class OmeMapsViewerDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('ome_maps_viewer_dialog.ui', parent)
-        self.ui.installEventFilter(enter_key_filter)
 
         self.data = data
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
