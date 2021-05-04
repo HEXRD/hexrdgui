@@ -3,8 +3,6 @@ import os
 
 from PySide2.QtWidgets import QDialog, QListWidgetItem, QMessageBox
 
-from hexrd.ui import enter_key_filter
-
 from hexrd.ui.ui_loader import UiLoader
 
 class LoadHDF5Dialog:
@@ -15,7 +13,6 @@ class LoadHDF5Dialog:
 
     loader = UiLoader()
     self.ui = loader.load_file('load_hdf5_dialog.ui', parent)
-    self.ui.installEventFilter(enter_key_filter)
 
     self.get_paths(f)
 

@@ -4,8 +4,6 @@ from PySide2.QtCore import QObject, QSignalBlocker
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QColorDialog
 
-from hexrd.ui import enter_key_filter
-
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
@@ -18,7 +16,6 @@ class OverlayStylePicker(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('overlay_style_picker.ui', parent)
-        self.ui.installEventFilter(enter_key_filter)
 
         self.original_style = copy.deepcopy(overlay['style'])
         self.overlay = overlay

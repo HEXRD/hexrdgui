@@ -7,8 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 
-from hexrd.ui import enter_key_filter
-
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 
@@ -23,7 +21,6 @@ class HandDrawnMaskDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('hand_drawn_mask_dialog.ui', parent)
-        self.ui.installEventFilter(enter_key_filter)
 
         self.canvas = canvas
         self.ring_data = []

@@ -1,7 +1,8 @@
 from PySide2.QtCore import QBuffer, QByteArray
 from PySide2.QtUiTools import QUiLoader
+from PySide2.QtWidgets import QDialog
 
-from hexrd.ui import resource_loader
+from hexrd.ui import enter_key_filter, resource_loader
 
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_tab_widget import ImageTabWidget
@@ -34,4 +35,17 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
         """Load a UI file from a string and return the widget"""
         data = QByteArray(string.encode('utf-8'))
         buf = QBuffer(data)
-        return self.load(buf, parent)
+        ui = self.load(buf, parent)
+
+        # Perform any custom processing on the ui
+        self.process_ui(ui)
+        return ui
+
+    def process_ui(self, ui):
+        """Perform any additional processing on loaded UI objects
+
+        Currently: it installs an enter key filter for QDialogs to prevent
+        the enter key from closing them.
+        """
+        if isinstance(ui, QDialog):
+            ui.installEventFilter(enter_key_filter)

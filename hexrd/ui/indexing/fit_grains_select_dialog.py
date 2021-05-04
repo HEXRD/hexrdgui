@@ -5,7 +5,6 @@ import numpy as np
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
-from hexrd.ui import enter_key_filter
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.indexing.utils import generate_grains_table
@@ -25,7 +24,6 @@ class FitGrainsSelectDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_select_dialog.ui', parent)
         self.ui.setWindowTitle('Select Grains to Fit')
-        self.ui.installEventFilter(enter_key_filter)
 
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()
