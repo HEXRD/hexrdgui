@@ -138,7 +138,7 @@ class MaskRegionsDialog(QObject):
             for a in self.canvas.raw_axes:
                 if a.get_title() == det:
                     a.patches.remove(last_patch)
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def axes_entered(self, event):
         self.axes = event.inaxes
@@ -161,14 +161,14 @@ class MaskRegionsDialog(QObject):
         if not self.det:
             self.det = self.image_mode
         self.create_patch()
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def drag_motion(self, event):
         if not self.axes or not self.press:
             return
 
         self.update_patch(event)
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def save_line_data(self):
         data_coords = self.patch.get_patch_transform().transform(
@@ -205,7 +205,7 @@ class MaskRegionsDialog(QObject):
         self.press.clear()
         self.end.clear()
         self.det = None
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def apply_masks(self):
         self.disconnect()
@@ -231,4 +231,4 @@ class MaskRegionsDialog(QObject):
                     axes.patches.clear()
 
         self.disconnect()
-        self.canvas.draw()
+        self.canvas.draw_idle()

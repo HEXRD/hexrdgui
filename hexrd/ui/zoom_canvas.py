@@ -93,6 +93,8 @@ class ZoomCanvas(FigureCanvas):
         # Clear the crosshairs when the mouse is moving over the canvas
         self.clear_crosshairs()
         self.update_vhlines(event)
+
+        # Can't use draw_idle() since the Cursor has useblit=True
         self.draw()
 
     def update_vhlines(self, event):
@@ -100,11 +102,9 @@ class ZoomCanvas(FigureCanvas):
         if any(not x for x in [self.vhlines, self.axes]):
             return
 
-        _, a2, a3 = self.axes
         vline, hline = self.vhlines
-
-        vline.set_data([event.xdata] * 2, a2.get_ylim())
-        hline.set_data(a3.get_xlim(), [event.ydata] * 2)
+        vline.set_xdata(event.xdata)
+        hline.set_ydata(event.ydata)
 
     def main_canvas_mouse_moved(self, event):
         if event.inaxes is None:
@@ -211,8 +211,8 @@ class ZoomCanvas(FigureCanvas):
             self.grid = grid
 
             # These are vertical and horizontal lines on the integral axes
-            vline, = a2.plot([], [], color='red', linewidth=1)
-            hline, = a3.plot([], [], color='red', linewidth=1)
+            vline = a2.axvline(0, color='red', linewidth=1)
+            hline = a3.axhline(0, color='red', linewidth=1)
             self.vhlines = [vline, hline]
         else:
             # Make sure we update the color map and norm each time
@@ -236,5 +236,6 @@ class ZoomCanvas(FigureCanvas):
         ys = np.append(roi_deg[:, 1], roi_deg[0, 1])
         self.box_overlay_line.set_data(xs, ys)
 
+        # Can't use draw_idle() since the Cursor has useblit=True
         self.main_canvas.draw()
-        self.draw()
+        self.draw_idle()

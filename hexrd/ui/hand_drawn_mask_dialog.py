@@ -63,7 +63,7 @@ class HandDrawnMaskDialog(QObject):
 
         self.canvas.mpl_disconnect(self.bp_id)
         self.bp_id = None
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def start(self):
         if self.canvas.mode != ViewType.polar:
@@ -91,7 +91,7 @@ class HandDrawnMaskDialog(QObject):
                         linestyle=linestyle)
         self.linebuilder = LineBuilder(line)
         self.lines.append(line)
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def line_finished(self):
         # append to ring_data
@@ -176,4 +176,4 @@ class LineBuilder(QObject):
 
     def update_line_data(self):
         self.line.set_data(self.xs, self.ys)
-        self.canvas.draw()
+        self.canvas.draw_idle()

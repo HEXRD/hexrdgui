@@ -131,7 +131,7 @@ class InteractiveTemplate:
         return all_paths
 
     def redraw(self):
-        self.parent.draw()
+        self.parent.draw_idle()
 
     def scale_template(self, sx=1, sy=1):
         xy = self.shape.xy
