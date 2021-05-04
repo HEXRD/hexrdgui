@@ -635,6 +635,11 @@
            </item>
            <item>
             <property name="text">
+             <string>dashed</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
              <string>dashdot</string>
             </property>
            </item>

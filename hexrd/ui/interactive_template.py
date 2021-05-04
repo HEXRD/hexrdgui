@@ -14,17 +14,16 @@ from hexrd.ui.hexrd_config import HexrdConfig
 
 
 class InteractiveTemplate:
-    def __init__(self, parent=None):
+    def __init__(self, img, parent=None):
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
         self.raw_axes = self.parent.raw_axes[0]
         self.panels = create_hedm_instrument().detectors
-        self.img = None
+        self.img = img
         self.shape = None
         self.press = None
         self.total_rotation = 0
-        self.translating = True
-        self.shape_styles = []
+
         self.parent.setFocusPolicy(Qt.ClickFocus)
 
     def update_image(self, img):
@@ -41,16 +40,13 @@ class InteractiveTemplate:
         verts = self.panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
-        self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
         self.center = self.get_midpoint()
         self.update_position(instr, det)
         self.connect_translate()
-        self.raw_axes = self.parent.raw_axes[0]
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
     def update_style(self, style, width, color):
-        self.shape_styles[-1] = {'line': style, 'width': width, 'color': color}
         self.shape.set_linestyle(style)
         self.shape.set_linewidth(width)
         self.shape.set_edgecolor(color)
@@ -88,7 +84,7 @@ class InteractiveTemplate:
         y1 = y0+height if height else y1
         x1 = x0+width if width else x1
         self.img = self.img[y0:y1, x0:x1]
-        self.cropped_shape = self.shape.xy - np.array([x0, y0])
+        self.shape.set_xy(self.shape.xy - np.array([x0, y0]))
         return self.img
 
     @property
@@ -100,53 +96,8 @@ class InteractiveTemplate:
             self.raw_axes.patches.remove(self.shape)
             self.redraw()
 
-    def save_boundary(self, color):
-        if self.shape in self.raw_axes.patches:
-            self.shape.set_linestyle('--')
-            self.redraw()
-
-    def toggle_boundaries(self, show):
-        if show:
-            self.raw_axes = self.parent.raw_axes[0]
-            for patch, style in zip(self.patches, self.shape_styles):
-                shape = patches.Polygon(
-                    patch.xy,
-                    fill=False,
-                    ls='--',
-                    lw=style['width'],
-                    color=style['color']
-                )
-                self.raw_axes.add_patch(shape)
-            if self.shape:
-                self.shape = self.raw_axes.patches.pop()
-                self.shape.set_linestyle(self.shape_styles[-1]['line'])
-                self.raw_axes.add_patch(self.shape)
-                if self.translating:
-                    self.connect_translate()
-                else:
-                    self.connect_rotate()
-            self.redraw()
-        else:
-            if self.shape:
-                self.disconnect()
-            self.patches = self.raw_axes.patches
-        self.redraw()
-
-    def disconnect(self):
-        if self.translating:
-            self.disconnect_translate()
-        else:
-            self.disconnect_rotate()
-
-    def completed(self):
-        self.disconnect()
-        self.img = None
-        self.shape = None
-        self.press = None
-        self.total_rotation = 0
-
     def mask(self):
-        col, row = self.cropped_shape.T
+        col, row = self.shape.xy.T
         col_nans = np.where(np.isnan(col))[0]
         row_nans = np.where(np.isnan(row))[0]
         cols = np.split(col, col_nans)
@@ -204,7 +155,6 @@ class InteractiveTemplate:
         self.key_press_cid = self.parent.mpl_connect(
             'key_press_event', self.on_key_translate)
         self.parent.setFocus()
-        self.translating = True
 
     def on_key_translate(self, event):
         dx, dy = 0, 0
@@ -254,6 +204,9 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect_translate(self):
+        if not self.button_press_cid:
+            return
+
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
         self.parent.mpl_disconnect(self.motion_cid)
@@ -269,7 +222,6 @@ class InteractiveTemplate:
         self.key_press_cid = self.parent.mpl_connect(
             'key_press_event', self.on_key_rotate)
         self.parent.setFocus()
-        self.translating = False
 
     def on_press_rotate(self, event):
         if event.inaxes != self.shape.axes:
@@ -352,6 +304,9 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect_rotate(self):
+        if not self.button_press_cid:
+            return
+
         self.parent.mpl_disconnect(self.button_press_cid)
         self.parent.mpl_disconnect(self.button_drag_cid)
         self.parent.mpl_disconnect(self.button_release_cid)
