@@ -530,4 +530,5 @@ class LoadPanel(QObject):
             'omega_max': self.omega_max,
             'nsteps': self.nsteps,
         }
-        ImageLoadManager().add_omega_metadata(HexrdConfig().imageseries_dict, data)
+        ImageLoadManager().add_omega_metadata(
+            HexrdConfig().imageseries_dict, data)
