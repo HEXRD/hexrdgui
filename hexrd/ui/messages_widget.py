@@ -96,6 +96,7 @@ class MessagesWidget(QObject):
         self.ui.clear.setVisible(b)
 
     def clear_text(self):
+        self._holding_return = False
         self.ui.text.clear()
 
     @contextmanager
