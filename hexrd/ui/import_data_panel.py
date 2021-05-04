@@ -44,7 +44,6 @@ class ImportDataPanel(QObject):
         self.detector_defaults = {}
         self.cmap = cmap
         self.detectors = []
-        self.editing = False
         self.defaults = {}
 
         self.set_default_color()
@@ -219,6 +218,7 @@ class ImportDataPanel(QObject):
 
             ImageLoadManager().read_data(files, parent=self.ui)
             self.cmap.block_updates(False)
+            self.it = InteractiveTemplate(self.parent())
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
@@ -231,9 +231,7 @@ class ImportDataPanel(QObject):
     def add_transform(self):
         # Prevent color map reset on transform
         self.cmap.block_updates(True)
-        if self.it:
-            self.editing = True
-        self.clear_boundry()
+        self.it.toggle_boundaries(show=False)
         ilm = ImageLoadManager()
         ilm.set_state({'trans': [self.ui.transforms.currentIndex()]})
         ilm.begin_processing(postprocess=True)
@@ -248,10 +246,8 @@ class ImportDataPanel(QObject):
             self.edited_images[self.detector]['height'] = img.shape[0]
             self.edited_images[self.detector]['width'] = img.shape[1]
 
-        if self.editing:
-            self.add_template()
-
-        if self.it is not None:
+        self.it.toggle_boundaries(show=True)
+        if self.it.shape is not None:
             self.it.update_image(img)
 
     def display_bounds(self):
@@ -269,13 +265,12 @@ class ImportDataPanel(QObject):
         self.ui.bb_width.blockSignals(False)
 
     def add_template(self):
-        self.it = InteractiveTemplate(
-            HexrdConfig().image('default', 0), self.parent())
         self.it.create_shape(
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
             det=self.detector,
             instr=self.instrument)
+        self.it.update_image(HexrdConfig().image('default', 0))
         self.update_template_style()
 
         self.display_bounds()
@@ -305,31 +300,28 @@ class ImportDataPanel(QObject):
             self.update_template_style()
 
     def setup_translate(self):
-        if self.it is not None:
-            self.it.disconnect_rotate()
+        if self.it.shape is not None:
+            self.it.disconnect()
             self.it.connect_translate()
 
     def setup_rotate(self):
-        if self.it is not None:
-            self.it.disconnect_translate()
+        if self.it.shape is not None:
+            self.it.disconnect()
             self.it.connect_rotate()
 
     def clear_boundry(self):
-        if self.it is None:
+        if self.it.shape is None:
             return
         self.it.clear()
-        self.it = None
 
     def save_boundary_position(self):
         HexrdConfig().set_boundary_position(
             self.instrument, self.detector, self.it.template.xy)
+        if self.it.shape:
+            self.it.save_boundary(self.outline_color)
 
     def crop_and_mask(self):
         self.save_boundary_position()
-        if self.ui.trans.isChecked():
-            self.it.disconnect_translate()
-        else:
-            self.it.disconnect_rotate()
         self.finalize()
         self.completed_detectors.append(self.detector)
         self.enable_widgets(self.ui.association, self.ui.file_selection,
@@ -358,7 +350,8 @@ class ImportDataPanel(QObject):
             'img': img,
             'tilt': self.it.rotation
         }
-        self.clear_boundry()
+
+        self.it.completed()
 
     def clear(self):
         self.clear_boundry()
@@ -368,7 +361,7 @@ class ImportDataPanel(QObject):
                             self.ui.outline_appearance, enabled=False)
 
     def check_for_unsaved_changes(self):
-        if self.it is None and self.detector in self.completed_detectors:
+        if self.it.shape is None and self.detector in self.completed_detectors:
             return
         msg = ('The currently selected detector has changes that have not been'
                + ' accepted. Keep changes?')
