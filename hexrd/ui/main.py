@@ -1,5 +1,6 @@
 import signal
 import sys
+
 from PySide2.QtCore import QCoreApplication, Qt
 from PySide2.QtGui import QIcon, QPixmap
 from PySide2.QtWidgets import QApplication

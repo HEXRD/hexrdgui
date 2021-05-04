@@ -282,7 +282,6 @@ class OmeMapsViewerDialog(QObject):
         ax.set_title('Eta Omega Maps')
         ax.set_xlabel(r'$\eta$ ($\deg$)')
         ax.set_ylabel(r'$\omega$ ($\deg$)')
-        fig.canvas.set_window_title('HEXRD')
         self.ui.canvas_layout.addWidget(canvas)
 
         self.toolbar = NavigationToolbar(canvas, self.ui, False)

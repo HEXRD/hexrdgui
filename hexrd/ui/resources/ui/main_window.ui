@@ -196,7 +196,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -209,7 +209,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -222,7 +222,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>708</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -317,6 +317,17 @@
       <number>0</number>
      </property>
     </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="messages_dock_widget">
+   <property name="windowTitle">
+    <string>Messages</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="messages_dock_widget_contents">
+    <layout class="QVBoxLayout" name="verticalLayout_3"/>
    </widget>
   </widget>
   <action name="action_tabbed_view">

@@ -4,11 +4,12 @@ from contextlib import contextmanager
 from enum import IntEnum
 from functools import reduce
 import math
+import sys
+
+import matplotlib.transforms as mtransforms
 import numpy as np
 
 from PySide2.QtCore import QObject, QSignalBlocker
-
-import matplotlib.transforms as mtransforms
 
 from hexrd import imageutil
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
@@ -312,3 +313,17 @@ def reversed_enumerate(sequence):
         reversed(range(len(sequence))),
         reversed(sequence),
     )
+
+
+@contextmanager
+def regular_stdout_stderr():
+    # Ensure we are using regular stdout and stderr in the context
+    prev_stdout = sys.stdout
+    prev_stderr = sys.stderr
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    try:
+        yield
+    finally:
+        sys.stdout = prev_stdout
+        sys.stderr = prev_stderr

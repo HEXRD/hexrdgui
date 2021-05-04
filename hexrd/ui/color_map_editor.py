@@ -152,8 +152,6 @@ class ColorMapEditor:
         if h - l < 5:
             h = l + 5
 
-        print('Range to be used: ', l, ' -> ', h)
-
         return l, h
 
     def reset_range(self):

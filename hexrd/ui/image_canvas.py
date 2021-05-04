@@ -834,7 +834,6 @@ class ImageCanvas(FigureCanvas):
             fig, ax = plt.subplots()
             ax.set_xlabel(r'2$\theta$ (deg)')
             ax.set_ylabel(r'$\eta$ (deg)')
-            fig.canvas.set_window_title('HEXRD')
             self._snip1d_figure_cache = (fig, ax)
         else:
             fig, ax = self._snip1d_figure_cache
