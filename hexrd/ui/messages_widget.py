@@ -25,9 +25,6 @@ class MessagesWidget(QObject):
         self.stdout_writer = Writer(self.write_stdout, self.ui)
         self.stderr_writer = Writer(self.write_stderr, self.ui)
 
-        self.prev_stdout = None
-        self.prev_stderr = None
-
         # Hold trailing returns to remove extra white space from the
         # bottom of the QTextEdit.
         self._holding_return = False
@@ -79,20 +76,12 @@ class MessagesWidget(QObject):
         scrollbar.setValue(scrollbar.maximum() if autoscroll else current)
 
     def write_stdout(self, text):
-        # First write to the previous stdout
-        if self.prev_stdout is not None:
-            self.prev_stdout.write(text)
-
         with self.with_color(STDOUT_COLOR):
             self.insert_text(text)
 
         self.message_written.emit('stdout', text)
 
     def write_stderr(self, text):
-        # First write to the previous stderr
-        if self.prev_stderr is not None:
-            self.prev_stderr.write(text)
-
         with self.with_color(STDERR_COLOR):
             self.insert_text(text)
 
@@ -119,6 +108,22 @@ class MessagesWidget(QObject):
         finally:
             text_edit.setTextColor(prev_qcolor)
 
+    @property
+    def prev_stdout(self):
+        return self.stdout_writer.prev_writer
+
+    @prev_stdout.setter
+    def prev_stdout(self, v):
+        self.stdout_writer.prev_writer = v
+
+    @property
+    def prev_stderr(self):
+        return self.stderr_writer.prev_writer
+
+    @prev_stderr.setter
+    def prev_stderr(self, v):
+        self.stderr_writer.prev_writer = v
+
 
 class Writer(QObject):
 
@@ -127,6 +132,9 @@ class Writer(QObject):
     def __init__(self, write_func, parent=None):
         super().__init__(parent)
         self.write_func = write_func
+
+        # Always write to the previous writer first
+        self.prev_writer = None
 
         self.setup_connections()
 
@@ -140,4 +148,11 @@ class Writer(QObject):
         self.write_func(text)
 
     def write(self, text):
+        if self.prev_writer is not None:
+            # First, write to the previous writer.
+            # This is so that messages will always get to the original stdout
+            # and stderr, even if events do not get processed in the Qt event
+            # loop, which can happen if an exception or seg fault occurs.
+            self.prev_writer.write(text)
+
         self.text_received.emit(text)

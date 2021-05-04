@@ -1,6 +1,5 @@
 import signal
 import sys
-import traceback
 
 from PySide2.QtCore import QCoreApplication, Qt
 from PySide2.QtGui import QIcon, QPixmap
@@ -8,7 +7,6 @@ from PySide2.QtWidgets import QApplication
 
 from hexrd.ui import resource_loader
 from hexrd.ui.main_window import MainWindow
-from hexrd.ui.utils import regular_stdout_stderr
 import hexrd.ui.resources.icons
 
 
@@ -30,16 +28,9 @@ def main():
     icon = QIcon(pixmap)
     app.setWindowIcon(icon)
 
-    try:
-        window = MainWindow()
-        window.set_icon(icon)
-        window.show()
-    except Exception:
-        # If an exception occurs, make sure we print it out to
-        # regular stdout and stderr.
-        with regular_stdout_stderr():
-            traceback.print_exc()
-        raise
+    window = MainWindow()
+    window.set_icon(icon)
+    window.show()
 
     sys.exit(app.exec_())
 
