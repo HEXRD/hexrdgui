@@ -103,13 +103,14 @@ class LoadPanel(QObject):
 
     def setup_processing_options(self):
         self.state = HexrdConfig().load_panel_state
-        num_dets = len(HexrdConfig().detector_names)
+        self.num_dets = len(HexrdConfig().detector_names)
         self.state.setdefault('agg', UI_AGG_INDEX_NONE)
         self.state.setdefault(
-            'trans', [UI_TRANS_INDEX_NONE for x in range(num_dets)])
+            'trans', [UI_TRANS_INDEX_NONE for x in range(self.num_dets)])
         self.state.setdefault(
-            'dark', [UI_DARK_INDEX_NONE for x in range(num_dets)])
-        self.state.setdefault('dark_files', [None for x in range(num_dets)])
+            'dark', [UI_DARK_INDEX_NONE for x in range(self.num_dets)])
+        self.state.setdefault(
+            'dark_files', [None for x in range(self.num_dets)])
 
     # Handle GUI changes
 
@@ -162,13 +163,16 @@ class LoadPanel(QObject):
             self.ui.transform.setCurrentIndex(self.state['trans'][self.idx])
             if self.ui.darkMode.isEnabled():
                 self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
-                self.dark_mode_changed()
+        self.dark_mode_changed()
         self.create_table()
 
     def apply_to_all_changed(self, checked):
         HexrdConfig().load_panel_state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
+        elif self.state['dark'][self.idx] == UI_DARK_INDEX_FILE:
+            self.select_dark_img(self.dark_files[self.idx])
+
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
@@ -184,15 +188,34 @@ class LoadPanel(QObject):
             self.parent_dir = new_dir
             self.dir_changed()
 
-    def select_dark_img(self):
-        # This takes one image to use for dark subtraction.
-        caption = HexrdConfig().images_dirtion = 'Select image file'
-        selected_file, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, caption, dir=self.parent_dir)
+    def select_dark_img(self, selected_file=False):
+        if not selected_file:
+            # This takes one image to use for dark subtraction.
+            caption = HexrdConfig().images_dirtion = 'Select image file'
+            selected_file, selected_filter = QFileDialog.getOpenFileName(
+                self.ui, caption, dir=self.parent_dir)
 
         if selected_file:
-            self.dark_files[self.idx] = selected_file[0]
-            self.state['dark_files'][self.idx] = self.dark_files[self.idx]
+            if self.ui.all_detectors.isChecked():
+                files = ImageLoadManager().match_files([selected_file])
+                if files and all(len(f) for f in files):
+                    files.sort()
+                    for i, f in enumerate(files):
+                        self.dark_files[i] = files[i][0]
+                        self.state['dark_files'][i] = files[i][0]
+                else:
+                    self.dark_files = [selected_file] * self.num_dets
+                    self.state['dark_files'] = [selected_file] * self.num_dets
+                    msg = (
+                        f'Unable to match files - using the same dark file'
+                        f'for each detector.\nIf this is incorrect please '
+                        f'de-select \"Apply Selections to All Detectors\" and '
+                        f'select the dark file manually for each detector.')
+                    QMessageBox.warning(self.ui, 'HEXRD', msg)
+            else:
+                self.dark_files[self.idx] = selected_file
+                self.state['dark_files'][self.idx] = selected_file
+
             self.dark_mode_changed()
             self.enable_read()
 
@@ -233,7 +256,7 @@ class LoadPanel(QObject):
         if total_frames - self.empty_frames < 2:
             enable = False
         self.ui.aggregation.setEnabled(enable)
-        for i in range(4):
+        for i in [1, 2, 3]:
             self.ui.darkMode.model().item(i).setEnabled(enable)
 
         if not enable:
