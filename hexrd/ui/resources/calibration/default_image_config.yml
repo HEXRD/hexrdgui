@@ -17,3 +17,4 @@ cartesian:
 colormap:
   min: 0
 show_detector_borders: true
+apply_pixel_solid_angle_correction: false

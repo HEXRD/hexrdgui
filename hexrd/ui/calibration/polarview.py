@@ -200,6 +200,9 @@ class PolarView:
         panel = self.detectors[det]
         img = self.images_dict[det]
 
+        if HexrdConfig().apply_pixel_solid_angle_correction:
+            img = img / panel.pixel_solid_angles
+
         gvec_angs = np.vstack([
                 angpts[1].flatten(),
                 angpts[0].flatten(),

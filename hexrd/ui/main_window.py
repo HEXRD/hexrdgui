@@ -122,6 +122,9 @@ class MainWindow(QObject):
 
         self.add_workflow_widgets()
 
+        self.ui.action_apply_pixel_solid_angle_correction.setChecked(
+            HexrdConfig().apply_pixel_solid_angle_correction)
+
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
 
@@ -241,6 +244,9 @@ class MainWindow(QObject):
             self.mask_manager_dialog.image_mode_changed)
 
         HexrdConfig().calibration_complete.connect(self.calibration_finished)
+
+        self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
+            HexrdConfig().set_apply_pixel_solid_angle_correction)
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)

@@ -251,6 +251,9 @@ class InstrumentViewer:
         img = self.images_dict[detector_id]
         panel = self.instr._detectors[detector_id]
 
+        if HexrdConfig().apply_pixel_solid_angle_correction:
+            img = img / panel.pixel_solid_angles
+
         # map corners
         corners = np.vstack(
             [panel.corner_ll,
