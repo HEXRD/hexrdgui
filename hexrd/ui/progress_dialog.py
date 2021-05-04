@@ -53,6 +53,9 @@ class ProgressDialog:
     def setRange(self, minimum, maximum):
         self.ui.progress_bar.setRange(minimum, maximum)
 
+    def value(self):
+        return self.ui.progress_bar.value()
+
     def setValue(self, value):
         self.ui.progress_bar.setValue(value)
 
