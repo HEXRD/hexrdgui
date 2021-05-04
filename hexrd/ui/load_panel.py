@@ -49,6 +49,7 @@ class LoadPanel(QObject):
         self.progress_dialog = None
         self.current_progress_step = 0
         self.progress_macro_steps = 0
+        self.update_allowed = False
 
         self.setup_gui()
         self.detectors_changed()
@@ -98,6 +99,7 @@ class LoadPanel(QObject):
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
+        self.ui.update_img_data.clicked.connect(self.update_image_data)
 
     def setup_processing_options(self):
         self.state = HexrdConfig().load_panel_state
@@ -207,6 +209,7 @@ class LoadPanel(QObject):
                 self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
+            self.update_allowed = False
             self.reset_data()
             self.load_image_data(selected_files)
             self.create_table()
@@ -467,6 +470,7 @@ class LoadPanel(QObject):
                 self.omega_max[row] = float(curr_val)
             elif column == 5:
                 self.nsteps[row] = int(curr_val)
+            self.ui.update_img_data.setEnabled(self.update_allowed)
             self.enable_read()
 
         self.ui.file_options.blockSignals(False)
@@ -474,15 +478,17 @@ class LoadPanel(QObject):
     def confirm_omega_range(self):
         files = self.yml_files if self.ext in YAML_EXTS else self.files
         omega_range = abs(max(self.omega_max) - min(self.omega_min))
-        return omega_range <= MAXIMUM_OMEGA_RANGE
-
-    # Process files
-    def read_data(self):
-        if not self.confirm_omega_range():
+        within_range = omega_range <= MAXIMUM_OMEGA_RANGE
+        if not within_range:
             msg = (
                 f'All omegas must be set and the '
                 f'range must be no greater than 360°.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
+        return within_range
+
+    # Process files
+    def read_data(self):
+        if not self.confirm_omega_range():
             return
         data = {
             'omega_min': self.omega_min,
@@ -499,6 +505,7 @@ class LoadPanel(QObject):
             data.update(self.frame_data)
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
+        self.update_allowed = True
 
     def load_image_stacks(self):
         if data := ImageStackDialog(self.parent()).exec_():
@@ -511,3 +518,16 @@ class LoadPanel(QObject):
             self.frame_data = data['frame_data']
             self.create_table()
             self.enable_read()
+            self.update_allowed = False
+            self.ui.update_img_data.setEnabled(self.update_allowed)
+
+    def update_image_data(self):
+        if not self.confirm_omega_range():
+            return
+        self.ui.update_img_data.setDisabled(True)
+        data = {
+            'omega_min': self.omega_min,
+            'omega_max': self.omega_max,
+            'nsteps': self.nsteps,
+        }
+        ImageLoadManager().add_omega_metadata(HexrdConfig().imageseries_dict, data)
