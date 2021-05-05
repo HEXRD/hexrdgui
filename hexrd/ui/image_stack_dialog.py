@@ -24,7 +24,6 @@ class ImageStackDialog(QObject):
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
 
         self.load_panel = load_panel
-        self.parent_dir = HexrdConfig().working_dir
         self.detectors = HexrdConfig().detector_names
         self.detector = self.detectors[0]
         self.state = copy.copy(HexrdConfig().stack_state)
@@ -124,9 +123,9 @@ class ImageStackDialog(QObject):
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
-                self.ui, 'Select directory', self.parent_dir)
+                self.ui, 'Select directory', HexrdConfig().working_dir)
         self.state[self.detector]['directory'] = d
-        self.parent_dir = d.rsplit('/', 1)[0]
+        HexrdConfig().working_dir = d.rsplit('/', 1)[0]
         self.ui.current_directory.setText(d)
         self.ui.current_directory.setToolTip(d)
         if not self.state['manual_file'] and self.state['apply_to_all']:
