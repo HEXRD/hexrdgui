@@ -1512,9 +1512,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def unagg_images(self):
         return self.unaggregated_images
 
-    def reset_unagg_imgs(self):
+    def reset_unagg_imgs(self, new_imgs=False):
         if self.unagg_images is not None:
-            HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
+            if not new_imgs:
+                HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
             self.unaggregated_images = None
 
     def set_unagg_images(self):
