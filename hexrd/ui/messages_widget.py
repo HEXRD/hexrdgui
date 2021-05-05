@@ -158,3 +158,11 @@ class Writer(QObject):
             self.call_stack[i - 1].write(text)
 
         self.text_received.emit(text)
+
+    def flush(self):
+        if self in self.call_stack:
+            # Flush the previous writer.
+            i = self.call_stack.index(self)
+            self.call_stack[i - 1].flush()
+
+        # We don't need to flush the Writer class...
