@@ -139,7 +139,10 @@ class ImportDataPanel(QObject):
         else:
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
-                                enabled=True)
+                                self.ui.file_selection, enabled=True)
+            if self.instrument == 'PXRDIP':
+                HexrdConfig().load_panel_state['trans'] = (
+                    [UI_TRANS_INDEX_FLIP_HORIZONTALLY])
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
