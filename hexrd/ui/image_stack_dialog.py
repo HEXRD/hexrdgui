@@ -227,7 +227,14 @@ class ImageStackDialog(QObject):
                 dir=self.state[self.detector]['directory'])
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
+            ims = ImageFileManager().open_file(str(files[0]))
+            frames = len(ims) if len(ims) else 1
+            total = (frames - self.state['empty_frames']) * len(files)
+            self.ui.total_frames.setValue(total)
             self.ui.file_count.setText(str(len(files)))
+            self.set_ranges(frames, len(files))
+            self.state['total_frames'] = frames
+            self.total_frames()
 
     def find_previous_images(self, files):
         try:
