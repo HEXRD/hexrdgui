@@ -169,7 +169,8 @@ class ImageStackDialog(QObject):
         self.ui.single_detector.setChecked(not checked)
         self.ui.search_directories.setEnabled(checked)
         self.ui.detector_search.setEnabled(checked)
-        self.ui.detectors.setDisabled(checked)
+        search_files = self.ui.files_by_search.isChecked()
+        self.ui.detectors.setDisabled(checked and search_files)
         self.ui.select_directory.setDisabled(checked)
 
     def select_omega_file(self):
@@ -216,6 +217,8 @@ class ImageStackDialog(QObject):
     def file_selection_changed(self, checked):
         self.state['manual_file'] = checked
         self.ui.select_files.setEnabled(checked)
+        single_detector = self.ui.single_detector.isChecked()
+        self.ui.detectors.setEnabled(checked or single_detector)
         self.ui.search_text.setDisabled(checked)
         self.ui.search.setDisabled(checked)
         self.ui.apply_to_all.setDisabled(checked)
