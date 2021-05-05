@@ -144,6 +144,7 @@ class ImageStackDialog(QObject):
             search = '*'
         if directory := self.state[det]['directory']:
             if files := list(Path(directory).glob(search)):
+                files = [f for f in files if f.is_file()]
                 self.state[det]['files'] = sorted([str(f) for f in files])
                 self.state[det]['file_count'] = len(files)
                 ims = ImageFileManager().open_file(str(files[0]))
