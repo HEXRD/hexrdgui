@@ -149,8 +149,7 @@ class ImageStackDialog(QObject):
                 self.state[det]['file_count'] = len(files)
                 ims = ImageFileManager().open_file(str(files[0]))
                 frames = len(ims) if len(ims) else 1
-                total = (frames - self.state['empty_frames']) * len(files)
-                self.ui.total_frames.setValue(total)
+                self.ui.total_frames.setValue(frames)
                 self.ui.file_count.setText(str(len(files)))
                 self.set_ranges(frames, len(files))
                 self.state['total_frames'] = frames
@@ -195,12 +194,6 @@ class ImageStackDialog(QObject):
     def total_frames(self):
         file_count = int(self.ui.file_count.text())
         total = self.state['total_frames'] * file_count
-        if empty := self.ui.empty_frames.value():
-            total = total - (empty * file_count)
-        if max_file := self.ui.max_file_frames.value():
-            total = min(total, max_file * file_count)
-        if max_total := self.ui.max_total_frames.value():
-            total = min(total, max_total)
         self.ui.total_frames.setValue(total)
 
     def change_detector(self, det):
@@ -232,8 +225,7 @@ class ImageStackDialog(QObject):
             self.state[self.detector]['file_count'] = len(files)
             ims = ImageFileManager().open_file(str(files[0]))
             frames = len(ims) if len(ims) else 1
-            total = (frames - self.state['empty_frames']) * len(files)
-            self.ui.total_frames.setValue(total)
+            self.ui.total_frames.setValue(frames)
             self.ui.file_count.setText(str(len(files)))
             self.set_ranges(frames, len(files))
             self.state['total_frames'] = frames
@@ -243,8 +235,7 @@ class ImageStackDialog(QObject):
         try:
             ims = ImageFileManager().open_file(files[0])
             frames = len(ims) if len(ims) else 1
-            total = (frames - self.state['empty_frames']) * len(files)
-            self.ui.total_frames.setValue(total)
+            self.ui.total_frames.setValue(frames)
             self.set_ranges(frames, len(files))
             self.state['total_frames'] = frames
             self.total_frames()
@@ -309,7 +300,7 @@ class ImageStackDialog(QObject):
         elif not self.state['omega_from_file']:
             omega = []
             nframes = self.ui.total_frames.value() // num_files
-            nsteps = [nframes] * num_files
+            nsteps = [w[2] for w in self.state['wedges']] * num_files
             row_count = self.ui.omega_wedges.rowCount()
             length = num_files if row_count == 1 else 1
             for i in range(row_count):
@@ -360,7 +351,15 @@ class ImageStackDialog(QObject):
                 if not self.ui.omega_wedges.item(i, j).text():
                     return -1
             steps += int(float(self.ui.omega_wedges.item(i, 2).text()))
-        return steps if self.ui.total_frames.value() != steps else 0
+        file_count = int(self.ui.file_count.text())
+        empty_frames = self.ui.empty_frames.value() * file_count
+        total_frames = self.ui.total_frames.value() - empty_frames
+        if self.ui.max_total_frames.value() != 0:
+            total_frames = min(total_frames, self.ui.max_total_frames.value())
+        if self.ui.max_file_frames.value() != 0:
+            total_frames = min(
+                total_frames, self.ui.max_file_frames.value() * file_count)
+        return (steps, total_frames) if total_frames != steps else (0, 0)
 
     def exec_(self):
         while True:
@@ -390,12 +389,13 @@ class ImageStackDialog(QObject):
                     QMessageBox.warning(None, 'HEXRD', msg)
                     error = True
                     continue
-                if (steps := self.check_steps()) != 0:
+                steps, total_frames = self.check_steps()
+                if steps != 0:
                     if steps > 0:
                         msg = (
                             f'The total number of steps must be equal to the '
                             f'total number of frames: {steps} total steps, '
-                            f'{self.ui.total_frames.value()} total frames.')
+                            f'{total_frames} total frames.')
                     else:
                         msg = f'The omega wedges are incomplete.'
                     QMessageBox.warning(None, 'HEXRD', msg)
