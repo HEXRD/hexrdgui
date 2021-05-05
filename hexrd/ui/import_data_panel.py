@@ -336,8 +336,11 @@ class ImportDataPanel(QObject):
         detectors = self.detector_defaults['default_config'].get(
             'detectors', {})
         det = detectors.setdefault(self.detector, {})
-        width = det.setdefault('pixels', {}).get('columns', 0)
-        height = det.setdefault('pixels', {}).get('rows', 0)
+        width = det.setdefault('pixels', {}).get('columns', {})
+        height = det.setdefault('pixels', {}).get('rows', {})
+        if isinstance(width, dict):
+            width = width.get('value', 0)
+            height = height.get('value', 0)
 
         if self.instrument == 'PXRDIP':
             # Boundary is currently rotated 90 degrees
