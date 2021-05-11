@@ -383,6 +383,11 @@ class WppfOptionsDialog(QObject):
 
         with block_signals(*self.all_widgets):
             for k, v in settings.items():
+                if k == 'params' and isinstance(v, dict):
+                    # The older WPPF dialog used a dict. Skip this
+                    # as it is no longer compatible.
+                    continue
+
                 if not hasattr(self, k):
                     # Skip it...
                     continue
