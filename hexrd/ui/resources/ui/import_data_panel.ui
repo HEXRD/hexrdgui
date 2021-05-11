@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>476</width>
-    <height>640</height>
+    <height>652</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -409,6 +409,9 @@
            <property name="enabled">
             <bool>false</bool>
            </property>
+           <property name="toolTip">
+            <string extracomment="Defaults to currently loaded configuration"/>
+           </property>
            <property name="text">
             <string>No File Selected</string>
            </property>
@@ -745,7 +748,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="adjust_template"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="adjust_template"/>
  </buttongroups>
 </ui>
