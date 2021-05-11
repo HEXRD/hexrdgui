@@ -407,7 +407,7 @@ class ImportDataPanel(QObject):
 
         for det in self.completed_detectors:
             transform = detectors[det].setdefault('transform', {})
-            *zx, z = transform['tilt']
+            *zx, z = [float(v) for v in transform['tilt']]
             transform['tilt'] = (
                 [*zx, (z + float(self.edited_images[det]['tilt']))])
             files.append([self.edited_images[det]['img']])
