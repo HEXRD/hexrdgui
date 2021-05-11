@@ -337,7 +337,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
     def get_range(self, ims):
         start = 0
-        if len(ims) != self.data.get('total_frames', [len(ims)])[0]:
+        nsteps = sum(self.data.get('nsteps', [len(ims)]))
+        if len(ims) != nsteps:
             # In the case of hdf5 and npz files we need to handle empty
             # frames via the ProcessedImageSeries 'frame_list' arg to slice
             # the frame list
