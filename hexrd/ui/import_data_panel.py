@@ -88,7 +88,7 @@ class ImportDataPanel(QObject):
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
         not_default = (self.ui.current_config.isChecked()
-                        or not self.ui.default_config.isChecked())
+                       or not self.ui.default_config.isChecked())
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
                 with open(self.config_file, 'r') as f:
@@ -145,7 +145,8 @@ class ImportDataPanel(QObject):
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
                                 self.ui.file_selection, enabled=True)
-            self.ui.config_file_label.setToolTip('Defaults to currently loaded configuration')
+            self.ui.config_file_label.setToolTip(
+                'Defaults to currently loaded configuration')
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
@@ -407,7 +408,8 @@ class ImportDataPanel(QObject):
         self.ui.load_config.setEnabled(not_default)
         self.ui.config_file_label.setEnabled(not_default)
         self.ui.config_file_label.setText('No File Selected')
-        self.ui.config_file_label.setToolTip('Defaults to currently loaded configuration')
+        self.ui.config_file_label.setToolTip(
+            'Defaults to currently loaded configuration')
         self.completed_detectors = []
         self.defaults.clear()
         self.config_file = None
