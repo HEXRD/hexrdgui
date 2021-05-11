@@ -430,7 +430,8 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
-            self.ui.file_options.item(i, 5).setText(str(self.nsteps[i]))
+            self.ui.file_options.item(i, 5).setText(
+                str(self.total_frames[i] - self.empty_frames))
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(Path(curr).name)
