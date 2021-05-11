@@ -46,6 +46,7 @@ class ImportDataPanel(QObject):
         self.cmap = cmap
         self.detectors = []
         self.defaults = {}
+        self.import_in_progress = False
 
         self.set_default_color()
         self.setup_connections()
@@ -134,10 +135,12 @@ class ImportDataPanel(QObject):
         self.instrument = instruments.get(idx, None)
 
         if self.instrument is None:
+            self.import_in_progress = False
             self.ui.detectors.setCurrentIndex(0)
             self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                                 enabled=False)
         else:
+            self.import_in_progress = True
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
                                 self.ui.file_selection, enabled=True)
@@ -172,7 +175,7 @@ class ImportDataPanel(QObject):
             HexrdConfig().load_instrument_config(f, import_raw=True)
 
     def config_loaded_from_menu(self):
-        if self.instrument is None:
+        if not self.import_in_progress:
             return
         self.load_instrument_config()
 
@@ -399,8 +402,10 @@ class ImportDataPanel(QObject):
         self.completed_detectors = []
         self.defaults.clear()
         self.config_file = None
+        self.import_in_progress = False
 
     def completed(self):
+        self.import_in_progress = False
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
@@ -423,9 +428,9 @@ class ImportDataPanel(QObject):
             self.detector_defaults['default_config'], sort_keys=False)
         temp.write(data.encode('utf-8'))
         temp.close()
+
         HexrdConfig().load_instrument_config(temp.name)
         self.set_convention()
-
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
