@@ -38,6 +38,7 @@ class ImportDataPanel(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('import_data_panel.ui', parent)
         self.it = None
+        self.instrument = None
         self.edited_images = {}
         self.completed_detectors = []
         self.canvas = parent.image_tab_widget.image_canvases[0]
@@ -169,6 +170,11 @@ class ImportDataPanel(QObject):
             for overlay in HexrdConfig().overlays:
                 overlay['visible'] = False
             HexrdConfig().load_instrument_config(f, import_raw=True)
+
+    def config_loaded_from_menu(self):
+        if self.instrument is None:
+            return
+        self.load_instrument_config()
 
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)

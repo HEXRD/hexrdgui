@@ -56,6 +56,9 @@ class MainWindow(QObject):
     # Emitted when a new mask is added
     new_mask_added = Signal(str)
 
+    # Emitted when a new configuration is loaded
+    config_loaded = Signal()
+
     def __init__(self, parent=None, image_files=None):
         super().__init__(parent)
 
@@ -213,6 +216,8 @@ class MainWindow(QObject):
             self.update_config_gui)
         self.import_data_widget.cancel_workflow.connect(
             self.load_dummy_images)
+        self.config_loaded.connect(
+            self.import_data_widget.config_loaded_from_menu)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -659,6 +664,7 @@ class MainWindow(QObject):
             self.calibration_config_widget.update_gui_from_config()
         elif current_widget is self.calibration_slider_widget.ui:
             self.calibration_slider_widget.update_gui_from_config()
+        self.config_loaded.emit()
 
     def eventFilter(self, target, event):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
