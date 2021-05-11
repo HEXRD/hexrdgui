@@ -183,7 +183,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                     HexrdConfig().imageseries_dict[det] = ims
             else:
                 ImageFileManager().load_images(det_names, self.files, options)
-        HexrdConfig().reset_unagg_imgs()
+        HexrdConfig().reset_unagg_imgs(new_imgs=True)
 
         # Now that self.state is set, setup the progress variables
         self.setup_progress_variables()

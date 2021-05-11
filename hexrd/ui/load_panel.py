@@ -430,7 +430,8 @@ class LoadPanel(QObject):
             self.ui.file_options.item(i, 2).setText(str(self.total_frames[i]))
             self.ui.file_options.item(i, 3).setText(str(self.omega_min[i]))
             self.ui.file_options.item(i, 4).setText(str(self.omega_max[i]))
-            self.ui.file_options.item(i, 5).setText(str(self.nsteps[i]))
+            self.ui.file_options.item(i, 5).setText(
+                str(self.total_frames[i] - self.empty_frames))
 
             # Set tooltips
             self.ui.file_options.item(i, 0).setToolTip(Path(curr).name)
@@ -441,6 +442,7 @@ class LoadPanel(QObject):
             # Don't allow editing of file name or total frames
             self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
             self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
+            self.ui.file_options.item(i, 5).setFlags(Qt.ItemIsEnabled)
             # If raw data offset can only be changed in YAML file
             if self.ext in YAML_EXTS:
                 self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
@@ -489,15 +491,11 @@ class LoadPanel(QObject):
                     self.ui.file_options.item(r, column).setText(str(curr_val))
                     new_total = str(self.total_frames[r] - self.empty_frames)
                     self.nsteps[r] = int(new_total)
-                    self.total_frames[r] = int(new_total)
-                    self.ui.file_options.item(r, 2).setText(new_total)
                     self.ui.file_options.item(r, 5).setText(new_total)
             elif column == 3:
                 self.omega_min[row] = float(curr_val)
             elif column == 4:
                 self.omega_max[row] = float(curr_val)
-            elif column == 5:
-                self.nsteps[row] = int(curr_val)
             self.ui.update_img_data.setEnabled(self.update_allowed)
             self.enable_read()
 
