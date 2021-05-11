@@ -144,9 +144,6 @@ class ImportDataPanel(QObject):
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
                                 self.ui.file_selection, enabled=True)
-            if self.instrument == 'PXRDIP':
-                HexrdConfig().load_panel_state['trans'] = (
-                    [UI_TRANS_INDEX_FLIP_HORIZONTALLY])
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
@@ -196,6 +193,10 @@ class ImportDataPanel(QObject):
         self.it.scale_template(sx=scale)
 
     def load_images(self):
+        if self.instrument == 'PXRDIP':
+            HexrdConfig().load_panel_state['trans'] = (
+                [UI_TRANS_INDEX_FLIP_HORIZONTALLY])
+
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, caption, dir=HexrdConfig().images_dir)
@@ -399,6 +400,11 @@ class ImportDataPanel(QObject):
                             self.ui.config_file_label, self.ui.config,
                             enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
+        select_config = self.ui.select_config.isChecked()
+        self.ui.default_config.setEnabled(select_config)
+        not_default = select_config and not self.ui.default_config.isChecked()
+        self.ui.load_config.setEnabled(not_default)
+        self.ui.config_file_label.setEnabled(not_default)
         self.completed_detectors = []
         self.defaults.clear()
         self.config_file = None
