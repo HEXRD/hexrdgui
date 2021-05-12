@@ -316,8 +316,8 @@ def reversed_enumerate(sequence):
 
 
 @contextmanager
-def regular_stdout_stderr():
-    # Ensure we are using regular stdout and stderr in the context
+def default_stdout_stderr():
+    # Ensure we are using default stdout and stderr in the context
     prev_stdout = sys.stdout
     prev_stderr = sys.stderr
     sys.stdout = sys.__stdout__
