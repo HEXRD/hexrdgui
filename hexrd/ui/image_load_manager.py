@@ -337,7 +337,14 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             ims_dict[key].metadata['omega'] = omw.omegas
 
     def get_range(self, ims):
-        return range(len(ims))
+        start = 0
+        nsteps = sum(self.data.get('nsteps', [len(ims)]))
+        if len(ims) != nsteps:
+            # In the case of hdf5 and npz files we need to handle empty
+            # frames via the ProcessedImageSeries 'frame_list' arg to slice
+            # the frame list
+            start = self.data.get('empty_frames', 0)
+        return range(start, len(ims))
 
     def get_flip_op(self, oplist, idx):
         if self.data:
