@@ -309,6 +309,9 @@ class PowderCalibrator(object):
         # build residual
         retval = []
         for det_key, panel in self.instr.detectors.items():
+            if len(data_dict[det_key]) == 0:
+                continue
+
             pdata = np.vstack(data_dict[det_key])
             if len(pdata) > 0:
                 hkls = pdata[:, 3:6]
