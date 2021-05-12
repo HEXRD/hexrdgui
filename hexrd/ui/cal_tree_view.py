@@ -45,6 +45,12 @@ class CalTreeItemModel(BaseTreeItemModel):
                 return value
             if role == Qt.DisplayRole:
                 return None
+
+        if isinstance(value, np.generic):
+            # Get a native python type for display. Otherwise,
+            # it won't display anything...
+            value = value.item()
+
         return value
 
     def setData(self, index, value, role):

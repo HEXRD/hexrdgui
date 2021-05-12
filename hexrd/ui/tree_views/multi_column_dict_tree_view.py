@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide2.QtCore import Signal, QModelIndex, Qt
 from PySide2.QtWidgets import (
     QCheckBox, QDialog, QItemEditorFactory, QStyledItemDelegate, QVBoxLayout
@@ -31,6 +33,11 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
             # If it's a bool, we want to display a checkbox via
             # a persistent editor, rather than the default display.
             return
+
+        if isinstance(value, np.generic):
+            # Get a native python type for display. Otherwise,
+            # it won't display anything..
+            value = value.item()
 
         return value
 
