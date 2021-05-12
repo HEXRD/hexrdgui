@@ -296,6 +296,9 @@ class PowderCalibrator(object):
         for det_key, panel in self.instr.detectors.items():
             # !!! now grabbing this from picks
             hkls_ref = np.asarray(data_dict['hkls'][det_key], dtype=int)
+            if len(hkls_ref) == 0:
+                continue
+
             gvecs = np.dot(hkls_ref, bmatx.T)
             dsp_ref = 1./xfcapi.rowNorm(gvecs)
 
@@ -319,7 +322,9 @@ class PowderCalibrator(object):
                              np.tile(np.hstack(hkld), (npts, 1))]
                         )
                     )
-            # pdata = np.vstack(data_dict[det_key])
+            if len(pdata) == 0:
+                continue
+
             pdata = np.vstack(pdata)
             if len(pdata) > 0:
                 hkls = pdata[:, 4:7]

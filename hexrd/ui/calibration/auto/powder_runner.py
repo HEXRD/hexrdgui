@@ -108,7 +108,14 @@ class PowderRunner(QObject):
 
     @property
     def data_xys(self):
-        return {k: np.vstack(v)[:, :2] for k, v in self.data_dict.items()}
+        ret = {}
+        for k, v in self.data_dict.items():
+            if len(v) == 0:
+                v = np.empty((0, 2))
+            else:
+                v = np.vstack(v)[:, :2]
+            ret[k] = v
+        return ret
 
     def show_lines(self, b):
         self.draw_lines() if b else self.remove_lines()
