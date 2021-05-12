@@ -38,6 +38,7 @@ class ImportDataPanel(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('import_data_panel.ui', parent)
         self.it = None
+        self.instrument = None
         self.edited_images = {}
         self.completed_detectors = []
         self.canvas = parent.image_tab_widget.image_canvases[0]
@@ -45,6 +46,7 @@ class ImportDataPanel(QObject):
         self.cmap = cmap
         self.detectors = []
         self.defaults = {}
+        self.import_in_progress = False
 
         self.set_default_color()
         self.setup_connections()
@@ -85,26 +87,27 @@ class ImportDataPanel(QObject):
 
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
-        if not self.ui.current_config.isChecked():
-            if not self.ui.default_config.isChecked() and self.config_file:
-                if os.path.splitext(self.config_file)[1] in YAML_EXTS:
-                    with open(self.config_file, 'r') as f:
-                        self.defaults = yaml.load(f, Loader=yaml.FullLoader)
-                else:
-                    try:
-                        with h5py.File(self.config_file, 'r') as f:
-                            instr = create_hedm_instrument()
-                            instr.unwrap_h5_to_dict(f, self.defaults)
-                    except Exception as e:
-                        msg = (
-                            f'ERROR - Could not read file: \n {e} \n'
-                            f'File must be HDF5 or YAML.')
-                        QMessageBox.warning(None, 'HEXRD', msg)
-                        return False
+        not_default = (self.ui.current_config.isChecked()
+                       or not self.ui.default_config.isChecked())
+        if self.config_file and not_default:
+            if os.path.splitext(self.config_file)[1] in YAML_EXTS:
+                with open(self.config_file, 'r') as f:
+                    self.defaults = yaml.load(f, Loader=yaml.FullLoader)
             else:
-                fname = f'{self.instrument.lower()}_reference_config.yml'
-                text = resource_loader.load_resource(hexrd_resources, fname)
-                self.defaults = yaml.load(text, Loader=yaml.FullLoader)
+                try:
+                    with h5py.File(self.config_file, 'r') as f:
+                        instr = create_hedm_instrument()
+                        instr.unwrap_h5_to_dict(f, self.defaults)
+                except Exception as e:
+                    msg = (
+                        f'ERROR - Could not read file: \n {e} \n'
+                        f'File must be HDF5 or YAML.')
+                    QMessageBox.warning(None, 'HEXRD', msg)
+                    return False
+        else:
+            fname = f'{self.instrument.lower()}_reference_config.yml'
+            text = resource_loader.load_resource(hexrd_resources, fname)
+            self.defaults = yaml.load(text, Loader=yaml.FullLoader)
         self.detector_defaults['default_config'] = self.defaults
         self.set_detector_options()
         return True
@@ -133,13 +136,17 @@ class ImportDataPanel(QObject):
         self.instrument = instruments.get(idx, None)
 
         if self.instrument is None:
+            self.import_in_progress = False
             self.ui.detectors.setCurrentIndex(0)
             self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                                 enabled=False)
         else:
+            self.import_in_progress = True
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
-                                enabled=True)
+                                self.ui.file_selection, enabled=True)
+            self.ui.config_file_label.setToolTip(
+                'Defaults to currently loaded configuration')
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
@@ -159,13 +166,20 @@ class ImportDataPanel(QObject):
                             enabled=not checked)
 
     def load_instrument_config(self):
-        self.defaults = copy.copy(HexrdConfig().internal_instrument_config)
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
+        self.config_file = temp.name
+        HexrdConfig().save_instrument_config(self.config_file)
         fname = f'default_{self.instrument.lower()}_config.yml'
         with resource_loader.resource_path(
                 hexrd.ui.resources.calibration, fname) as f:
             for overlay in HexrdConfig().overlays:
                 overlay['visible'] = False
             HexrdConfig().load_instrument_config(f, import_raw=True)
+
+    def config_loaded_from_menu(self):
+        if not self.import_in_progress:
+            return
+        self.load_instrument_config()
 
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)
@@ -184,6 +198,10 @@ class ImportDataPanel(QObject):
         self.it.scale_template(sx=scale)
 
     def load_images(self):
+        if self.instrument == 'PXRDIP':
+            HexrdConfig().load_panel_state['trans'] = (
+                [UI_TRANS_INDEX_FLIP_HORIZONTALLY])
+
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, caption, dir=HexrdConfig().images_dir)
@@ -384,11 +402,21 @@ class ImportDataPanel(QObject):
                             self.ui.config_file_label, self.ui.config,
                             enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
+        select_config = self.ui.select_config.isChecked()
+        self.ui.default_config.setEnabled(select_config)
+        not_default = select_config and not self.ui.default_config.isChecked()
+        self.ui.load_config.setEnabled(not_default)
+        self.ui.config_file_label.setEnabled(not_default)
+        self.ui.config_file_label.setText('No File Selected')
+        self.ui.config_file_label.setToolTip(
+            'Defaults to currently loaded configuration')
         self.completed_detectors = []
         self.defaults.clear()
         self.config_file = None
+        self.import_in_progress = False
 
     def completed(self):
+        self.import_in_progress = False
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
@@ -411,9 +439,9 @@ class ImportDataPanel(QObject):
             self.detector_defaults['default_config'], sort_keys=False)
         temp.write(data.encode('utf-8'))
         temp.close()
+
         HexrdConfig().load_instrument_config(temp.name)
         self.set_convention()
-
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
