@@ -4,6 +4,7 @@ import sys
 from PySide2.QtCore import QObject, Qt, Signal
 from PySide2.QtGui import QColor
 
+from hexrd.ui.fix_pdb import fix_pdb
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -47,6 +48,9 @@ class MessagesWidget(QObject):
         self.ui.destroyed.connect(self.release_output)
 
     def capture_output(self):
+        # Get pdb to always use the default stdout and stderr
+        fix_pdb()
+
         if self.stdout_writer not in self.STDOUT_CALL_STACK:
             self.stdout_writer.call_stack = self.STDOUT_CALL_STACK
             sys.stdout = self.stdout_writer
