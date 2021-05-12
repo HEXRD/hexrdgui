@@ -153,6 +153,9 @@
    </item>
    <item row="0" column="1" colspan="4">
     <widget class="QPushButton" name="reflections_table">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
      <property name="text">
       <string>Reflections Table</string>
      </property>
