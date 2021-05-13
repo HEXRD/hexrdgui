@@ -2,10 +2,14 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from PySide2.QtCore import QObject, Signal
+from PySide2.QtWidgets import (
+    QDialog, QDialogButtonBox, QMessageBox, QVBoxLayout
+)
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
+from hexrd.ui.range_widget import RangeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals, reversed_enumerate
 
@@ -28,6 +32,8 @@ class BrightnessContrastEditor(QObject):
         self._ui_min, self._ui_max = self._data_range
         self._data = None
         self.histogram = None
+        self.histogram_artist = None
+        self.line_artist = None
 
         self.default_auto_threshold = 5000
         self.current_auto_threshold = self.default_auto_threshold
@@ -36,7 +42,6 @@ class BrightnessContrastEditor(QObject):
         self.ui = loader.load_file('brightness_contrast_editor.ui', parent)
 
         self.setup_plot()
-        self.setup_line()
 
         self.ui.minimum.setMaximum(NUM_INCREMENTS)
         self.ui.maximum.setMaximum(NUM_INCREMENTS)
@@ -51,6 +56,7 @@ class BrightnessContrastEditor(QObject):
         self.ui.brightness.valueChanged.connect(self.brightness_edited)
         self.ui.contrast.valueChanged.connect(self.contrast_edited)
 
+        self.ui.set_data_range.pressed.connect(self.select_data_range)
         self.ui.reset.pressed.connect(self.reset_pressed)
         self.ui.auto_button.pressed.connect(self.auto_pressed)
 
@@ -61,6 +67,8 @@ class BrightnessContrastEditor(QObject):
     @data_range.setter
     def data_range(self, v):
         self._data_range = v
+        self.clip_ui_range()
+        self.ensure_min_max_space('max')
         self.update_gui()
 
     @property
@@ -70,7 +78,7 @@ class BrightnessContrastEditor(QObject):
     @data.setter
     def data(self, v):
         self._data = v
-        self.update_data_range()
+        self.reset_data_range()
 
     @property
     def data_list(self):
@@ -83,15 +91,18 @@ class BrightnessContrastEditor(QObject):
         else:
             return [self.data]
 
-    def update_data_range(self):
+    @property
+    def data_bounds(self):
         if self.data is None:
-            self.data_range = (0, 1)
-            return
+            return (0, 1)
 
         data = self.data_list
         mins = [x.min() for x in data]
         maxes = [x.max() for x in data]
-        self.data_range = (min(mins), max(maxes))
+        return (min(mins), max(maxes))
+
+    def reset_data_range(self):
+        self.data_range = self.data_bounds
 
     def update_gui(self):
         self.update_brightness()
@@ -289,7 +300,15 @@ class BrightnessContrastEditor(QObject):
 
         self.ui.plot_layout.addWidget(self.canvas)
 
+    def clear_plot(self):
+        self.axis.clear()
+        self.histogram_artist = None
+        self.line_artist = None
+
     def update_histogram(self):
+        # Clear the plot so everything will be re-drawn from scratch
+        self.clear_plot()
+
         data = self.data_list
         if not data:
             return
@@ -310,8 +329,9 @@ class BrightnessContrastEditor(QObject):
             'bins': HISTOGRAM_NUM_BINS,
             'color': 'black',
         }
-        self.axis.hist(**kwargs)
-        self.canvas.draw_idle()
+        self.histogram_artist = self.axis.hist(**kwargs)[2]
+
+        self.canvas.draw()
 
     def update_range_labels(self):
         labels = (self.ui.min_label, self.ui.max_label)
@@ -319,7 +339,7 @@ class BrightnessContrastEditor(QObject):
         for label, text in zip(labels, texts):
             label.setText(text)
 
-    def setup_line(self):
+    def create_line(self):
         xs = (self.ui_min, self.ui_max)
         ys = self.axis.get_ylim()
         kwargs = {
@@ -330,6 +350,9 @@ class BrightnessContrastEditor(QObject):
         self.line_artist, = self.axis.plot(xs, ys, **kwargs)
 
     def update_line(self):
+        if self.line_artist is None:
+            self.create_line()
+
         xs = (self.ui_min, self.ui_max)
         ys = self.axis.get_ylim()
 
@@ -341,14 +364,46 @@ class BrightnessContrastEditor(QObject):
         self.line_artist.set_data(interp(xs), ys)
         self.canvas.draw_idle()
 
-    def clear_plot(self):
-        self.figure.clear()
-
     @property
     def max_num_pixels(self):
         return max(np.prod(x.shape) for x in self.data_list)
 
+    def select_data_range(self):
+        dialog = QDialog(self.ui)
+        layout = QVBoxLayout()
+        dialog.setLayout(layout)
+
+        range_widget = RangeWidget(dialog)
+        range_widget.bounds = self.data_bounds
+        range_widget.min = self.data_range[0]
+        range_widget.max = self.data_range[1]
+        layout.addWidget(range_widget.ui)
+
+        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        button_box = QDialogButtonBox(buttons, dialog)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        if not dialog.exec_():
+            # User canceled
+            return
+
+        data_range = range_widget.range
+        if data_range[0] >= data_range[1]:
+            message = 'Min cannot be greater than or equal to the max'
+            QMessageBox.critical(self.ui, 'Validation Error', message)
+            return
+
+        if self.data_range == data_range:
+            # Nothing changed...
+            return
+
+        self.data_range = data_range
+        self.modified()
+
     def reset_pressed(self):
+        self.reset_data_range()
         self.reset_auto_threshold()
         self.reset.emit()
 
@@ -393,14 +448,15 @@ class BrightnessContrastEditor(QObject):
 
         if h_max < h_min:
             # Reset the range
-            self.reset_pressed()
-            return
+            self.reset_auto_threshold()
+            self.ui_range = self.data_range
+        else:
+            vmin = hist_start + h_min * bin_size
+            vmax = hist_start + h_max * bin_size
+            if vmin == vmax:
+                vmin, vmax = data_range
 
-        vmin = hist_start + h_min * bin_size
-        vmax = hist_start + h_max * bin_size
-        if vmin == vmax:
-            vmin, vmax = data_range
+            self.ui_range = vmin, vmax
 
-        self.ui_range = vmin, vmax
         self.update_brightness()
         self.update_contrast()
