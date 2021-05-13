@@ -172,15 +172,16 @@ class WppfOptionsDialog(QObject):
 
         obj = self.wppf_object
         try:
-            tth = obj.tth_list
-            spectrum = obj.computespectrum()
+            obj.computespectrum()
+            x, y = obj.spectrum_sim.data
 
             fig, ax = plt.subplots()
+            fig.canvas.manager.set_window_title('HEXRD')
             ax.set_xlabel(r'2$\theta$ (deg)')
             ax.set_ylabel(r'intensity')
             ax.set_title('Computed Spectrum')
 
-            ax.plot(tth, spectrum)
+            ax.plot(x, y)
             ax.relim()
             ax.autoscale_view()
             ax.axis('auto')
