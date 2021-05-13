@@ -613,9 +613,13 @@ class WppfOptionsDialog(QObject):
         if self.use_experiment_file:
             expt_spectrum = np.loadtxt(self.experiment_file)
         else:
-            expt_spectrum = HexrdConfig().last_azimuthal_integral_data
+            x, y = HexrdConfig().last_azimuthal_integral_data
+            if isinstance(y, np.ma.MaskedArray):
+                # Fill any masked values with zero
+                y = y.filled(0)
+
             # Re-format it to match the expected input format
-            expt_spectrum = np.array(list(zip(*expt_spectrum)))
+            expt_spectrum = np.array(list(zip(x, y)))
 
         if has_nan(expt_spectrum):
             # Store as masked array
