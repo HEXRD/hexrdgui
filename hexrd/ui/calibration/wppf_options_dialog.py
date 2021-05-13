@@ -65,6 +65,7 @@ class WppfOptionsDialog(QObject):
         self.dynamic_background_widgets = []
 
         self._wppf_object = None
+        self._prev_background_method = None
 
         self.reset_params()
         self.load_settings()
@@ -483,6 +484,12 @@ class WppfOptionsDialog(QObject):
             self.update_table()
 
     def update_background_parameters(self):
+        if self.background_method == self._prev_background_method:
+            # The method did not change. Just return.
+            return
+
+        self._prev_background_method = self.background_method
+
         main_layout = self.ui.background_method_parameters_layout
         clear_layout(main_layout)
         self.dynamic_background_widgets.clear()
