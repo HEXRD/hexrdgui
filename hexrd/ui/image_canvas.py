@@ -7,6 +7,7 @@ from PySide2.QtWidgets import QMessageBox
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
@@ -732,6 +733,15 @@ class ImageCanvas(FigureCanvas):
             return
 
         style = HexrdConfig().wppf_plot_style
+
+        if style.get('marker', 'o') not in Line2D.filled_markers:
+            # Marker is unfilled
+            if 'edgecolors' in style:
+                # Unfilled markers can't have edge colors.
+                # Remove this to avoid a matplotlib warning.
+                style = copy.deepcopy(style)
+                del style['edgecolors']
+
         self.wppf_plot = axis.scatter(*wppf_data, **style)
 
     def detector_axis(self, detector_name):
