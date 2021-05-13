@@ -76,6 +76,9 @@ class ColorMapEditor:
         self.ui.bc_editor_button.setEnabled(has_data)
 
     def bc_editor_button_pressed(self):
+        if self.bc_editor:
+            self.bc_editor.ui.reject()
+
         bc = self.bc_editor = BrightnessContrastEditor(self.ui)
         bc.data = self.data
         bc.edited.connect(self.bc_editor_modified)
