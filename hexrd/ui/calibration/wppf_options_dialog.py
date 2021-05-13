@@ -178,7 +178,6 @@ class WppfOptionsDialog(QObject):
             fig, ax = plt.subplots()
             ax.set_xlabel(r'2$\theta$ (deg)')
             ax.set_ylabel(r'intensity')
-            fig.canvas.set_window_title('HEXRD')
             ax.set_title('Computed Spectrum')
 
             ax.plot(tth, spectrum)
