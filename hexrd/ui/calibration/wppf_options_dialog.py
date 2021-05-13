@@ -31,6 +31,8 @@ from hexrd.ui.wppf_style_picker import WppfStylePicker
 
 inverted_peakshape_dict = {v: k for k, v in peakshape_dict.items()}
 
+DEFAULT_PEAK_SHAPE = 'pvtch'
+
 COLUMNS = {
     'name': 0,
     'value': 1,
@@ -118,7 +120,12 @@ class WppfOptionsDialog(QObject):
         self.ui.background_method.addItems(list(background_methods.keys()))
 
     def populate_peakshape_methods(self):
-        self.ui.peak_shape.addItems(list(peakshape_dict.values()))
+        keys = list(peakshape_dict.keys())
+        values = list(peakshape_dict.values())
+        self.ui.peak_shape.addItems(values)
+
+        if DEFAULT_PEAK_SHAPE in keys:
+            self.ui.peak_shape.setCurrentIndex(keys.index(DEFAULT_PEAK_SHAPE))
 
     def save_plot(self):
         obj = self._wppf_object
