@@ -140,7 +140,7 @@ class WppfOptionsDialog(QObject):
             raise Exception('No WPPF object!')
 
         # Prepare the data to write out
-        two_theta, intensity = obj.spectrum_sim.data
+        two_theta, intensity = obj.spectrum_sim.x, obj.spectrum_sim.y
         data = {
             'two_theta': two_theta,
             'intensity': intensity,
@@ -173,7 +173,7 @@ class WppfOptionsDialog(QObject):
         obj = self.wppf_object
         try:
             obj.computespectrum()
-            x, y = obj.spectrum_sim.data
+            x, y = obj.spectrum_sim.x, obj.spectrum_sim.y
 
             fig, ax = plt.subplots()
             fig.canvas.manager.set_window_title('HEXRD')
