@@ -362,11 +362,12 @@ class ImportDataPanel(QObject):
             width, height = height, width
         self.it.cropped_image(height, width)
 
-        img = self.it.masked_image
+        img, panel_buffer = self.it.masked_image
 
         self.edited_images[self.detector] = {
             'img': img,
-            'tilt': self.it.rotation
+            'tilt': self.it.rotation,
+            'panel_buffer': panel_buffer,
         }
 
         self.it.completed()
@@ -432,6 +433,8 @@ class ImportDataPanel(QObject):
             *zx, z = transform['tilt']
             transform['tilt'] = (
                 [*zx, (z + float(self.edited_images[det]['tilt']))])
+            panel_buffer = detectors[det].setdefault('panel_buffer', [])
+            panel_buffer = self.edited_images[det]['panel_buffer']
             files.append([self.edited_images[det]['img']])
 
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
