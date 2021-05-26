@@ -236,6 +236,7 @@ class LoadPanel(QObject):
             self.reset_data()
             self.load_image_data(selected_files)
             self.create_table()
+            self.setup_gui()
             self.enable_read()
 
     def reset_data(self):
@@ -257,7 +258,7 @@ class LoadPanel(QObject):
             return
 
         enable = True
-        total_frames = np.sum(self.total_frames)
+        total_frames = np.sum(self.total_frames) / len(self.dets)
         if total_frames - self.empty_frames < 2:
             enable = False
         self.ui.aggregation.setEnabled(enable)
