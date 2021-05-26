@@ -252,6 +252,7 @@ class MainWindow(QObject):
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)
+        self.import_data_widget.enforce_raw_mode.connect(self.enforce_view_mode)
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
@@ -825,3 +826,7 @@ class MainWindow(QObject):
         titles = [w.windowTitle() for w in dock_widgets]
         for title, w in sorted(zip(titles, dock_widgets)):
             self.ui.view_dock_widgets.addAction(w.toggleViewAction())
+
+    def enforce_view_mode(self, raw_only):
+        if raw_only:
+            self.image_mode_widget.ui.tab_widget.setCurrentIndex(0)

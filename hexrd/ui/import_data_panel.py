@@ -32,6 +32,8 @@ class ImportDataPanel(QObject):
 
     cancel_workflow = Signal()
 
+    enforce_raw_mode = Signal(bool)
+
     def __init__(self, cmap=None, parent=None):
         super(ImportDataPanel, self).__init__(parent)
 
@@ -137,11 +139,13 @@ class ImportDataPanel(QObject):
 
         if self.instrument is None:
             self.import_in_progress = False
+            self.enforce_raw_mode.emit(False)
             self.ui.detectors.setCurrentIndex(0)
             self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                                 enabled=False)
         else:
             self.import_in_progress = True
+            self.enforce_raw_mode.emit(True)
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
                                 self.ui.file_selection, enabled=True)
@@ -389,6 +393,7 @@ class ImportDataPanel(QObject):
             self.crop_and_mask()
 
     def reset_panel(self):
+        self.enforce_raw_mode.emit(False)
         self.clear_boundry()
         self.ui.instruments.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
