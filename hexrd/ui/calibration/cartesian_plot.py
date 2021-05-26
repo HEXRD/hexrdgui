@@ -291,6 +291,10 @@ class InstrumentViewer:
         for key in self.images_dict.keys():
             img += self.warp_dict[key]
 
+        # In case there were any nans...
+        nan_mask = np.isnan(img)
+        img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.)
+
         # Rescale the data to match the scale of the original dataset
         # TODO: try to get create_calibration_image to not rescale the
         # result to be between 0 and 1 in the first place so this will
