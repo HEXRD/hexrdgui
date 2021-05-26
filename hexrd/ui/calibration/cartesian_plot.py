@@ -299,7 +299,10 @@ class InstrumentViewer:
         # TODO: try to get create_calibration_image to not rescale the
         # result to be between 0 and 1 in the first place so this will
         # not be necessary.
-        self.img = np.interp(img, (img.min(), img.max()), (self.min, self.max))
+        img = np.interp(img, (img.min(), img.max()), (self.min, self.max))
+
+        # Re-mask...
+        self.img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.)
 
     def update_detector(self, det):
         # First, convert to the "None" angle convention
