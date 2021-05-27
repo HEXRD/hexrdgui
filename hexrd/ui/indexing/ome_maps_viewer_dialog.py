@@ -281,9 +281,10 @@ class OmeMapsViewerDialog(QObject):
         ax.set_title('Eta Omega Maps')
         ax.set_xlabel(r'$\eta$ ($\deg$)')
         ax.set_ylabel(r'$\omega$ ($\deg$)')
+        ax.format_coord = self.format_coord
         self.ui.canvas_layout.addWidget(canvas)
 
-        self.toolbar = NavigationToolbar(canvas, self.ui, False)
+        self.toolbar = NavigationToolbar(canvas, self.ui, coordinates=True)
         self.ui.canvas_layout.addWidget(self.toolbar)
 
         # Center the toolbar
@@ -292,6 +293,19 @@ class OmeMapsViewerDialog(QObject):
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
+
+    def format_coord(self, x, y):
+        # Format the coordinates to be displayed on the navigation toolbar.
+        # The coordinates are displayed when the mouse is moved.
+        float_format = '8.3f'
+        delimiter = ',  '
+        prefix = '   '
+
+        labels = []
+        labels.append(f'eta = {x:{float_format}}')
+        labels.append(f'omega = {y:{float_format}}')
+
+        return prefix + delimiter.join(labels)
 
     def setup_color_map(self):
         self.color_map_editor = ColorMapEditor(self, self.ui)
