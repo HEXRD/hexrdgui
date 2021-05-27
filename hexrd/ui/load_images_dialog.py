@@ -73,6 +73,8 @@ class LoadImagesDialog:
                 det_cb = QComboBox()
                 det_cb.addItems(list(set(self.detectors)))
                 table.setCellWidget(i, 0, det_cb)
+                table.cellWidget(i, 0).currentTextChanged.connect(
+                    lambda v, i=i: self.selection_changed(v, i))
             else:
                 d = QTableWidgetItem(self.detectors[i])
                 table.setItem(i, 0, d)
@@ -92,6 +94,8 @@ class LoadImagesDialog:
                 idx = HexrdConfig().load_panel_state['trans'][det]
             trans_cb.setCurrentIndex(idx)
             table.setCellWidget(i, 1, trans_cb)
+            table.cellWidget(i, 1).currentTextChanged.connect(
+                lambda v, i=i: self.selection_changed(v, i))
 
             f = QTableWidgetItem(self.image_files[i])
             table.setItem(i, 2, f)
@@ -138,6 +142,20 @@ class LoadImagesDialog:
             return self.ui.regex_line_edit.text()
 
         return self.ui.regex_combo.currentText()
+
+    def selection_changed(self, val, row):
+        table = self.ui.match_detectors_table
+        if val in self.detectors:
+            for i in range(table.rowCount()):
+                if i != row and table.cellWidget(i, 0).currentText() == val:
+                    trans = table.cellWidget(i, 1).currentText()
+                    table.cellWidget(row, 1).setCurrentText(trans)
+                    break
+        else:
+            det = table.cellWidget(row, 0).currentText()
+            for i in range(table.rowCount()):
+                if i != row and table.cellWidget(i, 0).currentText() == det:
+                    table.cellWidget(i, 1).setCurrentText(val)
 
 
 def _re_res(pat, s):
