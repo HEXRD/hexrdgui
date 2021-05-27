@@ -259,9 +259,7 @@ class MaterialStructureEditor(QObject):
                 U_array.append(atom['U'])
 
         mat = self.material
-        mat.atominfo = np.array(info_array)
-        mat.atomtype = np.array(type_array)
-        mat.U = np.array(U_array)
+        mat._set_atomdata(type_array, info_array, U_array)
 
         self.material_modified.emit()
 
