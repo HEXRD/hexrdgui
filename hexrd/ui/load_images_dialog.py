@@ -152,7 +152,10 @@ class LoadImagesDialog:
                     table.cellWidget(row, 1).setCurrentText(trans)
                     break
         else:
-            det = table.cellWidget(row, 0).currentText()
+            try:
+                det = table.cellWidget(row, 0).currentText()
+            except Exception:
+                det = table.item(row, 0).text()
             for i in range(table.rowCount()):
                 if i != row and table.cellWidget(i, 0).currentText() == det:
                     table.cellWidget(i, 1).setCurrentText(val)

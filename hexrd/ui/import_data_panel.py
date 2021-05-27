@@ -143,12 +143,14 @@ class ImportDataPanel(QObject):
             self.ui.detectors.setCurrentIndex(0)
             self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                                 enabled=False)
+            self.parent().action_show_toolbar.setChecked(True)
         else:
             self.import_in_progress = True
             self.enforce_raw_mode.emit(True)
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
                                 self.ui.file_selection, enabled=True)
+            self.parent().action_show_toolbar.setChecked(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
 
@@ -246,9 +248,7 @@ class ImportDataPanel(QObject):
             self.ui.files_label.setText(', '.join(file_names))
             self.enable_widgets(self.ui.transform_img, self.ui.association,
                                 self.ui.finalize, enabled=True)
-            self.enable_widgets(self.parent().action_show_toolbar,
-                                self.ui.data, enabled=False)
-            self.parent().action_show_toolbar.setChecked(False)
+            self.enable_widgets(self.ui.data, enabled=False)
 
     def add_transform(self):
         # Prevent color map reset on transform
