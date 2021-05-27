@@ -218,6 +218,8 @@ class MainWindow(QObject):
             self.load_dummy_images)
         self.config_loaded.connect(
             self.import_data_widget.config_loaded_from_menu)
+        self.ui.action_show_toolbar.toggled.connect(
+            self.ui.image_tab_widget.toggle_off_toolbar)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
