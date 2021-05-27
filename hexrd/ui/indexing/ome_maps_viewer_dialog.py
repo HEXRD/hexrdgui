@@ -342,18 +342,12 @@ class OmeMapsViewerDialog(QObject):
         if hasattr(self, '_data') and d == self._data:
             return
 
-        # Make a deep copy, and clean the data. Hexrd will do this
-        # cleaning on the original data on its own in
-        # generate_orientation_fibers().
         self.raw_data = copy.deepcopy(d)
-        self.cleaned_data = copy.deepcopy(d)
-        for map in self.cleaned_data.dataStore:
-            clean_map(map)
 
         # This data will have filters applied to it
         # We will make a shallow copy, and deep copy the data store
         # when filters are applied.
-        self._data = copy.copy(self.cleaned_data)
+        self._data = copy.copy(self.raw_data)
         self.reset_filters()
 
         self.update_extent()
@@ -458,12 +452,9 @@ class OmeMapsViewerDialog(QObject):
             self.draw()
 
     def create_spots(self):
-        data = self.image_data
-
-        if has_nan(data):
-            # Get rid of nans to make our work easier
-            data = copy.deepcopy(data)
-            data[np.isnan(data)] = 0
+        # We will clean the data for spot labeling, so make a deep copy
+        data = copy.deepcopy(self.image_data)
+        clean_map(data)
 
         method_name = self.method_name
         method_dict = self.config['find_orientations']['seed_search']['method']
@@ -611,7 +602,7 @@ class OmeMapsViewerDialog(QObject):
             name = '_dataStore'
         else:
             name = 'dataStore'
-        setattr(self.data, name, copy.deepcopy(self.cleaned_data.dataStore))
+        setattr(self.data, name, copy.deepcopy(self.raw_data.dataStore))
 
         # Make a fake config to pass to hexrd
         class Cfg:
