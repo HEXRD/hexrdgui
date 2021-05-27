@@ -70,8 +70,8 @@ class InteractiveTemplate:
 
     @property
     def masked_image(self):
-        self.mask()
-        return self.img
+        mask = self.mask()
+        return self.img, mask
 
     @property
     def bounds(self):
@@ -160,6 +160,7 @@ class InteractiveTemplate:
             mask[rr, cc] = True
             master_mask = np.logical_xor(master_mask, mask)
         self.img[~master_mask] = 0
+        return master_mask
 
     def get_paths(self):
         all_paths = []
