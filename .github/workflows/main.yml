@@ -128,7 +128,7 @@ jobs:
       run: |
           conda activate hexrdgui-package
           conda install anaconda scikit-learn==0.24.1
-          anaconda --token ${{ secrets.ANACONDA_TOKEN }} upload --user HEXRD --label ${HEXRDGUI_PACKAGE_LABEL} output/**/*.tar.bz2
+          anaconda --token ${{ secrets.ANACONDA_TOKEN }} upload --force --user HEXRD --label ${HEXRDGUI_PACKAGE_LABEL} output/**/*.tar.bz2
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
       # command works.
       shell: bash -l {0}
