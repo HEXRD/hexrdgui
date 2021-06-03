@@ -189,6 +189,9 @@ class WppfOptionsDialog(QObject):
             ax.set_ylabel(r'intensity')
             ax.set_title('Computed Spectrum')
 
+            # Match the scaling used...
+            ax.set_yscale(HexrdConfig().azimuthal_integral_axis_scale)
+
             ax.plot(x, y)
             ax.relim()
             ax.autoscale_view()

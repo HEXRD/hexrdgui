@@ -172,6 +172,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._auto_picked_data = None
         self.workflow = None
         self.last_azimuthal_integral_data = None
+        self.azimuthal_integral_axis_scale = 'linear'
         self._threshold_data = {}
         self.stack_state = {}
         self.unaggregated_images = None

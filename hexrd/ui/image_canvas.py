@@ -719,6 +719,7 @@ class ImageCanvas(FigureCanvas):
         if self.azimuthal_integral_axis is not None:
             scale = 'log' if isinstance(self.norm, LogNorm) else 'linear'
             self.azimuthal_integral_axis.set_yscale(scale)
+            HexrdConfig().azimuthal_integral_axis_scale = scale
 
     def update_wppf_plot(self):
         self.clear_wppf_plot()
