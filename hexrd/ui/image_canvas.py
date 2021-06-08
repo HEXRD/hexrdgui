@@ -7,6 +7,7 @@ from PySide2.QtWidgets import QMessageBox
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
@@ -718,6 +719,7 @@ class ImageCanvas(FigureCanvas):
         if self.azimuthal_integral_axis is not None:
             scale = 'log' if isinstance(self.norm, LogNorm) else 'linear'
             self.azimuthal_integral_axis.set_yscale(scale)
+            HexrdConfig().azimuthal_integral_axis_scale = scale
 
     def update_wppf_plot(self):
         self.clear_wppf_plot()
@@ -731,11 +733,16 @@ class ImageCanvas(FigureCanvas):
         if any(x is None for x in (wppf_data, axis, line)):
             return
 
-        style = {
-            's': 30,
-            'facecolors': 'none',
-            'edgecolors': 'r'
-        }
+        style = HexrdConfig().wppf_plot_style
+
+        if style.get('marker', 'o') not in Line2D.filled_markers:
+            # Marker is unfilled
+            if 'edgecolors' in style:
+                # Unfilled markers can't have edge colors.
+                # Remove this to avoid a matplotlib warning.
+                style = copy.deepcopy(style)
+                del style['edgecolors']
+
         self.wppf_plot = axis.scatter(*wppf_data, **style)
 
     def detector_axis(self, detector_name):

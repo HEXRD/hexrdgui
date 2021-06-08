@@ -2,7 +2,7 @@ import numpy as np
 
 from hexrd.matrixutil import findDuplicateVectors
 from hexrd.fitting import fitpeak
-from hexrd.fitting.peakfunctions import mpeak_nparams_dict
+from hexrd.wppf.peakfunctions import mpeak_nparams_dict
 
 nfields_data = 8
 

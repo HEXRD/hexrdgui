@@ -172,6 +172,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._auto_picked_data = None
         self.workflow = None
         self.last_azimuthal_integral_data = None
+        self.azimuthal_integral_axis_scale = 'linear'
         self._threshold_data = {}
         self.stack_state = {}
         self.unaggregated_images = None
@@ -1531,6 +1532,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if self.display_wppf_plot != b:
             settings = HexrdConfig().config['calibration']['wppf']
             settings['display_plot'] = b
+            self.rerender_wppf.emit()
+
+    @property
+    def wppf_plot_style(self):
+        settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
+        settings = settings.setdefault('plot_style', {})
+        if not settings:
+            settings.update(copy.deepcopy(constants.DEFAULT_WPPF_PLOT_STYLE))
+        return settings
+
+    @wppf_plot_style.setter
+    def wppf_plot_style(self, s):
+        if self.wppf_plot_style != s:
+            settings = HexrdConfig().config['calibration']['wppf']
+            settings['plot_style'] = s
             self.rerender_wppf.emit()
 
     @property

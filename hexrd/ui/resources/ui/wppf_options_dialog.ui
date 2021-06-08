@@ -7,97 +7,30 @@
     <x>0</x>
     <y>0</y>
     <width>635</width>
-    <height>451</height>
+    <height>703</height>
    </rect>
   </property>
+  <property name="windowTitle">
+   <string>WPPF Options Dialog</string>
+  </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="5" column="0">
-    <widget class="QCheckBox" name="use_experiment_file">
-     <property name="text">
-      <string>Use Experiment File</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="background_method_label">
-     <property name="text">
-      <string>Background Method:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="3">
-    <widget class="QPushButton" name="select_materials_button">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Select Materials</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="3">
-    <layout class="QGridLayout" name="background_method_parameters_layout">
-     <item row="1" column="0">
-      <widget class="QLabel" name="chebyshev_polynomial_degree_label">
-       <property name="text">
-        <string>Chebyshev Polynomial Degree:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="chebyshev_polynomial_degree">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>100000000</number>
-       </property>
-       <property name="value">
-        <number>6</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="5" column="1">
-    <widget class="QLineEdit" name="experiment_file">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
    <item row="3" column="1" colspan="2">
-    <widget class="QComboBox" name="background_method">
-     <item>
-      <property name="text">
-       <string>chebyshev</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>spline</string>
-      </property>
-     </item>
+    <widget class="QComboBox" name="peak_shape"/>
+   </item>
+   <item row="2" column="1" colspan="2">
+    <widget class="QSpinBox" name="refinement_steps">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000000</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="2">
-    <widget class="QComboBox" name="wppf_method">
-     <item>
-      <property name="text">
-       <string>LeBail</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Rietveld</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="5" column="2">
+   <item row="7" column="2">
     <widget class="QPushButton" name="select_experiment_file_button">
      <property name="enabled">
       <bool>false</bool>
@@ -107,7 +40,14 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="3">
+   <item row="2" column="0">
+    <widget class="QLabel" name="refinement_steps_label">
+     <property name="text">
+      <string>Refinement Steps:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0" colspan="3">
     <widget class="QTableWidget" name="table">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
@@ -142,54 +82,169 @@
      </column>
     </widget>
    </item>
-   <item row="9" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
+   <item row="6" column="0" colspan="3">
+    <layout class="QVBoxLayout" name="background_method_parameters_layout"/>
    </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QSpinBox" name="refinement_steps">
-     <property name="minimum">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <number>10000000</number>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="wppf_method_label">
+   <item row="4" column="0">
+    <widget class="QLabel" name="background_method_label">
      <property name="text">
-      <string>WPPF Method:</string>
+      <string>Background Method:</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="refinement_steps_label">
+   <item row="7" column="0">
+    <widget class="QCheckBox" name="use_experiment_file">
      <property name="text">
-      <string>Refinement Steps:</string>
+      <string>Use Experiment File</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="3">
+   <item row="12" column="0" colspan="3">
     <widget class="QPushButton" name="reset_table_to_defaults">
      <property name="text">
       <string>Reset Table to Defaults</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QCheckBox" name="display_wppf_plot">
+   <item row="1" column="1" colspan="2">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>LeBail</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Rietveld</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
+    <widget class="QComboBox" name="background_method"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="method_label">
      <property name="text">
-      <string>Display WPPF plot in polar view?</string>
+      <string>WPPF Method:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QLineEdit" name="experiment_file">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="button_layout">
+     <item>
+      <widget class="QPushButton" name="save_plot">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Save Plot</string>
+       </property>
+       <property name="icon">
+        <iconset theme="document-save">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="button_layout_spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="reset_object">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Reset Object</string>
+       </property>
+       <property name="icon">
+        <iconset theme="reload">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="preview_spectrum">
+       <property name="text">
+        <string>Preview Spectrum</string>
+       </property>
+       <property name="icon">
+        <iconset theme="user-desktop">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="run_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+       <property name="icon">
+        <iconset theme="dialog-ok">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="peak_shape_label">
+     <property name="text">
+      <string>Peak shape:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="plot_options_layout">
+     <item>
+      <widget class="QCheckBox" name="display_wppf_plot">
+       <property name="text">
+        <string>Display WPPF plot in polar view?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="edit_plot_style">
+       <property name="text">
+        <string>Edit Plot Style</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="0" colspan="3">
+    <widget class="QPushButton" name="select_materials_button">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select Materials</string>
      </property>
     </widget>
    </item>
@@ -197,51 +252,24 @@
  </widget>
  <tabstops>
   <tabstop>select_materials_button</tabstop>
-  <tabstop>wppf_method</tabstop>
+  <tabstop>method</tabstop>
   <tabstop>refinement_steps</tabstop>
+  <tabstop>peak_shape</tabstop>
   <tabstop>background_method</tabstop>
-  <tabstop>chebyshev_polynomial_degree</tabstop>
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
   <tabstop>select_experiment_file_button</tabstop>
   <tabstop>display_wppf_plot</tabstop>
+  <tabstop>edit_plot_style</tabstop>
   <tabstop>table</tabstop>
   <tabstop>reset_table_to_defaults</tabstop>
+  <tabstop>save_plot</tabstop>
+  <tabstop>reset_object</tabstop>
+  <tabstop>preview_spectrum</tabstop>
+  <tabstop>run_button</tabstop>
  </tabstops>
  <resources/>
  <connections>
-  <connection>
-   <sender>button_box</sender>
-   <signal>accepted()</signal>
-   <receiver>wppf_options_dialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>226</x>
-     <y>383</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>217</x>
-     <y>113</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>button_box</sender>
-   <signal>rejected()</signal>
-   <receiver>wppf_options_dialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>226</x>
-     <y>383</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>217</x>
-     <y>113</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>use_experiment_file</sender>
    <signal>toggled(bool)</signal>
