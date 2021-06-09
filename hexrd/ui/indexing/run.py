@@ -281,7 +281,7 @@ class FitGrainsRunner(Runner):
         kwargs = {
             'cfg': create_indexing_config(),
             'grains_table': self.grains_table,
-            'write_spots_files': False,
+            'write_spots_files': HexrdConfig().indexing_config['_write_spots'],
         }
         self.fit_grains_results = fit_grains(**kwargs)
         print('Fit Grains Complete')
