@@ -213,7 +213,8 @@ class FitGrainsOptionsDialog(QObject):
 
         indexing_config = HexrdConfig().indexing_config
         self.selected_material = indexing_config.get('_selected_material')
-        self.working_dir = indexing_config.get('working_dir', HexrdConfig().working_dir)
+        self.working_dir = indexing_config.get(
+            'working_dir', HexrdConfig().working_dir)
         write_spots = indexing_config.get('_write_spots', False)
         self.ui.write_out_spots.setChecked(write_spots)
 
