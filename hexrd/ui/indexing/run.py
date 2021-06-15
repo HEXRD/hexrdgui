@@ -22,6 +22,7 @@ from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.indexing.utils import generate_grains_table
 from hexrd.ui.progress_dialog import ProgressDialog
 
+
 class Runner(QObject):
     progress_text = Signal(str)
 
@@ -281,7 +282,7 @@ class FitGrainsRunner(Runner):
         kwargs = {
             'cfg': create_indexing_config(),
             'grains_table': self.grains_table,
-            'write_spots_files': False,
+            'write_spots_files': HexrdConfig().indexing_config['_write_spots'],
         }
         self.fit_grains_results = fit_grains(**kwargs)
         print('Fit Grains Complete')

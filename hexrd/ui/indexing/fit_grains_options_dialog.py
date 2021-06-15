@@ -1,6 +1,6 @@
 from PySide2.QtCore import (
     QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal)
-from PySide2.QtWidgets import QDialogButtonBox, QHeaderView
+from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
@@ -8,6 +8,8 @@ from hexrd.ui.ui_loader import UiLoader
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
+
+from pathlib import Path
 
 
 class FitGrainsOptionsDialog(QObject):
@@ -56,6 +58,8 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.material.currentIndexChanged.connect(
             self.selected_material_changed)
         self.ui.choose_hkls.pressed.connect(self.choose_hkls)
+
+        self.ui.set_spots_directory.clicked.connect(self.set_working_dir)
 
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
 
@@ -171,7 +175,10 @@ class FitGrainsOptionsDialog(QObject):
         self.tolerances_model.copy_to_config(config)
 
         indexing_config = HexrdConfig().indexing_config
+        indexing_config['analysis_name'] = Path(self.spots_path).stem
+        indexing_config['working_dir'] = str(Path(self.spots_path).parent)
         indexing_config['_selected_material'] = self.selected_material
+        indexing_config['_write_spots'] = self.ui.write_out_spots.isChecked()
 
     def update_gui_from_config(self, config):
         blocked = [QSignalBlocker(x) for x in self.all_widgets()]
@@ -206,6 +213,13 @@ class FitGrainsOptionsDialog(QObject):
 
         indexing_config = HexrdConfig().indexing_config
         self.selected_material = indexing_config.get('_selected_material')
+        working_dir = indexing_config.get(
+            'working_dir', str(Path(HexrdConfig().working_dir).parent))
+        analysis_name = indexing_config.get(
+            'analysis_name', Path(HexrdConfig().working_dir).stem)
+        self.spots_path = str(Path(working_dir) / analysis_name)
+        write_spots = indexing_config.get('_write_spots', False)
+        self.ui.write_out_spots.setChecked(write_spots)
 
         self.update_num_hkls()
 
@@ -271,3 +285,11 @@ class FitGrainsOptionsDialog(QObject):
         num_hkls = len(self.material.planeData.getHKLs())
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
+
+    def set_working_dir(self):
+        caption = 'Select directory to write spots files to'
+        d = QFileDialog.getExistingDirectory(
+            self.ui, caption, dir=self.spots_path)
+
+        if d:
+            self.spots_path = d
