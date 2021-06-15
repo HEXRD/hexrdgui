@@ -4,6 +4,7 @@ from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
+from hexrd.cli.fit_grains import write_results as write_fit_grains_results
 from hexrd.findorientations import (
     create_clustering_parameters, filter_maps_if_requested,
     generate_eta_ome_maps, generate_orientation_fibers, run_cluster
@@ -277,15 +278,22 @@ class FitGrainsRunner(Runner):
         self.progress_dialog.exec_()
 
     def run_fit_grains(self):
+        cfg = create_indexing_config()
+        write_spots = HexrdConfig().indexing_config.get('_write_spots', False)
+
         num_grains = self.grains_table.shape[0]
         self.update_progress_text(f'Running fit grains on {num_grains} grains')
         kwargs = {
-            'cfg': create_indexing_config(),
+            'cfg': cfg,
             'grains_table': self.grains_table,
-            'write_spots_files': HexrdConfig().indexing_config['_write_spots'],
+            'write_spots_files': write_spots,
         }
         self.fit_grains_results = fit_grains(**kwargs)
         print('Fit Grains Complete')
+
+        # If we wrote out the spots, let's write out the grains.out file too
+        if write_spots:
+            write_fit_grains_results(self.fit_grains_results, cfg)
 
     def view_fit_grains_results(self):
         if self.fit_grains_results is None:
