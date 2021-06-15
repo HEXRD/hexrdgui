@@ -22,6 +22,7 @@ from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.indexing.utils import generate_grains_table
 from hexrd.ui.progress_dialog import ProgressDialog
 
+
 class Runner(QObject):
     progress_text = Signal(str)
 

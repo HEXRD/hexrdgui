@@ -175,10 +175,11 @@ class FitGrainsOptionsDialog(QObject):
         self.tolerances_model.copy_to_config(config)
 
         indexing_config = HexrdConfig().indexing_config
-        indexing_config['analysis_name'] = self.working_dir
+        indexing_config['analysis_name'] = Path(self.working_dir).stem
         indexing_config['working_dir'] = str(Path(self.working_dir).parent)
         indexing_config['_selected_material'] = self.selected_material
         indexing_config['_write_spots'] = self.ui.write_out_spots.isChecked()
+        indexing_config['_spots_path'] = self.spots_path
 
     def update_gui_from_config(self, config):
         blocked = [QSignalBlocker(x) for x in self.all_widgets()]
@@ -213,8 +214,11 @@ class FitGrainsOptionsDialog(QObject):
 
         indexing_config = HexrdConfig().indexing_config
         self.selected_material = indexing_config.get('_selected_material')
-        self.working_dir = indexing_config.get(
-            'working_dir', HexrdConfig().working_dir)
+        working_dir = indexing_config.get('working_dir', str(Path(HexrdConfig().working_dir).parent))
+        analysis_name = indexing_config.get('analysis_name', Path(HexrdConfig().working_dir).stem)
+        self.working_dir = str(Path(working_dir) / analysis_name)
+        self.spots_path = indexing_config.get(
+            '_spots_path', HexrdConfig().working_dir)
         write_spots = indexing_config.get('_write_spots', False)
         self.ui.write_out_spots.setChecked(write_spots)
 
@@ -284,9 +288,9 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.num_hkls_selected.setText(text)
 
     def set_working_dir(self):
-        caption = 'Select directory to write sports files to'
+        caption = 'Select directory to write spots files to'
         d = QFileDialog.getExistingDirectory(
-            self.ui, caption, dir=self.working_dir)
+            self.ui, caption, dir=self.spots_path)
 
         if d:
-            self.working_dir = d
+            self.spots_path = d
