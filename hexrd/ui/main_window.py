@@ -506,8 +506,7 @@ class MainWindow(QObject):
             raise
 
     def update_color_map_bounds(self):
-        self.color_map_editor.update_bounds(
-            HexrdConfig().current_images_dict())
+        self.color_map_editor.update_bounds(HexrdConfig().images_dict)
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [

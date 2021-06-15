@@ -109,6 +109,9 @@ class ImageCanvas(FigureCanvas):
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
+
+        images_dict = HexrdConfig().images_dict
+
         if (self.mode != ViewType.raw or
                 len(image_names) != len(self.axes_images)):
             # Either we weren't in image mode before, we have a different
@@ -125,13 +128,8 @@ class ImageCanvas(FigureCanvas):
 
             rows = math.ceil(len(image_names) / cols)
 
-            idx = HexrdConfig().current_imageseries_idx
             for i, name in enumerate(image_names):
-                img = HexrdConfig().image(name, idx)
-
-                if HexrdConfig().apply_pixel_solid_angle_correction:
-                    panel = self.iviewer.instr.detectors[name]
-                    img = img / panel.pixel_solid_angles
+                img = images_dict[name]
 
                 # Apply any masks
                 for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
@@ -153,9 +151,9 @@ class ImageCanvas(FigureCanvas):
 
             self.figure.tight_layout()
         else:
-            idx = HexrdConfig().current_imageseries_idx
             for i, name in enumerate(image_names):
-                img = HexrdConfig().image(name, idx)
+                img = images_dict[name]
+
                 # Apply any masks
                 for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
                     if (mask_name in HexrdConfig().visible_masks and
@@ -780,9 +778,16 @@ class ImageCanvas(FigureCanvas):
 
         self.iviewer.update_detector(det)
         if self.mode == ViewType.raw:
-            # Only overlays need to be updated
+            # Overlays need to be updated
             HexrdConfig().flag_overlay_updates_for_all_materials()
-            self.update_overlays()
+
+            if HexrdConfig().any_intensity_corrections:
+                # A re-render may be needed, as the images may change
+                HexrdConfig().rerender_needed.emit()
+            else:
+                # Only overlays need updating
+                self.update_overlays()
+
             return
 
         self.axes_images[0].set_data(self.iviewer.img)
