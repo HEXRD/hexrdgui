@@ -120,6 +120,7 @@
       <string>Intensity Corrections</string>
      </property>
      <addaction name="action_apply_pixel_solid_angle_correction"/>
+     <addaction name="action_apply_lorentz_polarization_correction"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
     <addaction name="action_edit_euler_angle_convention"/>
@@ -583,6 +584,14 @@
    </property>
    <property name="text">
     <string>Apply Pixel Solid Angle Correction</string>
+   </property>
+  </action>
+  <action name="action_apply_lorentz_polarization_correction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Apply Lorentz Polarization Correction</string>
    </property>
   </action>
  </widget>
