@@ -180,10 +180,24 @@ class ReflectionsTable:
     def map_rows_to_selections(self, rows):
         table = self.ui.table
         selected_hkls = [table.item(i, COLUMNS.HKL).text() for i in rows]
-        return [self.hkl_to_index_map[x] for x in selected_hkls]
+
+        ret = []
+        for x in selected_hkls:
+            if x not in self.hkl_to_index_map:
+                continue
+
+            ret.append(self.hkl_to_index_map[x])
+
+        return ret
 
     def map_selections_to_rows(self, selections):
-        selected_hkls = [self.index_to_hkl_map[x] for x in selections]
+        selected_hkls = []
+        for x in selections:
+            if x not in self.index_to_hkl_map:
+                continue
+
+            selected_hkls.append(self.index_to_hkl_map[x])
+
         table = self.ui.table
         rows = []
         for i in range(table.rowCount()):
