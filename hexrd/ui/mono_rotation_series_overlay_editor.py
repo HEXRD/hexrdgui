@@ -1,12 +1,11 @@
 import copy
 import numpy as np
 
-from PySide2.QtCore import QSignalBlocker
-
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ranges_table_editor import RangesTableEditor
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class MonoRotationSeriesOverlayEditor:
@@ -53,18 +52,18 @@ class MonoRotationSeriesOverlayEditor:
         if self.overlay is None:
             return
 
-        blockers = [QSignalBlocker(w) for w in self.widgets]  # noqa: F841
-        options = self.overlay.get('options', {})
-        if 'crystal_params' in options:
-            self.crystal_params = options['crystal_params']
-        if 'ome_period' in options:
-            self.omega_period = options['ome_period']
-        if 'aggregation_mode' in options:
-            self.ui.aggregation.setCurrentText(options['aggregation_mode'])
-        if 'eta_ranges' in options:
-            self.eta_ranges = options['eta_ranges']
-        if 'ome_ranges' in options:
-            self.ome_ranges = options['ome_ranges']
+        with block_signals(*self.widgets):
+            options = self.overlay.get('options', {})
+            if 'crystal_params' in options:
+                self.crystal_params = options['crystal_params']
+            if 'ome_period' in options:
+                self.omega_period = options['ome_period']
+            if 'aggregation_mode' in options:
+                self.ui.aggregation.setCurrentText(options['aggregation_mode'])
+            if 'eta_ranges' in options:
+                self.eta_ranges = options['eta_ranges']
+            if 'ome_ranges' in options:
+                self.ome_ranges = options['ome_ranges']
 
     def update_config(self):
         if self.overlay is None:
