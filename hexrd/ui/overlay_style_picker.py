@@ -63,7 +63,7 @@ class OverlayStylePicker(QObject):
             'D'
         ]
 
-        if type == OverlayType.laue:
+        if type in (OverlayType.laue, OverlayType.mono_rotation_series):
             data_styles = marker_styles
         else:
             data_styles = line_styles
@@ -192,14 +192,8 @@ class OverlayStylePicker(QObject):
 
     @property
     def mono_rotation_series_keys(self):
-        return {
-            'data_color': 'c',
-            'data_style': 'ls',
-            'data_size': 'lw',
-            'range_color': 'c',
-            'range_style': 'ls',
-            'range_size': 'lw'
-        }
+        # Same as laue
+        return self.laue_keys
 
     @property
     def labels(self):
@@ -231,5 +225,5 @@ class OverlayStylePicker(QObject):
 
     @property
     def mono_rotation_series_labels(self):
-        # No labels to override
-        return {}
+        # Same as Laue
+        return self.laue_labels
