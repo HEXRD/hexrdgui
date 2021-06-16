@@ -11,8 +11,12 @@ class MonoRotationSeriesSpotOverlay:
                  eta_ranges=None,
                  ome_ranges=None,
                  ome_period=None,
-                 aggregation_mode=None
+                 aggregation_mode=None,
+                 eta_period=np.r_[-180., 180.],
                  ):
+
+        # FIXME: eta_period is currently not in use
+
         self._plane_data = plane_data
         self._instrument = instr
         if crystal_params is None:
