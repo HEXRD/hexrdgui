@@ -19,7 +19,6 @@ class InstrumentViewer:
     def __init__(self):
         self.type = ViewType.polar
         self.instr = create_hedm_instrument()
-        self.images_dict = HexrdConfig().current_images_dict()
 
         # Resolution settings
         # As far as I can tell, self.pixel_size won't actually change

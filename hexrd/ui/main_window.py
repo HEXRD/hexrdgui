@@ -32,6 +32,9 @@ from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.load_panel import LoadPanel
+from hexrd.ui.lorentz_polarization_options_dialog import (
+    LorentzPolarizationOptionsDialog
+)
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
 from hexrd.ui.materials_panel import MaterialsPanel
@@ -127,6 +130,8 @@ class MainWindow(QObject):
 
         self.ui.action_apply_pixel_solid_angle_correction.setChecked(
             HexrdConfig().apply_pixel_solid_angle_correction)
+        self.ui.action_apply_lorentz_polarization_correction.setChecked(
+            HexrdConfig().apply_lorentz_polarization_correction)
 
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
@@ -254,6 +259,9 @@ class MainWindow(QObject):
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)
+        self.ui.action_apply_lorentz_polarization_correction.toggled.connect(
+            self.apply_lorentz_polarization_correction_toggled)
+
         self.import_data_widget.enforce_raw_mode.connect(
             self.enforce_view_mode)
 
@@ -506,8 +514,7 @@ class MainWindow(QObject):
             raise
 
     def update_color_map_bounds(self):
-        self.color_map_editor.update_bounds(
-            HexrdConfig().current_images_dict())
+        self.color_map_editor.update_bounds(HexrdConfig().images_dict)
 
     def on_action_edit_euler_angle_convention(self):
         allowed_conventions = [
@@ -833,3 +840,21 @@ class MainWindow(QObject):
     def enforce_view_mode(self, raw_only):
         if raw_only:
             self.image_mode_widget.ui.tab_widget.setCurrentIndex(0)
+
+    def apply_lorentz_polarization_correction_toggled(self, b):
+        if not b:
+            # Just turn it off and return
+            HexrdConfig().apply_lorentz_polarization_correction = b
+            return
+
+        # Get the user to first select the Lorentz polarization options
+        d = LorentzPolarizationOptionsDialog(self.ui)
+        if not d.exec_():
+            # Canceled... uncheck the action.
+            action = self.ui.action_apply_lorentz_polarization_correction
+            action.setChecked(False)
+            return
+
+        # The dialog should have modified HexrdConfig's Lorentz options
+        # already. Just apply it now.
+        HexrdConfig().apply_lorentz_polarization_correction = b

@@ -410,13 +410,52 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def has_images(self):
         return len(self.imageseries_dict) != 0
 
-    def current_images_dict(self):
+    @property
+    def raw_images_dict(self):
+        """Get a dict of images with the current index"""
         idx = self.current_imageseries_idx
         ret = {}
         for key in self.imageseries_dict.keys():
             ret[key] = self.image(key, idx)
 
         return ret
+
+    @property
+    def intensity_corrected_images_dict(self):
+        """Performs intensity corrections, if any, before returning"""
+        images_dict = self.raw_images_dict
+
+        if not self.any_intensity_corrections:
+            # No intensity corrections. Return.
+            return images_dict
+
+        # Some methods require an instrument. Go ahead and create one.
+        from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        if HexrdConfig().apply_pixel_solid_angle_correction:
+            for name, img in images_dict.items():
+                panel = instr.detectors[name]
+                images_dict[name] = img / panel.pixel_solid_angles
+
+        if HexrdConfig().apply_lorentz_polarization_correction:
+            options = self.config['image']['lorentz_polarization']
+            kwargs = {
+                'f_hor': options['f_hor'],
+                'f_vert': options['f_vert'],
+            }
+
+            for name, img in images_dict.items():
+                panel = instr.detectors[name]
+                factor = panel.lorentz_polarization_factor(**kwargs)
+                images_dict[name] = img / factor
+
+        return images_dict
+
+    @property
+    def images_dict(self):
+        """Default to intensity corrected images dict"""
+        return self.intensity_corrected_images_dict
 
     def save_imageseries(self, ims, name, write_file, selected_format,
                          **kwargs):
@@ -1375,6 +1414,28 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     apply_pixel_solid_angle_correction = property(
         _apply_pixel_solid_angle_correction,
         set_apply_pixel_solid_angle_correction)
+
+    @property
+    def apply_lorentz_polarization_correction(self):
+        return self.config['image']['apply_lorentz_polarization_correction']
+
+    @apply_lorentz_polarization_correction.setter
+    def apply_lorentz_polarization_correction(self, v):
+        if v != self.apply_lorentz_polarization_correction:
+            self.config['image']['apply_lorentz_polarization_correction'] = v
+            self.deep_rerender_needed.emit()
+
+    @property
+    def any_intensity_corrections(self):
+        """Are we to perform any intensity corrections on the images?"""
+
+        # Add to the list here as needed
+        corrections = [
+            'apply_pixel_solid_angle_correction',
+            'apply_lorentz_polarization_correction',
+        ]
+
+        return any(getattr(self, x) for x in corrections)
 
     def get_show_saturation_level(self):
         return self._show_saturation_level

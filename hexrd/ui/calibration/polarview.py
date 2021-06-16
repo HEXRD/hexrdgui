@@ -33,7 +33,7 @@ class PolarView:
 
         self.instr = instrument
 
-        self.images_dict = HexrdConfig().current_images_dict()
+        self.images_dict = HexrdConfig().images_dict
 
         self.warp_dict = {}
 
@@ -124,6 +124,18 @@ class PolarView:
     def eta_period(self):
         return HexrdConfig().polar_res_eta_period
 
+    @property
+    def images_dict(self):
+        return self._images_dict
+
+    @images_dict.setter
+    def images_dict(self, v):
+        self._images_dict = v
+
+        # Cache the image min and max for later use
+        self.min = min(x.min() for x in v.values())
+        self.max = max(x.max() for x in v.values())
+
     def detector_borders(self, det):
         panel = self.detectors[det]
 
@@ -200,9 +212,6 @@ class PolarView:
         panel = self.detectors[det]
         img = self.images_dict[det]
 
-        if HexrdConfig().apply_pixel_solid_angle_correction:
-            img = img / panel.pixel_solid_angles
-
         gvec_angs = np.vstack([
                 angpts[1].flatten(),
                 angpts[0].flatten(),
@@ -270,11 +279,6 @@ class PolarView:
         self.img = img  # just a normal ndarry with NaNs
 
     def warp_all_images(self):
-        # Cache the image max and min for later use
-        images = self.images_dict.values()
-        self.min = min([x.min() for x in images])
-        self.max = max([x.max() for x in images])
-
         # Create the warped image for each detector
         for det in self.images_dict.keys():
             self.create_warp_image(det)
@@ -282,7 +286,15 @@ class PolarView:
         # Generate the final image
         self.generate_image()
 
+    def update_images_dict(self):
+        if HexrdConfig().any_intensity_corrections:
+            self.images_dict = HexrdConfig().images_dict
+
     def update_detector(self, det):
+        # If there are intensity corrections and the detector transform
+        # has been modified, we need to update the images dict.
+        self.update_images_dict()
+
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 

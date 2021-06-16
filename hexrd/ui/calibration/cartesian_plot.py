@@ -27,7 +27,7 @@ class InstrumentViewer:
     def __init__(self):
         self.type = ViewType.cartesian
         self.instr = create_hedm_instrument()
-        self.images_dict = HexrdConfig().current_images_dict()
+        self.images_dict = HexrdConfig().images_dict
 
         # Perform some checks before proceeding
         self.check_keys_match()
@@ -125,6 +125,18 @@ class InstrumentViewer:
         y_lim = self.dpanel.row_dim / 2
         return -x_lim, x_lim, -y_lim, y_lim
 
+    @property
+    def images_dict(self):
+        return self._images_dict
+
+    @images_dict.setter
+    def images_dict(self, v):
+        self._images_dict = v
+
+        # Cache the image min and max for later use
+        self.min = min(x.min() for x in v.values())
+        self.max = max(x.max() for x in v.values())
+
     def update_overlay_data(self):
         if not HexrdConfig().show_overlays:
             # Nothing to do
@@ -144,11 +156,6 @@ class InstrumentViewer:
         update_overlay_data(temp_instr, self.type)
 
     def plot_dplane(self):
-        # Cache the image max and min for later use
-        images = self.images_dict.values()
-        self.min = min([x.min() for x in images])
-        self.max = max([x.max() for x in images])
-
         # Create the warped image for each detector
         for detector_id in self.images_dict.keys():
             self.create_warped_image(detector_id)
@@ -251,9 +258,6 @@ class InstrumentViewer:
         img = self.images_dict[detector_id]
         panel = self.instr._detectors[detector_id]
 
-        if HexrdConfig().apply_pixel_solid_angle_correction:
-            img = img / panel.pixel_solid_angles
-
         # map corners
         corners = np.vstack(
             [panel.corner_ll,
@@ -304,7 +308,15 @@ class InstrumentViewer:
         # Re-mask...
         self.img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.)
 
+    def update_images_dict(self):
+        if HexrdConfig().any_intensity_corrections:
+            self.images_dict = HexrdConfig().images_dict
+
     def update_detector(self, det):
+        # If there are intensity corrections and the detector transform
+        # has been modified, we need to update the images dict.
+        self.update_images_dict()
+
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 
