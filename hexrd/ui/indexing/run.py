@@ -23,9 +23,11 @@ from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.indexing.utils import generate_grains_table
 from hexrd.ui.progress_dialog import ProgressDialog
+from hexrd.ui.utils import format_big_int
 
 
 class Runner(QObject):
+
     progress_text = Signal(str)
 
     def __init__(self, parent=None):
@@ -130,17 +132,47 @@ class IndexingRunner(Runner):
         self.progress_dialog.setWindowTitle('Find Orientations')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
-        worker = AsyncWorker(self.run_indexer, config)
+        worker = AsyncWorker(self.generate_orientation_fibers, config)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.orientation_fibers_generated)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
+
+    def generate_orientation_fibers(self, config):
+        # Generate the orientation fibers
+        self.update_progress_text('Generating orientation fibers')
+        self.qfib = generate_orientation_fibers(config, self.ome_maps)
+
+    def orientation_fibers_generated(self):
+        # Perform some validation
+        qfib_warning_threshold = 5e7
+        if self.qfib.shape[1] > qfib_warning_threshold:
+            formatted = format_big_int(self.qfib.shape[1])
+            msg = (f'Over {formatted} test orientations were '
+                   'generated. This may use up too much memory.\n\n'
+                   'Proceed anyways?')
+
+            response = QMessageBox.question(self.parent, 'WARNING', msg)
+            if response == QMessageBox.No:
+                # Go back to the eta omega maps viewer
+                self.view_ome_maps()
+                return
+
+        worker = AsyncWorker(self.run_indexer)
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.start_fit_grains_runner)
         worker.signals.finished.connect(self.progress_dialog.accept)
-        self.progress_dialog.exec_()
 
-    def run_indexer(self, config):
-        # Generate the orientation fibers
-        self.update_progress_text('Generating orientation fibers')
-        self.qfib = generate_orientation_fibers(config, self.ome_maps)
+        # We haven't received the finished signal from the last worker yet,
+        # so if we just call "self.progress_dialog.exec_()" here,
+        # it will receive the finished signal and accept immediately.
+        # Post this to the event loop so it gets shown again.
+        self.progress_dialog.exec_later()
+
+    def run_indexer(self):
+        config = create_indexing_config()
 
         # Find orientations
         self.update_progress_text('Running indexer (paintGrid)')
