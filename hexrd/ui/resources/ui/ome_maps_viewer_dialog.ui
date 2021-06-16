@@ -11,7 +11,99 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="4" column="1">
+   <item row="5" column="1">
+    <widget class="QCheckBox" name="write_scored_orientations">
+     <property name="text">
+      <string>Write scored orientations?</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="3" rowspan="3">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
+   <item row="5" column="3">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3" rowspan="2">
+    <layout class="QGridLayout" name="grid_layout">
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="label_spots">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Label Spots</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QPushButton" name="export_button">
+       <property name="text">
+        <string>Export</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" rowspan="4">
+      <layout class="QVBoxLayout" name="color_map_editor_layout"/>
+     </item>
+     <item row="1" column="2">
+      <widget class="QComboBox" name="active_hkl">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="active_hkl_label">
+       <property name="text">
+        <string>Displayed hkl</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" rowspan="4">
+      <widget class="QGroupBox" name="select_hkls_group">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>HKL Seeds</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QVBoxLayout" name="select_hkls_widget_layout"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="5" column="2">
+    <widget class="QPushButton" name="select_working_dir">
+     <property name="text">
+      <string>Select Directory</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
     <widget class="QGroupBox" name="seed_search_group_box">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -660,72 +752,7 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="2" rowspan="2">
-    <layout class="QGridLayout" name="grid_layout">
-     <item row="2" column="2">
-      <widget class="QCheckBox" name="label_spots">
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>Label Spots</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="export_button">
-       <property name="text">
-        <string>Export</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0" rowspan="4">
-      <layout class="QVBoxLayout" name="color_map_editor_layout"/>
-     </item>
-     <item row="1" column="2">
-      <widget class="QComboBox" name="active_hkl">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="active_hkl_label">
-       <property name="text">
-        <string>Displayed hkl</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1" rowspan="4">
-      <widget class="QGroupBox" name="select_hkls_group">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="title">
-        <string>HKL Seeds</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <layout class="QVBoxLayout" name="select_hkls_widget_layout"/>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="0" column="1" rowspan="2">
+   <item row="0" column="1" rowspan="2" colspan="2">
     <widget class="QGroupBox" name="filtering_group">
      <property name="title">
       <string>Filtering</string>
@@ -789,19 +816,6 @@
      </layout>
     </widget>
    </item>
-   <item row="5" column="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="2" rowspan="3">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -836,6 +850,8 @@
   <tabstop>clustering_radius</tabstop>
   <tabstop>clustering_completeness</tabstop>
   <tabstop>clustering_algorithm</tabstop>
+  <tabstop>write_scored_orientations</tabstop>
+  <tabstop>select_working_dir</tabstop>
   <tabstop>active_hkl</tabstop>
   <tabstop>label_spots</tabstop>
   <tabstop>export_button</tabstop>

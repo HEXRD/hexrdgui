@@ -85,6 +85,8 @@ class OmeMapsViewerDialog(QObject):
         self.color_map_editor.ui.minimum.valueChanged.connect(
             self.update_config)
 
+        self.ui.select_working_dir.pressed.connect(self.select_working_dir)
+
         self.select_hkls_widget.selection_changed.connect(self.update_config)
 
         # A plot reset is needed for log scale to handle the NaN values
@@ -488,6 +490,14 @@ class OmeMapsViewerDialog(QObject):
             # Save the raw data out...
             self.raw_data.save(selected_file)
 
+    def select_working_dir(self):
+        caption = 'Select directory to write scored orientations to'
+        d = QFileDialog.getExistingDirectory(
+            self.ui, caption, dir=self.working_dir)
+
+        if d:
+            self.working_dir = d
+
     @property
     def threshold(self):
         return self.color_map_editor.ui.minimum.value()
@@ -499,6 +509,14 @@ class OmeMapsViewerDialog(QObject):
             self.color_map_editor.ui.maximum.setValue(v + 1)
 
         self.color_map_editor.ui.minimum.setValue(v)
+
+    @property
+    def write_scored_orientations(self):
+        return self.ui.write_scored_orientations.isChecked()
+
+    @write_scored_orientations.setter
+    def write_scored_orientations(self, v):
+        self.ui.write_scored_orientations.setChecked(v)
 
     @property
     def yaml_widgets(self):
@@ -551,6 +569,11 @@ class OmeMapsViewerDialog(QObject):
 
         self.filter_maps = find_orientations['orientation_maps']['filter_maps']
 
+        key = '_write_scored_orientations'
+        self.write_scored_orientations = find_orientations.get(key, False)
+
+        self.working_dir = config.get('working_dir', HexrdConfig().working_dir)
+
     def update_config(self):
         # Update all of the config with their settings from the widgets
         config = self.config
@@ -592,6 +615,11 @@ class OmeMapsViewerDialog(QObject):
         find_orientations['threshold'] = self.threshold
         find_orientations['seed_search']['hkl_seeds'] = self.selected_hkls
         find_orientations['orientation_maps']['filter_maps'] = self.filter_maps
+
+        key = '_write_scored_orientations'
+        find_orientations[key] = self.write_scored_orientations
+
+        config['working_dir'] = self.working_dir
 
     def save_config(self):
         HexrdConfig().config['indexing'] = copy.deepcopy(self.config)

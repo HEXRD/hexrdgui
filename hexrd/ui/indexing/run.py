@@ -4,6 +4,7 @@ from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
+from hexrd.cli.find_orientations import write_scored_orientations
 from hexrd.cli.fit_grains import write_results as write_fit_grains_results
 from hexrd.findorientations import (
     create_clustering_parameters, filter_maps_if_requested,
@@ -155,6 +156,18 @@ class IndexingRunner(Runner):
             doMultiProc=ncpus > 1,
             nCPUs=ncpus)
         print('paintGrid complete')
+
+        orientations_cfg = HexrdConfig().indexing_config['find_orientations']
+        if orientations_cfg.get('_write_scored_orientations'):
+            # Write out the scored orientations
+            results = {}
+            results['scored_orientations'] = {
+                'test_quaternions': self.qfib,
+                'score': self.completeness
+            }
+            print(f'Writing scored orientations in {config.working_dir} ...')
+            write_scored_orientations(results, config)
+
         self.run_clustering()
 
     def run_clustering(self):
