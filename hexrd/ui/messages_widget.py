@@ -5,6 +5,7 @@ from PySide2.QtCore import QObject, Qt, Signal
 from PySide2.QtGui import QColor
 
 from hexrd.ui.fix_pdb import fix_pdb
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -61,6 +62,8 @@ class MessagesWidget(QObject):
             sys.stderr = self.stderr_writer
             self.STDERR_CALL_STACK.append(self.stderr_writer)
 
+        self.update_logging_streams()
+
     def release_output(self):
         stack = self.STDOUT_CALL_STACK
         if self.stdout_writer in stack:
@@ -73,6 +76,12 @@ class MessagesWidget(QObject):
             i = stack.index(self.stderr_writer)
             sys.stderr = stack[i - 1]
             stack.pop(i)
+
+        self.update_logging_streams()
+
+    def update_logging_streams(self):
+        HexrdConfig().logging_stdout_stream = sys.stdout
+        HexrdConfig().logging_stderr_stream = sys.stderr
 
     def insert_text(self, text):
         # Remove trailing returns so there isn't extra white

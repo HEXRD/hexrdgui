@@ -1,6 +1,8 @@
 import copy
+import logging
 import os
 from pathlib import Path
+import sys
 
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
 
@@ -177,6 +179,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.stack_state = {}
         self.unaggregated_images = None
         self.llnl_boundary_positions = {}
+        self.logging_stdout_handler = None
+        self.logging_stderr_handler = None
+
+        self.setup_logging()
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
         self.set_euler_angle_convention(default_conv, convert_config=False)
@@ -1626,3 +1632,78 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def set_boundary_position(self, instrument, detector, position):
         self.llnl_boundary_positions.setdefault(instrument, {})
         self.llnl_boundary_positions[instrument][detector] = position
+
+    @property
+    def logger(self):
+        return logging.getLogger('hexrd')
+
+    @property
+    def logging_handlers(self):
+        return (
+            self.logging_stdout_handler,
+            self.logging_stderr_handler,
+        )
+
+    def remove_logging_handlers(self):
+        for handler in self.logging_handlers:
+            if handler is None:
+                continue
+
+            handler.flush()
+            handler.close()
+            self.logger.removeHandler(handler)
+
+        self.logging_stdout_handler = None
+        self.logging_stderr_handler = None
+
+    def setup_logging(self, log_level=logging.INFO):
+        self.remove_logging_handlers()
+
+        logger = self.logger
+        logger.setLevel(log_level)
+
+        log_format = ('%(message)s',)
+
+        # Print INFO and DEBUG to stdout
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setFormatter(logging.Formatter(*log_format))
+        stdout_handler.setLevel(logging.DEBUG)
+        stdout_handler.addFilter(lambda r: r.levelno <= logging.INFO)
+        logger.addHandler(stdout_handler)
+
+        # Print all others to stderr
+        stderr_handler = logging.StreamHandler(sys.stderr)
+        stdout_handler.setFormatter(logging.Formatter(*log_format))
+        stderr_handler.setLevel(logging.WARNING)
+        logger.addHandler(stderr_handler)
+
+        self.logging_stdout_handler = stdout_handler
+        self.logging_stderr_handler = stderr_handler
+
+    @property
+    def logging_stdout_stream(self):
+        if self.logging_stdout_handler is None:
+            return None
+
+        return self.logging_stdout_handler.stream
+
+    @logging_stdout_stream.setter
+    def logging_stdout_stream(self, v):
+        if self.logging_stdout_handler is None:
+            return
+
+        self.logging_stdout_handler.setStream(v)
+
+    @property
+    def logging_stderr_stream(self):
+        if self.logging_stderr_handler is None:
+            return None
+
+        return self.logging_stderr_handler.stream
+
+    @logging_stderr_stream.setter
+    def logging_stderr_stream(self, v):
+        if self.logging_stderr_handler is None:
+            return
+
+        self.logging_stderr_handler.setStream(v)
