@@ -24,7 +24,7 @@ requirements:
     - importlib_resources
     - fabio
     - pyyaml
-    - hexrd
+    - hexrd=0.8.8
     - pyhdf
     - silx
 

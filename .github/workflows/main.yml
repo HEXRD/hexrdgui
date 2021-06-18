@@ -60,9 +60,12 @@ jobs:
           python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} minor
           python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} patch
 
-    - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
-      run: |
-          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "HEXRD_PACKAGE_CHANNEL=HEXRD" >> $GITHUB_ENV || echo "HEXRD_PACKAGE_CHANNEL=HEXRD/label/hexrd-prerelease" >> $GITHUB_ENV
+    - name: Set channel for HEXRD
+      run: echo "HEXRD_PACKAGE_CHANNEL=HEXRD" >> $GITHUB_ENV
+
+#    - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
+#      run: |
+#          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "HEXRD_PACKAGE_CHANNEL=HEXRD" >> $GITHUB_ENV || echo "HEXRD_PACKAGE_CHANNEL=HEXRD/label/hexrd-prerelease" >> $GITHUB_ENV
 
     - name: Create conda environment to build HEXRDGUI
       working-directory: hexrdgui
