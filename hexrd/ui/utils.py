@@ -363,9 +363,9 @@ def unique_array_list(array_list):
 def format_big_int(x, decimals=2):
     labels = [
         (1e12, 'trillion'),
-        (1e9, 'billion'),
-        (1e6, 'million'),
-        (1e3, 'thousand'),
+        (1e9,  'billion'),
+        (1e6,  'million'),
+        (1e3,  'thousand'),
     ]
 
     for divisor, label in labels:
@@ -373,3 +373,19 @@ def format_big_int(x, decimals=2):
             return f'{round(x / divisor, decimals)} {label}'
 
     return f'{x}'
+
+
+def format_memory_int(x, decimals=2):
+    labels = [
+        (1e12, 'TB'),
+        (1e9,  'GB'),
+        (1e6,  'MB'),
+        (1e3,  'KB'),
+        (1e0,  'B'),
+    ]
+
+    for divisor, label in labels:
+        if x > divisor:
+            return f'{round(x / divisor, decimals)} {label}'
+
+    return f'{x} B'
