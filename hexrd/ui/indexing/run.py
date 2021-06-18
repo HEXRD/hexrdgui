@@ -136,7 +136,7 @@ class IndexingRunner(Runner):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.orientation_fibers_generated)
-        worker.signals.finished.connect(self.progress_dialog.accept)
+        worker.signals.error.connect(self.progress_dialog.accept)
         self.progress_dialog.exec_()
 
     def generate_orientation_fibers(self, config):
@@ -156,20 +156,15 @@ class IndexingRunner(Runner):
             response = QMessageBox.question(self.parent, 'WARNING', msg)
             if response == QMessageBox.No:
                 # Go back to the eta omega maps viewer
+                self.progress_dialog.accept()
                 self.view_ome_maps()
                 return
 
         worker = AsyncWorker(self.run_indexer)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.start_fit_grains_runner)
-        worker.signals.finished.connect(self.progress_dialog.accept)
-
-        # We haven't received the finished signal from the last worker yet,
-        # so if we just call "self.progress_dialog.exec_()" here,
-        # it will receive the finished signal and accept immediately.
-        # Post this to the event loop so it gets shown again.
-        self.progress_dialog.exec_later()
+        worker.signals.result.connect(self.indexer_finished)
+        worker.signals.error.connect(self.progress_dialog.accept)
 
     def run_indexer(self):
         config = create_indexing_config()
@@ -200,9 +195,34 @@ class IndexingRunner(Runner):
             print(f'Writing scored orientations in {config.working_dir} ...')
             write_scored_orientations(results, config)
 
-        self.run_clustering()
+    def indexer_finished(self):
+        # Compute number of orientations run_cluster() will use
+        # to make sure there aren't too many
+        config = create_indexing_config()
+        min_compl = config.find_orientations.clustering.completeness
+        num_orientations = (np.array(self.completeness) > min_compl).sum()
 
-    def run_clustering(self):
+        num_orientations_warning_threshold = 1e6
+        if num_orientations > num_orientations_warning_threshold:
+            formatted = format_big_int(num_orientations)
+            msg = (f'Over {formatted} orientations are staged for '
+                   'clustering. This may use up too much memory.\n\n'
+                   'Proceed anyways?')
+
+            response = QMessageBox.question(self.parent, 'WARNING', msg)
+            if response == QMessageBox.No:
+                # Go back to the eta omega maps viewer
+                self.progress_dialog.accept()
+                self.view_ome_maps()
+                return
+
+        worker = AsyncWorker(self.run_cluster)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.start_fit_grains_runner)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+
+    def run_cluster(self):
         config = create_indexing_config()
         min_samples, mean_rpg = create_clustering_parameters(config,
                                                              self.ome_maps)
@@ -216,7 +236,6 @@ class IndexingRunner(Runner):
             'compl_thresh': config.find_orientations.clustering.completeness,
             'radius': config.find_orientations.clustering.radius
         }
-        self.update_progress_text('Running clustering')
         self.qbar, cl = run_cluster(**kwargs)
 
         print('Clustering complete...')

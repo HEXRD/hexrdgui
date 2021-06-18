@@ -75,8 +75,7 @@ class ProgressDialog:
         self.ui.exec_()
 
     def exec_later(self):
-        self.reset_messages()
-        QTimer.singleShot(0, lambda: self.ui.exec_())
+        QTimer.singleShot(0, lambda: self.exec_())
 
 
 class BlockEscapeKeyFilter(QObject):
