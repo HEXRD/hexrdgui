@@ -233,6 +233,8 @@ def build_package(hexrd_package_channel, hexrdgui_output_folder):
             build_windows_package_dir(base_path, tar_path)
         else:
             raise Exception('Unsupported platform: %s' % platform.system())
+
+        raise Exception('Temporary Exception')
     finally:
         if tmp_dir is not None:
             # We run into "Access is denied" when running on Windows in
