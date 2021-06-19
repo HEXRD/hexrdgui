@@ -234,7 +234,7 @@ def build_package(hexrd_package_channel, hexrdgui_output_folder):
         else:
             raise Exception('Unsupported platform: %s' % platform.system())
 
-        raise Exception('Temporary Exception')
+        # raise Exception('Temporary Exception')
     finally:
         if tmp_dir is not None:
             # We run into "Access is denied" when running on Windows in
