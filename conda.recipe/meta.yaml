@@ -24,7 +24,7 @@ requirements:
     - importlib_resources
     - fabio
     - pyyaml
-    - hexrd=0.8.8
+    - hexrd==0.8.8
     - pyhdf
     - silx
     - scikit-learn 0.24.1
