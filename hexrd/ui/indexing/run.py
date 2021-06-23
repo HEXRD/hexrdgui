@@ -51,6 +51,9 @@ class Runner(QObject):
         self.accept_progress_signal.emit()
 
     def on_async_error(self, t):
+        # In case the progress dialog is open...
+        self.accept_progress()
+
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
@@ -107,6 +110,7 @@ class IndexingRunner(Runner):
             self.thread_pool.start(worker)
 
             worker.signals.result.connect(self.ome_maps_loaded)
+            worker.signals.error.connect(self.on_async_error)
             worker.signals.finished.connect(self.accept_progress)
             self.progress_dialog.exec_()
 
@@ -144,7 +148,7 @@ class IndexingRunner(Runner):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.orientation_fibers_generated)
-        worker.signals.error.connect(self.accept_progress)
+        worker.signals.error.connect(self.on_async_error)
         self.progress_dialog.exec_()
 
     def generate_orientation_fibers(self, config):
@@ -172,7 +176,7 @@ class IndexingRunner(Runner):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.indexer_finished)
-        worker.signals.error.connect(self.accept_progress)
+        worker.signals.error.connect(self.on_async_error)
 
     def run_indexer(self):
         config = create_indexing_config()
@@ -230,6 +234,7 @@ class IndexingRunner(Runner):
         worker.signals.result.connect(self.start_fit_grains_runner,
                                       Qt.QueuedConnection)
         worker.signals.finished.connect(self.accept_progress)
+        worker.signals.error.connect(self.on_async_error)
 
     def run_cluster(self):
         config = create_indexing_config()
