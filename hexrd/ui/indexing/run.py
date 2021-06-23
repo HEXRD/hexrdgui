@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide2.QtCore import QObject, QThreadPool, Signal
+from PySide2.QtCore import QObject, QThreadPool, Qt, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
@@ -29,6 +29,7 @@ from hexrd.ui.utils import format_big_int
 class Runner(QObject):
 
     progress_text = Signal(str)
+    accept_progress_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -37,10 +38,17 @@ class Runner(QObject):
         self.thread_pool = QThreadPool(self.parent)
         self.progress_dialog = ProgressDialog(self.parent)
 
+        self.setup_connections()
+
+    def setup_connections(self):
         self.progress_text.connect(self.progress_dialog.setLabelText)
+        self.accept_progress_signal.connect(self.progress_dialog.accept)
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
+
+    def accept_progress(self):
+        self.accept_progress_signal.emit()
 
     def on_async_error(self, t):
         exctype, value, traceback = t
@@ -99,7 +107,7 @@ class IndexingRunner(Runner):
             self.thread_pool.start(worker)
 
             worker.signals.result.connect(self.ome_maps_loaded)
-            worker.signals.finished.connect(self.progress_dialog.accept)
+            worker.signals.finished.connect(self.accept_progress)
             self.progress_dialog.exec_()
 
     def run_eta_ome_maps(self, config):
@@ -136,7 +144,7 @@ class IndexingRunner(Runner):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.orientation_fibers_generated)
-        worker.signals.error.connect(self.progress_dialog.accept)
+        worker.signals.error.connect(self.accept_progress)
         self.progress_dialog.exec_()
 
     def generate_orientation_fibers(self, config):
@@ -156,7 +164,7 @@ class IndexingRunner(Runner):
             response = QMessageBox.question(self.parent, 'WARNING', msg)
             if response == QMessageBox.No:
                 # Go back to the eta omega maps viewer
-                self.progress_dialog.accept()
+                self.accept_progress()
                 self.view_ome_maps()
                 return
 
@@ -164,7 +172,7 @@ class IndexingRunner(Runner):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.indexer_finished)
-        worker.signals.error.connect(self.progress_dialog.accept)
+        worker.signals.error.connect(self.accept_progress)
 
     def run_indexer(self):
         config = create_indexing_config()
@@ -212,15 +220,16 @@ class IndexingRunner(Runner):
             response = QMessageBox.question(self.parent, 'WARNING', msg)
             if response == QMessageBox.No:
                 # Go back to the eta omega maps viewer
-                self.progress_dialog.accept()
+                self.accept_progress()
                 self.view_ome_maps()
                 return
 
         worker = AsyncWorker(self.run_cluster)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.start_fit_grains_runner)
-        worker.signals.finished.connect(self.progress_dialog.accept)
+        worker.signals.result.connect(self.start_fit_grains_runner,
+                                      Qt.QueuedConnection)
+        worker.signals.finished.connect(self.accept_progress)
 
     def run_cluster(self):
         config = create_indexing_config()
@@ -338,7 +347,7 @@ class FitGrainsRunner(Runner):
 
         worker.signals.result.connect(self.view_fit_grains_results)
         worker.signals.error.connect(self.on_async_error)
-        worker.signals.finished.connect(self.progress_dialog.accept)
+        worker.signals.finished.connect(self.accept_progress)
         self.progress_dialog.exec_()
 
     def run_fit_grains(self):
