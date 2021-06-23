@@ -146,6 +146,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         '--channel', 'cjh1',
         '--channel', 'anaconda',
         '--channel', 'conda-forge',
+        'hexrd==0.8.8',
         'hexrdgui'
     ]
     Conda.run_command(*params)
