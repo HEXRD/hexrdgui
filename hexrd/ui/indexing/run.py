@@ -144,11 +144,18 @@ class IndexingRunner(Runner):
         self.progress_dialog.setWindowTitle('Find Orientations')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
-        worker = AsyncWorker(self.generate_orientation_fibers, config)
-        self.thread_pool.start(worker)
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        if find_orientations['use_quaternion_grid']:
+            # Load qfib from a numpy file
+            self.qfib = np.load(find_orientations['use_quaternion_grid'])
+            self.orientation_fibers_generated()
+        else:
+            worker = AsyncWorker(self.generate_orientation_fibers, config)
+            self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.orientation_fibers_generated)
-        worker.signals.error.connect(self.on_async_error)
+            worker.signals.result.connect(self.orientation_fibers_generated)
+            worker.signals.error.connect(self.on_async_error)
+
         self.progress_dialog.exec_()
 
     def generate_orientation_fibers(self, config):

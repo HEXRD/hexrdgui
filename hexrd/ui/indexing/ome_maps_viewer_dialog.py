@@ -1,5 +1,5 @@
 import copy
-import os
+from pathlib import Path
 
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -56,8 +56,9 @@ class OmeMapsViewerDialog(QObject):
 
         self.setup_combo_box_item_data()
 
-        # Hide the method tab bar. The user selects it via the combo box.
-        self.ui.tab_widget.tabBar().hide()
+        # Hide these tab bars. The user selects them via combo boxes.
+        self.ui.quaternion_method_tab_widget.tabBar().hide()
+        self.ui.seed_search_method_tab_widget.tabBar().hide()
 
         self.create_tooltips()
 
@@ -79,9 +80,21 @@ class OmeMapsViewerDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
-        self.ui.method.currentIndexChanged.connect(self.update_method_tab)
-        self.ui.method.currentIndexChanged.connect(self.update_config)
-        self.ui.method.currentIndexChanged.connect(self.update_spots)
+        self.ui.quaternion_method.currentIndexChanged.connect(
+            self.update_quaternion_method_tab)
+        self.ui.quaternion_method.currentIndexChanged.connect(
+            self.update_seed_search_visibilities)
+        self.ui.quaternion_method.currentIndexChanged.connect(
+            self.update_config)
+        self.ui.quaternion_method.currentIndexChanged.connect(
+            self.update_spots)
+
+        self.ui.seed_search_method.currentIndexChanged.connect(
+            self.update_seed_search_method_tab)
+        self.ui.seed_search_method.currentIndexChanged.connect(
+            self.update_config)
+        self.ui.seed_search_method.currentIndexChanged.connect(
+            self.update_spots)
         self.color_map_editor.ui.minimum.valueChanged.connect(
             self.update_config)
 
@@ -108,18 +121,28 @@ class OmeMapsViewerDialog(QObject):
         for w in self.yaml_widgets:
             changed_signal(w).connect(self.update_config)
 
-        for w in self.method_parameter_widgets:
+        for w in self.seed_search_method_parameter_widgets:
             changed_signal(w).connect(self.update_spots)
+
+        self.ui.select_quaternion_grid_file.pressed.connect(
+            self.select_quaternion_grid_file)
 
     def setup_combo_box_item_data(self):
         # Set the item data for the combo boxes to be the names we want
+        item_data = [
+            'seed_search',
+            'grid_search',
+        ]
+        for i, data in enumerate(item_data):
+            self.ui.quaternion_method.setItemData(i, data)
+
         item_data = [
             'label',
             'blob_dog',
             'blob_log'
         ]
         for i, data in enumerate(item_data):
-            self.ui.method.setItemData(i, data)
+            self.ui.seed_search_method.setItemData(i, data)
 
         item_data = [
             'dbscan',
@@ -135,6 +158,16 @@ class OmeMapsViewerDialog(QObject):
                    f'Laplace filter.\nDefault: {DEFAULT_FWHM:.2f}')
         self.ui.filtering_fwhm.setToolTip(tooltip)
         self.ui.filtering_fwhm_label.setToolTip(tooltip)
+
+    def select_quaternion_grid_file(self):
+        title = 'Select quaternion grid file'
+        filters = 'NPY files (*.npy)'
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, title, HexrdConfig().working_dir, filters)
+
+        if selected_file:
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
+            self.quaternion_grid_file = selected_file
 
     def update_enable_states(self):
         filtering = self.ui.apply_filtering.isChecked()
@@ -169,9 +202,17 @@ class OmeMapsViewerDialog(QObject):
         self.rejected.emit()
 
     def validate(self):
-        hkls = self.config['find_orientations']['seed_search']['hkl_seeds']
-        if not hkls:
-            raise ValidationException('No hkls selected')
+        if self.quaternion_method_name == 'grid_search':
+            # Make sure the file exists.
+            q_file = self.config['find_orientations']['use_quaternion_grid']
+            if not q_file or not Path(q_file).exists():
+                msg = f'Quaternion file "{q_file}" does not exist!'
+                raise ValidationException(msg)
+        else:
+            # Seed search. Make sure hkls were chosen.
+            hkls = self.config['find_orientations']['seed_search']['hkl_seeds']
+            if not hkls:
+                raise ValidationException('No hkls selected')
 
     def setup_widget_paths(self):
         text = resource_loader.load_resource(hexrd.ui.resources.indexing,
@@ -194,25 +235,61 @@ class OmeMapsViewerDialog(QObject):
         self.widget_paths = paths
 
     @property
-    def method_parameter_widgets(self):
+    def seed_search_method_parameter_widgets(self):
         maps = self.gui_config_maps
         methods = maps['find_orientations']['seed_search']['method']
         names = [v for d in methods.values() for v in d.values()]
         return [getattr(self.ui, x) for x in names]
 
     @property
-    def method_name(self):
-        return self.ui.method.currentData()
+    def quaternion_method_name(self):
+        return self.ui.quaternion_method.currentData()
 
-    @method_name.setter
-    def method_name(self, v):
-        w = self.ui.method
+    @quaternion_method_name.setter
+    def quaternion_method_name(self, v):
+        w = self.ui.quaternion_method
         for i in range(w.count()):
             if v == w.itemData(i):
                 w.setCurrentIndex(i)
+                self.update_seed_search_visibilities()
+                self.update_quaternion_method_tab()
                 return
 
-        raise Exception(f'Unable to set method: {v}')
+        raise Exception(f'Unable to set quaternion_method: {v}')
+
+    @property
+    def quaternion_grid_file(self):
+        return self.ui.quaternion_grid_file.text()
+
+    @quaternion_grid_file.setter
+    def quaternion_grid_file(self, v):
+        self.ui.quaternion_grid_file.setText(v)
+
+    def update_seed_search_visibilities(self):
+        visible = self.quaternion_method_name == 'seed_search'
+
+        widgets = [
+            self.ui.select_hkls_group,
+            self.ui.label_spots,
+        ]
+
+        for w in widgets:
+            w.setVisible(visible)
+
+    @property
+    def seed_search_method_name(self):
+        return self.ui.seed_search_method.currentData()
+
+    @seed_search_method_name.setter
+    def seed_search_method_name(self, v):
+        w = self.ui.seed_search_method
+        for i in range(w.count()):
+            if v == w.itemData(i):
+                w.setCurrentIndex(i)
+                self.update_seed_search_method_tab()
+                return
+
+        raise Exception(f'Unable to set seed_search_method: {v}')
 
     def filter_modified(self):
         self.update_enable_states()
@@ -254,10 +331,15 @@ class OmeMapsViewerDialog(QObject):
         self.ui.filtering_apply_gaussian_laplace.setChecked(apply_gl)
         self.ui.filtering_fwhm.setValue(fwhm)
 
-    def update_method_tab(self):
+    def update_quaternion_method_tab(self):
         # Take advantage of the naming scheme...
-        method_tab = getattr(self.ui, self.method_name + '_tab')
-        self.ui.tab_widget.setCurrentWidget(method_tab)
+        method_tab = getattr(self.ui, self.quaternion_method_name + '_tab')
+        self.ui.quaternion_method_tab_widget.setCurrentWidget(method_tab)
+
+    def update_seed_search_method_tab(self):
+        # Take advantage of the naming scheme...
+        method_tab = getattr(self.ui, self.seed_search_method_name + '_tab')
+        self.ui.seed_search_method_tab_widget.setCurrentWidget(method_tab)
 
     @property
     def hkls(self):
@@ -378,7 +460,10 @@ class OmeMapsViewerDialog(QObject):
 
     @property
     def display_spots(self):
-        return self.ui.label_spots.isChecked()
+        return all((
+            self.quaternion_method_name == 'seed_search',
+            self.ui.label_spots.isChecked(),
+        ))
 
     def clear_spot_lines(self):
         if hasattr(self, '_spot_lines'):
@@ -458,7 +543,7 @@ class OmeMapsViewerDialog(QObject):
         data = copy.deepcopy(self.image_data)
         clean_map(data)
 
-        method_name = self.method_name
+        method_name = self.seed_search_method_name
         method_dict = self.config['find_orientations']['seed_search']['method']
         method_kwargs = method_dict[method_name]
 
@@ -483,7 +568,7 @@ class OmeMapsViewerDialog(QObject):
             'NPZ files (*.npz)')
 
         if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
             if not selected_file.endswith('.npz'):
                 selected_file += '.npz'
 
@@ -525,8 +610,10 @@ class OmeMapsViewerDialog(QObject):
     @property
     def all_widgets(self):
         return self.yaml_widgets + self.filter_widgets + [
-            self.ui.method,
-            self.ui.tab_widget,
+            self.ui.quaternion_method,
+            self.ui.quaternion_method_tab_widget,
+            self.ui.seed_search_method,
+            self.ui.seed_search_method_tab_widget,
             self.ui.active_hkl
         ]
 
@@ -559,10 +646,17 @@ class OmeMapsViewerDialog(QObject):
             set_val(w, path)
 
         find_orientations = config['find_orientations']
+
+        if find_orientations['use_quaternion_grid']:
+            self.quaternion_method_name = 'grid_search'
+        else:
+            self.quaternion_method_name = 'seed_search'
+
+        self.quaternion_grid_file = find_orientations.get('_quat_file', '')
+
         # Update the method name
         method = find_orientations['seed_search']['method']
-        self.method_name = next(iter(method))
-        self.update_method_tab()
+        self.seed_search_method_name = next(iter(method))
 
         # Also set the color map minimum to the threshold value...
         self.threshold = find_orientations['threshold']
@@ -579,12 +673,19 @@ class OmeMapsViewerDialog(QObject):
         config = self.config
         find_orientations = config['find_orientations']
 
+        if self.quaternion_method_name == 'seed_search':
+            quat_file = None
+        else:
+            quat_file = self.quaternion_grid_file
+        find_orientations['use_quaternion_grid'] = quat_file
+        find_orientations['_quat_file'] = self.quaternion_grid_file
+
         # Clear the method so it can be set to a different one
         method = find_orientations['seed_search']['method']
         method.clear()
 
         # Give it some dummy contents so the setter below will run
-        method_name = self.method_name
+        method_name = self.seed_search_method_name
         dummy_method = (
             self.gui_config_maps['find_orientations']['seed_search']['method'])
         method[method_name] = copy.deepcopy(dummy_method[method_name])
