@@ -338,3 +338,23 @@ def clear_layout(layout):
             child.deleteLater()
         else:
             child.widget().deleteLater()
+
+
+def array_index_in_list(array, array_list):
+    # Find the index of an array in a list of arrays
+    for i, array2 in enumerate(array_list):
+        if np.array_equal(array, array2):
+            return i
+
+    return -1
+
+
+def unique_array_list(array_list):
+    # Return a list with unique arrays in it (duplicates removed)
+    ret = []
+    for array in array_list:
+        if array_index_in_list(array, ret) == -1:
+            # It is not in the list
+            ret.append(array)
+
+    return ret
