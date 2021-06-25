@@ -38,7 +38,7 @@ COLOR_ORIENTATIONS_IND = 23
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, material=None, parent=None):
+    def __init__(self, data, material=None, parent=None, full_workflow=True):
         super().__init__()
 
         if material is None:
@@ -65,6 +65,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
+        self.ui.export_workflow.setEnabled(full_workflow)
 
         self.setup_tableview()
         self.load_cmaps()
@@ -303,6 +304,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
         self.ui.cylindrical_reference.toggled.connect(
             self.cylindrical_reference_toggled)
+        self.ui.export_workflow.clicked.connect(self.on_export_workflow_selected)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')

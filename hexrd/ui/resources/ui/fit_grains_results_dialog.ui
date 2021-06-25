@@ -544,22 +544,33 @@
     <layout class="QVBoxLayout" name="toolbar_layout"/>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Close</set>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QPushButton" name="export_workflow">
+       <property name="text">
+        <string>Export Full Workflow</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="button_box">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Close</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
    <class>ScientificDoubleSpinBox</class>
-   <extends>QSpinBox</extends>
-   <header>hexrd/ui/scientificspinbox</header>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
