@@ -870,6 +870,22 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return name
 
+    def save_indexing_config(self, output_file):
+        cfg = {}
+
+        def recursive_key_check(d, c):
+            for k, v in d.items():
+                    if isinstance(v, dict) and not k.startswith('_'):
+                            c[k] = {}
+                            recursive_key_check(v, c[k])
+                    elif not k.startswith('_'):
+                            c[k] = v
+
+        recursive_key_check(self.indexing_config, cfg)
+
+        with open(output_file, 'w') as f:
+            yaml.dump(cfg, f)
+
     def set_live_update(self, status):
         self.live_update = status
 

@@ -607,6 +607,15 @@ class FitGrainsResultsDialog(QObject):
                 exclusions[idx] = False
                 self.material.planeData.exclusions = exclusions
 
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Workflow', HexrdConfig().working_dir, 'YAML files (*.yml)')
+
+        if selected_file:
+            if Path(selected_file).suffix != '.yml':
+                selected_file += '.yml'
+
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
+            return HexrdConfig().save_indexing_config(selected_file)
 
 if __name__ == '__main__':
     from PySide2.QtCore import QCoreApplication
