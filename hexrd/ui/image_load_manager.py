@@ -212,7 +212,9 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         Returns a tuple of the form (function, frames), where func is the
         function to be applied and frames is the number of frames to aggregate.
         """
-        dark_idx = self.state['dark'][idx]
+
+        i = self.data['idx'] if 'idx' in self.data else idx
+        dark_idx = self.state['dark'][i]
         if dark_idx == UI_DARK_INDEX_FILE:
             ims = ImageFileManager().open_file(self.state['dark_files'][idx])
 
@@ -242,10 +244,9 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         The key is the detector name.
         """
         ops = {}
-        for idx, key in enumerate(ims_dict.keys()):
+        for i, key in enumerate(ims_dict.keys()):
             if self.data:
-                if 'idx' in self.data:
-                    idx = self.data['idx']
+                idx = self.data['idx'] if 'idx' in self.data else i
                 if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
                     if (self.state['dark'][idx] == UI_DARK_INDEX_EMPTY_FRAMES
                             and self.empty_frames == 0):
@@ -253,7 +254,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                                + 'No dark subtracion will be performed.')
                         QMessageBox.warning(None, 'HEXRD', msg)
                     else:
-                        op = self.get_dark_aggr_op(ims_dict[key], idx)
+                        op = self.get_dark_aggr_op(ims_dict[key], i)
                         ops[key] = op
 
         return ops
