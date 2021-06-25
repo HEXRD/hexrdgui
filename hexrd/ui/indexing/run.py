@@ -105,6 +105,12 @@ class IndexingRunner(Runner):
         else:
             # Create a full indexing config
             config = create_indexing_config()
+            # Save the hkls strings for future comparison
+            indexing_config = HexrdConfig().indexing_config
+            selected_material = indexing_config.get('_selected_material')
+            material = HexrdConfig().material(selected_material)
+            omaps = indexing_config['find_orientations']['orientation_maps']
+            omaps['_active_hkl_strings'] = material.planeData.getHKLs()
 
             # Setup to generate maps in background
             self.progress_dialog.setWindowTitle('Generating Eta Omega Maps')

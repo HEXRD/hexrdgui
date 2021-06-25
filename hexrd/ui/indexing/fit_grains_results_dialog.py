@@ -13,7 +13,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide2.QtCore import QObject, QTimer, Qt, Signal
-from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
+from PySide2.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
 
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.rotations import rotMatOfExpMap
@@ -304,7 +304,8 @@ class FitGrainsResultsDialog(QObject):
         self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
         self.ui.cylindrical_reference.toggled.connect(
             self.cylindrical_reference_toggled)
-        self.ui.export_workflow.clicked.connect(self.on_export_workflow_selected)
+        self.ui.export_workflow.clicked.connect(
+            self.on_export_workflow_selected)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -585,6 +586,26 @@ class FitGrainsResultsDialog(QObject):
         self.data = self.data_model.full_grains_table
         self.add_extra_data_columns()
         self.update_plot()
+
+    def on_export_workflow_selected(self):
+        idx_cfg = HexrdConfig().indexing_config
+        omaps = idx_cfg['find_orientations']['orientation_maps']
+        active = omaps.get("_active_hkl_strings", np.array([])).tolist()
+        current = self.material.planeData.getHKLs().tolist()
+        missing = [(' ').join(map(str, a)) for a in active if a not in current]
+
+        if missing:
+            msg = (
+                f'The following HKLs are excluded: {(", ").join(missing)}.'
+                f' Would you like to remove them from the exclusions list?')
+            response = QMessageBox.question(
+                self.ui, 'HEXRD', msg, (QMessageBox.Yes | QMessageBox.No))
+            if response == QMessageBox.Yes:
+                exclusions = self.material.planeData.exclusions
+                hkls = self.material.planeData.getHKLs(asStr=True, allHKLs=True)
+                idx = [hkls.index(m) for m in missing]
+                exclusions[idx] = False
+                self.material.planeData.exclusions = exclusions
 
 
 if __name__ == '__main__':
