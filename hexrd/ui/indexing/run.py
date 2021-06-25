@@ -243,8 +243,21 @@ class IndexingRunner(Runner):
         worker.signals.finished.connect(self.accept_progress)
         worker.signals.error.connect(self.on_async_error)
 
+    @property
+    def clustering_needs_min_samples(self):
+        # Determine whether we need the min_samples for clustering
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        return all((
+            find_orientations['use_quaternion_grid'] is None,
+            find_orientations['clustering']['algorithm'] != 'fclusterdata',
+        ))
+
     def run_cluster_functions(self):
-        self.create_clustering_parameters()
+        if self.clustering_needs_min_samples:
+            self.create_clustering_parameters()
+        else:
+            self.min_samples = 1
+
         self.run_cluster()
 
     def create_clustering_parameters(self):
