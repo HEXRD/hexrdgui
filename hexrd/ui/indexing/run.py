@@ -235,7 +235,7 @@ class IndexingRunner(Runner):
                 self.view_ome_maps()
                 return
 
-        worker = AsyncWorker(self.run_cluster)
+        worker = AsyncWorker(self.run_cluster_functions)
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(self.start_fit_grains_runner,
@@ -243,17 +243,27 @@ class IndexingRunner(Runner):
         worker.signals.finished.connect(self.accept_progress)
         worker.signals.error.connect(self.on_async_error)
 
-    def run_cluster(self):
-        config = create_indexing_config()
-        min_samples, mean_rpg = create_clustering_parameters(config,
-                                                             self.ome_maps)
+    def run_cluster_functions(self):
+        self.create_clustering_parameters()
+        self.run_cluster()
 
+    def create_clustering_parameters(self):
+        print('Creating cluster parameters...')
+        self.update_progress_text('Creating cluster parameters')
+        config = create_indexing_config()
+        self.min_samples, mean_rpg = create_clustering_parameters(
+            config, self.ome_maps)
+
+    def run_cluster(self):
+        print('Running cluster...')
+        self.update_progress_text('Running cluster')
+        config = create_indexing_config()
         kwargs = {
             'compl': self.completeness,
             'qfib': self.qfib,
             'qsym': config.material.plane_data.getQSym(),
             'cfg': config,
-            'min_samples': min_samples,
+            'min_samples': self.min_samples,
             'compl_thresh': config.find_orientations.clustering.completeness,
             'radius': config.find_orientations.clustering.radius
         }
