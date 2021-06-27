@@ -883,6 +883,30 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         recursive_key_check(self.indexing_config, cfg)
 
+        material = {
+            'definitions': 'materials.h5',
+            'active': self.active_material_name,
+            'dmin': self.active_material.dmin.getVal('angstrom'),
+            'tth_width': self.active_material.planeData.get_tThMax().tolist(),
+            'min_sfac_ratio': None
+        }
+
+        data = []
+        for det in self.detector_names:
+            data.append({'file': f'{det}.h5', 'args': {}, 'panel': det})
+
+        image_series = {
+            'format': 'hdf5',
+            'data': data
+        }
+
+        omaps = cfg['find_orientations']['orientation_maps']
+        omaps['active_hkls'] = list(
+            range(len(self.active_material.planeData.getHKLs())))
+        cfg['material'] = material
+        cfg['instrument'] = 'instrument.yml'
+        cfg['image-series'] = image_series
+
         with open(output_file, 'w') as f:
             yaml.dump(cfg, f)
 

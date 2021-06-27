@@ -594,17 +594,15 @@ class FitGrainsResultsDialog(QObject):
 
     def _save_workflow_files(self, selected_directory):
         if selected_directory:
-            parent = Path(selected_directory)/'workflow'
-            Path.mkdir(parent)
             HexrdConfig().working_dir = selected_directory
-            HexrdConfig().save_indexing_config(f'{str(parent)}/workflow.yml')
-            HexrdConfig().save_materials(f'{str(parent)}/materials.h5')
-            HexrdConfig().save_instrument_config(f'{str(parent)}/instrument.yml')
+            HexrdConfig().save_indexing_config(f'{str(selected_directory)}/workflow.yml')
+            HexrdConfig().save_materials(f'{str(selected_directory)}/materials.h5')
+            HexrdConfig().save_instrument_config(f'{str(selected_directory)}/instrument.yml')
             ims_dict = HexrdConfig().unagg_images
             if ims_dict is None:
                 ims_dict = HexrdConfig().imageseries_dict
             for det in HexrdConfig().detector_names:
-                path = f'{str(parent)}/{det}.h5'
+                path = f'{str(selected_directory)}/{det}.h5'
                 kwargs = {'path': 'imageseries'}
                 HexrdConfig().save_imageseries(
                     ims_dict.get(det), det, path, 'hdf5', **kwargs)
