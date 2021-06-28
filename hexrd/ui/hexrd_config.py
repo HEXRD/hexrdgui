@@ -875,11 +875,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         def recursive_key_check(d, c):
             for k, v in d.items():
-                    if isinstance(v, dict) and not k.startswith('_'):
-                            c[k] = {}
-                            recursive_key_check(v, c[k])
-                    elif not k.startswith('_'):
-                            c[k] = v
+                if isinstance(v, dict) and not k.startswith('_'):
+                    c[k] = {}
+                    recursive_key_check(v, c[k])
+                elif not k.startswith('_'):
+                    c[k] = v
 
         recursive_key_check(self.indexing_config, cfg)
 
