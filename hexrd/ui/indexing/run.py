@@ -110,7 +110,7 @@ class IndexingRunner(Runner):
             selected_material = indexing_config.get('_selected_material')
             material = HexrdConfig().material(selected_material)
             omaps = indexing_config['find_orientations']['orientation_maps']
-            omaps['_active_hkl_strings'] = material.planeData.getHKLs()
+            omaps['_active_hkl_strings'] = material.planeData.getHKLs(asStr=True)
 
             # Setup to generate maps in background
             self.progress_dialog.setWindowTitle('Generating Eta Omega Maps')

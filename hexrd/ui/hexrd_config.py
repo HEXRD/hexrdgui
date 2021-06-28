@@ -875,19 +875,24 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         def recursive_key_check(d, c):
             for k, v in d.items():
-                if isinstance(v, dict) and not k.startswith('_'):
+                if k.startswith('_'):
+                    continue
+
+                if isinstance(v, dict):
                     c[k] = {}
                     recursive_key_check(v, c[k])
-                elif not k.startswith('_'):
+                else:
                     c[k] = v
 
         recursive_key_check(self.indexing_config, cfg)
 
+        current_material = self.indexing_config['_selected_material']
+        selected_material = self.material(current_material)
         material = {
             'definitions': 'materials.h5',
-            'active': self.active_material_name,
-            'dmin': self.active_material.dmin.getVal('angstrom'),
-            'tth_width': self.active_material.planeData.get_tThMax().tolist(),
+            'active': current_material,
+            'dmin': selected_material.dmin.getVal('angstrom'),
+            'tth_width': selected_material.planeData.get_tThMax().item(),
             'min_sfac_ratio': None
         }
 

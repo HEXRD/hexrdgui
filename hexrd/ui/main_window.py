@@ -354,7 +354,7 @@ class MainWindow(QObject):
 
             data = np.loadtxt(selected_file, ndmin=2)
             dialog = FitGrainsResultsDialog(
-                data, parent=self.ui, full_workflow=False)
+                data, parent=self.ui, allow_export_workflow=False)
             dialog.show()
             self._fit_grains_results_dialog = dialog
 

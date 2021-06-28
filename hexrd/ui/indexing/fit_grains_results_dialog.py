@@ -41,7 +41,7 @@ COLOR_ORIENTATIONS_IND = 23
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, material=None, parent=None, full_workflow=True):
+    def __init__(self, data, material=None, parent=None, allow_export_workflow=True):
         super().__init__()
 
         if material is None:
@@ -68,7 +68,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
-        self.ui.export_workflow.setEnabled(full_workflow)
+        self.ui.export_workflow.setEnabled(allow_export_workflow)
         self.thread_pool = QThreadPool()
         self.progress_dialog = ProgressDialog(self.ui)
 
@@ -596,16 +596,15 @@ class FitGrainsResultsDialog(QObject):
         if selected_directory:
             HexrdConfig().working_dir = selected_directory
             HexrdConfig().save_indexing_config(
-                f'{str(selected_directory)}/workflow.yml')
-            HexrdConfig().save_materials(
-                f'{str(selected_directory)}/materials.h5')
+                f'{selected_directory}/workflow.yml')
+            HexrdConfig().save_materials(f'{selected_directory}/materials.h5')
             HexrdConfig().save_instrument_config(
-                f'{str(selected_directory)}/instrument.yml')
+                f'{selected_directory}/instrument.yml')
             ims_dict = HexrdConfig().unagg_images
             if ims_dict is None:
                 ims_dict = HexrdConfig().imageseries_dict
             for det in HexrdConfig().detector_names:
-                path = f'{str(selected_directory)}/{det}.h5'
+                path = f'{selected_directory}/{det}.h5'
                 kwargs = {'path': 'imageseries'}
                 HexrdConfig().save_imageseries(
                     ims_dict.get(det), det, path, 'hdf5', **kwargs)
@@ -613,9 +612,9 @@ class FitGrainsResultsDialog(QObject):
     def on_export_workflow_selected(self):
         idx_cfg = HexrdConfig().indexing_config
         omaps = idx_cfg['find_orientations']['orientation_maps']
-        active = omaps.get("_active_hkl_strings", np.array([])).tolist()
-        current = self.material.planeData.getHKLs().tolist()
-        missing = [(' ').join(map(str, a)) for a in active if a not in current]
+        active = omaps.get("_active_hkl_strings", [])
+        current = self.material.planeData.getHKLs(asStr=True)
+        missing = [a for a in active if a not in current]
 
         if missing:
             msg = (
