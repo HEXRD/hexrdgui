@@ -893,7 +893,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         data = []
         for det in self.detector_names:
-            data.append({'file': f'{det}.h5', 'args': {}, 'panel': det})
+            data.append({
+                'file': f'{det}.h5',
+                'args': {'path': 'imageseries'},
+                'panel': det
+            })
 
         image_series = {
             'format': 'hdf5',
@@ -905,7 +909,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             range(len(self.active_material.planeData.getHKLs())))
         cfg['material'] = material
         cfg['instrument'] = 'instrument.yml'
-        cfg['image-series'] = image_series
+        cfg['image_series'] = image_series
+        cfg['working_dir'] = str(Path(output_file).parent)
 
         with open(output_file, 'w') as f:
             yaml.dump(cfg, f)
