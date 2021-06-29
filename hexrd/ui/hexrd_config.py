@@ -2050,7 +2050,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def unagg_images(self):
-        return self.unaggregated_images
+        img_dict = self.unaggregated_images
+        if img_dict is None:
+            img_dict = self.imageseries_dict
+        return img_dict
+
+    @property
+    def agg_images(self):
+        return self.unaggregated_images is not None
 
     @property
     def is_aggregated(self):
@@ -2058,10 +2065,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.unagg_images is not None
 
     def reset_unagg_imgs(self, new_imgs=False):
-        if self.unagg_images is not None:
-            if not new_imgs:
-                HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
-            self.unaggregated_images = None
+        if not new_imgs:
+            HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
+        self.unaggregated_images = None
 
     def set_unagg_images(self):
         self.unaggregated_images = copy.copy(self.imageseries_dict)

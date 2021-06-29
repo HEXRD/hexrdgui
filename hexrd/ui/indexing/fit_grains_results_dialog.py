@@ -601,8 +601,6 @@ class FitGrainsResultsDialog(QObject):
             HexrdConfig().save_instrument_config(
                 f'{selected_directory}/instrument.yml')
             ims_dict = HexrdConfig().unagg_images
-            if ims_dict is None:
-                ims_dict = HexrdConfig().imageseries_dict
             for det in HexrdConfig().detector_names:
                 path = f'{selected_directory}/{det}.h5'
                 kwargs = {'path': 'imageseries'}

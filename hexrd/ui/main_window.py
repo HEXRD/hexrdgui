@@ -973,9 +973,6 @@ class MainWindow(QObject):
             action.setEnabled(False)
 
         image_series_dict = HexrdConfig().unagg_images
-        if image_series_dict is None:
-            image_series_dict = HexrdConfig().imageseries_dict
-
         if not image_series_dict:
             return
 

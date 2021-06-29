@@ -26,7 +26,7 @@ class SaveImagesDialog:
         self.ui.detectors.addItems(HexrdConfig().detector_names)
         self.ui.pwd.setText(self.parent_dir)
         self.ui.pwd.setToolTip(self.parent_dir)
-        if HexrdConfig().unagg_images:
+        if HexrdConfig().agg_images:
             self.ui.ignore_agg.setEnabled(True)
 
     def setup_connections(self):
