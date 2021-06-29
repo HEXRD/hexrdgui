@@ -6,7 +6,9 @@ from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import default_overlay_refinements
-from hexrd.ui.utils import instr_to_internal_dict
+from hexrd.ui.utils import (
+    array_index_in_list, instr_to_internal_dict, unique_array_list
+)
 
 
 class CalibrationRunner:
@@ -198,13 +200,13 @@ class CalibrationRunner:
 
         # Dump out the instrument as well
         instr = create_hedm_instrument()
-        print(f'Writing out instrument to instrument.pkl')
+        print('Writing out instrument to instrument.pkl')
         with open('instrument.pkl', 'wb') as wf:
             pickle.dump(instr, wf)
 
         # Dump out refinement flags
         flags = HexrdConfig().get_statuses_instrument_format()
-        print(f'Writing out refinement flags to refinement_flags.json')
+        print('Writing out refinement flags to refinement_flags.json')
         with open('refinement_flags.json', 'w') as wf:
             json.dump(flags, wf, cls=NumpyEncoder)
 
@@ -300,19 +302,77 @@ class CalibrationRunner:
     def reset_overlay_data_index_map(self):
         self.overlay_data_index = -1
 
-        if self.active_overlay_type == OverlayType.powder:
-            data_key = 'rings'
-        elif self.active_overlay_type == OverlayType.laue:
-            data_key = 'spots'
-        else:
+        data_key_map = {
+            OverlayType.powder: 'rings',
+            OverlayType.laue: 'spots',
+        }
+
+        if self.active_overlay_type not in data_key_map:
             raise Exception(f'{self.active_overlay_type} not implemented')
+
+        data_key = data_key_map[self.active_overlay_type]
+        data = self.active_overlay['data']
 
         data_map = {}
         ind = 0
-        for key, value in self.active_overlay['data'].items():
-            for i in range(len(value[data_key])):
-                data_map[ind] = (key, data_key, i)
-                ind += 1
+        if self.active_overlay_type == OverlayType.powder:
+            # Order by rings, then detector
+            # First, gather all of the hkls
+            # We can't use a set() because we can't use a normal comparison
+            # operator for the numpy arrays.
+            hkl_list = []
+            for value in data.values():
+                hkl_list.extend(value['hkls'])
+            hkl_list = unique_array_list(hkl_list)
+
+            # Sort the hkls list by min two theta
+            min_tth_values = []
+            for hkl in hkl_list:
+                min_value = np.finfo(np.float64).max
+                for key in data.keys():
+                    hkl_index = array_index_in_list(hkl, data[key]['hkls'])
+                    if hkl_index == -1:
+                        continue
+
+                    tth_values = data[key][data_key][hkl_index][:, 1]
+                    min_value = min(min_value, np.nanmin(tth_values))
+
+                min_tth_values.append(min_value)
+
+            # Perform the sorting
+            indices = list(range(len(hkl_list)))
+            indices.sort(key=lambda i: min_tth_values[i])
+            hkl_list = [hkl_list[i] for i in indices]
+
+            # Next, loop over the hkls, then the detectors, and add the items
+            for hkl in hkl_list:
+                # Sort keys by min eta in the overlay
+                keys = []
+                min_eta_values = {}
+                hkl_indices = {}
+                for key in data.keys():
+                    hkl_index = array_index_in_list(hkl, data[key]['hkls'])
+                    if hkl_index == -1:
+                        continue
+
+                    rings = data[key][data_key]
+
+                    keys.append(key)
+                    min_eta_values[key] = np.nanmin(rings[hkl_index][:, 0])
+                    hkl_indices[key] = hkl_index
+
+                keys.sort(key=lambda x: min_eta_values[x])
+
+                for key in keys:
+                    data_map[ind] = (key, data_key, hkl_indices[key])
+                    ind += 1
+
+        elif self.active_overlay_type == OverlayType.laue:
+            # Order by detector, then spots
+            for key, value in data.items():
+                for i in range(len(value[data_key])):
+                    data_map[ind] = (key, data_key, i)
+                    ind += 1
 
         self.overlay_data_index_map = data_map
 
