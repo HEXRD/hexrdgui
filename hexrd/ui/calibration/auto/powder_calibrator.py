@@ -131,7 +131,7 @@ class PowderCalibrator(object):
         return self.instr.extract_line_positions(
                 self.plane_data, self.img_dict,
                 tth_tol=self.tth_tol, eta_tol=self.eta_tol,
-                npdiv=2, collapse_eta=False, collapse_tth=False,
+                npdiv=2, collapse_eta=True, collapse_tth=False,
                 do_interpolation=True)
 
     def _extract_powder_lines(self, fit_tth_tol=None, int_cutoff=1e-4):
@@ -180,12 +180,15 @@ class PowderCalibrator(object):
                     continue
                 else:
                     for angs, intensities in ringset:
-                        tth_centers = np.average(
-                            np.vstack([angs[0][:-1], angs[0][1:]]),
-                            axis=0)
+                        # tth_centers = np.average(
+                        #     np.vstack([angs[0][:-1], angs[0][1:]]),
+                        #     axis=0)
+                        # eta_ref = angs[1]
+                        # int1d = np.sum(np.array(intensities).squeeze(), axis=0)
+                        tth_centers = angs[0]
                         eta_ref = angs[1]
-                        int1d = np.sum(np.array(intensities).squeeze(), axis=0)
-
+                        int1d = intensities[0]
+                        
                         # peak profile fitting
                         if len(dsp0[i_ring]) == 1:
                             p0 = fitpeak.estimate_pk_parms_1d(
