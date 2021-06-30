@@ -1,8 +1,9 @@
 import numpy as np
 
 from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Signal
-from PySide2.QtWidgets import QSizePolicy, QTableWidgetItem
+from PySide2.QtWidgets import QComboBox, QSizePolicy, QTableWidgetItem
 
+from hexrd.constants import chargestate
 from hexrd.material import Material
 
 from hexrd.ui.periodic_table_dialog import PeriodicTableDialog
@@ -12,8 +13,9 @@ from hexrd.ui.ui_loader import UiLoader
 
 COLUMNS = {
     'symbol': 0,
-    'occupancy': 1,
-    'thermal_factor': 2
+    'charge': 1,
+    'occupancy': 2,
+    'thermal_factor': 3
 }
 
 DEFAULT_U = Material.DFLT_U[0]
@@ -40,6 +42,7 @@ class MaterialSiteEditor(QObject):
 
         self._site = site
 
+        self.charge_comboboxes = []
         self.occupancy_spinboxes = []
         self.thermal_factor_spinboxes = []
 
@@ -192,6 +195,22 @@ class MaterialSiteEditor(QObject):
         w = QTableWidgetItem(v)
         return w
 
+    def create_charge_combobox(self, charge, symbol):
+        cb = QComboBox(self.ui.table)
+
+        if charge not in chargestate[symbol]:
+            raise Exception(f'Invalid charge {charge} for {symbol}')
+
+        cb.addItems(chargestate[symbol])
+        cb.setCurrentText(charge)
+        cb.currentIndexChanged.connect(self.update_config)
+
+        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        cb.setSizePolicy(size_policy)
+
+        self.charge_comboboxes.append(cb)
+        return cb
+
     def create_occupancy_spinbox(self, v):
         sb = ScientificDoubleSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
@@ -221,6 +240,7 @@ class MaterialSiteEditor(QObject):
         return sb
 
     def clear_table(self):
+        self.charge_comboboxes.clear()
         self.occupancy_spinboxes.clear()
         self.thermal_factor_spinboxes.clear()
         self.ui.table.clearContents()
@@ -251,6 +271,9 @@ class MaterialSiteEditor(QObject):
             w = self.create_symbol_label(atom['symbol'])
             self.ui.table.setItem(i, COLUMNS['symbol'], w)
 
+            w = self.create_charge_combobox(atom['charge'], atom['symbol'])
+            self.ui.table.setCellWidget(i, COLUMNS['charge'], w)
+
             w = self.create_occupancy_spinbox(atom['occupancy'])
             self.ui.table.setCellWidget(i, COLUMNS['occupancy'], w)
 
@@ -274,6 +297,9 @@ class MaterialSiteEditor(QObject):
     def update_config(self):
         for i, w in enumerate(self.fractional_coords_widgets):
             self.fractional_coords[i] = w.value()
+
+        for atom, combobox in zip(self.atoms, self.charge_comboboxes):
+            atom['charge'] = combobox.currentText()
 
         for atom, spinbox in zip(self.atoms, self.occupancy_spinboxes):
             atom['occupancy'] = spinbox.value()
