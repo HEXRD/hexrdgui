@@ -54,6 +54,11 @@
         </column>
         <column>
          <property name="text">
+          <string>Charge</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
           <string>Occupancy</string>
          </property>
         </column>
