@@ -1,15 +1,16 @@
-import tempfile
-from pathlib import Path
-import tarfile
-import zipfile
+import json
 import logging
-import shutil
-import sys
-import stat
 import os
+from pathlib import Path
 import platform
-import click
+import shutil
+import stat
+import sys
+import tarfile
+import tempfile
+import zipfile
 
+import click
 import coloredlogs
 
 import conda.cli.python_api as Conda
@@ -111,6 +112,19 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         config.channel.insert(0, 'hexrd-channel')
         config.channel_urls.insert(0, hexrd_package_channel)
 
+    # Determine the latest hexrd version in the hexrd_package_channel
+    # (release or pre-release), and force that hexrd version to be used.
+    params = [
+        Conda.Commands.SEARCH,
+        '--channel', hexrd_package_channel,
+        '--json',
+        'hexrd',
+    ]
+    output = Conda.run_command(*params)
+    results = json.loads(output[0])
+    hexrd_version = results['hexrd'][-1]['version']
+    config.variant['hexrd_version'] = hexrd_version
+
     config.CONDA_PY = '38'
     logger.info('Building hexrdgui conda package.')
     CondaBuild.build(recipe_path, config=config)
@@ -146,7 +160,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         '--channel', 'cjh1',
         '--channel', 'anaconda',
         '--channel', 'conda-forge',
-        'hexrd==0.8.8',
+        f'hexrd=={hexrd_version}',
         'hexrdgui'
     ]
     Conda.run_command(*params)
