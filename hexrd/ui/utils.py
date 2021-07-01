@@ -389,3 +389,12 @@ def format_memory_int(x, decimals=2):
             return f'{round(x / divisor, decimals)} {label}'
 
     return f'{x} B'
+
+
+def apply_symmetric_constraint(x):
+    # Copy values from upper triangle to lower triangle.
+    # Only works for square matrices.
+    for i in range(x.shape[0]):
+        for j in range(i):
+            x[i, j] = x[j, i]
+    return x

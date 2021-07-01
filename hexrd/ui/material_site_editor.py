@@ -1,12 +1,15 @@
+import copy
+
 import numpy as np
 
 from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Signal
-from PySide2.QtWidgets import QSizePolicy, QTableWidgetItem
+from PySide2.QtWidgets import QLineEdit, QSizePolicy, QTableWidgetItem
 
 from hexrd.material import Material
 
 from hexrd.ui.periodic_table_dialog import PeriodicTableDialog
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
+from hexrd.ui.thermal_factor_editor import ThermalFactorEditor
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -207,12 +210,13 @@ class MaterialSiteEditor(QObject):
         return sb
 
     def create_thermal_factor_spinbox(self, v):
-        sb = ScientificDoubleSpinBox(self.ui.table)
+        sb = ThermalFactorSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
         sb.setMinimum(THERMAL_FACTOR_MIN)
         sb.setMaximum(THERMAL_FACTOR_MAX)
         sb.setValue(v)
         sb.valueChanged.connect(self.update_config)
+        sb.setToolTip('Double-click to open tensor editor')
 
         size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sb.setSizePolicy(size_policy)
@@ -332,3 +336,63 @@ class MaterialSiteEditor(QObject):
     @property
     def site_settings_widgets(self):
         return self.fractional_coords_widgets
+
+
+class ThermalFactorSpinBox(ScientificDoubleSpinBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.editor = ThermalFactorEditor(0, parent)
+        self.setLineEdit(ThermalFactorLineEdit(self, self))
+
+    def value(self):
+        return self.editor.value
+
+    def setValue(self, v):
+        self.editor.value = v
+        if self.editor.is_tensor:
+            # Force an update
+            super().setValue(super().value())
+            self.valueChanged.emit(super().value())
+            self.setReadOnly(True)
+        else:
+            super().setValue(v)
+            self.valueChanged.emit(v)
+            self.setReadOnly(False)
+
+    def textFromValue(self, value):
+        if not hasattr(self, 'editor') or not self.editor.is_tensor:
+            return super().textFromValue(value)
+
+        return 'Tensor'
+
+    def open_editor(self):
+        if super().value() != 0:
+            # Make sure the value of the scalar is updated
+            self.editor.ui.scalar_value.setValue(super().value())
+
+        original = copy.deepcopy(self.editor.value)
+        if not self.editor.exec_():
+            self.editor.value = original
+            return
+
+        self.setValue(self.editor.value)
+
+
+class ThermalFactorLineEdit(QLineEdit):
+    def __init__(self, spinbox, parent=None):
+        super().__init__(parent)
+
+        self.spinbox = spinbox
+
+    def mousePressEvent(self, event):
+        if self.isReadOnly():
+            self.open_editor()
+            return
+
+        super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        self.open_editor()
+
+    def open_editor(self):
+        self.spinbox.open_editor()
