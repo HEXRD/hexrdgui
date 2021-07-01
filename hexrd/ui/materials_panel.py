@@ -147,7 +147,7 @@ class MaterialsPanel(QObject):
         mat = HexrdConfig().active_material
 
         mat.dmin = _angstroms(self.ui.min_d_spacing.value())
-        self.material_modified()
+        self.active_material_modified()
         HexrdConfig().flag_overlay_updates_for_material(mat.name)
         HexrdConfig().overlay_config_changed.emit()
 
