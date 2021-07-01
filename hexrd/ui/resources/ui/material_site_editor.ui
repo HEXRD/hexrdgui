@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>562</width>
+    <width>752</width>
     <height>502</height>
    </rect>
   </property>
@@ -198,6 +198,13 @@
         </item>
        </widget>
       </item>
+      <item row="2" column="2" colspan="2">
+       <widget class="QPushButton" name="convert_u_to_tensors">
+        <property name="text">
+         <string>Convert to Tensors</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -216,6 +223,7 @@
   <tabstop>coords_y</tabstop>
   <tabstop>coords_z</tabstop>
   <tabstop>thermal_factor_type</tabstop>
+  <tabstop>convert_u_to_tensors</tabstop>
   <tabstop>table</tabstop>
   <tabstop>select_atom_types</tabstop>
   <tabstop>remove_atom_type</tabstop>

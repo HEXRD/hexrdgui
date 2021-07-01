@@ -61,6 +61,7 @@ class MaterialSiteEditor(QObject):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.selection_changed)
         self.ui.remove_atom_type.pressed.connect(self.remove_selected_atom)
+        self.ui.convert_u_to_tensors.pressed.connect(self.convert_u_to_tensors)
 
     def select_atom_types(self):
         dialog = PeriodicTableDialog(self.atom_types, self.ui)
@@ -336,6 +337,16 @@ class MaterialSiteEditor(QObject):
     @property
     def site_settings_widgets(self):
         return self.fractional_coords_widgets
+
+    def convert_u_to_tensors(self):
+        for spinbox in self.thermal_factor_spinboxes:
+            if isinstance(spinbox.value(), np.ndarray):
+                # Already a tensor
+                continue
+
+            tensor = np.zeros(6, dtype=np.float64)
+            tensor[:3] = spinbox.value()
+            spinbox.setValue(tensor)
 
 
 class ThermalFactorSpinBox(ScientificDoubleSpinBox):
