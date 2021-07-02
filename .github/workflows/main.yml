@@ -62,7 +62,7 @@ jobs:
 
     - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
       run: |
-          [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "HEXRD_PACKAGE_CHANNEL=HEXRD" >> $GITHUB_ENV || echo "HEXRD_PACKAGE_CHANNEL=HEXRD/label/hexrd-prerelease" >> $GITHUB_ENV
+          [[ ${{ github.event_name == 'push' }} && ${{ startsWith(github.ref, 'refs/tags/') }} ]] && echo "HEXRD_PACKAGE_CHANNEL=HEXRD" >> $GITHUB_ENV || echo "HEXRD_PACKAGE_CHANNEL=HEXRD/label/hexrd-prerelease" >> $GITHUB_ENV
 
     - name: Create conda environment to build HEXRDGUI
       working-directory: hexrdgui
