@@ -11,7 +11,8 @@ class ProgressDialog:
         self.ui = loader.load_file('progress_dialog.ui', parent)
 
         self.messages_widget = MessagesWidget(self.ui)
-        # Disable the clear button
+        # Disable message widget buttons
+        self.messages_widget.allow_copy = False
         self.messages_widget.allow_clear = False
         self.ui.messages_widget_layout.addWidget(self.messages_widget.ui)
 

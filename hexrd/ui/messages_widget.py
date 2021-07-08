@@ -3,6 +3,7 @@ import sys
 
 from PySide2.QtCore import QObject, Qt, Signal
 from PySide2.QtGui import QColor
+from PySide2.QtWidgets import QApplication
 
 from hexrd.ui.fix_pdb import fix_pdb
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -45,6 +46,7 @@ class MessagesWidget(QObject):
         self.release_output()
 
     def setup_connections(self):
+        self.ui.copy.pressed.connect(self.copy_text)
         self.ui.clear.pressed.connect(self.clear_text)
         self.ui.destroyed.connect(self.release_output)
 
@@ -115,6 +117,18 @@ class MessagesWidget(QObject):
             self.insert_text(text)
 
         self.message_written.emit('stderr', text)
+
+    @property
+    def allow_copy(self):
+        return self.ui.copy.isVisible()
+
+    @allow_copy.setter
+    def allow_copy(self, b):
+        self.ui.copy.setVisible(b)
+
+    def copy_text(self):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.ui.text.toPlainText())
 
     @property
     def allow_clear(self):
