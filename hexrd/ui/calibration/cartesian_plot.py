@@ -12,6 +12,7 @@ from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import update_overlay_data
+from hexrd.ui.utils import format_memory_int
 
 from skimage import transform as tf
 
@@ -92,22 +93,9 @@ class InstrumentViewer:
         mem_extra_buffer = 1e7
         mem_usage += mem_extra_buffer
         if mem_usage > available_mem:
-
-            def format_size(size):
-                sizes = [
-                    ('TB', 1e12),
-                    ('GB', 1e9),
-                    ('MB', 1e6),
-                    ('KB', 1e3),
-                    ('B', 1)
-                ]
-                for s in sizes:
-                    if size > s[1]:
-                        return f'{round(size / s[1], 2)} {s[0]}'
-
             msg = 'Not enough memory for Cartesian plot\n'
-            msg += f'Memory available: {format_size(available_mem)}\n'
-            msg += f'Memory required: {format_size(mem_usage)}'
+            msg += f'Memory available: {format_memory_int(available_mem)}\n'
+            msg += f'Memory required: {format_memory_int(mem_usage)}'
             raise Exception(msg)
 
     def make_dpanel(self):

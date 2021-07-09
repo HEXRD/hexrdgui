@@ -1,9 +1,10 @@
 import numpy as np
 
-from PySide2.QtCore import QObject, QThreadPool, Signal
+from PySide2.QtCore import QObject, QThreadPool, Qt, Signal
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
+from hexrd.cli.find_orientations import write_scored_orientations
 from hexrd.cli.fit_grains import write_results as write_fit_grains_results
 from hexrd.findorientations import (
     create_clustering_parameters, filter_maps_if_requested,
@@ -22,10 +23,13 @@ from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.indexing.utils import generate_grains_table
 from hexrd.ui.progress_dialog import ProgressDialog
+from hexrd.ui.utils import format_big_int
 
 
 class Runner(QObject):
+
     progress_text = Signal(str)
+    accept_progress_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -34,12 +38,22 @@ class Runner(QObject):
         self.thread_pool = QThreadPool(self.parent)
         self.progress_dialog = ProgressDialog(self.parent)
 
+        self.setup_connections()
+
+    def setup_connections(self):
         self.progress_text.connect(self.progress_dialog.setLabelText)
+        self.accept_progress_signal.connect(self.progress_dialog.accept)
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
 
+    def accept_progress(self):
+        self.accept_progress_signal.emit()
+
     def on_async_error(self, t):
+        # In case the progress dialog is open...
+        self.accept_progress()
+
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
@@ -96,7 +110,8 @@ class IndexingRunner(Runner):
             self.thread_pool.start(worker)
 
             worker.signals.result.connect(self.ome_maps_loaded)
-            worker.signals.finished.connect(self.progress_dialog.accept)
+            worker.signals.error.connect(self.on_async_error)
+            worker.signals.finished.connect(self.accept_progress)
             self.progress_dialog.exec_()
 
     def run_eta_ome_maps(self, config):
@@ -129,17 +144,49 @@ class IndexingRunner(Runner):
         self.progress_dialog.setWindowTitle('Find Orientations')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
-        worker = AsyncWorker(self.run_indexer, config)
-        self.thread_pool.start(worker)
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        if find_orientations['use_quaternion_grid']:
+            # Load qfib from a numpy file
+            self.qfib = np.load(find_orientations['use_quaternion_grid'])
+            self.orientation_fibers_generated()
+        else:
+            worker = AsyncWorker(self.generate_orientation_fibers, config)
+            self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.start_fit_grains_runner)
-        worker.signals.finished.connect(self.progress_dialog.accept)
+            worker.signals.result.connect(self.orientation_fibers_generated)
+            worker.signals.error.connect(self.on_async_error)
+
         self.progress_dialog.exec_()
 
-    def run_indexer(self, config):
+    def generate_orientation_fibers(self, config):
         # Generate the orientation fibers
         self.update_progress_text('Generating orientation fibers')
         self.qfib = generate_orientation_fibers(config, self.ome_maps)
+
+    def orientation_fibers_generated(self):
+        # Perform some validation
+        qfib_warning_threshold = 5e7
+        if self.qfib.shape[1] > qfib_warning_threshold:
+            formatted = format_big_int(self.qfib.shape[1])
+            msg = (f'Over {formatted} test orientations were '
+                   'generated. This may use up too much memory.\n\n'
+                   'Proceed anyways?')
+
+            response = QMessageBox.question(self.parent, 'WARNING', msg)
+            if response == QMessageBox.No:
+                # Go back to the eta omega maps viewer
+                self.accept_progress()
+                self.view_ome_maps()
+                return
+
+        worker = AsyncWorker(self.run_indexer)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.indexer_finished)
+        worker.signals.error.connect(self.on_async_error)
+
+    def run_indexer(self):
+        config = create_indexing_config()
 
         # Find orientations
         self.update_progress_text('Running indexer (paintGrid)')
@@ -155,23 +202,84 @@ class IndexingRunner(Runner):
             doMultiProc=ncpus > 1,
             nCPUs=ncpus)
         print('paintGrid complete')
-        self.run_clustering()
 
-    def run_clustering(self):
+        orientations_cfg = HexrdConfig().indexing_config['find_orientations']
+        if orientations_cfg.get('_write_scored_orientations'):
+            # Write out the scored orientations
+            results = {}
+            results['scored_orientations'] = {
+                'test_quaternions': self.qfib,
+                'score': self.completeness
+            }
+            print(f'Writing scored orientations in {config.working_dir} ...')
+            write_scored_orientations(results, config)
+
+    def indexer_finished(self):
+        # Compute number of orientations run_cluster() will use
+        # to make sure there aren't too many
         config = create_indexing_config()
-        min_samples, mean_rpg = create_clustering_parameters(config,
-                                                             self.ome_maps)
+        min_compl = config.find_orientations.clustering.completeness
+        num_orientations = (np.array(self.completeness) > min_compl).sum()
 
+        num_orientations_warning_threshold = 1e6
+        if num_orientations > num_orientations_warning_threshold:
+            formatted = format_big_int(num_orientations)
+            msg = (f'Over {formatted} orientations are staged for '
+                   'clustering. This may use up too much memory.\n\n'
+                   'Proceed anyways?')
+
+            response = QMessageBox.question(self.parent, 'WARNING', msg)
+            if response == QMessageBox.No:
+                # Go back to the eta omega maps viewer
+                self.accept_progress()
+                self.view_ome_maps()
+                return
+
+        worker = AsyncWorker(self.run_cluster_functions)
+        self.thread_pool.start(worker)
+
+        worker.signals.result.connect(self.start_fit_grains_runner,
+                                      Qt.QueuedConnection)
+        worker.signals.finished.connect(self.accept_progress)
+        worker.signals.error.connect(self.on_async_error)
+
+    @property
+    def clustering_needs_min_samples(self):
+        # Determine whether we need the min_samples for clustering
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        return all((
+            find_orientations['use_quaternion_grid'] is None,
+            find_orientations['clustering']['algorithm'] != 'fclusterdata',
+        ))
+
+    def run_cluster_functions(self):
+        if self.clustering_needs_min_samples:
+            self.create_clustering_parameters()
+        else:
+            self.min_samples = 1
+
+        self.run_cluster()
+
+    def create_clustering_parameters(self):
+        print('Creating cluster parameters...')
+        self.update_progress_text('Creating cluster parameters')
+        config = create_indexing_config()
+        self.min_samples, mean_rpg = create_clustering_parameters(
+            config, self.ome_maps)
+
+    def run_cluster(self):
+        print('Running cluster...')
+        self.update_progress_text('Running cluster')
+        config = create_indexing_config()
         kwargs = {
             'compl': self.completeness,
             'qfib': self.qfib,
             'qsym': config.material.plane_data.getQSym(),
             'cfg': config,
-            'min_samples': min_samples,
+            'min_samples': self.min_samples,
             'compl_thresh': config.find_orientations.clustering.completeness,
             'radius': config.find_orientations.clustering.radius
         }
-        self.update_progress_text('Running clustering')
         self.qbar, cl = run_cluster(**kwargs)
 
         print('Clustering complete...')
@@ -274,7 +382,7 @@ class FitGrainsRunner(Runner):
 
         worker.signals.result.connect(self.view_fit_grains_results)
         worker.signals.error.connect(self.on_async_error)
-        worker.signals.finished.connect(self.progress_dialog.accept)
+        worker.signals.finished.connect(self.accept_progress)
         self.progress_dialog.exec_()
 
     def run_fit_grains(self):

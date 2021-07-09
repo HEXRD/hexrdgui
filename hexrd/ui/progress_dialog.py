@@ -63,7 +63,7 @@ class ProgressDialog:
     def accept(self):
         self.ui.accept()
 
-    def exec_(self):
+    def reset_messages(self):
         self.clear_messages()
         # Hide the messages widget until a message is received
         self.messages_widget.ui.hide()
@@ -71,7 +71,12 @@ class ProgressDialog:
         # Shrink the dialog to the size of the contents
         self.shrink_later()
 
+    def exec_(self):
+        self.reset_messages()
         self.ui.exec_()
+
+    def exec_later(self):
+        QTimer.singleShot(0, lambda: self.exec_())
 
 
 class BlockEscapeKeyFilter(QObject):

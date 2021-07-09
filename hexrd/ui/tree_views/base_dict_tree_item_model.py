@@ -69,21 +69,16 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
     def rebuild_tree(self):
         # Rebuild the tree from scratch
         self.clear()
-        for key in self.config:
-            data = [key, None]
-            tree_item = self.add_tree_item(data, self.root_item)
-            self.recursive_add_tree_items(self.config[key], tree_item)
+        self.recursive_add_tree_items(self.config, self.root_item)
 
     def path_to_item(self, tree_item):
         path = []
         cur_tree_item = tree_item
-        while True:
+        while cur_tree_item is not self.root_item:
             text = cur_tree_item.data(KEY_COL)
             text = int(text) if is_int(text) else text
             path.insert(0, text)
             cur_tree_item = cur_tree_item.parent_item
-            if cur_tree_item is self.root_item:
-                break
 
         return path
 
