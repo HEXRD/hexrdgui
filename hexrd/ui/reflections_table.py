@@ -6,17 +6,20 @@ import numpy as np
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
 from PySide2.QtWidgets import QTableWidgetItem
 
+from hexrd.crystallography import hklToStr
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import exclusions_off
 
 
 class COLUMNS:
-    HKL = 0
-    D_SPACING = 1
-    TTH = 2
-    SF = 3
-    MULTIPLICITY = 4
+    ID = 0
+    HKL = 1
+    D_SPACING = 2
+    TTH = 3
+    SF = 4
+    MULTIPLICITY = 5
 
 
 class ReflectionsTable:
@@ -141,6 +144,16 @@ class ReflectionsTable:
             sf = plane_data.structFact
             multiplicity = plane_data.getMultiplicity()
 
+        # Grab the hkl ids
+        hkl_ids = [-1] * len(hkls)
+        for hkl_data in plane_data.hklDataList:
+            try:
+                idx = hkls.index(hklToStr(hkl_data['hkl']))
+            except ValueError:
+                continue
+            else:
+                hkl_ids[idx] = hkl_data['hklID']
+
         # Since structure factors use arbitrary scaling, re-scale them
         # to a range that's easier on the eyes.
         rescale_structure_factors(sf)
@@ -155,6 +168,9 @@ class ReflectionsTable:
         # After sorting is enabled again, Qt sorts the table.
         with sorting_disabled(table):
             for i, hkl in enumerate(hkls):
+                table_item = IntTableItem(hkl_ids[i])
+                table.setItem(i, COLUMNS.ID, table_item)
+
                 table_item = HklTableItem(hkl)
                 table.setItem(i, COLUMNS.HKL, table_item)
 
@@ -169,6 +185,8 @@ class ReflectionsTable:
 
                 table_item = IntTableItem(multiplicity[i])
                 table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
+
+        table.resizeColumnsToContents()
 
         self.update_selected_rows()
         self.update_material_name()
