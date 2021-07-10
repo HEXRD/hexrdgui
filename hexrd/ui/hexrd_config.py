@@ -909,9 +909,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'data': data
         }
 
-        omaps = cfg['find_orientations']['orientation_maps']
-        omaps['active_hkls'] = list(
-            range(len(self.active_material.planeData.getHKLs())))
+        omaps = self.indexing_config['find_orientations']['orientation_maps']
+        active_hkls = omaps.get('_active_hkl_strings', None)
+        if active_hkls is None:
+            cfg['find_orientations']['orientation_maps']['active_hkls'] = []
+        else:
+            curr_hkls = selected_material.planeData.getHKLs(asStr=True)
+            hkls = [curr_hkls.index(x) for x in active_hkls if x in curr_hkls]
+            cfg['find_orientations']['orientation_maps']['active_hkls'] = hkls
+            cfg['find_orientations']['orientation_maps']['file'] = None
+
         cfg['material'] = material
         cfg['instrument'] = 'instrument.yml'
         cfg['image_series'] = image_series

@@ -98,18 +98,19 @@ class IndexingRunner(Runner):
         if dialog is None:
             return
 
+        indexing_config = HexrdConfig().indexing_config
+        omaps = indexing_config['find_orientations']['orientation_maps']
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
             self.ome_maps_loaded()
+            omaps['_active_hkl_strings'] = None
         else:
             # Create a full indexing config
             config = create_indexing_config()
             # Save the hkls strings for future comparison
-            indexing_config = HexrdConfig().indexing_config
             selected_material = indexing_config.get('_selected_material')
             material = HexrdConfig().material(selected_material)
-            omaps = indexing_config['find_orientations']['orientation_maps']
             omaps['_active_hkl_strings'] = material.planeData.getHKLs(asStr=True)
 
             # Setup to generate maps in background
