@@ -156,6 +156,13 @@ class IndexingRunner(Runner):
 
         # Create a full indexing config
         config = create_indexing_config()
+        # Save the hkls seeds for future comparison
+        indexing_config = HexrdConfig().indexing_config
+        omaps = indexing_config['find_orientations']['orientation_maps']
+        seed_search = indexing_config['find_orientations']['seed_search']
+        active = omaps['_active_hkl_strings']
+        seeds = seed_search['hkl_seeds']
+        seed_search['_hkl_seed_strings'] = [active[idx] for idx in seeds]
 
         # Hexrd normally applies filtering immediately after eta omega
         # maps are loaded. We will perform the user-selected filtering now.
