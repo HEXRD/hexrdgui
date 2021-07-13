@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>410</width>
-    <height>140</height>
+    <width>489</width>
+    <height>160</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -99,16 +99,6 @@
     </layout>
    </item>
    <item>
-    <widget class="QCheckBox" name="subtract_minimum">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Subtract the minimum value of all the data from each of the detectors.&lt;/p&gt;&lt;p&gt;This can be used to get rid of negative values, for instance.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Subtract minimum</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <spacer name="horizontalSpacer_2">
@@ -141,7 +131,6 @@
   <tabstop>update_all</tabstop>
   <tabstop>update_each</tabstop>
   <tabstop>transform_all_menu</tabstop>
-  <tabstop>subtract_minimum</tabstop>
  </tabstops>
  <resources/>
  <connections>
