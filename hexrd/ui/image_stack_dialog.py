@@ -146,6 +146,9 @@ class ImageStackDialog(QObject):
         self.state[det]['search'] = self.ui.search_text.text()
         if not (search := self.ui.search_text.text()):
             search = '*'
+        if self.detector in search:
+            pattern = search.split(self.detector)
+            search = f'{pattern[0]}{det}{pattern[1]}'
         if directory := self.state[det]['directory']:
             if files := list(Path(directory).glob(search)):
                 files = [f for f in files if f.is_file()]
@@ -272,17 +275,17 @@ class ImageStackDialog(QObject):
 
     def search_directories(self):
         pattern = self.ui.detector_search.text()
-        for det in self.detectors:
-            p = f'{pattern}/{det}' if Path(pattern).is_dir() else f'{pattern}_{det}'
-            if Path(p).exists():
-                p = f'{pattern}/{det}'
+        if Path(pattern).is_dir():
+            p = pattern
+            for det in self.detectors:
+                if Path(f'{pattern}/{det}').exists():
+                    p = f'{pattern}/{det}'
                 self.state[det]['directory'] = p
                 if det == self.ui.detectors.currentText():
                     self.ui.current_directory.setText(p)
-            else:
-                msg = (f'Could not find the directory for {det}:\n{p}')
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                break
+        else:
+            msg = (f'Could not find directory:\n{p}')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
 
     def get_files(self):
         imgs = []
