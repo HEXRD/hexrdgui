@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -121,6 +121,7 @@
      </property>
      <addaction name="action_apply_pixel_solid_angle_correction"/>
      <addaction name="action_apply_lorentz_polarization_correction"/>
+     <addaction name="action_subtract_minimum"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
     <addaction name="action_edit_euler_angle_convention"/>
@@ -204,7 +205,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>574</height>
          </rect>
         </property>
         <attribute name="label">
@@ -217,7 +218,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>574</height>
          </rect>
         </property>
         <attribute name="label">
@@ -230,7 +231,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>574</height>
          </rect>
         </property>
         <attribute name="label">
@@ -592,6 +593,14 @@
    </property>
    <property name="text">
     <string>Apply Lorentz Polarization Correction</string>
+   </property>
+  </action>
+  <action name="action_subtract_minimum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Subtract Minimum</string>
    </property>
   </action>
  </widget>

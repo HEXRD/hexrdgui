@@ -72,9 +72,5 @@ class TransformDialog:
             'agg': state.get('agg', 0),
         }
 
-        if self.ui.subtract_minimum.isChecked():
-            new_state['zero-min'] = None
-            state['zero-min'] = None
-
         ilm.set_state(new_state)
         ilm.begin_processing(postprocess=True)

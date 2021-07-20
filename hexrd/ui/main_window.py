@@ -132,6 +132,8 @@ class MainWindow(QObject):
             HexrdConfig().apply_pixel_solid_angle_correction)
         self.ui.action_apply_lorentz_polarization_correction.setChecked(
             HexrdConfig().apply_lorentz_polarization_correction)
+        self.ui.action_subtract_minimum.setChecked(
+            HexrdConfig().intensity_subtract_minimum)
 
         self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
@@ -261,6 +263,8 @@ class MainWindow(QObject):
             HexrdConfig().set_apply_pixel_solid_angle_correction)
         self.ui.action_apply_lorentz_polarization_correction.toggled.connect(
             self.apply_lorentz_polarization_correction_toggled)
+        self.ui.action_subtract_minimum.toggled.connect(
+            HexrdConfig().set_intensity_subtract_minimum)
 
         self.import_data_widget.enforce_raw_mode.connect(
             self.enforce_view_mode)
