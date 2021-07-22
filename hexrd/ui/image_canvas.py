@@ -73,7 +73,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_auto_picked_data.connect(
             self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
-        HexrdConfig().polar_masks_changed.connect(self.update_polar)
+        HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -647,14 +647,15 @@ class ImageCanvas(FigureCanvas):
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def update_polar(self):
-        if not self.iviewer:
+    def polar_masks_changed(self):
+        if not self.iviewer or self.mode != ViewType.polar:
             return
 
-        self.iviewer.update_image()
+        self.iviewer.reapply_masks()
         self.axes_images[0].set_data(self.iviewer.img)
         self.update_azimuthal_integral_plot()
         self.update_overlays()
+        self.draw_idle()
 
     def async_worker_error(self, error):
         QMessageBox.critical(self, 'HEXRD', str(error[1]))
