@@ -194,7 +194,10 @@ class ColorMapEditor:
 
         if self.ui.log_scale.isChecked():
             # The min cannot be 0 here, or this will raise an exception
-            min = 1.e-8 if min < 1.e-8 else min
+            # For some reason, if it is less than 1.e-7, for some datasets,
+            # matplotlib will round it to 0, and then raise an exception.
+            # Thus, keep it at 1.e-7 for now.
+            min = 1.e-7 if min < 1.e-7 else min
             norm = matplotlib.colors.LogNorm(vmin=min, vmax=max)
         else:
             norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
