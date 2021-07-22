@@ -70,6 +70,10 @@ class MaskRegionsDialog(QObject):
         self.ui.undo.clicked.connect(self.undo_selection)
         HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
 
+    def update_undo_enable_state(self):
+        enabled = bool(self.added_patches)
+        self.ui.undo.setEnabled(enabled)
+
     def select_shape(self):
         self.selection = self.ui.shape.currentText()
         self.patch = None
@@ -144,6 +148,8 @@ class MaskRegionsDialog(QObject):
                 if a.get_title() == det:
                     a.patches.remove(last_patch)
         self.canvas.draw_idle()
+
+        self.update_undo_enable_state()
 
     def axes_entered(self, event):
         self.axes = event.inaxes
@@ -224,6 +230,8 @@ class MaskRegionsDialog(QObject):
         self.end.clear()
         self.det = None
         self.canvas.draw_idle()
+
+        self.update_undo_enable_state()
 
     def apply_masks(self):
         self.disconnect()
