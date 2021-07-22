@@ -869,7 +869,16 @@ class ImageCanvas(FigureCanvas):
         else:
             # We have to run it ourselves...
             # It should not have already been applied to the image
-            background = utils.run_snip1d(self.iviewer.img)
+            # Apply the same pre-processing to the raw data...
+            pv = self.iviewer.pv
+            img = pv.raw_img.data
+            img = pv.apply_rescale(img)
+
+            no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
+            if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
+                img[pv.raw_img.mask] = np.nan
+
+            background = utils.run_snip1d(img)
 
         im = ax.imshow(background)
 
