@@ -217,17 +217,22 @@ class MaskRegionsDialog(QObject):
             HexrdConfig().polar_masks_changed.emit()
 
     def button_released(self, event):
-        if not self.axes or not self.press:
+        if not self.press:
             return
 
-        self.end = [event.xdata, event.ydata]
-        self.save_line_data()
+        if self.axes:
+            # Save it
+            self.end = [event.xdata, event.ydata]
+            self.save_line_data()
+            self.end.clear()
 
-        # Turn off animation so the patch will stay
-        self.patch.set_animated(False)
+            # Turn off animation so the patch will stay
+            self.patch.set_animated(False)
+        else:
+            det = self.added_patches.pop()
+            self.patches[det].pop()
 
         self.press.clear()
-        self.end.clear()
         self.det = None
         self.canvas.draw_idle()
 
