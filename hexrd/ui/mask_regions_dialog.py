@@ -16,12 +16,13 @@ class MaskRegionsDialog(QObject):
     new_mask_added = Signal(str)
 
     def __init__(self, parent=None):
-        super(MaskRegionsDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.parent = parent
         self.images = []
         self.canvas_ids = []
         self.axes = None
+        self.bg_cache = None
         self.press = []
         self.added_patches = []
         self.patches = {}
@@ -69,15 +70,23 @@ class MaskRegionsDialog(QObject):
         self.ui.undo.clicked.connect(self.undo_selection)
         HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
 
+    def update_undo_enable_state(self):
+        enabled = bool(self.added_patches)
+        self.ui.undo.setEnabled(enabled)
+
     def select_shape(self):
         self.selection = self.ui.shape.currentText()
         self.patch = None
 
     def create_patch(self):
+        kwargs = {
+            'fill': False,
+            'animated': True,
+        }
         if self.selection == 'Rectangle':
-            self.patch = patches.Rectangle((0, 0), 0, 0, fill=False)
+            self.patch = patches.Rectangle((0, 0), 0, 0, **kwargs)
         elif self.selection == 'Ellipse':
-            self.patch = patches.Ellipse((0, 0), 0, 0, fill=False)
+            self.patch = patches.Ellipse((0, 0), 0, 0, **kwargs)
         self.axes.add_patch(self.patch)
         self.patches.setdefault(self.det, []).append(self.patch)
         self.added_patches.append(self.det)
@@ -140,6 +149,8 @@ class MaskRegionsDialog(QObject):
                     a.patches.remove(last_patch)
         self.canvas.draw_idle()
 
+        self.update_undo_enable_state()
+
     def axes_entered(self, event):
         self.axes = event.inaxes
         self.canvas = event.canvas
@@ -161,14 +172,20 @@ class MaskRegionsDialog(QObject):
         if not self.det:
             self.det = self.image_mode
         self.create_patch()
-        self.canvas.draw_idle()
+
+        # For animating the patch
+        self.bg_cache = self.canvas.copy_from_bbox(self.axes.bbox)
 
     def drag_motion(self, event):
         if not self.axes or not self.press:
             return
 
         self.update_patch(event)
-        self.canvas.draw_idle()
+
+        # Update animation of patch
+        self.canvas.restore_region(self.bg_cache)
+        self.axes.draw_artist(self.patch)
+        self.canvas.blit(self.axes.bbox)
 
     def save_line_data(self):
         data_coords = self.patch.get_patch_transform().transform(
@@ -185,7 +202,6 @@ class MaskRegionsDialog(QObject):
             HexrdConfig().raw_masks_line_data[name] = [data]
             create_raw_mask(name, [data])
             HexrdConfig().visible_masks.append(name)
-            HexrdConfig().raw_masks_changed.emit()
 
         for data_coords in self.polar_masks_line_data:
             name = create_unique_name(
@@ -193,19 +209,34 @@ class MaskRegionsDialog(QObject):
             HexrdConfig().polar_masks_line_data[name] = data_coords
             create_polar_mask([data_coords], name)
             HexrdConfig().visible_masks.append(name)
+
+        if self.raw_masks_line_data:
+            HexrdConfig().raw_masks_changed.emit()
+
+        if self.polar_masks_line_data:
             HexrdConfig().polar_masks_changed.emit()
 
     def button_released(self, event):
-        if not self.axes or not self.press:
+        if not self.press:
             return
 
-        self.end = [event.xdata, event.ydata]
-        self.save_line_data()
+        if self.axes:
+            # Save it
+            self.end = [event.xdata, event.ydata]
+            self.save_line_data()
+            self.end.clear()
+
+            # Turn off animation so the patch will stay
+            self.patch.set_animated(False)
+        else:
+            det = self.added_patches.pop()
+            self.patches[det].pop()
 
         self.press.clear()
-        self.end.clear()
         self.det = None
         self.canvas.draw_idle()
+
+        self.update_undo_enable_state()
 
     def apply_masks(self):
         self.disconnect()

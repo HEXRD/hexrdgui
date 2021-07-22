@@ -73,7 +73,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_auto_picked_data.connect(
             self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
-        HexrdConfig().polar_masks_changed.connect(self.update_polar)
+        HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -647,14 +647,15 @@ class ImageCanvas(FigureCanvas):
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def update_polar(self):
-        if not self.iviewer:
+    def polar_masks_changed(self):
+        if not self.iviewer or self.mode != ViewType.polar:
             return
 
-        self.iviewer.update_image()
+        self.iviewer.reapply_masks()
         self.axes_images[0].set_data(self.iviewer.img)
         self.update_azimuthal_integral_plot()
         self.update_overlays()
+        self.draw_idle()
 
     def async_worker_error(self, error):
         QMessageBox.critical(self, 'HEXRD', str(error[1]))
@@ -868,7 +869,16 @@ class ImageCanvas(FigureCanvas):
         else:
             # We have to run it ourselves...
             # It should not have already been applied to the image
-            background = utils.run_snip1d(self.iviewer.img)
+            # Apply the same pre-processing to the raw data...
+            pv = self.iviewer.pv
+            img = pv.raw_img.data
+            img = pv.apply_rescale(img)
+
+            no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
+            if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
+                img[pv.raw_img.mask] = np.nan
+
+            background = utils.run_snip1d(img)
 
         im = ax.imshow(background)
 

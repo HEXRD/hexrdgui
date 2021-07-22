@@ -8,7 +8,7 @@ from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import run_snip1d
+from hexrd.ui.utils import SnipAlgorithmType, run_snip1d
 
 tvec_c = ct.zeros_3
 
@@ -36,6 +36,10 @@ class PolarView:
         self.images_dict = HexrdConfig().images_dict
 
         self.warp_dict = {}
+
+        self.raw_img = None
+        self.snipped_img = None
+        self.processed_img = None
 
         self.snip1d_background = None
 
@@ -245,38 +249,68 @@ class PolarView:
         # !!! assignment to img fills NaNs with zeros
         # !!! NOTE: cannot set `data` attribute on masked_array,
         #           but can manipulate mask
-        maimg = np.ma.sum(np.ma.stack(self.warp_dict.values()), axis=0)
-        img = maimg.data
+        self.raw_img = np.ma.sum(np.ma.stack(self.warp_dict.values()), axis=0)
+        self.apply_image_processing()
 
+    def apply_image_processing(self):
+        img = self.raw_img.data
+
+        img = self.apply_rescale(img)
+        img = self.apply_snip(img)
+        # cache this step so we can just re-apply masks if needed
+        self.snipped_img = img
+
+        img = self.apply_masks(img)
+
+        self.processed_img = img
+
+    def apply_rescale(self, img):
         # Rescale the data to match the scale of the original dataset
         kwargs = {
             'image': img,
             'in_range': (np.nanmin(img), np.nanmax(img)),
             'out_range': (self.min, self.max),
         }
-        img = rescale_intensity(**kwargs)
+        return rescale_intensity(**kwargs)
 
+    def apply_snip(self, img):
         # do SNIP if requested
-        # !!! Fast snip1d (ndimage) cannot handle nans
-        # from hexrdgui.hexrd.ui.utils:
-        #     Fast_SNIP_1D = 0
-        #     SNIP_1D = 1
-        #     SNIP_2D = 2
+        img = img.copy()
         if HexrdConfig().polar_apply_snip1d:
-            if HexrdConfig().polar_snip1d_algorithm in [1, 2]:
-                img[maimg.mask] = np.nan
+            # !!! Fast snip1d (ndimage) cannot handle nans
+            no_nan_methods = [SnipAlgorithmType.Fast_SNIP_1D]
+
+            if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
+                img[self.raw_img.mask] = np.nan
+
             self.snip1d_background = run_snip1d(img)
             # Perform the background subtraction
             img -= self.snip1d_background
         else:
             self.snip1d_background = None
 
-        # Apply user-specified masks if they are present
-        for mask in HexrdConfig().visible_polar_masks:
-            maimg.mask = np.logical_or(maimg.mask, ~mask)
-        img[maimg.mask] = np.nan
+        return img
 
-        self.img = img  # just a normal ndarry with NaNs
+    def apply_masks(self, img):
+        # Apply user-specified masks if they are present
+        img = img.copy()
+        total_mask = self.raw_img.mask
+        for mask in HexrdConfig().visible_polar_masks:
+            total_mask = np.logical_or(total_mask, ~mask)
+        img[total_mask] = np.nan
+
+        return img
+
+    def reapply_masks(self):
+        # This will only re-run the final step of applying masks...
+        if self.snipped_img is None:
+            return
+
+        self.processed_img = self.apply_masks(self.snipped_img)
+
+    @property
+    def img(self):
+        return self.processed_img
 
     def warp_all_images(self):
         # Create the warped image for each detector

@@ -35,12 +35,18 @@ class InstrumentViewer:
     def angular_grid(self):
         return self.pv.angular_grid
 
+    @property
+    def img(self):
+        return self.pv.img
+
     def update_angular_grid(self):
         self.pv.update_angular_grid()
 
     def update_image(self):
         self.pv.generate_image()
-        self.img = self.pv.img
+
+    def reapply_masks(self):
+        self.pv.reapply_masks()
 
     def draw_polar(self):
         """show polar view of rings"""
@@ -53,7 +59,6 @@ class InstrumentViewer:
         eta_max = HexrdConfig().polar_res_eta_max
 
         self._extent = [tth_min, tth_max, eta_max, eta_min]   # l, r, b, t
-        self.img = self.pv.img
         self.snip1d_background = self.pv.snip1d_background
 
     def update_overlay_data(self):
@@ -61,7 +66,6 @@ class InstrumentViewer:
 
     def update_detector(self, det):
         self.pv.update_detector(det)
-        self.img = self.pv.img
 
     def write_image(self, filename='polar_image.npz'):
         azimuthal_integration = HexrdConfig().last_azimuthal_integral_data
