@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>562</width>
+    <width>752</width>
     <height>502</height>
    </rect>
   </property>
@@ -50,6 +50,11 @@
         <column>
          <property name="text">
           <string>Symbol</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Charge</string>
          </property>
         </column>
         <column>
