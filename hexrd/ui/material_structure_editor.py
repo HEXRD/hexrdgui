@@ -262,8 +262,7 @@ class MaterialStructureEditor(QObject):
                 U_array.append(atom['U'])
 
         mat = self.material
-        mat._set_atomdata(type_array, info_array, U_array)
-        mat.charge = charge_array
+        mat._set_atomdata(type_array, info_array, U_array, charge_array)
 
         # Must force an update of the unit cell and structure factor
         # for the change in the charge array.
