@@ -1,4 +1,5 @@
 import copy
+from enum import Enum
 
 import numpy as np
 
@@ -8,12 +9,18 @@ from hexrd.transforms import xfcapi
 from hexrd.ui.constants import ViewType
 
 
+class LaueRangeShape(str, Enum):
+    rectangle = 'rectangle'
+    ellipse = 'ellipse'
+
+
 class LaueSpotOverlay:
     def __init__(self, plane_data, instr,
                  crystal_params=None, sample_rmat=None,
                  min_energy=5., max_energy=35.,
                  tth_width=None, eta_width=None,
-                 eta_period=np.r_[-180., 180.]):
+                 eta_period=np.r_[-180., 180.],
+                 range_shape=LaueRangeShape.rectangle):
         self.plane_data = plane_data
         self._instrument = instr
         if crystal_params is None:
@@ -41,6 +48,8 @@ class LaueSpotOverlay:
                                     units='degrees') > 1e-4:
             raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = eta_period
+
+        self.range_shape = range_shape
 
     @property
     def plane_data(self):
@@ -156,28 +165,26 @@ class LaueSpotOverlay:
             )
 
             if display_mode == ViewType.polar:
-                range_corners = self.range_corners(angles_corr)
                 # Save the Laue spots as a list instead of a numpy array,
                 # so that we can predictably get the id() of spots inside.
                 # Numpy arrays do fancy optimizations that break this.
                 spots = np.degrees(angles_corr).tolist()
-                point_groups[det_key]['spots'] = spots
-                point_groups[det_key]['ranges'] = np.degrees(range_corners)
+                spots_for_ranges = angles_corr
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
-                # !!! verify this
-                range_corners = self.range_corners(angles)
-                panel = self.instrument.detectors[det_key]
-                data = xy_data
                 if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
-                    data = panel.cartToPixel(data)
+                    xy_data = panel.cartToPixel(xy_data)
                     # Swap x and y, they are flipped
-                    data[:, [0, 1]] = data[:, [1, 0]]
+                    xy_data[:, [0, 1]] = xy_data[:, [1, 0]]
 
-                point_groups[det_key]['spots'] = data
-                point_groups[det_key]['ranges'] = self.range_data(
-                    range_corners, display_mode, panel
-                )
+                spots = xy_data
+                spots_for_ranges = angles
+
+            panel = self.instrument.detectors[det_key]
+            point_groups[det_key]['spots'] = spots
+            point_groups[det_key]['ranges'] = self.range_data(
+                spots_for_ranges, display_mode, panel
+            )
 
         return point_groups
 
@@ -208,12 +215,22 @@ class LaueSpotOverlay:
             return None
         return self.crystal_params[3:6].reshape(3, 1)
 
-    def range_data(self, range_corners, display_mode, panel):
-        # This function is only for raw and cartesian views
-        if not range_corners:
-            return []
+    def range_data(self, spots, display_mode, panel):
+        range_func = {
+            LaueRangeShape.rectangle: self.rectangular_range_data,
+            # LaueRangeShape.ellipse: self.ellipsoidal_range_data,
+        }
 
-        tvec_c = self.tvec_c
+        if self.range_shape not in range_func:
+            raise Exception(f'Unknown range shape: {self.range_shape}')
+
+        return range_func[self.range_shape](spots, display_mode, panel)
+
+    def rectangular_range_data(self, spots, display_mode, panel):
+        range_corners = self.range_corners(spots)
+        if display_mode == ViewType.polar:
+            # All done...
+            return np.degrees(range_corners)
 
         # The range data is curved for raw and cartesian.
         # Get more intermediate points so the data reflects this.
@@ -222,7 +239,7 @@ class LaueSpotOverlay:
             data = []
             for i in range(len(corners) - 1):
                 tmp = np.linspace(corners[i], corners[i + 1])
-                data.extend(panel.angles_to_cart(tmp, tvec_c=tvec_c))
+                data.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
 
             data = np.array(data)
             if display_mode == ViewType.raw:
@@ -232,3 +249,6 @@ class LaueSpotOverlay:
             results.append(data)
 
         return results
+
+    def ellipsoidal_range_data(self, spots, display_mode, panel):
+        pass
