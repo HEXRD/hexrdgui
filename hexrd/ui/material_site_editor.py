@@ -24,6 +24,7 @@ COLUMNS = {
     'thermal_factor': 3
 }
 
+DEFAULT_CHARGE = '0'
 DEFAULT_U = Material.DFLT_U[0]
 
 OCCUPATION_MIN = 0
@@ -148,12 +149,17 @@ class MaterialSiteEditor(QObject):
         # Reset all the occupancies
         atoms = self.atoms
         previous_u_values = {x['symbol']: x['U'] for x in atoms}
+        previous_charges = {x['symbol']: x['charge'] for x in atoms}
         atoms.clear()
 
         for symbol in v:
-            # Use the previous U if available. Otherwise, use the default.
-            U = previous_u_values.get(symbol, DEFAULT_U)
-            atoms.append({'symbol': symbol, 'U': U})
+            # Use previous values if available. Otherwise, use the defaults.
+            atom = {
+                'symbol': symbol,
+                'U': previous_u_values.get(symbol, DEFAULT_U),
+                'charge': previous_charges.get(symbol, DEFAULT_CHARGE),
+            }
+            atoms.append(atom)
 
         self.reset_occupancies()
         self.update_table()
