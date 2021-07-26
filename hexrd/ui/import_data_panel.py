@@ -442,6 +442,7 @@ class ImportDataPanel(QObject):
                 self.edited_images[det]['panel_buffer'])
             files.append([self.edited_images[det]['img']])
 
+        self.detector_defaults['detectors'] = detectors
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         try:
             instr = HEDMInstrument(
@@ -449,6 +450,7 @@ class ImportDataPanel(QObject):
             instr.write_config(temp.name, style='hdf5')
             HexrdConfig().load_instrument_config(temp.name)
         finally:
+            temp.close()
             Path(temp.name).unlink()
 
         self.set_convention()
