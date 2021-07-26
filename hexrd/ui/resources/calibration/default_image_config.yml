@@ -22,3 +22,4 @@ apply_lorentz_polarization_correction: false
 lorentz_polarization:
   f_hor: 1.0
   f_vert: 0.0
+intensity_subtract_minimum: false

@@ -456,6 +456,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 factor = panel.lorentz_polarization_factor(**kwargs)
                 images_dict[name] = img / factor
 
+        if HexrdConfig().intensity_subtract_minimum:
+            minimum = min([np.nanmin(x) for x in images_dict.values()])
+            for name, img in images_dict.items():
+                images_dict[name] = img - minimum
+
         return images_dict
 
     @property
@@ -1431,6 +1436,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.config['image']['apply_lorentz_polarization_correction'] = v
             self.deep_rerender_needed.emit()
 
+    def _intensity_subtract_minimum(self):
+        return self.config['image']['intensity_subtract_minimum']
+
+    def set_intensity_subtract_minimum(self, v):
+        if v != self.intensity_subtract_minimum:
+            self.config['image']['intensity_subtract_minimum'] = v
+            self.deep_rerender_needed.emit()
+
+    intensity_subtract_minimum = property(
+        _intensity_subtract_minimum,
+        set_intensity_subtract_minimum)
+
     @property
     def any_intensity_corrections(self):
         """Are we to perform any intensity corrections on the images?"""
@@ -1439,6 +1456,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         corrections = [
             'apply_pixel_solid_angle_correction',
             'apply_lorentz_polarization_correction',
+            'intensity_subtract_minimum',
         ]
 
         return any(getattr(self, x) for x in corrections)

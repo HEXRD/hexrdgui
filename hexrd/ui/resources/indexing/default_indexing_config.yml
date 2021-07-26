@@ -27,7 +27,7 @@ find_orientations:
   # either search full quaternion grid, or seed search based on sparse
   # orientation maps.  For input search space:
   #
-  # use_quaternion_grid: some/file/name
+  use_quaternion_grid: null
   #
   # otherwise defaults to seeded search:
   seed_search: # this section is ignored if use_quaternion_grid is defined
