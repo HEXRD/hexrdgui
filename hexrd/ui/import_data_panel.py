@@ -10,6 +10,7 @@ from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
 from PySide2.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
+from hexrd.instrument import HEDMInstrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -434,21 +435,22 @@ class ImportDataPanel(QObject):
             del(detectors[det])
 
         for det in self.completed_detectors:
-            transform = detectors[det].setdefault('transform', {})
-            *zx, z = transform['tilt']
-            transform['tilt'] = (
+            *zx, z = detectors[det]['transform']['tilt']
+            detectors[det]['transform']['tilt'] = (
                 [*zx, (z + float(self.edited_images[det]['tilt']))])
-            panel_buffer = detectors[det].setdefault('panel_buffer', [])
-            panel_buffer = self.edited_images[det]['panel_buffer']
+            detectors[det]['panel_buffer'] = (
+                self.edited_images[det]['panel_buffer'])
             files.append([self.edited_images[det]['img']])
 
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
-        data = yaml.dump(
-            self.detector_defaults['default_config'], sort_keys=False)
-        temp.write(data.encode('utf-8'))
-        temp.close()
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
+        try:
+            instr = HEDMInstrument(
+                instrument_config=self.detector_defaults['default_config'])
+            instr.write_config(temp.name, style='hdf5')
+            HexrdConfig().load_instrument_config(temp.name)
+        finally:
+            Path(temp.name).unlink()
 
-        HexrdConfig().load_instrument_config(temp.name)
         self.set_convention()
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (
