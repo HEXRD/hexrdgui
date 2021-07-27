@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>562</width>
+    <width>752</width>
     <height>502</height>
    </rect>
   </property>
@@ -106,8 +106,55 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="thermal_factor_type">
+        <item>
+         <property name="text">
+          <string>U</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>B</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="total_occupancy_label">
+        <property name="text">
+         <string>Total Occupancy:</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="ScientificDoubleSpinBox" name="coords_x">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-10000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="fractional_coordinates_label">
+        <property name="text">
+         <string>Fractional Coords:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="ScientificDoubleSpinBox" name="coords_y">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -132,25 +179,6 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="ScientificDoubleSpinBox" name="coords_y">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-10000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="3">
        <widget class="ScientificDoubleSpinBox" name="coords_z">
         <property name="keyboardTracking">
@@ -170,32 +198,14 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="total_occupancy_label">
-        <property name="text">
-         <string>Total Occupancy:</string>
+      <item row="2" column="2" colspan="2">
+       <widget class="QCheckBox" name="convert_u_to_tensors">
+        <property name="toolTip">
+         <string>When toggled, this will convert all thermal factor values to tensors if checked, or scalars if unchecked.</string>
         </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="fractional_coordinates_label">
         <property name="text">
-         <string>Fractional Coords:</string>
+         <string>Convert U to tensors</string>
         </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QComboBox" name="thermal_factor_type">
-        <item>
-         <property name="text">
-          <string>U</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>B</string>
-         </property>
-        </item>
        </widget>
       </item>
      </layout>
@@ -216,6 +226,7 @@
   <tabstop>coords_y</tabstop>
   <tabstop>coords_z</tabstop>
   <tabstop>thermal_factor_type</tabstop>
+  <tabstop>convert_u_to_tensors</tabstop>
   <tabstop>table</tabstop>
   <tabstop>select_atom_types</tabstop>
   <tabstop>remove_atom_type</tabstop>

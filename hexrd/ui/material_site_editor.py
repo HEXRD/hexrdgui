@@ -1,13 +1,17 @@
+import copy
+
 import numpy as np
 
-from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Signal
-from PySide2.QtWidgets import QSizePolicy, QTableWidgetItem
+from PySide2.QtCore import QItemSelectionModel, QObject, Signal
+from PySide2.QtWidgets import QLineEdit, QSizePolicy, QTableWidgetItem
 
 from hexrd.material import Material
 
 from hexrd.ui.periodic_table_dialog import PeriodicTableDialog
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
+from hexrd.ui.thermal_factor_editor import ThermalFactorEditor
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 COLUMNS = {
@@ -50,14 +54,13 @@ class MaterialSiteEditor(QObject):
     def setup_connections(self):
         self.ui.select_atom_types.pressed.connect(self.select_atom_types)
         self.ui.thermal_factor_type.currentIndexChanged.connect(
-            self.update_thermal_factor_header)
-        self.ui.thermal_factor_type.currentIndexChanged.connect(
-            self.update_gui)
+            self.thermal_factor_type_changed)
         for w in self.site_settings_widgets:
             w.valueChanged.connect(self.update_config)
         self.ui.table.selectionModel().selectionChanged.connect(
             self.selection_changed)
         self.ui.remove_atom_type.pressed.connect(self.remove_selected_atom)
+        self.ui.convert_u_to_tensors.toggled.connect(self.convert_u_to_tensors)
 
     def select_atom_types(self):
         dialog = PeriodicTableDialog(self.atom_types, self.ui)
@@ -207,12 +210,13 @@ class MaterialSiteEditor(QObject):
         return sb
 
     def create_thermal_factor_spinbox(self, v):
-        sb = ScientificDoubleSpinBox(self.ui.table)
+        sb = ThermalFactorSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
         sb.setMinimum(THERMAL_FACTOR_MIN)
         sb.setMaximum(THERMAL_FACTOR_MAX)
         sb.setValue(v)
         sb.valueChanged.connect(self.update_config)
+        sb.setToolTip('Double-click to open tensor editor')
 
         size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sb.setSizePolicy(size_policy)
@@ -226,14 +230,20 @@ class MaterialSiteEditor(QObject):
         self.ui.table.clearContents()
 
     def update_gui(self):
-        widgets = self.site_settings_widgets
-        blockers = [QSignalBlocker(w) for w in widgets]  # noqa: F841
+        with block_signals(*self.site_settings_widgets):
+            for i, w in enumerate(self.fractional_coords_widgets):
+                w.setValue(self.fractional_coords[i])
 
-        for i, w in enumerate(self.fractional_coords_widgets):
-            w.setValue(self.fractional_coords[i])
+            self.update_total_occupancy()
+            self.update_table()
+            self.reset_scalar_tensor_toggle()
 
-        self.update_total_occupancy()
-        self.update_table()
+    def reset_scalar_tensor_toggle(self):
+        any_scalars = any(not isinstance(w.value(), np.ndarray)
+                          for w in self.thermal_factor_spinboxes)
+
+        with block_signals(self.ui.convert_u_to_tensors):
+            self.ui.convert_u_to_tensors.setChecked(not any_scalars)
 
     def update_table(self):
         prev_selected = self.selected_row
@@ -242,30 +252,38 @@ class MaterialSiteEditor(QObject):
             self.ui.table,
             self.ui.table.selectionModel()
         ]
-        blockers = [QSignalBlocker(x) for x in block_list]  # noqa: F841
+        with block_signals(*block_list):
+            atoms = self.site['atoms']
+            self.clear_table()
+            self.ui.table.setRowCount(len(atoms))
+            for i, atom in enumerate(atoms):
+                w = self.create_symbol_label(atom['symbol'])
+                self.ui.table.setItem(i, COLUMNS['symbol'], w)
 
-        atoms = self.site['atoms']
-        self.clear_table()
-        self.ui.table.setRowCount(len(atoms))
-        for i, atom in enumerate(atoms):
-            w = self.create_symbol_label(atom['symbol'])
-            self.ui.table.setItem(i, COLUMNS['symbol'], w)
+                w = self.create_occupancy_spinbox(atom['occupancy'])
+                self.ui.table.setCellWidget(i, COLUMNS['occupancy'], w)
 
-            w = self.create_occupancy_spinbox(atom['occupancy'])
-            self.ui.table.setCellWidget(i, COLUMNS['occupancy'], w)
+                v = self.thermal_factor(atom)
+                w = self.create_thermal_factor_spinbox(v)
+                self.ui.table.setCellWidget(i, COLUMNS['thermal_factor'], w)
 
-            w = self.create_thermal_factor_spinbox(self.thermal_factor(atom))
-            self.ui.table.setCellWidget(i, COLUMNS['thermal_factor'], w)
+            self.update_occupancy_validity()
 
-        self.update_occupancy_validity()
+            if prev_selected is not None:
+                select_row = (prev_selected if prev_selected < self.num_rows
+                              else self.num_rows - 1)
+                self.select_row(select_row)
 
-        if prev_selected is not None:
-            select_row = (prev_selected if prev_selected < self.num_rows
-                          else self.num_rows - 1)
-            self.select_row(select_row)
+            # Just in case the selection actually changed...
+            self.selection_changed()
 
-        # Just in case the selection actually changed...
-        self.selection_changed()
+    def thermal_factor_type_changed(self):
+        self.update_thermal_factor_header()
+        self.update_table()
+
+        # Update the text for the tensor toggle as well
+        text = f'Convert {self.thermal_factor_type} to tensors'
+        self.ui.convert_u_to_tensors.setText(text)
 
     def update_thermal_factor_header(self):
         w = self.ui.table.horizontalHeaderItem(COLUMNS['thermal_factor'])
@@ -332,3 +350,95 @@ class MaterialSiteEditor(QObject):
     @property
     def site_settings_widgets(self):
         return self.fractional_coords_widgets
+
+    def convert_u_to_tensors(self, b):
+
+        def scalar_to_tensor(spinbox):
+            if isinstance(spinbox.value(), np.ndarray):
+                # Already a tensor
+                return
+
+            tensor = np.zeros(6, dtype=np.float64)
+            tensor[:3] = spinbox.value()
+            spinbox.setValue(tensor)
+
+        def tensor_to_scalar(spinbox):
+            value = spinbox.value()
+            if not isinstance(value, np.ndarray):
+                # Already a scalar
+                return
+
+            # Use the previous spinbox value if available
+            scalar = spinbox.editor.ui.scalar_value.value()
+            if (np.isclose(scalar, 0) and np.allclose(value[:3], value[0]) and
+                    np.allclose(value[3:], 0)):
+                # If the previous value is zero, and the tensor is diagonal,
+                # use the diagonal value
+                scalar = value[0]
+
+            spinbox.setValue(scalar)
+
+        f = scalar_to_tensor if b else tensor_to_scalar
+
+        for spinbox in self.thermal_factor_spinboxes:
+            f(spinbox)
+
+
+class ThermalFactorSpinBox(ScientificDoubleSpinBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.editor = ThermalFactorEditor(0, parent)
+        self.setLineEdit(ThermalFactorLineEdit(self, self))
+
+    def value(self):
+        return self.editor.value
+
+    def setValue(self, v):
+        self.editor.value = v
+        if self.editor.is_tensor:
+            # Force an update
+            super().setValue(super().value())
+            self.valueChanged.emit(super().value())
+            self.setReadOnly(True)
+        else:
+            super().setValue(v)
+            self.valueChanged.emit(v)
+            self.setReadOnly(False)
+
+    def textFromValue(self, value):
+        if not hasattr(self, 'editor') or not self.editor.is_tensor:
+            return super().textFromValue(value)
+
+        return 'Tensor'
+
+    def open_editor(self):
+        if super().value() != 0:
+            # Make sure the value of the scalar is updated
+            self.editor.ui.scalar_value.setValue(super().value())
+
+        original = copy.deepcopy(self.editor.value)
+        if not self.editor.exec_():
+            self.editor.value = original
+            return
+
+        self.setValue(self.editor.value)
+
+
+class ThermalFactorLineEdit(QLineEdit):
+    def __init__(self, spinbox, parent=None):
+        super().__init__(parent)
+
+        self.spinbox = spinbox
+
+    def mousePressEvent(self, event):
+        if self.isReadOnly():
+            self.open_editor()
+            return
+
+        super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        self.open_editor()
+
+    def open_editor(self):
+        self.spinbox.open_editor()

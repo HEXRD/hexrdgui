@@ -11,7 +11,6 @@ from PySide2.QtWidgets import (
 )
 
 from hexrd.constants import ptable, ptableinverse
-from hexrd.unitcell import unitcell
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.material_site_editor import MaterialSiteEditor
@@ -73,20 +72,6 @@ class MaterialStructureEditor(QObject):
         site = copy.deepcopy(self.material_site_editor.site)
         self.sites[self.selected_row] = site
         self.material_edited()
-
-    def ensure_scalar_U(self):
-        # When we allow editing a tensor U, we can remove this function.
-        tensor_encountered = False
-        for site in self.sites:
-            for atom in site['atoms']:
-                if isinstance(atom['U'], np.ndarray) and atom['U'].size > 1:
-                    tensor_encountered = True
-                    atom['U'] = atom['U'].mean()
-
-        if tensor_encountered:
-            name = self.material.name
-            print(f'Warning: converting U tensors in {name} to scalars')
-            self.material_edited()
 
     def name_changed(self, row, column):
         new_name = self.ui.table.item(row, column).text()
@@ -258,6 +243,11 @@ class MaterialStructureEditor(QObject):
                 type_array.append(ptable[atom['symbol']])
                 U_array.append(atom['U'])
 
+        if any(isinstance(x, np.ndarray) for x in U_array):
+            # Convert all to tensors
+            for i, U in enumerate(U_array):
+                U_array[i] = scalar_to_tensor(U)
+
         mat = self.material
         mat._set_atomdata(type_array, info_array, U_array)
 
@@ -299,6 +289,14 @@ class MaterialStructureEditor(QObject):
         type_array = mat._atomtype
         U_array = mat._U
 
+        if any(isinstance(x, np.ndarray) for x in U_array):
+            # Convert some to scalars if possible
+            new_U_array = []
+            for U in U_array:
+                new_U_array.append(tensor_to_scalar_if_diagonal(U))
+
+            U_array = new_U_array
+
         for i, atom in enumerate(info_array):
             atom_coords = atom[:3]
             # Check if this one has coords that match any others before it
@@ -330,10 +328,6 @@ class MaterialStructureEditor(QObject):
                 site['atoms'].append(atom)
 
             self.sites.append(site)
-
-        # FIXME: allow editing a tensor U as well.
-        # We can remove this function when that is done.
-        self.ensure_scalar_U()
 
     def material_edited(self):
         self.modified = True
@@ -369,3 +363,26 @@ class EditorFactory(QItemEditorFactory):
         editor = QLineEdit(parent)
         editor.setAlignment(Qt.AlignCenter)
         return editor
+
+
+def scalar_to_tensor(x):
+    if isinstance(x, np.ndarray) and x.shape == (6,):
+        # Already a tensor
+        return x
+
+    tensor = np.zeros(6, dtype=np.float64)
+    tensor[:3] = x
+    return tensor
+
+
+def tensor_to_scalar_if_diagonal(x):
+    # This will only convert to a scalar if the tensor is diagonal
+    if not isinstance(x, np.ndarray) or x.shape != (6,):
+        return x
+
+    if np.allclose(x[:3], x[0]) and np.allclose(x[3:], 0):
+        # It is diagonal
+        return x[0]
+
+    # Not diagonal...
+    return x
