@@ -253,13 +253,7 @@ class MaterialStructureEditor(QObject):
                 U_array[i] = scalar_to_tensor(U)
 
         mat = self.material
-        mat._set_atomdata(type_array, info_array, U_array)
-        mat.charge = charge_array
-
-        # Must force an update of the unit cell and structure factor
-        # for the change in the charge array.
-        mat._newUnitcell()
-        mat.update_structure_factor()
+        mat._set_atomdata(type_array, info_array, U_array, charge_array)
 
         self.material_modified.emit()
 
