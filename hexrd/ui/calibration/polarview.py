@@ -41,7 +41,7 @@ class PolarView:
         self.snipped_img = None
         self.processed_img = None
 
-        self.snip1d_background = None
+        self.snip_background = None
 
         self.update_angular_grid()
 
@@ -283,11 +283,11 @@ class PolarView:
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
                 img[self.raw_img.mask] = np.nan
 
-            self.snip1d_background = run_snip1d(img)
+            self.snip_background = run_snip1d(img)
             # Perform the background subtraction
-            img -= self.snip1d_background
+            img -= self.snip_background
         else:
-            self.snip1d_background = None
+            self.snip_background = None
 
         return img
 

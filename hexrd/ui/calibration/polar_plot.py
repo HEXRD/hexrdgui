@@ -39,6 +39,10 @@ class InstrumentViewer:
     def img(self):
         return self.pv.img
 
+    @property
+    def snip_background(self):
+        return self.pv.snip_background
+
     def update_angular_grid(self):
         self.pv.update_angular_grid()
 
@@ -59,7 +63,6 @@ class InstrumentViewer:
         eta_max = HexrdConfig().polar_res_eta_max
 
         self._extent = [tth_min, tth_max, eta_max, eta_min]   # l, r, b, t
-        self.snip1d_background = self.pv.snip1d_background
 
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
@@ -81,6 +84,9 @@ class InstrumentViewer:
             'extent': np.radians(self._extent),
             'azimuthal_integration': azimuthal_integration,
         }
+
+        if self.snip_background is not None:
+            data['snip_background'] = self.snip_background
 
         # Delete the file if it already exists
         if os.path.exists(filename):
