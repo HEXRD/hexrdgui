@@ -11,8 +11,8 @@ from hexrd.ui.constants import ViewType
 
 
 class LaueRangeShape(str, Enum):
-    rectangle = 'rectangle'
     ellipse = 'ellipse'
+    rectangle = 'rectangle'
 
 
 class LaueSpotOverlay:

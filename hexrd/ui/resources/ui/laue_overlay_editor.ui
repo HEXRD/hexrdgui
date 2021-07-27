@@ -10,6 +10,12 @@
     <height>602</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
@@ -76,20 +82,14 @@
       <string>Widths</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="1" column="1">
-       <widget class="QLabel" name="tth_width_label">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="enable_widths">
         <property name="text">
-         <string>2θ</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <string>Enable Widths</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
+      <item row="3" column="3">
        <widget class="ScientificDoubleSpinBox" name="eta_width">
         <property name="enabled">
          <bool>false</bool>
@@ -111,7 +111,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
+      <item row="1" column="3">
        <widget class="ScientificDoubleSpinBox" name="tth_width">
         <property name="enabled">
          <bool>false</bool>
@@ -133,7 +133,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="3" column="2">
        <widget class="QLabel" name="eta_width_label">
         <property name="enabled">
          <bool>false</bool>
@@ -146,32 +146,42 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="enable_widths">
-        <property name="text">
-         <string>Enable Widths</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QComboBox" name="width_shape">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="width_shape_label">
+      <item row="1" column="2">
+       <widget class="QLabel" name="tth_width_label">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Width Shape:</string>
+         <string>2θ</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
+      </item>
+      <item row="3" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="width_shape_label">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Width Shape:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="width_shape">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
@@ -205,9 +215,9 @@
   <tabstop>min_energy</tabstop>
   <tabstop>max_energy</tabstop>
   <tabstop>enable_widths</tabstop>
+  <tabstop>width_shape</tabstop>
   <tabstop>tth_width</tabstop>
   <tabstop>eta_width</tabstop>
-  <tabstop>width_shape</tabstop>
  </tabstops>
  <resources/>
  <connections/>

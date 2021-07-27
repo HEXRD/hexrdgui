@@ -78,8 +78,8 @@ class LaueOverlayEditor:
             self.ui.tth_width.setValue(np.degrees(options['tth_width']))
         if options.get('eta_width') is not None:
             self.ui.eta_width.setValue(np.degrees(options['eta_width']))
-        if options.get('width_shape') is not None:
-            self.width_shape = options['width_shape']
+
+        self.width_shape = options.get('width_shape', LaueRangeShape.rectangle)
 
         widths = ['tth_width', 'eta_width']
         enable_widths = all(options.get(x) is not None for x in widths)
