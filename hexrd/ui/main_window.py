@@ -210,6 +210,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
+        self.ui.action_rerun_clustering.triggered.connect(
+            self.on_action_rerun_clustering)
         self.ui.action_run_fit_grains.triggered.connect(
             self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
@@ -499,6 +501,9 @@ class MainWindow(QObject):
     def on_action_run_indexing_triggered(self):
         self._indexing_runner = IndexingRunner(self.ui)
         self._indexing_runner.run()
+
+    def on_action_rerun_clustering(self):
+        return
 
     def on_action_run_fit_grains_triggered(self):
         kwargs = {

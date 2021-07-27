@@ -30,6 +30,7 @@ class Runner(QObject):
 
     progress_text = Signal(str)
     accept_progress_signal = Signal()
+    clustering_run = Signal(bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,6 +44,8 @@ class Runner(QObject):
     def setup_connections(self):
         self.progress_text.connect(self.progress_dialog.setLabelText)
         self.accept_progress_signal.connect(self.progress_dialog.accept)
+        self.clustering_run.connect(
+            self.parent.action_rerun_clustering.setEnabled)
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
@@ -284,6 +287,7 @@ class IndexingRunner(Runner):
         self.qbar, cl = run_cluster(**kwargs)
 
         print('Clustering complete...')
+        self.clustering_run.emit(True)
         self.generate_grains_table()
 
     def generate_grains_table(self):
