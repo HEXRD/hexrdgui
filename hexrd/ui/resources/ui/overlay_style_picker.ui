@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>476</width>
-    <height>214</height>
+    <width>632</width>
+    <height>246</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -151,6 +151,9 @@
       </item>
       <item row="0" column="7">
        <widget class="ScientificDoubleSpinBox" name="range_size">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="decimals">
          <number>8</number>
         </property>
