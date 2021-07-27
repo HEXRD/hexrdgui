@@ -23,7 +23,7 @@ from hexrd.ui.constants import (
     UI_TRANS_INDEX_ROTATE_90, UI_TRANS_INDEX_FLIP_HORIZONTALLY, YAML_EXTS)
 import hexrd.ui.resources.calibration
 
-from hexrd.ui.utils import convert_tilt_convention
+from hexrd.ui.utils import convert_tilt_convention, instr_to_internal_dict
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 
 class ImportDataPanel(QObject):
@@ -99,8 +99,8 @@ class ImportDataPanel(QObject):
             else:
                 try:
                     with h5py.File(self.config_file, 'r') as f:
-                        instr = create_hedm_instrument()
-                        instr.unwrap_h5_to_dict(f, self.defaults)
+                        instr = HEDMInstrument(f)
+                        self.defaults = instr_to_internal_dict(instr)
                 except Exception as e:
                     msg = (
                         f'ERROR - Could not read file: \n {e} \n'
@@ -173,7 +173,7 @@ class ImportDataPanel(QObject):
                             enabled=not checked)
 
     def load_instrument_config(self):
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         self.config_file = temp.name
         HexrdConfig().save_instrument_config(self.config_file)
         fname = f'default_{self.instrument.lower()}_config.yml'
