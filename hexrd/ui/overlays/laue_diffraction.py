@@ -5,6 +5,7 @@ import numpy as np
 
 from hexrd import constants
 from hexrd.transforms import xfcapi
+from hexrd.utils.decorators import numba_njit_if_available
 
 from hexrd.ui.constants import ViewType
 
@@ -20,7 +21,7 @@ class LaueSpotOverlay:
                  min_energy=5., max_energy=35.,
                  tth_width=None, eta_width=None,
                  eta_period=np.r_[-180., 180.],
-                 range_shape=LaueRangeShape.rectangle):
+                 width_shape=LaueRangeShape.rectangle):
         self.plane_data = plane_data
         self._instrument = instr
         if crystal_params is None:
@@ -49,7 +50,7 @@ class LaueSpotOverlay:
             raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = eta_period
 
-        self.range_shape = range_shape
+        self.width_shape = width_shape
 
     @property
     def plane_data(self):
@@ -216,15 +217,18 @@ class LaueSpotOverlay:
         return self.crystal_params[3:6].reshape(3, 1)
 
     def range_data(self, spots, display_mode, panel):
+        if not self.widths_enabled:
+            return []
+
         range_func = {
             LaueRangeShape.rectangle: self.rectangular_range_data,
-            # LaueRangeShape.ellipse: self.ellipsoidal_range_data,
+            LaueRangeShape.ellipse: self.ellipsoidal_range_data,
         }
 
-        if self.range_shape not in range_func:
-            raise Exception(f'Unknown range shape: {self.range_shape}')
+        if self.width_shape not in range_func:
+            raise Exception(f'Unknown range shape: {self.width_shape}')
 
-        return range_func[self.range_shape](spots, display_mode, panel)
+        return range_func[self.width_shape](spots, display_mode, panel)
 
     def rectangular_range_data(self, spots, display_mode, panel):
         range_corners = self.range_corners(spots)
@@ -251,4 +255,43 @@ class LaueSpotOverlay:
         return results
 
     def ellipsoidal_range_data(self, spots, display_mode, panel):
-        pass
+        num_points = 300
+        a = self.tth_width / 2
+        b = self.eta_width / 2
+        results = []
+        for h, k in spots:
+            ellipse = ellipse_points(h, k, a, b, num_points)
+            results.append(ellipse)
+
+        if display_mode == ViewType.polar:
+            return np.degrees(results)
+
+        # Must be cartesian or raw
+        if display_mode not in (ViewType.raw, ViewType.cartesian):
+            raise Exception(f'Unknown view type: {display_mode}')
+
+        for result in results:
+            # Convert to Cartesian
+            result[:] = panel.angles_to_cart(result, tvec_c=self.tvec_c)
+
+            if display_mode == ViewType.raw:
+                # If raw, convert to pixels
+                result[:] = panel.cartToPixel(result)
+                result[:, [0, 1]] = result[:, [1, 0]]
+
+        return results
+
+
+@numba_njit_if_available(cache=True, nogil=True)
+def ellipse_points(h, k, a, b, num_points=30):
+    # skimage.draw.ellipse_perimeter could work instead, but it is
+    # intended to work with indices, and it doesn't sort points.
+    # We'll just do our own here using float values and sorting...
+    # (x - h)**2 / a**2 + (y - k)**2 / b**2 == 1
+    x = np.linspace(h + a, h - a, num_points // 2 + 1)[1:-1]
+    y_upper = b * np.sqrt(1 - (x - h)**2 / a**2) + k
+    upper = np.vstack((x, y_upper)).T
+    lower = np.vstack((x[::-1], 2 * k - y_upper)).T
+    right = np.array(((h + a, k),))
+    left = np.array(((h - a, k),))
+    return np.vstack((right, upper, left, lower, right))

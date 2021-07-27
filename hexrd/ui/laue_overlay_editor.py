@@ -2,13 +2,14 @@ import copy
 import numpy as np
 
 from PySide2.QtCore import QSignalBlocker
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
+from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.constants import (
     DEFAULT_CRYSTAL_PARAMS, DEFAULT_CRYSTAL_REFINEMENTS
 )
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays.laue_diffraction import LaueRangeShape
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -23,7 +24,12 @@ class LaueOverlayEditor:
         self.crystal_editor = CalibrationCrystalEditor(parent=self.ui)
         self.ui.crystal_editor_layout.addWidget(self.crystal_editor.ui)
 
+        self.setup_combo_boxes()
         self.setup_connections()
+
+    def setup_combo_boxes(self):
+        width_shapes = [x.value.capitalize() for x in LaueRangeShape]
+        self.ui.width_shape.addItems(width_shapes)
 
     def setup_connections(self):
         for w in self.widgets:
@@ -31,6 +37,8 @@ class LaueOverlayEditor:
                 w.valueChanged.connect(self.update_config)
             elif isinstance(w, QCheckBox):
                 w.toggled.connect(self.update_config)
+            elif isinstance(w, QComboBox):
+                w.currentIndexChanged.connect(self.update_config)
 
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
         self.crystal_editor.params_modified.connect(self.update_config)
@@ -70,6 +78,8 @@ class LaueOverlayEditor:
             self.ui.tth_width.setValue(np.degrees(options['tth_width']))
         if options.get('eta_width') is not None:
             self.ui.eta_width.setValue(np.degrees(options['eta_width']))
+        if options.get('width_shape') is not None:
+            self.width_shape = options['width_shape']
 
         widths = ['tth_width', 'eta_width']
         enable_widths = all(options.get(x) is not None for x in widths)
@@ -83,7 +93,9 @@ class LaueOverlayEditor:
             'tth_width_label',
             'tth_width',
             'eta_width_label',
-            'eta_width'
+            'eta_width',
+            'width_shape_label',
+            'width_shape',
         ]
         for name in names:
             getattr(self.ui, name).setEnabled(enable_widths)
@@ -111,6 +123,7 @@ class LaueOverlayEditor:
         options['crystal_params'] = self.crystal_params
         options['tth_width'] = self.tth_width
         options['eta_width'] = self.eta_width
+        options['width_shape'] = self.width_shape
 
         self.update_refinements()
 
@@ -139,11 +152,20 @@ class LaueOverlayEditor:
         return np.radians(self.ui.eta_width.value())
 
     @property
+    def width_shape(self):
+        return self.ui.width_shape.currentText().lower()
+
+    @width_shape.setter
+    def width_shape(self, v):
+        self.ui.width_shape.setCurrentText(v.capitalize())
+
+    @property
     def widgets(self):
         return [
             self.ui.min_energy,
             self.ui.max_energy,
             self.ui.enable_widths,
             self.ui.tth_width,
-            self.ui.eta_width
+            self.ui.eta_width,
+            self.ui.width_shape,
         ]
