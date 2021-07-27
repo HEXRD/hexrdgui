@@ -78,8 +78,8 @@ class InstrumentViewer:
 
         # Prepare the data to write out
         data = {
-            'tth_coordinates': self.angular_grid[1],
-            'eta_coordinates': self.angular_grid[0],
+            'tth_coordinates': np.degrees(self.angular_grid[1]),
+            'eta_coordinates': np.degrees(self.angular_grid[0]),
             'intensities': self.img,
             'extent': np.radians(self._extent),
             'azimuthal_integration': azimuthal_integration,
