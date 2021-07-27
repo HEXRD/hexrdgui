@@ -1,5 +1,6 @@
+from pathlib import Path
+
 import h5py
-import os
 import numpy as np
 
 from .polarview import PolarView
@@ -34,6 +35,14 @@ class InstrumentViewer:
     @property
     def angular_grid(self):
         return self.pv.angular_grid
+
+    @property
+    def raw_img(self):
+        return self.pv.raw_img
+
+    @property
+    def snipped_img(self):
+        return self.pv.snipped_img
 
     @property
     def img(self):
@@ -71,32 +80,42 @@ class InstrumentViewer:
         self.pv.update_detector(det)
 
     def write_image(self, filename='polar_image.npz'):
+        filename = Path(filename)
+
         azimuthal_integration = HexrdConfig().last_azimuthal_integral_data
 
         # Re-format the data so that it is in 2 columns
         azimuthal_integration = np.array(azimuthal_integration).T
 
+        intensities = self.pv.apply_rescale(self.raw_img.data)
+        intensities[self.raw_img.mask] = np.nan
+
         # Prepare the data to write out
         data = {
             'tth_coordinates': np.degrees(self.angular_grid[1]),
             'eta_coordinates': np.degrees(self.angular_grid[0]),
-            'intensities': self.img,
-            'extent': np.radians(self._extent),
+            'intensities': intensities,
+            'extent': self._extent,
             'azimuthal_integration': azimuthal_integration,
         }
 
         if self.snip_background is not None:
+            # Add the snip background if it was used
             data['snip_background'] = self.snip_background
 
+        # Add visible polar mask data if we have any
+        for name, mask in HexrdConfig().polar_masks.items():
+            if name not in HexrdConfig().visible_masks:
+                continue
+
+            data[f'mask_{name}'] = mask
+
         # Delete the file if it already exists
-        if os.path.exists(filename):
-            os.remove(filename)
+        if filename.exists():
+            filename.unlink()
 
         # Check the file extension
-        _, ext = os.path.splitext(filename)
-        ext = ext.lower()
-
-        if ext == '.npz':
+        if filename.suffix.lower() == '.npz':
             # If it looks like npz, save as npz
             np.savez(filename, **data)
         else:

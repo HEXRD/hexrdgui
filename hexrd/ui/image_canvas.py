@@ -864,8 +864,8 @@ class ImageCanvas(FigureCanvas):
             title = f'Algorithm {algorithm}'
         ax.set_title(title)
 
-        if self.iviewer.snip1d_background is not None:
-            background = self.iviewer.snip1d_background
+        if self.iviewer.snip_background is not None:
+            background = self.iviewer.snip_background
         else:
             # We have to run it ourselves...
             # It should not have already been applied to the image
