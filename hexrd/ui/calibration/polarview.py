@@ -252,10 +252,16 @@ class PolarView:
         self.raw_img = np.ma.sum(np.ma.stack(self.warp_dict.values()), axis=0)
         self.apply_image_processing()
 
-    def apply_image_processing(self):
-        img = self.raw_img.data
+    @property
+    def raw_rescaled_img(self):
+        return self.apply_rescale(self.raw_img.data)
 
-        img = self.apply_rescale(img)
+    @property
+    def raw_mask(self):
+        return self.raw_img.mask
+
+    def apply_image_processing(self):
+        img = self.raw_rescaled_img
         img = self.apply_snip(img)
         # cache this step so we can just re-apply masks if needed
         self.snipped_img = img
@@ -281,7 +287,7 @@ class PolarView:
             no_nan_methods = [SnipAlgorithmType.Fast_SNIP_1D]
 
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[self.raw_img.mask] = np.nan
+                img[self.raw_mask] = np.nan
 
             self.snip_background = run_snip1d(img)
             # Perform the background subtraction
@@ -294,7 +300,7 @@ class PolarView:
     def apply_masks(self, img):
         # Apply user-specified masks if they are present
         img = img.copy()
-        total_mask = self.raw_img.mask
+        total_mask = self.raw_mask
         for mask in HexrdConfig().visible_polar_masks:
             total_mask = np.logical_or(total_mask, ~mask)
         img[total_mask] = np.nan

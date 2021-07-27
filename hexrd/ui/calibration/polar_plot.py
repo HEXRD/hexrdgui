@@ -37,8 +37,16 @@ class InstrumentViewer:
         return self.pv.angular_grid
 
     @property
+    def raw_rescaled_img(self):
+        return self.pv.raw_rescaled_img
+
+    @property
     def raw_img(self):
         return self.pv.raw_img
+
+    @property
+    def raw_mask(self):
+        return self.pv.raw_mask
 
     @property
     def snipped_img(self):
@@ -87,8 +95,8 @@ class InstrumentViewer:
         # Re-format the data so that it is in 2 columns
         azimuthal_integration = np.array(azimuthal_integration).T
 
-        intensities = self.pv.apply_rescale(self.raw_img.data)
-        intensities[self.raw_img.mask] = np.nan
+        intensities = self.raw_rescaled_img
+        intensities[self.raw_mask] = np.nan
 
         # Prepare the data to write out
         data = {
