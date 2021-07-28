@@ -79,3 +79,11 @@ class DictTreeViewDialog(QDialog):
 
     def expand_rows(self):
         return self.dict_tree_view.expand_rows()
+
+    @property
+    def editable(self):
+        return self.dict_tree_view.editable
+
+    @editable.setter
+    def editable(self, v):
+        self.dict_tree_view.editable = v

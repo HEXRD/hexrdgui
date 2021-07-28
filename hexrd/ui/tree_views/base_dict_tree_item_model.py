@@ -22,6 +22,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         # These can be modified anytime
         self.lists_resizable = True
         self._blacklisted_paths = []
+        self.editable = True
 
         self.config = dictionary
 
@@ -58,9 +59,15 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             return Qt.NoItemFlags
 
         flags = super().flags(index)
-
         item = self.get_item(index)
-        if index.column() != KEY_COL and item.child_count() == 0:
+
+        is_editable = all((
+            index.column() != KEY_COL,
+            item.child_count() == 0,
+            self.editable,
+        ))
+
+        if is_editable:
             # All columns after the first with no children are editable
             flags = flags | Qt.ItemIsEditable
 
@@ -166,6 +173,14 @@ class BaseDictTreeView(QTreeView):
         self._combo_keys = v
         self.rebuild_tree()
         self.expand_rows()
+
+    @property
+    def editable(self):
+        return self.model().editable
+
+    @editable.setter
+    def editable(self, v):
+        self.model().editable = v
 
     def contextMenuEvent(self, event):
         # Generate the actions
