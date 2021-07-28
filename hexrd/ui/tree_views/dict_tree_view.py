@@ -96,3 +96,7 @@ class DictTreeViewDialog(QDialog):
 
     def set_extended_selection_mode(self):
         self.dict_tree_view.set_extended_selection_mode()
+
+    @property
+    def selected_items(self):
+        return self.dict_tree_view.selected_items

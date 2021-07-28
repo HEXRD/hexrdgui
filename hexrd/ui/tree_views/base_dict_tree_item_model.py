@@ -210,6 +210,11 @@ class BaseDictTreeView(QTreeView):
     def set_extended_selection_mode(self):
         self.selection_mode = QTreeView.ExtendedSelection
 
+    @property
+    def selected_items(self):
+        selected_rows = self.selectionModel().selectedRows()
+        return [self.model().get_item(x) for x in selected_rows]
+
     def contextMenuEvent(self, event):
         # Generate the actions
         actions = {}
