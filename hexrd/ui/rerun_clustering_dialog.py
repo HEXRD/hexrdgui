@@ -62,8 +62,17 @@ class RerunClusteringDialog:
         if self.ui.min_samples.isEnabled():
             self.indexing_runner.min_samples = self.ui.min_samples.value()
 
+    def save_input(self):
+        clustering_data = HexrdConfig().indexing_config.get('clustering', {})
+        clustering_data['radius'] = self.ui.radius.getValue()
+        clustering_data['completeness'] = self.ui.completeness.getValue()
+        clustering_data['algorithm'] = self.ui.algorithms.getCurrentText()
+        if self.ui.min_samples.enabled():
+            self.indexing_runner.min_samples = self.ui.min_samples.getValue()
+
     def on_accepted(self):
         self.save_input()
+
         worker = AsyncWorker(self.indexing_runner.run_cluster)
         self.indexing_runner.thread_pool.start(worker)
         worker.signals.result.connect(
