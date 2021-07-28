@@ -249,7 +249,7 @@ def has_nan(x):
     return np.isnan(np.min(x))
 
 
-def instr_to_internal_dict(instr, calibration_dict=None):
+def instr_to_internal_dict(instr, calibration_dict=None, convert_tilts=True):
     from hexrd.ui.hexrd_config import HexrdConfig
 
     # Convert an HEDMInstrument object into an internal dict we can
@@ -279,7 +279,7 @@ def instr_to_internal_dict(instr, calibration_dict=None):
 
     # Convert to the selected tilt convention
     eac = HexrdConfig().euler_angle_convention
-    if eac is not None:
+    if convert_tilts and eac is not None:
         convert_tilt_convention(config, None, eac)
 
     return config

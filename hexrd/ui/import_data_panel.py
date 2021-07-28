@@ -100,7 +100,8 @@ class ImportDataPanel(QObject):
                 try:
                     with h5py.File(self.config_file, 'r') as f:
                         instr = HEDMInstrument(f)
-                        self.defaults = instr_to_internal_dict(instr)
+                        self.defaults = instr_to_internal_dict(
+                            instr, convert_tilts=False)
                 except Exception as e:
                     msg = (
                         f'ERROR - Could not read file: \n {e} \n'
