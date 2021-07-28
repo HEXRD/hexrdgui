@@ -11,6 +11,8 @@ from PySide2.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
 from hexrd.instrument import HEDMInstrument
+from hexrd.rotations import (
+    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz)
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -439,8 +441,15 @@ class ImportDataPanel(QObject):
             instrument_config=self.detector_defaults['default_config'])
         for det in self.completed_detectors:
             panel = instr.detectors[det]
-            *zx, z = panel.tilt
-            panel.tilt = [*zx, (z + float(self.edited_images[det]['tilt']))]
+            # first need the zxz Euler angles from the panel rotation matrix.
+            *zx, z = angles_from_rmat_zxz(panel.rmat)
+            # convert updated zxz angles to rmat
+            tilts = [*zx, (z + float(self.edited_images[det]['tilt']))]
+            rmat_updated = make_rmat_euler(tilts, 'zxz', extrinsic=False)
+            # convert to angle-axis parameters
+            rang, raxs = angleAxisOfRotMat(rmat_updated)
+            # update tilt property on panel
+            panel.tilt = rang * raxs.flatten()
             panel.panel_buffer = self.edited_images[det]['panel_buffer']
             files.append([self.edited_images[det]['img']])
 
