@@ -429,7 +429,8 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
-        detectors = self.detector_defaults['default_config'].setdefault('detectors', {})
+        detectors = self.detector_defaults['default_config'].setdefault(
+            'detectors', {})
         not_set = [d for d in detectors if d not in self.completed_detectors]
         for det in not_set:
             del(self.detector_defaults['default_config']['detectors'][det])
