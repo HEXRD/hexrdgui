@@ -12,9 +12,10 @@ from PySide2.QtCore import Qt
 
 class RerunClusteringDialog:
 
-    def __init__(self, parent=None):
+    def __init__(self, indexing_runner, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('rerun_clustering_dialog.ui', parent)
+        self.indexing_runner = indexing_runner
         self.scored_orientations = None
         self.setup_gui()
         self.setup_connections()
