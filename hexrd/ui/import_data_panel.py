@@ -97,7 +97,9 @@ class ImportDataPanel(QObject):
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
                 with open(self.config_file, 'r') as f:
-                    self.defaults = yaml.load(f, Loader=yaml.FullLoader)
+                    instr = HEDMInstrument(f)
+                    self.defaults = instr_to_internal_dict(
+                        instr, convert_tilts=False)
             else:
                 try:
                     with h5py.File(self.config_file, 'r') as f:
