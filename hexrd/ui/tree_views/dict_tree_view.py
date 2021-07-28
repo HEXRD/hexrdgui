@@ -58,8 +58,6 @@ class DictTreeView(BaseDictTreeView):
         self.header().resizeSection(KEY_COL, 200)
         self.header().resizeSection(VALUE_COL, 200)
 
-        self.expand_rows()
-
 
 class DictTreeViewDialog(QDialog):
 
@@ -72,3 +70,6 @@ class DictTreeViewDialog(QDialog):
         self.layout().addWidget(self.dict_tree_view)
 
         self.resize(500, 500)
+
+    def expand_rows(self):
+        return self.dict_tree_view.expand_rows()

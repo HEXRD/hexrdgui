@@ -19,6 +19,7 @@ class IndexingTreeViewDialog(DictTreeViewDialog):
             ('seed_search', 'method'): self.seed_search_defaults,
         }
         self.dict_tree_view.combo_keys = combo_keys
+        self.expand_rows()
 
     @lazy_property
     def seed_search_defaults(self):
