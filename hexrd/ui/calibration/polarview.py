@@ -2,7 +2,7 @@ import numpy as np
 
 from skimage.exposure import rescale_intensity
 from skimage.filters.edges import binary_erosion
-from skimage.morphology import disk
+from skimage.morphology import rectangle
 
 from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
 
@@ -290,9 +290,12 @@ class PolarView:
             img -= self.snip1d_background
 
             if HexrdConfig().polar_apply_erosion:
-                mask = binary_erosion(
-                    ~self.raw_img.mask, structure=disk(2 * snip_width_pixels())
+                niter = HexrdConfig().polar_snip1d_numiter
+                structure = rectangle(
+                    1,
+                    int(2.1 * niter * snip_width_pixels()),
                 )
+                mask = binary_erosion(~self.raw_img.mask, structure)
                 img[~mask] = 0
         else:
             self.snip1d_background = None
