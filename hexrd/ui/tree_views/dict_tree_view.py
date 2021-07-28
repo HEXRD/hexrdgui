@@ -87,3 +87,12 @@ class DictTreeViewDialog(QDialog):
     @editable.setter
     def editable(self, v):
         self.dict_tree_view.editable = v
+
+    def set_single_selection_mode(self):
+        self.dict_tree_view.set_single_selection_mode()
+
+    def set_multi_selection_mode(self):
+        self.dict_tree_view.set_multi_selection_mode()
+
+    def set_extended_selection_mode(self):
+        self.dict_tree_view.set_extended_selection_mode()

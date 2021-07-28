@@ -182,6 +182,23 @@ class BaseDictTreeView(QTreeView):
     def editable(self, v):
         self.model().editable = v
 
+    @property
+    def selection_mode(self):
+        return self.selectionMode()
+
+    @selection_mode.setter
+    def selection_mode(self, v):
+        self.setSelectionMode(v)
+
+    def set_single_selection_mode(self):
+        self.selection_mode = QTreeView.SingleSelection
+
+    def set_multi_selection_mode(self):
+        self.selection_mode = QTreeView.MultiSelection
+
+    def set_extended_selection_mode(self):
+        self.selection_mode = QTreeView.ExtendedSelection
+
     def contextMenuEvent(self, event):
         # Generate the actions
         actions = {}
