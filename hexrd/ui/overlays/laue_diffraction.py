@@ -146,7 +146,8 @@ class LaueSpotOverlay:
             # filter (tth, eta) results
             xy_data = xy_det[0][idx, :]
             angles = angles[0][idx, :]  # these are in radians
-            point_groups[det_key]['hkls'] = hkls_in[0][:, idx].T
+            hkls = hkls_in[0][:, idx].T.astype(np.int32)
+            point_groups[det_key]['hkls'] = hkls
             angles[:, 1] = xfcapi.mapAngle(
                 angles[:, 1], np.radians(self.eta_period), units='radians'
             )
