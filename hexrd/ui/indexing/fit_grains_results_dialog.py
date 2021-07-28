@@ -13,7 +13,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide2.QtCore import (
-    QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
+    QObject, QSignalBlocker, QSortFilterProxyModel, QTimer, Qt, Signal
 )
 from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
 
@@ -65,8 +65,7 @@ class FitGrainsResultsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_results_dialog.ui', parent)
-        flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
 
@@ -465,8 +464,17 @@ class FitGrainsResultsDialog(QObject):
         view.sortByColumn(0, Qt.AscendingOrder)
         self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
 
+        # Update the variables on the table view
+        view.material = self.material
+        view.grains_table = self.data
+
     def show(self):
         self.ui.show()
+
+    def show_later(self):
+        # Call this if you might not be running on the GUI thread, so
+        # show() will be called on the GUI thread.
+        QTimer.singleShot(0, lambda: self.show())
 
     @property
     def tensor_type(self):

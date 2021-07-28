@@ -423,7 +423,7 @@ class FitGrainsRunner(Runner):
         }
         dialog = create_fit_grains_results_dialog(**kwargs)
         self.fit_grains_results_dialog = dialog
-        dialog.show()
+        dialog.show_later()
 
 
 def create_fit_grains_results_dialog(fit_grains_results, parent=None):
