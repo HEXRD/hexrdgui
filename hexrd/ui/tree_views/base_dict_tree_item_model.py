@@ -61,6 +61,17 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         flags = super().flags(index)
         item = self.get_item(index)
 
+        # Items are selectable if they have no children
+        # and none of the data values in the row are `None`.
+        is_selectable = all((
+            item.child_count() == 0,
+            not any(x is None for x in item.data_list),
+        ))
+        if is_selectable:
+            flags = flags | Qt.ItemIsSelectable
+        else:
+            flags = flags & ~Qt.ItemIsSelectable
+
         is_editable = all((
             index.column() != KEY_COL,
             item.child_count() == 0,
