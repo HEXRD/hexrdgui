@@ -429,25 +429,22 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
-        detectors = self.detector_defaults['default_config'].get(
-            'detectors', {})
+        detectors = self.detector_defaults['default_config'].setdefault('detectors', {})
         not_set = [d for d in detectors if d not in self.completed_detectors]
         for det in not_set:
-            del(detectors[det])
+            del(self.detector_defaults['default_config']['detectors'][det])
 
+        instr = HEDMInstrument(
+            instrument_config=self.detector_defaults['default_config'])
         for det in self.completed_detectors:
-            *zx, z = detectors[det]['transform']['tilt']
-            detectors[det]['transform']['tilt'] = (
-                [*zx, (z + float(self.edited_images[det]['tilt']))])
-            detectors[det]['panel_buffer'] = (
-                self.edited_images[det]['panel_buffer'])
+            panel = instr.detectors[det]
+            *zx, z = panel.tilt
+            panel.tilt = [*zx, (z + float(self.edited_images[det]['tilt']))]
+            panel.panel_buffer = self.edited_images[det]['panel_buffer']
             files.append([self.edited_images[det]['img']])
 
-        self.detector_defaults['detectors'] = detectors
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         try:
-            instr = HEDMInstrument(
-                instrument_config=self.detector_defaults['default_config'])
             instr.write_config(temp.name, style='hdf5')
             HexrdConfig().load_instrument_config(temp.name)
         finally:
