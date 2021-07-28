@@ -1644,8 +1644,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.rerender_auto_picked_data.emit()
 
     def boundary_position(self, instrument, detector):
-        return self.llnl_boundary_positions.get(
+        det_bounds = self.llnl_boundary_positions.get(
             instrument, {}).get(detector, None)
+        if not isinstance(det_bounds, dict):
+            return None
+        return det_bounds
 
     def set_boundary_position(self, instrument, detector, position):
         self.llnl_boundary_positions.setdefault(instrument, {})
