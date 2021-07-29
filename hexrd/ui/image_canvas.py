@@ -847,15 +847,11 @@ class ImageCanvas(FigureCanvas):
 
         extent = self.iviewer._extent
 
-        if not hasattr(self, '_snip1d_figure_cache'):
-            # Create the figure and axes to use
-            fig, ax = plt.subplots()
-            fig.canvas.manager.set_window_title('SNIP Background')
-            ax.set_xlabel(r'2$\theta$ (deg)')
-            ax.set_ylabel(r'$\eta$ (deg)')
-            self._snip1d_figure_cache = (fig, ax)
-        else:
-            fig, ax = self._snip1d_figure_cache
+        # Create the figure and axes to use
+        fig, ax = plt.subplots()
+        fig.canvas.manager.set_window_title('SNIP Background')
+        ax.set_xlabel(r'2$\theta$ (deg)')
+        ax.set_ylabel(r'$\eta$ (deg)')
 
         algorithm = HexrdConfig().polar_snip1d_algorithm
         titles = ['Fast SNIP 1D', 'SNIP 1D', 'SNIP 2D']
