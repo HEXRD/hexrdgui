@@ -108,6 +108,10 @@ class WppfOptionsDialog(QObject):
             'use_experiment_file',
             'experiment_file',
             'select_experiment_file_button',
+            'limit_tth',
+            'limit_tth_hyphen',
+            'min_tth',
+            'max_tth',
         ]
 
         for name in requires_object:
@@ -115,6 +119,15 @@ class WppfOptionsDialog(QObject):
 
         for name in requires_no_object:
             getattr(self.ui, name).setEnabled(not has_object)
+
+        enable_tth_limits = not has_object and self.limit_tth
+        widget_names = [
+            'min_tth',
+            'limit_tth_hyphen',
+            'max_tth',
+        ]
+        for name in widget_names:
+            getattr(self.ui, name).setEnabled(enable_tth_limits)
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
@@ -348,6 +361,30 @@ class WppfOptionsDialog(QObject):
         return {method: value}
 
     @property
+    def limit_tth(self):
+        return self.ui.limit_tth.isChecked()
+
+    @limit_tth.setter
+    def limit_tth(self, v):
+        self.ui.limit_tth.setChecked(v)
+
+    @property
+    def min_tth(self):
+        return self.ui.min_tth.value()
+
+    @min_tth.setter
+    def min_tth(self, v):
+        self.ui.min_tth.setValue(v)
+
+    @property
+    def max_tth(self):
+        return self.ui.max_tth.value()
+
+    @max_tth.setter
+    def max_tth(self, v):
+        self.ui.max_tth.setValue(v)
+
+    @property
     def use_experiment_file(self):
         return self.ui.use_experiment_file.isChecked()
 
@@ -419,6 +456,9 @@ class WppfOptionsDialog(QObject):
             'experiment_file',
             'display_wppf_plot',
             'params_dict',
+            'limit_tth',
+            'min_tth',
+            'max_tth',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -647,6 +687,18 @@ class WppfOptionsDialog(QObject):
                 'fill_value': 0.,
             }
             expt_spectrum = np.ma.masked_array(**kwargs)
+
+        if self.limit_tth:
+            expt_spectrum = expt_spectrum[expt_spectrum[:, 0] >= self.min_tth]
+            expt_spectrum = expt_spectrum[expt_spectrum[:, 0] <= self.max_tth]
+
+        if expt_spectrum.size == 0:
+            msg = 'Spectrum is empty.'
+            if self.limit_tth:
+                msg += '\nCheck min and max two theta.'
+
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            raise Exception(msg)
 
         return {
             'expt_spectrum': expt_spectrum,

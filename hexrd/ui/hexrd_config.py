@@ -1337,6 +1337,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     polar_apply_snip1d = property(_polar_apply_snip1d,
                                   set_polar_apply_snip1d)
 
+    def _polar_apply_erosion(self):
+        return self.config['image']['polar']['apply_erosion']
+
+    def set_polar_apply_erosion(self, v):
+        self.config['image']['polar']['apply_erosion'] = v
+        self.rerender_needed.emit()
+
+    polar_apply_erosion = property(_polar_apply_erosion,
+                                   set_polar_apply_erosion)
+
     def _polar_snip1d_algorithm(self):
         return self.config['image']['polar']['snip1d_algorithm']
 
@@ -1644,8 +1654,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.rerender_auto_picked_data.emit()
 
     def boundary_position(self, instrument, detector):
-        return self.llnl_boundary_positions.get(
+        det_bounds = self.llnl_boundary_positions.get(
             instrument, {}).get(detector, None)
+        if not isinstance(det_bounds, dict):
+            return None
+        return det_bounds
 
     def set_boundary_position(self, instrument, detector, position):
         self.llnl_boundary_positions.setdefault(instrument, {})
