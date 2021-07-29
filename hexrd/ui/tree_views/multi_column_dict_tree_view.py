@@ -156,16 +156,15 @@ class MultiColumnDictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.dict_tree_view = MultiColumnDictTreeView(dictionary, columns,
-                                                      self)
-        self.layout().addWidget(self.dict_tree_view)
+        self.tree_view = MultiColumnDictTreeView(dictionary, columns, self)
+        self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)
 
         self.setup_connections()
 
     def setup_connections(self):
-        self.dict_tree_view.dict_modified.connect(self.dict_modified.emit)
+        self.tree_view.dict_modified.connect(self.dict_modified.emit)
 
 
 class ColumnDelegate(QStyledItemDelegate):

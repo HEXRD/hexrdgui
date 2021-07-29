@@ -72,31 +72,31 @@ class DictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.dict_tree_view = DictTreeView(dictionary, self)
-        self.layout().addWidget(self.dict_tree_view)
+        self.tree_view = DictTreeView(dictionary, self)
+        self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)
 
     def expand_rows(self):
-        return self.dict_tree_view.expand_rows()
+        return self.tree_view.expand_rows()
 
     @property
     def editable(self):
-        return self.dict_tree_view.editable
+        return self.tree_view.editable
 
     @editable.setter
     def editable(self, v):
-        self.dict_tree_view.editable = v
+        self.tree_view.editable = v
 
     def set_single_selection_mode(self):
-        self.dict_tree_view.set_single_selection_mode()
+        self.tree_view.set_single_selection_mode()
 
     def set_multi_selection_mode(self):
-        self.dict_tree_view.set_multi_selection_mode()
+        self.tree_view.set_multi_selection_mode()
 
     def set_extended_selection_mode(self):
-        self.dict_tree_view.set_extended_selection_mode()
+        self.tree_view.set_extended_selection_mode()
 
     @property
     def selected_items(self):
-        return self.dict_tree_view.selected_items
+        return self.tree_view.selected_items
