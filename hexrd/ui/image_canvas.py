@@ -864,19 +864,15 @@ class ImageCanvas(FigureCanvas):
             title = f'Algorithm {algorithm}'
         ax.set_title(title)
 
-        if self.iviewer.snip1d_background is not None:
-            background = self.iviewer.snip1d_background
+        if self.iviewer.snip_background is not None:
+            background = self.iviewer.snip_background
         else:
             # We have to run it ourselves...
-            # It should not have already been applied to the image
-            # Apply the same pre-processing to the raw data...
-            pv = self.iviewer.pv
-            img = pv.raw_img.data
-            img = pv.apply_rescale(img)
+            img = self.iviewer.raw_rescaled_img
 
             no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[pv.raw_img.mask] = np.nan
+                img[self.iviewer.raw_mask] = np.nan
 
             background = utils.run_snip1d(img)
 
