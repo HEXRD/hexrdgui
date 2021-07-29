@@ -7,9 +7,10 @@ from PySide2.QtWidgets import (
 import numpy as np
 
 from hexrd.ui import constants
-from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
+from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.xray_energy_selection_dialog import XRayEnergySelectionDialog
+from hexrd.ui.ui_loader import UiLoader
 
 
 class CalibrationConfigWidget(QObject):
@@ -18,7 +19,7 @@ class CalibrationConfigWidget(QObject):
     gui_data_changed = Signal()
 
     def __init__(self, parent=None):
-        super(CalibrationConfigWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self.cfg = HexrdConfig()
 
@@ -39,6 +40,8 @@ class CalibrationConfigWidget(QObject):
         self.ui.cal_energy.valueChanged.connect(self.on_energy_changed)
         self.ui.cal_energy_wavelength.valueChanged.connect(
             self.on_energy_wavelength_changed)
+        self.ui.xray_energies_table.pressed.connect(
+            self.open_xray_energies_dialog)
 
         self.ui.cal_det_current.currentIndexChanged.connect(
             self.on_detector_changed)
@@ -91,6 +94,14 @@ class CalibrationConfigWidget(QObject):
             self.ui.cal_energy.setValue(new_energy)
         finally:
             self.ui.cal_energy.blockSignals(block_signals)
+
+    def open_xray_energies_dialog(self):
+        dialog = XRayEnergySelectionDialog(self.ui)
+        if not dialog.exec_():
+            return
+
+        # The table has units in eV. Convert to keV.
+        self.ui.cal_energy.setValue(dialog.selected_energy / 1e3)
 
     def on_detector_changed(self):
         self.update_detector_from_config()
