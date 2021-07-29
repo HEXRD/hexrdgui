@@ -850,6 +850,7 @@ class ImageCanvas(FigureCanvas):
         if not hasattr(self, '_snip1d_figure_cache'):
             # Create the figure and axes to use
             fig, ax = plt.subplots()
+            fig.canvas.manager.set_window_title('SNIP Background')
             ax.set_xlabel(r'2$\theta$ (deg)')
             ax.set_ylabel(r'$\eta$ (deg)')
             self._snip1d_figure_cache = (fig, ax)
