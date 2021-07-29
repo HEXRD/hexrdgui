@@ -59,7 +59,8 @@ class InteractiveTemplate:
     def update_position(self, instr, det):
         pos = HexrdConfig().boundary_position(instr, det)
         if pos is not None:
-            self.shape.set_xy(pos)
+            self.shape.set_xy(pos['coords'])
+            self.total_rotation = pos['angle']
             self.center = self.get_midpoint()
         elif instr == 'PXRDIP':
             self.rotate_shape(angle=90)
