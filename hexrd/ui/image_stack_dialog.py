@@ -53,6 +53,7 @@ class ImageStackDialog(QObject):
         self.ui.clear_file_selections.clicked.connect(
             self.clear_selected_files)
         self.clear_images.connect(self.load_panel.clear_from_stack_dialog)
+        self.ui.add_omega.toggled.connect(self.add_omega_toggled)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -73,6 +74,7 @@ class ImageStackDialog(QObject):
         self.ui.file_count.setText(str(file_count))
         self.ui.apply_to_all.setChecked(self.state['apply_to_all'])
         self.ui.all_detectors.setChecked(self.state['all_detectors'])
+        self.ui.add_omega.setChecked(self.state['add_omega_data'])
         self.ui.total_frames.setText(
             str(self.state['total_frames'] * file_count))
         self.set_ranges(
@@ -88,7 +90,7 @@ class ImageStackDialog(QObject):
             self.state.clear()
         if self.state:
             self.find_previous_images(self.state[self.detector]['files'])
-            self.load_omega_from_file(self.state['omega_from_file'])
+            self.add_omega_toggled(self.state.get('add_omega_data', True))
             self.file_selection_changed(self.state['manual_file'])
             self.detector_selection(self.state['all_detectors'])
         else:
@@ -104,7 +106,8 @@ class ImageStackDialog(QObject):
                 'total_frames': 1,
                 'manual_file': True,
                 'apply_to_all': True,
-                'wedges': []
+                'wedges': [],
+                'add_omega_data': True
             }
             for det in self.detectors:
                 self.state[det] = {
@@ -143,6 +146,9 @@ class ImageStackDialog(QObject):
         self.state[det]['search'] = self.ui.search_text.text()
         if not (search := self.ui.search_text.text()):
             search = '*'
+        if self.detector in search:
+            pattern = search.split(self.detector)
+            search = f'{pattern[0]}{det}{pattern[1]}'
         if directory := self.state[det]['directory']:
             if files := list(Path(directory).glob(search)):
                 files = [f for f in files if f.is_file()]
@@ -269,17 +275,17 @@ class ImageStackDialog(QObject):
 
     def search_directories(self):
         pattern = self.ui.detector_search.text()
-        for det in self.detectors:
-            p = f'{pattern}/{det}' if Path(pattern).is_dir() else f'{pattern}_{det}'
-            if Path(p).exists():
-                p = f'{pattern}/{det}'
+        if Path(pattern).is_dir():
+            p = pattern
+            for det in self.detectors:
+                if Path(f'{pattern}/{det}').exists():
+                    p = f'{pattern}/{det}'
                 self.state[det]['directory'] = p
                 if det == self.ui.detectors.currentText():
                     self.ui.current_directory.setText(p)
-            else:
-                msg = (f'Could not find the directory for {det}:\n{p}')
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                break
+        else:
+            msg = (f'Could not find directory:\n{p}')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
 
     def get_files(self):
         imgs = []
@@ -295,25 +301,43 @@ class ImageStackDialog(QObject):
         self.ui.file_count.setText('0')
         self.clear_images.emit()
 
+    def add_omega_toggled(self, checked):
+        self.state['add_omega_data'] = checked
+        self.ui.omega_from_file.setEnabled(checked)
+        if checked:
+            self.load_omega_from_file(self.ui.omega_from_file.isChecked())
+        else:
+            self.ui.omega_wedges.setEnabled(checked)
+            self.ui.add_wedge.setEnabled(checked)
+            self.ui.clear_wedges.setEnabled(checked)
+            self.ui.load_omega_file.setEnabled(checked)
+            self.ui.omega_file.setEnabled(checked)
+
+
     def get_omega_values(self, num_files):
         if self.state['omega_from_file'] and self.state['omega']:
             omega = np.load(self.state['omega'])
-        elif not self.state['omega_from_file']:
+        else:
             omega = []
             nframes = int(self.ui.total_frames.text()) // num_files
-            nsteps = [w[2] for w in self.state['wedges']] * num_files
-            row_count = self.ui.omega_wedges.rowCount()
-            length = num_files if row_count == 1 else 1
-            for i in range(row_count):
-                start = float(self.ui.omega_wedges.item(i, 0).text())
-                stop = float(self.ui.omega_wedges.item(i, 1).text())
-                steps = int(float(self.ui.omega_wedges.item(i, 2).text()))
-                delta = (stop - start) / length
-                omega.extend(np.linspace(
-                    [start, start + delta],
-                    [stop - delta, stop],
-                    length))
-            omega = np.array(omega)
+            if self.state["wedges"]:
+                nsteps = [w[2] for w in self.state['wedges']]
+                if len(nsteps) != num_files:
+                    nsteps = [sum(nsteps) / num_files] * num_files
+                row_count = self.ui.omega_wedges.rowCount()
+                length = num_files if row_count == 1 else 1
+                for i in range(row_count):
+                    start = float(self.ui.omega_wedges.item(i, 0).text())
+                    stop = float(self.ui.omega_wedges.item(i, 1).text())
+                    steps = int(float(self.ui.omega_wedges.item(i, 2).text()))
+                    delta = (stop - start) / length
+                    omega.extend(np.linspace(
+                        [start, start + delta],
+                        [stop - delta, stop],
+                        length))
+                omega = np.array(omega)
+            else:
+                nsteps = [nframes] * num_files
         if not len(omega):
             delta = MAXIMUM_OMEGA_RANGE / num_files
             omega = np.linspace(
@@ -345,7 +369,7 @@ class ImageStackDialog(QObject):
 
     def check_steps(self):
         if self.ui.omega_from_file.isChecked():
-            return
+            return (-1, -1) if self.state['omega'] else (0, 0)
         steps = 0
         for i in range(self.ui.omega_wedges.rowCount()):
             for j in range(self.ui.omega_wedges.columnCount()):
@@ -360,7 +384,7 @@ class ImageStackDialog(QObject):
         if self.ui.max_file_frames.value() != 0:
             total_frames = min(
                 total_frames, self.ui.max_file_frames.value() * file_count)
-        return (steps, total_frames) if total_frames != steps else (0, 0)
+        return (steps, total_frames) if total_frames != steps else (-1, -1)
 
     def exec_(self):
         while True:
@@ -391,7 +415,7 @@ class ImageStackDialog(QObject):
                     error = True
                     continue
                 steps, total_frames = self.check_steps()
-                if steps != 0:
+                if steps >= 0 and self.state['add_omega_data']:
                     if steps > 0:
                         msg = (
                             f'The total number of steps must be equal to the '
