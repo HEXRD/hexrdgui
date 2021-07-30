@@ -22,6 +22,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         # These can be modified anytime
         self.lists_resizable = True
         self._blacklisted_paths = []
+        self.editable = True
 
         self.config = dictionary
 
@@ -58,9 +59,26 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             return Qt.NoItemFlags
 
         flags = super().flags(index)
-
         item = self.get_item(index)
-        if index.column() != KEY_COL and item.child_count() == 0:
+
+        # Items are selectable if they have no children
+        # and none of the data values in the row are `None`.
+        is_selectable = all((
+            item.child_count() == 0,
+            not any(x is None for x in item.data_list),
+        ))
+        if is_selectable:
+            flags = flags | Qt.ItemIsSelectable
+        else:
+            flags = flags & ~Qt.ItemIsSelectable
+
+        is_editable = all((
+            index.column() != KEY_COL,
+            item.child_count() == 0,
+            self.editable,
+        ))
+
+        if is_editable:
             # All columns after the first with no children are editable
             flags = flags | Qt.ItemIsEditable
 
@@ -166,6 +184,36 @@ class BaseDictTreeView(QTreeView):
         self._combo_keys = v
         self.rebuild_tree()
         self.expand_rows()
+
+    @property
+    def editable(self):
+        return self.model().editable
+
+    @editable.setter
+    def editable(self, v):
+        self.model().editable = v
+
+    @property
+    def selection_mode(self):
+        return self.selectionMode()
+
+    @selection_mode.setter
+    def selection_mode(self, v):
+        self.setSelectionMode(v)
+
+    def set_single_selection_mode(self):
+        self.selection_mode = QTreeView.SingleSelection
+
+    def set_multi_selection_mode(self):
+        self.selection_mode = QTreeView.MultiSelection
+
+    def set_extended_selection_mode(self):
+        self.selection_mode = QTreeView.ExtendedSelection
+
+    @property
+    def selected_items(self):
+        selected_rows = self.selectionModel().selectedRows()
+        return [self.model().get_item(x) for x in selected_rows]
 
     def contextMenuEvent(self, event):
         # Generate the actions

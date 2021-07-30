@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide2.QtWidgets import QDialog, QVBoxLayout
 
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
@@ -26,8 +28,12 @@ class DictTreeItemModel(BaseDictTreeItemModel):
         elif isinstance(cur_config, list):
             keys = range(len(cur_config))
         else:
-            # This must be a value. Set it.
-            cur_tree_item.set_data(VALUE_COL, cur_config)
+            # This must be a value.
+            val = cur_config
+            if isinstance(val, np.ndarray) and val.size == 1:
+                # Convert to native python type
+                val = val.item()
+            cur_tree_item.set_data(VALUE_COL, val)
             return
 
         for key in keys:
@@ -58,8 +64,6 @@ class DictTreeView(BaseDictTreeView):
         self.header().resizeSection(KEY_COL, 200)
         self.header().resizeSection(VALUE_COL, 200)
 
-        self.expand_rows()
-
 
 class DictTreeViewDialog(QDialog):
 
@@ -68,7 +72,31 @@ class DictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.dict_tree_view = DictTreeView(dictionary, self)
-        self.layout().addWidget(self.dict_tree_view)
+        self.tree_view = DictTreeView(dictionary, self)
+        self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)
+
+    def expand_rows(self):
+        return self.tree_view.expand_rows()
+
+    @property
+    def editable(self):
+        return self.tree_view.editable
+
+    @editable.setter
+    def editable(self, v):
+        self.tree_view.editable = v
+
+    def set_single_selection_mode(self):
+        self.tree_view.set_single_selection_mode()
+
+    def set_multi_selection_mode(self):
+        self.tree_view.set_multi_selection_mode()
+
+    def set_extended_selection_mode(self):
+        self.tree_view.set_extended_selection_mode()
+
+    @property
+    def selected_items(self):
+        return self.tree_view.selected_items
