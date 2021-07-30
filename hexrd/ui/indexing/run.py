@@ -125,7 +125,8 @@ class IndexingRunner(Runner):
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
         dialog.rejected.connect(self.clear)
-        dialog.show()
+        # Show later so the dialog will move to the front on Mac
+        dialog.show_later()
 
         self.ome_maps_viewer_dialog = dialog
 

@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import yaml
 
-from PySide2.QtCore import Signal, QObject, QSignalBlocker, Qt
+from PySide2.QtCore import Signal, QObject, QSignalBlocker, QTimer, Qt
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox,
     QSizePolicy, QSpinBox
@@ -184,6 +184,13 @@ class OmeMapsViewerDialog(QObject):
     def show(self):
         self.update_plot()
         self.ui.show()
+
+    def show_later(self):
+        # In case this was called in a separate thread (which will
+        # happen if the maps were generated), post the show() to the
+        # event loop. Otherwise, on Mac, the dialog will not move to
+        # the front.
+        QTimer.singleShot(0, lambda: self.show())
 
     def on_accepted(self):
         # Update the config just in case...
