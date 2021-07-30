@@ -23,11 +23,13 @@ DEFAULT_SITE = {
     'atoms': [
         {
             'symbol': 'O',
+            'charge': '0',
             'occupancy': 0.5,
             'U': 1e-6
         },
         {
             'symbol': 'Ce',
+            'charge': '0',
             'occupancy': 0.5,
             'U': 1e-6
         }
@@ -234,6 +236,7 @@ class MaterialStructureEditor(QObject):
         # Convert the sites back to the material data format
         info_array = []
         type_array = []
+        charge_array = []
         U_array = []
 
         for site in self.sites:
@@ -241,6 +244,7 @@ class MaterialStructureEditor(QObject):
                 info_array.append((*site['fractional_coords'],
                                    atom['occupancy']))
                 type_array.append(ptable[atom['symbol']])
+                charge_array.append(atom['charge'])
                 U_array.append(atom['U'])
 
         if any(isinstance(x, np.ndarray) for x in U_array):
@@ -249,7 +253,7 @@ class MaterialStructureEditor(QObject):
                 U_array[i] = scalar_to_tensor(U)
 
         mat = self.material
-        mat._set_atomdata(type_array, info_array, U_array)
+        mat._set_atomdata(type_array, info_array, U_array, charge_array)
 
         self.material_modified.emit()
 
@@ -263,11 +267,13 @@ class MaterialStructureEditor(QObject):
             'atoms': [
                 {
                     'symbol': 'Na',
+                    'charge': '0',
                     'occupancy': 0.5,
                     'U': 4.18e-7
                 },
                 {
                     'symbol': 'Br',
+                    'charge': '0',
                     'occupancy': 0.5,
                     'U': 4.18e-7
                 }
@@ -287,6 +293,7 @@ class MaterialStructureEditor(QObject):
 
         info_array = mat._atominfo
         type_array = mat._atomtype
+        charge_array = mat.charge
         U_array = mat._U
 
         if any(isinstance(x, np.ndarray) for x in U_array):
@@ -322,6 +329,7 @@ class MaterialStructureEditor(QObject):
             for i in indices:
                 atom = {
                     'symbol': ptableinverse[type_array[i]],
+                    'charge': charge_array[i],
                     'occupancy': info_array[i][3],
                     'U': U_array[i]
                 }
