@@ -323,7 +323,7 @@ class ImageStackDialog(QObject):
             if self.state["wedges"]:
                 nsteps = [w[2] for w in self.state['wedges']]
                 if len(nsteps) != num_files:
-                    nsteps = [sum(nsteps) / num_files] * num_files
+                    nsteps = [sum(nsteps) // num_files] * num_files
                 row_count = self.ui.omega_wedges.rowCount()
                 length = num_files if row_count == 1 else 1
                 for i in range(row_count):
