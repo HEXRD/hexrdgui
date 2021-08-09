@@ -1,6 +1,5 @@
 name: hexrdgui-package
 channels:
-  - cjh1
   - conda-forge
   - nodefaults
 dependencies:
