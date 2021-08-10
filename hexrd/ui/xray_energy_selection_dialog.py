@@ -13,6 +13,7 @@ from hexrd.utils.decorators import memoize
 
 from hexrd.ui.resource_loader import load_resource
 from hexrd.ui.tree_views.dict_tree_view import DictTreeViewDialog
+from hexrd.ui.ui_loader import UiLoader
 
 
 class XRayEnergySelectionDialog(DictTreeViewDialog):
@@ -44,6 +45,8 @@ class XRayEnergySelectionDialog(DictTreeViewDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         self.layout().addWidget(button_box)
+
+        UiLoader().install_dialog_enter_key_filters(self)
 
     def load_xray_dict(self):
         self.xray_dict = _load_xray_dict()
