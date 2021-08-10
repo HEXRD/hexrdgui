@@ -49,6 +49,7 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
+from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 
 
 class MainWindow(QObject):
@@ -503,7 +504,7 @@ class MainWindow(QObject):
         self._indexing_runner.run()
 
     def on_action_rerun_clustering(self):
-        return
+        RerunClusteringDialog(self._indexing_runner, self.ui).show()
 
     def on_action_run_fit_grains_triggered(self):
         kwargs = {
