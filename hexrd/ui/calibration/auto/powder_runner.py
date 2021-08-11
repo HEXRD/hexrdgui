@@ -2,7 +2,7 @@ import traceback
 
 import numpy as np
 
-from PySide2.QtCore import QObject, Qt, Signal
+from PySide2.QtCore import QObject, QTimer, Qt, Signal
 from PySide2.QtWidgets import QCheckBox, QMessageBox
 
 from hexrd.ui.async_runner import AsyncRunner
@@ -141,7 +141,10 @@ class PowderRunner(QObject):
         cb.toggled.connect(self.show_lines)
 
         box.setCheckBox(cb)
-        box.show()
+
+        # We must show() in the GUI thread, or on Mac, the dialog
+        # will appear behind the main window...
+        QTimer.singleShot(0, lambda: box.show())
 
         box.finished.connect(self.remove_lines)
         box.accepted.connect(self.lines_accepted)
