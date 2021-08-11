@@ -18,7 +18,8 @@ class RerunClusteringDialog(QDialog):
         loader = UiLoader()
         self.ui = loader.load_file('rerun_clustering_dialog.ui', parent)
         self.indexing_runner = indexing_runner
-        self.scored_orientations = None
+        self.qfib = None
+        self.completeness = None
         self.setup_gui()
         self.setup_connections()
 
@@ -47,8 +48,8 @@ class RerunClusteringDialog(QDialog):
             self.ui.file_name.setText(Path(selected_file).name)
             self.ui.file_name.setToolTip(selected_file)
             with np.load(selected_file) as data:
-                self.indexing_runner.qfib = data['test_quaternions']
-                self.indexing_runner.completeness = data['score']
+                self.qfib = data['test_quaternions']
+                self.completeness = data['score']
 
     def save_input(self):
         idx_cfg = copy.deepcopy(HexrdConfig().indexing_config)
@@ -60,6 +61,10 @@ class RerunClusteringDialog(QDialog):
             clustering)
         if self.ui.min_samples.isEnabled():
             self.indexing_runner.min_samples = self.ui.min_samples.value()
+        if self.qfib is not None:
+            self.indexing_runner.qfib = self.qfib
+        if self.completeness is not None:
+            self.indexing_runner.completeness = self.completeness
 
     def accept(self):
         self.save_input()
