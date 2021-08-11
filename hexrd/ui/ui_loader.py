@@ -1,6 +1,6 @@
 from PySide2.QtCore import QBuffer, QByteArray
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QDialog
+from PySide2.QtWidgets import QDialog, QDialogButtonBox, QPushButton
 
 from hexrd.ui import enter_key_filter, resource_loader
 
@@ -44,8 +44,32 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
     def process_ui(self, ui):
         """Perform any additional processing on loaded UI objects
 
-        Currently: it installs an enter key filter for QDialogs to prevent
+        Currently, it installs an enter key filter for QDialogs to prevent
         the enter key from closing them.
         """
         if isinstance(ui, QDialog):
-            ui.installEventFilter(enter_key_filter)
+            self.install_dialog_enter_key_filters(ui)
+
+    def install_dialog_enter_key_filters(self, dialog):
+        """Block enter key press accept/reject for dialogs
+
+        This function installs enter key filters on a QDialog and all
+        QPushButton children that follow this parent/child scheme:
+
+        QDialog -> QDialogButtonBox -> QPushButton
+
+        The enter key filter blocks all enter/return key presses from
+        automatically accepting or rejecting the dialog, to prevent
+        the user from accidentally closing the dialog by pressing enter.
+
+        The event filter must be installed both on the QDialog and the
+        QPushButtons because it is currently unpredictable (to me,
+        at least) which one will receive the key press event, and if the
+        QDialog receives the key press event, it DOES NOT forward the
+        event to the QPushButton, but rather "clicks" the QPushButton.
+        """
+        dialog.installEventFilter(enter_key_filter)
+
+        for box in dialog.findChildren(QDialogButtonBox):
+            for button in box.findChildren(QPushButton):
+                button.installEventFilter(enter_key_filter)

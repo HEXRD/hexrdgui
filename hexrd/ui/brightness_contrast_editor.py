@@ -385,6 +385,8 @@ class BrightnessContrastEditor(QObject):
         button_box.rejected.connect(dialog.reject)
         layout.addWidget(button_box)
 
+        UiLoader().install_dialog_enter_key_filters(dialog)
+
         if not dialog.exec_():
             # User canceled
             return
