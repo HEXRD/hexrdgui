@@ -500,11 +500,14 @@ class MainWindow(QObject):
         self.update_all()
 
     def on_action_run_indexing_triggered(self):
+        self.ui.action_rerun_clustering.setEnabled(False)
         self._indexing_runner = IndexingRunner(self.ui)
+        self._indexing_runner.clustering_ran.connect(
+            self.ui.action_rerun_clustering.setEnabled)
         self._indexing_runner.run()
 
     def on_action_rerun_clustering(self):
-        RerunClusteringDialog(self._indexing_runner, self.ui).show()
+        RerunClusteringDialog(self._indexing_runner, self.ui).exec_()
 
     def on_action_run_fit_grains_triggered(self):
         kwargs = {

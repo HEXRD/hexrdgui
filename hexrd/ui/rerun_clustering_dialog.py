@@ -6,13 +6,15 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
-from PySide2.QtWidgets import QFileDialog
+from PySide2.QtWidgets import QDialog, QFileDialog
 from PySide2.QtCore import Qt
 
 
-class RerunClusteringDialog:
+class RerunClusteringDialog(QDialog):
 
     def __init__(self, indexing_runner, parent=None):
+        super().__init__(parent)
+
         loader = UiLoader()
         self.ui = loader.load_file('rerun_clustering_dialog.ui', parent)
         self.indexing_runner = indexing_runner
@@ -22,22 +24,19 @@ class RerunClusteringDialog:
 
     def setup_gui(self):
         idx_cfg = HexrdConfig().indexing_config['find_orientations']
-        clustering_data = idx_cfg.get('clustering', {})
-        self.ui.radius.setValue(clustering_data.get('radius', 1.0))
-        self.ui.completeness.setValue(
-            clustering_data.get('completeness', 0.85))
-        self.ui.algorithms.setCurrentText(
-            clustering_data.get('algorithm', 'dbscan'))
-        needs_min_samples = getattr(
-            self.indexing_runner, 'clustering_needs_min_samples', False)
+        clustering_data = idx_cfg['clustering']
+        self.ui.radius.setValue(clustering_data['radius'])
+        self.ui.completeness.setValue(clustering_data['completeness'])
+        self.ui.algorithms.setCurrentText(clustering_data['algorithm'])
+        needs_min_samples = self.indexing_runner.clustering_needs_min_samples
         self.ui.min_samples_label.setEnabled(needs_min_samples)
         self.ui.min_samples.setEnabled(needs_min_samples)
-        if self.ui.min_samples.isEnabled():
+        if needs_min_samples:
             self.ui.min_samples.setValue(self.indexing_runner.min_samples)
 
     def setup_connections(self):
         self.ui.load_file.clicked.connect(self.load_file)
-        self.ui.buttonBox.accepted.connect(self.on_accepted)
+        self.ui.buttonBox.accepted.connect(self.accept)
 
     def load_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -62,17 +61,20 @@ class RerunClusteringDialog:
         if self.ui.min_samples.isEnabled():
             self.indexing_runner.min_samples = self.ui.min_samples.value()
 
-    def on_accepted(self):
+    def accept(self):
         self.save_input()
 
-        worker = AsyncWorker(self.indexing_runner.run_cluster)
-        self.indexing_runner.thread_pool.start(worker)
+        runner = self.indexing_runner
+        worker = AsyncWorker(runner.run_cluster)
+        runner.thread_pool.start(worker)
         worker.signals.result.connect(
-            self.indexing_runner.start_fit_grains_runner, Qt.QueuedConnection)
-        worker.signals.finished.connect(self.indexing_runner.accept_progress)
-        worker.signals.error.connect(self.indexing_runner.on_async_error)
-        self.indexing_runner.progress_dialog.exec_()
+            runner.start_fit_grains_runner, Qt.QueuedConnection)
+        worker.signals.finished.connect(runner.accept_progress)
+        worker.signals.error.connect(runner.on_async_error)
+        runner.progress_dialog.exec_()
 
-    def show(self):
+        super().accept()
+
+    def exec_(self):
         self.setup_gui()
         self.ui.exec_()
