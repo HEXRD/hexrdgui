@@ -29,14 +29,14 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="ScientificDoubleSpinBox" name="completeness">
-     <property name="decimals">
+    <widget class="ScientificDoubleSpinBox" name="completeness" native="true">
+     <property name="decimals" stdset="0">
       <number>8</number>
      </property>
-     <property name="maximum">
+     <property name="maximum" stdset="0">
       <double>1.000000000000000</double>
      </property>
-     <property name="value">
+     <property name="value" stdset="0">
       <double>0.850000000000000</double>
      </property>
     </widget>
@@ -82,7 +82,7 @@
    <item row="3" column="0">
     <widget class="QLabel" name="min_samples_label">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="text">
       <string>Minimum Samples</string>
@@ -92,7 +92,7 @@
    <item row="3" column="1">
     <widget class="QSpinBox" name="min_samples">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -107,14 +107,14 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="ScientificDoubleSpinBox" name="radius">
-     <property name="decimals">
+    <widget class="ScientificDoubleSpinBox" name="radius" native="true">
+     <property name="decimals" stdset="0">
       <number>8</number>
      </property>
-     <property name="maximum">
+     <property name="maximum" stdset="0">
       <double>10000000.000000000000000</double>
      </property>
-     <property name="value">
+     <property name="value" stdset="0">
       <double>1.000000000000000</double>
      </property>
     </widget>
@@ -128,6 +128,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QWidget</extends>
+   <header>scientificdoublespinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>radius</tabstop>
   <tabstop>completeness</tabstop>

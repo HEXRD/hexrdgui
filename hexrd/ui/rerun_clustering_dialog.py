@@ -30,14 +30,26 @@ class RerunClusteringDialog(QDialog):
         self.ui.completeness.setValue(clustering_data['completeness'])
         self.ui.algorithms.setCurrentText(clustering_data['algorithm'])
         needs_min_samples = self.indexing_runner.clustering_needs_min_samples
-        self.ui.min_samples_label.setEnabled(needs_min_samples)
-        self.ui.min_samples.setEnabled(needs_min_samples)
+        self.ui.min_samples_label.setVisible(needs_min_samples)
+        self.ui.min_samples.setVisible(needs_min_samples)
         if needs_min_samples:
             self.ui.min_samples.setValue(self.indexing_runner.min_samples)
 
     def setup_connections(self):
         self.ui.load_file.clicked.connect(self.load_file)
         self.ui.buttonBox.accepted.connect(self.accept)
+        self.ui.algorithms.currentIndexChanged.connect(
+            self.update_min_samples_enable_state)
+
+    def update_min_samples_enable_state(self):
+        indexing_config = HexrdConfig().indexing_config
+        visible = (
+            indexing_config['find_orientations']['use_quaternion_grid'] is None
+            and self.ui.algorithms.currentText() != 'fclusterdata'
+        )
+
+        self.ui.min_samples_label.setVisible(visible)
+        self.ui.min_samples.setVisible(visible)
 
     def load_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
