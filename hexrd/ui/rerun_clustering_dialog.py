@@ -29,15 +29,12 @@ class RerunClusteringDialog(QDialog):
         self.ui.radius.setValue(clustering_data['radius'])
         self.ui.completeness.setValue(clustering_data['completeness'])
         self.ui.algorithms.setCurrentText(clustering_data['algorithm'])
-        needs_min_samples = self.indexing_runner.clustering_needs_min_samples
-        self.ui.min_samples_label.setVisible(needs_min_samples)
-        self.ui.min_samples.setVisible(needs_min_samples)
-        if needs_min_samples:
-            self.ui.min_samples.setValue(self.indexing_runner.min_samples)
+        self.ui.min_samples.setValue(self.indexing_runner.min_samples)
+        self.update_min_samples_enable_state()
 
     def setup_connections(self):
         self.ui.load_file.clicked.connect(self.load_file)
-        self.ui.buttonBox.accepted.connect(self.accept)
+        self.ui.button_box.accepted.connect(self.accept)
         self.ui.algorithms.currentIndexChanged.connect(
             self.update_min_samples_enable_state)
 
@@ -64,14 +61,12 @@ class RerunClusteringDialog(QDialog):
                 self.completeness = data['score']
 
     def save_input(self):
-        idx_cfg = copy.deepcopy(HexrdConfig().indexing_config)
-        clustering = idx_cfg['find_orientations'].get('clustering', {})
+        idx_cfg = HexrdConfig().indexing_config
+        clustering = idx_cfg['find_orientations']['clustering']
         clustering['radius'] = self.ui.radius.value()
         clustering['completeness'] = self.ui.completeness.value()
         clustering['algorithm'] = self.ui.algorithms.currentText()
-        HexrdConfig().indexing_config['find_orientations']['clustering'] = (
-            clustering)
-        if self.ui.min_samples.isEnabled():
+        if self.indexing_runner.clustering_needs_min_samples:
             self.indexing_runner.min_samples = self.ui.min_samples.value()
         if self.qfib is not None:
             self.indexing_runner.qfib = self.qfib

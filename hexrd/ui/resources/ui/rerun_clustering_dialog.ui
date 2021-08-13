@@ -97,7 +97,7 @@
     </widget>
    </item>
    <item row="6" column="1">
-    <widget class="QDialogButtonBox" name="buttonBox">
+    <widget class="QDialogButtonBox" name="button_box">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -145,7 +145,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>rejected()</signal>
    <receiver>rerun_clustering_dialog</receiver>
    <slot>reject()</slot>
@@ -161,7 +161,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>accepted()</signal>
    <receiver>rerun_clustering_dialog</receiver>
    <slot>accept()</slot>
