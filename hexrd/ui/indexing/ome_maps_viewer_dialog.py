@@ -215,6 +215,20 @@ class OmeMapsViewerDialog(QObject):
             if not q_file or not Path(q_file).exists():
                 msg = f'Quaternion file "{q_file}" does not exist!'
                 raise ValidationException(msg)
+
+            # Load the file and validate the shape
+            try:
+                quats = np.load(q_file)
+            except ValueError:
+                msg = f'Failed to load quaternion file "{q_file}" with numpy'
+                raise ValidationException(msg)
+
+            if quats.ndim != 2 or quats.shape[0] != 4:
+                msg = (
+                    f'The quaternion array in "{q_file}" must have a shape of '
+                    f'(4, n), but instead has a shape of "{quats.shape}".'
+                )
+                raise ValidationException(msg)
         else:
             # Seed search. Make sure hkls were chosen.
             hkls = self.config['find_orientations']['seed_search']['hkl_seeds']
