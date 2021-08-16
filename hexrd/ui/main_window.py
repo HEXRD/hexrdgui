@@ -49,6 +49,7 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
+from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 
 
 class MainWindow(QObject):
@@ -210,6 +211,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
+        self.ui.action_rerun_clustering.triggered.connect(
+            self.on_action_rerun_clustering)
         self.ui.action_run_fit_grains.triggered.connect(
             self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
@@ -497,8 +500,14 @@ class MainWindow(QObject):
         self.update_all()
 
     def on_action_run_indexing_triggered(self):
+        self.ui.action_rerun_clustering.setEnabled(False)
         self._indexing_runner = IndexingRunner(self.ui)
+        self._indexing_runner.clustering_ran.connect(
+            self.ui.action_rerun_clustering.setEnabled)
         self._indexing_runner.run()
+
+    def on_action_rerun_clustering(self):
+        RerunClusteringDialog(self._indexing_runner, self.ui).exec_()
 
     def on_action_run_fit_grains_triggered(self):
         kwargs = {

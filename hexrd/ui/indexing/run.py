@@ -62,6 +62,9 @@ class Runner(QObject):
 
 
 class IndexingRunner(Runner):
+
+    clustering_ran = Signal(bool)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.clear()
@@ -284,6 +287,7 @@ class IndexingRunner(Runner):
         self.qbar, cl = run_cluster(**kwargs)
 
         print('Clustering complete...')
+        self.clustering_ran.emit(True)
         self.generate_grains_table()
 
     def generate_grains_table(self):
