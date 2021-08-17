@@ -97,13 +97,15 @@ class MaskManagerDialog(QObject):
             status = key in HexrdConfig().visible_masks
             cb.setChecked(status)
             cb.setStyleSheet('margin-left:50%; margin-right:50%;')
-            cb.toggled.connect(self.toggle_visibility)
             self.ui.masks_table.setCellWidget(i, 1, cb)
+            self.ui.masks_table.cellWidget(i, 1).toggled.connect(
+                lambda checked, key=key: self.toggle_visibility(checked, key))
 
             # Add push button to remove mask
             pb = QPushButton('Remove Mask')
-            pb.clicked.connect(self.remove_mask)
             self.ui.masks_table.setCellWidget(i, 2, pb)
+            self.ui.masks_table.cellWidget(i, 2).released.connect(
+                lambda i=i, key=key: self.remove_mask(i, key))
 
             # Connect manager to raw image mode tab settings
             # for threshold mask
@@ -121,15 +123,8 @@ class MaskManagerDialog(QObject):
     def threshold_toggled(self, v):
         HexrdConfig().set_threshold_mask_status(v, set_by_mgr=True)
 
-    def toggle_visibility(self, checked):
-        if self.ui.masks_table.currentRow() < 0:
-            return
-
-        row = self.ui.masks_table.currentRow()
-        name = self.ui.masks_table.item(row, 0).text()
-        mtype, data = self.masks[name]
-
-        if checked and name and name not in HexrdConfig().visible_masks:
+    def toggle_visibility(self, checked, name):
+        if checked and name not in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.append(name)
         elif not checked and name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
@@ -146,10 +141,8 @@ class MaskManagerDialog(QObject):
         HexrdConfig().set_threshold_mask(None)
         HexrdConfig().set_threshold_mask_status(False)
 
-    def remove_mask(self):
-        row = self.ui.masks_table.currentRow()
-        name = self.ui.masks_table.item(row, 0).text()
-        mtype, data = self.masks[name]
+    def remove_mask(self, row, name):
+        mtype, _ = self.masks[name]
 
         del self.masks[name]
         if name in HexrdConfig().visible_masks:
@@ -185,11 +178,10 @@ class MaskManagerDialog(QObject):
                 return
 
             self.masks[new_name] = self.masks.pop(self.old_name)
-            mtype, data = self.masks[new_name]
-            if mtype == 'polar':
+            if self.old_name in HexrdConfig().polar_masks_line_data.keys():
                 value = HexrdConfig().polar_masks_line_data.pop(self.old_name)
                 HexrdConfig().polar_masks[new_name] = value
-            elif mtype != 'threshold':
+            elif self.old_name in HexrdConfig().raw_masks_line_data.keys():
                 value = HexrdConfig().raw_masks_line_data.pop(self.old_name)
                 HexrdConfig().raw_masks[new_name] = value
 
@@ -200,9 +192,10 @@ class MaskManagerDialog(QObject):
                 value = HexrdConfig().raw_masks.pop(self.old_name)
                 HexrdConfig().raw_masks[new_name] = value
 
-            if self.old_name in self.visible:
-                self.visible.append(new_name)
-                self.visible.remove(self.old_name)
+            if self.old_name in HexrdConfig().visible_masks:
+                HexrdConfig().visible_masks.append(new_name)
+                HexrdConfig().visible_masks.remove(self.old_name)
+
         self.old_name = None
 
     def context_menu_event(self, event):
