@@ -84,6 +84,7 @@ class MaskManagerDialog(QObject):
         self.ui.export_masks.clicked.connect(self.export_visible_masks)
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
+        HexrdConfig().detectors_changed.connect(self.clear_masks)
 
     def setup_table(self, status=True):
         self.ui.masks_table.blockSignals(True)
@@ -233,3 +234,10 @@ class MaskManagerDialog(QObject):
             mtype, data = self.masks[mask]
             d[mask] = data
         self.export_masks(d)
+
+    def clear_masks(self):
+        HexrdConfig().polar_masks.clear()
+        HexrdConfig().raw_masks.clear()
+        HexrdConfig().visible_masks.clear()
+        self.masks.clear()
+        self.setup_table()
