@@ -86,6 +86,7 @@ class MaskManagerDialog(QObject):
             self.update_masks_list)
 
     def setup_table(self, status=True):
+        self.ui.masks_table.blockSignals(True)
         self.ui.masks_table.setRowCount(0)
         for i, key in enumerate(self.masks.keys()):
             # Add label
@@ -113,7 +114,9 @@ class MaskManagerDialog(QObject):
             if mtype == 'threshold':
                 self.setup_threshold_connections(cb, pb)
 
-    def setup_threshold_connections(self, checkbox, pushbutton):
+        self.ui.masks_table.blockSignals(False)
+
+    def setup_threshold_connections(self, checkbox, row, name):
         HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
         checkbox.toggled.connect(self.threshold_toggled)
 
@@ -155,6 +158,7 @@ class MaskManagerDialog(QObject):
             self.reset_threshold()
 
         self.ui.masks_table.removeRow(row)
+        self.setup_table()
 
         if self.image_mode == ViewType.polar:
             HexrdConfig().polar_masks_changed.emit()
@@ -197,6 +201,7 @@ class MaskManagerDialog(QObject):
                 HexrdConfig().visible_masks.remove(self.old_name)
 
         self.old_name = None
+        self.setup_table()
 
     def context_menu_event(self, event):
         index = self.ui.masks_table.indexAt(event)
