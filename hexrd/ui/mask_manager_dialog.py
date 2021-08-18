@@ -209,13 +209,14 @@ class MaskManagerDialog(QObject):
 
     def context_menu_event(self, event):
         index = self.ui.masks_table.indexAt(event)
-        menu = QMenu(self.ui.masks_table)
-        export = menu.addAction('Export Mask')
-        action = menu.exec_(QCursor.pos())
-        if action == export:
-            selection = self.ui.masks_table.item(index.row(), 0).text()
-            mtype, data = self.masks[selection]
-            self.export_masks({selection: data})
+        if index.row() >= 0:
+            menu = QMenu(self.ui.masks_table)
+            export = menu.addAction('Export Mask')
+            action = menu.exec_(QCursor.pos())
+            if action == export:
+                selection = self.ui.masks_table.item(index.row(), 0).text()
+                _, data = self.masks[selection]
+                self.export_masks({selection: data})
 
     def export_masks(self, data):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
