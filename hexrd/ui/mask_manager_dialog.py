@@ -113,13 +113,16 @@ class MaskManagerDialog(QObject):
             # for threshold mask
             mtype, data = self.masks[key]
             if mtype == 'threshold':
-                self.setup_threshold_connections(cb, pb)
+                self.setup_threshold_connections(cb, i, key)
 
         self.ui.masks_table.blockSignals(False)
 
     def setup_threshold_connections(self, checkbox, row, name):
         HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
         checkbox.toggled.connect(self.threshold_toggled)
+        self.ui.masks_table.cellWidget(row, 2).released.connect(
+            lambda row=row, name=name: self.remove_mask(row, name))
+
 
     def image_mode_changed(self, mode):
         self.image_mode = mode
