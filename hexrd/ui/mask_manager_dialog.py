@@ -38,10 +38,10 @@ class MaskManagerDialog(QObject):
         polar_data = HexrdConfig().polar_masks_line_data
         raw_data = HexrdConfig().raw_masks_line_data
 
-        for i, (key, val) in enumerate(polar_data.items()):
+        for _, (key, val) in enumerate(polar_data.items()):
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = ('polar', val)
-        for i, (key, val) in enumerate(raw_data.items()):
+        for _, (key, val) in enumerate(raw_data.items()):
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = val
         if HexrdConfig().threshold_mask_status:
@@ -57,7 +57,7 @@ class MaskManagerDialog(QObject):
             for name, data in HexrdConfig().polar_masks_line_data.items():
                 vals = self.masks.values()
                 for val in data:
-                    if any(np.array_equal(val, m) for t, m in vals):
+                    if any(np.array_equal(val, m) for _, m in vals):
                         continue
                     self.masks[name] = (mask_type, val)
         elif mask_type == 'raw':
@@ -66,7 +66,7 @@ class MaskManagerDialog(QObject):
             for name, value in HexrdConfig().raw_masks_line_data.items():
                 det, val = value[0]
                 vals = self.masks.values()
-                if any(np.array_equal(val, m) for t, m in vals):
+                if any(np.array_equal(val, m) for _, m in vals):
                     continue
                 self.masks[name] = (det, val)
         elif not self.threshold:
@@ -111,7 +111,7 @@ class MaskManagerDialog(QObject):
 
             # Connect manager to raw image mode tab settings
             # for threshold mask
-            mtype, data = self.masks[key]
+            mtype, _ = self.masks[key]
             if mtype == 'threshold':
                 self.setup_threshold_connections(cb, i, key)
 
@@ -175,7 +175,7 @@ class MaskManagerDialog(QObject):
 
         self.old_name = self.ui.masks_table.item(row, 0).text()
 
-    def update_mask_name(self, row, column):
+    def update_mask_name(self, row):
         if not hasattr(self, 'old_name') or self.old_name is None:
             return
 
@@ -219,13 +219,13 @@ class MaskManagerDialog(QObject):
                 self.export_masks({selection: data})
 
     def export_masks(self, data):
-        selected_file, selected_filter = QFileDialog.getSaveFileName(
+        selected_file, _ = QFileDialog.getSaveFileName(
             self.ui, 'Save Mask', HexrdConfig().working_dir,
             'NPZ files (*.npz);; NPY files (*.npy)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
-            path, ext = os.path.splitext(selected_file)
+            _, ext = os.path.splitext(selected_file)
 
             if ext.lower() == '.npz':
                 np.savez(selected_file, **data)
@@ -235,7 +235,7 @@ class MaskManagerDialog(QObject):
     def export_visible_masks(self):
         d = {}
         for mask in HexrdConfig().visible_masks:
-            mtype, data = self.masks[mask]
+            _, data = self.masks[mask]
             d[mask] = data
         self.export_masks(d)
 
