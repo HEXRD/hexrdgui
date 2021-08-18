@@ -262,4 +262,5 @@ class MaskRegionsDialog(QObject):
                     axes.patches.clear()
 
         self.disconnect()
-        self.canvas.draw_idle()
+        if self.canvas is not None:
+            self.canvas.draw_idle()
