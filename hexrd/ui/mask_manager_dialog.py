@@ -100,14 +100,13 @@ class MaskManagerDialog(QObject):
             cb.setChecked(status)
             cb.setStyleSheet('margin-left:50%; margin-right:50%;')
             self.ui.masks_table.setCellWidget(i, 1, cb)
-            self.ui.masks_table.cellWidget(i, 1).toggled.connect(
+            cb.toggled.connect(
                 lambda checked, key=key: self.toggle_visibility(checked, key))
 
             # Add push button to remove mask
             pb = QPushButton('Remove Mask')
             self.ui.masks_table.setCellWidget(i, 2, pb)
-            self.ui.masks_table.cellWidget(i, 2).released.connect(
-                lambda i=i, key=key: self.remove_mask(i, key))
+            pb.clicked.connect(lambda i=i, key=key: self.remove_mask(i, key))
 
             # Connect manager to raw image mode tab settings
             # for threshold mask
@@ -120,7 +119,7 @@ class MaskManagerDialog(QObject):
     def setup_threshold_connections(self, checkbox, row, name):
         HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
         checkbox.toggled.connect(self.threshold_toggled)
-        self.ui.masks_table.cellWidget(row, 2).released.connect(
+        self.ui.masks_table.cellWidget(row, 2).clicked.connect(
             lambda row=row, name=name: self.remove_mask(row, name))
 
 
