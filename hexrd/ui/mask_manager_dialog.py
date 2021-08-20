@@ -38,10 +38,10 @@ class MaskManagerDialog(QObject):
         polar_data = HexrdConfig().polar_masks_line_data
         raw_data = HexrdConfig().raw_masks_line_data
 
-        for _, (key, val) in enumerate(polar_data.items()):
+        for key, val in polar_data.items():
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = ('polar', val)
-        for _, (key, val) in enumerate(raw_data.items()):
+        for key, val in raw_data.items():
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = val
         if HexrdConfig().threshold_mask_status:
