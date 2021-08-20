@@ -101,12 +101,12 @@ class MaskManagerDialog(QObject):
                 cb.setStyleSheet('margin-left:50%; margin-right:50%;')
                 self.ui.masks_table.setCellWidget(i, 1, cb)
                 cb.toggled.connect(
-                    lambda checked, key=key: self.toggle_visibility(checked, key))
+                    lambda c, k=key: self.toggle_visibility(c, k))
 
                 # Add push button to remove mask
                 pb = QPushButton('Remove Mask')
                 self.ui.masks_table.setCellWidget(i, 2, pb)
-                pb.clicked.connect(lambda i=i, key=key: self.remove_mask(i, key))
+                pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
 
                 # Connect manager to raw image mode tab settings
                 # for threshold mask
