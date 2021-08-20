@@ -6,7 +6,7 @@ from PySide2.QtWidgets import (
     QCheckBox, QFileDialog, QMenu, QPushButton, QTableWidgetItem)
 from PySide2.QtGui import QCursor
 
-from hexrd.ui.utils import create_unique_name
+from hexrd.ui.utils import block_signals, create_unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import ViewType
@@ -87,34 +87,32 @@ class MaskManagerDialog(QObject):
         HexrdConfig().detectors_changed.connect(self.clear_masks)
 
     def setup_table(self, status=True):
-        self.ui.masks_table.blockSignals(True)
-        self.ui.masks_table.setRowCount(0)
-        for i, key in enumerate(self.masks.keys()):
-            # Add label
-            self.ui.masks_table.insertRow(i)
-            self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
+        with block_signals(self.ui.masks_table):
+            self.ui.masks_table.setRowCount(0)
+            for i, key in enumerate(self.masks.keys()):
+                # Add label
+                self.ui.masks_table.insertRow(i)
+                self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
-            # Add checkbox to toggle visibility
-            cb = QCheckBox()
-            status = key in HexrdConfig().visible_masks
-            cb.setChecked(status)
-            cb.setStyleSheet('margin-left:50%; margin-right:50%;')
-            self.ui.masks_table.setCellWidget(i, 1, cb)
-            cb.toggled.connect(
-                lambda checked, key=key: self.toggle_visibility(checked, key))
+                # Add checkbox to toggle visibility
+                cb = QCheckBox()
+                status = key in HexrdConfig().visible_masks
+                cb.setChecked(status)
+                cb.setStyleSheet('margin-left:50%; margin-right:50%;')
+                self.ui.masks_table.setCellWidget(i, 1, cb)
+                cb.toggled.connect(
+                    lambda checked, key=key: self.toggle_visibility(checked, key))
 
-            # Add push button to remove mask
-            pb = QPushButton('Remove Mask')
-            self.ui.masks_table.setCellWidget(i, 2, pb)
-            pb.clicked.connect(lambda i=i, key=key: self.remove_mask(i, key))
+                # Add push button to remove mask
+                pb = QPushButton('Remove Mask')
+                self.ui.masks_table.setCellWidget(i, 2, pb)
+                pb.clicked.connect(lambda i=i, key=key: self.remove_mask(i, key))
 
-            # Connect manager to raw image mode tab settings
-            # for threshold mask
-            mtype, _ = self.masks[key]
-            if mtype == 'threshold':
-                self.setup_threshold_connections(cb, i, key)
-
-        self.ui.masks_table.blockSignals(False)
+                # Connect manager to raw image mode tab settings
+                # for threshold mask
+                mtype, _ = self.masks[key]
+                if mtype == 'threshold':
+                    self.setup_threshold_connections(cb, i, key)
 
     def setup_threshold_connections(self, checkbox, row, name):
         HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
