@@ -1,3 +1,5 @@
+from PySide2.QtWidgets import QMessageBox
+
 import numpy as np
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -15,6 +17,15 @@ class PowderCalibrationDialog:
         self.update_gui()
 
     def update_gui(self):
+        if self.tth_tol is None:
+            default = 0.125
+            msg = (
+                'Powder overlay width is required.\n\n'
+                f'Setting to default: {default}°'
+            )
+            QMessageBox.warning(self.ui.parent(), 'HEXRD', msg)
+            self.tth_tol = default
+
         options = HexrdConfig().config['calibration']['powder']
         pk_type = options['pk_type']
 
@@ -51,7 +62,8 @@ class PowderCalibrationDialog:
 
     @property
     def tth_tol(self):
-        return np.degrees(self.material.planeData.tThWidth)
+        tth_width = self.material.planeData.tThWidth
+        return None if tth_width is None else np.degrees(tth_width)
 
     @tth_tol.setter
     def tth_tol(self, v):
