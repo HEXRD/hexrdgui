@@ -1,19 +1,15 @@
-import os
-
 import numpy as np
 
 from PySide2.QtCore import QAbstractTableModel, QModelIndex, Qt
 
 
-class FitGrainsResultsModel(QAbstractTableModel):
-    """Model for grain-fitting results
+class GrainsTableModel(QAbstractTableModel):
+    """Model for viewing grains"""
 
-    """
-
-    def __init__(self, grains_table, parent=None):
+    def __init__(self, grains_table, excluded_columns=None, parent=None):
         super().__init__(parent)
-        self.grains_table = grains_table
-        self.headers = [
+        self.full_grains_table = grains_table
+        self.full_headers = [
             'grain ID', 'completeness', 'chi^2',
             'exp_map_c[0]', 'exp_map_c[1]', 'exp_map_c[2]',
             't_vec_c[0]', 't_vec_c[1]', 't_vec_c[2]',
@@ -25,10 +21,13 @@ class FitGrainsResultsModel(QAbstractTableModel):
             'ln(V_s)[1,2]', 'ln(V_s)[0,2]', 'ln(V_s)[0,1]'
         ]
 
-    # Override methods:
+        self.excluded_columns = excluded_columns if excluded_columns else []
+
+        self.grains_table = self.full_grains_table[:, self.included_columns]
+        self.headers = [self.full_headers[x] for x in self.included_columns]
 
     def columnCount(self, parent=QModelIndex()):
-        return 21
+        return len(self.headers)
 
     def data(self, model_index, role=Qt.DisplayRole):
         if role != Qt.DisplayRole:
@@ -43,20 +42,26 @@ class FitGrainsResultsModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headers[section]
-        # (else)
+
         return super().headerData(section, orientation, role)
 
     def rowCount(self, parent=QModelIndex()):
         if parent.isValid():
             return 0
+
         return len(self.grains_table)
 
     # Custom methods
 
+    @property
+    def included_columns(self):
+        return [i for i in range(len(self.full_headers))
+                if i not in self.excluded_columns]
+
     def save(self, path):
         with open(path, 'w') as fp:
-            header_items = self.headers.copy()
-            header_items[0] = f'# {self.headers[0]}'
+            header_items = self.full_headers.copy()
+            header_items[0] = f'# {self.full_headers[0]}'
 
             # Formatting logic is copied from instrument GrainDataWriter
             delim = '  '
@@ -70,7 +75,7 @@ class FitGrainsResultsModel(QAbstractTableModel):
             fp.write(header)
             fp.write('\n')
 
-            for row in self.grains_table:
+            for row in self.full_grains_table:
                 res = row.tolist()
                 res[0] = int(res[0])
                 output_str = delim.join(

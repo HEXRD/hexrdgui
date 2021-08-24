@@ -20,7 +20,7 @@ from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
 import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.matrixutil import vecMVToSymm
-from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
+from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 
@@ -56,7 +56,7 @@ class FitGrainsResultsDialog(QObject):
         self.ax = None
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.data = data
-        self.data_model = FitGrainsResultsModel(data)
+        self.data_model = GrainsTableModel(data)
         self.material = material
         self.canvas = None
         self.fig = None
