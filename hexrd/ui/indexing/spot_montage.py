@@ -29,7 +29,7 @@ plt.rcParams.update(params)
 
 def montage(X, colormap=plt.cm.inferno, show_borders=True,
             title=None, xlabel=None, ylabel=None,
-            threshold=None, filename=None):
+            threshold=None, filename=None, fig_ax=None):
     m, n, count = np.shape(X)
     img_data = np.log(X - np.min(X) + 1)
     if threshold is None:
@@ -41,10 +41,15 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
     M = np.zeros((mm * m, nn * n))
 
     # colormap
+    colormap = colormap.copy()
     colormap.set_under('b')
 
-    fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title(title)
+    if fig_ax is not None:
+        fig, ax = fig_ax
+    else:
+        fig, ax = plt.subplots()
+        fig.canvas.manager.set_window_title(title)
+
     image_id = 0
     for j in range(mm):
         sliceM = j * m
@@ -71,13 +76,13 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
         for xp, yp in zip(xs, ys):
             ax.plot(xp, yp, 'c:')
     if xlabel is None:
-        ax.set_xlabel(r'$2\theta$', FontSize=14)
+        ax.set_xlabel(r'$2\theta$', fontsize=14)
     else:
-        ax.set_xlabel(xlabel, FontSize=14)
+        ax.set_xlabel(xlabel, fontsize=14)
     if ylabel is None:
-        ax.set_ylabel(r'$\eta$', FontSize=14)
+        ax.set_ylabel(r'$\eta$', fontsize=14)
     else:
-        ax.set_ylabel(ylabel, FontSize=14)
+        ax.set_ylabel(ylabel, fontsize=14)
     ax.axis('auto')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -89,10 +94,13 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
     ax.set_xticks([])
     ax.set_yticks([])
     if title is not None:
-        ax.set_title(title, FontSize=18)
+        ax.set_title(title, fontsize=18)
     if filename is not None:
         fig.savefig(filename, bbox_inches='tight', dpi=300)
-    plt.show()
+
+    if fig_ax is None:
+        plt.show()
+
     return M
 
 
@@ -116,12 +124,17 @@ def extract_hkls_from_spots_data(all_spots):
         for det_key, spot_output in spots[1].items():
             for spot_id, data in enumerate(spot_output):
                 hkl_id = int(data[data_map['hkl_id']])
+                peak_id = int(data[data_map['peak_id']])
                 if hkl_id in hkls:
+                    hkls[hkl_id]['peak_ids'].append(peak_id)
                     continue
 
                 hkl = data[data_map['hkl']]
                 hkl_str = ' '.join([f'{int(x):^3}' for x in hkl])
-                hkls[hkl_id] = hkl_str
+                hkls[hkl_id] = {
+                    'str': hkl_str,
+                    'peak_ids': [peak_id],
+                }
 
     return hkls
 

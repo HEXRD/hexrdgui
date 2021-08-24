@@ -6,7 +6,7 @@ from PySide2.QtWidgets import QMenu, QTableView
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
-from hexrd.ui.indexing.spot_montage import plot_gvec_from_spots_data
+from hexrd.ui.indexing.view_spots_dialog import ViewSpotsDialog
 
 
 class GrainsTableView(QTableView):
@@ -82,7 +82,8 @@ class GrainsTableView(QTableView):
         self.async_runner.run(self.run_pull_spots_on_selected_grains)
 
     def visualize_spots(self, spots):
-        plot_gvec_from_spots_data(spots, 0)
+        self.spots_viewer = ViewSpotsDialog(spots, self)
+        self.spots_viewer.ui.show()
 
     def run_pull_spots_on_selected_grains(self):
         selected_grains = self.selected_grain_ids
