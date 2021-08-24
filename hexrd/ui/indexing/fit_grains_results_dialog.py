@@ -589,7 +589,7 @@ if __name__ == '__main__':
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
     app = QApplication(sys.argv)
 
-    data = np.loadtxt(sys.argv[1])
+    data = np.loadtxt(sys.argv[1], ndmin=2)
 
     dialog = FitGrainsResultsDialog(data)
 
