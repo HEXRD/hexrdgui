@@ -6,14 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>561</height>
+    <width>459</width>
+    <height>684</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Fit Grains Options</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="GrainsTableView" name="grains_table_view"/>
+   </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="4" column="0">
@@ -337,6 +340,11 @@
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>scientificspinbox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>GrainsTableView</class>
+   <extends>QTableView</extends>
+   <header location="global">grains_table_view.py</header>
   </customwidget>
  </customwidgets>
  <tabstops>

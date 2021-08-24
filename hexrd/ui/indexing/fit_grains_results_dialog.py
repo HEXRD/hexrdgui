@@ -12,9 +12,7 @@ import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import (
-    QObject, QSignalBlocker, QSortFilterProxyModel, QTimer, Qt, Signal
-)
+from PySide2.QtCore import QObject, QSignalBlocker, QTimer, Qt, Signal
 from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
 
 import hexrd.ui.constants
@@ -30,12 +28,6 @@ ELASTIC_SLICE = slice(15, 21)
 ELASTIC_OFF_DIAGONAL_SLICE = slice(18, 21)
 EQUIVALENT_IND = 21
 HYDROSTATIC_IND = 22
-
-# Sortable columns are grain id, completeness, chi^2, and t_vec_c
-SORTABLE_COLUMNS = [
-    *range(0, 3),
-    *range(6, 9),
-]
 
 
 class FitGrainsResultsDialog(QObject):
@@ -233,15 +225,6 @@ class FitGrainsResultsDialog(QObject):
             selected_file += '.npz'
 
         np.savez_compressed(selected_file, stresses=stresses)
-
-    def on_sort_indicator_changed(self, index, order):
-        """Shows sort indicator for sortable columns, hides for all others."""
-        horizontal_header = self.ui.table_view.horizontalHeader()
-        if index in SORTABLE_COLUMNS:
-            horizontal_header.setSortIndicatorShown(True)
-            horizontal_header.setSortIndicator(index, order)
-        else:
-            horizontal_header.setSortIndicatorShown(False)
 
     @property
     def depth_shading(self):
@@ -445,26 +428,8 @@ class FitGrainsResultsDialog(QObject):
     def setup_tableview(self):
         view = self.ui.table_view
 
-        # Subclass QSortFilterProxyModel to restrict sorting by column
-        class GrainsTableSorter(QSortFilterProxyModel):
-            def sort(self, column, order):
-                if column not in SORTABLE_COLUMNS:
-                    return
-                return super().sort(column, order)
-
-        proxy_model = GrainsTableSorter(self.ui)
-        proxy_model.setSourceModel(self.data_model)
-        view.verticalHeader().hide()
-        view.setModel(proxy_model)
-        view.resizeColumnToContents(0)
-
-        view.setSortingEnabled(True)
-        view.horizontalHeader().sortIndicatorChanged.connect(
-            self.on_sort_indicator_changed)
-        view.sortByColumn(0, Qt.AscendingOrder)
-        self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
-
         # Update the variables on the table view
+        view.data_model = self.data_model
         view.material = self.material
         view.grains_table = self.data
 

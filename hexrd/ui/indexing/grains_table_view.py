@@ -1,5 +1,6 @@
 import numpy as np
 
+from PySide2.QtCore import QSortFilterProxyModel, Qt
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu, QTableView
 
@@ -9,12 +10,20 @@ from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.view_spots_dialog import ViewSpotsDialog
 
 
+# Sortable columns are grain id, completeness, chi^2, and t_vec_c
+SORTABLE_COLUMNS = [
+    *range(0, 3),
+    *range(6, 9),
+]
+
+
 class GrainsTableView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self.material = None
         self.grains_table = None
+        self._data_model = None
 
         self.async_runner = AsyncRunner(parent)
 
@@ -141,3 +150,42 @@ class GrainsTableView(QTableView):
             'interp': 'nearest',
         }
         return instr.pull_spots(**kwargs)
+
+    @property
+    def data_model(self):
+        return self._data_model
+
+    @data_model.setter
+    def data_model(self, v):
+        self._data_model = v
+        self.setup_proxy()
+
+    def setup_proxy(self):
+
+        # Subclass QSortFilterProxyModel to restrict sorting by column
+        class GrainsTableSorter(QSortFilterProxyModel):
+            def sort(self, column, order):
+                if column not in SORTABLE_COLUMNS:
+                    return
+                return super().sort(column, order)
+
+        proxy_model = GrainsTableSorter(self)
+        proxy_model.setSourceModel(self.data_model)
+        self.verticalHeader().hide()
+        self.setModel(proxy_model)
+        self.resizeColumnToContents(0)
+
+        self.setSortingEnabled(True)
+        self.horizontalHeader().sortIndicatorChanged.connect(
+            self.on_sort_indicator_changed)
+        self.sortByColumn(0, Qt.AscendingOrder)
+        self.horizontalHeader().setSortIndicatorShown(False)
+
+    def on_sort_indicator_changed(self, index, order):
+        """Shows sort indicator for sortable columns, hides for all others."""
+        horizontal_header = self.horizontalHeader()
+        if index in SORTABLE_COLUMNS:
+            horizontal_header.setSortIndicatorShown(True)
+            horizontal_header.setSortIndicator(index, order)
+        else:
+            horizontal_header.setSortIndicatorShown(False)

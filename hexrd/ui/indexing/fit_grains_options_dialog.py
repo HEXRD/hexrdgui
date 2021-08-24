@@ -3,6 +3,7 @@ from PySide2.QtCore import (
 from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 
@@ -16,8 +17,10 @@ class FitGrainsOptionsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, grains_table, parent=None):
         super().__init__(parent)
+
+        self.grains_table = grains_table
 
         config = HexrdConfig().indexing_config['fit_grains']
         if config.get('do_fit') is False:
@@ -29,6 +32,17 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.setup_material_options()
+
+        kwargs = {
+            'grains_table': grains_table,
+            'excluded_columns': list(range(6, len(grains_table[0]))),
+            'parent': self.ui.grains_table_view,
+        }
+        self.data_model = GrainsTableModel(**kwargs)
+        view = self.ui.grains_table_view
+        view.data_model = self.data_model
+        view.material = self.material
+        view.grains_table = grains_table
 
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')
@@ -233,7 +247,6 @@ class FitGrainsOptionsDialog(QObject):
         this method returns an empty list.
         """
         selection_model = self.ui.tolerances_view.selectionModel()
-        selection = selection_model.selection()
         num_rows = self.tolerances_model.rowCount()
         selected_rows = list()
         for row in range(num_rows):
@@ -255,6 +268,7 @@ class FitGrainsOptionsDialog(QObject):
         if hasattr(self, '_table'):
             self._table.material = self.material
 
+        self.ui.grains_table_view.material = self.material
         self.update_num_hkls()
 
     @property
