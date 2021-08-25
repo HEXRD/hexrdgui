@@ -10,6 +10,7 @@ from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.view_spots_dialog import ViewSpotsDialog
+from hexrd.ui.table_selector_widget import TableSingleRowSelectorDialog
 
 
 # Sortable columns are grain id, completeness, chi^2, and t_vec_c
@@ -26,6 +27,8 @@ class GrainsTableView(QTableView):
         self.material = None
         self.grains_table = None
         self._data_model = None
+        self._tolerances = []
+        self.selected_tol_id = -1
 
         self.async_runner = AsyncRunner(parent)
 
@@ -84,7 +87,50 @@ class GrainsTableView(QTableView):
             self.grains_table is not None,
         ))
 
+    @property
+    def tolerances(self):
+        if self._tolerances:
+            return self._tolerances
+
+        cfg = create_indexing_config()
+        tolerance = cfg.fit_grains.tolerance
+        res = []
+        for i in range(len(tolerance.tth)):
+            res.append({
+                'tth': tolerance.tth[i],
+                'eta': tolerance.eta[i],
+                'ome': tolerance.omega[i],
+            })
+        return res
+
+    @tolerances.setter
+    def tolerances(self, v):
+        self._tolerances = v
+
+    def select_tolerance_id(self):
+        tolerances = self.tolerances
+        headers = ['tth', 'eta', 'ome']
+        data = np.empty((len(tolerances), len(headers)), dtype=np.float64)
+        for i, tol in enumerate(tolerances):
+            for j, header in enumerate(headers):
+                data[i, j] = tolerances[i][header]
+
+        dialog = TableSingleRowSelectorDialog(self)
+        dialog.table.data = data
+        dialog.table.horizontal_headers = headers
+        dialog.setWindowTitle('Select tolerances to use')
+
+        if not dialog.exec_():
+            return False
+
+        self.selected_tol_id = dialog.selected_row
+        return True
+
     def pull_spots(self):
+        if not self.select_tolerance_id():
+            # User canceled
+            return
+
         num_grains = len(self.selected_grain_ids)
         grain_str = 'grains' if num_grains != 1 else 'grain'
         title = f'Running pull_spots() on {num_grains} {grain_str}'
@@ -105,19 +151,16 @@ class GrainsTableView(QTableView):
 
         selected_grains = self.selected_grain_ids
 
-        # Default to using the last tolerance. We should let the user
-        # choose this in the future.
-        tol_id = -1
         spots_output = {}
         try:
             for grain_id in selected_grains:
-                spots_output[grain_id] = self.run_pull_spots(grain_id, tol_id)
+                spots_output[grain_id] = self.run_pull_spots(grain_id)
         finally:
             _memo_hkls.clear()
 
         return spots_output
 
-    def run_pull_spots(self, grain_id, tol_id):
+    def run_pull_spots(self, grain_id):
         grain_params = self.grains_table[grain_id][3:15]
 
         # Prevent an exception...
@@ -129,7 +172,12 @@ class GrainsTableView(QTableView):
 
         instr = cfg.instrument.hedm
         imsd = cfg.image_series
-        tolerance = cfg.fit_grains.tolerance
+
+        tol_id = self.selected_tol_id
+        tolerances = self.tolerances
+        tth_tol = tolerances[tol_id]['tth']
+        eta_tol = tolerances[tol_id]['eta']
+        ome_tol = tolerances[tol_id]['ome']
 
         # Use this plane data rather than the one in the config.
         # This should be set to whatever the fit grains viewer is
@@ -145,9 +193,9 @@ class GrainsTableView(QTableView):
         kwargs = {
             'plane_data': plane_data,
             'grain_params': grain_params,
-            'tth_tol': tolerance.tth[tol_id],
-            'eta_tol': tolerance.eta[tol_id],
-            'ome_tol': tolerance.omega[tol_id],
+            'tth_tol': tth_tol,
+            'eta_tol': eta_tol,
+            'ome_tol': ome_tol,
             'imgser_dict': imsd,
             'npdiv': cfg.fit_grains.npdiv,
             'threshold': cfg.fit_grains.threshold,

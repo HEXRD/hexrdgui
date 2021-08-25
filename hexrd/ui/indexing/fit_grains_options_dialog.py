@@ -57,7 +57,9 @@ class FitGrainsOptionsDialog(QObject):
             self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(
                 i, QHeaderView.Stretch)
 
-        # Setup connections
+        self.setup_connections()
+
+    def setup_connections(self):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.rejected)
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
@@ -76,6 +78,9 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.set_spots_directory.clicked.connect(self.set_working_dir)
 
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
+
+        self.tolerances_model.data_modified.connect(
+            self.tolerance_data_modified)
 
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
@@ -161,6 +166,19 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.delete_row.setEnabled(delete_enable)
         self.ui.move_up.setEnabled(up_enable)
         self.ui.move_down.setEnabled(down_enable)
+
+    def tolerance_data_modified(self):
+        # Update the tolerances on the table
+        all_tolerances = self.tolerances_model.data_columns
+        tolerances = []
+        for tth, eta, ome in zip(*all_tolerances):
+            tolerances.append({
+                'tth': tth,
+                'eta': eta,
+                'ome': ome,
+            })
+
+        self.ui.grains_table_view.tolerances = tolerances
 
     def on_tth_max_toggled(self, checked):
         enabled = checked
