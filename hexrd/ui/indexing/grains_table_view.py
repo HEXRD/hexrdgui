@@ -109,6 +109,10 @@ class GrainsTableView(QTableView):
 
     def select_tolerance_id(self):
         tolerances = self.tolerances
+        if len(tolerances) == 1:
+            self.selected_tol_id = 0
+            return True
+
         headers = ['tth', 'eta', 'ome']
         data = np.empty((len(tolerances), len(headers)), dtype=np.float64)
         for i, tol in enumerate(tolerances):
