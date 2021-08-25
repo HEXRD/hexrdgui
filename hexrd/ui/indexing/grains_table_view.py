@@ -140,6 +140,7 @@ class GrainsTableView(QTableView):
 
     def visualize_spots(self, spots):
         self.spots_viewer = ViewSpotsDialog(spots, self)
+        self.spots_viewer.tolerances = self.tolerances[self.selected_tol_id]
         self.spots_viewer.ui.show()
 
     def run_pull_spots_on_selected_grains(self):

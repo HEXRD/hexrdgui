@@ -23,6 +23,7 @@ class ViewSpotsDialog:
         self.setup_canvas()
 
         self.spots = spots
+        self.tolerances = None
         self.update_hkls_list()
         self.hkl_index_changed()
 
@@ -59,6 +60,25 @@ class ViewSpotsDialog:
 
     def clear_data(self):
         self.spots = None
+
+    @property
+    def tolerances(self):
+        return self._tolerances
+
+    @tolerances.setter
+    def tolerances(self, d):
+        self._tolerances = d
+
+        self.ui.tolerances.clear()
+        if d is None:
+            return
+
+        order = ['tth', 'eta', 'ome']
+        formatting = '5.2f'
+        items = [f'{d[x]:{formatting}} {x}' for x in order]
+        items[-1] = 'and ' + items[-1]
+        text = ', '.join(items)
+        self.ui.tolerances.setText(text)
 
     def format_coord(self, x, y):
         # Format the coordinates to be displayed on the navigation toolbar.
@@ -192,6 +212,7 @@ if __name__ == '__main__':
         spots_data = pickle.load(rf)
 
     dialog = ViewSpotsDialog(spots_data)
+    dialog.tolerances = {'tth': 0.25, 'eta': 3.0, 'ome': 2.0}
 
     dialog.ui.resize(1200, 800)
     dialog.ui.finished.connect(app.quit)

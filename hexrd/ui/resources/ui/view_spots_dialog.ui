@@ -23,28 +23,11 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="0" colspan="8">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
    <item row="1" column="3">
     <widget class="QComboBox" name="peak_id">
-     <property name="styleSheet">
-      <string notr="true">combobox-popup: 0;</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="4">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="hkl">
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
      </property>
@@ -70,8 +53,39 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="5">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
+   <item row="1" column="6">
+    <widget class="QLabel" name="tolerances">
+     <property name="text">
+      <string>0.25 tth, 3.0 eta, and 2.0 ome </string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="hkl">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="5">
+    <widget class="QLabel" name="tolerances_label">
+     <property name="text">
+      <string>Tolerances:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
+    <spacer name="horizontalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>
