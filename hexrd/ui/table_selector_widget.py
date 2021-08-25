@@ -58,6 +58,7 @@ class TableSelectorWidget(QTableWidget):
                 x = data[i][j]
                 item = QTableWidgetItem(str(x))
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                item.setTextAlignment(Qt.AlignHCenter)
                 self.setItem(i, j, item)
 
         self.resizeColumnsToContents()
