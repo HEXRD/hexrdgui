@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>838</width>
+    <width>889</width>
     <height>690</height>
    </rect>
   </property>
@@ -23,17 +23,14 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="0" colspan="8">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
-   <item row="1" column="3">
+   <item row="1" column="5">
     <widget class="QComboBox" name="peak_id">
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="1" column="2">
     <widget class="QLabel" name="hkl_label">
      <property name="text">
       <string>HKL:</string>
@@ -43,39 +40,15 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
-    <widget class="QLabel" name="peak_id_label">
-     <property name="text">
-      <string>Peak ID:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="6">
-    <widget class="QLabel" name="tolerances">
-     <property name="text">
-      <string>0.25 tth, 3.0 eta, and 2.0 ome </string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="hkl">
-     <property name="styleSheet">
-      <string notr="true">combobox-popup: 0;</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="5">
+   <item row="1" column="7">
     <widget class="QLabel" name="tolerances_label">
      <property name="text">
       <string>Tolerances:</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="4">
-    <spacer name="horizontalSpacer_2">
+   <item row="1" column="6">
+    <spacer name="horizontal_spacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -87,8 +60,54 @@
      </property>
     </spacer>
    </item>
+   <item row="1" column="3">
+    <widget class="QComboBox" name="hkl">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="8">
+    <widget class="QLabel" name="tolerances">
+     <property name="text">
+      <string>0.25 tth, 3.0 eta, and 2.0 ome </string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="10">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="detector_label">
+     <property name="text">
+      <string>Detector:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
+    <widget class="QLabel" name="peak_id_label">
+     <property name="text">
+      <string>Peak ID:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="detector">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>detector</tabstop>
+  <tabstop>hkl</tabstop>
+  <tabstop>peak_id</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

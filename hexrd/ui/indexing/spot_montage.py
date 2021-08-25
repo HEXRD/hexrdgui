@@ -116,12 +116,15 @@ def create_labels(det_key, tth_crd, eta_crd, peak_id, hkl):
     return labels
 
 
-def extract_hkls_from_spots_data(all_spots):
+def extract_hkls_from_spots_data(all_spots, detector_key=None):
     data_map = SPOTS_DATA_MAP
 
     hkls = {}
     for grain_id, spots in all_spots.items():
         for det_key, spot_output in spots[1].items():
+            if detector_key is not None and det_key != detector_key:
+                continue
+
             for spot_id, data in enumerate(spot_output):
                 hkl_id = int(data[data_map['hkl_id']])
                 peak_id = int(data[data_map['peak_id']])
