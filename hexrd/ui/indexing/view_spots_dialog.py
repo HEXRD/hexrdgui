@@ -33,9 +33,6 @@ class ViewSpotsDialog:
         self.ui.hkl.currentIndexChanged.connect(self.hkl_index_changed)
         self.ui.peak_id.currentIndexChanged.connect(self.update_canvas)
 
-        # Since the data is large, make sure it gets deleted when we finish
-        self.ui.finished.connect(self.clear_data)
-
     def setup_canvas(self):
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure())
@@ -59,7 +56,9 @@ class ViewSpotsDialog:
         self.canvas = canvas
 
     def clear_data(self):
-        self.spots = None
+        # Ensure there is no memory leak, since the spots are large.
+        # Go ahead and delete the data now.
+        self.spots.clear()
 
     @property
     def tolerances(self):

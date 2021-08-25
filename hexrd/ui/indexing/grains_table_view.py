@@ -143,6 +143,9 @@ class GrainsTableView(QTableView):
         self.spots_viewer.tolerances = self.tolerances[self.selected_tol_id]
         self.spots_viewer.ui.show()
 
+        # Since the data is large, make sure it gets deleted when we finish
+        self.spots_viewer.ui.finished.connect(self.spots_viewer.clear_data)
+
     def run_pull_spots_on_selected_grains(self):
         # Make sure memoized hkls are removed before and after running
         # pull_spots(). If pull_spots() was called earlier with different
