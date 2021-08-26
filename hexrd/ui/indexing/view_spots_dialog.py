@@ -24,6 +24,9 @@ class ViewSpotsDialog:
 
         self.spots = spots
         self.tolerances = None
+        self.tth_centers = None
+        self.eta_centers = None
+        self.intensities = None
         self.update_grain_id_list()
         self.grain_id_index_changed()
 
@@ -87,13 +90,38 @@ class ViewSpotsDialog:
     def format_coord(self, x, y):
         # Format the coordinates to be displayed on the navigation toolbar.
         # The coordinates are displayed when the mouse is moved.
+        required_attrs = [
+            self.tth_centers,
+            self.eta_centers,
+            self.intensities,
+        ]
+
+        if any(x is None for x in required_attrs):
+            return ''
+
+        m, n, _ = self.intensities.shape
+
+        # Move x and y into a single frame's coordinates
+        while x > n:
+            x -= n
+
+        while y > m:
+            y -= m
+
+        tth_range = np.degrees((self.tth_centers[0], self.tth_centers[-1]))
+        eta_range = np.degrees((self.eta_centers[0], self.eta_centers[-1]))
+
+        # Rescale x and y to be within the ranges
+        x = np.interp(x, (0, n), tth_range)
+        y = np.interp(y, (0, m), eta_range)
+
         float_format = '8.3f'
         delimiter = ',  '
         prefix = '   '
 
         labels = []
-        labels.append(f'eta = {x:{float_format}}')
-        labels.append(f'omega = {y:{float_format}}')
+        labels.append(f'2θ = {x:{float_format}}')
+        labels.append(f'η = {y:{float_format}}')
 
         return prefix + delimiter.join(labels)
 
@@ -222,13 +250,16 @@ class ViewSpotsDialog:
             )
             raise Exception(msg)
 
-        tth_edges = data[data_map['tth_edges']]
-        eta_edges = data[data_map['eta_edges']]
+        tth_centers = centers_of_edge_vec(data[data_map['tth_edges']])
+        eta_centers = centers_of_edge_vec(data[data_map['eta_edges']])
+
+        self.tth_centers = tth_centers
+        self.eta_centers = eta_centers
 
         kwargs = {
             'det_key': det_key,
-            'tth_crd': centers_of_edge_vec(tth_edges),
-            'eta_crd': centers_of_edge_vec(eta_edges),
+            'tth_crd': tth_centers,
+            'eta_crd': eta_centers,
             'peak_id': data[data_map['peak_id']],
             'hkl': data[data_map['hkl']],
         }
@@ -238,6 +269,7 @@ class ViewSpotsDialog:
             data[data_map['patch_data']],
             (1, 2, 0)
         )
+        self.intensities = intensities
 
         # make montage
         kwargs = {

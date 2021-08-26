@@ -123,7 +123,7 @@ def create_labels(det_key, tth_crd, eta_crd, peak_id, hkl):
     labels = {}
     labels['title'] = f"Spot {peak_id}, detector '{det_key}' ({hkl_str})"
     labels['xlabel'] = rf'$2\theta\in({tth_crd[0]:.3f}, {tth_crd[-1]:.3f})$'
-    labels['ylabel'] = rf'$2\eta\in({eta_crd[0]:.3f}, {eta_crd[-1]:.3f})$'
+    labels['ylabel'] = rf'$\eta\in({eta_crd[0]:.3f}, {eta_crd[-1]:.3f})$'
     return labels
 
 
