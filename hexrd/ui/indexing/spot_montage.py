@@ -29,7 +29,8 @@ plt.rcParams.update(params)
 
 def montage(X, colormap=plt.cm.inferno, show_borders=True,
             title=None, xlabel=None, ylabel=None,
-            threshold=None, filename=None, fig_ax=None):
+            threshold=None, filename=None, fig_ax=None,
+            ome_centers=None):
     m, n, count = np.shape(X)
     img_data = np.log(X - np.min(X) + 1)
     if threshold is None:
@@ -61,6 +62,16 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
                 img = img_data[:, :, image_id]
             sliceN = k * n
             M[sliceM:sliceM + m, sliceN:sliceN + n] = img
+            if ome_centers is not None and image_id < len(ome_centers):
+                center = ome_centers[image_id]
+                kwargs = {
+                    'x': sliceN,
+                    'y': sliceM + 0.04 * m * mm,
+                    's': f'{center:8.3f}°',
+                    'fontdict': {'color': 'w'},
+                }
+                ax.text(**kwargs)
+
             image_id += 1
     # M = np.sqrt(M + np.min(M))
     im = ax.imshow(M, cmap=colormap, vmin=threshold, interpolation='nearest')
@@ -145,7 +156,6 @@ def extract_hkls_from_spots_data(all_spots, detector_key=None):
 def plot_gvec_from_spots_data(all_spots, gvec_id, threshold=0.):
     data_map = SPOTS_DATA_MAP
 
-    breakpoint()
     for grain_id, spots in all_spots.items():
         for det_key, spot_output in spots[1].items():
             for spot_id, data in enumerate(spot_output):
