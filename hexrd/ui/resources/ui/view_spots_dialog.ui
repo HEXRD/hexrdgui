@@ -35,6 +35,9 @@
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
      </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
+     </property>
     </widget>
    </item>
    <item row="1" column="0">
@@ -48,6 +51,9 @@
     <widget class="QComboBox" name="hkl">
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
      </property>
     </widget>
    </item>
@@ -75,6 +81,9 @@
     <widget class="QComboBox" name="peak_id">
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
      </property>
     </widget>
    </item>
