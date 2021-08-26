@@ -30,7 +30,7 @@ plt.rcParams.update(params)
 def montage(X, colormap=plt.cm.inferno, show_borders=True,
             title=None, xlabel=None, ylabel=None,
             threshold=None, filename=None, fig_ax=None,
-            ome_centers=None):
+            ome_centers=None, frame_indices=None):
     m, n, count = np.shape(X)
     img_data = np.log(X - np.min(X) + 1)
     if threshold is None:
@@ -68,6 +68,16 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
                     'x': sliceN,
                     'y': sliceM + 0.035 * m * mm,
                     's': f'{center:8.3f}°',
+                    'fontdict': {'color': 'w'},
+                }
+                ax.text(**kwargs)
+
+            if frame_indices is not None and image_id < len(frame_indices):
+                frame_index = frame_indices[image_id]
+                kwargs = {
+                    'x': sliceN + n - 0.035 * n * nn,
+                    'y': sliceM + 0.035 * m * mm,
+                    's': f'{frame_index}',
                     'fontdict': {'color': 'w'},
                 }
                 ax.text(**kwargs)

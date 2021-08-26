@@ -40,6 +40,7 @@ class ViewSpotsDialog:
         self.ui.hkl.currentIndexChanged.connect(self.hkl_index_changed)
         self.ui.peak_id.currentIndexChanged.connect(self.update_canvas)
         self.ui.show_ome_centers.toggled.connect(self.update_canvas)
+        self.ui.show_frame_indices.toggled.connect(self.update_canvas)
 
     def setup_canvas(self):
         # Create the figure and axes to use
@@ -215,6 +216,10 @@ class ViewSpotsDialog:
     def show_ome_centers(self):
         return self.ui.show_ome_centers.isChecked()
 
+    @property
+    def show_frame_indices(self):
+        return self.ui.show_frame_indices.isChecked()
+
     def clear_canvas(self):
         # Since the montage() function is creating everything from
         # scratch, it is faster for now for us to just throw away
@@ -280,6 +285,9 @@ class ViewSpotsDialog:
         }
         if self.show_ome_centers:
             kwargs['ome_centers'] = np.degrees(data[data_map['ome_eval']])
+
+        if self.show_frame_indices:
+            kwargs['frame_indices'] = data[data_map['frame_indices']]
 
         montage(**kwargs)
 
