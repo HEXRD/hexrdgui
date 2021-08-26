@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1101</width>
-    <height>690</height>
+    <width>1281</width>
+    <height>900</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,51 +23,7 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="9">
-    <widget class="QLabel" name="tolerances">
-     <property name="text">
-      <string>0.25 tth, 3.0 eta, and 2.0 ome </string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="detector">
-     <property name="styleSheet">
-      <string notr="true">combobox-popup: 0;</string>
-     </property>
-     <property name="sizeAdjustPolicy">
-      <enum>QComboBox::AdjustToContents</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="detector_label">
-     <property name="text">
-      <string>Detector:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="3">
-    <widget class="QComboBox" name="hkl">
-     <property name="styleSheet">
-      <string notr="true">combobox-popup: 0;</string>
-     </property>
-     <property name="sizeAdjustPolicy">
-      <enum>QComboBox::AdjustToContents</enum>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="4">
-    <widget class="QLabel" name="peak_id_label">
-     <property name="text">
-      <string>Peak ID:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2">
     <widget class="QLabel" name="hkl_label">
      <property name="text">
       <string>HKL:</string>
@@ -77,7 +33,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="5">
+   <item row="1" column="7">
     <widget class="QComboBox" name="peak_id">
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
@@ -88,13 +44,40 @@
     </widget>
    </item>
    <item row="1" column="6">
+    <widget class="QLabel" name="peak_id_label">
+     <property name="text">
+      <string>Peak ID:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="grain_id_label">
+     <property name="text">
+      <string>Grain ID:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="8">
     <widget class="QCheckBox" name="show_ome_centers">
      <property name="text">
       <string>Show Omega Centers</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="7">
+   <item row="1" column="3">
+    <widget class="QComboBox" name="detector">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="9">
     <spacer name="horizontal_spacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -107,19 +90,54 @@
      </property>
     </spacer>
    </item>
-   <item row="2" column="0" colspan="11">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
-   <item row="1" column="8">
+   <item row="1" column="10">
     <widget class="QLabel" name="tolerances_label">
      <property name="text">
       <string>Tolerances:</string>
      </property>
     </widget>
    </item>
+   <item row="1" column="5">
+    <widget class="QComboBox" name="hkl">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="11">
+    <widget class="QLabel" name="tolerances">
+     <property name="text">
+      <string>0.25 tth, 3.0 eta, and 2.0 ome </string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QLabel" name="detector_label">
+     <property name="text">
+      <string>Detector:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="grain_id">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="13">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
   </layout>
  </widget>
  <tabstops>
+  <tabstop>grain_id</tabstop>
   <tabstop>detector</tabstop>
   <tabstop>hkl</tabstop>
   <tabstop>peak_id</tabstop>

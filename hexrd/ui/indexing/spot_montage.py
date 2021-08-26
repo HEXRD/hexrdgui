@@ -66,7 +66,7 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
                 center = ome_centers[image_id]
                 kwargs = {
                     'x': sliceN,
-                    'y': sliceM + 0.04 * m * mm,
+                    'y': sliceM + 0.035 * m * mm,
                     's': f'{center:8.3f}°',
                     'fontdict': {'color': 'w'},
                 }
@@ -127,11 +127,14 @@ def create_labels(det_key, tth_crd, eta_crd, peak_id, hkl):
     return labels
 
 
-def extract_hkls_from_spots_data(all_spots, detector_key=None):
+def extract_hkls_from_spots_data(all_spots, grain_id=None, detector_key=None):
     data_map = SPOTS_DATA_MAP
 
     hkls = {}
-    for grain_id, spots in all_spots.items():
+    for cur_grain_id, spots in all_spots.items():
+        if grain_id is not None and cur_grain_id != grain_id:
+            continue
+
         for det_key, spot_output in spots[1].items():
             if detector_key is not None and det_key != detector_key:
                 continue

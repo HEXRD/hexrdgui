@@ -24,12 +24,14 @@ class ViewSpotsDialog:
 
         self.spots = spots
         self.tolerances = None
-        self.update_detector_list()
-        self.detector_index_changed()
+        self.update_grain_id_list()
+        self.grain_id_index_changed()
 
         self.setup_connections()
 
     def setup_connections(self):
+        self.ui.grain_id.currentIndexChanged.connect(
+            self.grain_id_index_changed)
         self.ui.detector.currentIndexChanged.connect(
             self.detector_index_changed)
         self.ui.hkl.currentIndexChanged.connect(self.hkl_index_changed)
@@ -95,30 +97,50 @@ class ViewSpotsDialog:
 
         return prefix + delimiter.join(labels)
 
-    def detector_index_changed(self):
-        self.update_hkls_list()
-        self.hkl_index_changed()
+    def update_grain_id_list(self):
+        prev = self.selected_grain_id
+        grain_ids = list(self.spots.keys())
+        with block_signals(self.ui.grain_id):
+            self.ui.grain_id.clear()
+            for id in grain_ids:
+                self.ui.grain_id.addItem(str(id), id)
 
-    def hkl_index_changed(self):
-        self.update_peak_ids()
-        self.update_canvas()
+            if prev in grain_ids:
+                self.ui.grain_id.setCurrentText(str(prev))
+
+        self.ui.grain_id.setEnabled(len(grain_ids) > 1)
 
     def update_detector_list(self):
-        det_keys = list(self.spots[0][1].keys())
+        prev = self.selected_detector_key
+        grain_id = self.selected_grain_id
+        det_keys = list(self.spots[grain_id][1].keys())
         with block_signals(self.ui.detector):
             self.ui.detector.clear()
             self.ui.detector.addItems(det_keys)
 
+            if prev in det_keys:
+                self.ui.detector.setCurrentText(prev)
+
         self.ui.detector.setEnabled(len(det_keys) > 1)
 
     def update_hkls_list(self):
+        prev = self.selected_gvec_id
+        grain_id = self.selected_grain_id
         det_key = self.selected_detector_key
-        self.hkl_data = extract_hkls_from_spots_data(self.spots, det_key)
+        kwargs = {
+            'all_spots': self.spots,
+            'grain_id': grain_id,
+            'detector_key': det_key,
+        }
+        self.hkl_data = extract_hkls_from_spots_data(**kwargs)
         hkls = {k: v['str'] for k, v in self.hkl_data.items()}
         with block_signals(self.ui.hkl):
             self.ui.hkl.clear()
             for gid, hkl_str in hkls.items():
                 self.ui.hkl.addItem(hkl_str, gid)
+
+            if prev in hkls:
+                self.ui.hkl.setCurrentText(hkls[prev])
 
     def update_peak_ids(self):
         peak_ids = self.hkl_data[self.selected_gvec_id]['peak_ids']
@@ -128,6 +150,22 @@ class ViewSpotsDialog:
                 self.ui.peak_id.addItem(str(peak_id), peak_id)
 
         self.ui.peak_id.setEnabled(len(peak_ids) > 1)
+
+    def grain_id_index_changed(self):
+        self.update_detector_list()
+        self.detector_index_changed()
+
+    def detector_index_changed(self):
+        self.update_hkls_list()
+        self.hkl_index_changed()
+
+    def hkl_index_changed(self):
+        self.update_peak_ids()
+        self.update_canvas()
+
+    @property
+    def selected_grain_id(self):
+        return self.ui.grain_id.currentData()
 
     @property
     def selected_detector_key(self):
@@ -171,30 +209,16 @@ class ViewSpotsDialog:
 
         data_map = SPOTS_DATA_MAP
 
-        detector_key = self.selected_detector_key
+        grain_id = self.selected_grain_id
+        det_key = self.selected_detector_key
         gvec_id = self.selected_gvec_id
         peak_id = self.selected_peak_id
-        found = False
 
-        for grain_id, spots in self.spots.items():
-            for det_key, spot_output in spots[1].items():
-                if det_key != detector_key:
-                    continue
-
-                for spot_id, data in enumerate(spot_output):
-                    if data[data_map['hkl_id']] != gvec_id:
-                        continue
-
-                    if data[data_map['peak_id']] != peak_id:
-                        continue
-
-                    found = True
-                    break
-
-        if not found:
+        data = _find_data(self.spots, grain_id, det_key, gvec_id, peak_id)
+        if data is None:
             msg = (
-                f'Failed to find spot data for {detector_key=}, {gvec_id=}, '
-                f'and {peak_id=}'
+                f'Failed to find spot data for {grain_id=}, {det_key=}, '
+                f'{gvec_id=}, and {peak_id=}'
             )
             raise Exception(msg)
 
@@ -228,6 +252,28 @@ class ViewSpotsDialog:
         montage(**kwargs)
 
 
+def _find_data(all_spots, grain_id, det_key, gvec_id, peak_id):
+    data_map = SPOTS_DATA_MAP
+
+    if grain_id not in all_spots:
+        return
+
+    spots = all_spots[grain_id]
+
+    if det_key not in spots[1]:
+        return
+
+    spot_output = spots[1][det_key]
+    for spot_id, data in enumerate(spot_output):
+        if data[data_map['hkl_id']] != gvec_id:
+            continue
+
+        if data[data_map['peak_id']] != peak_id:
+            continue
+
+        return data
+
+
 if __name__ == '__main__':
     import pickle
     import sys
@@ -247,7 +293,6 @@ if __name__ == '__main__':
     dialog = ViewSpotsDialog(spots_data)
     dialog.tolerances = {'tth': 0.25, 'eta': 3.0, 'ome': 2.0}
 
-    dialog.ui.resize(1200, 800)
     dialog.ui.finished.connect(app.quit)
     dialog.ui.show()
     app.exec_()
