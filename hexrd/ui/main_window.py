@@ -340,8 +340,8 @@ class MainWindow(QObject):
             path = Path(selected_file)
             HexrdConfig().working_dir = str(path.parent)
 
-            data = np.loadtxt(selected_file)
-            dialog = FitGrainsResultsDialog(data)
+            data = np.loadtxt(selected_file, ndmin=2)
+            dialog = FitGrainsResultsDialog(data, parent=self.ui)
             dialog.show()
             self._fit_grains_results_dialog = dialog
 

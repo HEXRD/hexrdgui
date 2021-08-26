@@ -1,4 +1,5 @@
 import copy
+import os
 
 import numpy as np
 
@@ -69,4 +70,20 @@ def create_indexing_config():
 
     config.image_series = ims_dict
 
+    validate_config(config)
+
     return config
+
+
+def validate_config(config):
+    # Perform any modifications to make sure this is a valid config
+    try:
+        config.working_dir
+    except IOError:
+        # This working directory does not exist. Set it to the cwd.
+        print(f'Warning: {config.get("working_dir")} does not exist.',
+              f'Changing working directory to {os.getcwd()}')
+        config.set('working_dir', os.getcwd())
+
+        # Make sure future configs use the new working dir as well...
+        HexrdConfig().indexing_config['working_dir'] = os.getcwd()

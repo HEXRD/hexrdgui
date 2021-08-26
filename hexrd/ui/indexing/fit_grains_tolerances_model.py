@@ -1,4 +1,4 @@
-from PySide2.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide2.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
 
 
 class FitGrainsToleranceModel(QAbstractTableModel):
@@ -6,6 +6,8 @@ class FitGrainsToleranceModel(QAbstractTableModel):
 
     Organizes one column for each tolerance type (tth, eta, omega)
     """
+
+    data_modified = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,6 +45,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         # Note that conventional [row][col] is reversed here
         self.data_columns[column][row] = value
 
+        self.data_modified.emit()
         return True
 
     def flags(self, model_index):
@@ -78,6 +81,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.eta_tolerances.append(0.0)
         self.omega_tolerances.append(0.0)
         self.endInsertRows()
+        self.data_modified.emit()
 
     def delete_rows(self, rows):
         first = rows[0]
@@ -88,6 +92,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
             del self.eta_tolerances[row]
             del self.omega_tolerances[row]
         self.endRemoveRows()
+        self.data_modified.emit()
 
     def move_rows(self, rows, delta):
         """Move rows in the table
@@ -108,6 +113,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
             last_section = remaining_list[destination:]
             data[:] = first_section + moving_section + last_section
         self.endMoveRows()
+        self.data_modified.emit()
 
     def copy_to_config(self, config):
         config['tolerance'] = {
@@ -127,3 +133,5 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.omega_tolerances = config.get('omega')
 
         self.endResetModel()
+
+        self.data_modified.emit()

@@ -4,9 +4,6 @@ from PySide2.QtWidgets import QDialog, QDialogButtonBox, QPushButton
 
 from hexrd.ui import enter_key_filter, resource_loader
 
-from hexrd.ui.image_canvas import ImageCanvas
-from hexrd.ui.image_tab_widget import ImageTabWidget
-from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.singletons import QSingleton
 
 import hexrd.ui.resources.ui
@@ -16,6 +13,16 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.register_custom_widgets()
+
+    def register_custom_widgets(self):
+        # Import these here to avoid circular imports
+        from hexrd.ui.indexing.grains_table_view import GrainsTableView
+        from hexrd.ui.image_canvas import ImageCanvas
+        from hexrd.ui.image_tab_widget import ImageTabWidget
+        from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
+
+        self.registerCustomWidget(GrainsTableView)
         self.registerCustomWidget(ImageCanvas)
         self.registerCustomWidget(ImageTabWidget)
         self.registerCustomWidget(ScientificDoubleSpinBox)

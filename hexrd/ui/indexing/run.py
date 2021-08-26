@@ -371,7 +371,7 @@ class FitGrainsRunner(Runner):
 
     def view_fit_grains_options(self):
         # Run dialog for user options
-        dialog = FitGrainsOptionsDialog(self.parent)
+        dialog = FitGrainsOptionsDialog(self.grains_table, self.parent)
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
         self.fit_grains_options_dialog = dialog
@@ -423,7 +423,7 @@ class FitGrainsRunner(Runner):
         }
         dialog = create_fit_grains_results_dialog(**kwargs)
         self.fit_grains_results_dialog = dialog
-        dialog.show()
+        dialog.show_later()
 
 
 def create_fit_grains_results_dialog(fit_grains_results, parent=None):
