@@ -15,9 +15,11 @@ from matplotlib.figure import Figure
 from PySide2.QtCore import QObject, QSignalBlocker, QTimer, Qt, Signal
 from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
 
+from hexrd.matrixutil import vecMVToSymm
+from hexrd.rotations import rotMatOfExpMap
+
 import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.matrixutil import vecMVToSymm
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
@@ -28,6 +30,8 @@ ELASTIC_SLICE = slice(15, 21)
 ELASTIC_OFF_DIAGONAL_SLICE = slice(18, 21)
 EQUIVALENT_IND = 21
 HYDROSTATIC_IND = 22
+END_COLUMNS_IND = 23
+COLOR_ORIENTATIONS_IND = 23
 
 
 class FitGrainsResultsDialog(QObject):
@@ -42,7 +46,7 @@ class FitGrainsResultsDialog(QObject):
             material = HexrdConfig().active_material
             if material:
                 # Warn the user so this is clear.
-                print(f'Assuming material of {material.name} for stress '
+                print(f'Assuming material of {material.name} for needed '
                       'computations')
 
         self.ax = None
@@ -124,6 +128,7 @@ class FitGrainsResultsDialog(QObject):
                 # Compute the hydrostatic stress
                 grain[HYDROSTATIC_IND] = 1 / 3 * np.trace(sigma)
 
+        self._converted_data = data
         return data
 
     @property
@@ -156,6 +161,28 @@ class FitGrainsResultsDialog(QObject):
         except AttributeError:
             return None
 
+    @property
+    def color_by_column(self):
+        return self.ui.plot_color_option.currentData()
+
+    @property
+    def colors(self):
+        data = self._converted_data
+        column = self.color_by_column
+        if column < END_COLUMNS_IND:
+            return data[:, column]
+
+        def to_colors():
+            exp_maps = data[:, 3:6]
+            rmats = np.array([rotMatOfExpMap(x) for x in exp_maps])
+            return self.material.unitcell.color_orientations(rmats)
+
+        funcs = {
+            COLOR_ORIENTATIONS_IND: to_colors,
+        }
+
+        return funcs[column]()
+
     def update_enable_states(self):
         has_stiffness = self.stiffness is not None
         self.ui.convert_strain_to_stress.setEnabled(has_stiffness)
@@ -175,8 +202,7 @@ class FitGrainsResultsDialog(QObject):
 
     def update_plot(self):
         data = self.converted_data
-        column = self.ui.plot_color_option.currentData()
-        colors = data[:, column]
+        colors = self.colors
 
         coords = data[:, COORDS_SLICE].T
         sz = self.ui.glyph_size_slider.value()
@@ -191,8 +217,16 @@ class FitGrainsResultsDialog(QObject):
             'depthshade': self.depth_shading,
         }
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
-        self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
+        self.update_color_settings()
         self.draw_idle()
+
+    def update_color_settings(self):
+        color_map_needed = self.color_by_column != COLOR_ORIENTATIONS_IND
+        self.ui.color_map_label.setEnabled(color_map_needed)
+        self.ui.color_maps.setEnabled(color_map_needed)
+
+        if color_map_needed:
+            self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
 
     def on_export_button_pressed(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -400,6 +434,7 @@ class FitGrainsResultsDialog(QObject):
             ('Goodness of Fit', 2),
             (f'Equivalent {tensor_type}', EQUIVALENT_IND),
             (f'Hydrostatic {tensor_type}', HYDROSTATIC_IND),
+            ('Orientation', COLOR_ORIENTATIONS_IND),
             (f'XX {tensor_type}', 15),
             (f'YY {tensor_type}', 16),
             (f'ZZ {tensor_type}', 17),
