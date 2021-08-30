@@ -32,7 +32,7 @@ class ListEditor(QObject):
         # Make sure there are no duplicates in the items
         items = list(dict.fromkeys(items))
 
-        self.items = items
+        self._items = items
         self._prev_selected_items = []
 
         self.update_table()
@@ -56,6 +56,21 @@ class ListEditor(QObject):
     @property
     def selected_rows(self):
         return sorted([x.row() for x in self.selection_model.selectedRows()])
+
+    @property
+    def items(self):
+        return self._items
+
+    @items.setter
+    def items(self, items):
+        if self._items == items:
+            return
+
+        # Make sure there are no duplicates in the items
+        items = list(dict.fromkeys(items))
+
+        self._items = items
+        self.update_table()
 
     @property
     def selected_items(self):
