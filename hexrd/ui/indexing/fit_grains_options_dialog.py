@@ -31,7 +31,7 @@ class FitGrainsOptionsDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.setup_material_options()
+        self.update_materials()
 
         kwargs = {
             'grains_table': grains_table,
@@ -82,6 +82,8 @@ class FitGrainsOptionsDialog(QObject):
         self.tolerances_model.data_modified.connect(
             self.tolerance_data_modified)
 
+        HexrdConfig().materials_dict_modified.connect(self.update_materials)
+
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
         widgets = [
@@ -100,10 +102,17 @@ class FitGrainsOptionsDialog(QObject):
     def show(self):
         self.ui.show()
 
-    def setup_material_options(self):
+    def update_materials(self):
+        prev = self.selected_material
+        material_names = list(HexrdConfig().materials)
+
         self.ui.material.clear()
-        self.ui.material.addItems(list(HexrdConfig().materials.keys()))
-        self.ui.material.setCurrentText(HexrdConfig().active_material_name)
+        self.ui.material.addItems(material_names)
+
+        if prev in material_names:
+            self.ui.material.setCurrentText(prev)
+        else:
+            self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def on_accepted(self):
         # Save the selected options on the config
@@ -314,7 +323,11 @@ class FitGrainsOptionsDialog(QObject):
         self._table.show()
 
     def update_num_hkls(self):
-        num_hkls = len(self.material.planeData.getHKLs())
+        if self.material is None:
+            num_hkls = 0
+        else:
+            num_hkls = len(self.material.planeData.getHKLs())
+
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
 

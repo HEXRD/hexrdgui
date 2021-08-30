@@ -29,15 +29,7 @@ class MaterialListEditor:
 
         self.ui.import_material.clicked.connect(self.import_material)
 
-        update_editor_signals = [
-            HexrdConfig().material_renamed,
-            HexrdConfig().materials_removed,
-            HexrdConfig().materials_rearranged,
-            HexrdConfig().materials_set,
-        ]
-
-        for signal in update_editor_signals:
-            signal.connect(self.update_editor_items)
+        HexrdConfig().materials_dict_modified.connect(self.update_editor_items)
 
     def update_editor_items(self):
         self.editor.items = self.materials_names

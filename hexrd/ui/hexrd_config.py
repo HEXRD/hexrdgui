@@ -120,6 +120,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
 
+    """Emitted when the materials dict is modified in any way"""
+    materials_dict_modified = Signal()
+
     """Emitted when a material is renamed"""
     material_renamed = Signal()
 
@@ -231,6 +234,20 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.active_material = mat
 
         self.update_visible_material_energies()
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        materials_dict_modified_signals = [
+            self.material_renamed,
+            self.materials_added,
+            self.materials_removed,
+            self.materials_rearranged,
+            self.materials_set,
+        ]
+
+        for signal in materials_dict_modified_signals:
+            signal.connect(self.materials_dict_modified.emit)
 
     def save_settings(self):
         settings = QSettings()

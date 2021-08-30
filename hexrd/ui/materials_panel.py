@@ -79,12 +79,8 @@ class MaterialsPanel(QObject):
             self.active_material_changed)
         HexrdConfig().active_material_modified.connect(
             self.active_material_modified)
-        HexrdConfig().materials_rearranged.connect(
+        HexrdConfig().materials_dict_modified.connect(
             self.update_gui_from_config)
-        HexrdConfig().materials_added.connect(self.update_gui_from_config)
-        HexrdConfig().material_renamed.connect(self.update_gui_from_config)
-        HexrdConfig().materials_removed.connect(self.update_gui_from_config)
-        HexrdConfig().materials_set.connect(self.update_gui_from_config)
 
         self.material_structure_editor.material_modified.connect(
             self.material_structure_edited)
