@@ -6,7 +6,7 @@ from PySide2.QtWidgets import (
     QCheckBox, QFileDialog, QMenu, QPushButton, QTableWidgetItem)
 from PySide2.QtGui import QCursor
 
-from hexrd.ui.utils import block_signals, create_unique_name
+from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import ViewType
@@ -70,7 +70,7 @@ class MaskManagerDialog(QObject):
                     continue
                 self.masks[name] = (det, val)
         elif not self.threshold:
-            name = create_unique_name(self.masks, 'threshold')
+            name = unique_name(self.masks, 'threshold')
             self.masks[name] = ('threshold', HexrdConfig().threshold_mask)
             HexrdConfig().visible_masks.append(name)
             self.threshold = True
