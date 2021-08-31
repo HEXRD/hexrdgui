@@ -184,11 +184,17 @@ class EventBlocker(QObject):
             return super().eventFilter(obj, event)
 
 
-def create_unique_name(dic, name, value=0):
-    while name in dic.keys():
-        prefix, *rest = name.rpartition('_')
-        name = f'{prefix}_{value}'
+def unique_name(items, name, start=1, delimiter='_'):
+    value = start
+    while name in items:
+        prefix, delim, suffix = name.rpartition(delimiter)
+        if not delim or not is_int(suffix):
+            # We don't have a "<name><delim><num>" system yet. Start one.
+            name += f'{delimiter}{value}'
+        else:
+            name = f'{prefix}{delim}{value}'
         value += 1
+
     return name
 
 

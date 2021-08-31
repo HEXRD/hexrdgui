@@ -23,7 +23,7 @@ from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
-from hexrd.ui.utils import create_unique_name
+from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -574,8 +574,8 @@ class MainWindow(QObject):
 
     def run_apply_polar_mask(self, line_data):
         for line in line_data:
-            name = create_unique_name(
-                HexrdConfig().polar_masks_line_data, 'polar_mask_0')
+            name = unique_name(HexrdConfig().polar_masks_line_data,
+                               'polar_mask_0')
             HexrdConfig().polar_masks_line_data[name] = line.copy()
             HexrdConfig().visible_masks.append(name)
             create_polar_mask([line.copy()], name)
@@ -606,8 +606,7 @@ class MainWindow(QObject):
             msg = 'No Laue overlay ranges found'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
-        name = create_unique_name(
-            HexrdConfig().polar_masks_line_data, 'laue_mask')
+        name = unique_name(HexrdConfig().polar_masks_line_data, 'laue_mask')
         create_polar_mask(data, name)
         HexrdConfig().polar_masks_line_data[name] = data
         HexrdConfig().visible_masks.append(name)

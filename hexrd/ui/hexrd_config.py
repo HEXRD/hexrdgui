@@ -120,11 +120,23 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the materials panel should update"""
     active_material_modified = Signal()
 
+    """Emitted when the materials dict is modified in any way"""
+    materials_dict_modified = Signal()
+
     """Emitted when a material is renamed"""
     material_renamed = Signal()
 
-    """Emitted when a material is removed"""
-    material_removed = Signal()
+    """Emitted when materials were added"""
+    materials_added = Signal()
+
+    """Emitted when materials were removed"""
+    materials_removed = Signal()
+
+    """Emitted when materials keys were re-arranged"""
+    materials_rearranged = Signal()
+
+    """Emitted when materials have been set"""
+    materials_set = Signal()
 
     """Emitted to update the tth width in the powder overlay editor"""
     material_tth_width_modified = Signal(str)
@@ -222,6 +234,20 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.active_material = mat
 
         self.update_visible_material_energies()
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        materials_dict_modified_signals = [
+            self.material_renamed,
+            self.materials_added,
+            self.materials_removed,
+            self.materials_rearranged,
+            self.materials_set,
+        ]
+
+        for signal in materials_dict_modified_signals:
+            signal.connect(self.materials_dict_modified.emit)
 
     def save_settings(self):
         settings = QSettings()
@@ -563,14 +589,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def import_material(self, f):
         beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
-        base_name = os.path.splitext(os.path.basename(f))[0]
+        name = os.path.splitext(os.path.basename(f))[0]
 
         # Make sure we have a unique name
-        ind = 1
-        name = base_name
-        while name in self.materials:
-            name = base_name + f'_{ind}'
-            ind += 1
+        name = utils.unique_name(self.materials, name)
 
         material = Material(name, f, kev=beam_energy)
         self.add_material(name, material)
@@ -976,33 +998,79 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.reset_tth_max_all_materials()
 
     def add_material(self, name, material):
-        if name in self.materials:
-            raise Exception(name + ' is already in materials list!')
-        self.config['materials']['materials'][name] = material
-        self.reset_tth_max(name)
+        self.add_materials([name], [material])
+
+    def add_materials(self, names, materials):
+        if any(x in self.materials for x in names):
+            mats = list(self.materials.keys())
+            msg = f'Some names {names} are already in materials list {mats}!'
+            raise Exception(msg)
+
+        if len(names) != len(materials):
+            msg = f'{len(names)=} does not match {len(materials)=}!'
+            raise Exception(msg)
+
+        for name, mat in zip(names, materials):
+            self.config['materials']['materials'][name] = mat
+            self.reset_tth_max(name)
+
+        self.materials_added.emit()
+
+    def copy_materials(self, from_names, to_names):
+        mats = self.materials
+        cannot_copy = (
+            any(x in from_names for x in to_names) or
+            any(x in mats for x in to_names) or
+            any(x not in mats for x in from_names) or
+            len(from_names) != len(to_names)
+        )
+        if cannot_copy:
+            mat_names = list(mats.keys())
+            msg = f'Cannot copy {from_names=} to {to_names=} for {mat_names=}'
+            raise Exception(msg)
+
+        for from_name, to_name in zip(from_names, to_names):
+            self.add_material(to_name, copy.deepcopy(mats[from_name]))
+
+    def rearrange_materials(self, new_order):
+        if sorted(new_order) != sorted(self.materials):
+            old = list(self.materials.keys())
+            msg = f'Cannot re-arrange material names from {old} to {new_order}'
+            raise Exception(msg)
+
+        mats = self.materials
+        new_materials = {k: mats[k] for k in new_order}
+        self.config['materials']['materials'] = new_materials
+
+        # This should not require any overlay updates
+        self.materials_rearranged.emit()
 
     def rename_material(self, old_name, new_name):
-        if old_name != new_name:
-            self.config['materials']['materials'][new_name] = (
-                self.config['materials']['materials'][old_name])
-            self.config['materials']['materials'][new_name].name = new_name
+        if old_name == new_name:
+            return
 
-            # Rename any overlays as well
-            for overlay in self.overlays:
-                if overlay['material'] == old_name:
-                    overlay['material'] = new_name
+        ordering = list(self.materials.keys())
+        ordering[ordering.index(old_name)] = new_name
 
-            if self.active_material_name == old_name:
-                # Change the active material before removing the old one
-                # Set the dict directly to bypass the updates that occur
-                # if we did self.active_material = new_name
-                self.config['materials']['active_material'] = new_name
+        # First, rename the material
+        self.materials[new_name] = self.materials[old_name]
+        self.materials[new_name].name = new_name
 
-            # Avoid calling self.remove_material() to avoid pruning
-            # overlays and such.
-            del self.config['materials']['materials'][old_name]
+        # Now re-create the dict to keep the ordering
+        new_dict = {k: self.materials[k] for k in ordering}
+        self.config['materials']['materials'] = new_dict
 
-            self.material_renamed.emit()
+        # Rename any overlays as well
+        for overlay in self.overlays:
+            if overlay['material'] == old_name:
+                overlay['material'] = new_name
+
+        if self.active_material_name == old_name:
+            # Set the dict directly to bypass the updates that occur
+            # if we did self.active_material = new_name
+            self.config['materials']['active_material'] = new_name
+
+        self.material_renamed.emit()
 
     def modify_material(self, name, material):
         if name not in self.materials:
@@ -1013,18 +1081,26 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.overlay_config_changed.emit()
 
     def remove_material(self, name):
-        if name not in self.materials:
-            raise Exception(name + ' is not in materials list!')
-        del self.config['materials']['materials'][name]
+        self.remove_materials([name])
+
+    def remove_materials(self, names):
+        if any(x not in self.materials for x in names):
+            mats = list(self.materials.keys())
+            msg = f'Some of {names=} are not in materials list {mats=}'
+            raise Exception(msg)
+
+        for name in names:
+            del self.config['materials']['materials'][name]
+
         self.prune_overlays()
 
-        if name == self.active_material_name:
-            if self.materials.keys():
-                self.active_material = list(self.materials.keys())[0]
+        if self.active_material_name in names:
+            if self.materials:
+                self.active_material = next(iter(self.materials))
             else:
                 self.active_material = None
 
-        self.material_removed.emit()
+        self.materials_removed.emit()
 
     def _materials(self):
         return self.config['materials'].get('materials', {})
@@ -1037,6 +1113,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.prune_overlays()
         self.flag_overlay_updates_for_all_materials()
         self.overlay_config_changed.emit()
+
+        self.materials_set.emit()
 
     materials = property(_materials, _set_materials)
 

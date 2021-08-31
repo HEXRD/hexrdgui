@@ -29,6 +29,7 @@ class OmeMapsSelectDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
+        HexrdConfig().materials_dict_modified.connect(self.update_materials)
         self.ui.select_file_button.pressed.connect(self.select_file)
         self.ui.method.currentIndexChanged.connect(self.update_method_tab)
         self.ui.material.currentIndexChanged.connect(
@@ -47,9 +48,19 @@ class OmeMapsSelectDialog(QObject):
         for i, data in enumerate(item_data):
             self.ui.method.setItemData(i, data)
 
+        self.update_materials()
+
+    def update_materials(self):
+        prev = self.selected_material
+        material_names = list(HexrdConfig().materials)
+
         self.ui.material.clear()
-        self.ui.material.addItems(list(HexrdConfig().materials.keys()))
-        self.ui.material.setCurrentText(HexrdConfig().active_material_name)
+        self.ui.material.addItems(material_names)
+
+        if prev in material_names:
+            self.ui.material.setCurrentText(prev)
+        else:
+            self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def show(self):
         self.ui.show()
@@ -192,6 +203,10 @@ class OmeMapsSelectDialog(QObject):
         self._table.show()
 
     def update_num_hkls(self):
-        num_hkls = len(self.material.planeData.getHKLs())
+        if self.material is None:
+            num_hkls = 0
+        else:
+            num_hkls = len(self.material.planeData.getHKLs())
+
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)

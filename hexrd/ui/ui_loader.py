@@ -22,10 +22,15 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
         from hexrd.ui.image_tab_widget import ImageTabWidget
         from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 
-        self.registerCustomWidget(GrainsTableView)
-        self.registerCustomWidget(ImageCanvas)
-        self.registerCustomWidget(ImageTabWidget)
-        self.registerCustomWidget(ScientificDoubleSpinBox)
+        register_list = [
+            GrainsTableView,
+            ImageCanvas,
+            ImageTabWidget,
+            ScientificDoubleSpinBox,
+        ]
+
+        for item in register_list:
+            self.registerCustomWidget(item)
 
     def load_file(self, file_name, parent=None):
         """Load a UI file and return the widget
