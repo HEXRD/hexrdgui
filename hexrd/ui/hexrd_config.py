@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 
-from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings
+from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
 
 import h5py
 import numpy as np
@@ -269,6 +269,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Clear the overlay data and save the overlays as well
         HexrdConfig().clear_overlay_data()
+        breakpoint()
         settings.setValue('overlays', self.overlays)
         settings.setValue('workflow', self.workflow)
 
@@ -308,11 +309,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.overlays = settings.value('overlays', [])
         self.overlays = self.overlays if self.overlays is not None else []
 
-        # For backward compatibility:
-        for overlay in self.overlays:
-            overlay['type'] = constants.OverlayType(overlay['type'])
-
         self.workflow = settings.value('workflow', None)
+
+        # For backward compatibility.
+        # Perform after HexrdConfig() has finished being created...
+        QTimer.singleShot(0, self.validate_overlays)
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -1322,6 +1323,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def flag_overlay_updates_for_all_materials(self):
         for name in self.materials:
             self.flag_overlay_updates_for_material(name)
+
+    def validate_overlays(self):
+        # Ensure backward-compatibility with previous settings
+        for overlay in self.overlays:
+            overlay['type'] = constants.OverlayType(overlay['type'])
+            default_refinements = overlays.default_overlay_refinements(overlay)
+            if len(default_refinements) != len(overlay.get('refinements', [])):
+                name = f'{overlay["material"]} {overlay["type"].name}'
+                print(f'Warning: resetting overlay refinements for "{name}"',
+                      'due to length mismatch')
+                overlay['refinements'] = default_refinements
 
     @property
     def visible_polar_masks(self):
