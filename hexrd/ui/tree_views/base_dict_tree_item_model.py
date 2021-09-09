@@ -1,6 +1,6 @@
 from functools import partial
 
-from PySide2.QtCore import QModelIndex, Qt, Signal
+from PySide2.QtCore import QItemSelection, QModelIndex, Qt, Signal
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu, QMessageBox, QTreeView
 
@@ -138,10 +138,18 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
 class BaseDictTreeView(QTreeView):
 
+    selection_changed = Signal(QItemSelection, QItemSelection)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self._combo_keys = []
+
+    def setModel(self, model):
+        # Override to add a connection
+        super().setModel(model)
+        if selection_model := self.selectionModel():
+            selection_model.selectionChanged.connect(self.selection_changed)
 
     def rebuild_tree(self):
         self.model().rebuild_tree()
