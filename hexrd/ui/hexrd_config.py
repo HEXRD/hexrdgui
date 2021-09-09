@@ -269,7 +269,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Clear the overlay data and save the overlays as well
         HexrdConfig().clear_overlay_data()
-        breakpoint()
         settings.setValue('overlays', self.overlays)
         settings.setValue('workflow', self.workflow)
 
