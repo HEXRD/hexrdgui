@@ -1,11 +1,13 @@
 import numpy as np
 
 from hexrd.ui.calibration.pick_based_calibration import run_calibration
+from hexrd.ui.calibration.picks_tree_view_dialog import PicksTreeViewDialog
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import default_overlay_refinements
+from hexrd.ui.tree_views.picks_tree_view import picks_to_tree_format
 from hexrd.ui.utils import (
     array_index_in_list, instr_to_internal_dict, unique_array_list
 )
@@ -121,18 +123,29 @@ class CalibrationRunner:
             'single_line_mode': overlay['type'] == OverlayType.laue
         }
 
-        self._calibration_line_picker = LinePickerDialog(**kwargs)
-        self._calibration_line_picker.ui.setWindowTitle(title)
-        self._calibration_line_picker.start()
-        self._calibration_line_picker.point_picked.connect(
-            self.point_picked)
-        self._calibration_line_picker.line_completed.connect(
-            self.line_completed)
-        self._calibration_line_picker.last_point_removed.connect(
-            self.last_point_removed)
-        self._calibration_line_picker.finished.connect(
-            self.calibration_line_picker_finished)
-        self._calibration_line_picker.result.connect(self.finish_line)
+        picker = LinePickerDialog(**kwargs)
+        self._calibration_line_picker = picker
+        picker.ui.setWindowTitle(title)
+        picker.start()
+        picker.point_picked.connect(self.point_picked)
+        picker.line_completed.connect(self.line_completed)
+        picker.last_point_removed.connect(self.last_point_removed)
+        picker.finished.connect(self.calibration_line_picker_finished)
+        picker.view_picks.connect(self.view_picks_table)
+        picker.result.connect(self.finish_line)
+
+    def view_picks_table(self):
+        self.fill_overlay_picks()
+
+        if hasattr(self, '_calibration_line_picker'):
+            parent = self._calibration_line_picker.ui
+        else:
+            parent = None
+
+        picks = self.generate_pick_results()
+        tree_format = picks_to_tree_format(picks)
+        dialog = PicksTreeViewDialog(tree_format, parent)
+        dialog.exec_()
 
     def finish_line(self):
         self.save_overlay_picks()
@@ -401,11 +414,38 @@ class CalibrationRunner:
             return root_list[val]
         elif self.active_overlay_type == OverlayType.laue:
             # Only a single list for each Laue key
+            # Make sure it contains a value for the requested path
+            while len(root_list) < val + 1:
+                root_list.append((np.nan, np.nan))
+
             return root_list
 
         raise Exception(f'Not implemented: {self.active_overlay_type}')
 
+    def fill_overlay_picks(self):
+        prev_visibilities = self.overlay_visibilities
+        self.restore_backup_overlay_visibilities()
+
+        prev_overlay_ind = self.current_overlay_ind
+        prev_overlay_data_ind = self.overlay_data_index
+        cur_overlay = self.active_overlay
+        while cur_overlay is not None:
+            self.pad_data_with_empty_lists()
+            self.save_overlay_picks()
+            cur_overlay = self.next_overlay()
+            self.reset_overlay_data_index_map()
+            self.reset_overlay_picks()
+
+        self.current_overlay_ind = prev_overlay_ind
+        self.overlay_visibilities = prev_visibilities
+        self.reset_overlay_data_index_map()
+        self.overlay_data_index = prev_overlay_data_ind
+        self.overlay_picks = self.all_overlay_picks[self.current_overlay_ind]
+
     def pad_data_with_empty_lists(self):
+        if self.overlay_data_index == -1:
+            self.overlay_data_index += 1
+
         # This increments the overlay data index to the end and inserts
         # empty lists along the way.
         if self.active_overlay_type == OverlayType.powder:
@@ -446,8 +486,11 @@ class CalibrationRunner:
     def point_picked(self):
         linebuilder = self._calibration_line_picker.linebuilder
         data = (linebuilder.xs[-1], linebuilder.ys[-1])
-        self.current_data_list.append(data)
+        if self.active_overlay_type == OverlayType.powder:
+            self.current_data_list.append(data)
         if self.active_overlay_type == OverlayType.laue:
+            _, _, ind = self.current_data_path
+            self.current_data_list[ind] = data
             self.increment_overlay_data_index()
 
     def line_completed(self):
@@ -465,5 +508,6 @@ class CalibrationRunner:
             self.current_data_list.pop(-1)
         elif self.active_overlay_type == OverlayType.laue:
             self.decrement_overlay_data_index()
-            if self.current_data_list:
-                self.current_data_list.pop(-1)
+            _, _, ind = self.current_data_path
+            if 0 <= ind < len(self.current_data_list):
+                self.current_data_list[ind] = (np.nan, np.nan)

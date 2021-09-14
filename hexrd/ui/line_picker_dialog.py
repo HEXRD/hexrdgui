@@ -31,6 +31,9 @@ class LinePickerDialog(QObject):
     # Emitted when the last point was removed
     last_point_removed = Signal()
 
+    # Emitted when "Picks Table" was clicked
+    view_picks = Signal()
+
     def __init__(self, canvas, parent, single_line_mode=False):
         super(LinePickerDialog, self).__init__(parent)
 
@@ -75,6 +78,7 @@ class LinePickerDialog(QObject):
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
         self.zoom_canvas.point_picked.connect(self.zoom_point_picked)
+        self.ui.view_picks.clicked.connect(self.view_picks.emit)
 
     def update_enable_states(self):
         linebuilder = self.linebuilder
