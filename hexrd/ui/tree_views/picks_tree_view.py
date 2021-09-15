@@ -1,6 +1,8 @@
 import numpy as np
 
 from PySide2.QtCore import Qt
+from PySide2.QtGui import QCursor
+from PySide2.QtWidgets import QMenu
 
 from hexrd.crystallography import hklToStr
 
@@ -178,14 +180,48 @@ class PicksTreeView(BaseDictTreeView):
         # empty line
         self.line, = self.canvas.axis.plot([], [], **kwargs)
 
-    def contextMenuEvent(self, event):
-        # We will soon override this behavior. But for now, do nothing.
-        return
-
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
             self.delete_selected_picks()
         return super().keyPressEvent(event)
+
+    def contextMenuEvent(self, event):
+        actions = {}
+
+        items = self.selected_items
+        num_selected = len(items)
+
+        menu = QMenu(self)
+
+        # Helper functions
+        def add_actions(d: dict):
+            actions.update({menu.addAction(k): v for k, v in d.items()})
+
+        def add_separator():
+            if not actions:
+                return
+            menu.addSeparator()
+
+        if num_selected > 0:
+            new_actions = {
+                'Delete': self.delete_selected_picks,
+            }
+
+            add_actions(new_actions)
+
+        if not actions:
+            # No context menu
+            return
+
+        # Open up the context menu
+        action_chosen = menu.exec_(QCursor.pos())
+
+        if action_chosen is None:
+            # No action chosen
+            return
+
+        # Run the function for the action that was chosen
+        actions[action_chosen]()
 
 
 def picks_to_tree_format(all_picks):
