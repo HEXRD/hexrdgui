@@ -54,6 +54,27 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return True
 
+    def removeRows(self, row, count, parent):
+        item = self.get_item(parent)
+        for _ in range(count):
+            if row >= len(item.child_items):
+                return False
+
+            # First, remove the value from the config
+            path = self.path_to_item(item.child_items[row])
+            self.del_config_val(path)
+
+            # Next, remove the value from the tree item
+            item.child_items.pop(row)
+
+            parent_val = self.config_val(path[:-1])
+            if isinstance(parent_val, (tuple, list)):
+                # If the parent was a tuple or list, re-number the keys
+                # (this assumes the keys are the indices)
+                self.renumber_list_keys(item)
+
+        return True
+
     def flags(self, index):
         if not index.isValid():
             return Qt.NoItemFlags
@@ -83,6 +104,15 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             flags = flags | Qt.ItemIsEditable
 
         return flags
+
+    def remove_items(self, items):
+        for item in items:
+            row = item.row()
+            parent = item.parent_item
+            index = self.createIndex(parent.row(), 0, parent)
+            self.beginRemoveRows(index, row, row)
+            self.removeRow(row, index)
+            self.endRemoveRows()
 
     def rebuild_tree(self):
         # Rebuild the tree from scratch
@@ -123,6 +153,26 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         except KeyError:
             msg = f'Path: {path}\nwas not found in dict: {self.config}'
             raise Exception(msg)
+
+    def del_config_val(self, path):
+        """Delete a config value from a path"""
+        cur_val = self.config
+        try:
+            for val in path[:-1]:
+                cur_val = cur_val[val]
+
+            del cur_val[path[-1]]
+        except KeyError:
+            msg = f'Path: {path}\nwas not found in dict: {self.config}'
+            raise Exception(msg)
+
+    def renumber_list_keys(self, item):
+        # This should be called after a list item was deleted to renumber
+        # the sibling items' keys.
+        for child_item in item.child_items:
+            child_item.set_data(0, child_item.row())
+            index = self.createIndex(child_item.row(), 0, child_item)
+            self.dataChanged.emit(index, index)
 
     @property
     def blacklisted_paths(self):
@@ -219,9 +269,12 @@ class BaseDictTreeView(QTreeView):
         self.selection_mode = QTreeView.ExtendedSelection
 
     @property
+    def selected_rows(self):
+        return self.selectionModel().selectedRows()
+
+    @property
     def selected_items(self):
-        selected_rows = self.selectionModel().selectedRows()
-        return [self.model().get_item(x) for x in selected_rows]
+        return [self.model().get_item(x) for x in self.selected_rows]
 
     def contextMenuEvent(self, event):
         # Generate the actions

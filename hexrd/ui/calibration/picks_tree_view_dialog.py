@@ -28,7 +28,7 @@ class PicksTreeViewDialog:
         self.ui.finished.connect(self.on_finished)
 
     def on_finished(self):
-        self.tree_view.clear_drawn_points()
+        self.tree_view.clear_artists()
 
     def exec_(self):
         return self.ui.exec_()

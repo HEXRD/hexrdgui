@@ -562,7 +562,10 @@ class CalibrationRunner:
                 break
 
             if self.current_data_list:
-                line.set_data(list(zip(*self.current_data_list)))
+                data = list(zip(*self.current_data_list))
+            else:
+                data = ([], [])
+            line.set_data(data)
 
         self.overlay_data_index = prev_data_index
         picker.canvas.draw_idle()

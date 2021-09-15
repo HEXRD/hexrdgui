@@ -1,3 +1,7 @@
+import numpy as np
+
+from PySide2.QtCore import Qt
+
 from hexrd.crystallography import hklToStr
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -92,10 +96,10 @@ class PicksTreeView(BaseDictTreeView):
 
     def selection_was_changed(self):
         self.highlight_selected_hkls()
-        self.draw_selected_points()
+        self.draw_selected_picks()
 
     def data_was_modified(self):
-        self.draw_selected_points()
+        self.draw_selected_picks()
 
     def clear_highlights(self):
         for overlay in HexrdConfig().overlays:
@@ -117,9 +121,34 @@ class PicksTreeView(BaseDictTreeView):
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
-    def draw_selected_points(self):
+    def delete_selected_picks(self):
+        model = self.model()
+        items_to_remove = []
+        for item in self.selected_items:
+            path = model.path_to_item(item)
+            if len(path) == 3:
+                # It is a laue point. Just set it to nans.
+                left = model.createIndex(item.row(), 1, item)
+                right = model.createIndex(item.row(), 2, item)
+                model.setData(left, np.nan, Qt.EditRole)
+                model.setData(right, np.nan, Qt.EditRole)
+
+                # Flag it as changed
+                model.dataChanged.emit(left, right)
+                continue
+            elif len(path) != 4:
+                raise NotImplementedError(path)
+
+            # These rows will actually be removed
+            items_to_remove.append(item)
+
+        if items_to_remove:
+            model.remove_items(items_to_remove)
+            self.draw_selected_picks()
+
+    def draw_selected_picks(self):
         if not self.canvas or not self.selected_items:
-            self.clear_drawn_points()
+            self.clear_artists()
             return
 
         if not self.line:
@@ -129,7 +158,7 @@ class PicksTreeView(BaseDictTreeView):
         self.line.set_data(list(zip(*xys)))
         self.canvas.draw_idle()
 
-    def clear_drawn_points(self):
+    def clear_artists(self):
         if not self.line:
             return
 
@@ -152,6 +181,11 @@ class PicksTreeView(BaseDictTreeView):
     def contextMenuEvent(self, event):
         # We will soon override this behavior. But for now, do nothing.
         return
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            self.delete_selected_picks()
+        return super().keyPressEvent(event)
 
 
 def picks_to_tree_format(all_picks):
