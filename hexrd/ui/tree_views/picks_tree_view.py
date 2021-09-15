@@ -1,10 +1,13 @@
 from hexrd.crystallography import hklToStr
 
+from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays import overlay_from_name, path_to_hkl
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
 )
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
+from hexrd.ui.utils import hkl_str_to_array
 
 
 # Global constants
@@ -75,6 +78,34 @@ class PicksTreeView(BaseDictTreeView):
             self.header().resizeSection(col, 200)
 
         self.expand_rows()
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.selection_changed.connect(self.selection_was_changed)
+
+    def selection_was_changed(self):
+        self.highlight_selected_items()
+
+    def clear_highlights(self):
+        for overlay in HexrdConfig().overlays:
+            overlay.setdefault('highlights', []).clear()
+
+    def highlight_selected_items(self):
+        self.clear_highlights()
+
+        model = self.model()
+        for item in self.selected_items:
+            path = model.path_to_value(item, 0)
+            # Example: ['diamond powder', 'IMAGE-PLATE-2', '1 1 1', 1, -1]
+            overlay_name, detector_name, hkl_str, *others = path
+            overlay = overlay_from_name(overlay_name)
+            hkl = hkl_str_to_array(hkl_str)
+            hkl_path = path_to_hkl(overlay, detector_name, hkl)
+            overlay['highlights'].append(hkl_path)
+
+        HexrdConfig().flag_overlay_updates_for_all_materials()
+        HexrdConfig().overlay_config_changed.emit()
 
     def contextMenuEvent(self, event):
         # We will soon override this behavior. But for now, do nothing.

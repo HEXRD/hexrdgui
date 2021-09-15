@@ -404,3 +404,8 @@ def apply_symmetric_constraint(x):
         for j in range(i):
             x[i, j] = x[j, i]
     return x
+
+
+def hkl_str_to_array(hkl):
+    # For instance: '1 -1 10' => np.array((1, -1, 10))
+    return np.array(list(map(int, hkl.split())))

@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 
 from hexrd.ui.calibration.pick_based_calibration import run_calibration
@@ -142,10 +144,16 @@ class CalibrationRunner:
         else:
             parent = None
 
+        # Backup the highlighting
+        highlighting = copy.deepcopy(self.active_overlay['highlights'])
+
         picks = self.generate_pick_results()
         tree_format = picks_to_tree_format(picks)
         dialog = PicksTreeViewDialog(tree_format, parent)
         dialog.exec_()
+
+        # Restore previous highlighting
+        self.set_highlighting(highlighting)
 
     def finish_line(self):
         self.save_overlay_picks()
