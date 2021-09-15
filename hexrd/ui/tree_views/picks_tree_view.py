@@ -145,9 +145,9 @@ def tree_format_to_picks(tree_format):
         for det, hkl_picks in entry.items():
             hkls[det] = []
             picks[det] = []
-            for hkl, picks in hkl_picks.items():
-                hkls[det].append(list(map(int, hkl.split(','))))
-                picks[det].append(picks)
+            for hkl, cur_picks in hkl_picks.items():
+                hkls[det].append(list(map(int, hkl.split())))
+                picks[det].append(cur_picks)
 
         current = {
             'material': material,
