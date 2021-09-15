@@ -35,7 +35,7 @@ class LinePickerDialog(QObject):
     view_picks = Signal()
 
     def __init__(self, canvas, parent, single_line_mode=False):
-        super(LinePickerDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.canvas = canvas
 
@@ -136,9 +136,7 @@ class LinePickerDialog(QObject):
             # Nothing to delete
             return
 
-        linebuilder.xs.pop(-1)
-        linebuilder.ys.pop(-1)
-        linebuilder.update_line_data()
+        linebuilder.remove_last_point()
 
         self.last_point_removed.emit()
 
@@ -178,6 +176,15 @@ class LinePickerDialog(QObject):
 
         self.lines.append(line)
         self.canvas.draw_idle()
+
+    def hide_artists(self):
+        self.show_artists(False)
+
+    def show_artists(self, show=True):
+        for line in self.lines:
+            line.set_visible(show)
+
+        self.zoom_canvas.box_overlay_line.set_visible(show)
 
     def line_finished(self):
         linebuilder = self.linebuilder
@@ -264,15 +271,27 @@ class LineBuilder(QObject):
 
         self.line = line
         self.canvas = line.figure.canvas
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
+
+    @property
+    def xs(self):
+        return list(self.line.get_xdata())
+
+    @property
+    def ys(self):
+        return list(self.line.get_ydata())
 
     def append_data(self, x, y):
-        self.xs.append(x)
-        self.ys.append(y)
-        self.update_line_data()
+        xs = self.xs + [x]
+        ys = self.ys + [y]
+        self.line.set_data(xs, ys)
+        self.line_modified()
         self.point_picked.emit()
 
-    def update_line_data(self):
-        self.line.set_data(self.xs, self.ys)
+    def remove_last_point(self):
+        xs = self.xs[:-1]
+        ys = self.ys[:-1]
+        self.line.set_data(xs, ys)
+        self.line_modified()
+
+    def line_modified(self):
         self.canvas.draw_idle()

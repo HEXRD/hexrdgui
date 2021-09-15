@@ -14,17 +14,21 @@ from hexrd.ui.ui_loader import UiLoader
 
 class PicksTreeViewDialog:
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(self, dictionary, canvas=None, parent=None):
         self.ui = UiLoader().load_file('picks_tree_view_dialog.ui', parent)
 
         self.dictionary = dictionary
-        self.tree_view = PicksTreeView(dictionary, self.ui)
+        self.tree_view = PicksTreeView(dictionary, canvas, self.ui)
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.export_picks.clicked.connect(self.export_picks_clicked)
+        self.ui.finished.connect(self.on_finished)
+
+    def on_finished(self):
+        self.tree_view.clear_drawn_points()
 
     def exec_(self):
         return self.ui.exec_()

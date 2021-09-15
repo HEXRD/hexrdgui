@@ -9,7 +9,9 @@ from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import default_overlay_refinements
-from hexrd.ui.tree_views.picks_tree_view import picks_to_tree_format
+from hexrd.ui.tree_views.picks_tree_view import (
+    picks_to_tree_format, tree_format_to_picks
+)
 from hexrd.ui.utils import (
     array_index_in_list, instr_to_internal_dict, unique_array_list
 )
@@ -21,6 +23,8 @@ class CalibrationRunner:
         self.parent = parent
         self.current_overlay_ind = -1
         self.all_overlay_picks = {}
+
+        self.line_picker = None
 
     def run(self):
         self.validate()
@@ -126,7 +130,7 @@ class CalibrationRunner:
         }
 
         picker = LinePickerDialog(**kwargs)
-        self._calibration_line_picker = picker
+        self.line_picker = picker
         picker.ui.setWindowTitle(title)
         picker.start()
         picker.point_picked.connect(self.point_picked)
@@ -139,21 +143,37 @@ class CalibrationRunner:
     def view_picks_table(self):
         self.fill_overlay_picks()
 
-        if hasattr(self, '_calibration_line_picker'):
-            parent = self._calibration_line_picker.ui
+        if self.line_picker:
+            parent = self.line_picker.ui
         else:
             parent = None
 
-        # Backup the highlighting
+        # Backup some settings
         highlighting = copy.deepcopy(self.active_overlay['highlights'])
+        prev_visibilities = self.overlay_visibilities
+        self.restore_backup_overlay_visibilities()
+        self.hide_artists()
 
         picks = self.generate_pick_results()
         tree_format = picks_to_tree_format(picks)
-        dialog = PicksTreeViewDialog(tree_format, parent)
+        dialog = PicksTreeViewDialog(tree_format, self.canvas, parent)
         dialog.exec_()
 
-        # Restore previous highlighting
+        # Update all of the picks with the modified data
+        updated_picks = tree_format_to_picks(dialog.dictionary)
+
+        # Since python dicts are ordered, I think we can assume that the
+        # ordering of the picks should still be the same.
+        for i, new_picks in enumerate(updated_picks):
+            self.all_overlay_picks[i] = new_picks['picks']
+
+        self.overlay_picks = self.all_overlay_picks[self.current_overlay_ind]
+        self.update_lines_from_picks()
+
+        # Restore backups
+        self.show_artists()
         self.set_highlighting(highlighting)
+        self.overlay_visibilities = prev_visibilities
 
     def finish_line(self):
         self.save_overlay_picks()
@@ -472,8 +492,8 @@ class CalibrationRunner:
         data_path = self.current_data_path
         if data_path is None:
             # We are done picking for this overlay.
-            if hasattr(self, '_calibration_line_picker'):
-                self._calibration_line_picker.ui.accept()
+            if self.line_picker:
+                self.line_picker.ui.accept()
             return
 
         self.set_highlighting([data_path])
@@ -492,7 +512,7 @@ class CalibrationRunner:
         self.set_highlighting([data_path])
 
     def point_picked(self):
-        linebuilder = self._calibration_line_picker.linebuilder
+        linebuilder = self.line_picker.linebuilder
         data = (linebuilder.xs[-1], linebuilder.ys[-1])
         if self.active_overlay_type == OverlayType.powder:
             self.current_data_list.append(data)
@@ -519,3 +539,30 @@ class CalibrationRunner:
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
                 self.current_data_list[ind] = (np.nan, np.nan)
+
+    def hide_artists(self):
+        if self.line_picker:
+            self.line_picker.hide_artists()
+
+    def show_artists(self):
+        if self.line_picker:
+            self.line_picker.show_artists()
+
+    def update_lines_from_picks(self):
+        if not self.line_picker:
+            return
+
+        # Save the previous index
+        prev_data_index = self.overlay_data_index
+
+        picker = self.line_picker
+        for i, line in enumerate(picker.lines):
+            self.overlay_data_index = i
+            if not self.current_data_path:
+                break
+
+            if self.current_data_list:
+                line.set_data(list(zip(*self.current_data_list)))
+
+        self.overlay_data_index = prev_data_index
+        picker.canvas.draw_idle()

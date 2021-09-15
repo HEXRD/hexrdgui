@@ -22,7 +22,7 @@ class PicksTreeItemModel(BaseDictTreeItemModel):
         super().__init__(dictionary, parent)
 
         # Don't allow editing for now. But we will add it soon in the future.
-        self.editable = False
+        self.editable = True
 
         self.root_item = TreeItem(['', '2θ', 'η'])
         self.rebuild_tree()
@@ -63,10 +63,13 @@ class PicksTreeItemModel(BaseDictTreeItemModel):
 
 class PicksTreeView(BaseDictTreeView):
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(self, dictionary, canvas=None, parent=None):
         super().__init__(parent)
 
-        self.setModel(PicksTreeItemModel(dictionary, parent=self))
+        self.canvas = canvas
+        self.line = None
+
+        self.setModel(PicksTreeItemModel(dictionary, self))
 
         value_cols = [X_COL, Y_COL]
         all_cols = [KEY_COL] + value_cols
@@ -77,21 +80,28 @@ class PicksTreeView(BaseDictTreeView):
             self.resizeColumnToContents(col)
             self.header().resizeSection(col, 200)
 
+        # Allow extended selection
+        self.set_extended_selection_mode()
         self.expand_rows()
 
         self.setup_connections()
 
     def setup_connections(self):
         self.selection_changed.connect(self.selection_was_changed)
+        self.model().dict_modified.connect(self.data_was_modified)
 
     def selection_was_changed(self):
-        self.highlight_selected_items()
+        self.highlight_selected_hkls()
+        self.draw_selected_points()
+
+    def data_was_modified(self):
+        self.draw_selected_points()
 
     def clear_highlights(self):
         for overlay in HexrdConfig().overlays:
             overlay.setdefault('highlights', []).clear()
 
-    def highlight_selected_items(self):
+    def highlight_selected_hkls(self):
         self.clear_highlights()
 
         model = self.model()
@@ -106,6 +116,38 @@ class PicksTreeView(BaseDictTreeView):
 
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
+
+    def draw_selected_points(self):
+        if not self.canvas or not self.selected_items:
+            self.clear_drawn_points()
+            return
+
+        if not self.line:
+            self.setup_line()
+
+        xys = [item.data_list[1:] for item in self.selected_items]
+        self.line.set_data(list(zip(*xys)))
+        self.canvas.draw_idle()
+
+    def clear_drawn_points(self):
+        if not self.line:
+            return
+
+        self.line.set_data([], [])
+        self.canvas.draw_idle()
+
+    def setup_line(self):
+        if not self.canvas or self.line:
+            return
+
+        kwargs = {
+            'color': 'b',
+            'marker': '.',
+            'linestyle': 'None',
+        }
+
+        # empty line
+        self.line, = self.canvas.axis.plot([], [], **kwargs)
 
     def contextMenuEvent(self, event):
         # We will soon override this behavior. But for now, do nothing.
