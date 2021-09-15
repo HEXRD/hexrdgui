@@ -7,7 +7,6 @@ from itertools import cycle
 import numpy as np
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
@@ -104,7 +103,6 @@ class LinePickerDialog(QObject):
             self.lines.pop(0).remove()
 
         self.linebuilder = None
-        self.cursor = None
 
         self.zoom_canvas.cleanup()
         self.zoom_canvas = None
@@ -149,13 +147,9 @@ class LinePickerDialog(QObject):
             print('line picker only works in polar mode!')
             return
 
-        ax = self.canvas.axis
-
         # list for set of rings 'picked'
         self.ring_data.clear()
 
-        # fire up the cursor for this tool
-        self.cursor = Cursor(ax, useblit=True, color='red', linewidth=1)
         self.add_line()
         self.show()
 
@@ -184,7 +178,7 @@ class LinePickerDialog(QObject):
         for line in self.lines:
             line.set_visible(show)
 
-        self.zoom_canvas.box_overlay_line.set_visible(show)
+        self.zoom_canvas.show_main_artists(show)
 
     def line_finished(self):
         linebuilder = self.linebuilder
