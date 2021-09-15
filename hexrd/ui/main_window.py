@@ -491,7 +491,7 @@ class MainWindow(QObject):
             runner.run()
         except Exception as e:
             QMessageBox.warning(self.ui, 'HEXRD', str(e))
-            return
+            raise
 
     def calibration_finished(self):
         print('Calibration finished')
