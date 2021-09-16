@@ -582,7 +582,15 @@ class CalibrationRunner:
             cur = cur[entry]
 
         hkl = hklToStr(cur)
-        self.line_picker.current_hkl_label = f'Current hkl:  {hkl}'
+        label = f'Current hkl:  {hkl}'
+        if self.active_overlay_type == OverlayType.laue:
+            data_list = self.current_data_list
+            if self.overlay_data_index < len(data_list):
+                data_entry = data_list[self.overlay_data_index]
+                if not any(np.isnan(x) for x in data_entry):
+                    label += '  (overwriting)'
+
+        self.line_picker.current_hkl_label = label
 
     def update_lines_from_picks(self):
         if not self.line_picker:
