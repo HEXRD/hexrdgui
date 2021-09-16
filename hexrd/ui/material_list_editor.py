@@ -2,6 +2,8 @@ from pathlib import Path
 
 from PySide2.QtWidgets import QFileDialog
 
+from hexrd.material import Material
+
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.list_editor import ListEditor
 from hexrd.ui.ui_loader import UiLoader
@@ -26,6 +28,7 @@ class MaterialListEditor:
         editor.items_deleted.connect(self.items_deleted)
         editor.items_copied.connect(self.items_copied)
         editor.item_renamed.connect(self.item_renamed)
+        editor.item_added.connect(self.item_added)
 
         self.ui.import_material.clicked.connect(self.import_material)
 
@@ -57,6 +60,11 @@ class MaterialListEditor:
 
     def item_renamed(self, old_name, new_name):
         HexrdConfig().rename_material(old_name, new_name)
+
+    def item_added(self, new_name):
+        material = Material()
+        material.name = new_name
+        HexrdConfig().add_material(new_name, material)
 
     def import_material(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
