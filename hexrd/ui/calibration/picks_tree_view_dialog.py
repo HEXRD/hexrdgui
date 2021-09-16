@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 
 import h5py
@@ -7,9 +8,11 @@ from PySide2.QtWidgets import QFileDialog
 
 from hexrd.instrument import unwrap_dict_to_h5
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.tree_views.picks_tree_view import PicksTreeView
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils.conversions import angles_to_cart
 
 
 class PicksTreeViewDialog:
@@ -51,5 +54,34 @@ class PicksTreeViewDialog:
         if filename.exists():
             filename.unlink()
 
+        export_data = {
+            'angular': self.dictionary,
+            'cartesian': self.dict_with_cart_coords,
+        }
+
         with h5py.File(filename, 'w') as wf:
-            unwrap_dict_to_h5(wf, self.dictionary)
+            unwrap_dict_to_h5(wf, export_data)
+
+    @property
+    def dict_with_cart_coords(self):
+        return picks_angles_to_cartesian(self.dictionary)
+
+
+def picks_angles_to_cartesian(picks):
+    instr = create_hedm_instrument()
+    ret = copy.deepcopy(picks)
+    for name, detectors in ret.items():
+        is_laue = 'laue' in name
+        for detector_name, hkls in detectors.items():
+            panel = instr.detectors[detector_name]
+            if is_laue:
+                for hkl, spot in hkls.items():
+                    hkls[hkl] = angles_to_cart([spot], panel)[0]
+                continue
+
+            # Must be powder
+            for hkl, line in hkls.items():
+                if line:
+                    hkls[hkl] = angles_to_cart(line, panel)
+
+    return ret
