@@ -2,6 +2,8 @@ import copy
 
 import numpy as np
 
+from hexrd.crystallography import hklToStr
+
 from hexrd.ui.calibration.pick_based_calibration import run_calibration
 from hexrd.ui.calibration.picks_tree_view_dialog import PicksTreeViewDialog
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
@@ -136,6 +138,7 @@ class CalibrationRunner:
 
         self.line_picker = picker
         picker.ui.setWindowTitle(title)
+        self.update_current_hkl_label()
         # In case picks were selected beforehand, make sure the lines
         # get updated every time a new line is added (the first of
         # which gets added with start()).
@@ -514,6 +517,9 @@ class CalibrationRunner:
             # Make sure a list is automatically inserted for powder
             self.current_data_list
 
+        # Update the hkl label
+        self.update_current_hkl_label()
+
     def decrement_overlay_data_index(self):
         if self.overlay_data_index == 0:
             # Can't go back any further
@@ -563,6 +569,20 @@ class CalibrationRunner:
     def show_artists(self):
         if self.line_picker:
             self.line_picker.show_artists()
+
+    def update_current_hkl_label(self):
+        if not self.line_picker or not self.active_overlay:
+            return
+
+        overlay = self.active_overlay
+        path = ['data'] + list(self.current_data_path)
+        path[2] = 'hkls'
+        cur = overlay
+        for entry in path:
+            cur = cur[entry]
+
+        hkl = hklToStr(cur)
+        self.line_picker.current_hkl_label = f'Current hkl:  {hkl}'
 
     def update_lines_from_picks(self):
         if not self.line_picker:
