@@ -24,6 +24,10 @@ class ListEditor(QObject):
     # names they correspond to, in order.
     items_copied = Signal(list, list)
 
+    # Indicates that a default item was added to the end.
+    # Provides the name of the new item.
+    item_added = Signal(str)
+
     def __init__(self, items, parent=None):
         super().__init__(parent)
 
@@ -46,6 +50,7 @@ class ListEditor(QObject):
         self.ui.down.clicked.connect(self.down)
         self.ui.delete_.clicked.connect(self.delete)
         self.ui.copy.clicked.connect(self.copy)
+        self.ui.add.clicked.connect(self.add)
 
         self.ui.table.itemChanged.connect(self.item_edited)
 
@@ -79,6 +84,9 @@ class ListEditor(QObject):
     @property
     def num_items(self):
         return len(self.items)
+
+    def clear_selection(self):
+        self.selection_model.clear()
 
     def select_row(self, i):
         model_index = self.selection_model.model().index(i, 0)
@@ -144,6 +152,17 @@ class ListEditor(QObject):
         self.update_table()
 
         self.items_copied.emit(old_items, new_items)
+
+    def add(self):
+        new_name = unique_name(self.items, 'new')
+        self.items += [new_name]
+        self.update_table()
+
+        # Select the new item
+        self.clear_selection()
+        self.select_row(len(self.items) - 1)
+
+        self.item_added.emit(new_name)
 
     def item_edited(self, item):
         row = item.row()
