@@ -27,8 +27,8 @@ class LinePickerDialog(QObject):
     # Emitted when the dialog is closed
     finished = Signal()
 
-    # Emits the ring data that was selected
-    result = Signal(list)
+    # Emitted when the dialog was accepted
+    accepted = Signal()
 
     # Emitted when the last point was removed
     last_point_removed = Signal()
@@ -50,7 +50,6 @@ class LinePickerDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.ring_data = []
         self.linebuilder = None
         self.lines = []
 
@@ -100,8 +99,6 @@ class LinePickerDialog(QObject):
         self.ui.setGeometry(px, py + (ph - dh) / 2.0, dw, dh)
 
     def clear(self):
-        self.ring_data.clear()
-
         while self.lines:
             self.lines.pop(0).remove()
 
@@ -150,9 +147,6 @@ class LinePickerDialog(QObject):
             print('line picker only works in polar mode!')
             return
 
-        # list for set of rings 'picked'
-        self.ring_data.clear()
-
         self.add_line()
         self.show()
 
@@ -186,19 +180,10 @@ class LinePickerDialog(QObject):
         self.zoom_canvas.show_main_artists(show)
 
     def line_finished(self):
-        linebuilder = self.linebuilder
         # If the linebuilder is already gone, just return
-        if linebuilder is None:
+        if self.linebuilder is None:
             return
 
-        # append to ring_data
-        ring_data = np.vstack([linebuilder.xs, linebuilder.ys]).T
-
-        if len(ring_data) == 0:
-            # Don't do anything if there is no ring data
-            return
-
-        self.ring_data.append(ring_data)
         self.add_line()
 
     def button_pressed(self, event):
@@ -240,7 +225,7 @@ class LinePickerDialog(QObject):
 
         # finished needs to be emitted before the result
         self.finished.emit()
-        self.result.emit(copy.deepcopy(self.ring_data))
+        self.accepted.emit()
 
         self.clear()
 

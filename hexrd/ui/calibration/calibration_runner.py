@@ -149,7 +149,7 @@ class CalibrationRunner:
         picker.last_point_removed.connect(self.last_point_removed)
         picker.finished.connect(self.calibration_line_picker_finished)
         picker.view_picks.connect(self.view_picks_table)
-        picker.result.connect(self.finish_line)
+        picker.accepted.connect(self.finish_line)
 
     def view_picks_table(self):
         if self.line_picker:
