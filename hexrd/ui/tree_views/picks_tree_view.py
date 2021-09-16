@@ -188,8 +188,15 @@ class PicksTreeView(BaseDictTreeView):
     def contextMenuEvent(self, event):
         actions = {}
 
-        items = self.selected_items
-        num_selected = len(items)
+        index = self.indexAt(event.pos())
+        model = self.model()
+        item = model.get_item(index)
+        path = model.path_to_item(item)
+        powder_clicked = 'powder' in path[0]
+        hkl_clicked = len(path) == 3
+        powder_pick_clicked = len(path) == 4
+        selected_items = self.selected_items
+        num_selected = len(selected_items)
 
         menu = QMenu(self)
 
@@ -202,12 +209,26 @@ class PicksTreeView(BaseDictTreeView):
                 return
             menu.addSeparator()
 
-        if num_selected > 0:
-            new_actions = {
-                'Delete': self.delete_selected_picks,
-            }
+        # Context menu methods
+        def insert_item():
+            if hkl_clicked:
+                position = 0
+                parent_item = item
+            elif powder_pick_clicked:
+                position = path[-1]
+                parent_item = item.parent_item
+            else:
+                raise NotImplementedError
 
-            add_actions(new_actions)
+            new_item = TreeItem([position, 0., 0.])
+            model.insert_items([new_item], parent_item, position)
+
+        # Action logic
+        if powder_clicked and (hkl_clicked or powder_pick_clicked):
+            add_actions({'Insert': insert_item})
+
+        if num_selected > 0:
+            add_actions({'Delete': self.delete_selected_picks})
 
         if not actions:
             # No context menu

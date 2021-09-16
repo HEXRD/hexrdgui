@@ -18,6 +18,9 @@ class LinePickerDialog(QObject):
     # Emitted when a point was picked
     point_picked = Signal()
 
+    # Emitted when a line is added
+    line_added = Signal()
+
     # Emitted when a line is completed
     line_completed = Signal()
 
@@ -170,6 +173,8 @@ class LinePickerDialog(QObject):
 
         self.lines.append(line)
         self.canvas.draw_idle()
+
+        self.line_added.emit()
 
     def hide_artists(self):
         self.show_artists(False)

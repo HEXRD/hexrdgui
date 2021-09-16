@@ -5,6 +5,7 @@ from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu, QMessageBox, QTreeView
 
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
+from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.utils import is_int
 
 
@@ -75,6 +76,17 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return True
 
+    def insertRows(self, row, count, parent):
+        # This will not add data to the items. The data must be
+        # added in a separate function.
+        parent_item = self.get_item(parent)
+        for _ in range(count):
+            item = TreeItem([0] * self.columnCount(parent))
+            item.parent_item = parent_item
+            parent_item.child_items.insert(row, item)
+
+        return True
+
     def flags(self, index):
         if not index.isValid():
             return Qt.NoItemFlags
@@ -113,6 +125,30 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             self.beginRemoveRows(index, row, row)
             self.removeRow(row, index)
             self.endRemoveRows()
+
+    def insert_items(self, items, parent_item, position):
+        parent_path = self.path_to_item(parent_item)
+        if not isinstance(self.config_val(parent_path), list):
+            # Inserting items is only supported for list
+            raise NotImplementedError(type(self.config_val(parent_path)))
+
+        num_items = len(items)
+        end_position = position + num_items - 1
+        parent_index = self.createIndex(parent_item.row(), 0, parent_item)
+        self.beginInsertRows(parent_index, position, end_position)
+        self.insertRows(position, num_items, parent_index)
+        self.endInsertRows()
+
+        # Set the data for these items
+        for i, item in enumerate(items, position):
+            parent_item.child(i).data_list = item.data_list
+
+        data_list = [item.data_list[1:] for item in parent_item.child_items]
+        self.set_config_val(parent_path, data_list)
+
+        # Renumber the list keys. This will also flag that the data
+        # has been changed.
+        self.renumber_list_keys(parent_item)
 
     def rebuild_tree(self):
         # Rebuild the tree from scratch

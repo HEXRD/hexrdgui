@@ -22,6 +22,7 @@ class CalibrationRunner:
         self.canvas = canvas
         self.parent = parent
         self.current_overlay_ind = -1
+        self.overlay_data_index = -1
         self.all_overlay_picks = {}
 
         self.line_picker = None
@@ -29,6 +30,8 @@ class CalibrationRunner:
     def run(self):
         self.validate()
         self.clear_all_overlay_picks()
+        self.backup_overlay_visibilities = self.overlay_visibilities
+        self.pad_overlay_picks()
         self.pick_next_line()
 
     def validate(self):
@@ -130,8 +133,13 @@ class CalibrationRunner:
         }
 
         picker = LinePickerDialog(**kwargs)
+
         self.line_picker = picker
         picker.ui.setWindowTitle(title)
+        # In case picks were selected beforehand, make sure the lines
+        # get updated every time a new line is added (the first of
+        # which gets added with start()).
+        picker.line_added.connect(self.update_lines_from_picks)
         picker.start()
         picker.point_picked.connect(self.point_picked)
         picker.line_completed.connect(self.line_completed)
@@ -141,8 +149,6 @@ class CalibrationRunner:
         picker.result.connect(self.finish_line)
 
     def view_picks_table(self):
-        self.fill_overlay_picks()
-
         if self.line_picker:
             parent = self.line_picker.ui
         else:
@@ -307,7 +313,6 @@ class CalibrationRunner:
         self.overlay_visibilities = [overlay is x for x in self.overlays]
 
     def calibration_line_picker_finished(self):
-        self.pad_data_with_empty_lists()
         self.restore_backup_overlay_visibilities()
         self.remove_all_highlighting()
 
@@ -338,7 +343,8 @@ class CalibrationRunner:
         HexrdConfig().overlay_config_changed.emit()
 
     def reset_overlay_picks(self):
-        self.overlay_picks = {}
+        ind = self.current_overlay_ind
+        self.overlay_picks = self.all_overlay_picks.get(ind, {})
 
     def reset_overlay_data_index_map(self):
         self.overlay_data_index = -1
@@ -450,12 +456,17 @@ class CalibrationRunner:
 
         raise Exception(f'Not implemented: {self.active_overlay_type}')
 
-    def fill_overlay_picks(self):
+    def pad_overlay_picks(self):
+        prev_overlay_ind = self.current_overlay_ind
+        prev_overlay_data_ind = self.overlay_data_index
         prev_visibilities = self.overlay_visibilities
         self.restore_backup_overlay_visibilities()
 
-        prev_overlay_ind = self.current_overlay_ind
-        prev_overlay_data_ind = self.overlay_data_index
+        if self.current_overlay_ind == -1:
+            self.next_overlay()
+            self.reset_overlay_data_index_map()
+            self.reset_overlay_picks()
+
         cur_overlay = self.active_overlay
         while cur_overlay is not None:
             self.pad_data_with_empty_lists()
@@ -466,9 +477,10 @@ class CalibrationRunner:
 
         self.current_overlay_ind = prev_overlay_ind
         self.overlay_visibilities = prev_visibilities
-        self.reset_overlay_data_index_map()
+        if prev_overlay_data_ind != -1:
+            self.reset_overlay_data_index_map()
         self.overlay_data_index = prev_overlay_data_ind
-        self.overlay_picks = self.all_overlay_picks[self.current_overlay_ind]
+        self.reset_overlay_picks()
 
     def pad_data_with_empty_lists(self):
         if self.overlay_data_index == -1:
@@ -520,6 +532,10 @@ class CalibrationRunner:
             _, _, ind = self.current_data_path
             self.current_data_list[ind] = data
             self.increment_overlay_data_index()
+
+            # In case a point was over-written, force an update of
+            # the line artists.
+            self.update_lines_from_picks()
 
     def line_completed(self):
         self.increment_overlay_data_index()
