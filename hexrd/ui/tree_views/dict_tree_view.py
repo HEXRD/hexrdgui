@@ -1,5 +1,3 @@
-import numpy as np
-
 from PySide2.QtWidgets import QDialog, QVBoxLayout
 
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
@@ -29,11 +27,7 @@ class DictTreeItemModel(BaseDictTreeItemModel):
             keys = range(len(cur_config))
         else:
             # This must be a value.
-            val = cur_config
-            if isinstance(val, np.ndarray) and val.size == 1:
-                # Convert to native python type
-                val = val.item()
-            cur_tree_item.set_data(VALUE_COL, val)
+            cur_tree_item.set_data(VALUE_COL, cur_config)
             return
 
         for key in keys:

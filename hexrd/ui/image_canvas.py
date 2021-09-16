@@ -900,7 +900,8 @@ def transform_from_plain_cartesian_func(mode):
         return panel.map_to_plane(xys, dplane.rmat, dplane.tvec)
 
     def cart_to_angles(xys, panel, iviewer):
-        ang_crds, _ = panel.cart_to_angles(xys, tvec_c=iviewer.instr.tvec)
+        ang_crds, _ = panel.cart_to_angles(xys, tvec_c=iviewer.instr.tvec,
+                                           apply_distortion=True)
         ang_crds = np.degrees(ang_crds)
         ang_crds[:, 1] = mapAngle(ang_crds[:, 1],
                                   HexrdConfig().polar_res_eta_period,

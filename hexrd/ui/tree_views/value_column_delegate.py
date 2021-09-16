@@ -1,10 +1,10 @@
 from PySide2.QtWidgets import (
-    QStyledItemDelegate,
     QItemEditorFactory,
-    QPushButton
+    QPushButton,
+    QStyledItemDelegate,
 )
 
-from PySide2.QtCore import QEvent
+from PySide2.QtCore import QEvent, Qt
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
@@ -55,6 +55,16 @@ class ValueColumnDelegate(QStyledItemDelegate):
             return edit_btn
         else:
             return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        # Implement special behavior for setting editor data
+        if isinstance(editor, ScientificDoubleSpinBox):
+            # Set the value ourselves to ensure special behavior
+            # involving NaN runs correctly.
+            v = index.data(Qt.EditRole)
+            return editor.setValue(v)
+
+        return super().setEditorData(editor, index)
 
 
 class ValueColumnEditorFactory(QItemEditorFactory):

@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class TreeItem:
     # A simple TreeItem class to be used with QTreeView...
 
@@ -35,7 +38,21 @@ class TreeItem:
     def set_data(self, column, val):
         if column < 0 or column >= len(self.data_list):
             return
-        self.data_list[column] = val
+
+        self.data_list[column] = self._preprocess_value(val)
+
+    def _preprocess_value(self, val):
+        # We must convert some values to native python types, or Qt
+        # will not know how to display them.
+        get_item = (
+            (isinstance(val, np.ndarray) and val.size == 1) or
+            isinstance(val, np.generic)
+        )
+        if get_item:
+            # Convert to native python type
+            val = val.item()
+
+        return val
 
     def row(self):
         if self.parent_item:

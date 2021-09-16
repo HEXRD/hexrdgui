@@ -13,12 +13,8 @@
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="5" column="0">
-      <widget class="QLabel" name="zoom_eta_width_label">
-       <property name="text">
-        <string>Zoom η Width:</string>
-       </property>
-      </widget>
+     <item row="3" column="0" colspan="2">
+      <layout class="QVBoxLayout" name="zoom_canvas_layout"/>
      </item>
      <item row="0" column="1">
       <widget class="QLabel" name="start_new_line_label">
@@ -27,10 +23,10 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="add_point_label">
+     <item row="4" column="0">
+      <widget class="QLabel" name="zoom_tth_width_label">
        <property name="text">
-        <string>Add a point with left-click.</string>
+        <string>Zoom 2θ Width:</string>
        </property>
       </widget>
      </item>
@@ -47,42 +43,10 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="zoom_tth_width_label">
+     <item row="5" column="0">
+      <widget class="QLabel" name="zoom_eta_width_label">
        <property name="text">
-        <string>Zoom 2θ Width:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="2">
-      <widget class="QLabel" name="finish_label">
-       <property name="text">
-        <string>Click &quot;Ok&quot; to finish.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="ScientificDoubleSpinBox" name="zoom_eta_width">
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="suffix">
-        <string>°</string>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="minimum">
-        <double>0.000001000000000</double>
-       </property>
-       <property name="maximum">
-        <double>10000.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.200000000000000</double>
-       </property>
-       <property name="value">
-        <double>10.000000000000000</double>
+        <string>Zoom η Width:</string>
        </property>
       </widget>
      </item>
@@ -111,8 +75,30 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0" colspan="2">
-      <layout class="QVBoxLayout" name="zoom_canvas_layout"/>
+     <item row="5" column="1">
+      <widget class="ScientificDoubleSpinBox" name="zoom_eta_width">
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string>°</string>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="minimum">
+        <double>0.000001000000000</double>
+       </property>
+       <property name="maximum">
+        <double>10000.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.200000000000000</double>
+       </property>
+       <property name="value">
+        <double>10.000000000000000</double>
+       </property>
+      </widget>
      </item>
      <item row="6" column="0">
       <widget class="QCheckBox" name="two_click_mode">
@@ -127,6 +113,34 @@
        </property>
        <property name="tristate">
         <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="add_point_label">
+       <property name="text">
+        <string>Add a point with left-click.</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="2">
+      <widget class="QPushButton" name="view_picks">
+       <property name="text">
+        <string>Picks Table</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="finish_label">
+       <property name="text">
+        <string>Click &quot;Ok&quot; to finish.</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="current_hkl_label">
+       <property name="text">
+        <string>Current hkl: </string>
        </property>
       </widget>
      </item>
@@ -156,6 +170,7 @@
   <tabstop>zoom_eta_width</tabstop>
   <tabstop>two_click_mode</tabstop>
   <tabstop>back_button</tabstop>
+  <tabstop>view_picks</tabstop>
  </tabstops>
  <resources/>
  <connections>
