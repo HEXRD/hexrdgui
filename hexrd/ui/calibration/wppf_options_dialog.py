@@ -10,6 +10,7 @@ from PySide2.QtWidgets import (
     QTableWidgetItem, QWidget
 )
 
+from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.parameters import Parameter
@@ -83,10 +84,13 @@ class WppfOptionsDialog(QObject):
             self.update_background_parameters)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file)
-        self.ui.reset_table_to_defaults.pressed.connect(self.reset_params)
         self.ui.display_wppf_plot.toggled.connect(
             self.display_wppf_plot_toggled)
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
+
+        self.ui.export_table.clicked.connect(self.export_table)
+        self.ui.import_table.clicked.connect(self.import_table)
+        self.ui.reset_table_to_defaults.clicked.connect(self.reset_params)
 
         self.ui.save_plot.pressed.connect(self.save_plot)
         self.ui.reset_object.pressed.connect(self.reset_object)
@@ -723,6 +727,101 @@ class WppfOptionsDialog(QObject):
                 raise Exception(f'{obj} does not have attribute: {key}')
 
             setattr(obj, key, val)
+
+    def export_table(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Export Table', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if selected_file:
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
+            return self.export_params(selected_file)
+
+    def export_params(self, filename):
+        filename = Path(filename)
+        if filename.exists():
+            filename.unlink()
+
+        param_dict = self.params.param_dict
+        export_data = {k: param_to_dict(v) for k, v in param_dict.items()}
+
+        with h5py.File(filename, 'w') as wf:
+            unwrap_dict_to_h5(wf, export_data)
+
+    def import_table(self):
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, 'Import Table', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if selected_file:
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
+            return self.import_params(selected_file)
+
+    def import_params(self, filename):
+        filename = Path(filename)
+        if not filename.exists():
+            raise FileNotFoundError(filename)
+
+        import_params = {}
+        with h5py.File(filename, 'r') as rf:
+            unwrap_h5_to_dict(rf, import_params)
+
+        # No exception means we are valid
+        self.validate_import_params(import_params, filename)
+
+        # Unfortunately, hexrd.wppf.parameters.Parameter will not accept
+        # np.bool_ types for Parameter.vary, only native booleans. Let's
+        # do this conversion.
+        def to_native_bools(d):
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    to_native_bools(v)
+                elif isinstance(v, np.bool_):
+                    d[k] = v.item()
+
+        to_native_bools(import_params)
+
+        # Keep the ordering the same as the GUI currently has
+        for key in self.params.param_dict.keys():
+            self.params[key] = dict_to_param(import_params[key])
+
+        self.update_table()
+
+    def validate_import_params(self, import_params, filename):
+        here = self.params.param_dict.keys()
+        there = import_params.keys()
+        extra = list(set(there) - set(here))
+        missing = list(set(here) - set(there))
+
+        if extra or missing:
+            msg = (f'Parameters in {filename} do not match current WPPF '
+                   'parameters internally. Please ensure the same settings '
+                   'are being used')
+
+            if missing:
+                missing_str = ', '.join([f'"{x}"' for x in missing])
+                msg += f'\n\nMissing keys: {missing_str}'
+
+            if extra:
+                extra_str = ', '.join([f'"{x}"' for x in extra])
+                msg += f'\n\nExtra keys: {extra_str}'
+
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            raise Exception(msg)
+
+        req_keys = ['name', 'value', 'lb', 'ub', 'vary']
+        missing_reqs = []
+        for key, entry in import_params.items():
+            if any(x not in entry for x in req_keys):
+                missing_reqs.append(key)
+
+        if missing_reqs:
+            missing_reqs_str = ', '.join([f'"{x}"' for x in missing_reqs])
+            msg = f'{filename} contains parameters that are missing keys\n\n'
+            msg += f'Parameters missing required keys: {missing_reqs_str}'
+
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            raise Exception(msg)
 
 
 def generate_params(method, materials, peak_shape):
