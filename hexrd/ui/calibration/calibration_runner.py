@@ -499,7 +499,7 @@ class CalibrationRunner:
         elif self.active_overlay_type == OverlayType.laue:
             while self.current_data_path is not None:
                 # Use NaN's to indicate a skip for laue
-                self.current_data_list.append((np.nan, np.nan))
+                self.current_data_list
                 self.overlay_data_index += 1
 
     def increment_overlay_data_index(self):
