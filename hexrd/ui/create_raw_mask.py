@@ -56,3 +56,16 @@ def create_raw_mask(name, line_data):
             mask = np.ones(img.shape, dtype=bool)
             mask[rr, cc] = False
             HexrdConfig().raw_masks[name] = (det, mask)
+
+
+def rebuild_raw_masks():
+    HexrdConfig().raw_masks.clear()
+    for name, line_data in HexrdConfig().raw_masks_line_data.items():
+        create_raw_mask(name, line_data)
+    for name, data in HexrdConfig().polar_masks_line_data.items():
+        if isinstance(data, list):
+            # These are Laue spots
+            continue
+        else:
+            line_data = convert_polar_to_raw(data)
+            create_raw_mask(name, line_data)
