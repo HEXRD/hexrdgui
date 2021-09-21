@@ -82,6 +82,7 @@ class MaskManagerDialog(QObject):
         self.ui.masks_table.customContextMenuRequested.connect(
             self.context_menu_event)
         self.ui.export_masks.clicked.connect(self.export_visible_masks)
+        self.ui.import_masks.clicked.connect(self.import_masks)
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
@@ -242,3 +243,12 @@ class MaskManagerDialog(QObject):
         HexrdConfig().visible_masks.clear()
         self.masks.clear()
         self.setup_table()
+
+    def import_masks(self):
+        selected_file, _ = QFileDialog.getOpenFileName(
+            self.ui, 'Save Mask', HexrdConfig().working_dir,
+            'NPZ files (*.npz)')
+
+        if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            # Load data
