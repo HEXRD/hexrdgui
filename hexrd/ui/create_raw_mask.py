@@ -6,6 +6,7 @@ from skimage.draw import polygon
 from hexrd.ui import constants
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils.conversions import angles_to_pixels
 
 
 def apply_threshold_mask(imageseries):
@@ -41,8 +42,7 @@ def _create_threshold_mask(img, comparison, value):
 def convert_polar_to_raw(line):
     line_data = []
     for key, panel in create_hedm_instrument().detectors.items():
-        cart = panel.angles_to_cart(np.radians(line))
-        raw = panel.cartToPixel(cart)
+        raw = angles_to_pixels(line, panel)
         line_data.append((key, raw))
     return line_data
 
