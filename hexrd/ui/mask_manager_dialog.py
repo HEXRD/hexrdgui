@@ -1,4 +1,5 @@
-from hexrd.ui.create_raw_mask import convert_polar_to_raw
+from hexrd.ui.create_polar_mask import rebuild_polar_masks
+from hexrd.ui.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
 import os
 import numpy as np
 
@@ -255,8 +256,26 @@ class MaskManagerDialog(QObject):
     def import_masks(self):
         selected_file, _ = QFileDialog.getOpenFileName(
             self.ui, 'Save Mask', HexrdConfig().working_dir,
-            'NPZ files (*.npz)')
+            'NPZ files (*.npz);; NPY files (*.npy)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
-            # Load data
+            basename = os.path.basename(selected_file)
+            filename, ext = os.path.splitext(basename)
+
+            raw_lines = HexrdConfig().raw_masks_line_data
+            if ext.lower() == '.npz':
+                with np.load(selected_file, allow_pickle=True) as f:
+                    for key in f.keys():
+                        for name, data in f[key]:
+                            raw_lines.setdefault(name, []).append((key, data))
+            elif ext.lower() == '.npy':
+                det, data = np.load(selected_file, allow_pickle=True)[0]
+                raw_lines[filename] = [(det, data)]
+
+            if self.image_mode == ViewType.raw:
+                rebuild_raw_masks()
+            elif self.image_mode == ViewType.polar:
+                rebuild_polar_masks()
+
+            self.update_masks_list('raw')
