@@ -1,3 +1,4 @@
+from hexrd.ui.create_raw_mask import convert_polar_to_raw
 import os
 import numpy as np
 
@@ -56,10 +57,9 @@ class MaskManagerDialog(QObject):
                 return
             for name, data in HexrdConfig().polar_masks_line_data.items():
                 vals = self.masks.values()
-                for val in data:
-                    if any(np.array_equal(val, m) for _, m in vals):
-                        continue
-                    self.masks[name] = (mask_type, val)
+                if any(np.array_equal(val, m) for val, (_, m) in zip(data, vals)):
+                    continue
+                self.masks[name] = (mask_type, data)
         elif mask_type == 'raw':
             if not HexrdConfig().raw_masks_line_data:
                 return
@@ -212,8 +212,9 @@ class MaskManagerDialog(QObject):
             export = menu.addAction('Export Mask')
             action = menu.exec_(QCursor.pos())
             if action == export:
+                self.convert_polar_to_raw()
                 selection = self.ui.masks_table.item(index.row(), 0).text()
-                _, data = self.masks[selection]
+                data = HexrdConfig().raw_masks_line_data[selection]
                 self.export_masks({selection: data})
 
     def export_masks(self, data):
@@ -231,10 +232,12 @@ class MaskManagerDialog(QObject):
                 np.save(selected_file, list(data.values())[0])
 
     def export_visible_masks(self):
+        self.convert_polar_to_raw()
         d = {}
-        for mask in HexrdConfig().visible_masks:
-            _, data = self.masks[mask]
-            d[mask] = data
+        for name in HexrdConfig().visible_masks:
+            data = HexrdConfig().raw_masks_line_data[name]
+            for det, mask in data:
+                d.setdefault(det, []).append((name, mask))
         self.export_masks(d)
 
     def clear_masks(self):
@@ -243,6 +246,11 @@ class MaskManagerDialog(QObject):
         HexrdConfig().visible_masks.clear()
         self.masks.clear()
         self.setup_table()
+
+    def convert_polar_to_raw(self):
+        for name, data in HexrdConfig().polar_masks_line_data.items():
+            line_data = convert_polar_to_raw(data)
+            HexrdConfig().raw_masks_line_data[name] = line_data
 
     def import_masks(self):
         selected_file, _ = QFileDialog.getOpenFileName(
