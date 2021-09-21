@@ -13,8 +13,6 @@ from matplotlib.colors import LogNorm
 
 import numpy as np
 
-from hexrd.transforms.xfcapi import mapAngle
-
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
@@ -22,6 +20,7 @@ from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import utils
+from hexrd.ui.utils.conversions import cart_to_angles, cart_to_pixels
 import hexrd.ui.constants
 
 
@@ -892,26 +891,26 @@ def transform_from_plain_cartesian_func(mode):
     # The functions all have arguments like the following:
     # xys, panel, iviewer
 
-    def cart_to_pixel(xys, panel, iviewer):
-        return panel.cartToPixel(xys)[:, [1, 0]]
+    def to_pixels(xys, panel, iviewer):
+        return cart_to_pixels(xys, panel)
 
     def transform_cart(xys, panel, iviewer):
         dplane = iviewer.dplane
         return panel.map_to_plane(xys, dplane.rmat, dplane.tvec)
 
-    def cart_to_angles(xys, panel, iviewer):
-        ang_crds, _ = panel.cart_to_angles(xys, tvec_c=iviewer.instr.tvec,
-                                           apply_distortion=True)
-        ang_crds = np.degrees(ang_crds)
-        ang_crds[:, 1] = mapAngle(ang_crds[:, 1],
-                                  HexrdConfig().polar_res_eta_period,
-                                  units='degrees')
-        return ang_crds
+    def to_angles(xys, panel, iviewer):
+        kwargs = {
+            'xys': xys,
+            'panel': panel,
+            'eta_period': HexrdConfig().polar_res_eta_period,
+            'tvec_c': iviewer.instr.tvec,
+        }
+        return cart_to_angles(**kwargs)
 
     funcs = {
-        ViewType.raw: cart_to_pixel,
+        ViewType.raw: to_pixels,
         ViewType.cartesian: transform_cart,
-        ViewType.polar: cart_to_angles,
+        ViewType.polar: to_angles,
     }
 
     if mode not in funcs:
