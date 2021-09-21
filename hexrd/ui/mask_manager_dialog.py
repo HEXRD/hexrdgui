@@ -61,7 +61,7 @@ class MaskManagerDialog(QObject):
                 return
             for name, data in HexrdConfig().polar_masks_line_data.items():
                 vals = self.masks.values()
-                if any(np.array_equal(val, m) for val, (_, m) in zip(data, vals)):
+                if any(np.array_equal(v, m) for v, (_, m) in zip(data, vals)):
                     continue
                 self.masks[name] = (mask_type, data)
         elif mask_type == 'raw':
