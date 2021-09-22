@@ -39,11 +39,12 @@ def _create_threshold_mask(img, comparison, value):
     return img, mask
 
 
-def convert_polar_to_raw(line):
+def convert_polar_to_raw(line_data):
     line_data = []
-    for key, panel in create_hedm_instrument().detectors.items():
-        raw = angles_to_pixels(line, panel)
-        line_data.append((key, raw))
+    for line in line_data:
+        for key, panel in create_hedm_instrument().detectors.items():
+            raw = angles_to_pixels(line, panel)
+            line_data.append((key, raw))
     return line_data
 
 
@@ -63,9 +64,5 @@ def rebuild_raw_masks():
     for name, line_data in HexrdConfig().raw_masks_line_data.items():
         create_raw_mask(name, line_data)
     for name, data in HexrdConfig().polar_masks_line_data.items():
-        if isinstance(data, list):
-            # These are Laue spots
-            continue
-        else:
-            line_data = convert_polar_to_raw(data)
-            create_raw_mask(name, line_data)
+        line_data = convert_polar_to_raw(data)
+        create_raw_mask(name, line_data)
