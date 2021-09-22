@@ -9,8 +9,15 @@ from hexrd.ui.utils.conversions import pixels_to_angles
 
 
 def convert_raw_to_polar(det, line):
-    panel = create_hedm_instrument().detectors[det]
-    return [pixels_to_angles(line, panel, HexrdConfig().polar_res_eta_period)]
+    instr = create_hedm_instrument()
+    kwargs = {
+        'ij': line,
+        'panel': instr.detectors[det],
+        'eta_period': HexrdConfig().polar_res_eta_period,
+        'tvec_c': instr.tvec,
+    }
+
+    return [pixels_to_angles(**kwargs)]
 
 
 def create_polar_mask(line_data, name):
