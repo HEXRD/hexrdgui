@@ -4,8 +4,7 @@ from PySide2.QtCore import Qt
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu
 
-from hexrd.crystallography import hklToStr
-
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import overlay_from_name, path_to_hkl
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
@@ -24,14 +23,40 @@ Y_COL = X_COL + 1
 
 class PicksTreeItemModel(BaseDictTreeItemModel):
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(self, dictionary, coords_type=ViewType.polar, parent=None):
         super().__init__(dictionary, parent)
 
-        # Don't allow editing for now. But we will add it soon in the future.
-        self.editable = True
+        self.root_item = TreeItem([''] * 3)
+        self.coords_type = coords_type
 
-        self.root_item = TreeItem(['', '2θ', 'η'])
         self.rebuild_tree()
+
+    @property
+    def coords_type(self):
+        return self._coords_type
+
+    @coords_type.setter
+    def coords_type(self, v):
+        self._coords_type = v
+        self.update_root_item()
+
+    def update_root_item(self):
+        options = {
+            ViewType.raw: ['i', 'j'],
+            ViewType.cartesian: ['x', 'y'],
+            ViewType.polar: ['2θ', 'η'],
+        }
+
+        if self.coords_type not in options:
+            raise NotImplementedError(self.coords_type)
+
+        labels = options[self.coords_type]
+        row = self.root_item.row()
+        for i in range(2):
+            col = i + 1
+            self.root_item.set_data(col, labels[i])
+            index = self.createIndex(row, col, self.root_item)
+            self.dataChanged.emit(index, index)
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         def is_coords(x):
@@ -69,13 +94,14 @@ class PicksTreeItemModel(BaseDictTreeItemModel):
 
 class PicksTreeView(BaseDictTreeView):
 
-    def __init__(self, dictionary, canvas=None, parent=None):
+    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
+                 parent=None):
         super().__init__(parent)
 
         self.canvas = canvas
         self.line = None
 
-        self.setModel(PicksTreeItemModel(dictionary, self))
+        self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
 
         value_cols = [X_COL, Y_COL]
         all_cols = [KEY_COL] + value_cols
@@ -244,50 +270,10 @@ class PicksTreeView(BaseDictTreeView):
         # Run the function for the action that was chosen
         actions[action_chosen]()
 
+    @property
+    def coords_type(self):
+        return self.model().coords_type
 
-def picks_to_tree_format(all_picks):
-    def listify(sequence):
-        sequence = list(sequence)
-        for i, item in enumerate(sequence):
-            if isinstance(item, tuple):
-                sequence[i] = listify(item)
-
-        return sequence
-
-    tree_format = {}
-    for entry in all_picks:
-        hkl_picks = {}
-
-        for det in entry['hkls']:
-            hkl_picks[det] = {}
-            for hkl, picks in zip(entry['hkls'][det], entry['picks'][det]):
-                hkl_picks[det][hklToStr(hkl)] = listify(picks)
-
-        name = f"{entry['material']} {entry['type']}"
-        tree_format[name] = hkl_picks
-
-    return tree_format
-
-
-def tree_format_to_picks(tree_format):
-    all_picks = []
-    for name, entry in tree_format.items():
-        material, type = name.split()
-        hkls = {}
-        picks = {}
-        for det, hkl_picks in entry.items():
-            hkls[det] = []
-            picks[det] = []
-            for hkl, cur_picks in hkl_picks.items():
-                hkls[det].append(list(map(int, hkl.split())))
-                picks[det].append(cur_picks)
-
-        current = {
-            'material': material,
-            'type': type,
-            'hkls': hkls,
-            'picks': picks,
-        }
-        all_picks.append(current)
-
-    return all_picks
+    @coords_type.setter
+    def coords_type(self, v):
+        self.model().coords_type = v
