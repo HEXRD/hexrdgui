@@ -2,6 +2,8 @@ import copy
 
 import numpy as np
 
+from PySide2.QtWidgets import QMessageBox
+
 from hexrd.crystallography import hklToStr
 
 from hexrd.ui.calibration.pick_based_calibration import run_calibration
@@ -158,7 +160,11 @@ class CalibrationRunner:
             parent = None
 
         # Backup some settings
-        highlighting = copy.deepcopy(self.active_overlay['highlights'])
+        if 'highlights' in self.active_overlay:
+            highlighting = copy.deepcopy(self.active_overlay['highlights'])
+        else:
+            highlighting = None
+
         prev_visibilities = self.overlay_visibilities
         self.restore_backup_overlay_visibilities()
         self.hide_artists()
@@ -181,7 +187,10 @@ class CalibrationRunner:
 
         # Restore backups
         self.show_artists()
-        self.set_highlighting(highlighting)
+        if highlighting is None:
+            self.remove_all_highlighting()
+        else:
+            self.set_highlighting(highlighting)
         self.overlay_visibilities = prev_visibilities
 
     def finish_line(self):
@@ -261,6 +270,12 @@ class CalibrationRunner:
             json.dump(flags, wf, cls=NumpyEncoder)
 
     def finish(self):
+        # Ask the user if they want to review the picks
+        msg = 'Point picking complete. Review picks?'
+        response = QMessageBox.question(self.parent, 'HEXRD', msg)
+        if response == QMessageBox.Yes:
+            self.view_picks_table()
+
         self.run_calibration()
 
     def run_calibration(self):
