@@ -45,6 +45,7 @@ def rebuild_polar_masks():
     for name, line_data in HexrdConfig().polar_masks_line_data.items():
         create_polar_mask(line_data, name)
     for name, value in HexrdConfig().raw_masks_line_data.items():
-        det, data = value[0]
-        line_data = convert_raw_to_polar(det, data)
+        line_data = []
+        for det, data in value:
+            line_data.extend(convert_raw_to_polar(det, data))
         create_polar_mask(line_data, name)
