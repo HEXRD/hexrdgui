@@ -39,10 +39,21 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="import_picks">
+       <property name="text">
+        <string>Import Picks</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>export_picks</tabstop>
+  <tabstop>import_picks</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
