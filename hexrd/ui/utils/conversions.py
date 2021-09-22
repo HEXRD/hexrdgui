@@ -8,7 +8,7 @@ def cart_to_pixels(xys, panel):
 
 
 def pixels_to_cart(ij, panel):
-    return panel.pixelToCart(ij)[:, [1, 0]]
+    return panel.pixelToCart(ij[:, [1, 0]])
 
 
 def cart_to_angles(xys, panel, eta_period, tvec_c=None, apply_distortion=True):
