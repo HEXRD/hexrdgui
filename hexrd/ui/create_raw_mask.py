@@ -52,7 +52,7 @@ def convert_polar_to_raw(line_data):
 
 def create_raw_mask(name, line_data):
     for det in HexrdConfig().detector_names:
-        det_lines = [l for l in line_data if det == l[0]]
+        det_lines = [line for line in line_data if det == line[0]]
         img = HexrdConfig().image(det, 0)
         final_mask = np.ones(img.shape, dtype=bool)
         for _, data in det_lines:
