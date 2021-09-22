@@ -218,8 +218,12 @@ class MaskManagerDialog(QObject):
             if action == export:
                 self.convert_polar_to_raw()
                 selection = self.ui.masks_table.item(index.row(), 0).text()
-                det, data = HexrdConfig().raw_masks_line_data[selection]
-                self.export_masks({det: {selection: data}})
+                data = HexrdConfig().raw_masks_line_data[selection]
+                d = {}
+                for i, (det, mask) in enumerate(data):
+                    parent = d.setdefault(det, {})
+                    parent.setdefault(selection, {})[str(i)] = mask
+                self.export_masks(d)
 
     def export_masks(self, data):
         selected_file, _ = QFileDialog.getSaveFileName(
@@ -238,8 +242,9 @@ class MaskManagerDialog(QObject):
         d = {}
         for name in HexrdConfig().visible_masks:
             data = HexrdConfig().raw_masks_line_data[name]
-            for det, mask in data:
-                d.setdefault(det, {})[name] = mask
+            for i, (det, mask) in enumerate(data):
+                parent = d.setdefault(det, {})
+                parent.setdefault(name, {})[str(i)] = mask
         self.export_masks(d)
 
     def clear_masks(self):
@@ -278,8 +283,9 @@ class MaskManagerDialog(QObject):
                     f'Detectors found in masks: {list(mask_data.keys())}')
                 QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
-            for name, mask in data.items():
-                raw_line_data.setdefault(name, []).append((det, mask))
+            for name, masks in data.items():
+                for mask in masks.values():
+                    raw_line_data.setdefault(name, []).append((det, mask))
 
         if self.image_mode == ViewType.raw:
             rebuild_raw_masks()
