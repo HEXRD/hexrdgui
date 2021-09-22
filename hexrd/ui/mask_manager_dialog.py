@@ -259,29 +259,31 @@ class MaskManagerDialog(QObject):
             self.ui, 'Save Mask', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
 
-        if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
-            # Unwrap the h5 file to a dict
-            masks_dict = {}
-            with h5py.File(selected_file, 'r') as f:
-                unwrap_h5_to_dict(f, masks_dict)
+        if not selected_file:
+            return
 
-            raw_line_data = HexrdConfig().raw_masks_line_data
-            mask_data = masks_dict['masks']
-            for det, data in mask_data.items():
-                if det not in HexrdConfig().detector_names:
-                    msg = (
-                        f'Detectors must match.\n'
-                        f'Current detectors: {HexrdConfig().detector_names}.\n'
-                        f'Detectors found in masks: {list(mask_data.keys())}')
-                    QMessageBox.warning(self.ui, 'HEXRD', msg)
-                    return
-                for name, mask in data.items():
-                    raw_line_data.setdefault(name, []).append((det, mask))
+        HexrdConfig().working_dir = os.path.dirname(selected_file)
+        # Unwrap the h5 file to a dict
+        masks_dict = {}
+        with h5py.File(selected_file, 'r') as f:
+            unwrap_h5_to_dict(f, masks_dict)
 
-            if self.image_mode == ViewType.raw:
-                rebuild_raw_masks()
-            elif self.image_mode == ViewType.polar:
-                rebuild_polar_masks()
+        raw_line_data = HexrdConfig().raw_masks_line_data
+        mask_data = masks_dict['masks']
+        for det, data in mask_data.items():
+            if det not in HexrdConfig().detector_names:
+                msg = (
+                    f'Detectors must match.\n'
+                    f'Current detectors: {HexrdConfig().detector_names}.\n'
+                    f'Detectors found in masks: {list(mask_data.keys())}')
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
+                return
+            for name, mask in data.items():
+                raw_line_data.setdefault(name, []).append((det, mask))
 
-            self.update_masks_list('raw')
+        if self.image_mode == ViewType.raw:
+            rebuild_raw_masks()
+        elif self.image_mode == ViewType.polar:
+            rebuild_polar_masks()
+
+        self.update_masks_list('raw')
