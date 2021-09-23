@@ -278,15 +278,16 @@ class MaskManagerDialog(QObject):
         masks_dict = {}
         with h5py.File(selected_file, 'r') as f:
             unwrap_h5_to_dict(f, masks_dict)
+        self.load_masks(masks_dict['masks'])
 
+    def load_masks(self, h5py_group):
         raw_line_data = HexrdConfig().raw_masks_line_data
-        mask_data = masks_dict['masks']
-        for det, data in mask_data.items():
+        for det, data in h5py_group.items():
             if det not in HexrdConfig().detector_names:
                 msg = (
                     f'Detectors must match.\n'
                     f'Current detectors: {HexrdConfig().detector_names}.\n'
-                    f'Detectors found in masks: {list(mask_data.keys())}')
+                    f'Detectors found in masks: {list(h5py_group.keys())}')
                 QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
             for name, masks in data.items():
