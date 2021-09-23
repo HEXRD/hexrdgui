@@ -21,8 +21,8 @@ from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
-from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
-from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
+from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
+from hexrd.ui.create_raw_mask import rebuild_raw_masks
 from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
@@ -573,10 +573,11 @@ class MainWindow(QObject):
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, line_data):
+        raw_lines = HexrdConfig().raw_masks_line_data
+        polar_lines = HexrdConfig().polar_masks_line_data
         for line in line_data:
-            name = unique_name(HexrdConfig().polar_masks_line_data,
-                               'polar_mask_0')
-            HexrdConfig().polar_masks_line_data[name] = line.copy()
+            name = unique_name({**raw_lines, **polar_lines}, 'polar_mask_0')
+            HexrdConfig().polar_masks_line_data[name] = [line.copy()]
             HexrdConfig().visible_masks.append(name)
             create_polar_mask([line.copy()], name)
         HexrdConfig().polar_masks_changed.emit()
@@ -606,7 +607,10 @@ class MainWindow(QObject):
             msg = 'No Laue overlay ranges found'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
-        name = unique_name(HexrdConfig().polar_masks_line_data, 'laue_mask')
+
+        raw_lines = HexrdConfig().raw_masks_line_data
+        polar_lines = HexrdConfig().polar_masks_line_data
+        name = unique_name({**raw_lines, **polar_lines}, 'laue_mask')
         create_polar_mask(data, name)
         HexrdConfig().polar_masks_line_data[name] = data
         HexrdConfig().visible_masks.append(name)
@@ -734,29 +738,10 @@ class MainWindow(QObject):
         if self.image_mode == ViewType.cartesian:
             self.ui.image_tab_widget.show_cartesian()
         elif self.image_mode == ViewType.polar:
-            # Rebuild polar masks
-            HexrdConfig().polar_masks.clear()
-            for name, line_data in HexrdConfig().polar_masks_line_data.items():
-                if not isinstance(line_data, list):
-                    line_data = [line_data]
-                create_polar_mask(line_data, name)
-            for name, value in HexrdConfig().raw_masks_line_data.items():
-                det, data = value[0]
-                line_data = convert_raw_to_polar(det, data)
-                create_polar_mask(line_data, name)
+            rebuild_polar_masks()
             self.ui.image_tab_widget.show_polar()
         else:
-            # Rebuild raw masks
-            HexrdConfig().raw_masks.clear()
-            for name, line_data in HexrdConfig().raw_masks_line_data.items():
-                create_raw_mask(name, line_data)
-            for name, data in HexrdConfig().polar_masks_line_data.items():
-                if isinstance(data, list):
-                    # These are Laue spots
-                    continue
-                else:
-                    line_data = convert_polar_to_raw(data)
-                    create_raw_mask(name, line_data)
+            rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before

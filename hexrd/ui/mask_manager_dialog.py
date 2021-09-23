@@ -1,10 +1,15 @@
+from hexrd.ui.create_polar_mask import rebuild_polar_masks
+from hexrd.ui.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
 import os
 import numpy as np
+import h5py
 
 from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import (
-    QCheckBox, QFileDialog, QMenu, QPushButton, QTableWidgetItem)
+    QCheckBox, QFileDialog, QMenu, QMessageBox, QPushButton, QTableWidgetItem)
 from PySide2.QtGui import QCursor
+
+from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 
 from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -56,10 +61,9 @@ class MaskManagerDialog(QObject):
                 return
             for name, data in HexrdConfig().polar_masks_line_data.items():
                 vals = self.masks.values()
-                for val in data:
-                    if any(np.array_equal(val, m) for _, m in vals):
-                        continue
-                    self.masks[name] = (mask_type, val)
+                if any(np.array_equal(v, m) for v, (_, m) in zip(data, vals)):
+                    continue
+                self.masks[name] = (mask_type, data)
         elif mask_type == 'raw':
             if not HexrdConfig().raw_masks_line_data:
                 return
@@ -82,6 +86,7 @@ class MaskManagerDialog(QObject):
         self.ui.masks_table.customContextMenuRequested.connect(
             self.context_menu_event)
         self.ui.export_masks.clicked.connect(self.export_visible_masks)
+        self.ui.import_masks.clicked.connect(self.import_masks)
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
@@ -185,10 +190,10 @@ class MaskManagerDialog(QObject):
             self.masks[new_name] = self.masks.pop(self.old_name)
             if self.old_name in HexrdConfig().polar_masks_line_data.keys():
                 value = HexrdConfig().polar_masks_line_data.pop(self.old_name)
-                HexrdConfig().polar_masks[new_name] = value
+                HexrdConfig().polar_masks_line_data[new_name] = value
             elif self.old_name in HexrdConfig().raw_masks_line_data.keys():
                 value = HexrdConfig().raw_masks_line_data.pop(self.old_name)
-                HexrdConfig().raw_masks[new_name] = value
+                HexrdConfig().raw_masks_line_data[new_name] = value
 
             if self.old_name in HexrdConfig().polar_masks.keys():
                 value = HexrdConfig().polar_masks.pop(self.old_name)
@@ -211,29 +216,35 @@ class MaskManagerDialog(QObject):
             export = menu.addAction('Export Mask')
             action = menu.exec_(QCursor.pos())
             if action == export:
+                self.convert_polar_to_raw()
                 selection = self.ui.masks_table.item(index.row(), 0).text()
-                _, data = self.masks[selection]
-                self.export_masks({selection: data})
+                data = HexrdConfig().raw_masks_line_data[selection]
+                d = {}
+                for i, (det, mask) in enumerate(data):
+                    parent = d.setdefault(det, {})
+                    parent.setdefault(selection, {})[str(i)] = mask
+                self.export_masks(d)
 
     def export_masks(self, data):
         selected_file, _ = QFileDialog.getSaveFileName(
             self.ui, 'Save Mask', HexrdConfig().working_dir,
-            'NPZ files (*.npz);; NPY files (*.npy)')
+            'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
-            _, ext = os.path.splitext(selected_file)
-
-            if ext.lower() == '.npz':
-                np.savez(selected_file, **data)
-            elif ext.lower() == '.npy':
-                np.save(selected_file, list(data.values())[0])
+            # write to hdf5
+            with h5py.File(selected_file, 'w') as f:
+                masks_group = f.create_group('masks')
+                unwrap_dict_to_h5(masks_group, data, asattr=False)
 
     def export_visible_masks(self):
+        self.convert_polar_to_raw()
         d = {}
-        for mask in HexrdConfig().visible_masks:
-            _, data = self.masks[mask]
-            d[mask] = data
+        for name in HexrdConfig().visible_masks:
+            data = HexrdConfig().raw_masks_line_data[name]
+            for i, (det, mask) in enumerate(data):
+                parent = d.setdefault(det, {})
+                parent.setdefault(name, {})[str(i)] = mask
         self.export_masks(d)
 
     def clear_masks(self):
@@ -242,3 +253,43 @@ class MaskManagerDialog(QObject):
         HexrdConfig().visible_masks.clear()
         self.masks.clear()
         self.setup_table()
+
+    def convert_polar_to_raw(self):
+        for name, data in HexrdConfig().polar_masks_line_data.items():
+            line_data = convert_polar_to_raw(data)
+            HexrdConfig().raw_masks_line_data[name] = line_data
+
+    def import_masks(self):
+        selected_file, _ = QFileDialog.getOpenFileName(
+            self.ui, 'Save Mask', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if not selected_file:
+            return
+
+        HexrdConfig().working_dir = os.path.dirname(selected_file)
+        # Unwrap the h5 file to a dict
+        masks_dict = {}
+        with h5py.File(selected_file, 'r') as f:
+            unwrap_h5_to_dict(f, masks_dict)
+
+        raw_line_data = HexrdConfig().raw_masks_line_data
+        mask_data = masks_dict['masks']
+        for det, data in mask_data.items():
+            if det not in HexrdConfig().detector_names:
+                msg = (
+                    f'Detectors must match.\n'
+                    f'Current detectors: {HexrdConfig().detector_names}.\n'
+                    f'Detectors found in masks: {list(mask_data.keys())}')
+                QMessageBox.warning(self.ui, 'HEXRD', msg)
+                return
+            for name, masks in data.items():
+                for mask in masks.values():
+                    raw_line_data.setdefault(name, []).append((det, mask))
+
+        if self.image_mode == ViewType.raw:
+            rebuild_raw_masks()
+        elif self.image_mode == ViewType.polar:
+            rebuild_polar_masks()
+
+        self.update_masks_list('raw')

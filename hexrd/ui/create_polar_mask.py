@@ -5,13 +5,19 @@ from skimage.draw import polygon
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.calibration.polarview import PolarView
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils.conversions import pixels_to_angles
 
 
 def convert_raw_to_polar(det, line):
-    panel = create_hedm_instrument().detectors[det]
-    cart = panel.pixelToCart(line)
-    tth, gvec = panel.cart_to_angles(cart)
-    return [np.degrees(tth)]
+    instr = create_hedm_instrument()
+    kwargs = {
+        'ij': line,
+        'panel': instr.detectors[det],
+        'eta_period': HexrdConfig().polar_res_eta_period,
+        'tvec_c': instr.tvec,
+    }
+
+    return [pixels_to_angles(**kwargs)]
 
 
 def create_polar_mask(line_data, name):
@@ -32,3 +38,14 @@ def create_polar_mask(line_data, name):
         mask[rr, cc] = False
         final_mask = np.logical_and(final_mask, mask)
     HexrdConfig().polar_masks[name] = final_mask
+
+
+def rebuild_polar_masks():
+    HexrdConfig().polar_masks.clear()
+    for name, line_data in HexrdConfig().polar_masks_line_data.items():
+        create_polar_mask(line_data, name)
+    for name, value in HexrdConfig().raw_masks_line_data.items():
+        line_data = []
+        for det, data in value:
+            line_data.extend(convert_raw_to_polar(det, data))
+        create_polar_mask(line_data, name)
