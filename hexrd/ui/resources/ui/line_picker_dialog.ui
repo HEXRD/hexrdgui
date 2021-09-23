@@ -13,23 +13,6 @@
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="3" column="0" colspan="2">
-      <layout class="QVBoxLayout" name="zoom_canvas_layout"/>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="start_new_line_label">
-       <property name="text">
-        <string>Start a new line with right-click.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="zoom_tth_width_label">
-       <property name="text">
-        <string>Zoom 2θ Width:</string>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="1">
       <widget class="QPushButton" name="back_button">
        <property name="enabled">
@@ -43,10 +26,10 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="zoom_eta_width_label">
+     <item row="8" column="0" colspan="2">
+      <widget class="QPushButton" name="view_picks">
        <property name="text">
-        <string>Zoom η Width:</string>
+        <string>Picks Table</string>
        </property>
       </widget>
      </item>
@@ -72,6 +55,30 @@
        </property>
        <property name="value">
         <double>5.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="add_point_label">
+       <property name="text">
+        <string>Add a point with left-click.</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0" colspan="2">
+      <layout class="QVBoxLayout" name="zoom_canvas_layout"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="start_new_line_label">
+       <property name="text">
+        <string>Start a new line with right-click.</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="current_hkl_label">
+       <property name="text">
+        <string>Current hkl: </string>
        </property>
       </widget>
      </item>
@@ -116,20 +123,6 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="add_point_label">
-       <property name="text">
-        <string>Add a point with left-click.</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0" colspan="2">
-      <widget class="QPushButton" name="view_picks">
-       <property name="text">
-        <string>Picks Table</string>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLabel" name="finish_label">
        <property name="text">
@@ -137,10 +130,30 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QLabel" name="current_hkl_label">
+     <item row="4" column="0">
+      <widget class="QLabel" name="zoom_tth_width_label">
        <property name="text">
-        <string>Current hkl: </string>
+        <string>Zoom 2θ Width:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="zoom_eta_width_label">
+       <property name="text">
+        <string>Zoom η Width:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QCheckBox" name="display_sums_in_subplots">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, display sums in the subplots. If unchecked, display cursor pixel values instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Display sums in subplots</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -170,6 +183,7 @@
   <tabstop>zoom_eta_width</tabstop>
   <tabstop>two_click_mode</tabstop>
   <tabstop>back_button</tabstop>
+  <tabstop>display_sums_in_subplots</tabstop>
   <tabstop>view_picks</tabstop>
  </tabstops>
  <resources/>
