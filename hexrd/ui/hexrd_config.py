@@ -50,6 +50,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when beam vector has changed"""
     beam_vector_changed = Signal()
 
+    """Emitted when the oscillation stage changes"""
+    oscillation_stage_changed = Signal()
+
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
@@ -884,6 +887,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # indicating so
             det = path[1]
             self.detector_transform_modified.emit(det)
+            return
+
+        if path[0] == 'oscillation_stage':
+            self.rerender_needed.emit()
+            # Overlays need to update their instrument objects when
+            # the oscillation stage changes.
+            self.oscillation_stage_changed.emit()
             return
 
         # Otherwise, assume we need to re-render the whole image
