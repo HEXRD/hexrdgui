@@ -76,6 +76,8 @@ class LinePickerDialog(QObject):
         self.point_picked.connect(self.update_enable_states)
         self.last_point_removed.connect(self.update_enable_states)
         self.ui.two_click_mode.toggled.connect(self.two_click_mode_changed)
+        self.ui.display_sums_in_subplots.toggled.connect(
+            self.display_sums_in_subplots_toggled)
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
         self.zoom_canvas.point_picked.connect(self.zoom_point_picked)
@@ -141,6 +143,9 @@ class LinePickerDialog(QObject):
     def two_click_mode_changed(self, on):
         self.two_click_mode = on
         self.zoom_frozen = False
+
+    def display_sums_in_subplots_toggled(self, b):
+        self.zoom_canvas.display_sums_in_subplots = b
 
     def start(self):
         if self.canvas.mode != ViewType.polar:
