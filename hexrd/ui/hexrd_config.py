@@ -250,28 +250,108 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for signal in materials_dict_modified_signals:
             signal.connect(self.materials_dict_modified.emit)
 
+    # Returns a list of tuples contain the names of attributes and their
+    # default values that should be persisted as part of the configuration
+    # state.
+    def _attributes_to_persist(self):
+        return [
+            ('config_instrument', None),
+            ('config_calibration', None),
+            ('config_indexing', None),
+            ('config_image', None),
+            ('images_dir', None),
+            ('working_dir', None),
+            ('hdf5_path', None),
+            ('live_update', True),
+            ('euler_angle_convention',
+                constants.DEFAULT_EULER_ANGLE_CONVENTION),
+            ('previous_active_material', None),
+            ('collapsed_state', []),
+            ('load_panel_state', {}),
+            ('stack_state', {}),
+            ('llnl_boundary_positions', {}),
+            ('overlays', []),
+            ('workflow', None)
+        ]
+
+    # Provide a mapping from attribute names to the keys used in our state
+    # file or QSettings. Its a one to one mapping appart from a few exceptions
+    def _attribute_to_settings_key(self, attribute_name):
+        exceptions = {
+            'llnl_boundary_positions': 'boundary_positions',
+            'stack_state': 'image_stack_state',
+            'previous_active_material': 'active_material'
+        }
+
+        if attribute_name in exceptions:
+            return exceptions[attribute_name]
+
+        return attribute_name
+
+    # Save the state in QSettings
+    def _save_state_to_settings(self, state, settings):
+        for name, value in state.items():
+            settings.setValue(name, value)
+
+    # Load the state from QSettings
+    def _load_state_from_settings(self, settings):
+        state = {}
+        for name, default in self._attributes_to_persist():
+            state[name] = settings.value(
+                self._attribute_to_settings_key(name), default)
+
+        return state
+
+    def state_to_persist(self):
+        """
+        Return a dict of the parts of HexrdConfig that should persisted to
+        preserve the state of the application.
+        """
+
+        # Clear the overlay data and before generating state
+        HexrdConfig().clear_overlay_data()
+
+        state = {}
+        for name, _ in self._attributes_to_persist():
+            state[self._attribute_to_settings_key(name)] = getattr(self, name)
+
+        state['euler_angle_convention'] = self.euler_angle_convention
+
+        return state
+
+    def load_from_state(self, state):
+        """
+        Update HexrdConfig using a loaded state.
+        """
+
+        # We have to special case euler_angle_convention as its need to be set
+        # using set_euler_angle_convention, see below
+        skip = ['euler_angle_convention']
+
+        for name, value in state.items():
+            if name not in skip:
+                setattr(self, name, value)
+
+        # All QSettings come back as strings. So check that we are dealing with
+        # a boolean and convert if necessary
+        if not isinstance(self.live_update, bool):
+            self.live_update = self.live_update == 'true'
+
+        # Read the attribute set by _load_attributes
+        conv = state['euler_angle_convention']
+        if isinstance(conv, tuple):
+            # Convert to our new method of storing it
+            conv = {'axes_order': conv[0], 'extrinsic': conv[1]}
+
+        self.set_euler_angle_convention(conv, convert_config=False)
+
+        self.overlays = self.overlays if self.overlays is not None else []
+
     def save_settings(self):
         settings = QSettings()
-        settings.setValue('config_instrument', self.config['instrument'])
-        settings.setValue('config_calibration', self.config['calibration'])
-        settings.setValue('config_indexing', self.indexing_config)
-        settings.setValue('config_image', self.config['image'])
-        settings.setValue('images_dir', self.images_dir)
-        settings.setValue('working_dir', self.working_dir)
-        settings.setValue('hdf5_path', self.hdf5_path)
-        settings.setValue('live_update', self.live_update)
-        settings.setValue('euler_angle_convention',
-                          self.euler_angle_convention)
-        settings.setValue('active_material', self.active_material_name)
-        settings.setValue('collapsed_state', self.collapsed_state)
-        settings.setValue('load_panel_state', self.load_panel_state)
-        settings.setValue('image_stack_state', self.stack_state)
-        settings.setValue('boundary_positions', self.llnl_boundary_positions)
 
-        # Clear the overlay data and save the overlays as well
-        HexrdConfig().clear_overlay_data()
-        settings.setValue('overlays', self.overlays)
-        settings.setValue('workflow', self.workflow)
+        state = self.state_to_persist()
+        self._save_state_to_settings(state, settings)
 
     def set_workflow(self, workflow):
         if workflow == self.workflow:
@@ -282,34 +362,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def load_settings(self):
         settings = QSettings()
-        self.config['instrument'] = settings.value('config_instrument', None)
-        self.config['calibration'] = settings.value('config_calibration', None)
-        self.config['indexing'] = settings.value('config_indexing', None)
-        self.config['image'] = settings.value('config_image', None)
-        self.images_dir = settings.value('images_dir', None)
-        self.working_dir = settings.value('working_dir', None)
-        self.hdf5_path = settings.value('hdf5_path', None)
-        # All QSettings come back as strings.
-        self.live_update = settings.value('live_update', 'true') == 'true'
 
-        default_convention = constants.DEFAULT_EULER_ANGLE_CONVENTION
-        conv = settings.value('euler_angle_convention', default_convention)
-        if isinstance(conv, tuple):
-            # Convert to our new method of storing it
-            conv = {'axes_order': conv[0], 'extrinsic': conv[1]}
-
-        self.set_euler_angle_convention(conv, convert_config=False)
-
-        self.previous_active_material = settings.value('active_material', None)
-        self.collapsed_state = settings.value('collapsed_state', [])
-        self.load_panel_state = settings.value('load_panel_state', {})
-        self.stack_state = settings.value('image_stack_state', {})
-        self.llnl_boundary_positions = settings.value('boundary_positions', {})
-
-        self.overlays = settings.value('overlays', [])
-        self.overlays = self.overlays if self.overlays is not None else []
-
-        self.workflow = settings.value('workflow', None)
+        state = self._load_state_from_settings(settings)
+        self.load_from_state(state)
 
         # For backward compatibility.
         # Perform after HexrdConfig() has finished being created...
@@ -585,8 +640,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
         self.materials = load_materials_hdf5(f, kev=beam_energy)
 
-    def save_materials(self, f):
-        save_materials_hdf5(f, self.materials)
+    def save_materials(self, f, path=None):
+        save_materials_hdf5(f, self.materials, path)
 
     def import_material(self, f):
         beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
@@ -1831,3 +1886,43 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return
 
         self.logging_stderr_handler.setStream(v)
+
+    # Property with same name as settings key, used for persistence
+    @property
+    def config_instrument(self):
+        return self.config['instrument']
+
+    # Property with same name as settings key, used for persistence
+    @config_instrument.setter
+    def config_instrument(self, instrument):
+        self.config['instrument'] = instrument
+
+    # Property with same name as settings key, used for persistence
+    @property
+    def config_calibration(self):
+        return self.config['calibration']
+
+    # Property with same name as settings key, used for persistence
+    @config_calibration.setter
+    def config_calibration(self, calibration):
+        self.config['calibration'] = calibration
+
+    # Property with same name as settings key, used for persistence
+    @property
+    def config_indexing(self):
+        return self.config['indexing']
+
+    # Property with same name as settings key, used for persistence
+    @config_indexing.setter
+    def config_indexing(self, indexing):
+        self.config['indexing'] = indexing
+
+    # Property with same name as settings key, used for persistence
+    @property
+    def config_image(self):
+        return self.config['image']
+
+    # Property with same name as settings key, used for persistence
+    @config_image.setter
+    def config_image(self, image):
+        self.config['image'] = image

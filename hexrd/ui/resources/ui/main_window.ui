@@ -58,6 +58,7 @@
      <addaction name="action_open_aps_imageseries"/>
      <addaction name="separator"/>
      <addaction name="action_open_grain_fitting_results"/>
+     <addaction name="action_open_state"/>
     </widget>
     <widget class="QMenu" name="menu_save">
      <property name="title">
@@ -73,6 +74,7 @@
      <addaction name="action_save_imageseries"/>
      <addaction name="menu_save_config"/>
      <addaction name="action_save_materials"/>
+     <addaction name="action_save_state"/>
     </widget>
     <widget class="QMenu" name="menu_export">
      <property name="title">
@@ -622,6 +624,16 @@
    </property>
    <property name="text">
     <string>Apply Powder Rings Mask to Polar</string>
+   </property>
+  </action>
+  <action name="action_save_state">
+   <property name="text">
+    <string>State</string>
+   </property>
+  </action>
+  <action name="action_open_state">
+   <property name="text">
+    <string>State</string>
    </property>
   </action>
  </widget>

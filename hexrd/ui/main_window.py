@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import h5py
 
 import numpy as np
 
@@ -52,6 +53,7 @@ from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
+from hexrd.ui import state
 
 
 class MainWindow(QObject):
@@ -171,6 +173,10 @@ class MainWindow(QObject):
             self.on_action_save_imageseries_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
+        self.ui.action_save_state.triggered.connect(
+            self.on_action_save_state_triggered)
+        self.ui.action_open_state.triggered.connect(
+            self.on_action_load_state_triggered)
         self.ui.action_export_current_plot.triggered.connect(
             self.on_action_export_current_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
@@ -885,6 +891,30 @@ class MainWindow(QObject):
 
     def on_action_open_mask_manager_triggered(self):
         self.mask_manager_dialog.show()
+
+    def on_action_save_state_triggered(self):
+
+        selected_file, _ = QFileDialog.getSaveFileName(
+            self.ui, 'Save Current State', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if selected_file:
+            with h5py.File(selected_file, "w") as h5_file:
+                state.save(h5_file)
+
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+
+    def on_action_load_state_triggered(self):
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, 'Load State', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if selected_file:
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            with h5py.File(selected_file, "r") as h5_file:
+                state.load(h5_file)
 
     def add_view_dock_widget_actions(self):
         # Add actions to show/hide all of the dock widgets
