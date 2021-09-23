@@ -21,9 +21,8 @@ from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
-from hexrd.ui.create_polar_mask import (
-    create_polar_mask, create_raw_mask, rebuild_polar_masks)
-from hexrd.ui.create_raw_mask import rebuild_raw_masks
+from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
+from hexrd.ui.create_raw_mask import create_raw_mask, rebuild_raw_masks
 from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
@@ -585,12 +584,13 @@ class MainWindow(QObject):
             HexrdConfig().raw_masks_changed.emit()
         elif self.image_mode == ViewType.polar:
             for line in line_data:
-                name = unique_name({**raw_lines, **polar_lines}, 'polar_mask_0')
+                name = unique_name(
+                    {**raw_lines, **polar_lines}, 'polar_mask_0')
                 HexrdConfig().polar_masks_line_data[name] = line.copy()
                 HexrdConfig().visible_masks.append(name)
                 create_polar_mask([line.copy()], name)
             HexrdConfig().polar_masks_changed.emit()
-        # self.new_mask_added.emit(self.image_mode)
+        self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
         if not HexrdConfig().show_overlays:
