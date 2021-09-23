@@ -1,4 +1,4 @@
-from PySide2.QtCore import Signal
+from PySide2.QtCore import Signal, QTimer
 from PySide2.QtWidgets import QSizePolicy
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -19,8 +19,20 @@ class ZoomCanvas(FigureCanvas):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        self.xdata = None
+        self.ydata = None
+        self.main_artists_visible = True
+
         self.main_canvas = main_canvas
         self.pv = main_canvas.iviewer.pv
+
+        # Fire up the cursor for the main canvas
+        kwargs = {
+            'useblit': True,
+            'color': 'red',
+            'linewidth': 1,
+        }
+        self.main_cursor = MainCanvasCursor(self.main_axis, **kwargs)
 
         self.draw_crosshairs = draw_crosshairs
 
@@ -30,7 +42,7 @@ class ZoomCanvas(FigureCanvas):
 
         # Set up the box overlay lines
         ax = self.main_canvas.axis
-        self.box_overlay_line = ax.plot([], [], 'm-')[0]
+        self.box_overlay_line, = ax.plot([], [], 'm-', animated=True)
         self.crosshairs = None
         self.vhlines = None
 
@@ -43,6 +55,8 @@ class ZoomCanvas(FigureCanvas):
     def setup_connections(self):
         self.mc_mne_id = self.main_canvas.mpl_connect(
             'motion_notify_event', self.main_canvas_mouse_moved)
+        self.mc_de_id = self.main_canvas.mpl_connect(
+            'draw_event', self.on_main_canvas_draw_event)
         self.mne_id = self.mpl_connect('motion_notify_event',
                                        self.mouse_moved)
         self.bp_id = self.mpl_connect('button_press_event',
@@ -143,6 +157,25 @@ class ZoomCanvas(FigureCanvas):
 
         self.crosshairs.set_data(zip(*vals))
 
+    def show_main_artists(self, show):
+        self.box_overlay_line.set_visible(show)
+        self.main_cursor.show(show)
+        self.main_artists_visible = show
+
+    def on_main_canvas_draw_event(self, event):
+        invalid = (
+            self.xdata is None or
+            self.ydata is None or
+            self.box_overlay_line is None
+        )
+        if invalid:
+            return
+
+        self.main_cursor.show(self.main_artists_visible)
+
+        # Render...
+        QTimer.singleShot(0, self.render)
+
     def render(self):
         self.clear_crosshairs()
 
@@ -236,6 +269,41 @@ class ZoomCanvas(FigureCanvas):
         ys = np.append(roi_deg[:, 1], roi_deg[0, 1])
         self.box_overlay_line.set_data(xs, ys)
 
-        # Can't use draw_idle() since the Cursor has useblit=True
-        self.main_canvas.draw()
+        # We are relying on the Cursor's background cache here in order
+        # to do our blitting.
+        self.main_cursor.draw_artists()
+        self.main_axis.draw_artist(self.box_overlay_line)
+        self.main_cursor.blit()
+
+        # Redraw the zoom canvas
         self.draw_idle()
+
+    @property
+    def main_axis(self):
+        return self.main_canvas.axis
+
+
+class MainCanvasCursor(Cursor):
+    def _update(self):
+        # Override this matplotlib function to stop automatic updates
+        # Although this is an underscore function, it looks like it was
+        # last touched in matplotlib 16 years ago, which means it's not
+        # likely to change...
+        pass
+
+    def hide(self):
+        self.show(False)
+
+    def show(self, show=True):
+        self.linev.set_visible(show)
+        self.lineh.set_visible(show)
+
+    def draw_artists(self):
+        if self.background is not None:
+            self.canvas.restore_region(self.background)
+        self.ax.draw_artist(self.linev)
+        self.ax.draw_artist(self.lineh)
+        self.show()
+
+    def blit(self):
+        self.canvas.blit(self.ax.bbox)

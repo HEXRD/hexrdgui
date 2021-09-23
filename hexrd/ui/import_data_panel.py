@@ -10,6 +10,9 @@ from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
 from PySide2.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
+from hexrd.instrument import HEDMInstrument
+from hexrd.rotations import (
+    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz)
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -22,7 +25,7 @@ from hexrd.ui.constants import (
     UI_TRANS_INDEX_ROTATE_90, UI_TRANS_INDEX_FLIP_HORIZONTALLY, YAML_EXTS)
 import hexrd.ui.resources.calibration
 
-from hexrd.ui.utils import convert_tilt_convention
+from hexrd.ui.utils import convert_tilt_convention, instr_to_internal_dict
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 
 class ImportDataPanel(QObject):
@@ -94,12 +97,15 @@ class ImportDataPanel(QObject):
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
                 with open(self.config_file, 'r') as f:
-                    self.defaults = yaml.load(f, Loader=yaml.FullLoader)
+                    instr = HEDMInstrument(f)
+                    self.defaults = instr_to_internal_dict(
+                        instr, convert_tilts=False)
             else:
                 try:
                     with h5py.File(self.config_file, 'r') as f:
-                        instr = create_hedm_instrument()
-                        instr.unwrap_h5_to_dict(f, self.defaults)
+                        instr = HEDMInstrument(f)
+                        self.defaults = instr_to_internal_dict(
+                            instr, convert_tilts=False)
                 except Exception as e:
                     msg = (
                         f'ERROR - Could not read file: \n {e} \n'
@@ -172,7 +178,7 @@ class ImportDataPanel(QObject):
                             enabled=not checked)
 
     def load_instrument_config(self):
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         self.config_file = temp.name
         HexrdConfig().save_instrument_config(self.config_file)
         fname = f'default_{self.instrument.lower()}_config.yml'
@@ -337,8 +343,9 @@ class ImportDataPanel(QObject):
         self.it.clear()
 
     def save_boundary_position(self):
+        position = {'coords': self.it.template.xy, 'angle': self.it.rotation}
         HexrdConfig().set_boundary_position(
-            self.instrument, self.detector, self.it.template.xy)
+            self.instrument, self.detector, position)
         if self.it.shape:
             self.it.save_boundary(self.outline_color)
 
@@ -427,28 +434,36 @@ class ImportDataPanel(QObject):
         self.check_for_unsaved_changes()
 
         files = []
-        detectors = self.detector_defaults['default_config'].get(
+        detectors = self.detector_defaults['default_config'].setdefault(
             'detectors', {})
         not_set = [d for d in detectors if d not in self.completed_detectors]
         for det in not_set:
-            del(detectors[det])
+            del(self.detector_defaults['default_config']['detectors'][det])
 
+        instr = HEDMInstrument(
+            instrument_config=self.detector_defaults['default_config'])
         for det in self.completed_detectors:
-            transform = detectors[det].setdefault('transform', {})
-            *zx, z = transform['tilt']
-            transform['tilt'] = (
-                [*zx, (z + float(self.edited_images[det]['tilt']))])
-            panel_buffer = detectors[det].setdefault('panel_buffer', [])
-            panel_buffer = self.edited_images[det]['panel_buffer']
+            panel = instr.detectors[det]
+            # first need the zxz Euler angles from the panel rotation matrix.
+            *zx, z = angles_from_rmat_zxz(panel.rmat)
+            # convert updated zxz angles to rmat
+            tilts = [*zx, (z + float(self.edited_images[det]['tilt']))]
+            rmat_updated = make_rmat_euler(tilts, 'zxz', extrinsic=False)
+            # convert to angle-axis parameters
+            rang, raxs = angleAxisOfRotMat(rmat_updated)
+            # update tilt property on panel
+            panel.tilt = rang * raxs.flatten()
+            panel.panel_buffer = self.edited_images[det]['panel_buffer']
             files.append([self.edited_images[det]['img']])
 
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.yml')
-        data = yaml.dump(
-            self.detector_defaults['default_config'], sort_keys=False)
-        temp.write(data.encode('utf-8'))
-        temp.close()
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
+        try:
+            instr.write_config(temp.name, style='hdf5')
+            HexrdConfig().load_instrument_config(temp.name)
+        finally:
+            temp.close()
+            Path(temp.name).unlink()
 
-        HexrdConfig().load_instrument_config(temp.name)
         self.set_convention()
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (

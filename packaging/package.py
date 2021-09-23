@@ -102,8 +102,9 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     # First build the hexrdgui package
     recipe_path = str(base_path / '..' / 'conda.recipe')
     config = Config()
-    config.channel = ['cjh1', 'anaconda', 'conda-forge']
-    config.channel_urls = ['cjh1', 'anaconda', 'conda-forge']
+    config.channel = ['cjh1', 'conda-forge']
+    config.channel_urls = ['cjh1', 'conda-forge']
+    config.override_channels = True
 
     if hexrdgui_output_folder is not None:
         config.output_folder = hexrdgui_output_folder
@@ -116,6 +117,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     # (release or pre-release), and force that hexrd version to be used.
     params = [
         Conda.Commands.SEARCH,
+        '--override-channels',
         '--channel', hexrd_package_channel,
         '--json',
         'hexrd',
@@ -133,7 +135,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     # Now create a new environment to install the package into
     env_prefix = str(tmp / package_env_name)
 
-    channels = ['--channel', 'anaconda', '--channel', 'conda-forge']
+    channels = ['--channel', 'conda-forge']
 
     # For the mac we need to use our own version of Python built with the
     # latest SDK. See https://github.com/HEXRD/hexrdgui/issues/505 for
@@ -144,6 +146,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     Conda.run_command(
         Conda.Commands.CREATE,
         '--prefix', env_prefix,
+        '--override-channels',
         *channels,
         'python=3.8.4'
     )
@@ -155,10 +158,10 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     params = [
         Conda.Commands.INSTALL,
         '--prefix', env_prefix,
+        '--override-channels',
         '--channel', hexrdgui_output_folder_uri,
         '--channel', hexrd_package_channel,
         '--channel', 'cjh1',
-        '--channel', 'anaconda',
         '--channel', 'conda-forge',
         f'hexrd=={hexrd_version}',
         'hexrdgui'
@@ -171,6 +174,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         params = [
             Conda.Commands.INSTALL,
             '--prefix', env_prefix,
+            '--override-channels',
             '--channel', 'conda-forge',
             'libgfortran=4.0.0'
         ]

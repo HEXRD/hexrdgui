@@ -1,6 +1,7 @@
 from PySide2.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
 
 from hexrd.ui.select_items_widget import SelectItemsWidget
+from hexrd.ui.ui_loader import UiLoader
 
 
 class SelectItemsDialog(QDialog):
@@ -15,6 +16,8 @@ class SelectItemsDialog(QDialog):
         buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.button_box = QDialogButtonBox(buttons, self)
         self.layout().addWidget(self.button_box)
+
+        UiLoader().install_dialog_enter_key_filters(self)
 
         self.setup_connections()
 

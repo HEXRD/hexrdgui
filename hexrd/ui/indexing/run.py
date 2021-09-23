@@ -62,6 +62,9 @@ class Runner(QObject):
 
 
 class IndexingRunner(Runner):
+
+    clustering_ran = Signal(bool)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.clear()
@@ -125,7 +128,8 @@ class IndexingRunner(Runner):
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
         dialog.rejected.connect(self.clear)
-        dialog.show()
+        # Show later so the dialog will move to the front on Mac
+        dialog.show_later()
 
         self.ome_maps_viewer_dialog = dialog
 
@@ -283,6 +287,7 @@ class IndexingRunner(Runner):
         self.qbar, cl = run_cluster(**kwargs)
 
         print('Clustering complete...')
+        self.clustering_ran.emit(True)
         self.generate_grains_table()
 
     def generate_grains_table(self):
@@ -366,7 +371,7 @@ class FitGrainsRunner(Runner):
 
     def view_fit_grains_options(self):
         # Run dialog for user options
-        dialog = FitGrainsOptionsDialog(self.parent)
+        dialog = FitGrainsOptionsDialog(self.grains_table, self.parent)
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
         self.fit_grains_options_dialog = dialog
@@ -418,7 +423,7 @@ class FitGrainsRunner(Runner):
         }
         dialog = create_fit_grains_results_dialog(**kwargs)
         self.fit_grains_results_dialog = dialog
-        dialog.show()
+        dialog.show_later()
 
 
 def create_fit_grains_results_dialog(fit_grains_results, parent=None):

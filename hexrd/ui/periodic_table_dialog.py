@@ -4,6 +4,8 @@ from PySide2.QtWidgets import (
 
 from silx.gui.widgets.PeriodicTable import PeriodicTable
 
+from hexrd.ui.ui_loader import UiLoader
+
 
 class PeriodicTableDialog(QDialog):
 
@@ -21,6 +23,8 @@ class PeriodicTableDialog(QDialog):
         buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.button_box = QDialogButtonBox(buttons, self)
         self.layout().addWidget(self.button_box)
+
+        UiLoader().install_dialog_enter_key_filters(self)
 
         if atoms_selected:
             self.periodic_table.setSelection(atoms_selected)

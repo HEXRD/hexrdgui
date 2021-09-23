@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -140,6 +140,7 @@
     <addaction name="action_run_wppf"/>
     <addaction name="separator"/>
     <addaction name="action_run_indexing"/>
+    <addaction name="action_rerun_clustering"/>
     <addaction name="action_run_fit_grains"/>
    </widget>
    <addaction name="menu_file"/>
@@ -205,7 +206,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -218,7 +219,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -231,7 +232,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -604,6 +605,14 @@
    </property>
    <property name="text">
     <string>Subtract Minimum</string>
+   </property>
+  </action>
+  <action name="action_rerun_clustering">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Re-run Clustering</string>
    </property>
   </action>
  </widget>

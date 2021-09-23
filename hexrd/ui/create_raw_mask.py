@@ -6,6 +6,7 @@ from skimage.draw import polygon
 from hexrd.ui import constants
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils.conversions import angles_to_pixels
 
 
 def apply_threshold_mask(imageseries):
@@ -38,21 +39,35 @@ def _create_threshold_mask(img, comparison, value):
     return img, mask
 
 
-def convert_polar_to_raw(line):
-    line_data = []
-    for key, panel in create_hedm_instrument().detectors.items():
-        cart = panel.angles_to_cart(np.radians(line))
-        raw = panel.cartToPixel(cart)
-        line_data.append((key, raw))
-    return line_data
+def convert_polar_to_raw(line_data):
+    raw_line_data = []
+    for line in line_data:
+        for key, panel in create_hedm_instrument().detectors.items():
+            raw = angles_to_pixels(line, panel)
+            if all([np.isnan(x) for x in raw.flatten()]):
+                continue
+            raw_line_data.append((key, raw))
+    return raw_line_data
 
 
 def create_raw_mask(name, line_data):
-    for line in line_data:
-        det, data = line
+    for det in HexrdConfig().detector_names:
+        det_lines = [line for line in line_data if det == line[0]]
         img = HexrdConfig().image(det, 0)
-        rr, cc = polygon(data[:, 1], data[:, 0], shape=img.shape)
-        if len(rr) >= 1:
-            mask = np.ones(img.shape, dtype=bool)
-            mask[rr, cc] = False
-            HexrdConfig().raw_masks[name] = (det, mask)
+        final_mask = np.ones(img.shape, dtype=bool)
+        for _, data in det_lines:
+            rr, cc = polygon(data[:, 1], data[:, 0], shape=img.shape)
+            if len(rr) >= 1:
+                mask = np.ones(img.shape, dtype=bool)
+                mask[rr, cc] = False
+                final_mask = np.logical_and(final_mask, mask)
+        HexrdConfig().raw_masks.setdefault(name, []).append((det, final_mask))
+
+
+def rebuild_raw_masks():
+    HexrdConfig().raw_masks.clear()
+    for name, line_data in HexrdConfig().raw_masks_line_data.items():
+        create_raw_mask(name, line_data)
+    for name, data in HexrdConfig().polar_masks_line_data.items():
+        line_data = convert_polar_to_raw(data)
+        create_raw_mask(name, line_data)

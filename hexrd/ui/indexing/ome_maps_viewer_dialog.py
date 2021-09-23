@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import yaml
 
-from PySide2.QtCore import Signal, QObject, QSignalBlocker, Qt
+from PySide2.QtCore import Signal, QObject, QSignalBlocker, QTimer, Qt
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox,
     QSizePolicy, QSpinBox
@@ -185,6 +185,13 @@ class OmeMapsViewerDialog(QObject):
         self.update_plot()
         self.ui.show()
 
+    def show_later(self):
+        # In case this was called in a separate thread (which will
+        # happen if the maps were generated), post the show() to the
+        # event loop. Otherwise, on Mac, the dialog will not move to
+        # the front.
+        QTimer.singleShot(0, lambda: self.show())
+
     def on_accepted(self):
         # Update the config just in case...
         self.update_config()
@@ -207,6 +214,20 @@ class OmeMapsViewerDialog(QObject):
             q_file = self.config['find_orientations']['use_quaternion_grid']
             if not q_file or not Path(q_file).exists():
                 msg = f'Quaternion file "{q_file}" does not exist!'
+                raise ValidationException(msg)
+
+            # Load the file and validate the shape
+            try:
+                quats = np.load(q_file)
+            except ValueError:
+                msg = f'Failed to load quaternion file "{q_file}" with numpy'
+                raise ValidationException(msg)
+
+            if quats.ndim != 2 or quats.shape[0] != 4:
+                msg = (
+                    f'The quaternion array in "{q_file}" must have a shape of '
+                    f'(4, n), but instead has a shape of "{quats.shape}".'
+                )
                 raise ValidationException(msg)
         else:
             # Seed search. Make sure hkls were chosen.

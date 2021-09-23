@@ -13,8 +13,6 @@ from matplotlib.colors import LogNorm
 
 import numpy as np
 
-from hexrd.transforms.xfcapi import mapAngle
-
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
@@ -22,6 +20,7 @@ from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui import utils
+from hexrd.ui.utils.conversions import cart_to_angles, cart_to_pixels
 import hexrd.ui.constants
 
 
@@ -132,10 +131,11 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
-                    if (mask_name in HexrdConfig().visible_masks and
-                            det == name):
-                        img[~mask] = 0
+                for mask_name, data in HexrdConfig().raw_masks.items():
+                    for det, mask in data:
+                        if (mask_name in HexrdConfig().visible_masks and
+                                det == name):
+                            img[~mask] = 0
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
                 axis.set_title(name)
@@ -155,10 +155,11 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, (det, mask) in HexrdConfig().raw_masks.items():
-                    if (mask_name in HexrdConfig().visible_masks and
-                            det == name):
-                        img[~mask] = 0
+                for mask_name, data in HexrdConfig().raw_masks.items():
+                    for det, mask in data:
+                        if (mask_name in HexrdConfig().visible_masks and
+                                det == name):
+                            img[~mask] = 0
                 self.axes_images[i].set_data(img)
 
         # This will call self.draw_idle()
@@ -847,14 +848,11 @@ class ImageCanvas(FigureCanvas):
 
         extent = self.iviewer._extent
 
-        if not hasattr(self, '_snip1d_figure_cache'):
-            # Create the figure and axes to use
-            fig, ax = plt.subplots()
-            ax.set_xlabel(r'2$\theta$ (deg)')
-            ax.set_ylabel(r'$\eta$ (deg)')
-            self._snip1d_figure_cache = (fig, ax)
-        else:
-            fig, ax = self._snip1d_figure_cache
+        # Create the figure and axes to use
+        fig, ax = plt.subplots()
+        fig.canvas.manager.set_window_title('SNIP Background')
+        ax.set_xlabel(r'2$\theta$ (deg)')
+        ax.set_ylabel(r'$\eta$ (deg)')
 
         algorithm = HexrdConfig().polar_snip1d_algorithm
         titles = ['Fast SNIP 1D', 'SNIP 1D', 'SNIP 2D']
@@ -864,19 +862,15 @@ class ImageCanvas(FigureCanvas):
             title = f'Algorithm {algorithm}'
         ax.set_title(title)
 
-        if self.iviewer.snip1d_background is not None:
-            background = self.iviewer.snip1d_background
+        if self.iviewer.snip_background is not None:
+            background = self.iviewer.snip_background
         else:
             # We have to run it ourselves...
-            # It should not have already been applied to the image
-            # Apply the same pre-processing to the raw data...
-            pv = self.iviewer.pv
-            img = pv.raw_img.data
-            img = pv.apply_rescale(img)
+            img = self.iviewer.raw_rescaled_img
 
             no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[pv.raw_img.mask] = np.nan
+                img[self.iviewer.raw_mask] = np.nan
 
             background = utils.run_snip1d(img)
 
@@ -899,25 +893,26 @@ def transform_from_plain_cartesian_func(mode):
     # The functions all have arguments like the following:
     # xys, panel, iviewer
 
-    def cart_to_pixel(xys, panel, iviewer):
-        return panel.cartToPixel(xys)[:, [1, 0]]
+    def to_pixels(xys, panel, iviewer):
+        return cart_to_pixels(xys, panel)
 
     def transform_cart(xys, panel, iviewer):
         dplane = iviewer.dplane
         return panel.map_to_plane(xys, dplane.rmat, dplane.tvec)
 
-    def cart_to_angles(xys, panel, iviewer):
-        ang_crds, _ = panel.cart_to_angles(xys, tvec_c=iviewer.instr.tvec)
-        ang_crds = np.degrees(ang_crds)
-        ang_crds[:, 1] = mapAngle(ang_crds[:, 1],
-                                  HexrdConfig().polar_res_eta_period,
-                                  units='degrees')
-        return ang_crds
+    def to_angles(xys, panel, iviewer):
+        kwargs = {
+            'xys': xys,
+            'panel': panel,
+            'eta_period': HexrdConfig().polar_res_eta_period,
+            'tvec_c': iviewer.instr.tvec,
+        }
+        return cart_to_angles(**kwargs)
 
     funcs = {
-        ViewType.raw: cart_to_pixel,
+        ViewType.raw: to_pixels,
         ViewType.cartesian: transform_cart,
-        ViewType.polar: cart_to_angles,
+        ViewType.polar: to_angles,
     }
 
     if mode not in funcs:

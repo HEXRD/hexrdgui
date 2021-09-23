@@ -1,10 +1,11 @@
 from functools import partial
 
-from PySide2.QtCore import QModelIndex, Qt, Signal
+from PySide2.QtCore import QItemSelection, QModelIndex, Qt, Signal
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu, QMessageBox, QTreeView
 
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
+from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.utils import is_int
 
 
@@ -22,6 +23,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         # These can be modified anytime
         self.lists_resizable = True
         self._blacklisted_paths = []
+        self.editable = True
 
         self.config = dictionary
 
@@ -53,18 +55,100 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return True
 
+    def removeRows(self, row, count, parent):
+        item = self.get_item(parent)
+        for _ in range(count):
+            if row >= len(item.child_items):
+                return False
+
+            # First, remove the value from the config
+            path = self.path_to_item(item.child_items[row])
+            self.del_config_val(path)
+
+            # Next, remove the value from the tree item
+            item.child_items.pop(row)
+
+            parent_val = self.config_val(path[:-1])
+            if isinstance(parent_val, (tuple, list)):
+                # If the parent was a tuple or list, re-number the keys
+                # (this assumes the keys are the indices)
+                self.renumber_list_keys(item)
+
+        return True
+
+    def insertRows(self, row, count, parent):
+        # This will not add data to the items. The data must be
+        # added in a separate function.
+        parent_item = self.get_item(parent)
+        for _ in range(count):
+            item = TreeItem([0] * self.columnCount(parent))
+            item.parent_item = parent_item
+            parent_item.child_items.insert(row, item)
+
+        return True
+
     def flags(self, index):
         if not index.isValid():
             return Qt.NoItemFlags
 
         flags = super().flags(index)
-
         item = self.get_item(index)
-        if index.column() != KEY_COL and item.child_count() == 0:
+
+        # Items are selectable if they have no children
+        # and none of the data values in the row are `None`.
+        is_selectable = all((
+            item.child_count() == 0,
+            not any(x is None for x in item.data_list),
+        ))
+        if is_selectable:
+            flags = flags | Qt.ItemIsSelectable
+        else:
+            flags = flags & ~Qt.ItemIsSelectable
+
+        is_editable = all((
+            index.column() != KEY_COL,
+            item.child_count() == 0,
+            self.editable,
+        ))
+
+        if is_editable:
             # All columns after the first with no children are editable
             flags = flags | Qt.ItemIsEditable
 
         return flags
+
+    def remove_items(self, items):
+        for item in items:
+            row = item.row()
+            parent = item.parent_item
+            index = self.createIndex(parent.row(), 0, parent)
+            self.beginRemoveRows(index, row, row)
+            self.removeRow(row, index)
+            self.endRemoveRows()
+
+    def insert_items(self, items, parent_item, position):
+        parent_path = self.path_to_item(parent_item)
+        if not isinstance(self.config_val(parent_path), list):
+            # Inserting items is only supported for list
+            raise NotImplementedError(type(self.config_val(parent_path)))
+
+        num_items = len(items)
+        end_position = position + num_items - 1
+        parent_index = self.createIndex(parent_item.row(), 0, parent_item)
+        self.beginInsertRows(parent_index, position, end_position)
+        self.insertRows(position, num_items, parent_index)
+        self.endInsertRows()
+
+        # Set the data for these items
+        for i, item in enumerate(items, position):
+            parent_item.child(i).data_list = item.data_list
+
+        data_list = [item.data_list[1:] for item in parent_item.child_items]
+        self.set_config_val(parent_path, data_list)
+
+        # Renumber the list keys. This will also flag that the data
+        # has been changed.
+        self.renumber_list_keys(parent_item)
 
     def rebuild_tree(self):
         # Rebuild the tree from scratch
@@ -106,6 +190,26 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             msg = f'Path: {path}\nwas not found in dict: {self.config}'
             raise Exception(msg)
 
+    def del_config_val(self, path):
+        """Delete a config value from a path"""
+        cur_val = self.config
+        try:
+            for val in path[:-1]:
+                cur_val = cur_val[val]
+
+            del cur_val[path[-1]]
+        except KeyError:
+            msg = f'Path: {path}\nwas not found in dict: {self.config}'
+            raise Exception(msg)
+
+    def renumber_list_keys(self, item):
+        # This should be called after a list item was deleted to renumber
+        # the sibling items' keys.
+        for child_item in item.child_items:
+            child_item.set_data(0, child_item.row())
+            index = self.createIndex(child_item.row(), 0, child_item)
+            self.dataChanged.emit(index, index)
+
     @property
     def blacklisted_paths(self):
         return self._blacklisted_paths
@@ -120,10 +224,18 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
 class BaseDictTreeView(QTreeView):
 
+    selection_changed = Signal(QItemSelection, QItemSelection)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self._combo_keys = []
+
+    def setModel(self, model):
+        # Override to add a connection
+        super().setModel(model)
+        if selection_model := self.selectionModel():
+            selection_model.selectionChanged.connect(self.selection_changed)
 
     def rebuild_tree(self):
         self.model().rebuild_tree()
@@ -166,6 +278,39 @@ class BaseDictTreeView(QTreeView):
         self._combo_keys = v
         self.rebuild_tree()
         self.expand_rows()
+
+    @property
+    def editable(self):
+        return self.model().editable
+
+    @editable.setter
+    def editable(self, v):
+        self.model().editable = v
+
+    @property
+    def selection_mode(self):
+        return self.selectionMode()
+
+    @selection_mode.setter
+    def selection_mode(self, v):
+        self.setSelectionMode(v)
+
+    def set_single_selection_mode(self):
+        self.selection_mode = QTreeView.SingleSelection
+
+    def set_multi_selection_mode(self):
+        self.selection_mode = QTreeView.MultiSelection
+
+    def set_extended_selection_mode(self):
+        self.selection_mode = QTreeView.ExtendedSelection
+
+    @property
+    def selected_rows(self):
+        return self.selectionModel().selectedRows()
+
+    @property
+    def selected_items(self):
+        return [self.model().get_item(x) for x in self.selected_rows]
 
     def contextMenuEvent(self, event):
         # Generate the actions

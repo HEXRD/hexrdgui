@@ -7,7 +7,6 @@ from itertools import cycle
 import numpy as np
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
@@ -19,20 +18,26 @@ class LinePickerDialog(QObject):
     # Emitted when a point was picked
     point_picked = Signal()
 
+    # Emitted when a line is added
+    line_added = Signal()
+
     # Emitted when a line is completed
     line_completed = Signal()
 
     # Emitted when the dialog is closed
     finished = Signal()
 
-    # Emits the ring data that was selected
-    result = Signal(list)
+    # Emitted when the dialog was accepted
+    accepted = Signal()
 
     # Emitted when the last point was removed
     last_point_removed = Signal()
 
+    # Emitted when "Picks Table" was clicked
+    view_picks = Signal()
+
     def __init__(self, canvas, parent, single_line_mode=False):
-        super(LinePickerDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.canvas = canvas
 
@@ -45,7 +50,6 @@ class LinePickerDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.ring_data = []
         self.linebuilder = None
         self.lines = []
 
@@ -75,6 +79,7 @@ class LinePickerDialog(QObject):
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                              self.button_pressed)
         self.zoom_canvas.point_picked.connect(self.zoom_point_picked)
+        self.ui.view_picks.clicked.connect(self.view_picks.emit)
 
     def update_enable_states(self):
         linebuilder = self.linebuilder
@@ -94,13 +99,10 @@ class LinePickerDialog(QObject):
         self.ui.setGeometry(px, py + (ph - dh) / 2.0, dw, dh)
 
     def clear(self):
-        self.ring_data.clear()
-
         while self.lines:
             self.lines.pop(0).remove()
 
         self.linebuilder = None
-        self.cursor = None
 
         self.zoom_canvas.cleanup()
         self.zoom_canvas = None
@@ -132,9 +134,7 @@ class LinePickerDialog(QObject):
             # Nothing to delete
             return
 
-        linebuilder.xs.pop(-1)
-        linebuilder.ys.pop(-1)
-        linebuilder.update_line_data()
+        linebuilder.remove_last_point()
 
         self.last_point_removed.emit()
 
@@ -147,13 +147,6 @@ class LinePickerDialog(QObject):
             print('line picker only works in polar mode!')
             return
 
-        ax = self.canvas.axis
-
-        # list for set of rings 'picked'
-        self.ring_data.clear()
-
-        # fire up the cursor for this tool
-        self.cursor = Cursor(ax, useblit=True, color='red', linewidth=1)
         self.add_line()
         self.show()
 
@@ -175,20 +168,22 @@ class LinePickerDialog(QObject):
         self.lines.append(line)
         self.canvas.draw_idle()
 
+        self.line_added.emit()
+
+    def hide_artists(self):
+        self.show_artists(False)
+
+    def show_artists(self, show=True):
+        for line in self.lines:
+            line.set_visible(show)
+
+        self.zoom_canvas.show_main_artists(show)
+
     def line_finished(self):
-        linebuilder = self.linebuilder
         # If the linebuilder is already gone, just return
-        if linebuilder is None:
+        if self.linebuilder is None:
             return
 
-        # append to ring_data
-        ring_data = np.vstack([linebuilder.xs, linebuilder.ys]).T
-
-        if len(ring_data) == 0:
-            # Don't do anything if there is no ring data
-            return
-
-        self.ring_data.append(ring_data)
         self.add_line()
 
     def button_pressed(self, event):
@@ -230,7 +225,7 @@ class LinePickerDialog(QObject):
 
         # finished needs to be emitted before the result
         self.finished.emit()
-        self.result.emit(copy.deepcopy(self.ring_data))
+        self.accepted.emit()
 
         self.clear()
 
@@ -249,6 +244,14 @@ class LinePickerDialog(QObject):
     def zoom_frozen(self, v):
         self.zoom_canvas.frozen = v
 
+    @property
+    def current_hkl_label(self):
+        return self.ui.current_hkl_label.text()
+
+    @current_hkl_label.setter
+    def current_hkl_label(self, text):
+        self.ui.current_hkl_label.setText(text)
+
 
 class LineBuilder(QObject):
 
@@ -260,15 +263,27 @@ class LineBuilder(QObject):
 
         self.line = line
         self.canvas = line.figure.canvas
-        self.xs = list(line.get_xdata())
-        self.ys = list(line.get_ydata())
+
+    @property
+    def xs(self):
+        return list(self.line.get_xdata())
+
+    @property
+    def ys(self):
+        return list(self.line.get_ydata())
 
     def append_data(self, x, y):
-        self.xs.append(x)
-        self.ys.append(y)
-        self.update_line_data()
+        xs = self.xs + [x]
+        ys = self.ys + [y]
+        self.line.set_data(xs, ys)
+        self.line_modified()
         self.point_picked.emit()
 
-    def update_line_data(self):
-        self.line.set_data(self.xs, self.ys)
+    def remove_last_point(self):
+        xs = self.xs[:-1]
+        ys = self.ys[:-1]
+        self.line.set_data(xs, ys)
+        self.line_modified()
+
+    def line_modified(self):
         self.canvas.draw_idle()

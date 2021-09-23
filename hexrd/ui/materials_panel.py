@@ -1,15 +1,13 @@
 import math
-import os
 
 from PySide2.QtCore import QObject, QSignalBlocker, Qt
 from PySide2.QtGui import QFocusEvent, QKeyEvent
-from PySide2.QtWidgets import QComboBox, QFileDialog, QMenu, QMessageBox
-
-from hexrd.material import Material
+from PySide2.QtWidgets import QComboBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.material_editor_widget import MaterialEditorWidget
+from hexrd.ui.material_list_editor import MaterialListEditor
 from hexrd.ui.material_properties_editor import MaterialPropertiesEditor
 from hexrd.ui.material_structure_editor import MaterialStructureEditor
 from hexrd.ui.overlay_manager import OverlayManager
@@ -42,30 +40,12 @@ class MaterialsPanel(QObject):
         # Turn off autocomplete for the QComboBox
         self.ui.materials_combo.setCompleter(None)
 
-        self.add_tool_button_actions()
-
         self.setup_connections()
 
         self.update_gui_from_config()
 
-    def add_tool_button_actions(self):
-        b = self.ui.materials_tool_button
-
-        m = QMenu(b)
-        self.tool_button_menu = m
-
-        self.add_material_action = m.addAction('Add material')
-        self.import_material_action = m.addAction('Import material')
-        self.delete_material_action = m.addAction('Delete material')
-
-        b.setMenu(m)
-
     def setup_connections(self):
         self.ui.materials_combo.installEventFilter(self)
-        self.add_material_action.triggered.connect(self.add_material)
-        self.import_material_action.triggered.connect(self.import_material)
-        self.delete_material_action.triggered.connect(
-            self.remove_current_material)
         self.ui.materials_combo.currentIndexChanged.connect(
             self.set_active_material)
         self.ui.materials_combo.currentIndexChanged.connect(
@@ -99,9 +79,18 @@ class MaterialsPanel(QObject):
             self.active_material_changed)
         HexrdConfig().active_material_modified.connect(
             self.active_material_modified)
+        HexrdConfig().materials_dict_modified.connect(
+            self.update_gui_from_config)
 
         self.material_structure_editor.material_modified.connect(
             self.material_structure_edited)
+
+        self.ui.materials_tool_button.clicked.connect(self.tool_button_clicked)
+
+    def tool_button_clicked(self):
+        if not hasattr(self, '_material_list_editor'):
+            self._material_list_editor = MaterialListEditor(self.ui)
+        self._material_list_editor.ui.show()
 
     def update_enable_states(self):
         limit_active = self.ui.limit_active.isChecked()
@@ -235,42 +224,6 @@ class MaterialsPanel(QObject):
 
     def current_material(self):
         return self.ui.materials_combo.currentText()
-
-    def add_material(self):
-        # Create a default material
-        new_mat = Material()
-
-        # Get a unique name
-        base_name = 'new_material'
-        names = list(HexrdConfig().materials.keys())
-        for i in range(1, 100000):
-            new_name = f'{base_name}_{i}'
-            if new_name not in names:
-                new_mat.name = new_name
-                break
-
-        HexrdConfig().add_material(new_name, new_mat)
-        HexrdConfig().active_material = new_name
-
-    def import_material(self):
-        selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Import Material', HexrdConfig().working_dir,
-            'CIF files (*.cif)')
-
-        if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
-            new_name = HexrdConfig().import_material(selected_file)
-            HexrdConfig().active_material = new_name
-
-    def remove_current_material(self):
-        # Don't allow the user to remove all of the materials
-        if len(HexrdConfig().materials.keys()) == 1:
-            msg = 'Cannot remove all materials. Add another first.'
-            QMessageBox.warning(self.ui, 'HEXRD', msg)
-            return
-
-        name = self.current_material()
-        HexrdConfig().remove_material(name)
 
     def modify_material_name(self):
         combo = self.ui.materials_combo

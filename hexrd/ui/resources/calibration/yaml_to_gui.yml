@@ -14,7 +14,10 @@ detectors:
         'cal_det_param_2',
         'cal_det_param_3',
         'cal_det_param_4',
-        'cal_det_param_5'
+        'cal_det_param_5',
+        'cal_det_param_6',
+        'cal_det_param_7',
+        'cal_det_param_8',
       ]
     pixels:
       columns: 'cal_det_columns'

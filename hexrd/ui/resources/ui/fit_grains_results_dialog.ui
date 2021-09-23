@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>800</height>
+    <height>826</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -37,7 +37,7 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QTableView" name="table_view">
+     <widget class="GrainsTableView" name="table_view">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -561,6 +561,11 @@
    <extends>QSpinBox</extends>
    <header>hexrd/ui/scientificspinbox</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GrainsTableView</class>
+   <extends>QTableView</extends>
+   <header location="global">grains_table_view.py</header>
   </customwidget>
  </customwidgets>
  <tabstops>

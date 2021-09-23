@@ -3,6 +3,7 @@ from PySide2.QtCore import (
 from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 
@@ -16,8 +17,10 @@ class FitGrainsOptionsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, grains_table, parent=None):
         super().__init__(parent)
+
+        self.grains_table = grains_table
 
         config = HexrdConfig().indexing_config['fit_grains']
         if config.get('do_fit') is False:
@@ -28,7 +31,18 @@ class FitGrainsOptionsDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.setup_material_options()
+        self.update_materials()
+
+        kwargs = {
+            'grains_table': grains_table,
+            'excluded_columns': [1, 2] + list(range(6, len(grains_table[0]))),
+            'parent': self.ui.grains_table_view,
+        }
+        self.data_model = GrainsTableModel(**kwargs)
+        view = self.ui.grains_table_view
+        view.data_model = self.data_model
+        view.material = self.material
+        view.grains_table = grains_table
 
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')
@@ -43,7 +57,9 @@ class FitGrainsOptionsDialog(QObject):
             self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(
                 i, QHeaderView.Stretch)
 
-        # Setup connections
+        self.setup_connections()
+
+    def setup_connections(self):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.rejected)
         self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
@@ -63,6 +79,11 @@ class FitGrainsOptionsDialog(QObject):
 
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
 
+        self.tolerances_model.data_modified.connect(
+            self.tolerance_data_modified)
+
+        HexrdConfig().materials_dict_modified.connect(self.update_materials)
+
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
         widgets = [
@@ -81,10 +102,17 @@ class FitGrainsOptionsDialog(QObject):
     def show(self):
         self.ui.show()
 
-    def setup_material_options(self):
+    def update_materials(self):
+        prev = self.selected_material
+        material_names = list(HexrdConfig().materials)
+
         self.ui.material.clear()
-        self.ui.material.addItems(list(HexrdConfig().materials.keys()))
-        self.ui.material.setCurrentText(HexrdConfig().active_material_name)
+        self.ui.material.addItems(material_names)
+
+        if prev in material_names:
+            self.ui.material.setCurrentText(prev)
+        else:
+            self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def on_accepted(self):
         # Save the selected options on the config
@@ -147,6 +175,19 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.delete_row.setEnabled(delete_enable)
         self.ui.move_up.setEnabled(up_enable)
         self.ui.move_down.setEnabled(down_enable)
+
+    def tolerance_data_modified(self):
+        # Update the tolerances on the table
+        all_tolerances = self.tolerances_model.data_columns
+        tolerances = []
+        for tth, eta, ome in zip(*all_tolerances):
+            tolerances.append({
+                'tth': tth,
+                'eta': eta,
+                'ome': ome,
+            })
+
+        self.ui.grains_table_view.tolerances = tolerances
 
     def on_tth_max_toggled(self, checked):
         enabled = checked
@@ -233,7 +274,6 @@ class FitGrainsOptionsDialog(QObject):
         this method returns an empty list.
         """
         selection_model = self.ui.tolerances_view.selectionModel()
-        selection = selection_model.selection()
         num_rows = self.tolerances_model.rowCount()
         selected_rows = list()
         for row in range(num_rows):
@@ -255,6 +295,7 @@ class FitGrainsOptionsDialog(QObject):
         if hasattr(self, '_table'):
             self._table.material = self.material
 
+        self.ui.grains_table_view.material = self.material
         self.update_num_hkls()
 
     @property
@@ -282,7 +323,11 @@ class FitGrainsOptionsDialog(QObject):
         self._table.show()
 
     def update_num_hkls(self):
-        num_hkls = len(self.material.planeData.getHKLs())
+        if self.material is None:
+            num_hkls = 0
+        else:
+            num_hkls = len(self.material.planeData.getHKLs())
+
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
 

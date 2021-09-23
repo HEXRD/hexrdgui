@@ -1,5 +1,6 @@
+from pathlib import Path
+
 import h5py
-import os
 import numpy as np
 
 from .polarview import PolarView
@@ -36,8 +37,28 @@ class InstrumentViewer:
         return self.pv.angular_grid
 
     @property
+    def raw_rescaled_img(self):
+        return self.pv.raw_rescaled_img
+
+    @property
+    def raw_img(self):
+        return self.pv.raw_img
+
+    @property
+    def raw_mask(self):
+        return self.pv.raw_mask
+
+    @property
+    def snipped_img(self):
+        return self.pv.snipped_img
+
+    @property
     def img(self):
         return self.pv.img
+
+    @property
+    def snip_background(self):
+        return self.pv.snip_background
 
     def update_angular_grid(self):
         self.pv.update_angular_grid()
@@ -59,7 +80,6 @@ class InstrumentViewer:
         eta_max = HexrdConfig().polar_res_eta_max
 
         self._extent = [tth_min, tth_max, eta_max, eta_min]   # l, r, b, t
-        self.snip1d_background = self.pv.snip1d_background
 
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
@@ -68,29 +88,42 @@ class InstrumentViewer:
         self.pv.update_detector(det)
 
     def write_image(self, filename='polar_image.npz'):
+        filename = Path(filename)
+
         azimuthal_integration = HexrdConfig().last_azimuthal_integral_data
 
         # Re-format the data so that it is in 2 columns
         azimuthal_integration = np.array(azimuthal_integration).T
 
+        intensities = self.raw_rescaled_img
+        intensities[self.raw_mask] = np.nan
+
         # Prepare the data to write out
         data = {
-            'tth_coordinates': self.angular_grid[1],
-            'eta_coordinates': self.angular_grid[0],
-            'intensities': self.img,
-            'extent': np.radians(self._extent),
+            'tth_coordinates': np.degrees(self.angular_grid[1]),
+            'eta_coordinates': np.degrees(self.angular_grid[0]),
+            'intensities': intensities,
+            'extent': self._extent,
             'azimuthal_integration': azimuthal_integration,
         }
 
+        if self.snip_background is not None:
+            # Add the snip background if it was used
+            data['snip_background'] = self.snip_background
+
+        # Add visible polar mask data if we have any
+        for name, mask in HexrdConfig().polar_masks.items():
+            if name not in HexrdConfig().visible_masks:
+                continue
+
+            data[f'mask_{name}'] = mask
+
         # Delete the file if it already exists
-        if os.path.exists(filename):
-            os.remove(filename)
+        if filename.exists():
+            filename.unlink()
 
         # Check the file extension
-        _, ext = os.path.splitext(filename)
-        ext = ext.lower()
-
-        if ext == '.npz':
+        if filename.suffix.lower() == '.npz':
             # If it looks like npz, save as npz
             np.savez(filename, **data)
         else:

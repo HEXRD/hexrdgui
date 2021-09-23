@@ -9,7 +9,7 @@ from hexrd.unitcell import _StiffnessDict
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.matrix_editor import MatrixEditor
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import compose
+from hexrd.ui.utils import apply_symmetric_constraint, compose
 
 
 class MaterialPropertiesEditor:
@@ -132,12 +132,3 @@ class MaterialPropertiesEditor:
             self.ui.volume,
             self.ui.volume_per_atom,
         ]
-
-
-def apply_symmetric_constraint(x):
-    # Copy values from upper triangle to lower triangle.
-    # Only works for square matrices.
-    for i in range(x.shape[0]):
-        for j in range(i):
-            x[i, j] = x[j, i]
-    return x

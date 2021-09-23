@@ -21,9 +21,10 @@ from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
-from hexrd.ui.create_polar_mask import convert_raw_to_polar, create_polar_mask
-from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
-from hexrd.ui.utils import create_unique_name
+from hexrd.ui.create_polar_mask import (
+    create_polar_mask, create_raw_mask, rebuild_polar_masks)
+from hexrd.ui.create_raw_mask import rebuild_raw_masks
+from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -49,6 +50,7 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
+from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 
 
 class MainWindow(QObject):
@@ -210,6 +212,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
+        self.ui.action_rerun_clustering.triggered.connect(
+            self.on_action_rerun_clustering)
         self.ui.action_run_fit_grains.triggered.connect(
             self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
@@ -337,8 +341,8 @@ class MainWindow(QObject):
             path = Path(selected_file)
             HexrdConfig().working_dir = str(path.parent)
 
-            data = np.loadtxt(selected_file)
-            dialog = FitGrainsResultsDialog(data)
+            data = np.loadtxt(selected_file, ndmin=2)
+            dialog = FitGrainsResultsDialog(data, parent=self.ui)
             dialog.show()
             self._fit_grains_results_dialog = dialog
 
@@ -488,7 +492,7 @@ class MainWindow(QObject):
             runner.run()
         except Exception as e:
             QMessageBox.warning(self.ui, 'HEXRD', str(e))
-            return
+            raise
 
     def calibration_finished(self):
         print('Calibration finished')
@@ -497,8 +501,14 @@ class MainWindow(QObject):
         self.update_all()
 
     def on_action_run_indexing_triggered(self):
+        self.ui.action_rerun_clustering.setEnabled(False)
         self._indexing_runner = IndexingRunner(self.ui)
+        self._indexing_runner.clustering_ran.connect(
+            self.ui.action_rerun_clustering.setEnabled)
         self._indexing_runner.run()
+
+    def on_action_rerun_clustering(self):
+        RerunClusteringDialog(self._indexing_runner, self.ui).exec_()
 
     def on_action_run_fit_grains_triggered(self):
         kwargs = {
@@ -564,23 +574,23 @@ class MainWindow(QObject):
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, dets, line_data):
+        raw_lines = HexrdConfig().raw_masks_line_data
+        polar_lines = HexrdConfig().polar_masks_line_data
         if self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
-                name = create_unique_name(
-                    HexrdConfig().raw_masks_line_data, 'raw_mask_0')
+                name = unique_name({**raw_lines, **polar_lines}, 'raw_mask_0')
                 HexrdConfig().raw_masks_line_data[name] = [(det, line.copy())]
                 HexrdConfig().visible_masks.append(name)
                 create_raw_mask(name, [(det, line.copy())])
             HexrdConfig().raw_masks_changed.emit()
         elif self.image_mode == ViewType.polar:
             for line in line_data:
-                name = create_unique_name(
-                    HexrdConfig().polar_masks_line_data, 'polar_mask_0')
+                name = unique_name({**raw_lines, **polar_lines}, 'polar_mask_0')
                 HexrdConfig().polar_masks_line_data[name] = line.copy()
                 HexrdConfig().visible_masks.append(name)
                 create_polar_mask([line.copy()], name)
             HexrdConfig().polar_masks_changed.emit()
-        self.new_mask_added.emit(self.image_mode)
+        # self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
         if not HexrdConfig().show_overlays:
@@ -606,8 +616,10 @@ class MainWindow(QObject):
             msg = 'No Laue overlay ranges found'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
-        name = create_unique_name(
-            HexrdConfig().polar_masks_line_data, 'laue_mask')
+
+        raw_lines = HexrdConfig().raw_masks_line_data
+        polar_lines = HexrdConfig().polar_masks_line_data
+        name = unique_name({**raw_lines, **polar_lines}, 'laue_mask')
         create_polar_mask(data, name)
         HexrdConfig().polar_masks_line_data[name] = data
         HexrdConfig().visible_masks.append(name)
@@ -736,30 +748,10 @@ class MainWindow(QObject):
         if self.image_mode == ViewType.cartesian:
             self.ui.image_tab_widget.show_cartesian()
         elif self.image_mode == ViewType.polar:
-            # Rebuild polar masks
-            HexrdConfig().polar_masks.clear()
-            for name, line_data in HexrdConfig().polar_masks_line_data.items():
-                if not isinstance(line_data, list):
-                    line_data = [line_data]
-                create_polar_mask(line_data, name)
-            for name, value in HexrdConfig().raw_masks_line_data.items():
-                det, data = value[0]
-                line_data = convert_raw_to_polar(det, data)
-                create_polar_mask(line_data, name)
+            rebuild_polar_masks()
             self.ui.image_tab_widget.show_polar()
         else:
-            # Rebuild raw masks
-            HexrdConfig().raw_masks.clear()
-            for name, line_data in HexrdConfig().raw_masks_line_data.items():
-                create_raw_mask(name, line_data)
-            for name, data in HexrdConfig().polar_masks_line_data.items():
-                if isinstance(data, list):
-                    # These are Laue spots
-                    continue
-                else:
-                    # This is a single mask
-                    line_data = convert_polar_to_raw(data)
-                    create_raw_mask(name, line_data)
+            rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()
 
         # Only ask if have haven't asked before

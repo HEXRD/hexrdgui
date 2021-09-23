@@ -12,15 +12,15 @@ import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import (
-    QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
-)
+from PySide2.QtCore import QObject, QSignalBlocker, QTimer, Qt, Signal
 from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
+
+from hexrd.matrixutil import vecMVToSymm
+from hexrd.rotations import rotMatOfExpMap
 
 import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.matrixutil import vecMVToSymm
-from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
+from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 
@@ -30,12 +30,8 @@ ELASTIC_SLICE = slice(15, 21)
 ELASTIC_OFF_DIAGONAL_SLICE = slice(18, 21)
 EQUIVALENT_IND = 21
 HYDROSTATIC_IND = 22
-
-# Sortable columns are grain id, completeness, chi^2, and t_vec_c
-SORTABLE_COLUMNS = [
-    *range(0, 3),
-    *range(6, 9),
-]
+END_COLUMNS_IND = 23
+COLOR_ORIENTATIONS_IND = 23
 
 
 class FitGrainsResultsDialog(QObject):
@@ -50,13 +46,13 @@ class FitGrainsResultsDialog(QObject):
             material = HexrdConfig().active_material
             if material:
                 # Warn the user so this is clear.
-                print(f'Assuming material of {material.name} for stress '
+                print(f'Assuming material of {material.name} for needed '
                       'computations')
 
         self.ax = None
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.data = data
-        self.data_model = FitGrainsResultsModel(data)
+        self.data_model = GrainsTableModel(data)
         self.material = material
         self.canvas = None
         self.fig = None
@@ -65,8 +61,7 @@ class FitGrainsResultsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_results_dialog.ui', parent)
-        flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
 
@@ -133,6 +128,7 @@ class FitGrainsResultsDialog(QObject):
                 # Compute the hydrostatic stress
                 grain[HYDROSTATIC_IND] = 1 / 3 * np.trace(sigma)
 
+        self._converted_data = data
         return data
 
     @property
@@ -165,6 +161,28 @@ class FitGrainsResultsDialog(QObject):
         except AttributeError:
             return None
 
+    @property
+    def color_by_column(self):
+        return self.ui.plot_color_option.currentData()
+
+    @property
+    def colors(self):
+        data = self._converted_data
+        column = self.color_by_column
+        if column < END_COLUMNS_IND:
+            return data[:, column]
+
+        def to_colors():
+            exp_maps = data[:, 3:6]
+            rmats = np.array([rotMatOfExpMap(x) for x in exp_maps])
+            return self.material.unitcell.color_orientations(rmats)
+
+        funcs = {
+            COLOR_ORIENTATIONS_IND: to_colors,
+        }
+
+        return funcs[column]()
+
     def update_enable_states(self):
         has_stiffness = self.stiffness is not None
         self.ui.convert_strain_to_stress.setEnabled(has_stiffness)
@@ -184,8 +202,7 @@ class FitGrainsResultsDialog(QObject):
 
     def update_plot(self):
         data = self.converted_data
-        column = self.ui.plot_color_option.currentData()
-        colors = data[:, column]
+        colors = self.colors
 
         coords = data[:, COORDS_SLICE].T
         sz = self.ui.glyph_size_slider.value()
@@ -200,8 +217,16 @@ class FitGrainsResultsDialog(QObject):
             'depthshade': self.depth_shading,
         }
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
-        self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
+        self.update_color_settings()
         self.draw_idle()
+
+    def update_color_settings(self):
+        color_map_needed = self.color_by_column != COLOR_ORIENTATIONS_IND
+        self.ui.color_map_label.setEnabled(color_map_needed)
+        self.ui.color_maps.setEnabled(color_map_needed)
+
+        if color_map_needed:
+            self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
 
     def on_export_button_pressed(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -234,15 +259,6 @@ class FitGrainsResultsDialog(QObject):
             selected_file += '.npz'
 
         np.savez_compressed(selected_file, stresses=stresses)
-
-    def on_sort_indicator_changed(self, index, order):
-        """Shows sort indicator for sortable columns, hides for all others."""
-        horizontal_header = self.ui.table_view.horizontalHeader()
-        if index in SORTABLE_COLUMNS:
-            horizontal_header.setSortIndicatorShown(True)
-            horizontal_header.setSortIndicator(index, order)
-        else:
-            horizontal_header.setSortIndicatorShown(False)
 
     @property
     def depth_shading(self):
@@ -418,6 +434,7 @@ class FitGrainsResultsDialog(QObject):
             ('Goodness of Fit', 2),
             (f'Equivalent {tensor_type}', EQUIVALENT_IND),
             (f'Hydrostatic {tensor_type}', HYDROSTATIC_IND),
+            ('Orientation', COLOR_ORIENTATIONS_IND),
             (f'XX {tensor_type}', 15),
             (f'YY {tensor_type}', 16),
             (f'ZZ {tensor_type}', 17),
@@ -446,27 +463,18 @@ class FitGrainsResultsDialog(QObject):
     def setup_tableview(self):
         view = self.ui.table_view
 
-        # Subclass QSortFilterProxyModel to restrict sorting by column
-        class GrainsTableSorter(QSortFilterProxyModel):
-            def sort(self, column, order):
-                if column not in SORTABLE_COLUMNS:
-                    return
-                return super().sort(column, order)
-
-        proxy_model = GrainsTableSorter(self.ui)
-        proxy_model.setSourceModel(self.data_model)
-        view.verticalHeader().hide()
-        view.setModel(proxy_model)
-        view.resizeColumnToContents(0)
-
-        view.setSortingEnabled(True)
-        view.horizontalHeader().sortIndicatorChanged.connect(
-            self.on_sort_indicator_changed)
-        view.sortByColumn(0, Qt.AscendingOrder)
-        self.ui.table_view.horizontalHeader().setSortIndicatorShown(False)
+        # Update the variables on the table view
+        view.data_model = self.data_model
+        view.material = self.material
+        view.grains_table = self.data
 
     def show(self):
         self.ui.show()
+
+    def show_later(self):
+        # Call this if you might not be running on the GUI thread, so
+        # show() will be called on the GUI thread.
+        QTimer.singleShot(0, lambda: self.show())
 
     @property
     def tensor_type(self):
@@ -581,7 +589,7 @@ if __name__ == '__main__':
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
     app = QApplication(sys.argv)
 
-    data = np.loadtxt(sys.argv[1])
+    data = np.loadtxt(sys.argv[1], ndmin=2)
 
     dialog = FitGrainsResultsDialog(data)
 

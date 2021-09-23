@@ -13,6 +13,9 @@ FLOAT_REGEX = re.compile(r'(([+-]?\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?)')
 # "i" and "in" are both interpreted as "inf"
 INFINITE_REGEX = re.compile(r'^([+-]?)(i(?:n|nf)?)$')
 
+# "n" and "na" are both interpreted as "nan"
+NAN_REGEX = re.compile(r'^(n(?:a|an)?)$')
+
 
 class FloatValidator(QValidator):
 
@@ -22,7 +25,8 @@ class FloatValidator(QValidator):
         if match:
             return match.group(0) == string
 
-        return INFINITE_REGEX.search(string) is not None
+        special_regexes = (INFINITE_REGEX, NAN_REGEX)
+        return any(x.search(string) is not None for x in special_regexes)
 
     def validate(self, string, position):
         if FloatValidator.valid_float_string(string):
@@ -38,8 +42,13 @@ class FloatValidator(QValidator):
         if match:
             return match.group(0)
 
-        match = INFINITE_REGEX.search(text)
-        return match.group(1) + 'inf' if match else ''
+        if match := INFINITE_REGEX.search(text):
+            return match.group(1) + 'inf'
+
+        if NAN_REGEX.search(text):
+            return 'nan'
+
+        return ''
 
 
 def clean_text(func):
@@ -61,26 +70,36 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
     @staticmethod
     def format_float(value):
         """Modified form of the 'g' format specifier."""
-
         string = '{:.10g}'.format(value).replace('e+', 'e')
         string = re.sub(r'e(-?)0*(\d+)', r'e\1\2', string)
 
         return string
 
     def __init__(self, *args, **kwargs):
-        super(ScientificDoubleSpinBox, self).__init__(*args, **kwargs)
-        self.setMinimum(-math.inf)
-        self.setMaximum(math.inf)
+        super().__init__(*args, **kwargs)
         self.validator = FloatValidator()
         self.setDecimals(1000)
+        self.reset_range()
+
+    def reset_range(self):
+        self.setRange(-math.inf, math.inf)
 
     @clean_text
     def validate(self, text, position):
         return self.validator.validate(text, position)
 
     @clean_text
-    def fixup(self, text):
-        return self.validator.fixup(text)
+    def fixup(self, original_text):
+        text = self.validator.fixup(original_text)
+        if text == 'nan':
+            self.is_nan = True
+            # Don't auto-fill the text
+            self.lineEdit().setText(original_text)
+        elif self.is_nan and text:
+            self.is_nan = False
+            # Don't auto-fill the text
+            self.lineEdit().setText(original_text)
+        return text
 
     @clean_text
     def valueFromText(self, text):
@@ -91,6 +110,10 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
 
     def stepBy(self, steps):
         text = self.cleanText()
+        if any(x.search(text) for x in (INFINITE_REGEX, NAN_REGEX)):
+            # We cannot step
+            return
+
         groups = FLOAT_REGEX.search(text).groups()
         decimal = float(groups[1])
         decimal += steps
@@ -101,6 +124,28 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
 
         # Select the text just like a regular spin box would...
         self.selectAll()
+
+    def setValue(self, v):
+        self.is_nan = math.isnan(v)
+        super().setValue(v)
+
+    @property
+    def is_nan(self):
+        return math.isnan(self.value())
+
+    @is_nan.setter
+    def is_nan(self, b):
+        if self.is_nan == b:
+            # Unchanged
+            return
+
+        if b:
+            # Setting the min or max to nan forces the min, max, and
+            # value to all be nan.
+            self.setMaximum(math.nan)
+        else:
+            # Reset the range so we can have values that are not nan
+            self.reset_range()
 
 
 def remove_prefix(text, prefix):

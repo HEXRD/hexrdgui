@@ -7,3 +7,4 @@ class FitGrainsTreeViewDialog(DictTreeViewDialog):
         config = HexrdConfig().indexing_config['fit_grains']
         super().__init__(config, parent)
         self.setWindowTitle('Fit Grains Config')
+        self.expand_rows()

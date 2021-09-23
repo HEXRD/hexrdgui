@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>rerun_clustering_dialog</class>
+ <widget class="QDialog" name="rerun_clustering_dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>401</width>
+    <height>207</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Re-run Clustering</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="raduis_label">
+     <property name="text">
+      <string>Radius</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="completeness_label">
+     <property name="text">
+      <string>Completeness</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="ScientificDoubleSpinBox" name="completeness" native="true">
+     <property name="decimals" stdset="0">
+      <number>8</number>
+     </property>
+     <property name="maximum" stdset="0">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="value" stdset="0">
+      <double>0.850000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="alogirthm_label">
+     <property name="text">
+      <string>Algorithm</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QComboBox" name="algorithms">
+     <item>
+      <property name="text">
+       <string>dbscan</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>sph-dbscan</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>ort-dbscan</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>fclusterdata</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QPushButton" name="load_file">
+     <property name="text">
+      <string>Load Scored Orientations</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="min_samples_label">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Minimum Samples</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QSpinBox" name="min_samples">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="ScientificDoubleSpinBox" name="radius" native="true">
+     <property name="decimals" stdset="0">
+      <number>8</number>
+     </property>
+     <property name="maximum" stdset="0">
+      <double>10000000.000000000000000</double>
+     </property>
+     <property name="value" stdset="0">
+      <double>1.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QLabel" name="file_name">
+     <property name="text">
+      <string>No File Selected</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QWidget</extends>
+   <header>scientificdoublespinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>radius</tabstop>
+  <tabstop>completeness</tabstop>
+  <tabstop>algorithms</tabstop>
+  <tabstop>min_samples</tabstop>
+  <tabstop>load_file</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>button_box</sender>
+   <signal>rejected()</signal>
+   <receiver>rerun_clustering_dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>268</x>
+     <y>124</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>277</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>button_box</sender>
+   <signal>accepted()</signal>
+   <receiver>rerun_clustering_dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>227</x>
+     <y>118</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

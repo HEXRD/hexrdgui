@@ -145,7 +145,8 @@ DEFAULT_LAUE_OPTIONS = {
     'min_energy': 5,
     'max_energy': 35,
     'tth_width': None,
-    'eta_width': None
+    'eta_width': None,
+    'width_shape': 'ellipse',
 }
 
 DEFAULT_MONO_ROTATION_SERIES_OPTIONS = {}

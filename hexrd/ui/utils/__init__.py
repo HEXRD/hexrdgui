@@ -184,11 +184,17 @@ class EventBlocker(QObject):
             return super().eventFilter(obj, event)
 
 
-def create_unique_name(dic, name, value=0):
-    while name in dic.keys():
-        prefix, *rest = name.rpartition('_')
-        name = f'{prefix}_{value}'
+def unique_name(items, name, start=1, delimiter='_'):
+    value = start
+    while name in items:
+        prefix, delim, suffix = name.rpartition(delimiter)
+        if not delim or not is_int(suffix):
+            # We don't have a "<name><delim><num>" system yet. Start one.
+            name += f'{delimiter}{value}'
+        else:
+            name = f'{prefix}{delim}{value}'
         value += 1
+
     return name
 
 
@@ -249,7 +255,7 @@ def has_nan(x):
     return np.isnan(np.min(x))
 
 
-def instr_to_internal_dict(instr, calibration_dict=None):
+def instr_to_internal_dict(instr, calibration_dict=None, convert_tilts=True):
     from hexrd.ui.hexrd_config import HexrdConfig
 
     # Convert an HEDMInstrument object into an internal dict we can
@@ -279,7 +285,7 @@ def instr_to_internal_dict(instr, calibration_dict=None):
 
     # Convert to the selected tilt convention
     eac = HexrdConfig().euler_angle_convention
-    if eac is not None:
+    if convert_tilts and eac is not None:
         convert_tilt_convention(config, None, eac)
 
     return config
@@ -389,3 +395,17 @@ def format_memory_int(x, decimals=2):
             return f'{round(x / divisor, decimals)} {label}'
 
     return f'{x} B'
+
+
+def apply_symmetric_constraint(x):
+    # Copy values from upper triangle to lower triangle.
+    # Only works for square matrices.
+    for i in range(x.shape[0]):
+        for j in range(i):
+            x[i, j] = x[j, i]
+    return x
+
+
+def hkl_str_to_array(hkl):
+    # For instance: '1 -1 10' => np.array((1, -1, 10))
+    return np.array(list(map(int, hkl.split())))

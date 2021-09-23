@@ -10,6 +10,7 @@ from hexrd.ui.overlays.powder_diffraction import PowderLineOverlay
 
 from hexrd.ui import constants
 from hexrd.ui.constants import OverlayType
+from hexrd.ui.utils import array_index_in_list
 
 
 def overlay_generator(overlay_type):
@@ -117,3 +118,38 @@ def update_overlay_data(instr, display_mode):
         generator = overlay_generator(type)(**kwargs)
         overlay['data'] = generator.overlay(display_mode)
         overlay['update_needed'] = False
+
+
+def path_to_hkl(overlay, detector_name, hkl):
+    data_key_map = {
+        OverlayType.powder: 'rings',
+        OverlayType.laue: 'spots',
+    }
+
+    overlay_type = overlay['type']
+    if overlay_type not in data_key_map:
+        raise NotImplementedError(overlay_type)
+
+    data_key = data_key_map[overlay_type]
+
+    detector_data = overlay['data'][detector_name]
+    ind = array_index_in_list(hkl, detector_data['hkls'])
+    if ind == -1:
+        raise Exception(f'Failed to find path to hkl: {hkl}')
+
+    return (detector_name, data_key, ind)
+
+
+def overlay_from_name(name):
+    # Name is <material> <type>
+    material, type = name.split()
+
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    for overlay in HexrdConfig().overlays:
+        matches = (
+            material == overlay['material'] and
+            type == overlay['type'].value
+        )
+        if matches:
+            return overlay

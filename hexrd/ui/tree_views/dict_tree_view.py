@@ -26,7 +26,7 @@ class DictTreeItemModel(BaseDictTreeItemModel):
         elif isinstance(cur_config, list):
             keys = range(len(cur_config))
         else:
-            # This must be a value. Set it.
+            # This must be a value.
             cur_tree_item.set_data(VALUE_COL, cur_config)
             return
 
@@ -58,8 +58,6 @@ class DictTreeView(BaseDictTreeView):
         self.header().resizeSection(KEY_COL, 200)
         self.header().resizeSection(VALUE_COL, 200)
 
-        self.expand_rows()
-
 
 class DictTreeViewDialog(QDialog):
 
@@ -68,7 +66,31 @@ class DictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.dict_tree_view = DictTreeView(dictionary, self)
-        self.layout().addWidget(self.dict_tree_view)
+        self.tree_view = DictTreeView(dictionary, self)
+        self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)
+
+    def expand_rows(self):
+        return self.tree_view.expand_rows()
+
+    @property
+    def editable(self):
+        return self.tree_view.editable
+
+    @editable.setter
+    def editable(self, v):
+        self.tree_view.editable = v
+
+    def set_single_selection_mode(self):
+        self.tree_view.set_single_selection_mode()
+
+    def set_multi_selection_mode(self):
+        self.tree_view.set_multi_selection_mode()
+
+    def set_extended_selection_mode(self):
+        self.tree_view.set_extended_selection_mode()
+
+    @property
+    def selected_items(self):
+        return self.tree_view.selected_items
