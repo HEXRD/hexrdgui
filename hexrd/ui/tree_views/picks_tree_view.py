@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 
 from PySide2.QtCore import Qt
@@ -6,6 +8,7 @@ from PySide2.QtWidgets import QMenu
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import overlay_from_name, path_to_hkl
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
@@ -99,6 +102,7 @@ class PicksTreeView(BaseDictTreeView):
         super().__init__(parent)
 
         self.canvas = canvas
+        self.allow_hand_picking = True
         self.line = None
 
         self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
@@ -158,8 +162,8 @@ class PicksTreeView(BaseDictTreeView):
                 # It is a laue point. Just set it to nans.
                 left = model.createIndex(item.row(), 1, item)
                 right = model.createIndex(item.row(), 2, item)
-                model.setData(left, np.nan, Qt.EditRole)
-                model.setData(right, np.nan, Qt.EditRole)
+                model.setData(left, np.nan)
+                model.setData(right, np.nan)
 
                 # Flag it as changed
                 model.dataChanged.emit(left, right)
@@ -221,8 +225,11 @@ class PicksTreeView(BaseDictTreeView):
         powder_clicked = 'powder' in path[0]
         hkl_clicked = len(path) == 3
         powder_pick_clicked = len(path) == 4
+        hkl_str = path[2] if hkl_clicked or powder_pick_clicked else ''
+        laue_pick_clicked = hkl_clicked and not powder_clicked
         selected_items = self.selected_items
         num_selected = len(selected_items)
+        is_hand_pickable = self.is_hand_pickable
 
         menu = QMenu(self)
 
@@ -249,9 +256,23 @@ class PicksTreeView(BaseDictTreeView):
             new_item = TreeItem([position, 0., 0.])
             model.insert_items([new_item], parent_item, position)
 
+            # Select the new item
+            index = model.createIndex(new_item.row(), 0, new_item)
+            self.setCurrentIndex(index)
+
+            if is_hand_pickable:
+                # Go ahead and get the user to hand pick the point...
+                self.hand_pick_point(new_item, hkl_str)
+
+        def hand_pick_item():
+            self.hand_pick_point(item, hkl_str)
+
         # Action logic
         if powder_clicked and (hkl_clicked or powder_pick_clicked):
             add_actions({'Insert': insert_item})
+
+        if is_hand_pickable and (powder_pick_clicked or laue_pick_clicked):
+            add_actions({'Hand pick': hand_pick_item})
 
         if num_selected > 0:
             add_actions({'Delete': self.delete_selected_picks})
@@ -269,6 +290,42 @@ class PicksTreeView(BaseDictTreeView):
 
         # Run the function for the action that was chosen
         actions[action_chosen]()
+
+    @property
+    def has_canvas(self):
+        return self.canvas is not None
+
+    @property
+    def is_hand_pickable(self):
+        return self.allow_hand_picking and self.has_canvas
+
+    def hand_pick_point(self, item, hkl_str=''):
+        kwargs = {
+            'canvas': self.canvas,
+            'parent': self,
+            'single_pick_mode': True,
+        }
+
+        picker = LinePickerDialog(**kwargs)
+        picker.current_hkl_label = f'Current hkl:  {hkl_str}'
+
+        title = f'Pick point for:  {hkl_str}'
+        picker.ui.setWindowTitle(title)
+        picker.start()
+
+        finished_func = partial(self.point_picked, item=item)
+        picker.point_picked.connect(finished_func)
+
+    def point_picked(self, x, y, item):
+        model = self.model()
+        left = model.createIndex(item.row(), 1, item)
+        right = model.createIndex(item.row(), 2, item)
+
+        model.setData(left, x)
+        model.setData(right, y)
+
+        # Flag it as changed
+        model.dataChanged.emit(left, right)
 
     @property
     def coords_type(self):

@@ -27,7 +27,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         self.config = dictionary
 
-    def setData(self, index, value, role):
+    def setData(self, index, value, role=Qt.EditRole):
         item = self.get_item(index)
 
         # If they are identical, don't do anything
@@ -141,7 +141,9 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         # Set the data for these items
         for i, item in enumerate(items, position):
-            parent_item.child(i).data_list = item.data_list
+            # Over-write the added tree items with the provided items
+            parent_item.child_items[i] = item
+            item.parent_item = parent_item
 
         data_list = [item.data_list[1:] for item in parent_item.child_items]
         self.set_config_val(parent_path, data_list)

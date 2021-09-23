@@ -1,4 +1,5 @@
 import copy
+from functools import partial
 
 import numpy as np
 
@@ -151,11 +152,6 @@ class CalibrationRunner:
         picker.accepted.connect(self.finish_line)
 
     def view_picks_table(self):
-        if self.line_picker:
-            parent = self.line_picker.ui
-        else:
-            parent = None
-
         # Backup some settings
         if 'highlights' in self.active_overlay:
             highlighting = copy.deepcopy(self.active_overlay['highlights'])
@@ -164,19 +160,28 @@ class CalibrationRunner:
 
         prev_visibilities = self.overlay_visibilities
         self.restore_backup_overlay_visibilities()
-        self.hide_artists()
+        self.disable_line_picker()
 
         picks = self.generate_pick_results()
-
         kwargs = {
             'dictionary': picks_to_tree_format(picks),
             'coords_type': ViewType.polar,
             'canvas': self.canvas,
-            'parent': parent,
+            'parent': self.canvas,
         }
         dialog = PicksTreeViewDialog(**kwargs)
-        dialog.exec_()
+        dialog.ui.show()
 
+        kwargs = {
+            'dialog': dialog,
+            'highlighting': highlighting,
+            'prev_visibilities': prev_visibilities,
+        }
+        finished_func = partial(self.finished_viewing_picks, **kwargs)
+        dialog.ui.finished.connect(finished_func)
+
+    def finished_viewing_picks(self, result, dialog, highlighting,
+                               prev_visibilities):
         # Update all of the picks with the modified data
         updated_picks = tree_format_to_picks(dialog.dictionary)
 
@@ -189,7 +194,7 @@ class CalibrationRunner:
         self.update_lines_from_picks()
 
         # Restore backups
-        self.show_artists()
+        self.enable_line_picker()
         if highlighting is None:
             self.remove_all_highlighting()
         else:
@@ -547,9 +552,8 @@ class CalibrationRunner:
         data_path = self.current_data_path
         self.set_highlighting([data_path])
 
-    def point_picked(self):
-        linebuilder = self.line_picker.linebuilder
-        data = (linebuilder.xs[-1], linebuilder.ys[-1])
+    def point_picked(self, x, y):
+        data = (x, y)
         if self.active_overlay_type == OverlayType.powder:
             self.current_data_list.append(data)
         if self.active_overlay_type == OverlayType.laue:
@@ -580,13 +584,13 @@ class CalibrationRunner:
             if 0 <= ind < len(self.current_data_list):
                 self.current_data_list[ind] = (np.nan, np.nan)
 
-    def hide_artists(self):
+    def disable_line_picker(self, b=True):
         if self.line_picker:
-            self.line_picker.hide_artists()
+            self.line_picker.disabled = b
+            self.line_picker.ui.setVisible(not b)
 
-    def show_artists(self):
-        if self.line_picker:
-            self.line_picker.show_artists()
+    def enable_line_picker(self):
+        self.disable_line_picker(False)
 
     def update_current_hkl_label(self):
         if not self.line_picker or not self.active_overlay:
