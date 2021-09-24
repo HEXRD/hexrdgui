@@ -19,7 +19,8 @@ class COLUMNS:
     D_SPACING = 2
     TTH = 3
     SF = 4
-    MULTIPLICITY = 5
+    POWDER_INTENSITY = 5
+    MULTIPLICITY = 6
 
 
 class ReflectionsTable:
@@ -142,6 +143,7 @@ class ReflectionsTable:
             d_spacings = plane_data.getPlaneSpacings()
             tth = plane_data.getTTh()
             sf = plane_data.structFact
+            powder_intensity = plane_data.powder_intensity
             multiplicity = plane_data.getMultiplicity()
 
         # Grab the hkl ids
@@ -182,6 +184,9 @@ class ReflectionsTable:
 
                 table_item = FloatTableItem(sf[i])
                 table.setItem(i, COLUMNS.SF, table_item)
+
+                table_item = FloatTableItem(powder_intensity[i])
+                table.setItem(i, COLUMNS.POWDER_INTENSITY, table_item)
 
                 table_item = IntTableItem(multiplicity[i])
                 table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
