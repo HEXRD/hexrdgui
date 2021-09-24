@@ -618,6 +618,45 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
 
+    def action_edit_apply_powder_mask_to_polar(self):
+        if not HexrdConfig().show_overlays:
+            msg = 'Overlays are not displayed'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        overlays = HexrdConfig().overlays
+        powder_overlays = (
+            [x for x in overlays if x['type'] == OverlayType.powder])
+        powder_overlays = [x for x in powder_overlays if x['visible']]
+        if not powder_overlays:
+            msg = 'No powder overlays found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        data = []
+        for overlay in powder_overlays:
+            for _, val in overlay['data'].items():
+                a = iter(val['rbnds'])
+                for start, end in zip(a, a):
+                    ranges = np.array(np.flip(start, axis=1))
+                    ranges = np.append(ranges, np.flip(end), axis=0)
+                    ranges = np.append(ranges, [ranges[0]], axis=0)
+                    data.append(ranges[~np.isnan(ranges).any(axis=1)])
+
+        if not data:
+            msg = 'No powder overlay ranges found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        name = unique_name(HexrdConfig().raw_mask_coords, 'powder_mask')
+        create_polar_mask(name, data)
+        raw_data = convert_polar_to_raw(data)
+        HexrdConfig().raw_mask_coords[name] = raw_data
+        HexrdConfig().visible_masks.append(name)
+        self.new_mask_added.emit(self.image_mode)
+        HexrdConfig().polar_masks_changed.emit()
+
+
     def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
         mrd.new_mask_added.connect(self.new_mask_added.emit)
