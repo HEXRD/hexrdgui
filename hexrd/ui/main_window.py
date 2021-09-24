@@ -179,6 +179,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
+        self.ui.action_edit_apply_powder_mask_to_polar.triggered.connect(
+            self.action_edit_apply_powder_mask_to_polar)
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
             self.on_action_edit_apply_polygon_mask_triggered)
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
@@ -664,6 +666,7 @@ class MainWindow(QObject):
                                                         has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
+        self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():
