@@ -144,9 +144,8 @@ class MaskManagerDialog(QObject):
         del self.masks[name]
         if name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
-        HexrdConfig().polar_masks.pop(name, None)
         HexrdConfig().raw_mask_coords.pop(name, None)
-        HexrdConfig().raw_masks.pop(name, None)
+        HexrdConfig().masks.pop(name, None)
         if mtype == 'threshold':
             self.reset_threshold()
 
@@ -179,12 +178,9 @@ class MaskManagerDialog(QObject):
                 value = HexrdConfig().raw_mask_coords.pop(self.old_name)
                 HexrdConfig().raw_mask_coords[new_name] = value
 
-            if self.old_name in HexrdConfig().polar_masks.keys():
-                value = HexrdConfig().polar_masks.pop(self.old_name)
-                HexrdConfig().polar_masks[new_name] = value
-            if self.old_name in HexrdConfig().raw_masks.keys():
-                value = HexrdConfig().raw_masks.pop(self.old_name)
-                HexrdConfig().raw_masks[new_name] = value
+            if self.old_name in HexrdConfig().masks.keys():
+                value = HexrdConfig().masks.pop(self.old_name)
+                HexrdConfig().masks[new_name] = value
 
             if self.old_name in HexrdConfig().visible_masks:
                 HexrdConfig().visible_masks.append(new_name)
@@ -230,8 +226,7 @@ class MaskManagerDialog(QObject):
         self.export_masks(d)
 
     def clear_masks(self):
-        HexrdConfig().polar_masks.clear()
-        HexrdConfig().raw_masks.clear()
+        HexrdConfig().masks.clear()
         HexrdConfig().visible_masks.clear()
         self.masks.clear()
         self.setup_table()

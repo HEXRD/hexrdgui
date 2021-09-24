@@ -579,7 +579,7 @@ class MainWindow(QObject):
             raw_line = convert_polar_to_raw([line])
             HexrdConfig().raw_mask_coords[name] = raw_line
             HexrdConfig().visible_masks.append(name)
-            create_polar_mask([line.copy()], name)
+            create_polar_mask(name, [line])
         HexrdConfig().polar_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
@@ -609,7 +609,7 @@ class MainWindow(QObject):
             return
 
         name = unique_name(HexrdConfig().raw_mask_coords, 'laue_mask')
-        create_polar_mask(data, name)
+        create_polar_mask(name, data)
         raw_data = convert_polar_to_raw(data)
         HexrdConfig().raw_mask_coords[name] = raw_data
         HexrdConfig().visible_masks.append(name)

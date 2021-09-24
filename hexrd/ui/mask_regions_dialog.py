@@ -1,6 +1,6 @@
+from hexrd.ui.create_polar_mask import create_polar_mask
 from PySide2.QtCore import QObject, Signal
 
-from hexrd.ui.create_polar_mask import create_polar_mask
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
 from hexrd.ui.utils import unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -192,12 +192,16 @@ class MaskRegionsDialog(QObject):
             self.raw_mask_coords.append([data_coords])
 
     def create_masks(self):
-
         for data in self.raw_mask_coords:
             name = unique_name(
                 HexrdConfig().raw_mask_coords, f'{self.image_mode}_mask_0')
-            HexrdConfig().raw_mask_coords[name] = [data]
-            create_raw_mask(name, [data])
+            if self.image_mode == 'raw':
+                HexrdConfig().raw_mask_coords[name] = [data]
+                create_raw_mask(name, [data])
+            elif self.image_mode == 'polar':
+                raw_coords = convert_polar_to_raw(data)
+                HexrdConfig().raw_mask_coords[name] = raw_coords
+                create_polar_mask(name, data)
             HexrdConfig().visible_masks.append(name)
 
         masks_changed_signal = {

@@ -178,8 +178,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = {}
-        self.polar_masks = {}
-        self.raw_masks = {}
+        self.masks = {}
         self.raw_mask_coords = {}
         self.visible_masks = []
         self.backup_tth_maxes = {}
@@ -1345,7 +1344,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def visible_polar_masks(self):
-        masks = self.polar_masks.items()
+        masks = self.masks.items()
         visible = self.visible_masks
         return [mask for name, mask in masks if name in visible]
 
