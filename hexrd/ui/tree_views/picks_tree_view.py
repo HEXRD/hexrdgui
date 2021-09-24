@@ -104,6 +104,7 @@ class PicksTreeView(BaseDictTreeView):
         self.canvas = canvas
         self.allow_hand_picking = True
         self.line = None
+        self.is_deleting_picks = False
 
         self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
 
@@ -127,6 +128,10 @@ class PicksTreeView(BaseDictTreeView):
         self.model().dict_modified.connect(self.data_was_modified)
 
     def selection_was_changed(self):
+        if self.is_deleting_picks:
+            # Don't re-highlight and re-draw for every pick that is deleted
+            return
+
         self.highlight_selected_hkls()
         self.draw_selected_picks()
 
@@ -154,6 +159,15 @@ class PicksTreeView(BaseDictTreeView):
         HexrdConfig().overlay_config_changed.emit()
 
     def delete_selected_picks(self):
+        self.is_deleting_picks = True
+        try:
+            self._delete_selected_picks()
+        finally:
+            self.is_deleting_picks = False
+
+        self.selection_was_changed()
+
+    def _delete_selected_picks(self):
         model = self.model()
         items_to_remove = []
         for item in self.selected_items:
