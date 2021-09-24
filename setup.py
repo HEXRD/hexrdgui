@@ -8,7 +8,7 @@ install_reqs = [
     'importlib-resources',
     'fabio>=0.11',
     'pyyaml',
-    'hexrd@git+https://github.com/hexrd/hexrd.git@master',
+    'hexrd',
     'silx'
 ]
 
