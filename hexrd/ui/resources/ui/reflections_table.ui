@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
+    <width>650</width>
     <height>210</height>
    </rect>
   </property>
@@ -53,7 +53,7 @@
       <number>5</number>
      </property>
      <property name="columnCount">
-      <number>6</number>
+      <number>7</number>
      </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>true</bool>
@@ -98,6 +98,11 @@
      <column>
       <property name="text">
        <string>|F|²</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Iₚ</string>
       </property>
      </column>
      <column>
