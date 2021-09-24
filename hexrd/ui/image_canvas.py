@@ -72,6 +72,8 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_auto_picked_data.connect(
             self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
+        HexrdConfig().oscillation_stage_changed.connect(
+            self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
 
     def __del__(self):
@@ -131,7 +133,7 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, data in HexrdConfig().raw_masks.items():
+                for mask_name, data in HexrdConfig().masks.items():
                     for det, mask in data:
                         if (mask_name in HexrdConfig().visible_masks and
                                 det == name):
@@ -155,7 +157,7 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, data in HexrdConfig().raw_masks.items():
+                for mask_name, data in HexrdConfig().masks.items():
                     for det, mask in data:
                         if (mask_name in HexrdConfig().visible_masks and
                                 det == name):
@@ -479,6 +481,19 @@ class ImageCanvas(FigureCanvas):
 
         bvec = HexrdConfig().instrument_config['beam']['vector']
         self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
+        self.update_overlays()
+
+    def oscillation_stage_changed(self):
+        if not self.iviewer or not hasattr(self.iviewer, 'instr'):
+            return
+
+        # Need to update the parameters on the instrument
+        os_conf = HexrdConfig().instrument_config['oscillation_stage']
+        self.iviewer.instr.chi = os_conf['chi']
+        self.iviewer.instr.tvec = os_conf['translation']
+
+        # Re-draw all overlays from scratch
+        HexrdConfig().clear_overlay_data()
         self.update_overlays()
 
     def show_cartesian(self):

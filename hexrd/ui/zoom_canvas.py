@@ -22,6 +22,11 @@ class ZoomCanvas(FigureCanvas):
         self.xdata = None
         self.ydata = None
         self.main_artists_visible = True
+        self._display_sums_in_subplots = True
+
+        self.i_row = None
+        self.j_col = None
+        self.roi_deg = None
 
         self.main_canvas = main_canvas
         self.pv = main_canvas.iviewer.pv
@@ -36,15 +41,17 @@ class ZoomCanvas(FigureCanvas):
 
         self.draw_crosshairs = draw_crosshairs
 
-        self.axes = None
+        self.axes = [None, None, None]
         self.axes_images = None
         self.frozen = False
+        self.in_zoom_axis = False
 
         # Set up the box overlay lines
         ax = self.main_canvas.axis
         self.box_overlay_line, = ax.plot([], [], 'm-', animated=True)
         self.crosshairs = None
         self.vhlines = None
+        self.disabled = False
 
         # user-specified ROI in degrees (from interactors)
         self.tth_tol = 0.5
@@ -97,6 +104,9 @@ class ZoomCanvas(FigureCanvas):
             self.crosshairs = None
 
     def button_pressed(self, event):
+        if self.disabled:
+            return
+
         if event.button != 1:
             # Don't do anything if it isn't a left click
             return
@@ -104,9 +114,17 @@ class ZoomCanvas(FigureCanvas):
         self.point_picked.emit(event)
 
     def mouse_moved(self, event):
+        if self.disabled:
+            return
+
         # Clear the crosshairs when the mouse is moving over the canvas
         self.clear_crosshairs()
         self.update_vhlines(event)
+
+        self.in_zoom_axis = event.inaxes == self.axes[0]
+
+        if not self.display_sums_in_subplots:
+            self.update_subplots()
 
         # Can't use draw_idle() since the Cursor has useblit=True
         self.draw()
@@ -121,9 +139,15 @@ class ZoomCanvas(FigureCanvas):
         hline.set_ydata(event.ydata)
 
     def main_canvas_mouse_moved(self, event):
+        if self.disabled:
+            return
+
         if event.inaxes is None:
             # Do nothing...
             return
+
+        if self.main_axis == event.inaxes:
+            self.in_zoom_axis = False
 
         if not event.inaxes.get_images():
             # Image is over intensity plot. Do nothing...
@@ -137,6 +161,16 @@ class ZoomCanvas(FigureCanvas):
         self.ydata = event.ydata
 
         self.render()
+
+    @property
+    def display_sums_in_subplots(self):
+        return self._display_sums_in_subplots
+
+    @display_sums_in_subplots.setter
+    def display_sums_in_subplots(self, b):
+        self._display_sums_in_subplots = b
+        self.update_subplots()
+        self.draw()
 
     def plot_crosshairs(self, xlims, ylims):
         x_scale = 0.05
@@ -163,6 +197,9 @@ class ZoomCanvas(FigureCanvas):
         self.main_artists_visible = show
 
     def on_main_canvas_draw_event(self, event):
+        if self.disabled:
+            return
+
         invalid = (
             self.xdata is None or
             self.ydata is None or
@@ -176,11 +213,59 @@ class ZoomCanvas(FigureCanvas):
         # Render...
         QTimer.singleShot(0, self.render)
 
+    def update_subplots(self):
+        req = [self.pv, self.rsimg, self.i_row, self.j_col, self.roi_deg]
+        if any(x is None for x in req):
+            return
+
+        pv = self.pv
+        rsimg = self.rsimg
+        i_row, j_col = self.i_row, self.j_col
+        roi_deg = self.roi_deg
+
+        a2_x = np.degrees(pv.angular_grid[1][0, j_col[0]:j_col[1]])
+        a3_y = np.degrees(pv.angular_grid[0][i_row[1]:i_row[2], 0])
+        if self.display_sums_in_subplots:
+            roi = rsimg[i_row[1]:i_row[2], j_col[0]:j_col[1]]
+            a2_y = np.sum(roi, axis=0)
+            a3_x = np.sum(roi, axis=1)
+        else:
+            if self.in_zoom_axis and self.vhlines:
+                x = self.vhlines[0].get_xdata()
+                y = self.vhlines[1].get_ydata()
+            else:
+                # Use the center of the plot
+                xlims = roi_deg[0:2, 0]
+                ylims = roi_deg[2:0:-1, 1]
+                x, y = np.mean(xlims), np.mean(ylims)
+
+            # Convert to pixels
+            x_pixel = pv.tth_to_pixel(np.radians(x))
+            y_pixel = pv.eta_to_pixel(np.radians(y))
+
+            # Extract the points from the main image
+            a2_y = rsimg[round(y_pixel), j_col[0]:j_col[1]]
+            a3_x = rsimg[i_row[1]:i_row[2], round(x_pixel)]
+
+        a2_data = (a2_x, a2_y)
+        a3_data = (a3_x, a3_y)
+
+        self.axes_images[1].set_data(a2_data)
+        self.axes_images[2].set_data(a3_data)
+
+        self.axes[1].relim()
+        self.axes[1].autoscale_view()
+        self.axes[2].relim()
+        self.axes[2].autoscale_view()
+
     def render(self):
+        if self.disabled:
+            return
+
         self.clear_crosshairs()
 
         point = (self.xdata, self.ydata)
-        rsimg = self.main_canvas.iviewer.img
+        rsimg = self.rsimg
         _extent = self.main_canvas.iviewer._extent
         pv = self.pv
 
@@ -194,6 +279,8 @@ class ZoomCanvas(FigureCanvas):
         roi_deg[:, 1] = np.clip(roi_deg[:, 1],
                                 *np.degrees((pv.eta_min, pv.eta_max)))
 
+        self.roi_deg = roi_deg
+
         # get pixel values from PolarView class
         i_row = pv.eta_to_pixel(np.radians(roi_deg[:, 1]))
         j_col = pv.tth_to_pixel(np.radians(roi_deg[:, 0]))
@@ -202,16 +289,7 @@ class ZoomCanvas(FigureCanvas):
         i_row = np.round(i_row).astype(int)
         j_col = np.round(j_col).astype(int)
 
-        # plot
-        roi = rsimg[i_row[1]:i_row[2], j_col[0]:j_col[1]]
-        a2_data = (
-            np.degrees(pv.angular_grid[1][0, j_col[0]:j_col[1]]),
-            np.sum(roi, axis=0)
-        )
-        a3_data = (
-            np.sum(roi, axis=1),
-            np.degrees(pv.angular_grid[0][i_row[1]:i_row[2], 0])
-        )
+        self.i_row, self.j_col = i_row, j_col
 
         xlims = roi_deg[0:2, 0]
         ylims = roi_deg[2:0:-1, 1]
@@ -231,8 +309,8 @@ class ZoomCanvas(FigureCanvas):
             a3.label_outer()
             a3.tick_params(labelbottom=True)  # Label bottom anyways for a3
             self.cursor = Cursor(a1, useblit=True, color='red', linewidth=1)
-            im2, = a2.plot(a2_data[0], a2_data[1])
-            im3, = a3.plot(a3_data[0], a3_data[1])
+            im2, = a2.plot([], [])
+            im3, = a3.plot([], [])
             self.figure.suptitle(r"ROI zoom")
             a2.set_xlabel(r"$2\theta$ [deg]")
             a2.set_ylabel(r"intensity")
@@ -247,6 +325,8 @@ class ZoomCanvas(FigureCanvas):
             vline = a2.axvline(0, color='red', linewidth=1)
             hline = a3.axhline(0, color='red', linewidth=1)
             self.vhlines = [vline, hline]
+
+            self.update_subplots()
         else:
             # Make sure we update the color map and norm each time
             self.axes_images[0].set_cmap(self.main_canvas.cmap)
@@ -254,13 +334,8 @@ class ZoomCanvas(FigureCanvas):
 
             self.axes[0].set_xlim(*xlims)
             self.axes[0].set_ylim(*ylims)
-            self.axes_images[1].set_data(a2_data)
-            self.axes_images[2].set_data(a3_data)
 
-            self.axes[1].relim()
-            self.axes[1].autoscale_view()
-            self.axes[2].relim()
-            self.axes[2].autoscale_view()
+            self.update_subplots()
 
         if self.draw_crosshairs:
             self.plot_crosshairs(xlims, ylims)
@@ -281,6 +356,19 @@ class ZoomCanvas(FigureCanvas):
     @property
     def main_axis(self):
         return self.main_canvas.axis
+
+    @property
+    def rsimg(self):
+        return self.main_canvas.iviewer.img
+
+    @property
+    def disabled(self):
+        return self._disabled
+
+    @disabled.setter
+    def disabled(self, b):
+        self._disabled = b
+        self.show_main_artists(not b)
 
 
 class MainCanvasCursor(Cursor):

@@ -1,12 +1,14 @@
+from functools import partial
+
 import numpy as np
 
 from PySide2.QtCore import Qt
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu
 
-from hexrd.crystallography import hklToStr
-
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.overlays import overlay_from_name, path_to_hkl
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
@@ -24,14 +26,40 @@ Y_COL = X_COL + 1
 
 class PicksTreeItemModel(BaseDictTreeItemModel):
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(self, dictionary, coords_type=ViewType.polar, parent=None):
         super().__init__(dictionary, parent)
 
-        # Don't allow editing for now. But we will add it soon in the future.
-        self.editable = True
+        self.root_item = TreeItem([''] * 3)
+        self.coords_type = coords_type
 
-        self.root_item = TreeItem(['', '2θ', 'η'])
         self.rebuild_tree()
+
+    @property
+    def coords_type(self):
+        return self._coords_type
+
+    @coords_type.setter
+    def coords_type(self, v):
+        self._coords_type = v
+        self.update_root_item()
+
+    def update_root_item(self):
+        options = {
+            ViewType.raw: ['i', 'j'],
+            ViewType.cartesian: ['x', 'y'],
+            ViewType.polar: ['2θ', 'η'],
+        }
+
+        if self.coords_type not in options:
+            raise NotImplementedError(self.coords_type)
+
+        labels = options[self.coords_type]
+        row = self.root_item.row()
+        for i in range(2):
+            col = i + 1
+            self.root_item.set_data(col, labels[i])
+            index = self.createIndex(row, col, self.root_item)
+            self.dataChanged.emit(index, index)
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         def is_coords(x):
@@ -69,13 +97,16 @@ class PicksTreeItemModel(BaseDictTreeItemModel):
 
 class PicksTreeView(BaseDictTreeView):
 
-    def __init__(self, dictionary, canvas=None, parent=None):
+    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
+                 parent=None):
         super().__init__(parent)
 
         self.canvas = canvas
+        self.allow_hand_picking = True
         self.line = None
+        self.is_deleting_picks = False
 
-        self.setModel(PicksTreeItemModel(dictionary, self))
+        self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
 
         value_cols = [X_COL, Y_COL]
         all_cols = [KEY_COL] + value_cols
@@ -97,6 +128,10 @@ class PicksTreeView(BaseDictTreeView):
         self.model().dict_modified.connect(self.data_was_modified)
 
     def selection_was_changed(self):
+        if self.is_deleting_picks:
+            # Don't re-highlight and re-draw for every pick that is deleted
+            return
+
         self.highlight_selected_hkls()
         self.draw_selected_picks()
 
@@ -124,6 +159,15 @@ class PicksTreeView(BaseDictTreeView):
         HexrdConfig().overlay_config_changed.emit()
 
     def delete_selected_picks(self):
+        self.is_deleting_picks = True
+        try:
+            self._delete_selected_picks()
+        finally:
+            self.is_deleting_picks = False
+
+        self.selection_was_changed()
+
+    def _delete_selected_picks(self):
         model = self.model()
         items_to_remove = []
         for item in self.selected_items:
@@ -132,8 +176,8 @@ class PicksTreeView(BaseDictTreeView):
                 # It is a laue point. Just set it to nans.
                 left = model.createIndex(item.row(), 1, item)
                 right = model.createIndex(item.row(), 2, item)
-                model.setData(left, np.nan, Qt.EditRole)
-                model.setData(right, np.nan, Qt.EditRole)
+                model.setData(left, np.nan)
+                model.setData(right, np.nan)
 
                 # Flag it as changed
                 model.dataChanged.emit(left, right)
@@ -195,8 +239,11 @@ class PicksTreeView(BaseDictTreeView):
         powder_clicked = 'powder' in path[0]
         hkl_clicked = len(path) == 3
         powder_pick_clicked = len(path) == 4
+        hkl_str = path[2] if hkl_clicked or powder_pick_clicked else ''
+        laue_pick_clicked = hkl_clicked and not powder_clicked
         selected_items = self.selected_items
         num_selected = len(selected_items)
+        is_hand_pickable = self.is_hand_pickable
 
         menu = QMenu(self)
 
@@ -223,9 +270,23 @@ class PicksTreeView(BaseDictTreeView):
             new_item = TreeItem([position, 0., 0.])
             model.insert_items([new_item], parent_item, position)
 
+            # Select the new item
+            index = model.createIndex(new_item.row(), 0, new_item)
+            self.setCurrentIndex(index)
+
+            if is_hand_pickable:
+                # Go ahead and get the user to hand pick the point...
+                self.hand_pick_point(new_item, hkl_str)
+
+        def hand_pick_item():
+            self.hand_pick_point(item, hkl_str)
+
         # Action logic
         if powder_clicked and (hkl_clicked or powder_pick_clicked):
             add_actions({'Insert': insert_item})
+
+        if is_hand_pickable and (powder_pick_clicked or laue_pick_clicked):
+            add_actions({'Hand pick': hand_pick_item})
 
         if num_selected > 0:
             add_actions({'Delete': self.delete_selected_picks})
@@ -244,50 +305,46 @@ class PicksTreeView(BaseDictTreeView):
         # Run the function for the action that was chosen
         actions[action_chosen]()
 
+    @property
+    def has_canvas(self):
+        return self.canvas is not None
 
-def picks_to_tree_format(all_picks):
-    def listify(sequence):
-        sequence = list(sequence)
-        for i, item in enumerate(sequence):
-            if isinstance(item, tuple):
-                sequence[i] = listify(item)
+    @property
+    def is_hand_pickable(self):
+        return self.allow_hand_picking and self.has_canvas
 
-        return sequence
-
-    tree_format = {}
-    for entry in all_picks:
-        hkl_picks = {}
-
-        for det in entry['hkls']:
-            hkl_picks[det] = {}
-            for hkl, picks in zip(entry['hkls'][det], entry['picks'][det]):
-                hkl_picks[det][hklToStr(hkl)] = listify(picks)
-
-        name = f"{entry['material']} {entry['type']}"
-        tree_format[name] = hkl_picks
-
-    return tree_format
-
-
-def tree_format_to_picks(tree_format):
-    all_picks = []
-    for name, entry in tree_format.items():
-        material, type = name.split()
-        hkls = {}
-        picks = {}
-        for det, hkl_picks in entry.items():
-            hkls[det] = []
-            picks[det] = []
-            for hkl, cur_picks in hkl_picks.items():
-                hkls[det].append(list(map(int, hkl.split())))
-                picks[det].append(cur_picks)
-
-        current = {
-            'material': material,
-            'type': type,
-            'hkls': hkls,
-            'picks': picks,
+    def hand_pick_point(self, item, hkl_str=''):
+        kwargs = {
+            'canvas': self.canvas,
+            'parent': self,
+            'single_pick_mode': True,
         }
-        all_picks.append(current)
 
-    return all_picks
+        picker = LinePickerDialog(**kwargs)
+        picker.current_hkl_label = f'Current hkl:  {hkl_str}'
+
+        title = f'Pick point for:  {hkl_str}'
+        picker.ui.setWindowTitle(title)
+        picker.start()
+
+        finished_func = partial(self.point_picked, item=item)
+        picker.point_picked.connect(finished_func)
+
+    def point_picked(self, x, y, item):
+        model = self.model()
+        left = model.createIndex(item.row(), 1, item)
+        right = model.createIndex(item.row(), 2, item)
+
+        model.setData(left, x)
+        model.setData(right, y)
+
+        # Flag it as changed
+        model.dataChanged.emit(left, right)
+
+    @property
+    def coords_type(self):
+        return self.model().coords_type
+
+    @coords_type.setter
+    def coords_type(self, v):
+        self.model().coords_type = v

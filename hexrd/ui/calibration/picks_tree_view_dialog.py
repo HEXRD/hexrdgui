@@ -9,6 +9,7 @@ from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 
+from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.tree_views.picks_tree_view import PicksTreeView
@@ -18,11 +19,13 @@ from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
 
 class PicksTreeViewDialog:
 
-    def __init__(self, dictionary, canvas=None, parent=None):
+    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
+                 parent=None):
         self.ui = UiLoader().load_file('picks_tree_view_dialog.ui', parent)
 
         self.dictionary = dictionary
-        self.tree_view = PicksTreeView(dictionary, canvas, self.ui)
+        self.tree_view = PicksTreeView(dictionary, coords_type, canvas,
+                                       self.ui)
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
         self.setup_connections()
@@ -138,6 +141,14 @@ class PicksTreeViewDialog:
     @property
     def dict_with_cart_coords(self):
         return picks_angles_to_cartesian(self.dictionary)
+
+    @property
+    def coords_type(self):
+        return self.tree_view.coords_type
+
+    @coords_type.setter
+    def coords_type(self, v):
+        self.tree_view.coords_type = v
 
 
 def convert_picks(picks, conversion_function, **kwargs):

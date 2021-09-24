@@ -112,7 +112,7 @@ class InstrumentViewer:
             data['snip_background'] = self.snip_background
 
         # Add visible polar mask data if we have any
-        for name, mask in HexrdConfig().polar_masks.items():
+        for name, mask in HexrdConfig().masks.items():
             if name not in HexrdConfig().visible_masks:
                 continue
 

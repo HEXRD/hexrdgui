@@ -20,7 +20,7 @@ def convert_raw_to_polar(det, line):
     return [pixels_to_angles(**kwargs)]
 
 
-def create_polar_mask(line_data, name):
+def create_polar_mask(name, line_data):
     # Calculate current image dimensions
     pv = PolarView(None)
     shape = pv.shape
@@ -37,15 +37,13 @@ def create_polar_mask(line_data, name):
         mask = np.ones(shape, dtype=bool)
         mask[rr, cc] = False
         final_mask = np.logical_and(final_mask, mask)
-    HexrdConfig().polar_masks[name] = final_mask
+    HexrdConfig().masks[name] = final_mask
 
 
 def rebuild_polar_masks():
-    HexrdConfig().polar_masks.clear()
-    for name, line_data in HexrdConfig().polar_masks_line_data.items():
-        create_polar_mask(line_data, name)
-    for name, value in HexrdConfig().raw_masks_line_data.items():
+    HexrdConfig().masks.clear()
+    for name, value in HexrdConfig().raw_mask_coords.items():
         line_data = []
         for det, data in value:
             line_data.extend(convert_raw_to_polar(det, data))
-        create_polar_mask(line_data, name)
+        create_polar_mask(name, line_data)

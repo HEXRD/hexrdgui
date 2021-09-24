@@ -1,3 +1,4 @@
+from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import QMessageBox
 
 import numpy as np
@@ -76,3 +77,9 @@ class PowderCalibrationDialog:
         HexrdConfig().material_tth_width_modified.emit(self.material.name)
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
         HexrdConfig().overlay_config_changed.emit()
+
+    def show_optimization_parameters(self, b=True):
+        self.ui.optimization_parameters_group.setVisible(b)
+
+        # Resize later so that the dialog is the correct size
+        QTimer.singleShot(0, lambda: self.ui.resize(self.ui.sizeHint()))
