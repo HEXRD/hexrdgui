@@ -82,4 +82,4 @@ class PowderCalibrationDialog:
         self.ui.optimization_parameters_group.setVisible(b)
 
         # Resize later so that the dialog is the correct size
-        QTimer.singleShot(0, lambda: self.ui.resize(self.ui.sizeHint()));
+        QTimer.singleShot(0, lambda: self.ui.resize(self.ui.sizeHint()))

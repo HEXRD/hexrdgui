@@ -1,5 +1,3 @@
-import copy
-
 from PySide2.QtCore import Qt, QObject, Signal
 
 from itertools import cycle
@@ -291,6 +289,7 @@ class LinePickerDialog(QObject):
         if self.zoom_canvas:
             self.zoom_canvas.disabled = v
         self.show_artists(not v)
+
 
 class LineBuilder(QObject):
 
