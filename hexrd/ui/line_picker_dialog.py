@@ -284,11 +284,12 @@ class LinePickerDialog(QObject):
 
     @property
     def disabled(self):
-        return self.zoom_canvas.disabled
+        return self.zoom_canvas.disabled if self.zoom_canvas else True
 
     @disabled.setter
     def disabled(self, v):
-        self.zoom_canvas.disabled = v
+        if self.zoom_canvas:
+            self.zoom_canvas.disabled = v
         self.show_artists(not v)
 
 class LineBuilder(QObject):

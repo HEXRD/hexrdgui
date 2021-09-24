@@ -9,6 +9,7 @@ from PySide2.QtWidgets import (
     QMessageBox, QVBoxLayout
 )
 
+from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 
@@ -483,8 +484,14 @@ class MainWindow(QObject):
             return self.ui.image_tab_widget.export_current_plot(selected_file)
 
     def on_action_run_calibration_triggered(self):
+        if not hasattr(self, '_calibration_runner_async_runner'):
+            # Initialize this only once and keep it around, so we don't
+            # run into issues connecting/disconnecting the messages.
+            self._calibration_runner_async_runner = AsyncRunner(self.ui)
+
+        async_runner = self._calibration_runner_async_runner
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        runner = CalibrationRunner(canvas)
+        runner = CalibrationRunner(canvas, async_runner)
         self._calibration_runner = runner
 
         try:
