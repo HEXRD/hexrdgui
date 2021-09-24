@@ -51,6 +51,7 @@ class ZoomCanvas(FigureCanvas):
         self.box_overlay_line, = ax.plot([], [], 'm-', animated=True)
         self.crosshairs = None
         self.vhlines = None
+        self.disabled = False
 
         # user-specified ROI in degrees (from interactors)
         self.tth_tol = 0.5
@@ -103,6 +104,9 @@ class ZoomCanvas(FigureCanvas):
             self.crosshairs = None
 
     def button_pressed(self, event):
+        if self.disabled:
+            return
+
         if event.button != 1:
             # Don't do anything if it isn't a left click
             return
@@ -110,6 +114,9 @@ class ZoomCanvas(FigureCanvas):
         self.point_picked.emit(event)
 
     def mouse_moved(self, event):
+        if self.disabled:
+            return
+
         # Clear the crosshairs when the mouse is moving over the canvas
         self.clear_crosshairs()
         self.update_vhlines(event)
@@ -132,6 +139,9 @@ class ZoomCanvas(FigureCanvas):
         hline.set_ydata(event.ydata)
 
     def main_canvas_mouse_moved(self, event):
+        if self.disabled:
+            return
+
         if event.inaxes is None:
             # Do nothing...
             return
@@ -187,6 +197,9 @@ class ZoomCanvas(FigureCanvas):
         self.main_artists_visible = show
 
     def on_main_canvas_draw_event(self, event):
+        if self.disabled:
+            return
+
         invalid = (
             self.xdata is None or
             self.ydata is None or
@@ -246,6 +259,9 @@ class ZoomCanvas(FigureCanvas):
         self.axes[2].autoscale_view()
 
     def render(self):
+        if self.disabled:
+            return
+
         self.clear_crosshairs()
 
         point = (self.xdata, self.ydata)
@@ -344,6 +360,15 @@ class ZoomCanvas(FigureCanvas):
     @property
     def rsimg(self):
         return self.main_canvas.iviewer.img
+
+    @property
+    def disabled(self):
+        return self._disabled
+
+    @disabled.setter
+    def disabled(self, b):
+        self._disabled = b
+        self.show_main_artists(not b)
 
 
 class MainCanvasCursor(Cursor):
