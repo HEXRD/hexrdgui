@@ -22,7 +22,7 @@ from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
-from hexrd.ui.create_raw_mask import rebuild_raw_masks
+from hexrd.ui.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
 from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
@@ -573,11 +573,11 @@ class MainWindow(QObject):
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, line_data):
-        raw_lines = HexrdConfig().raw_masks_line_data
-        polar_lines = HexrdConfig().polar_masks_line_data
         for line in line_data:
-            name = unique_name({**raw_lines, **polar_lines}, 'polar_mask_0')
-            HexrdConfig().polar_masks_line_data[name] = [line.copy()]
+            name = unique_name(
+                HexrdConfig().raw_mask_coords, 'polar_mask_0')
+            raw_line = convert_polar_to_raw([line])
+            HexrdConfig().raw_mask_coords[name] = raw_line
             HexrdConfig().visible_masks.append(name)
             create_polar_mask([line.copy()], name)
         HexrdConfig().polar_masks_changed.emit()
@@ -608,11 +608,10 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        raw_lines = HexrdConfig().raw_masks_line_data
-        polar_lines = HexrdConfig().polar_masks_line_data
-        name = unique_name({**raw_lines, **polar_lines}, 'laue_mask')
+        name = unique_name(HexrdConfig().raw_mask_coords, 'laue_mask')
         create_polar_mask(data, name)
-        HexrdConfig().polar_masks_line_data[name] = data
+        raw_data = convert_polar_to_raw(data)
+        HexrdConfig().raw_mask_coords[name] = raw_data
         HexrdConfig().visible_masks.append(name)
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
