@@ -178,10 +178,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = {}
-        self.polar_masks = {}
-        self.polar_masks_line_data = {}
-        self.raw_masks = {}
-        self.raw_masks_line_data = {}
+        self.masks = {}
+        self.raw_mask_coords = {}
         self.visible_masks = []
         self.backup_tth_maxes = {}
         self.overlays = []
@@ -1345,8 +1343,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 overlay['refinements'] = default_refinements
 
     @property
-    def visible_polar_masks(self):
-        masks = self.polar_masks.items()
+    def visible_masks(self):
+        masks = self.masks.items()
         visible = self.visible_masks
         return [mask for name, mask in masks if name in visible]
 

@@ -133,7 +133,7 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, data in HexrdConfig().raw_masks.items():
+                for mask_name, data in HexrdConfig().masks.items():
                     for det, mask in data:
                         if (mask_name in HexrdConfig().visible_masks and
                                 det == name):
@@ -157,7 +157,7 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, data in HexrdConfig().raw_masks.items():
+                for mask_name, data in HexrdConfig().masks.items():
                     for det, mask in data:
                         if (mask_name in HexrdConfig().visible_masks and
                                 det == name):
