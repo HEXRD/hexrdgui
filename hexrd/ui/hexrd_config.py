@@ -1343,7 +1343,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 overlay['refinements'] = default_refinements
 
     @property
-    def visible_masks(self):
+    def visible_polar_masks(self):
         masks = self.masks.items()
         visible = self.visible_masks
         return [mask for name, mask in masks if name in visible]
