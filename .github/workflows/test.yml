@@ -76,7 +76,7 @@ jobs:
     - name: Install requirements.txt
       run: |
           pip install -r tests/requirements.txt
-      working-directory: hexrd
+      working-directory: hexrdgui
 
     - name: Run tests
       env:
