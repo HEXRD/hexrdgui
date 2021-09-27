@@ -1,5 +1,5 @@
 from hexrd.ui.create_polar_mask import rebuild_polar_masks
-from hexrd.ui.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
+from hexrd.ui.create_raw_mask import rebuild_raw_masks
 import os
 import numpy as np
 import h5py
@@ -40,12 +40,8 @@ class MaskManagerDialog(QObject):
 
     def create_masks_list(self):
         self.masks = {}
-        polar_data = HexrdConfig().polar_masks_line_data
-        raw_data = HexrdConfig().raw_masks_line_data
+        raw_data = HexrdConfig().raw_mask_coords
 
-        for key, val in polar_data.items():
-            if not any(np.array_equal(m, val) for m in self.masks.values()):
-                self.masks[key] = ('polar', val)
         for key, val in raw_data.items():
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = val
@@ -56,18 +52,10 @@ class MaskManagerDialog(QObject):
         HexrdConfig().visible_masks = list(self.masks.keys())
 
     def update_masks_list(self, mask_type):
-        if mask_type == 'polar':
-            if not HexrdConfig().polar_masks_line_data:
+        if mask_type == 'raw' or mask_type == 'polar':
+            if not HexrdConfig().raw_mask_coords:
                 return
-            for name, data in HexrdConfig().polar_masks_line_data.items():
-                vals = self.masks.values()
-                if any(np.array_equal(v, m) for v, (_, m) in zip(data, vals)):
-                    continue
-                self.masks[name] = (mask_type, data)
-        elif mask_type == 'raw':
-            if not HexrdConfig().raw_masks_line_data:
-                return
-            for name, value in HexrdConfig().raw_masks_line_data.items():
+            for name, value in HexrdConfig().raw_mask_coords.items():
                 det, val = value[0]
                 vals = self.masks.values()
                 if any(np.array_equal(val, m) for _, m in vals):
@@ -156,10 +144,8 @@ class MaskManagerDialog(QObject):
         del self.masks[name]
         if name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
-        HexrdConfig().polar_masks_line_data.pop(name, None)
-        HexrdConfig().polar_masks.pop(name, None)
-        HexrdConfig().raw_masks_line_data.pop(name, None)
-        HexrdConfig().raw_masks.pop(name, None)
+        HexrdConfig().raw_mask_coords.pop(name, None)
+        HexrdConfig().masks.pop(name, None)
         if mtype == 'threshold':
             self.reset_threshold()
 
@@ -188,19 +174,13 @@ class MaskManagerDialog(QObject):
                 return
 
             self.masks[new_name] = self.masks.pop(self.old_name)
-            if self.old_name in HexrdConfig().polar_masks_line_data.keys():
-                value = HexrdConfig().polar_masks_line_data.pop(self.old_name)
-                HexrdConfig().polar_masks_line_data[new_name] = value
-            elif self.old_name in HexrdConfig().raw_masks_line_data.keys():
-                value = HexrdConfig().raw_masks_line_data.pop(self.old_name)
-                HexrdConfig().raw_masks_line_data[new_name] = value
+            if self.old_name in HexrdConfig().raw_mask_coords.keys():
+                value = HexrdConfig().raw_mask_coords.pop(self.old_name)
+                HexrdConfig().raw_mask_coords[new_name] = value
 
-            if self.old_name in HexrdConfig().polar_masks.keys():
-                value = HexrdConfig().polar_masks.pop(self.old_name)
-                HexrdConfig().polar_masks[new_name] = value
-            if self.old_name in HexrdConfig().raw_masks.keys():
-                value = HexrdConfig().raw_masks.pop(self.old_name)
-                HexrdConfig().raw_masks[new_name] = value
+            if self.old_name in HexrdConfig().masks.keys():
+                value = HexrdConfig().masks.pop(self.old_name)
+                HexrdConfig().masks[new_name] = value
 
             if self.old_name in HexrdConfig().visible_masks:
                 HexrdConfig().visible_masks.append(new_name)
@@ -216,9 +196,8 @@ class MaskManagerDialog(QObject):
             export = menu.addAction('Export Mask')
             action = menu.exec_(QCursor.pos())
             if action == export:
-                self.convert_polar_to_raw()
                 selection = self.ui.masks_table.item(index.row(), 0).text()
-                data = HexrdConfig().raw_masks_line_data[selection]
+                data = HexrdConfig().raw_mask_coords[selection]
                 d = {}
                 for i, (det, mask) in enumerate(data):
                     parent = d.setdefault(det, {})
@@ -238,26 +217,19 @@ class MaskManagerDialog(QObject):
                 unwrap_dict_to_h5(masks_group, data, asattr=False)
 
     def export_visible_masks(self):
-        self.convert_polar_to_raw()
         d = {}
         for name in HexrdConfig().visible_masks:
-            data = HexrdConfig().raw_masks_line_data[name]
+            data = HexrdConfig().raw_mask_coords[name]
             for i, (det, mask) in enumerate(data):
                 parent = d.setdefault(det, {})
                 parent.setdefault(name, {})[str(i)] = mask
         self.export_masks(d)
 
     def clear_masks(self):
-        HexrdConfig().polar_masks.clear()
-        HexrdConfig().raw_masks.clear()
+        HexrdConfig().masks.clear()
         HexrdConfig().visible_masks.clear()
         self.masks.clear()
         self.setup_table()
-
-    def convert_polar_to_raw(self):
-        for name, data in HexrdConfig().polar_masks_line_data.items():
-            line_data = convert_polar_to_raw(data)
-            HexrdConfig().raw_masks_line_data[name] = line_data
 
     def import_masks(self):
         selected_file, _ = QFileDialog.getOpenFileName(
@@ -273,7 +245,7 @@ class MaskManagerDialog(QObject):
         with h5py.File(selected_file, 'r') as f:
             unwrap_h5_to_dict(f, masks_dict)
 
-        raw_line_data = HexrdConfig().raw_masks_line_data
+        raw_line_data = HexrdConfig().raw_mask_coords
         mask_data = masks_dict['masks']
         for det, data in mask_data.items():
             if det not in HexrdConfig().detector_names:

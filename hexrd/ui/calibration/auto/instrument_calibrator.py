@@ -135,7 +135,7 @@ class InstrumentCalibrator(object):
         iter_count = 0
         while delta_r > conv_tol \
             and step_successful \
-                and iter_count <= max_iter:
+                and iter_count < max_iter:
 
             # extract data
             master_data_dict_list = self.extract_points(

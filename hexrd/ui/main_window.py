@@ -9,6 +9,7 @@ from PySide2.QtWidgets import (
     QMessageBox, QVBoxLayout
 )
 
+from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 
@@ -22,7 +23,8 @@ from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
-from hexrd.ui.create_raw_mask import create_raw_mask, rebuild_raw_masks
+from hexrd.ui.create_raw_mask import (
+    convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
@@ -179,6 +181,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
+        self.ui.action_edit_apply_powder_mask_to_polar.triggered.connect(
+            self.action_edit_apply_powder_mask_to_polar)
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
             self.on_action_edit_apply_polygon_mask_triggered)
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
@@ -483,8 +487,14 @@ class MainWindow(QObject):
             return self.ui.image_tab_widget.export_current_plot(selected_file)
 
     def on_action_run_calibration_triggered(self):
+        if not hasattr(self, '_calibration_runner_async_runner'):
+            # Initialize this only once and keep it around, so we don't
+            # run into issues connecting/disconnecting the messages.
+            self._calibration_runner_async_runner = AsyncRunner(self.ui)
+
+        async_runner = self._calibration_runner_async_runner
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        runner = CalibrationRunner(canvas)
+        runner = CalibrationRunner(canvas, async_runner)
         self._calibration_runner = runner
 
         try:
@@ -573,23 +583,24 @@ class MainWindow(QObject):
             self.run_apply_polar_mask)
 
     def run_apply_polar_mask(self, dets, line_data):
-        raw_lines = HexrdConfig().raw_masks_line_data
-        polar_lines = HexrdConfig().polar_masks_line_data
-        if self.image_mode == ViewType.raw:
-            for det, line in zip(dets, line_data):
-                name = unique_name({**raw_lines, **polar_lines}, 'raw_mask_0')
-                HexrdConfig().raw_masks_line_data[name] = [(det, line.copy())]
-                HexrdConfig().visible_masks.append(name)
-                create_raw_mask(name, [(det, line.copy())])
-            HexrdConfig().raw_masks_changed.emit()
-        elif self.image_mode == ViewType.polar:
+        if self.image_mode == ViewType.polar:
             for line in line_data:
                 name = unique_name(
-                    {**raw_lines, **polar_lines}, 'polar_mask_0')
-                HexrdConfig().polar_masks_line_data[name] = line.copy()
+                    HexrdConfig().raw_mask_coords, 'polar_mask_0')
+                raw_line = convert_polar_to_raw([line])
+                HexrdConfig().raw_mask_coords[name] = raw_line
                 HexrdConfig().visible_masks.append(name)
-                create_polar_mask([line.copy()], name)
+                create_polar_mask(name, [line])
             HexrdConfig().polar_masks_changed.emit()
+        elif self.image_mode == ViewType.raw:
+            for det, line in zip(dets, line_data):
+                for line in line_data:
+                    name = unique_name(
+                        HexrdConfig().raw_mask_coords, 'raw_mask_0')
+                    HexrdConfig().raw_mask_coords[name] = line.copy()
+                    HexrdConfig().visible_masks.append(name)
+                    create_raw_mask(name, [(det, line)])
+                HexrdConfig().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -617,14 +628,52 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        raw_lines = HexrdConfig().raw_masks_line_data
-        polar_lines = HexrdConfig().polar_masks_line_data
-        name = unique_name({**raw_lines, **polar_lines}, 'laue_mask')
-        create_polar_mask(data, name)
-        HexrdConfig().polar_masks_line_data[name] = data
+        name = unique_name(HexrdConfig().raw_mask_coords, 'laue_mask')
+        create_polar_mask(name, data)
+        raw_data = convert_polar_to_raw(data)
+        HexrdConfig().raw_mask_coords[name] = raw_data
         HexrdConfig().visible_masks.append(name)
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
+
+    def action_edit_apply_powder_mask_to_polar(self):
+        if not HexrdConfig().show_overlays:
+            msg = 'Overlays are not displayed'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        overlays = HexrdConfig().overlays
+        powder_overlays = (
+            [x for x in overlays if x['type'] == OverlayType.powder])
+        powder_overlays = [x for x in powder_overlays if x['visible']]
+        if not powder_overlays:
+            msg = 'No powder overlays found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        data = []
+        for overlay in powder_overlays:
+            for _, val in overlay['data'].items():
+                a = iter(val['rbnds'])
+                for start, end in zip(a, a):
+                    ranges = np.array(np.flip(start, axis=1))
+                    ranges = np.append(ranges, np.flip(end), axis=0)
+                    ranges = np.append(ranges, [ranges[0]], axis=0)
+                    data.append(ranges[~np.isnan(ranges).any(axis=1)])
+
+        if not data:
+            msg = 'No powder overlay ranges found'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        name = unique_name(HexrdConfig().raw_mask_coords, 'powder_mask')
+        create_polar_mask(name, data)
+        raw_data = convert_polar_to_raw(data)
+        HexrdConfig().raw_mask_coords[name] = raw_data
+        HexrdConfig().visible_masks.append(name)
+        self.new_mask_added.emit(self.image_mode)
+        HexrdConfig().polar_masks_changed.emit()
+
 
     def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
@@ -675,6 +724,7 @@ class MainWindow(QObject):
             (is_polar or is_raw) and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
+        self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
 
     def start_powder_calibration(self):
         if not HexrdConfig().has_images():

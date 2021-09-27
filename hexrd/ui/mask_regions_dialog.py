@@ -1,7 +1,7 @@
+from hexrd.ui.create_polar_mask import create_polar_mask
 from PySide2.QtCore import QObject, Signal
 
-from hexrd.ui.create_polar_mask import create_polar_mask
-from hexrd.ui.create_raw_mask import create_raw_mask
+from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
 from hexrd.ui.utils import unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.constants import ViewType
@@ -28,8 +28,7 @@ class MaskRegionsDialog(QObject):
         self.patches = {}
         self.canvas = None
         self.image_mode = None
-        self.polar_masks_line_data = []
-        self.raw_masks_line_data = []
+        self.raw_mask_coords = []
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -130,10 +129,7 @@ class MaskRegionsDialog(QObject):
 
     def discard_patch(self):
         det = self.added_patches.pop()
-        if det == ViewType.polar:
-            self.polar_masks_line_data.pop()
-        else:
-            self.raw_masks_line_data.pop()
+        self.raw_mask_coords.pop()
         return self.patches[det].pop(), det
 
     def undo_selection(self):
@@ -191,30 +187,28 @@ class MaskRegionsDialog(QObject):
         data_coords = self.patch.get_patch_transform().transform(
             self.patch.get_path().vertices[:-1])
         if self.image_mode == ViewType.raw:
-            self.raw_masks_line_data.append((self.det, data_coords))
+            self.raw_mask_coords.append((self.det, data_coords))
         elif self.image_mode == ViewType.polar:
-            self.polar_masks_line_data.append([data_coords])
+            self.raw_mask_coords.append([data_coords])
 
     def create_masks(self):
-        raw_lines = HexrdConfig().raw_masks_line_data
-        polar_lines = HexrdConfig().polar_masks_line_data
-        for data in self.raw_masks_line_data:
-            name = unique_name({**raw_lines, **polar_lines}, 'raw_mask_0')
-            HexrdConfig().raw_masks_line_data[name] = [data]
-            create_raw_mask(name, [data])
+        for data in self.raw_mask_coords:
+            name = unique_name(
+                HexrdConfig().raw_mask_coords, f'{self.image_mode}_mask_0')
+            if self.image_mode == 'raw':
+                HexrdConfig().raw_mask_coords[name] = [data]
+                create_raw_mask(name, [data])
+            elif self.image_mode == 'polar':
+                raw_coords = convert_polar_to_raw(data)
+                HexrdConfig().raw_mask_coords[name] = raw_coords
+                create_polar_mask(name, data)
             HexrdConfig().visible_masks.append(name)
 
-        for data_coords in self.polar_masks_line_data:
-            name = unique_name({**raw_lines, **polar_lines}, 'polar_mask_0')
-            HexrdConfig().polar_masks_line_data[name] = data_coords
-            create_polar_mask(data_coords, name)
-            HexrdConfig().visible_masks.append(name)
-
-        if self.raw_masks_line_data:
-            HexrdConfig().raw_masks_changed.emit()
-
-        if self.polar_masks_line_data:
-            HexrdConfig().polar_masks_changed.emit()
+        masks_changed_signal = {
+            'raw': HexrdConfig().raw_masks_changed,
+            'polar': HexrdConfig().polar_masks_changed
+        }
+        masks_changed_signal[self.image_mode].emit()
 
     def button_released(self, event):
         if not self.press:
