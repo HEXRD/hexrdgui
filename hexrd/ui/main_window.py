@@ -23,7 +23,8 @@ from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
-from hexrd.ui.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
+from hexrd.ui.create_raw_mask import (
+    convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import (
     OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
@@ -174,9 +175,9 @@ class MainWindow(QObject):
             self.on_action_export_current_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
-        self.ui.action_edit_apply_polar_mask.triggered.connect(
-            self.on_action_edit_apply_polar_mask_triggered)
-        self.ui.action_edit_apply_polar_mask.triggered.connect(
+        self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
+            self.on_action_edit_apply_hand_drawn_mask_triggered)
+        self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
@@ -572,24 +573,33 @@ class MainWindow(QObject):
         self.update_all()
         self.update_config_gui()
 
-    def on_action_edit_apply_polar_mask_triggered(self):
+    def on_action_edit_apply_hand_drawn_mask_triggered(self):
         # Make the dialog
         canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._apply_polar_mask_line_picker = (
+        self._apply_drawn_mask_line_picker = (
             HandDrawnMaskDialog(canvas, self.ui))
-        self._apply_polar_mask_line_picker.start()
-        self._apply_polar_mask_line_picker.finished.connect(
-            self.run_apply_polar_mask)
+        self._apply_drawn_mask_line_picker.start()
+        self._apply_drawn_mask_line_picker.finished.connect(
+            self.run_apply_hand_drawn_mask)
 
-    def run_apply_polar_mask(self, line_data):
-        for line in line_data:
-            name = unique_name(
-                HexrdConfig().raw_mask_coords, 'polar_mask_0')
-            raw_line = convert_polar_to_raw([line])
-            HexrdConfig().raw_mask_coords[name] = raw_line
-            HexrdConfig().visible_masks.append(name)
-            create_polar_mask(name, [line])
-        HexrdConfig().polar_masks_changed.emit()
+    def run_apply_hand_drawn_mask(self, dets, line_data):
+        if self.image_mode == ViewType.polar:
+            for line in line_data:
+                name = unique_name(
+                    HexrdConfig().raw_mask_coords, 'polar_mask_0')
+                raw_line = convert_polar_to_raw([line])
+                HexrdConfig().raw_mask_coords[name] = raw_line
+                HexrdConfig().visible_masks.append(name)
+                create_polar_mask(name, [line])
+            HexrdConfig().polar_masks_changed.emit()
+        elif self.image_mode == ViewType.raw:
+            for det, line in zip(dets, line_data):
+                name = unique_name(
+                    HexrdConfig().raw_mask_coords, 'raw_mask_0')
+                HexrdConfig().raw_mask_coords[name] = [(det, line.copy())]
+                HexrdConfig().visible_masks.append(name)
+                create_raw_mask(name, [(det, line)])
+            HexrdConfig().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -702,14 +712,15 @@ class MainWindow(QObject):
         # This is for enable states that depend on the image mode
         is_cartesian = self.image_mode == ViewType.cartesian
         is_polar = self.image_mode == ViewType.polar
+        is_raw = self.image_mode == ViewType.raw
 
         has_images = HexrdConfig().has_images()
 
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian) and has_images)
         self.ui.action_run_calibration.setEnabled(is_polar and has_images)
-        self.ui.action_edit_apply_polar_mask.setEnabled(is_polar and
-                                                        has_images)
+        self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
+            (is_polar or is_raw) and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
