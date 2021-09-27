@@ -198,16 +198,16 @@ class MaskManagerDialog(QObject):
             if action == export:
                 selection = self.ui.masks_table.item(index.row(), 0).text()
                 data = HexrdConfig().raw_mask_coords[selection]
-                d = {'visible': []}
+                d = {'_visible': []}
                 if selection in HexrdConfig().visible_masks:
-                    d['visible'] = [selection]
+                    d['_visible'] = [selection]
                 for i, (det, mask) in enumerate(data):
                     parent = d.setdefault(det, {})
                     parent.setdefault(selection, {})[str(i)] = mask
                 self.export_masks_to_file(d)
 
     def write_all_masks(self, h5py_group=None):
-        d = {'visible': HexrdConfig().visible_masks}
+        d = {'_visible': HexrdConfig().visible_masks}
         for name, data in HexrdConfig().raw_mask_coords.items():
             for i, (det, mask) in enumerate(data):
                 parent = d.setdefault(det, {})
@@ -258,7 +258,7 @@ class MaskManagerDialog(QObject):
     def load_masks(self, h5py_group):
         raw_line_data = HexrdConfig().raw_mask_coords
         for key, data in h5py_group.items():
-            if key == 'visible':
+            if key == '_visible':
                 HexrdConfig().visible_masks = list(data)
             else:
                 if key not in HexrdConfig().detector_names:
