@@ -198,16 +198,17 @@ class MaskManagerDialog(QObject):
             if action == export:
                 selection = self.ui.masks_table.item(index.row(), 0).text()
                 data = HexrdConfig().raw_mask_coords[selection]
-                d = {}
+                d = {'visible': []}
+                if selection in HexrdConfig().visible_masks:
+                    d['visible'] = [selection]
                 for i, (det, mask) in enumerate(data):
                     parent = d.setdefault(det, {})
                     parent.setdefault(selection, {})[str(i)] = mask
                 self.export_masks_to_file(d)
 
-    def write_visible_masks(self, h5py_group=None):
-        d = {}
-        for name in HexrdConfig().visible_masks:
-            data = HexrdConfig().raw_mask_coords[name]
+    def write_all_masks(self, h5py_group=None):
+        d = {'visible': HexrdConfig().visible_masks}
+        for name, data in HexrdConfig().raw_mask_coords.items():
             for i, (det, mask) in enumerate(data):
                 parent = d.setdefault(det, {})
                 parent.setdefault(name, {})[str(i)] = mask
@@ -255,22 +256,27 @@ class MaskManagerDialog(QObject):
         self.load_masks(masks_dict['masks'])
 
     def load_masks(self, h5py_group):
-        raw_line_data = HexrdConfig().raw_masks_line_data
-        for det, data in h5py_group.items():
-            if det not in HexrdConfig().detector_names:
-                msg = (
-                    f'Detectors must match.\n'
-                    f'Current detectors: {HexrdConfig().detector_names}.\n'
-                    f'Detectors found in masks: {list(h5py_group.keys())}')
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                return
-            for name, masks in data.items():
-                for mask in masks.values():
-                    raw_line_data.setdefault(name, []).append((det, mask))
+        raw_line_data = HexrdConfig().raw_mask_coords
+        for key, data in h5py_group.items():
+            if key == 'visible':
+                HexrdConfig().visible_masks = list(data)
+            else:
+                if key not in HexrdConfig().detector_names:
+                    msg = (
+                        f'Detectors must match.\n'
+                        f'Current detectors: {HexrdConfig().detector_names}.\n'
+                        f'Detectors found in masks: {list(h5py_group.keys())}')
+                    QMessageBox.warning(self.ui, 'HEXRD', msg)
+                    return
+                for name, masks in data.items():
+                    for mask in masks.values():
+                        raw_line_data.setdefault(name, []).append((key, mask))
 
         if self.image_mode == ViewType.raw:
             rebuild_raw_masks()
+            HexrdConfig().raw_masks_changed.emit()
         elif self.image_mode == ViewType.polar:
             rebuild_polar_masks()
+            HexrdConfig().polar_masks_changed.emit()
 
         self.update_masks_list('raw')
