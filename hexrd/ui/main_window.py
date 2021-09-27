@@ -580,9 +580,9 @@ class MainWindow(QObject):
             HandDrawnMaskDialog(canvas, self.ui))
         self._apply_drawn_mask_line_picker.start()
         self._apply_drawn_mask_line_picker.finished.connect(
-            self.run_apply_polar_mask)
+            self.run_apply_hand_drawn_mask)
 
-    def run_apply_polar_mask(self, dets, line_data):
+    def run_apply_hand_drawn_mask(self, dets, line_data):
         if self.image_mode == ViewType.polar:
             for line in line_data:
                 name = unique_name(
