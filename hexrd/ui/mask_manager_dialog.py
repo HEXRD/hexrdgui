@@ -73,7 +73,7 @@ class MaskManagerDialog(QObject):
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
         self.ui.masks_table.customContextMenuRequested.connect(
             self.context_menu_event)
-        self.ui.export_masks.clicked.connect(self.gather_visible_masks)
+        self.ui.export_masks.clicked.connect(self.write_all_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
