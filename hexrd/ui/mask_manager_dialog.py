@@ -72,8 +72,8 @@ class MaskManagerDialog(QObject):
         self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
         self.ui.masks_table.customContextMenuRequested.connect(
-            self.context_menu_event)
-        self.ui.export_masks.clicked.connect(self.export_visible_masks)
+            self.export_masks)
+        self.ui.export_masks.clicked.connect(self.export_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
@@ -202,19 +202,25 @@ class MaskManagerDialog(QObject):
                 for i, (det, mask) in enumerate(data):
                     parent = d.setdefault(det, {})
                     parent.setdefault(selection, {})[str(i)] = mask
-                self.export_masks(d)
+                return d
 
-    def export_masks(self, data):
-        selected_file, _ = QFileDialog.getSaveFileName(
-            self.ui, 'Save Mask', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+    def export_masks(self, event=False, h5py_group=None):
+        if event:
+            data = self.context_menu_event(event)
+        else:
+            data = self.export_visible_masks()
 
-        if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
+        if h5py_group is None:
+            output_file, _ = QFileDialog.getSaveFileName(
+                self.ui, 'Save Mask', HexrdConfig().working_dir,
+                'HDF5 files (*.h5 *.hdf5)')
+            HexrdConfig().working_dir = os.path.dirname(output_file)
             # write to hdf5
-            with h5py.File(selected_file, 'w') as f:
-                masks_group = f.create_group('masks')
-                unwrap_dict_to_h5(masks_group, data, asattr=False)
+            with h5py.File(output_file, 'w') as f:
+                h5py_group = f.create_group('masks')
+                unwrap_dict_to_h5(h5py_group, data, asattr=False)
+        else:
+            unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
     def export_visible_masks(self):
         d = {}
@@ -223,7 +229,7 @@ class MaskManagerDialog(QObject):
             for i, (det, mask) in enumerate(data):
                 parent = d.setdefault(det, {})
                 parent.setdefault(name, {})[str(i)] = mask
-        self.export_masks(d)
+        return d
 
     def clear_masks(self):
         HexrdConfig().masks.clear()
@@ -244,15 +250,16 @@ class MaskManagerDialog(QObject):
         masks_dict = {}
         with h5py.File(selected_file, 'r') as f:
             unwrap_h5_to_dict(f, masks_dict)
+        self.load_masks(masks_dict['masks'])
 
-        raw_line_data = HexrdConfig().raw_mask_coords
-        mask_data = masks_dict['masks']
-        for det, data in mask_data.items():
+    def load_masks(self, h5py_group):
+        raw_line_data = HexrdConfig().raw_masks_line_data
+        for det, data in h5py_group.items():
             if det not in HexrdConfig().detector_names:
                 msg = (
                     f'Detectors must match.\n'
                     f'Current detectors: {HexrdConfig().detector_names}.\n'
-                    f'Detectors found in masks: {list(mask_data.keys())}')
+                    f'Detectors found in masks: {list(h5py_group.keys())}')
                 QMessageBox.warning(self.ui, 'HEXRD', msg)
                 return
             for name, masks in data.items():
