@@ -204,7 +204,7 @@ class MaskManagerDialog(QObject):
                     parent.setdefault(selection, {})[str(i)] = mask
                 self.export_masks_to_file(d)
 
-    def gather_visible_masks(self, h5py_group=None):
+    def write_visible_masks(self, h5py_group=None):
         d = {}
         for name in HexrdConfig().visible_masks:
             data = HexrdConfig().raw_mask_coords[name]
@@ -228,7 +228,7 @@ class MaskManagerDialog(QObject):
         # write to hdf5
         with h5py.File(output_file, 'w') as f:
             h5py_group = f.create_group('masks')
-            unwrap_dict_to_h5(h5py_group, data, asattr=False)
+            self.write_masks_to_group(data, h5py_group)
 
     def write_masks_to_group(self, data, h5py_group):
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
