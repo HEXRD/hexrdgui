@@ -313,7 +313,8 @@ class PolarView:
         # Apply user-specified masks if they are present
         img = img.copy()
         total_mask = self.raw_mask
-        for mask in HexrdConfig().visible_polar_masks:
+        for name in HexrdConfig().visible_masks:
+            mask = HexrdConfig().masks[name]
             total_mask = np.logical_or(total_mask, ~mask)
         img[total_mask] = np.nan
 
