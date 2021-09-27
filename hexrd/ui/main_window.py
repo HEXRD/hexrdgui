@@ -594,13 +594,12 @@ class MainWindow(QObject):
             HexrdConfig().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
-                for line in line_data:
-                    name = unique_name(
-                        HexrdConfig().raw_mask_coords, 'raw_mask_0')
-                    HexrdConfig().raw_mask_coords[name] = line.copy()
-                    HexrdConfig().visible_masks.append(name)
-                    create_raw_mask(name, [(det, line)])
-                HexrdConfig().raw_masks_changed.emit()
+                name = unique_name(
+                    HexrdConfig().raw_mask_coords, 'raw_mask_0')
+                HexrdConfig().raw_mask_coords[name] = [(det, line.copy())]
+                HexrdConfig().visible_masks.append(name)
+                create_raw_mask(name, [(det, line)])
+            HexrdConfig().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
