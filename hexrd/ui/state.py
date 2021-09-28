@@ -1,9 +1,11 @@
-import hexrd.ui
-from hexrd.ui.hexrd_config import HexrdConfig
-import yaml
 from pathlib import Path
+
 import h5py
 import numpy as np
+import yaml
+
+import hexrd.ui
+from hexrd.ui.hexrd_config import HexrdConfig
 
 CONFIG_PREFIX = "config"
 CONFIG_YAML_PATH = str(Path(CONFIG_PREFIX) / "yaml")
@@ -131,12 +133,61 @@ def save(h5_file):
     """
     Save the state of the application in a HDF5 file
     """
-    _save_config(h5_file, HexrdConfig().state_to_persist())
+
+    # We load the instrument config in a different way...
+    skip_list = [
+        'config_instrument',
+    ]
+
+    state = HexrdConfig().state_to_persist()
+    for entry in skip_list:
+        if entry in state:
+            del state[entry]
+
+    # Save the state
+    _save_config(h5_file, state)
+
+    # Write out the materials
+    HexrdConfig().save_materials(h5_file, '/materials')
+
+    # Write out the instrument
+    HexrdConfig().save_instrument_config(h5_file)
+
+    # Get any connected parts to save state...
+    HexrdConfig().save_state.emit(h5_file)
 
 
 def load(h5_file):
     """
     Load application state from a HDF5 file
     """
-    state = _load_config(h5_file)
-    HexrdConfig().load_from_state(state)
+    HexrdConfig().loading_state = True
+    try:
+        # First, load the materials
+        HexrdConfig().load_materials(h5_file['/materials'])
+
+        # Now, load the state
+        state = _load_config(h5_file)
+
+        # Rename the state variables to the attribute names...
+        renamed_state = {}
+        for name, _ in HexrdConfig()._attributes_to_persist():
+            old_name = HexrdConfig()._attribute_to_settings_key(name)
+            if old_name in state:
+                renamed_state[name] = state.pop(old_name)
+
+        HexrdConfig().load_from_state(renamed_state)
+
+        # Load the instrument config...
+        HexrdConfig().load_instrument_config(h5_file)
+
+        # Get any connected parts to load state...
+        HexrdConfig().load_state.emit(h5_file)
+
+        # Just in case the workflow changed...
+        HexrdConfig().workflow_changed.emit()
+    finally:
+        HexrdConfig().loading_state = False
+
+    # Indicate that the state was loaded...
+    HexrdConfig().state_loaded.emit()

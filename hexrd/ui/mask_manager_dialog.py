@@ -80,6 +80,9 @@ class MaskManagerDialog(QObject):
             self.update_masks_list)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
 
+        HexrdConfig().save_state.connect(self.save_state)
+        HexrdConfig().load_state.connect(self.load_state)
+
     def setup_table(self, status=True):
         with block_signals(self.ui.masks_table):
             self.ui.masks_table.setRowCount(0)
@@ -206,6 +209,16 @@ class MaskManagerDialog(QObject):
                     parent = d.setdefault(det, {})
                     parent.setdefault(selection, {})[str(i)] = mask
                 self.export_masks_to_file(d)
+
+    def save_state(self, h5py_group):
+        if 'masks' not in h5py_group:
+            h5py_group.create_group('masks')
+
+        self.write_all_masks(h5py_group['masks'])
+
+    def load_state(self, h5py_group):
+        if 'masks' in h5py_group:
+            self.load_masks(h5py_group['masks'])
 
     def write_all_masks(self, h5py_group=None):
         d = {'_visible': HexrdConfig().visible_masks}

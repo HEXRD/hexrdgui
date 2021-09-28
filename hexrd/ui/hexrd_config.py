@@ -159,6 +159,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     update_reflections_tables = Signal(str)
 
+    """Emitted when parts of the GUI should save their state in the file"""
+    save_state = Signal(h5py.File)
+
+    """Emitted when parts of the GUI should load their state from the file"""
+    load_state = Signal(h5py.File)
+
+    """Indicate that the state was loaded..."""
+    state_loaded = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -194,6 +203,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.llnl_boundary_positions = {}
         self.logging_stdout_handler = None
         self.logging_stderr_handler = None
+        self.loading_state = False
 
         self.setup_logging()
 
@@ -231,7 +241,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Re-load the previous active material if available
         mat = self.previous_active_material
-        if mat is not None and mat in self.materials.keys():
+        if mat is not None and mat in self.materials:
             self.active_material = mat
 
         self.update_visible_material_energies()
@@ -255,6 +265,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     # state.
     def _attributes_to_persist(self):
         return [
+            ('active_material_name', None),
             ('config_instrument', None),
             ('config_calibration', None),
             ('config_indexing', None),
@@ -265,7 +276,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('live_update', True),
             ('euler_angle_convention',
                 constants.DEFAULT_EULER_ANGLE_CONVENTION),
-            ('previous_active_material', None),
             ('collapsed_state', []),
             ('load_panel_state', {}),
             ('stack_state', {}),
@@ -280,7 +290,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         exceptions = {
             'llnl_boundary_positions': 'boundary_positions',
             'stack_state': 'image_stack_state',
-            'previous_active_material': 'active_material'
+            'active_material_name': 'active_material',
         }
 
         if attribute_name in exceptions:
@@ -324,18 +334,33 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         Update HexrdConfig using a loaded state.
         """
 
+        # The "active_material_name" is a special case that will be set to
+        # "previous_active_material".
         # We have to special case euler_angle_convention as its need to be set
         # using set_euler_angle_convention, see below
-        skip = ['euler_angle_convention']
+        skip = [
+            'active_material_name',
+            'euler_angle_convention',
+        ]
 
-        for name, value in state.items():
-            if name not in skip:
-                setattr(self, name, value)
+        try:
+            for name, value in state.items():
+                if name not in skip:
+                    setattr(self, name, value)
+        except AttributeError:
+            raise AttributeError(f'Failed to set attribute {name}')
 
         # All QSettings come back as strings. So check that we are dealing with
         # a boolean and convert if necessary
         if not isinstance(self.live_update, bool):
             self.live_update = self.live_update == 'true'
+
+        self.previous_active_material = state.get('active_material_name')
+
+        # Re-load the previous active material if available
+        mat = self.previous_active_material
+        if mat is not None and mat in self.materials:
+            self.active_material = mat
 
         # Read the attribute set by _load_attributes
         conv = state['euler_angle_convention']
@@ -574,8 +599,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return utils.instr_to_internal_dict(instr)
 
         def read_hexrd():
-            with h5py.File(path, 'r') as f:
-                instr = HEDMInstrument(f, tilt_calibration_mapping=rme)
+            def read_file(f):
+                return HEDMInstrument(f, tilt_calibration_mapping=rme)
+
+            if isinstance(path, h5py.File):
+                instr = read_file(path)
+            else:
+                with h5py.File(path, 'r') as f:
+                    instr = read_file(f)
 
             return utils.instr_to_internal_dict(instr)
 
@@ -584,7 +615,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             '.hexrd': read_hexrd,
         }
 
-        ext = Path(path).suffix
+        if isinstance(path, h5py.File):
+            ext = '.hexrd'
+        else:
+            ext = Path(path).suffix
+
         if ext not in formats:
             raise Exception(f'Unknown extension: {ext}')
 
@@ -629,9 +664,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             '.hexrd': 'hdf5',
         }
 
-        ext = Path(output_file).suffix
-        if ext not in styles:
-            raise Exception(f'Unknown output extension: {ext}')
+        if isinstance(output_file, h5py.File):
+            ext = '.hexrd'
+        else:
+            ext = Path(output_file).suffix
+            if ext not in styles:
+                raise Exception(f'Unknown output extension: {ext}')
 
         instr = create_hedm_instrument()
         instr.write_config(output_file, style=styles[ext])

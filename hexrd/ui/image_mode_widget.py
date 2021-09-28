@@ -94,6 +94,8 @@ class ImageModeWidget(QObject):
         HexrdConfig().mgr_threshold_mask_changed.connect(
             self.ui.raw_threshold_mask.setChecked)
 
+        HexrdConfig().state_loaded.connect(self.update_gui_from_config)
+
     def currentChanged(self, index):
         modes = {
             0: ViewType.raw,
@@ -178,6 +180,11 @@ class ImageModeWidget(QObject):
         self.ui.polar_apply_erosion.setEnabled(apply_snip1d)
 
     def auto_generate_cartesian_params(self):
+        if HexrdConfig().loading_state:
+            # Don't modify the parameters if a state file is being
+            # loaded. We want to keep whatever is in the state file...
+            return
+
         # This will automatically generate and set values for the
         # Cartesian pixel size and virtual plane distance based upon
         # values in the instrument config.
@@ -199,6 +206,11 @@ class ImageModeWidget(QObject):
         self.update_gui_from_config()
 
     def auto_generate_polar_params(self):
+        if HexrdConfig().loading_state:
+            # Don't modify the parameters if a state file is being
+            # loaded. We want to keep whatever is in the state file...
+            return
+
         # This will automatically generate and set values for the polar
         # pixel values based upon the config.
         # This function does not invoke a re-render.

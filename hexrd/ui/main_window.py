@@ -282,6 +282,8 @@ class MainWindow(QObject):
         self.import_data_widget.enforce_raw_mode.connect(
             self.enforce_view_mode)
 
+        HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
+
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
 
@@ -322,7 +324,6 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = str(path.parent)
 
             HexrdConfig().load_instrument_config(str(path))
-            self.update_config_gui()
 
     def _save_config(self, extension, filter):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -678,7 +679,6 @@ class MainWindow(QObject):
         HexrdConfig().visible_masks.append(name)
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
-
 
     def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)

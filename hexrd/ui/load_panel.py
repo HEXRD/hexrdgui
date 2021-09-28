@@ -36,9 +36,7 @@ class LoadPanel(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('load_panel.ui', parent)
 
-        self.ims = HexrdConfig().imageseries_dict
-        self.parent_dir = HexrdConfig().images_dir
-        self.state = HexrdConfig().load_panel_state
+        self.update_config_variables()
 
         self.files = []
         self.omega_min = []
@@ -101,6 +99,8 @@ class LoadPanel(QObject):
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
         self.ui.update_img_data.clicked.connect(self.update_image_data)
 
+        HexrdConfig().state_loaded.connect(self.state_loaded)
+
     def setup_processing_options(self):
         self.state = HexrdConfig().load_panel_state
         self.num_dets = len(HexrdConfig().detector_names)
@@ -111,6 +111,15 @@ class LoadPanel(QObject):
             'dark', [UI_DARK_INDEX_NONE for x in range(self.num_dets)])
         self.state.setdefault(
             'dark_files', [None for x in range(self.num_dets)])
+
+    def state_loaded(self):
+        self.update_config_variables()
+        self.setup_gui()
+
+    def update_config_variables(self):
+        self.ims = HexrdConfig().imageseries_dict
+        self.parent_dir = HexrdConfig().images_dir
+        self.state = HexrdConfig().load_panel_state
 
     # Handle GUI changes
 
