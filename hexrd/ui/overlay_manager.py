@@ -44,6 +44,8 @@ class OverlayManager:
         HexrdConfig().material_renamed.connect(self.update_table)
         HexrdConfig().materials_removed.connect(self.update_table)
 
+        HexrdConfig().state_loaded.connect(self.update_table)
+
     def show(self):
         self.update_table()
         self.ui.show()

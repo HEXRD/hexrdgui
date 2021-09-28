@@ -191,3 +191,6 @@ def load(h5_file):
 
     # Indicate that the state was loaded...
     HexrdConfig().state_loaded.emit()
+
+    # Perform a deep rerender to make sure everything is updated...
+    HexrdConfig().deep_rerender_needed.emit()
