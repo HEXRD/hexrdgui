@@ -10,6 +10,7 @@ from PySide2.QtWidgets import (
 from PySide2.QtGui import QCursor
 
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
+from hexrd.utils.compatibility import h5py_read_string
 
 from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -259,7 +260,8 @@ class MaskManagerDialog(QObject):
         raw_line_data = HexrdConfig().raw_mask_coords
         for key, data in h5py_group.items():
             if key == '_visible':
-                HexrdConfig().visible_masks = list(data)
+                # Convert strings into actual python strings
+                HexrdConfig().visible_masks = list(h5py_read_string(data))
             else:
                 if key not in HexrdConfig().detector_names:
                     msg = (
@@ -270,6 +272,8 @@ class MaskManagerDialog(QObject):
                     return
                 for name, masks in data.items():
                     for mask in masks.values():
+                        # Load the numpy array from the hdf5 file
+                        mask = mask[()]
                         raw_line_data.setdefault(name, []).append((key, mask))
 
         if self.image_mode == ViewType.raw:
