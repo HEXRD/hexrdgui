@@ -7,10 +7,18 @@ Created on Tue Sep 29 14:20:48 2020
 
 import numpy as np
 
+from scipy import ndimage
+from scipy.integrate import nquad
 from scipy.optimize import leastsq
 
+from skimage import filters
+from skimage.feature import blob_log
+
+from hexrd.ui.calibration.calibrationutil import \
+    gaussian_2d, gaussian_2d_int, sxcal_obj_func, __reflInfo_dtype
+from hexrd.constants import fwhm_to_sigma
 from hexrd.transforms import xfcapi
-from hexrd.ui.calibration.calibrationutil import sxcal_obj_func
+from hexrd import xrdutil
 
 
 def enrich_pick_data(picks, instr, materials):
@@ -45,12 +53,13 @@ def enrich_pick_data(picks, instr, materials):
                     )
                     pick_data[data_key][det_key] = xy_picks
             elif pick_type == 'powder':
-                # need translation vector
+                # !!! need translation vector from overlay
                 tvec_c = np.asarray(
                     pick_data['options']['tvec'], dtype=float
                 ).flatten()
 
                 # calculate cartesian coords
+                # !!! uses translation vector
                 pdl = []
                 for ring_picks in pick_dict[det_key]:
                     if len(ring_picks) > 0:
@@ -93,7 +102,8 @@ class LaueCalibrator(object):
 
     @property
     def plane_data(self):
-        self._plane_data.wavelength = self._instr.beam_energy
+        self._plane_data.wavelength = self.energy_cutoffs[-1]
+        self._plane_data.exclusions = None
         return self._plane_data
 
     @property
@@ -142,8 +152,266 @@ class LaueCalibrator(object):
     @energy_cutoffs.setter
     def energy_cutoffs(self, x):
         assert len(x) == 2, "input must have 2 elements"
-        assert x[1] > x[0, "first element must be < than second"]
+        assert x[1] > x[0], "first element must be < than second"
         self._energy_cutoffs = x
+
+    def _autopick_points(self, raw_img_dict, tth_tol=5., eta_tol=5.,
+                         npdiv=2, do_smoothing=True, smoothing_sigma=2,
+                         use_blob_detection=True, blob_threshold=0.25,
+                         fit_peaks=True):
+        """
+
+
+        Parameters
+        ----------
+        raw_img_dict : TYPE
+            DESCRIPTION.
+        tth_tol : TYPE, optional
+            DESCRIPTION. The default is 5..
+        eta_tol : TYPE, optional
+            DESCRIPTION. The default is 5..
+        npdiv : TYPE, optional
+            DESCRIPTION. The default is 2.
+        do_smoothing : TYPE, optional
+            DESCRIPTION. The default is True.
+        smoothing_sigma : TYPE, optional
+            DESCRIPTION. The default is 2.
+        use_blob_detection : TYPE, optional
+            DESCRIPTION. The default is True.
+        blob_threshold : TYPE, optional
+            DESCRIPTION. The default is 0.25.
+        fit_peaks : TYPE, optional
+            DESCRIPTION. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
+        labelStructure = ndimage.generate_binary_structure(2, 1)
+        rmat_s = np.eye(3)  # !!! forcing to identity
+        omega = 0.  # !!! same ^^^
+
+        rmat_c = xfcapi.makeRotMatOfExpMap(self.params[:3])
+        tvec_c = self.params[3:6]
+        # vinv_s = self.params[6:12]  # !!!: patches don't take this yet
+
+        # run simulation
+        # ???: could we get this from overlays?
+        laue_sim = self.instr.simulate_laue_pattern(
+            self.plane_data,
+            minEnergy=self.energy_cutoffs[0],
+            maxEnergy=self.energy_cutoffs[1],
+            rmat_s=None, grain_params=np.atleast_2d(self.params),
+        )
+
+        # loop over detectors for results
+        refl_dict = dict.fromkeys(instr.detectors)
+        for det_key, det in self.instr.detectors.items():
+            det_config = det.config_dict(
+                chi=self.instr.chi,
+                tvec=self.instr.tvec,
+                beam_vector=self.instr.beam_vector
+            )
+
+            xy_det, hkls, angles, dspacing, energy = laue_sim[det_key]
+            valid_xy = []
+            valid_hkls = []
+            valid_angs = []
+            valid_energy = []
+            for gid in range(len(xy_det)):
+                # find valid reflections
+                valid_refl = ~np.isnan(xy_det[gid][:, 0])
+                valid_xy.append(xy_det[gid][valid_refl, :])
+                valid_hkls.append(hkls[gid][:, valid_refl])
+                valid_angs.append(angles[gid][valid_refl, :])
+                valid_energy.append(energy[gid][valid_refl])
+                pass
+
+            # make patches
+            refl_patches = xrdutil.make_reflection_patches(
+                det_config,
+                valid_angs, det.angularPixelSize(valid_xy),
+                rmat_c=rmat_c, tvec_c=tvec_c,
+                tth_tol=tth_tol, eta_tol=eta_tol,
+                npdiv=npdiv, quiet=True)
+
+            reflInfoList = []
+            img = raw_img_dict[det_key]
+            native_area = det.pixel_area
+            num_patches = len(refl_patches)
+            meas_xy = np.nan*np.ones((num_patches, 2))
+            meas_angs = np.nan*np.ones((num_patches, 2))
+            for iRefl, patch in enumerate(refl_patches):
+                # check for overrun
+                irow = patch[-1][0]
+                jcol = patch[-1][1]
+                if np.any([irow < 0, irow >= det.rows,
+                           jcol < 0, jcol >= det.cols]):
+                    continue
+                if not np.all(
+                        det.clip_to_panel(
+                            np.vstack([patch[1][0].flatten(),
+                                       patch[1][1].flatten()]).T
+                            )[1]
+                        ):
+                    continue
+                # use nearest interpolation
+                spot_data = img[irow, jcol] * patch[3] * npdiv**2 / native_area
+                spot_data -= np.amin(spot_data)
+                patch_size = spot_data.shape
+
+                sigmax = 0.25*np.min(spot_data.shape) * fwhm_to_sigma
+
+                # optional gaussian smoothing
+                if do_smoothing:
+                    spot_data = filters.gaussian(spot_data, smoothing_sigma)
+
+                if use_blob_detection:
+                    spot_data_scl = 2.*spot_data/np.max(spot_data) - 1.
+
+                    # Compute radii in the 3rd column.
+                    blobs_log = blob_log(spot_data_scl,
+                                         min_sigma=2,
+                                         max_sigma=min(sigmax, 20),
+                                         num_sigma=10,
+                                         threshold=blob_threshold,
+                                         overlap=0.1)
+                    numPeaks = len(blobs_log)
+                else:
+                    labels, numPeaks = ndimage.label(
+                        spot_data > np.percentile(spot_data, 99),
+                        structure=labelStructure
+                    )
+                    slabels = np.arange(1, numPeaks + 1)
+                tth_edges = patch[0][0][0, :]
+                eta_edges = patch[0][1][:, 0]
+                delta_tth = tth_edges[1] - tth_edges[0]
+                delta_eta = eta_edges[1] - eta_edges[0]
+                if numPeaks > 0:
+                    peakId = iRefl
+                    if use_blob_detection:
+                        coms = blobs_log[:, :2]
+                    else:
+                        coms = np.array(
+                            ndimage.center_of_mass(
+                                spot_data, labels=labels, index=slabels
+                                )
+                            )
+                    if numPeaks > 1:
+                        #
+                        center = np.r_[spot_data.shape]*0.5
+                        com_diff = coms - np.tile(center, (numPeaks, 1))
+                        closest_peak_idx = np.argmin(
+                            np.sum(com_diff**2, axis=1)
+                        )
+                        #
+                    else:
+                        closest_peak_idx = 0
+                        pass   # end multipeak conditional
+                    #
+                    coms = coms[closest_peak_idx]
+                    assert(coms.ndim == 1), "oops"
+                    #
+                    if fit_peaks:
+                        sigm = 0.2*np.min(spot_data.shape)
+                        if use_blob_detection:
+                            sigm = min(blobs_log[closest_peak_idx, 2], sigm)
+                        y0, x0 = coms.flatten()
+                        ampl = float(spot_data[int(y0), int(x0)])
+                        # y0, x0 = 0.5*np.array(spot_data.shape)
+                        # ampl = np.max(spot_data)
+                        a_par = c_par = 0.5/float(sigm**2)
+                        b_par = 0.
+                        bgx = bgy = 0.
+                        bkg = np.min(spot_data)
+                        params = [ampl,
+                                  a_par, b_par, c_par,
+                                  x0, y0, bgx, bgy, bkg]
+                        #
+                        result = leastsq(gaussian_2d, params, args=(spot_data))
+                        #
+                        fit_par = result[0]
+                        #
+                        coms = np.array([fit_par[5], fit_par[4]])
+                        '''
+                        print("%s, %d, (%.2f, %.2f), (%d, %d)"
+                              % (det_key, iRefl, coms[0], coms[1],
+                                 patch_size[0], patch_size[1]))
+                        '''
+                        row_cen = 0.08*patch_size[0]
+                        col_cen = 0.08*patch_size[1]
+                        if np.any(
+                            [coms[0] < row_cen,
+                             coms[0] >= patch_size[0] - row_cen,
+                             coms[1] < col_cen,
+                             coms[1] >= patch_size[1] - col_cen]
+                        ):
+                            continue
+                        if (fit_par[0] < 1.):
+                            continue
+
+                        # intensities
+                        spot_intensity, int_err = nquad(
+                            gaussian_2d_int,
+                            [[0., 2.*y0], [0., 2.*x0]],
+                            args=fit_par)
+                        pass
+                    com_angs = np.hstack([
+                        tth_edges[0] + (0.5 + coms[1])*delta_tth,
+                        eta_edges[0] + (0.5 + coms[0])*delta_eta
+                        ])
+
+                    # grab intensities
+                    if not fit_peaks:
+                        if use_blob_detection:
+                            spot_intensity = 10
+                            max_intensity = 10
+                        else:
+                            spot_intensity = np.sum(
+                                spot_data[labels == slabels[closest_peak_idx]]
+                            )
+                            max_intensity = np.max(
+                                spot_data[labels == slabels[closest_peak_idx]]
+                            )
+                    else:
+                        max_intensity = np.max(spot_data)
+                    # need xy coords
+                    # !!! NO DISTORTION
+                    # !!! forcing ome = 0. -- could be inconsistent with rmat_s
+                    cmv = np.atleast_2d(np.hstack([com_angs, omega]))
+                    gvec_c = xfcapi.anglesToGVec(
+                        cmv,
+                        chi=instr.chi,
+                        rMat_c=rmat_c,
+                        bHat_l=instr.beam_vector)
+                    new_xy = xfcapi.gvecToDetectorXY(
+                        gvec_c,
+                        det.rmat, rmat_s, rmat_c,
+                        det.tvec, instr.tvec, tvec_c,
+                        beamVec=instr.beam_vector)
+                    meas_xy[iRefl, :] = new_xy
+                    meas_angs[iRefl, :] = com_angs
+                else:
+                    peakId = -999
+                    #
+                    spot_intensity = np.nan
+                    max_intensity = np.nan
+                    pass
+                reflInfoList.append([peakId, valid_hkls[:, iRefl],
+                                     (spot_intensity, max_intensity),
+                                     valid_energy[iRefl],
+                                     valid_angs[iRefl, :],
+                                     meas_angs[iRefl, :],
+                                     meas_xy[iRefl, :]])
+                pass
+            reflInfo = np.array(
+                [tuple(i) for i in reflInfoList],
+                dtype=__reflInfo_dtype)
+            refl_dict[det_key] = reflInfo
+
+        # !!! ok, here is where we would populated the data_dict from refl_dict
+        return
 
     def _evaluate(self, reduced_params, data_dict):
         """
@@ -309,7 +577,7 @@ class PowderCalibrator(object):
             # the data structure is:
             #     [x, y, tth, eta, h, k, l, dsp0]
             # FIXME: clean this up!
-            pdata = []
+            pdata = []  # [xy_meas, tth_eta_meas, hkl]
             for ir, hkld in enumerate(zip(hkls_ref, dsp_ref)):
                 npts = len(pick_angs[ir])
                 if npts > 0:

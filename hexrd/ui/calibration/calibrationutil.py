@@ -39,6 +39,8 @@ import pickle as cpl
 
 import numpy as np
 
+import h5py
+
 import yaml
 
 # import ipywidgets as widgets
@@ -162,9 +164,13 @@ def det_panel_mask(instr, img_dict, tolerance=1e-6):
 
 # instrument
 def load_instrument(yml):
-    with open(yml, 'r') as f:
-        icfg = yaml.load(f)
-    return instrument.HEDMInstrument(instrument_config=icfg)
+    try:
+        with h5py.File(yml, 'r') as f:
+            instr = instrument.HEDMInstrument(f)
+    except(OSError):
+        with open(yml, 'r') as f:
+            instr = instrument.HEDMInstrument(yaml.safe_load(f))
+    return instr
 
 
 # instrument
@@ -208,6 +214,7 @@ def log_scale_img(img):
 
 
 # Material instantiation
+# FIXME: these two functions are out of date!
 def make_matl(mat_name, sgnum, lparms, hkl_ssq_max=500):
     matl = material.Material(mat_name)
     matl.sgnum = sgnum
