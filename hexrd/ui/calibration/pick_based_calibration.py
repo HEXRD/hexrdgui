@@ -311,7 +311,6 @@ class LaueCalibrator(object):
                         pass   # end multipeak conditional
                     #
                     coms = coms[closest_peak_idx]
-                    assert(coms.ndim == 1), "oops"
                     #
                     if fit_peaks:
                         sigm = 0.2*np.min(spot_data.shape)
@@ -377,7 +376,6 @@ class LaueCalibrator(object):
                     else:
                         max_intensity = np.max(spot_data)
                     # need xy coords
-                    # !!! NO DISTORTION
                     # !!! forcing ome = 0. -- could be inconsistent with rmat_s
                     cmv = np.atleast_2d(np.hstack([com_angs, omega]))
                     gvec_c = xfcapi.anglesToGVec(
@@ -391,6 +389,10 @@ class LaueCalibrator(object):
                         det.tvec, instr.tvec, tvec_c,
                         beamVec=instr.beam_vector)
                     meas_xy[iRefl, :] = new_xy
+                    if det.distortion is not None:
+                        meas_xy[iRefl, :] = det.distortion.apply_inverse(
+                            meas_xy[iRefl, :]
+                        )
                     meas_angs[iRefl, :] = com_angs
                 else:
                     peakId = -999
