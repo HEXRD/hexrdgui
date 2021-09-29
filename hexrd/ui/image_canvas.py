@@ -920,7 +920,7 @@ def transform_from_plain_cartesian_func(mode):
             'xys': xys,
             'panel': panel,
             'eta_period': HexrdConfig().polar_res_eta_period,
-            'tvec_c': iviewer.instr.tvec,
+            'tvec_s': iviewer.instr.tvec,
         }
         return cart_to_angles(**kwargs)
 

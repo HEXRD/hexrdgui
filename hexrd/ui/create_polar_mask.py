@@ -14,7 +14,7 @@ def convert_raw_to_polar(det, line):
         'ij': line,
         'panel': instr.detectors[det],
         'eta_period': HexrdConfig().polar_res_eta_period,
-        'tvec_c': instr.tvec,
+        'tvec_s': instr.tvec,
     }
 
     return [pixels_to_angles(**kwargs)]
