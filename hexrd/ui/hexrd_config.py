@@ -204,6 +204,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.logging_stdout_handler = None
         self.logging_stderr_handler = None
         self.loading_state = False
+        self.last_loaded_state_file = None
 
         self.setup_logging()
 

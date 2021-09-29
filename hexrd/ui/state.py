@@ -196,22 +196,29 @@ def load(h5_file):
         HexrdConfig().workflow_changed.emit()
 
         # Finally, load the imageseries...
-        imsd = HexrdConfig().imageseries_dict
-        imsd.clear()
-
-        root = 'images'
-        for det, ims in list(h5_file[root].items()):
-            imsd[det] = imageseries.open(h5_file, 'hdf5', path=f'{root}/{det}')
-
-        HexrdConfig().reset_unagg_imgs(new_imgs=True)
-
-        ImageLoadManager().update_status = HexrdConfig().live_update
-        ImageLoadManager().finish_processing_ims()
+        load_imageseries_dict(h5_file)
     finally:
         HexrdConfig().loading_state = False
+
+    # Record the location of the state file in case we save over it
+    HexrdConfig().last_loaded_state_file = h5_file.filename
 
     # Indicate that the state was loaded...
     HexrdConfig().state_loaded.emit()
 
     # Perform a deep rerender to make sure everything is updated...
     HexrdConfig().deep_rerender_needed.emit()
+
+
+def load_imageseries_dict(h5_file):
+    imsd = HexrdConfig().imageseries_dict
+    imsd.clear()
+
+    root = 'images'
+    for det, ims in list(h5_file[root].items()):
+        imsd[det] = imageseries.open(h5_file, 'hdf5', path=f'{root}/{det}')
+
+    HexrdConfig().reset_unagg_imgs(new_imgs=True)
+
+    ImageLoadManager().update_status = HexrdConfig().live_update
+    ImageLoadManager().finish_processing_ims()

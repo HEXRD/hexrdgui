@@ -335,6 +335,10 @@ class ImageCanvas(FigureCanvas):
         pass
 
     def update_overlays(self):
+        if HexrdConfig().loading_state:
+            # Skip the request if we are loading state
+            return
+
         # iviewer is required for drawing rings
         if not self.iviewer:
             return
@@ -790,6 +794,10 @@ class ImageCanvas(FigureCanvas):
             self.auto_picked_data_artists.append(artist)
 
     def on_detector_transform_modified(self, det):
+        if HexrdConfig().loading_state:
+            # Skip the request if we are loading state
+            return
+
         if self.mode is None:
             return
 

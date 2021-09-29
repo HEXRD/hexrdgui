@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-import h5py
+import tempfile
 
+import h5py
 import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
@@ -366,6 +367,10 @@ class MainWindow(QObject):
             self.load_widget.config_changed()
 
     def load_dummy_images(self):
+        if HexrdConfig().loading_state:
+            # Don't load the dummy images during state load
+            return
+
         ImageFileManager().load_dummy_images()
         self.update_all(clear_canvases=True)
         self.ui.action_transform_detectors.setEnabled(False)
@@ -788,6 +793,10 @@ class MainWindow(QObject):
         if not HexrdConfig().has_images():
             return
 
+        if HexrdConfig().loading_state:
+            # Skip the request if we are loading state
+            return
+
         prev_blocked = self.calibration_config_widget.block_all_signals()
 
         # Need to clear focus from current widget if enter is pressed or
@@ -898,11 +907,47 @@ class MainWindow(QObject):
             self.ui, 'Save Current State', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
 
-        if selected_file:
-            with h5py.File(selected_file, "w") as h5_file:
-                state.save(h5_file)
+        if not selected_file:
+            return
 
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
+        overwriting_last_loaded = False
+        if selected_file == HexrdConfig().last_loaded_state_file:
+            # We are over-writing the last loaded state file.
+            # We must save to a temp file to avoid over-writing the
+            # imageseries, which are already open...
+            # We'll then load the imageseries back in
+            overwriting_last_loaded = True
+
+            # Make a temporary file to use for saving
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            temp.close()
+            save_file = temp.name
+        else:
+            save_file = selected_file
+
+        with h5py.File(save_file, 'w') as h5_file:
+            state.save(h5_file)
+
+        if overwriting_last_loaded:
+            # Clear the imageseries dict so that the files get closed
+            HexrdConfig().imageseries_dict.clear()
+
+            # Move the save file to the selected file
+            os.rename(save_file, selected_file)
+
+            # Re-load the imageseries
+            # Keep the file open and let the imageseries close it...
+            HexrdConfig().loading_state = True
+            try:
+                h5_file = h5py.File(selected_file, 'r')
+                state.load_imageseries_dict(h5_file)
+            finally:
+                HexrdConfig().loading_state = False
+
+            # Perform a deep rerender so updates are reflected
+            HexrdConfig().deep_rerender_needed.emit()
+
+        HexrdConfig().working_dir = os.path.dirname(selected_file)
 
     def on_action_load_state_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
