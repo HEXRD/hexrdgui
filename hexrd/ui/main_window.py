@@ -913,8 +913,14 @@ class MainWindow(QObject):
             path = Path(selected_file)
             HexrdConfig().working_dir = str(path.parent)
 
-            with h5py.File(selected_file, "r") as h5_file:
+            # The image series will take care of closing the file
+            h5_file = h5py.File(selected_file, "r")
+            try:
                 state.load(h5_file)
+            except Exception:
+                # If an exception occurred, assume we should close the file...
+                h5_file.close()
+                raise
 
     def add_view_dock_widget_actions(self):
         # Add actions to show/hide all of the dock widgets

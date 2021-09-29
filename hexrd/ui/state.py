@@ -4,8 +4,11 @@ import h5py
 import numpy as np
 import yaml
 
+from hexrd import imageseries
+
 import hexrd.ui
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.image_load_manager import ImageLoadManager
 
 CONFIG_PREFIX = "config"
 CONFIG_YAML_PATH = str(Path(CONFIG_PREFIX) / "yaml")
@@ -156,6 +159,11 @@ def save(h5_file):
     # Get any connected parts to save state...
     HexrdConfig().save_state.emit(h5_file)
 
+    # Finally, write the imageseries...
+    root = 'images'
+    for det, ims in HexrdConfig().imageseries_dict.items():
+        imageseries.write(ims, h5_file, 'hdf5', path=f'{root}/{det}')
+
 
 def load(h5_file):
     """
@@ -186,6 +194,19 @@ def load(h5_file):
 
         # Just in case the workflow changed...
         HexrdConfig().workflow_changed.emit()
+
+        # Finally, load the imageseries...
+        imsd = HexrdConfig().imageseries_dict
+        imsd.clear()
+
+        root = 'images'
+        for det, ims in list(h5_file[root].items()):
+            imsd[det] = imageseries.open(h5_file, 'hdf5', path=f'{root}/{det}')
+
+        HexrdConfig().reset_unagg_imgs(new_imgs=True)
+
+        ImageLoadManager().update_status = HexrdConfig().live_update
+        ImageLoadManager().finish_processing_ims()
     finally:
         HexrdConfig().loading_state = False
 

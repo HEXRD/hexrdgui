@@ -24,7 +24,7 @@ class MaskManagerDialog(QObject):
     update_masks = Signal()
 
     def __init__(self, parent=None):
-        super(MaskManagerDialog, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
 
         loader = UiLoader()
@@ -217,6 +217,7 @@ class MaskManagerDialog(QObject):
         self.write_all_masks(h5py_group['masks'])
 
     def load_state(self, h5py_group):
+        self.clear_masks()
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
 
@@ -251,6 +252,7 @@ class MaskManagerDialog(QObject):
     def clear_masks(self):
         HexrdConfig().masks.clear()
         HexrdConfig().visible_masks.clear()
+        HexrdConfig().raw_mask_coords.clear()
         self.masks.clear()
         self.setup_table()
 
