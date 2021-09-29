@@ -158,7 +158,7 @@ class LaueCalibrator(object):
     def _autopick_points(self, raw_img_dict, tth_tol=5., eta_tol=5.,
                          npdiv=2, do_smoothing=True, smoothing_sigma=2,
                          use_blob_detection=True, blob_threshold=0.25,
-                         fit_peaks=True):
+                         fit_peaks=True, min_peak_int=1., fit_tth_tol=0.1):
         """
 
 
@@ -338,8 +338,8 @@ class LaueCalibrator(object):
                               % (det_key, iRefl, coms[0], coms[1],
                                  patch_size[0], patch_size[1]))
                         '''
-                        row_cen = 0.08*patch_size[0]
-                        col_cen = 0.08*patch_size[1]
+                        row_cen = fit_tth_tol * patch_size[0]
+                        col_cen = fit_tth_tol * patch_size[1]
                         if np.any(
                             [coms[0] < row_cen,
                              coms[0] >= patch_size[0] - row_cen,
@@ -347,7 +347,7 @@ class LaueCalibrator(object):
                              coms[1] >= patch_size[1] - col_cen]
                         ):
                             continue
-                        if (fit_par[0] < 1.):
+                        if (fit_par[0] < min_peak_int):
                             continue
 
                         # intensities
