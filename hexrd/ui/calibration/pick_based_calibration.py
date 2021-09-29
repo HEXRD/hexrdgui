@@ -5,6 +5,8 @@ Created on Tue Sep 29 14:20:48 2020
 @author: berni
 """
 
+import copy
+
 import numpy as np
 
 from scipy import ndimage
@@ -82,7 +84,7 @@ class LaueCalibrator(object):
     def __init__(self, instr, plane_data, grain_params, flags,
                  min_energy=5., max_energy=25.):
         self._instr = instr
-        self._plane_data = plane_data
+        self._plane_data = copy.deepcopy(plane_data)
         self._plane_data.wavelength = self._instr.beam_energy  # force
         self._params = np.asarray(grain_params, dtype=float).flatten()
         assert len(self._params) == self._nparams, \
@@ -206,7 +208,7 @@ class LaueCalibrator(object):
         )
 
         # loop over detectors for results
-        refl_dict = dict.fromkeys(instr.detectors)
+        refl_dict = dict.fromkeys(self.instr.detectors)
         for det_key, det in self.instr.detectors.items():
             det_config = det.config_dict(
                 chi=self.instr.chi,
@@ -380,14 +382,14 @@ class LaueCalibrator(object):
                     cmv = np.atleast_2d(np.hstack([com_angs, omega]))
                     gvec_c = xfcapi.anglesToGVec(
                         cmv,
-                        chi=instr.chi,
+                        chi=self.instr.chi,
                         rMat_c=rmat_c,
-                        bHat_l=instr.beam_vector)
+                        bHat_l=self.instr.beam_vector)
                     new_xy = xfcapi.gvecToDetectorXY(
                         gvec_c,
                         det.rmat, rmat_s, rmat_c,
-                        det.tvec, instr.tvec, tvec_c,
-                        beamVec=instr.beam_vector)
+                        det.tvec, self.instr.tvec, tvec_c,
+                        beamVec=self.instr.beam_vector)
                     meas_xy[iRefl, :] = new_xy
                     if det.distortion is not None:
                         meas_xy[iRefl, :] = det.distortion.apply_inverse(
