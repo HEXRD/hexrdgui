@@ -124,8 +124,16 @@ class PowderLineOverlay:
             # construct ideal angular coords
             ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
 
-            # !!! must apply offset
-            xys_full = panel.angles_to_cart(ang_crds, tvec_c=self.tvec)
+            # Convert nominal powder angle coords to cartesian
+            # !!! Tricky business; here we must consider _both_ the SAMPLE
+            #     CS origin and anything specified for the XRD COM for the
+            #     overlay.  This is so they get properly mapped back to the
+            #     the proper cartesian coords.
+            xys_full = panel.angles_to_cart(
+                ang_crds,
+                tvec_s=self.instrument.tvec,
+                tvec_c=self.tvec
+            )
 
             # skip if ring not on panel
             if len(xys_full) == 0:
@@ -138,10 +146,14 @@ class PowderLineOverlay:
             )
 
             if display_mode == ViewType.polar:
-                # !!! apply offset correction
-                ang_crds, _ = panel.cart_to_angles(xys,
-                                                   tvec_c=self.instrument.tvec)
-
+                # Apply offset correction
+                # !!! In polar view, the nominal angles refer to the SAMPLE
+                #     CS origin, so we omit the addition of any offset to the
+                #     diffraction COM in the sameple frame!
+                ang_crds, _ = panel.cart_to_angles(
+                    xys,
+                    tvec_s=self.instrument.tvec
+                )
                 if len(ang_crds) == 0:
                     skipped_tth.append(i)
                     continue
@@ -159,6 +171,7 @@ class PowderLineOverlay:
                 ang_crds = ang_crds[eidx, :]
 
                 # branch cut
+                # FIXME: still is not quite right
                 delta_eta_est = np.median(np.diff(ang_crds[:, 0]))
                 cut_on_panel = bool(
                     xfcapi.angularDifference(
