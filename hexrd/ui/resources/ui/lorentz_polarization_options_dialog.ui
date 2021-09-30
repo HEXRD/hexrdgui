@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>302</width>
-    <height>107</height>
+    <width>318</width>
+    <height>158</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,21 +23,21 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="horizontal_label">
-     <property name="text">
-      <string>Horizontal Fraction:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
+   <item row="2" column="0">
     <widget class="QLabel" name="vertical_label">
      <property name="text">
       <string>Vertical Fraction:</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
+   <item row="3" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
     <widget class="ScientificDoubleSpinBox" name="horizontal">
      <property name="keyboardTracking">
       <bool>false</bool>
@@ -53,7 +53,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="2" column="1">
     <widget class="ScientificDoubleSpinBox" name="vertical">
      <property name="keyboardTracking">
       <bool>false</bool>
@@ -66,10 +66,17 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   <item row="1" column="0">
+    <widget class="QLabel" name="horizontal_label">
+     <property name="text">
+      <string>Horizontal Fraction:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QCheckBox" name="unpolarized">
+     <property name="text">
+      <string>Unpolarized</string>
      </property>
     </widget>
    </item>
@@ -117,6 +124,70 @@
     <hint type="destinationlabel">
      <x>312</x>
      <y>65</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>unpolarized</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>horizontal_label</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>24</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>91</x>
+     <y>59</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>unpolarized</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>horizontal</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>24</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>242</x>
+     <y>59</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>unpolarized</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>vertical_label</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>24</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>91</x>
+     <y>96</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>unpolarized</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>vertical</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>24</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>242</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
