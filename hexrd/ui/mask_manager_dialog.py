@@ -10,6 +10,7 @@ from PySide2.QtWidgets import (
 from PySide2.QtGui import QCursor
 
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
+from hexrd.utils.compatibility import h5py_read_string
 
 from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -23,7 +24,7 @@ class MaskManagerDialog(QObject):
     update_masks = Signal()
 
     def __init__(self, parent=None):
-        super(MaskManagerDialog, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
 
         loader = UiLoader()
@@ -78,6 +79,9 @@ class MaskManagerDialog(QObject):
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
+
+        HexrdConfig().save_state.connect(self.save_state)
+        HexrdConfig().load_state.connect(self.load_state)
 
     def setup_table(self, status=True):
         with block_signals(self.ui.masks_table):
@@ -206,6 +210,17 @@ class MaskManagerDialog(QObject):
                     parent.setdefault(selection, {})[str(i)] = mask
                 self.export_masks_to_file(d)
 
+    def save_state(self, h5py_group):
+        if 'masks' not in h5py_group:
+            h5py_group.create_group('masks')
+
+        self.write_all_masks(h5py_group['masks'])
+
+    def load_state(self, h5py_group):
+        self.clear_masks()
+        if 'masks' in h5py_group:
+            self.load_masks(h5py_group['masks'])
+
     def write_all_masks(self, h5py_group=None):
         d = {'_visible': HexrdConfig().visible_masks}
         for name, data in HexrdConfig().raw_mask_coords.items():
@@ -237,6 +252,7 @@ class MaskManagerDialog(QObject):
     def clear_masks(self):
         HexrdConfig().masks.clear()
         HexrdConfig().visible_masks.clear()
+        HexrdConfig().raw_mask_coords.clear()
         self.masks.clear()
         self.setup_table()
 
@@ -259,7 +275,8 @@ class MaskManagerDialog(QObject):
         raw_line_data = HexrdConfig().raw_mask_coords
         for key, data in h5py_group.items():
             if key == '_visible':
-                HexrdConfig().visible_masks = list(data)
+                # Convert strings into actual python strings
+                HexrdConfig().visible_masks = list(h5py_read_string(data))
             else:
                 if key not in HexrdConfig().detector_names:
                     msg = (
@@ -270,6 +287,8 @@ class MaskManagerDialog(QObject):
                     return
                 for name, masks in data.items():
                     for mask in masks.values():
+                        # Load the numpy array from the hdf5 file
+                        mask = mask[()]
                         raw_line_data.setdefault(name, []).append((key, mask))
 
         if self.image_mode == ViewType.raw:

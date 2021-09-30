@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
+import tempfile
 
+import h5py
 import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
@@ -52,6 +54,7 @@ from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
+from hexrd.ui import state
 
 
 class MainWindow(QObject):
@@ -171,6 +174,10 @@ class MainWindow(QObject):
             self.on_action_save_imageseries_triggered)
         self.ui.action_save_materials.triggered.connect(
             self.on_action_save_materials_triggered)
+        self.ui.action_save_state.triggered.connect(
+            self.on_action_save_state_triggered)
+        self.ui.action_open_state.triggered.connect(
+            self.on_action_load_state_triggered)
         self.ui.action_export_current_plot.triggered.connect(
             self.on_action_export_current_plot_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
@@ -276,6 +283,8 @@ class MainWindow(QObject):
         self.import_data_widget.enforce_raw_mode.connect(
             self.enforce_view_mode)
 
+        HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
+
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
 
@@ -316,7 +325,6 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = str(path.parent)
 
             HexrdConfig().load_instrument_config(str(path))
-            self.update_config_gui()
 
     def _save_config(self, extension, filter):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -359,6 +367,10 @@ class MainWindow(QObject):
             self.load_widget.config_changed()
 
     def load_dummy_images(self):
+        if HexrdConfig().loading_state:
+            # Don't load the dummy images during state load
+            return
+
         ImageFileManager().load_dummy_images()
         self.update_all(clear_canvases=True)
         self.ui.action_transform_detectors.setEnabled(False)
@@ -673,7 +685,6 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
 
-
     def on_action_edit_apply_polygon_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
         mrd.new_mask_added.connect(self.new_mask_added.emit)
@@ -782,6 +793,10 @@ class MainWindow(QObject):
         if not HexrdConfig().has_images():
             return
 
+        if HexrdConfig().loading_state:
+            # Skip the request if we are loading state
+            return
+
         prev_blocked = self.calibration_config_widget.block_all_signals()
 
         # Need to clear focus from current widget if enter is pressed or
@@ -885,6 +900,72 @@ class MainWindow(QObject):
 
     def on_action_open_mask_manager_triggered(self):
         self.mask_manager_dialog.show()
+
+    def on_action_save_state_triggered(self):
+
+        selected_file, _ = QFileDialog.getSaveFileName(
+            self.ui, 'Save Current State', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if not selected_file:
+            return
+
+        overwriting_last_loaded = False
+        if selected_file == HexrdConfig().last_loaded_state_file:
+            # We are over-writing the last loaded state file.
+            # We must save to a temp file to avoid over-writing the
+            # imageseries, which are already open...
+            # We'll then load the imageseries back in
+            overwriting_last_loaded = True
+
+            # Make a temporary file to use for saving
+            temp = tempfile.NamedTemporaryFile(delete=False)
+            temp.close()
+            save_file = temp.name
+        else:
+            save_file = selected_file
+
+        with h5py.File(save_file, 'w') as h5_file:
+            state.save(h5_file)
+
+        if overwriting_last_loaded:
+            # Clear the imageseries dict so that the files get closed
+            HexrdConfig().imageseries_dict.clear()
+
+            # Move the save file to the selected file
+            os.rename(save_file, selected_file)
+
+            # Re-load the imageseries
+            # Keep the file open and let the imageseries close it...
+            HexrdConfig().loading_state = True
+            try:
+                h5_file = h5py.File(selected_file, 'r')
+                state.load_imageseries_dict(h5_file)
+            finally:
+                HexrdConfig().loading_state = False
+
+            # Perform a deep rerender so updates are reflected
+            HexrdConfig().deep_rerender_needed.emit()
+
+        HexrdConfig().working_dir = os.path.dirname(selected_file)
+
+    def on_action_load_state_triggered(self):
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, 'Load State', HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)')
+
+        if selected_file:
+            path = Path(selected_file)
+            HexrdConfig().working_dir = str(path.parent)
+
+            # The image series will take care of closing the file
+            h5_file = h5py.File(selected_file, "r")
+            try:
+                state.load(h5_file)
+            except Exception:
+                # If an exception occurred, assume we should close the file...
+                h5_file.close()
+                raise
 
     def add_view_dock_widget_actions(self):
         # Add actions to show/hide all of the dock widgets

@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -53,6 +53,7 @@
       <string>&amp;Open</string>
      </property>
      <addaction name="action_open_images"/>
+     <addaction name="action_open_state"/>
      <addaction name="action_open_config_file"/>
      <addaction name="action_open_materials"/>
      <addaction name="action_open_aps_imageseries"/>
@@ -71,6 +72,7 @@
       <addaction name="action_save_config_yaml"/>
      </widget>
      <addaction name="action_save_imageseries"/>
+     <addaction name="action_save_state"/>
      <addaction name="menu_save_config"/>
      <addaction name="action_save_materials"/>
     </widget>
@@ -207,7 +209,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>574</height>
          </rect>
         </property>
         <attribute name="label">
@@ -220,7 +222,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>574</height>
          </rect>
         </property>
         <attribute name="label">
@@ -233,7 +235,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>574</height>
          </rect>
         </property>
         <attribute name="label">
@@ -622,6 +624,16 @@
    </property>
    <property name="text">
     <string>Apply Powder Rings Mask to Polar</string>
+   </property>
+  </action>
+  <action name="action_save_state">
+   <property name="text">
+    <string>State</string>
+   </property>
+  </action>
+  <action name="action_open_state">
+   <property name="text">
+    <string>State</string>
    </property>
   </action>
  </widget>
