@@ -11,8 +11,10 @@ def pixels_to_cart(ij, panel):
     return panel.pixelToCart(ij[:, [1, 0]])
 
 
-def cart_to_angles(xys, panel, eta_period, tvec_c=None, apply_distortion=True):
+def cart_to_angles(xys, panel, eta_period, tvec_s=None, tvec_c=None,
+                   apply_distortion=True):
     kwargs = {
+        'tvec_s': tvec_s,
         'tvec_c': tvec_c,
         'apply_distortion': apply_distortion,
     }
@@ -32,6 +34,12 @@ def angles_to_pixels(angles, panel):
     return cart_to_pixels(xys, panel)
 
 
-def pixels_to_angles(ij, panel, eta_period, tvec_c=None):
+def pixels_to_angles(ij, panel, eta_period, tvec_s=None, tvec_c=None):
     xys = pixels_to_cart(ij, panel)
-    return cart_to_angles(xys, panel, eta_period, tvec_c)
+
+    kwargs = {
+        'eta_period': eta_period,
+        'tvec_s': tvec_s,
+        'tvec_c': tvec_c,
+    }
+    return cart_to_angles(xys, panel, **kwargs)

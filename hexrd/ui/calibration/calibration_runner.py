@@ -839,7 +839,7 @@ def auto_picks_to_picks(auto_picks, overlay):
         kwargs = {
             'panel': instr.detectors[det],
             'eta_period': HexrdConfig().polar_res_eta_period,
-            'tvec_c': instr.tvec,
+            'tvec_s': instr.tvec,
         }
         for i, line in enumerate(det_picks):
             det_picks[i] = cart_to_angles(line, **kwargs).tolist()
