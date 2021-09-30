@@ -202,6 +202,9 @@ class PowderOverlayEditor:
         ] + self.offset_widgets
 
     def material_tth_width_modified_externally(self, material_name):
+        if not self.material:
+            return
+
         if material_name != self.material.name:
             return
 
