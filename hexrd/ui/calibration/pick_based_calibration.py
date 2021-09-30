@@ -16,8 +16,10 @@ from scipy.optimize import leastsq
 from skimage import filters
 from skimage.feature import blob_log
 
-from hexrd.ui.calibration.calibrationutil import \
-    gaussian_2d, gaussian_2d_int, sxcal_obj_func, __reflInfo_dtype
+from hexrd.ui.calibration.calibrationutil import (
+    gaussian_2d, gaussian_2d_int, sxcal_obj_func,
+    __reflInfo_dtype as reflInfo_dtype
+)
 from hexrd.constants import fwhm_to_sigma
 from hexrd.transforms import xfcapi
 from hexrd import xrdutil
@@ -415,11 +417,11 @@ class LaueCalibrator(object):
                 pass
             reflInfo = np.array(
                 [tuple(i) for i in reflInfoList],
-                dtype=__reflInfo_dtype)
+                dtype=reflInfo_dtype)
             refl_dict[det_key] = reflInfo
 
         # !!! ok, here is where we would populated the data_dict from refl_dict
-        return
+        return refl_dict
 
     def _evaluate(self, reduced_params, data_dict):
         """
