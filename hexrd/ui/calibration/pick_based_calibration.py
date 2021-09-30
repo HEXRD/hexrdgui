@@ -217,18 +217,22 @@ class LaueCalibrator(object):
             )
 
             xy_det, hkls, angles, dspacing, energy = laue_sim[det_key]
+            '''
             valid_xy = []
             valid_hkls = []
             valid_angs = []
             valid_energy = []
-            for gid in range(len(xy_det)):
-                # find valid reflections
-                valid_refl = ~np.isnan(xy_det[gid][:, 0])
-                valid_xy.append(xy_det[gid][valid_refl, :])
-                valid_hkls.append(hkls[gid][:, valid_refl])
-                valid_angs.append(angles[gid][valid_refl, :])
-                valid_energy.append(energy[gid][valid_refl])
-                pass
+            '''
+            # !!! not necessary to loop over grains since we can only handle 1
+            # for gid in range(len(xy_det)):
+            gid = 0
+            # find valid reflections
+            valid_refl = ~np.isnan(xy_det[gid][:, 0])
+            valid_xy = xy_det[gid][valid_refl, :]
+            valid_hkls = hkls[gid][:, valid_refl]
+            valid_angs = angles[gid][valid_refl, :]
+            valid_energy = energy[gid][valid_refl]
+            # pass
 
             # make patches
             refl_patches = xrdutil.make_reflection_patches(
