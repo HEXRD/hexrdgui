@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>laue_auto_picker_dialog</class>
+ <widget class="QDialog" name="laue_auto_picker_dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>774</width>
+    <height>284</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="3" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" rowspan="2">
+    <widget class="QGroupBox" name="annular_sector_widths_group">
+     <property name="title">
+      <string>Annular Sector Widths:</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="2" column="1">
+       <widget class="ScientificDoubleSpinBox" name="tth_tol">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modifying this will also modify the 2θ width of the material's PlaneData.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="tth_tol_label">
+        <property name="text">
+         <string>2θ:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="eta_tol_label">
+        <property name="text">
+         <string>η:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="ScientificDoubleSpinBox" name="eta_tol">
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="npdiv_label">
+        <property name="text">
+         <string>Subdivisions:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="npdiv">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="value">
+         <number>2</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1" rowspan="2" colspan="2">
+    <widget class="QGroupBox" name="peak_fitting_group">
+     <property name="title">
+      <string>Peak Fitting:</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="2" column="3">
+       <widget class="ScientificDoubleSpinBox" name="fit_tth_tol">
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.050000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="fit_tth_tol_label">
+        <property name="text">
+         <string>Fit 2θ Tolerance:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="int_cutoff_label">
+        <property name="text">
+         <string>Min Peak Amplitude:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QCheckBox" name="use_blob_detection">
+        <property name="text">
+         <string>Use blob detection?</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="ScientificDoubleSpinBox" name="min_peak_int">
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.000100000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QCheckBox" name="do_smoothing">
+        <property name="text">
+         <string>Do smoothing?</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="ScientificDoubleSpinBox" name="smoothing_sigma">
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>2.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="ScientificDoubleSpinBox" name="blob_threshold">
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.250000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="fit_peaks">
+        <property name="text">
+         <string>Fit peaks?</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>npdiv</tabstop>
+  <tabstop>tth_tol</tabstop>
+  <tabstop>eta_tol</tabstop>
+  <tabstop>fit_peaks</tabstop>
+  <tabstop>fit_tth_tol</tabstop>
+  <tabstop>min_peak_int</tabstop>
+  <tabstop>do_smoothing</tabstop>
+  <tabstop>smoothing_sigma</tabstop>
+  <tabstop>use_blob_detection</tabstop>
+  <tabstop>blob_threshold</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>button_box</sender>
+   <signal>accepted()</signal>
+   <receiver>laue_auto_picker_dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>217</x>
+     <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>button_box</sender>
+   <signal>rejected()</signal>
+   <receiver>laue_auto_picker_dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>217</x>
+     <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>do_smoothing</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>smoothing_sigma</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>366</x>
+     <y>171</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>552</x>
+     <y>171</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>use_blob_detection</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>blob_threshold</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>355</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>552</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fit_peaks</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fit_tth_tol_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>457</x>
+     <y>62</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>457</x>
+     <y>97</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fit_peaks</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fit_tth_tol</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>457</x>
+     <y>62</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>654</x>
+     <y>97</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fit_peaks</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>int_cutoff_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>457</x>
+     <y>62</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>457</x>
+     <y>134</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fit_peaks</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>min_peak_int</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>457</x>
+     <y>62</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>654</x>
+     <y>134</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

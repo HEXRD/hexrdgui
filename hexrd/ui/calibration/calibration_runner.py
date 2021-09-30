@@ -13,7 +13,11 @@ from hexrd.ui.calibration.auto import (
     PowderCalibrationDialog,
     PowderCalibrator,
 )
-from hexrd.ui.calibration.pick_based_calibration import run_calibration
+from hexrd.ui.calibration.laue_auto_picker_dialog import LaueAutoPickerDialog
+from hexrd.ui.calibration.pick_based_calibration import (
+    LaueCalibrator,
+    run_calibration,
+)
 from hexrd.ui.calibration.picks_tree_view_dialog import PicksTreeViewDialog
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType, ViewType
@@ -131,43 +135,38 @@ class CalibrationRunner:
 
         title = self.active_overlay_name
 
-        if overlay['type'] == OverlayType.powder:
-            box = QMessageBox(self.canvas)
-            box.setIcon(QMessageBox.Question)
+        box = QMessageBox(self.canvas)
+        box.setIcon(QMessageBox.Question)
 
-            # Hacky, but we'll hook up apply and yes for the buttons...
-            auto_button_type = QMessageBox.Apply
-            hand_button_type = QMessageBox.Yes
-            buttons = auto_button_type | hand_button_type | QMessageBox.No
-            box.setStandardButtons(buttons)
-            # Hide the no button. We still need it, though, for canceling...
-            box.button(QMessageBox.No).hide()
-            msg = (
-                f'Auto picking is available for "{title}"\n\n'
-                'Would you like to auto pick or hand pick points?'
-            )
-            box.setWindowTitle(f'Select picking style for: "{title}"')
-            box.setText(msg)
+        # Hacky, but we'll hook up apply and yes for the buttons...
+        auto_button_type = QMessageBox.Apply
+        hand_button_type = QMessageBox.Yes
+        buttons = auto_button_type | hand_button_type | QMessageBox.No
+        box.setStandardButtons(buttons)
+        # Hide the no button. We still need it, though, for canceling...
+        box.button(QMessageBox.No).hide()
+        msg = (
+            f'Auto picking is available for "{title}"\n\n'
+            'Would you like to auto pick or hand pick points?'
+        )
+        box.setWindowTitle(f'Select picking style for: "{title}"')
+        box.setText(msg)
 
-            auto_button = box.button(auto_button_type)
-            auto_button.setText('Auto')
-            auto_button.setIcon(QIcon())
-            hand_button = box.button(hand_button_type)
-            hand_button.setText('Hand')
-            hand_button.setIcon(QIcon())
-            box.exec_()
+        auto_button = box.button(auto_button_type)
+        auto_button.setText('Auto')
+        auto_button.setIcon(QIcon())
+        hand_button = box.button(hand_button_type)
+        hand_button.setText('Hand')
+        hand_button.setIcon(QIcon())
+        box.exec_()
 
-            if box.clickedButton() == auto_button:
-                self.auto_pick_points()
-            elif box.clickedButton() == hand_button:
-                self.hand_pick_points()
-            else:
-                # User canceled
-                self.restore_state()
-                return
-        else:
-            # Laue overlays currently require hand picking
+        if box.clickedButton() == auto_button:
+            self.auto_pick_points()
+        elif box.clickedButton() == hand_button:
             self.hand_pick_points()
+        else:
+            # User canceled
+            self.restore_state()
 
     def hand_pick_points(self):
         overlay = self.active_overlay
@@ -698,6 +697,17 @@ class CalibrationRunner:
         picker.canvas.draw_idle()
 
     def auto_pick_points(self):
+        funcs = {
+            OverlayType.powder: self.auto_pick_powder_points,
+            OverlayType.laue: self.auto_pick_laue_points,
+        }
+
+        if self.active_overlay_type not in funcs:
+            raise NotImplementedError(self.active_overlay_type)
+
+        return funcs[self.active_overlay_type]()
+
+    def auto_pick_powder_points(self):
         material = HexrdConfig().material(self.active_overlay['material'])
         dialog = PowderCalibrationDialog(material, self.canvas)
         dialog.show_optimization_parameters(False)
@@ -732,10 +742,10 @@ class CalibrationRunner:
 
     def auto_pick_powder_lines(self):
         self.async_runner.progress_title = 'Auto picking points...'
-        self.async_runner.success_callback = self.auto_pick_finished
-        self.async_runner.run(self.run_auto_pick)
+        self.async_runner.success_callback = self.auto_powder_pick_finished
+        self.async_runner.run(self.run_auto_powder_pick)
 
-    def run_auto_pick(self):
+    def run_auto_powder_pick(self):
         options = HexrdConfig().config['calibration']['powder']
         kwargs = {
             'fit_tth_tol': options['fit_tth_tol'],
@@ -744,8 +754,66 @@ class CalibrationRunner:
         # We are only doing a single material. Grab the only element...
         return self.auto_ic.extract_points(**kwargs)[0]
 
-    def auto_pick_finished(self, auto_picks):
-        picks = auto_picks_to_picks(auto_picks, self.active_overlay)
+    def auto_powder_pick_finished(self, auto_picks):
+        picks = auto_powder_picks_to_picks(auto_picks, self.active_overlay)
+        self.overlay_picks = picks['picks']
+        self.save_overlay_picks()
+
+        if len(self.all_overlay_picks) == 1:
+            # If this is the only overlay, don't view the picks table,
+            # as the GUI will ask anyways...
+            self.finish_line()
+        else:
+            dialog = self.view_picks_table()
+            dialog.ui.finished.connect(self.finish_line)
+
+    def auto_pick_laue_points(self):
+        overlay = self.active_overlay
+        dialog = LaueAutoPickerDialog(overlay, self.canvas)
+        if not dialog.exec_():
+            # User canceled
+            self.restore_state()
+            return
+
+        self.instr = create_hedm_instrument()
+
+        statuses = HexrdConfig().get_statuses_instrument_format()
+        self.instr.calibration_flags = statuses
+
+        material = HexrdConfig().material(overlay['material'])
+        all_flags = np.hstack([statuses, self.active_overlay_refinements])
+        init_kwargs = {
+            'instr': self.instr,
+            'plane_data': material.planeData,
+            'grain_params': overlay['options']['crystal_params'],
+            'flags': all_flags,
+            'min_energy': overlay['options']['min_energy'],
+            'max_energy': overlay['options']['max_energy'],
+        }
+
+        self.laue_auto_picker = LaueCalibrator(**init_kwargs)
+        self.auto_pick_laue_spots()
+
+    def auto_pick_laue_spots(self):
+        self.async_runner.progress_title = 'Auto picking points...'
+        self.async_runner.success_callback = self.auto_laue_pick_finished
+        self.async_runner.run(self.run_auto_laue_pick)
+
+    def run_auto_laue_pick(self):
+        # Assume there is only one image in each image series for now...
+        imsd = HexrdConfig().imageseries_dict
+        raw_img_dict = {k: x[0] for k, x in imsd.items()}
+
+        # These are the options the user chose earlier...
+        options = HexrdConfig().config['calibration']['laue_auto_picker']
+        kwargs = {
+            'raw_img_dict': raw_img_dict,
+            **options
+        }
+        return self.laue_auto_picker._autopick_points(**kwargs)
+
+    def auto_laue_pick_finished(self, auto_picks):
+        picks = auto_laue_picks_to_picks(auto_picks, self.active_overlay)
         self.overlay_picks = picks['picks']
         self.save_overlay_picks()
 
@@ -816,7 +884,7 @@ def tree_format_to_picks(tree_format):
     return all_picks
 
 
-def auto_picks_to_picks(auto_picks, overlay):
+def auto_powder_picks_to_picks(auto_picks, overlay):
     def get_hkls(overlay):
         return {
             key: np.array(val.get('hkls', [])).tolist()
@@ -843,6 +911,45 @@ def auto_picks_to_picks(auto_picks, overlay):
         }
         for i, line in enumerate(det_picks):
             det_picks[i] = cart_to_angles(line, **kwargs).tolist()
+
+    return {
+        'material': overlay['material'],
+        'type': overlay['type'],
+        'hkls': hkls,
+        'picks': picks,
+    }
+
+
+def auto_laue_picks_to_picks(auto_picks, overlay):
+    def get_hkls(overlay):
+        return {
+            key: np.array(val.get('hkls', [])).tolist()
+            for key, val in overlay['data'].items()
+        }
+
+    hkls = get_hkls(overlay)
+    picks = {det: [[] for _ in val] for det, val in hkls.items()}
+    for det, det_picks in auto_picks.items():
+        for entry in det_picks:
+            hkl = entry[1].astype(int).tolist()
+            cart = entry[6]
+            idx = hkls[det].index(hkl)
+            picks[det][idx] = cart
+
+    # Now convert the cartesian coordinates to polar
+    instr = create_hedm_instrument()
+    for det, det_picks in picks.items():
+        kwargs = {
+            'panel': instr.detectors[det],
+            'eta_period': HexrdConfig().polar_res_eta_period,
+            'tvec_c': instr.tvec,
+        }
+        for i, line in enumerate(det_picks):
+            if len(line) == 0:
+                det_picks[i] = (np.nan, np.nan)
+                continue
+
+            det_picks[i] = cart_to_angles(line, **kwargs)[0]
 
     return {
         'material': overlay['material'],
