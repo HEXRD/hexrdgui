@@ -1,3 +1,4 @@
+![platforms](https://anaconda.org/hexrd/hexrdgui/badges/platforms.svg) ![current version](https://anaconda.org/hexrd/hexrdgui/badges/version.svg) ![last updated](https://anaconda.org/hexrd/hexrdgui/badges/latest_release_relative_date.svg) ![downloads](https://anaconda.org/hexrd/hexrdgui/badges/downloads.svg)
 # Installing
 
 Requires Python 3.8+
