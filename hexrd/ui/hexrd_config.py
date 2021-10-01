@@ -555,6 +555,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if HexrdConfig().apply_lorentz_polarization_correction:
             options = self.config['image']['lorentz_polarization']
             kwargs = {
+                'unpolarized': options['unpolarized'],
                 'f_hor': options['f_hor'],
                 'f_vert': options['f_vert'],
             }
