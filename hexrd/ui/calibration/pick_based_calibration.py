@@ -53,7 +53,8 @@ def enrich_pick_data(picks, instr, materials):
                     tth_eta_picks = np.vstack(tth_eta_picks)
                     xy_picks = panel.angles_to_cart(
                         np.radians(tth_eta_picks),
-                        tvec_c=np.asarray(grain_params[3:6], dtype=float)
+                        tvec_c=np.asarray(grain_params[3:6], dtype=float),
+                        tvec_s=instr.tvec
                     )
                     pick_data[data_key][det_key] = xy_picks
             elif pick_type == 'powder':
@@ -69,7 +70,8 @@ def enrich_pick_data(picks, instr, materials):
                     if len(ring_picks) > 0:
                         xy_picks = panel.angles_to_cart(
                             np.atleast_2d(np.radians(ring_picks)),
-                            tvec_c=tvec_c
+                            tvec_c=tvec_c,
+                            tvec_s=instr.tvec
                         )
                     else:
                         xy_picks = []
