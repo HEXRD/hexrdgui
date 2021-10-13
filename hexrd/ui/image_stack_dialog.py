@@ -18,12 +18,12 @@ class ImageStackDialog(QObject):
     # Emitted when images are cleared
     clear_images = Signal()
 
-    def __init__(self, parent=None, load_panel=None):
+    def __init__(self, parent=None, hedm_import_tool_dialog=None):
         super(ImageStackDialog, self).__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
 
-        self.load_panel = load_panel
+        self.hedm_import_tool_dialog = hedm_import_tool_dialog
         self.detectors = HexrdConfig().detector_names
         self.detector = self.detectors[0]
         self.state = copy.copy(HexrdConfig().stack_state)
@@ -52,7 +52,7 @@ class ImageStackDialog(QObject):
         self.ui.search_directories.clicked.connect(self.search_directories)
         self.ui.clear_file_selections.clicked.connect(
             self.clear_selected_files)
-        self.clear_images.connect(self.load_panel.clear_from_stack_dialog)
+        self.clear_images.connect(self.hedm_import_tool_dialog.clear_from_stack_dialog)
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
 
     def setup_gui(self):

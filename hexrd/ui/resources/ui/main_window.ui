@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -57,6 +57,8 @@
      <addaction name="action_open_config_file"/>
      <addaction name="action_open_materials"/>
      <addaction name="action_open_aps_imageseries"/>
+     <addaction name="action_llnl_import_tool"/>
+     <addaction name="action_hedm_import_tool"/>
      <addaction name="separator"/>
      <addaction name="action_open_grain_fitting_results"/>
     </widget>
@@ -82,8 +84,16 @@
      </property>
      <addaction name="action_export_current_plot"/>
     </widget>
+    <widget class="QMenu" name="menu_import">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="action_llnl_import_tool"/>
+     <addaction name="action_hedm_import_tool"/>
+    </widget>
     <addaction name="menu_open"/>
     <addaction name="menu_save"/>
+    <addaction name="menu_import"/>
     <addaction name="menu_export"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
@@ -209,7 +219,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -222,7 +232,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -235,7 +245,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>620</height>
          </rect>
         </property>
         <attribute name="label">
@@ -634,6 +644,26 @@
   <action name="action_open_state">
    <property name="text">
     <string>State</string>
+   </property>
+  </action>
+  <action name="action_llnl_import_tools">
+   <property name="text">
+    <string>LLNL Import Tool</string>
+   </property>
+  </action>
+  <action name="action_hedm_import_tools">
+   <property name="text">
+    <string>HEDM Import Tool</string>
+   </property>
+  </action>
+  <action name="action_llnl_import_tool">
+   <property name="text">
+    <string>LLNL Import Tool</string>
+   </property>
+  </action>
+  <action name="action_hedm_import_tool">
+   <property name="text">
+    <string>HEDM Import Tool</string>
    </property>
   </action>
  </widget>

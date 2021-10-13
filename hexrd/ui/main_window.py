@@ -35,7 +35,7 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.import_data_panel import ImportDataPanel
 from hexrd.ui.load_images_dialog import LoadImagesDialog
-from hexrd.ui.load_panel import LoadPanel
+from hexrd.ui.hedm_import_tool_dialog import HEDMImportToolDialog
 from hexrd.ui.lorentz_polarization_options_dialog import (
     LorentzPolarizationOptionsDialog
 )
@@ -100,12 +100,7 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
-        self.load_widget = LoadPanel(self.ui)
-        self.ui.load_page.setLayout(QVBoxLayout())
-        self.ui.load_page.layout().addWidget(self.load_widget.ui)
-        self.load_widget.ui.setVisible(False)
-        self.workflow_widgets[WORKFLOW_HEDM].append(self.load_widget.ui)
-
+        self.load_widget = HEDMImportToolDialog(self.ui)
         self.import_data_widget = ImportDataPanel(self.color_map_editor,
                                                   self.ui)
         self.ui.load_page.setLayout(QVBoxLayout())
@@ -241,6 +236,8 @@ class MainWindow(QObject):
             self.import_data_widget.config_loaded_from_menu)
         self.ui.action_show_toolbar.toggled.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_hedm_import_tool.triggered.connect(
+            self.on_action_hedm_import_tool_triggered)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -995,3 +992,6 @@ class MainWindow(QObject):
         # The dialog should have modified HexrdConfig's Lorentz options
         # already. Just apply it now.
         HexrdConfig().apply_lorentz_polarization_correction = b
+
+    def on_action_hedm_import_tool_triggered(self):
+        self.load_widget.show()

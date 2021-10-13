@@ -25,16 +25,16 @@ from hexrd.ui.ui_loader import UiLoader
 """
 
 
-class LoadPanel(QObject):
+class HEDMImportToolDialog(QObject):
 
     # Emitted when images are loaded
     images_loaded = Signal()
 
     def __init__(self, parent=None):
-        super(LoadPanel, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('load_panel.ui', parent)
+        self.ui = loader.load_file('hedm_import_tool_dialog.ui', parent)
 
         self.update_config_variables()
 
@@ -62,7 +62,7 @@ class LoadPanel(QObject):
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(
             self.state['trans'][self.ui.detector.currentIndex()])
-        self.ui.darkMode.setCurrentIndex(
+        self.ui.dark_mode.setCurrentIndex(
             self.state['dark'][self.ui.detector.currentIndex()])
         self.dark_files = self.state['dark_files']
 
@@ -83,11 +83,11 @@ class LoadPanel(QObject):
 
         self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
-        self.ui.selectDark.clicked.connect(self.select_dark_img)
+        self.ui.select_dark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
         self.ui.image_stack.clicked.connect(self.load_image_stacks)
 
-        self.ui.darkMode.currentIndexChanged.connect(self.dark_mode_changed)
+        self.ui.dark_mode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.switch_detector)
         self.ui.aggregation.currentIndexChanged.connect(self.agg_changed)
         self.ui.transform.currentIndexChanged.connect(self.trans_changed)
@@ -97,7 +97,9 @@ class LoadPanel(QObject):
             self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
-        self.ui.update_img_data.clicked.connect(self.update_image_data)
+        self.ui.update_image_data.clicked.connect(self.update_image_data)
+
+        self.ui.accepted.connect(self.accept_dialog)
 
         HexrdConfig().state_loaded.connect(self.state_loaded)
 
@@ -124,19 +126,19 @@ class LoadPanel(QObject):
     # Handle GUI changes
 
     def dark_mode_changed(self):
-        self.state['dark'][self.idx] = self.ui.darkMode.currentIndex()
+        self.state['dark'][self.idx] = self.ui.dark_mode.currentIndex()
 
         if self.state['dark'][self.idx] == UI_DARK_INDEX_FILE:
-            self.ui.selectDark.setEnabled(True)
+            self.ui.select_dark.setEnabled(True)
             if self.dark_files[self.idx]:
                 self.ui.dark_file.setText(self.dark_files[self.idx])
             else:
                 self.ui.dark_file.setText('(No File Selected)')
             self.enable_read()
         else:
-            self.ui.selectDark.setEnabled(False)
+            self.ui.select_dark.setEnabled(False)
             self.ui.dark_file.setText(
-                '(Using ' + str(self.ui.darkMode.currentText()) + ')')
+                '(Using ' + str(self.ui.dark_mode.currentText()) + ')')
             self.enable_read()
             self.state['dark_files'][self.idx] = None
 
@@ -170,8 +172,8 @@ class LoadPanel(QObject):
         self.idx = self.ui.detector.currentIndex()
         if not self.ui.all_detectors.isChecked():
             self.ui.transform.setCurrentIndex(self.state['trans'][self.idx])
-            if self.ui.darkMode.isEnabled():
-                self.ui.darkMode.setCurrentIndex(self.state['dark'][self.idx])
+            if self.ui.dark_mode.isEnabled():
+                self.ui.dark_mode.setCurrentIndex(self.state['dark'][self.idx])
         self.dark_mode_changed()
         self.create_table()
 
@@ -272,15 +274,15 @@ class LoadPanel(QObject):
             enable = False
         self.ui.aggregation.setEnabled(enable)
         for i in [1, 2, 3]:
-            self.ui.darkMode.model().item(i).setEnabled(enable)
+            self.ui.dark_mode.model().item(i).setEnabled(enable)
 
         if not enable:
             # Update dark mode settings
-            if self.ui.darkMode.currentIndex() != UI_DARK_INDEX_FILE:
+            if self.ui.dark_mode.currentIndex() != UI_DARK_INDEX_FILE:
                 num_dets = len(HexrdConfig().detector_names)
                 self.state['dark'] = (
                     [UI_DARK_INDEX_NONE for x in range(num_dets)])
-                self.ui.darkMode.setCurrentIndex(UI_DARK_INDEX_NONE)
+                self.ui.dark_mode.setCurrentIndex(UI_DARK_INDEX_NONE)
             # Update aggregation settings
             self.state['agg'] = UI_AGG_INDEX_NONE
             self.ui.aggregation.setCurrentIndex(0)
@@ -505,7 +507,7 @@ class LoadPanel(QObject):
                 self.omega_min[row] = float(curr_val)
             elif column == 4:
                 self.omega_max[row] = float(curr_val)
-            self.ui.update_img_data.setEnabled(self.update_allowed)
+            self.ui.update_image_data.setEnabled(self.update_allowed)
             self.enable_read()
 
         self.ui.file_options.blockSignals(False)
@@ -554,12 +556,12 @@ class LoadPanel(QObject):
             self.create_table()
             self.enable_read()
             self.update_allowed = False
-            self.ui.update_img_data.setEnabled(self.update_allowed)
+            self.ui.update_image_data.setEnabled(self.update_allowed)
 
     def update_image_data(self):
         if not self.confirm_omega_range():
             return
-        self.ui.update_img_data.setDisabled(True)
+        self.ui.update_image_data.setDisabled(True)
         data = {
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
@@ -567,3 +569,10 @@ class LoadPanel(QObject):
         }
         ImageLoadManager().add_omega_metadata(
             HexrdConfig().imageseries_dict, data)
+
+    def show(self):
+        self.ui.show()
+
+    def accept_dialog(self):
+        if self.ui.read.isEnabled():
+            self.read_data()
