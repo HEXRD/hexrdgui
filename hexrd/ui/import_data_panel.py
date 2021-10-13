@@ -433,7 +433,6 @@ class ImportDataPanel(QObject):
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
-        files = []
         detectors = self.detector_defaults['default_config'].setdefault(
             'detectors', {})
         not_set = [d for d in detectors if d not in self.completed_detectors]
@@ -453,7 +452,6 @@ class ImportDataPanel(QObject):
             rang, raxs = angleAxisOfRotMat(rmat_updated)
             # update tilt property on panel
             panel.tilt = rang * raxs.flatten()
-            files.append([self.edited_images[det]['img']])
 
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         try:
@@ -467,8 +465,10 @@ class ImportDataPanel(QObject):
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
+        det_names = HexrdConfig().detector_names
+        files = [[self.edited_images[det]['img']] for det in det_names]
         ImageLoadManager().read_data(files, parent=self.ui)
-        for det in HexrdConfig().detector_names:
+        for det in det_names:
             panel = instr.detectors[det]
             panel.panel_buffer = self.edited_images[det]['panel_buffer']
 
