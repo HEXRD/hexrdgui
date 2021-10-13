@@ -453,7 +453,6 @@ class ImportDataPanel(QObject):
             rang, raxs = angleAxisOfRotMat(rmat_updated)
             # update tilt property on panel
             panel.tilt = rang * raxs.flatten()
-            panel.panel_buffer = self.edited_images[det]['panel_buffer']
             files.append([self.edited_images[det]['img']])
 
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
@@ -469,6 +468,9 @@ class ImportDataPanel(QObject):
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
         ImageLoadManager().read_data(files, parent=self.ui)
+        for det in HexrdConfig().detector_names:
+            panel = instr.detectors[det]
+            panel.panel_buffer = self.edited_images[det]['panel_buffer']
 
         self.reset_panel()
         self.parent().action_show_toolbar.setEnabled(True)
