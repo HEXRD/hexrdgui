@@ -33,7 +33,7 @@ from hexrd.ui.constants import (
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
-from hexrd.ui.import_data_panel import ImportDataPanel
+from hexrd.ui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.hedm_import_tool_dialog import HEDMImportToolDialog
 from hexrd.ui.lorentz_polarization_options_dialog import (
@@ -101,12 +101,8 @@ class MainWindow(QObject):
         self.add_materials_panel()
 
         self.load_widget = HEDMImportToolDialog(self.ui)
-        self.import_data_widget = ImportDataPanel(self.color_map_editor,
+        self.import_data_widget = LLNLImportToolDialog(self.color_map_editor,
                                                   self.ui)
-        self.ui.load_page.setLayout(QVBoxLayout())
-        self.ui.load_page.layout().addWidget(self.import_data_widget.ui)
-        self.import_data_widget.ui.setVisible(False)
-        self.workflow_widgets[WORKFLOW_LLNL].append(self.import_data_widget.ui)
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
@@ -238,6 +234,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_hedm_import_tool.triggered.connect(
             self.on_action_hedm_import_tool_triggered)
+        self.ui.action_llnl_import_tool.triggered.connect(
+            self.on_action_llnl_import_tool_triggered)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -995,3 +993,6 @@ class MainWindow(QObject):
 
     def on_action_hedm_import_tool_triggered(self):
         self.load_widget.show()
+
+    def on_action_llnl_import_tool_triggered(self):
+        self.import_data_widget.show()

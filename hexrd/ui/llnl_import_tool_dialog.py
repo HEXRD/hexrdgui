@@ -28,7 +28,7 @@ import hexrd.ui.resources.calibration
 from hexrd.ui.utils import convert_tilt_convention, instr_to_internal_dict
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 
-class ImportDataPanel(QObject):
+class LLNLImportToolDialog(QObject):
 
     # Emitted when new config is loaded
     new_config_loaded = Signal()
@@ -38,10 +38,10 @@ class ImportDataPanel(QObject):
     enforce_raw_mode = Signal(bool)
 
     def __init__(self, cmap=None, parent=None):
-        super(ImportDataPanel, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('import_data_panel.ui', parent)
+        self.ui = loader.load_file('llnl_import_tool_dialog.ui', parent)
         self.it = None
         self.instrument = None
         self.edited_images = {}
@@ -74,8 +74,9 @@ class ImportDataPanel(QObject):
             self.update_template_style)
         self.ui.line_color.clicked.connect(self.pick_line_color)
         self.ui.line_size.valueChanged.connect(self.update_template_style)
-        self.ui.cancel.clicked.connect(self.reset_panel)
-        self.ui.cancel.clicked.connect(self.cancel_workflow.emit)
+        self.ui.cancel.clicked.connect(self.ui.reject)
+        self.ui.rejected.connect(self.reset_panel)
+        self.ui.rejected.connect(self.cancel_workflow.emit)
         self.ui.select_config.toggled.connect(self.update_config_selection)
         self.ui.default_config.toggled.connect(self.update_config_load)
         self.ui.load_config.clicked.connect(self.load_config)
@@ -476,3 +477,6 @@ class ImportDataPanel(QObject):
         self.parent().action_show_toolbar.setEnabled(True)
         self.parent().action_show_toolbar.setChecked(True)
         self.cmap.block_updates(False)
+
+    def show(self):
+        self.ui.show()
