@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 
 import h5py
+from hexrd.ui.image_stack_dialog import ImageStackDialog
 import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
@@ -122,8 +123,6 @@ class MainWindow(QObject):
 
         self.update_config_gui()
 
-        self.add_workflow_widgets()
-
         self.ui.action_apply_pixel_solid_angle_correction.setChecked(
             HexrdConfig().apply_pixel_solid_angle_correction)
         self.ui.action_apply_lorentz_polarization_correction.setChecked(
@@ -233,6 +232,8 @@ class MainWindow(QObject):
             self.on_action_hedm_import_tool_triggered)
         self.ui.action_llnl_import_tool.triggered.connect(
             self.on_action_llnl_import_tool_triggered)
+        self.ui.action_image_stack.triggered.connect(
+            self.on_action_image_stack_triggered)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -246,7 +247,6 @@ class MainWindow(QObject):
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
-        HexrdConfig().workflow_changed.connect(self.add_workflow_widgets)
         HexrdConfig().raw_masks_changed.connect(
             self.ui.image_tab_widget.load_images)
 
@@ -279,13 +279,6 @@ class MainWindow(QObject):
 
     def show(self):
         self.ui.show()
-
-    def add_workflow_widgets(self):
-        current_workflow = HexrdConfig().workflow
-        for key in self.workflow_widgets.keys():
-            visible = True if key == current_workflow else False
-            for widget in self.workflow_widgets[key]:
-                widget.setVisible(visible)
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -981,3 +974,9 @@ class MainWindow(QObject):
 
     def on_action_llnl_import_tool_triggered(self):
         self.import_data_widget.show()
+
+    def on_action_image_stack_triggered(self):
+        data = ImageStackDialog(self.parent(), self.load_widget).exec_()
+        if data:
+            self.load_widget.image_stack_loaded(data)
+            self.load_widget.show()

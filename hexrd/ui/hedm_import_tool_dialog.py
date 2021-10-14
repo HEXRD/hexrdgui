@@ -85,7 +85,6 @@ class HEDMImportToolDialog(QObject):
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.select_dark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
-        self.ui.image_stack.clicked.connect(self.load_image_stacks)
 
         self.ui.dark_mode.currentIndexChanged.connect(self.dark_mode_changed)
         self.ui.detector.currentIndexChanged.connect(self.switch_detector)
@@ -544,19 +543,18 @@ class HEDMImportToolDialog(QObject):
         ImageLoadManager().read_data(self.files, data, self.parent())
         self.update_allowed = True
 
-    def load_image_stacks(self):
-        if data := ImageStackDialog(self.parent(), self).exec_():
-            self.files = data['files']
-            self.omega_min = data['omega_min']
-            self.omega_max = data['omega_max']
-            self.nsteps = data['nsteps']
-            self.empty_frames = data['empty_frames']
-            self.total_frames = data['total_frames']
-            self.frame_data = data['frame_data']
-            self.create_table()
-            self.enable_read()
-            self.update_allowed = False
-            self.ui.update_image_data.setEnabled(self.update_allowed)
+    def image_stack_loaded(self, data):
+        self.files = data['files']
+        self.omega_min = data['omega_min']
+        self.omega_max = data['omega_max']
+        self.nsteps = data['nsteps']
+        self.empty_frames = data['empty_frames']
+        self.total_frames = data['total_frames']
+        self.frame_data = data['frame_data']
+        self.create_table()
+        self.enable_read()
+        self.update_allowed = False
+        self.ui.update_image_data.setEnabled(self.update_allowed)
 
     def update_image_data(self):
         if not self.confirm_omega_range():

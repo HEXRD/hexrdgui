@@ -86,8 +86,9 @@
      <property name="title">
       <string>Import</string>
      </property>
-     <addaction name="action_llnl_import_tool"/>
      <addaction name="action_hedm_import_tool"/>
+     <addaction name="action_image_stack"/>
+     <addaction name="action_llnl_import_tool"/>
     </widget>
     <addaction name="menu_open"/>
     <addaction name="menu_save"/>
@@ -643,6 +644,11 @@
   <action name="action_hedm_import_tool">
    <property name="text">
     <string>HEDM Import Tool</string>
+   </property>
+  </action>
+  <action name="action_image_stack">
+   <property name="text">
+    <string>Image Stack</string>
    </property>
   </action>
  </widget>

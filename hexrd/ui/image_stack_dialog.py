@@ -284,7 +284,7 @@ class ImageStackDialog(QObject):
                 if det == self.ui.detectors.currentText():
                     self.ui.current_directory.setText(p)
         else:
-            msg = (f'Could not find directory:\n{p}')
+            msg = (f'Could not find directory:\n{pattern}')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
 
     def get_files(self):
