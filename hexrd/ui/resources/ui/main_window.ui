@@ -633,7 +633,7 @@
   </action>
   <action name="action_hedm_import_tools">
    <property name="text">
-    <string>HEDM Import Tool</string>
+    <string>Simple Image Series</string>
    </property>
   </action>
   <action name="action_llnl_import_tool">
@@ -643,7 +643,7 @@
   </action>
   <action name="action_hedm_import_tool">
    <property name="text">
-    <string>HEDM Import Tool</string>
+    <string>Simple Image Series</string>
    </property>
   </action>
   <action name="action_image_stack">

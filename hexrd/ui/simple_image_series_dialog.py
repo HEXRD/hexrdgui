@@ -24,7 +24,7 @@ from hexrd.ui.ui_loader import UiLoader
 """
 
 
-class HEDMImportToolDialog(QObject):
+class SimpleImageSeriesDialog(QObject):
 
     # Emitted when images are loaded
     images_loaded = Signal()
@@ -33,7 +33,7 @@ class HEDMImportToolDialog(QObject):
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('hedm_import_tool_dialog.ui', parent)
+        self.ui = loader.load_file('simple_image_series_dialog.ui', parent)
 
         self.update_config_variables()
 

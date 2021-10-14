@@ -36,7 +36,7 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
-from hexrd.ui.hedm_import_tool_dialog import HEDMImportToolDialog
+from hexrd.ui.simple_image_series_dialog import SimpleImageSeriesDialog
 from hexrd.ui.lorentz_polarization_options_dialog import (
     LorentzPolarizationOptionsDialog
 )
@@ -100,7 +100,7 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
-        self.load_widget = HEDMImportToolDialog(self.ui)
+        self.load_widget = SimpleImageSeriesDialog(self.ui)
         self.import_data_widget = LLNLImportToolDialog(self.color_map_editor,
                                                   self.ui)
 
