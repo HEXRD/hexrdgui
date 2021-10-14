@@ -105,9 +105,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the load_panel_state has been cleared"""
     load_panel_state_reset = Signal()
 
-    """Emitted when the workflow has been changed"""
-    workflow_changed = Signal()
-
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
 
@@ -194,7 +191,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.overlays = []
         self.wppf_data = None
         self._auto_picked_data = None
-        self.workflow = None
         self.last_azimuthal_integral_data = None
         self.azimuthal_integral_axis_scale = 'linear'
         self._threshold_data = {}
@@ -281,8 +277,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('load_panel_state', {}),
             ('stack_state', {}),
             ('llnl_boundary_positions', {}),
-            ('overlays', []),
-            ('workflow', None)
+            ('overlays', [])
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -378,13 +373,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         state = self.state_to_persist()
         self._save_state_to_settings(state, settings)
-
-    def set_workflow(self, workflow):
-        if workflow == self.workflow:
-            return
-
-        self.workflow = workflow
-        self.workflow_changed.emit()
 
     def load_settings(self):
         settings = QSettings()

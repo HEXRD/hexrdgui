@@ -52,7 +52,6 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 )
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrd.ui import state
 
@@ -143,8 +142,6 @@ class MainWindow(QObject):
         # do not draw the images before the first paint event has
         # occurred. The images will be drawn automatically after
         # the first paint event has occurred (see MainWindow.eventFilter).
-
-        self.workflow_selection_dialog = WorkflowSelectionDialog(self.ui)
 
         self.add_view_dock_widget_actions()
 
@@ -259,9 +256,6 @@ class MainWindow(QObject):
         ImageLoadManager().live_update_status.connect(self.live_update)
         ImageLoadManager().state_updated.connect(self.load_widget.setup_gui)
 
-        self.ui.action_switch_workflow.triggered.connect(
-            self.on_action_switch_workflow_triggered)
-
         self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
         self.image_mode_widget.tab_changed.connect(
             self.mask_manager_dialog.image_mode_changed)
@@ -357,9 +351,7 @@ class MainWindow(QObject):
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
-        if self.workflow_selection_dialog == WORKFLOW_LLNL:
-            # Update the load widget
-            self.load_widget.config_changed()
+        self.load_widget.config_changed()
 
     def load_dummy_images(self):
         if HexrdConfig().loading_state:
@@ -813,10 +805,6 @@ class MainWindow(QObject):
             rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()
 
-        # Only ask if have haven't asked before
-        if HexrdConfig().workflow is None:
-            self.workflow_selection_dialog.show()
-
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
     def live_update(self, enabled):
@@ -868,9 +856,6 @@ class MainWindow(QObject):
         self.image_mode_widget.reset_masking()
         _ = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
-
-    def on_action_switch_workflow_triggered(self):
-        self.workflow_selection_dialog.show()
 
     def update_hedm_enable_states(self):
         actions = (self.ui.action_run_indexing, self.ui.action_run_fit_grains)

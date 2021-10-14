@@ -57,8 +57,6 @@
      <addaction name="action_open_config_file"/>
      <addaction name="action_open_materials"/>
      <addaction name="action_open_aps_imageseries"/>
-     <addaction name="action_llnl_import_tool"/>
-     <addaction name="action_hedm_import_tool"/>
      <addaction name="separator"/>
      <addaction name="action_open_grain_fitting_results"/>
     </widget>
@@ -141,7 +139,6 @@
     <addaction name="action_edit_reset_instrument_config"/>
     <addaction name="menu_masks"/>
     <addaction name="action_transform_detectors"/>
-    <addaction name="action_switch_workflow"/>
     <addaction name="action_edit_refinements"/>
    </widget>
    <widget class="QMenu" name="menu_run">
@@ -211,7 +208,7 @@
      <item>
       <widget class="QToolBox" name="config_tool_box">
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="materials_page">
         <property name="geometry">
@@ -219,24 +216,11 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>651</height>
          </rect>
         </property>
         <attribute name="label">
          <string>Materials</string>
-        </attribute>
-       </widget>
-       <widget class="QWidget" name="load_page">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>550</width>
-          <height>620</height>
-         </rect>
-        </property>
-        <attribute name="label">
-         <string>Load Data</string>
         </attribute>
        </widget>
        <widget class="QWidget" name="instrument_calibration_page">
@@ -245,7 +229,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>620</height>
+          <height>651</height>
          </rect>
         </property>
         <attribute name="label">
@@ -504,11 +488,6 @@
    </property>
    <property name="text">
     <string>Indexing</string>
-   </property>
-  </action>
-  <action name="action_switch_workflow">
-   <property name="text">
-    <string>Switch Workflow</string>
    </property>
   </action>
   <action name="action_edit_apply_hand_drawn_mask">
