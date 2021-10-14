@@ -1,6 +1,4 @@
 import copy
-import tempfile
-import yaml
 import numpy as np
 from pathlib import Path
 
@@ -52,7 +50,8 @@ class ImageStackDialog(QObject):
         self.ui.search_directories.clicked.connect(self.search_directories)
         self.ui.clear_file_selections.clicked.connect(
             self.clear_selected_files)
-        self.clear_images.connect(self.hedm_import_tool_dialog.clear_from_stack_dialog)
+        self.clear_images.connect(
+            self.hedm_import_tool_dialog.clear_from_stack_dialog)
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
 
     def setup_gui(self):

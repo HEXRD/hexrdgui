@@ -13,7 +13,6 @@ from hexrd.ui.constants import (
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
-from hexrd.ui.image_stack_dialog import ImageStackDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.ui_loader import UiLoader
 

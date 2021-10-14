@@ -1,7 +1,6 @@
 import os
 import yaml
 import tempfile
-import copy
 import h5py
 from pathlib import Path
 
@@ -25,8 +24,8 @@ from hexrd.ui.constants import (
     UI_TRANS_INDEX_ROTATE_90, UI_TRANS_INDEX_FLIP_HORIZONTALLY, YAML_EXTS)
 import hexrd.ui.resources.calibration
 
-from hexrd.ui.utils import convert_tilt_convention, instr_to_internal_dict
-from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+from hexrd.ui.utils import instr_to_internal_dict
+
 
 class LLNLImportToolDialog(QObject):
 

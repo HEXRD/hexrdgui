@@ -9,7 +9,7 @@ import numpy as np
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtWidgets import (
     QApplication, QDockWidget, QFileDialog, QInputDialog, QMainWindow,
-    QMessageBox, QVBoxLayout
+    QMessageBox
 )
 
 from hexrd.ui.async_runner import AsyncRunner
