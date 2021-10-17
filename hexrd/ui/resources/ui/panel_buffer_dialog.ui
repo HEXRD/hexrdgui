@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>478</width>
-    <height>235</height>
+    <height>296</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,29 +30,6 @@
        <string>Border</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="3" column="1">
-        <widget class="QSpinBox" name="border_y_spinbox">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>100000</number>
-         </property>
-         <property name="value">
-          <number>1</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="border_x_spinbox">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>100000</number>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="border_x_label">
          <property name="text">
@@ -79,6 +56,38 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="3" column="1">
+        <widget class="ScientificDoubleSpinBox" name="border_y_spinbox">
+         <property name="decimals">
+          <number>8</number>
+         </property>
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>10000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="ScientificDoubleSpinBox" name="border_x_spinbox">
+         <property name="decimals">
+          <number>8</number>
+         </property>
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>10000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -177,6 +186,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.py</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>tab_widget</tabstop>
   <tabstop>file_name</tabstop>

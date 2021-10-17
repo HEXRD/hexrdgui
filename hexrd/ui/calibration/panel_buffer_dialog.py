@@ -128,15 +128,18 @@ class PanelBufferDialog(QObject):
         if 'buffer' in detector_config:
             buffer = detector_config['buffer']['value']
 
-            if isinstance(buffer, np.ndarray):
-                self.mode = CONFIG_MODE_NUMPY
-            elif isinstance(buffer, list):
+            if isinstance(buffer, list):
+                buffer = np.array(buffer)
+
+            if buffer.size in (1, 2):
                 self.mode = CONFIG_MODE_BORDER
-                if np.isscalar(buffer):
-                    buffer = [buffer]*2
+                if buffer.size == 1:
+                    buffer = [buffer.item()] * 2
 
                 self.ui.border_x_spinbox.setValue(buffer[0])
                 self.ui.border_y_spinbox.setValue(buffer[1])
+            else:
+                self.mode = CONFIG_MODE_NUMPY
 
         self.update_mode_tab()
 
