@@ -98,8 +98,8 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
-        self.load_widget = SimpleImageSeriesDialog(self.ui)
-        self.import_data_widget = LLNLImportToolDialog(self.color_map_editor,
+        self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
+        self.llnl_import_tool_dialog = LLNLImportToolDialog(self.color_map_editor,
                                                   self.ui)
 
         self.cal_tree_view = CalTreeView(self.ui)
@@ -218,12 +218,12 @@ class MainWindow(QObject):
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
-        self.import_data_widget.new_config_loaded.connect(
+        self.llnl_import_tool_dialog.new_config_loaded.connect(
             self.update_config_gui)
-        self.import_data_widget.cancel_workflow.connect(
+        self.llnl_import_tool_dialog.cancel_workflow.connect(
             self.load_dummy_images)
         self.config_loaded.connect(
-            self.import_data_widget.config_loaded_from_menu)
+            self.llnl_import_tool_dialog.config_loaded_from_menu)
         self.ui.action_show_toolbar.toggled.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_hedm_import_tool.triggered.connect(
@@ -252,7 +252,7 @@ class MainWindow(QObject):
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.live_update)
-        ImageLoadManager().state_updated.connect(self.load_widget.setup_gui)
+        ImageLoadManager().state_updated.connect(self.simple_image_series_dialog.setup_gui)
 
         self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
         self.image_mode_widget.tab_changed.connect(
@@ -267,7 +267,7 @@ class MainWindow(QObject):
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
 
-        self.import_data_widget.enforce_raw_mode.connect(
+        self.llnl_import_tool_dialog.enforce_raw_mode.connect(
             self.enforce_view_mode)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
@@ -342,7 +342,7 @@ class MainWindow(QObject):
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
-        self.load_widget.config_changed()
+        self.simple_image_series_dialog.config_changed()
 
     def load_dummy_images(self):
         if HexrdConfig().loading_state:
@@ -968,13 +968,13 @@ class MainWindow(QObject):
         HexrdConfig().apply_lorentz_polarization_correction = b
 
     def on_action_hedm_import_tool_triggered(self):
-        self.load_widget.show()
+        self.simple_image_series_dialog.show()
 
     def on_action_llnl_import_tool_triggered(self):
-        self.import_data_widget.show()
+        self.llnl_import_tool_dialog.show()
 
     def on_action_image_stack_triggered(self):
-        data = ImageStackDialog(self.parent(), self.load_widget).exec_()
+        data = ImageStackDialog(self.parent(), self.simple_image_series_dialog).exec_()
         if data:
-            self.load_widget.image_stack_loaded(data)
-            self.load_widget.show()
+            self.simple_image_series_dialog.image_stack_loaded(data)
+            self.simple_image_series_dialog.show()
