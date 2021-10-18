@@ -192,9 +192,6 @@ def load(h5_file):
         # Get any connected parts to load state...
         HexrdConfig().load_state.emit(h5_file)
 
-        # Just in case the workflow changed...
-        HexrdConfig().workflow_changed.emit()
-
         # Finally, load the imageseries...
         load_imageseries_dict(h5_file)
     finally:

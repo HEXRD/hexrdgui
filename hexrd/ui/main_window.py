@@ -29,8 +29,7 @@ from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
     convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.utils import unique_name
-from hexrd.ui.constants import (
-    OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
+from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -73,7 +72,6 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
-        self.workflow_widgets = {'HEDM': [], 'LLNL': []}
 
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
