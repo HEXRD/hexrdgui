@@ -99,8 +99,8 @@ class MainWindow(QObject):
         self.add_materials_panel()
 
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
-        self.llnl_import_tool_dialog = LLNLImportToolDialog(self.color_map_editor,
-                                                  self.ui)
+        self.llnl_import_tool_dialog = LLNLImportToolDialog(
+                                        self.color_map_editor, self.ui)
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
@@ -252,7 +252,8 @@ class MainWindow(QObject):
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.live_update)
-        ImageLoadManager().state_updated.connect(self.simple_image_series_dialog.setup_gui)
+        ImageLoadManager().state_updated.connect(
+            self.simple_image_series_dialog.setup_gui)
 
         self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
         self.image_mode_widget.tab_changed.connect(
@@ -974,7 +975,8 @@ class MainWindow(QObject):
         self.llnl_import_tool_dialog.show()
 
     def on_action_image_stack_triggered(self):
-        data = ImageStackDialog(self.parent(), self.simple_image_series_dialog).exec_()
+        data = ImageStackDialog(
+            self.parent(), self.simple_image_series_dialog).exec_()
         if data:
             self.simple_image_series_dialog.image_stack_loaded(data)
             self.simple_image_series_dialog.show()
