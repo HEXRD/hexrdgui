@@ -139,6 +139,7 @@ class SimpleImageSeriesDialog(QObject):
                 '(Using ' + str(self.ui.dark_mode.currentText()) + ')')
             self.enable_read()
             self.state['dark_files'][self.idx] = None
+        self.enable_read()
 
     def detectors_changed(self):
         self.ui.detector.clear()
@@ -149,9 +150,11 @@ class SimpleImageSeriesDialog(QObject):
         self.state['agg'] = self.ui.aggregation.currentIndex()
         if self.ui.aggregation.currentIndex() == UI_AGG_INDEX_NONE:
             HexrdConfig().reset_unagg_imgs()
+        self.enable_read()
 
     def trans_changed(self):
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
+        self.enable_read()
 
     def dir_changed(self):
         new_dir = str(Path(self.files[0][0]).parent)
@@ -181,7 +184,7 @@ class SimpleImageSeriesDialog(QObject):
             self.switch_detector()
         elif self.state['dark'][self.idx] == UI_DARK_INDEX_FILE:
             self.select_dark_img(self.dark_files[self.idx])
-
+        self.enable_read()
 
     def select_folder(self, new_dir=None):
         # This expects to define the root image folder.
@@ -541,6 +544,7 @@ class SimpleImageSeriesDialog(QObject):
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
         self.update_allowed = True
+        self.ui.read.setDisabled(True)
 
     def image_stack_loaded(self, data):
         self.files = data['files']
