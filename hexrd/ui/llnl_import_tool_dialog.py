@@ -338,9 +338,8 @@ class LLNLImportToolDialog(QObject):
             self.it.connect_rotate()
 
     def clear_boundry(self):
-        if self.it.shape is None:
-            return
-        self.it.clear()
+        if self.it and self.it.shape is not None:
+            self.it.clear()
 
     def save_boundary_position(self):
         position = {'coords': self.it.template.xy, 'angle': self.it.rotation}
