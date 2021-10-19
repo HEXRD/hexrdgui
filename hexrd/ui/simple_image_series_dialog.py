@@ -559,6 +559,7 @@ class SimpleImageSeriesDialog(QObject):
         self.empty_frames = data['empty_frames']
         self.total_frames = data['total_frames']
         self.frame_data = data['frame_data']
+        self.reverse_frames(data['reverse_frames'])
         self.create_table()
         self.enable_read()
         self.update_allowed = False

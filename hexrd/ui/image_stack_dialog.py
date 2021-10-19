@@ -360,7 +360,8 @@ class ImageStackDialog(QObject):
             'frame_data': {
                 'max_file_frames': self.state['max_file_frames'],
                 'max_total_frames': self.state['max_total_frames']
-            }
+            },
+            'reverse_frames': self.ui.reverse_frames.isChecked()
         }
         if not self.state['omega_from_file']:
             data['frame_data']['wedges'] = self.state['wedges']
