@@ -65,7 +65,8 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.dark_mode.setCurrentIndex(
             self.state['dark'][self.ui.detector.currentIndex()])
         self.dark_files = self.state['dark_files']
-        self.ui.reverse_frames.setChecked(self.state.get('frames_reversed', False))
+        self.ui.reverse_frames.setChecked(
+            self.state.get('frames_reversed', False))
 
         self.dark_mode_changed()
         if not self.parent_dir:
