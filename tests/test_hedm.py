@@ -30,7 +30,7 @@ def test_load_data(qtbot, main_window, default_config_path, default_data_path):
     # There should only be dummy data currently
     assert is_dummy_data()
 
-    load_panel = main_window.load_widget
+    load_panel = main_window.simple_image_series_dialog
     # Press the "Select Image Files" button
     with select_files_when_asked(default_data_path):
         qtbot.mouseClick(load_panel.ui.image_files, Qt.LeftButton)

@@ -3,12 +3,13 @@ from pathlib import Path
 import tempfile
 
 import h5py
+from hexrd.ui.image_stack_dialog import ImageStackDialog
 import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
 from PySide2.QtWidgets import (
     QApplication, QDockWidget, QFileDialog, QInputDialog, QMainWindow,
-    QMessageBox, QVBoxLayout
+    QMessageBox
 )
 
 from hexrd.ui.async_runner import AsyncRunner
@@ -28,14 +29,13 @@ from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
     convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.utils import unique_name
-from hexrd.ui.constants import (
-    OverlayType, ViewType, WORKFLOW_HEDM, WORKFLOW_LLNL)
+from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
-from hexrd.ui.import_data_panel import ImportDataPanel
+from hexrd.ui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
-from hexrd.ui.load_panel import LoadPanel
+from hexrd.ui.simple_image_series_dialog import SimpleImageSeriesDialog
 from hexrd.ui.lorentz_polarization_options_dialog import (
     LorentzPolarizationOptionsDialog
 )
@@ -52,7 +52,6 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 )
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.workflow_selection_dialog import WorkflowSelectionDialog
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrd.ui import state
 
@@ -73,7 +72,6 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
-        self.workflow_widgets = {'HEDM': [], 'LLNL': []}
 
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
@@ -100,18 +98,9 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
-        self.load_widget = LoadPanel(self.ui)
-        self.ui.load_page.setLayout(QVBoxLayout())
-        self.ui.load_page.layout().addWidget(self.load_widget.ui)
-        self.load_widget.ui.setVisible(False)
-        self.workflow_widgets[WORKFLOW_HEDM].append(self.load_widget.ui)
-
-        self.import_data_widget = ImportDataPanel(self.color_map_editor,
-                                                  self.ui)
-        self.ui.load_page.setLayout(QVBoxLayout())
-        self.ui.load_page.layout().addWidget(self.import_data_widget.ui)
-        self.import_data_widget.ui.setVisible(False)
-        self.workflow_widgets[WORKFLOW_LLNL].append(self.import_data_widget.ui)
+        self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
+        self.llnl_import_tool_dialog = LLNLImportToolDialog(
+                                        self.color_map_editor, self.ui)
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
@@ -132,8 +121,6 @@ class MainWindow(QObject):
 
         self.update_config_gui()
 
-        self.add_workflow_widgets()
-
         self.ui.action_apply_pixel_solid_angle_correction.setChecked(
             HexrdConfig().apply_pixel_solid_angle_correction)
         self.ui.action_apply_lorentz_polarization_correction.setChecked(
@@ -152,8 +139,6 @@ class MainWindow(QObject):
         # do not draw the images before the first paint event has
         # occurred. The images will be drawn automatically after
         # the first paint event has occurred (see MainWindow.eventFilter).
-
-        self.workflow_selection_dialog = WorkflowSelectionDialog(self.ui)
 
         self.add_view_dock_widget_actions()
 
@@ -233,14 +218,20 @@ class MainWindow(QObject):
             self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
             self.ui.status_bar.clearMessage)
-        self.import_data_widget.new_config_loaded.connect(
+        self.llnl_import_tool_dialog.new_config_loaded.connect(
             self.update_config_gui)
-        self.import_data_widget.cancel_workflow.connect(
+        self.llnl_import_tool_dialog.cancel_workflow.connect(
             self.load_dummy_images)
         self.config_loaded.connect(
-            self.import_data_widget.config_loaded_from_menu)
+            self.llnl_import_tool_dialog.config_loaded_from_menu)
         self.ui.action_show_toolbar.toggled.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_hedm_import_tool.triggered.connect(
+            self.on_action_hedm_import_tool_triggered)
+        self.ui.action_llnl_import_tool.triggered.connect(
+            self.on_action_llnl_import_tool_triggered)
+        self.ui.action_image_stack.triggered.connect(
+            self.on_action_image_stack_triggered)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -254,7 +245,6 @@ class MainWindow(QObject):
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
-        HexrdConfig().workflow_changed.connect(self.add_workflow_widgets)
         HexrdConfig().raw_masks_changed.connect(
             self.ui.image_tab_widget.load_images)
 
@@ -262,10 +252,8 @@ class MainWindow(QObject):
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.live_update)
-        ImageLoadManager().state_updated.connect(self.load_widget.setup_gui)
-
-        self.ui.action_switch_workflow.triggered.connect(
-            self.on_action_switch_workflow_triggered)
+        ImageLoadManager().state_updated.connect(
+            self.simple_image_series_dialog.setup_gui)
 
         self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
         self.image_mode_widget.tab_changed.connect(
@@ -280,7 +268,7 @@ class MainWindow(QObject):
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
 
-        self.import_data_widget.enforce_raw_mode.connect(
+        self.llnl_import_tool_dialog.enforce_raw_mode.connect(
             self.enforce_view_mode)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
@@ -290,13 +278,6 @@ class MainWindow(QObject):
 
     def show(self):
         self.ui.show()
-
-    def add_workflow_widgets(self):
-        current_workflow = HexrdConfig().workflow
-        for key in self.workflow_widgets.keys():
-            visible = True if key == current_workflow else False
-            for widget in self.workflow_widgets[key]:
-                widget.setVisible(visible)
 
     def add_materials_panel(self):
         # Remove the placeholder materials panel from the UI, and
@@ -362,9 +343,7 @@ class MainWindow(QObject):
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
-        if self.workflow_selection_dialog == WORKFLOW_LLNL:
-            # Update the load widget
-            self.load_widget.config_changed()
+        self.simple_image_series_dialog.config_changed()
 
     def load_dummy_images(self):
         if HexrdConfig().loading_state:
@@ -818,10 +797,6 @@ class MainWindow(QObject):
             rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()
 
-        # Only ask if have haven't asked before
-        if HexrdConfig().workflow is None:
-            self.workflow_selection_dialog.show()
-
         self.calibration_config_widget.unblock_all_signals(prev_blocked)
 
     def live_update(self, enabled):
@@ -873,9 +848,6 @@ class MainWindow(QObject):
         self.image_mode_widget.reset_masking()
         _ = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
-
-    def on_action_switch_workflow_triggered(self):
-        self.workflow_selection_dialog.show()
 
     def update_hedm_enable_states(self):
         actions = (self.ui.action_run_indexing, self.ui.action_run_fit_grains)
@@ -995,3 +967,16 @@ class MainWindow(QObject):
         # The dialog should have modified HexrdConfig's Lorentz options
         # already. Just apply it now.
         HexrdConfig().apply_lorentz_polarization_correction = b
+
+    def on_action_hedm_import_tool_triggered(self):
+        self.simple_image_series_dialog.show()
+
+    def on_action_llnl_import_tool_triggered(self):
+        self.llnl_import_tool_dialog.show()
+
+    def on_action_image_stack_triggered(self):
+        data = ImageStackDialog(
+            self.parent(), self.simple_image_series_dialog).exec_()
+        if data:
+            self.simple_image_series_dialog.image_stack_loaded(data)
+            self.simple_image_series_dialog.show()

@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -82,8 +82,17 @@
      </property>
      <addaction name="action_export_current_plot"/>
     </widget>
+    <widget class="QMenu" name="menu_import">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="action_hedm_import_tool"/>
+     <addaction name="action_image_stack"/>
+     <addaction name="action_llnl_import_tool"/>
+    </widget>
     <addaction name="menu_open"/>
     <addaction name="menu_save"/>
+    <addaction name="menu_import"/>
     <addaction name="menu_export"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
@@ -131,7 +140,6 @@
     <addaction name="action_edit_reset_instrument_config"/>
     <addaction name="menu_masks"/>
     <addaction name="action_transform_detectors"/>
-    <addaction name="action_switch_workflow"/>
     <addaction name="action_edit_refinements"/>
    </widget>
    <widget class="QMenu" name="menu_run">
@@ -201,7 +209,7 @@
      <item>
       <widget class="QToolBox" name="config_tool_box">
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="materials_page">
         <property name="geometry">
@@ -209,24 +217,11 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>651</height>
          </rect>
         </property>
         <attribute name="label">
          <string>Materials</string>
-        </attribute>
-       </widget>
-       <widget class="QWidget" name="load_page">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>550</width>
-          <height>574</height>
-         </rect>
-        </property>
-        <attribute name="label">
-         <string>Load Data</string>
         </attribute>
        </widget>
        <widget class="QWidget" name="instrument_calibration_page">
@@ -235,7 +230,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>574</height>
+          <height>651</height>
          </rect>
         </property>
         <attribute name="label">
@@ -496,11 +491,6 @@
     <string>Indexing</string>
    </property>
   </action>
-  <action name="action_switch_workflow">
-   <property name="text">
-    <string>Switch Workflow</string>
-   </property>
-  </action>
   <action name="action_edit_apply_hand_drawn_mask">
    <property name="checkable">
     <bool>false</bool>
@@ -634,6 +624,21 @@
   <action name="action_open_state">
    <property name="text">
     <string>State</string>
+   </property>
+  </action>
+  <action name="action_llnl_import_tool">
+   <property name="text">
+    <string>LLNL Import Tool</string>
+   </property>
+  </action>
+  <action name="action_hedm_import_tool">
+   <property name="text">
+    <string>Simple Image Series</string>
+   </property>
+  </action>
+  <action name="action_image_stack">
+   <property name="text">
+    <string>Image Stack</string>
    </property>
   </action>
  </widget>

@@ -1,6 +1,4 @@
 import copy
-import tempfile
-import yaml
 import numpy as np
 from pathlib import Path
 
@@ -18,12 +16,12 @@ class ImageStackDialog(QObject):
     # Emitted when images are cleared
     clear_images = Signal()
 
-    def __init__(self, parent=None, load_panel=None):
+    def __init__(self, parent=None, simple_image_series_dialog=None):
         super(ImageStackDialog, self).__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
 
-        self.load_panel = load_panel
+        self.simple_image_series_dialog = simple_image_series_dialog
         self.detectors = HexrdConfig().detector_names
         self.detector = self.detectors[0]
         self.state = copy.copy(HexrdConfig().stack_state)
@@ -52,7 +50,8 @@ class ImageStackDialog(QObject):
         self.ui.search_directories.clicked.connect(self.search_directories)
         self.ui.clear_file_selections.clicked.connect(
             self.clear_selected_files)
-        self.clear_images.connect(self.load_panel.clear_from_stack_dialog)
+        self.clear_images.connect(
+            self.simple_image_series_dialog.clear_from_stack_dialog)
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
 
     def setup_gui(self):
@@ -284,7 +283,7 @@ class ImageStackDialog(QObject):
                 if det == self.ui.detectors.currentText():
                     self.ui.current_directory.setText(p)
         else:
-            msg = (f'Could not find directory:\n{p}')
+            msg = (f'Could not find directory:\n{pattern}')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
 
     def get_files(self):
