@@ -173,6 +173,9 @@ class RefinementsEditor:
         func = self.actions[action]
         func()
 
+        # Update the tree view
+        self.update_tree_view()
+
     @property
     def actions(self):
         return {
@@ -191,8 +194,6 @@ class RefinementsEditor:
                     recurse(x[key])
 
         recurse(self.dict)
-
-        self.update_tree_view()
 
     def mirror_first_detector(self):
         detectors = self.dict['instrument']['detectors']
@@ -214,8 +215,6 @@ class RefinementsEditor:
                 continue
 
             set_refinements(det)
-
-        self.update_tree_view()
 
 
 def unique_overlay_name(overlay):
