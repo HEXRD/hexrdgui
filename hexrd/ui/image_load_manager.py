@@ -283,6 +283,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                 ops.append(('rectangle', self.state['rect'][idx]))
 
             frames = self.get_range(ims_dict[key])
+            if self.state.get('frames_reversed', False):
+                frames = frames[::-1]
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
             HexrdConfig().set_instrument_config_val(
@@ -338,7 +340,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             # frames via the ProcessedImageSeries 'frame_list' arg to slice
             # the frame list
             start = self.data.get('empty_frames', 0)
-        return range(start, len(ims))
+        return np.arange(start, len(ims))
 
     def get_flip_op(self, oplist, idx):
         if self.data:

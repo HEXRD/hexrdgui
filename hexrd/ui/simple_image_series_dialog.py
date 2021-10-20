@@ -64,6 +64,8 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.dark_mode.setCurrentIndex(
             self.state['dark'][self.ui.detector.currentIndex()])
         self.dark_files = self.state['dark_files']
+        self.ui.reverse_frames.setChecked(
+            self.state.get('frames_reversed', False))
 
         self.dark_mode_changed()
         if not self.parent_dir:
@@ -96,6 +98,7 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
         self.ui.update_image_data.clicked.connect(self.update_image_data)
+        self.ui.reverse_frames.toggled.connect(self.reverse_frames)
 
         self.ui.accepted.connect(self.accept_dialog)
 
@@ -534,7 +537,8 @@ class SimpleImageSeriesDialog(QObject):
             'nsteps': self.nsteps,
             'empty_frames': self.empty_frames,
             'total_frames': self.total_frames,
-            }
+            'reverse_frames': self.ui.reverse_frames.isChecked()
+        }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
         if self.ext in YAML_EXTS:
@@ -554,6 +558,7 @@ class SimpleImageSeriesDialog(QObject):
         self.empty_frames = data['empty_frames']
         self.total_frames = data['total_frames']
         self.frame_data = data['frame_data']
+        self.reverse_frames(data['reverse_frames'])
         self.create_table()
         self.enable_read()
         self.update_allowed = False
@@ -577,3 +582,7 @@ class SimpleImageSeriesDialog(QObject):
     def accept_dialog(self):
         if self.ui.read.isEnabled():
             self.read_data()
+
+    def reverse_frames(self, state):
+        self.state['frames_reversed'] = state
+        self.enable_read()
