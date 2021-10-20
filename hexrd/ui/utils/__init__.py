@@ -250,6 +250,16 @@ def exclusions_off(plane_data):
         plane_data.exclusions = prev
 
 
+@contextmanager
+def tth_max_off(plane_data):
+    prev = plane_data.tThMax
+    plane_data.tThMax = None
+    try:
+        yield
+    finally:
+        plane_data.tThMax = prev
+
+
 def has_nan(x):
     # Utility function to check if there are any NaNs in x
     return np.isnan(np.min(x))

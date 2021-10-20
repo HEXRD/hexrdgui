@@ -10,7 +10,7 @@ from hexrd.crystallography import hklToStr
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import exclusions_off
+from hexrd.ui.utils import exclusions_off, tth_max_off
 
 
 class COLUMNS:
@@ -139,12 +139,13 @@ class ReflectionsTable:
         # rows are displayed, even the excluded ones. The user
         # picks the exclusions by selecting the rows.
         with exclusions_off(plane_data):
-            hkls = plane_data.getHKLs(asStr=True)
-            d_spacings = plane_data.getPlaneSpacings()
-            tth = plane_data.getTTh()
-            sf = plane_data.structFact
-            powder_intensity = plane_data.powder_intensity
-            multiplicity = plane_data.getMultiplicity()
+            with tth_max_off(plane_data):
+                hkls = plane_data.getHKLs(asStr=True)
+                d_spacings = plane_data.getPlaneSpacings()
+                tth = plane_data.getTTh()
+                sf = plane_data.structFact
+                powder_intensity = plane_data.powder_intensity
+                multiplicity = plane_data.getMultiplicity()
 
         # Grab the hkl ids
         hkl_ids = [-1] * len(hkls)
@@ -191,6 +192,13 @@ class ReflectionsTable:
                 table_item = IntTableItem(multiplicity[i])
                 table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
 
+                # Set the selectability for the entire row
+                selectable = True
+                if plane_data.tThMax is not None:
+                    selectable = tth[i] <= plane_data.tThMax
+
+                self.set_row_selectable(i, selectable)
+
         table.resizeColumnsToContents()
 
         self.update_selected_rows()
@@ -228,6 +236,18 @@ class ReflectionsTable:
                 rows.append(i)
 
         return rows
+
+    def set_row_selectable(self, i, selectable):
+        table = self.ui.table
+        for j in range(table.columnCount()):
+            item = table.item(i, j)
+            flags = item.flags()
+            if selectable:
+                flags |= Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            else:
+                flags &= ~Qt.ItemIsSelectable & ~Qt.ItemIsEnabled
+
+            item.setFlags(flags)
 
 
 class HklTableItem(QTableWidgetItem):
