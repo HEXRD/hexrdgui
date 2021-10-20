@@ -56,7 +56,6 @@
      <addaction name="action_open_state"/>
      <addaction name="action_open_config_file"/>
      <addaction name="action_open_materials"/>
-     <addaction name="action_open_aps_imageseries"/>
      <addaction name="separator"/>
      <addaction name="action_open_grain_fitting_results"/>
     </widget>
@@ -423,11 +422,6 @@
   <action name="action_edit_euler_angle_convention">
    <property name="text">
     <string>Euler Angle &amp;Convention</string>
-   </property>
-  </action>
-  <action name="action_open_aps_imageseries">
-   <property name="text">
-    <string>&amp;APS ImageSeries</string>
    </property>
   </action>
   <action name="actionQuit">

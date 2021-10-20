@@ -55,17 +55,6 @@ class ImageFileManager(metaclass=Singleton):
         if self.remember:
             HexrdConfig().hdf5_path = self.path
 
-    def load_aps_imageseries(self, detectors, directory_names):
-        HexrdConfig().imageseries_dict.clear()
-        for name, d in zip(detectors, directory_names):
-            try:
-                ims = self.open_directory(d)
-                HexrdConfig().imageseries_dict[name] = ims
-            except (Exception, IOError) as error:
-                msg = ('ERROR - Could not read file: \n' + str(error))
-                QMessageBox.warning(None, 'HEXRD', msg)
-                return
-
     def open_file(self, f, options=None):
         # f could be either a file or numpy array
         ext = os.path.splitext(f)[1] if isinstance(f, str) else None
