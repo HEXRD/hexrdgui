@@ -53,6 +53,7 @@ class ImageStackDialog(QObject):
         self.clear_images.connect(
             self.simple_image_series_dialog.clear_from_stack_dialog)
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
+        self.ui.reverse_frames.toggled(self.reverse_frames)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -312,6 +313,8 @@ class ImageStackDialog(QObject):
             self.ui.load_omega_file.setEnabled(checked)
             self.ui.omega_file.setEnabled(checked)
 
+    def reverse_frames(self, state):
+        self.state['reverse_frames'] = state
 
     def get_omega_values(self, num_files):
         if self.state['omega_from_file'] and self.state['omega']:
@@ -361,7 +364,7 @@ class ImageStackDialog(QObject):
                 'max_file_frames': self.state['max_file_frames'],
                 'max_total_frames': self.state['max_total_frames']
             },
-            'reverse_frames': self.ui.reverse_frames.isChecked()
+            'reverse_frames': self.state['reverse_frames']
         }
         if not self.state['omega_from_file']:
             data['frame_data']['wedges'] = self.state['wedges']

@@ -47,7 +47,6 @@ class SimpleImageSeriesDialog(QObject):
         self.current_progress_step = 0
         self.progress_macro_steps = 0
         self.update_allowed = False
-        self.frames_reversed = False
 
         self.setup_gui()
         self.detectors_changed()
@@ -538,7 +537,7 @@ class SimpleImageSeriesDialog(QObject):
             'nsteps': self.nsteps,
             'empty_frames': self.empty_frames,
             'total_frames': self.total_frames,
-            'reverse_frames': self.frames_reversed
+            'reverse_frames': self.ui.reverse_frames.isChecked()
         }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
@@ -585,6 +584,5 @@ class SimpleImageSeriesDialog(QObject):
             self.read_data()
 
     def reverse_frames(self, state):
-        self.frames_reversed = state
         self.state['frames_reversed'] = state
         self.enable_read()
