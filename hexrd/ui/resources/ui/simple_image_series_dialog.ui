@@ -76,13 +76,6 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QCheckBox" name="aps_imageseries">
-        <property name="text">
-         <string>Use APS ImageSeries</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="dark_label">
         <property name="text">

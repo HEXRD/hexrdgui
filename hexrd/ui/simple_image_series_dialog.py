@@ -236,15 +236,9 @@ class SimpleImageSeriesDialog(QObject):
 
     def select_images(self):
         # This takes one or more images for a single detector.
-        if self.ui.aps_imageseries.isChecked():
-            files = QDir(self.parent_dir).entryInfoList(QDir.Files)
-            selected_files = []
-            for file in files:
-                selected_files.append(file.absoluteFilePath())
-        else:
-            caption = HexrdConfig().images_dirtion = 'Select image file(s)'
-            selected_files, selected_filter = QFileDialog.getOpenFileNames(
-                self.ui, caption, dir=self.parent_dir)
+        caption = HexrdConfig().images_dirtion = 'Select image file(s)'
+        selected_files, _ = QFileDialog.getOpenFileNames(
+            self.ui, caption, dir=self.parent_dir)
 
         if selected_files:
             self.update_allowed = False

@@ -238,8 +238,6 @@ class MainWindow(QObject):
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
-        self.ui.action_open_aps_imageseries.triggered.connect(
-            self.open_aps_imageseries)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
@@ -416,25 +414,6 @@ class MainWindow(QObject):
         self.update_hedm_enable_states()
         self.color_map_editor.reset_range()
         self.image_mode_widget.reset_masking()
-
-    def open_aps_imageseries(self):
-        # Get the most recent images dir
-        images_dir = HexrdConfig().images_dir
-        detector_names = HexrdConfig().detector_names
-        selected_dirs = []
-        for name in detector_names:
-            caption = 'Select directory for detector: ' + name
-            d = QFileDialog.getExistingDirectory(self.ui, caption,
-                                                 dir=images_dir)
-            if not d:
-                return
-
-            selected_dirs.append(d)
-            images_dir = os.path.dirname(d)
-
-        ImageFileManager().load_aps_imageseries(detector_names, selected_dirs)
-        self.update_all()
-        self.new_images_loaded.emit()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
