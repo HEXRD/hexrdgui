@@ -38,92 +38,92 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="2" colspan="2">
        <widget class="QPushButton" name="select_files">
-        <property name="text">
-         <string>Select Files</string>
-        </property>
+	<property name="text">
+	 <string>Select Files</string>
+	</property>
        </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="matching_files_label">
-        <property name="text">
-         <string>Matching Files Found:</string>
-        </property>
+	<property name="text">
+	 <string>Matching Files Found:</string>
+	</property>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QRadioButton" name="files_by_selection">
-        <property name="text">
-         <string>Manual Selection</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">file_options</string>
-        </attribute>
+	<property name="text">
+	 <string>Manual Selection</string>
+	</property>
+	<property name="checked">
+	 <bool>true</bool>
+	</property>
+	<attribute name="buttonGroup">
+	 <string notr="true">file_options</string>
+	</attribute>
        </widget>
       </item>
       <item row="1" column="2">
        <widget class="QPushButton" name="search">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Search</string>
-        </property>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="text">
+	 <string>Search</string>
+	</property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QRadioButton" name="files_by_search">
-        <property name="text">
-         <string>Search</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">file_options</string>
-        </attribute>
+	<property name="text">
+	 <string>Search</string>
+	</property>
+	<attribute name="buttonGroup">
+	 <string notr="true">file_options</string>
+	</attribute>
        </widget>
       </item>
       <item row="1" column="3" alignment="Qt::AlignHCenter">
        <widget class="QCheckBox" name="apply_to_all">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Apply to All</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="text">
+	 <string>Apply to All</string>
+	</property>
+	<property name="checked">
+	 <bool>true</bool>
+	</property>
        </widget>
       </item>
       <item row="1" column="0" colspan="2">
        <widget class="QLineEdit" name="search_text">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="toolTip">
-         <string/>
-        </property>
-        <property name="placeholderText">
-         <string>Search Pattern</string>
-        </property>
-        <property name="clearButtonEnabled">
-         <bool>true</bool>
-        </property>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="toolTip">
+	 <string/>
+	</property>
+	<property name="placeholderText">
+	 <string>Search Pattern</string>
+	</property>
+	<property name="clearButtonEnabled">
+	 <bool>true</bool>
+	</property>
        </widget>
       </item>
       <item row="2" column="2" alignment="Qt::AlignHCenter">
        <widget class="QLabel" name="file_count">
-        <property name="text">
-         <string>0</string>
-        </property>
+	<property name="text">
+	 <string>0</string>
+	</property>
        </widget>
       </item>
       <item row="2" column="3">
        <widget class="QPushButton" name="clear_file_selections">
-        <property name="text">
-         <string>Clear Selections</string>
-        </property>
+	<property name="text">
+	 <string>Clear Selections</string>
+	</property>
        </widget>
       </item>
      </layout>
@@ -137,85 +137,85 @@
      <layout class="QGridLayout" name="gridLayout_6">
       <item row="1" column="2">
        <widget class="QLabel" name="max_total_frames_label">
-        <property name="text">
-         <string>Max Total Frames</string>
-        </property>
+	<property name="text">
+	 <string>Max Total Frames</string>
+	</property>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="empty_frames_label">
-        <property name="text">
-         <string>Empty Frames</string>
-        </property>
+	<property name="text">
+	 <string>Empty Frames</string>
+	</property>
        </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="max_file_frames_label">
-        <property name="text">
-         <string>Max File Frames</string>
-        </property>
+	<property name="text">
+	 <string>Max File Frames</string>
+	</property>
        </widget>
       </item>
       <item row="1" column="3">
        <widget class="QSpinBox" name="max_total_frames">
-        <property name="maximum">
-         <number>1000000</number>
-        </property>
-        <property name="value">
-         <number>0</number>
-        </property>
+	<property name="maximum">
+	 <number>1000000</number>
+	</property>
+	<property name="value">
+	 <number>0</number>
+	</property>
        </widget>
       </item>
       <item row="0" column="3">
        <widget class="QLabel" name="total_frames">
-        <property name="text">
-         <string>0</string>
-        </property>
+	<property name="text">
+	 <string>0</string>
+	</property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QSpinBox" name="empty_frames">
-        <property name="maximum">
-         <number>1000000</number>
-        </property>
+	<property name="maximum">
+	 <number>1000000</number>
+	</property>
        </widget>
       </item>
       <item row="0" column="2">
        <widget class="QLabel" name="frames_label">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>Total Frames</string>
-        </property>
+	<property name="enabled">
+	 <bool>true</bool>
+	</property>
+	<property name="text">
+	 <string>Total Frames</string>
+	</property>
        </widget>
       </item>
       <item row="1" column="1">
        <widget class="QSpinBox" name="max_file_frames">
-        <property name="frame">
-         <bool>true</bool>
-        </property>
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="maximum">
-         <number>1000000</number>
-        </property>
-        <property name="value">
-         <number>0</number>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_5">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-        </layout>
+	<property name="frame">
+	 <bool>true</bool>
+	</property>
+	<property name="keyboardTracking">
+	 <bool>false</bool>
+	</property>
+	<property name="maximum">
+	 <number>1000000</number>
+	</property>
+	<property name="value">
+	 <number>0</number>
+	</property>
+	<layout class="QGridLayout" name="gridLayout_5">
+	 <property name="leftMargin">
+	  <number>0</number>
+	 </property>
+	</layout>
        </widget>
       </item>
       <item row="2" column="0" colspan="2">
        <widget class="QCheckBox" name="reverse_frames">
-        <property name="text">
-         <string>Reverse Frame Order</string>
-        </property>
+	<property name="text">
+	 <string>Reverse Frame Order</string>
+	</property>
        </widget>
       </item>
      </layout>
@@ -235,118 +235,118 @@
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="0" colspan="2">
        <widget class="QCheckBox" name="omega_from_file">
-        <property name="text">
-         <string>Load from File</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
+	<property name="text">
+	 <string>Load from File</string>
+	</property>
+	<property name="checked">
+	 <bool>true</bool>
+	</property>
        </widget>
       </item>
       <item row="3" column="5">
        <widget class="QPushButton" name="add_wedge">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Add Wedge</string>
-        </property>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="text">
+	 <string>Add Wedge</string>
+	</property>
        </widget>
       </item>
       <item row="1" column="2">
        <widget class="QPushButton" name="load_omega_file">
-        <property name="text">
-         <string>Select File</string>
-        </property>
+	<property name="text">
+	 <string>Select File</string>
+	</property>
        </widget>
       </item>
       <item row="1" column="3" colspan="3">
        <widget class="QLineEdit" name="omega_file">
-        <property name="text">
-         <string>(No File Selected)</string>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
+	<property name="text">
+	 <string>(No File Selected)</string>
+	</property>
+	<property name="readOnly">
+	 <bool>true</bool>
+	</property>
        </widget>
       </item>
       <item row="3" column="0">
        <widget class="QPushButton" name="clear_wedges">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Clear</string>
-        </property>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="text">
+	 <string>Clear</string>
+	</property>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QRadioButton" name="add_omega">
-        <property name="text">
-         <string>Add Omega Data</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">omega_options</string>
-        </attribute>
+	<property name="text">
+	 <string>Add Omega Data</string>
+	</property>
+	<property name="checked">
+	 <bool>true</bool>
+	</property>
+	<attribute name="buttonGroup">
+	 <string notr="true">omega_options</string>
+	</attribute>
        </widget>
       </item>
       <item row="2" column="0" colspan="6">
        <widget class="QTableWidget" name="omega_wedges">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
-        </property>
-        <property name="alternatingRowColors">
-         <bool>true</bool>
-        </property>
-        <attribute name="horizontalHeaderDefaultSectionSize">
-         <number>139</number>
-        </attribute>
-        <attribute name="horizontalHeaderStretchLastSection">
-         <bool>true</bool>
-        </attribute>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <attribute name="verticalHeaderStretchLastSection">
-         <bool>false</bool>
-        </attribute>
-        <column>
-         <property name="text">
-          <string>Start</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Stop</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Steps</string>
-         </property>
-        </column>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="sizePolicy">
+	 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+	  <horstretch>0</horstretch>
+	  <verstretch>0</verstretch>
+	 </sizepolicy>
+	</property>
+	<property name="sizeAdjustPolicy">
+	 <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+	</property>
+	<property name="alternatingRowColors">
+	 <bool>true</bool>
+	</property>
+	<attribute name="horizontalHeaderDefaultSectionSize">
+	 <number>139</number>
+	</attribute>
+	<attribute name="horizontalHeaderStretchLastSection">
+	 <bool>true</bool>
+	</attribute>
+	<attribute name="verticalHeaderVisible">
+	 <bool>false</bool>
+	</attribute>
+	<attribute name="verticalHeaderStretchLastSection">
+	 <bool>false</bool>
+	</attribute>
+	<column>
+	 <property name="text">
+	  <string>Start</string>
+	 </property>
+	</column>
+	<column>
+	 <property name="text">
+	  <string>Stop</string>
+	 </property>
+	</column>
+	<column>
+	 <property name="text">
+	  <string>Steps</string>
+	 </property>
+	</column>
        </widget>
       </item>
       <item row="0" column="2">
        <widget class="QRadioButton" name="no_omega">
-        <property name="text">
-         <string>No Omega Data</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">omega_options</string>
-        </attribute>
+	<property name="text">
+	 <string>No Omega Data</string>
+	</property>
+	<attribute name="buttonGroup">
+	 <string notr="true">omega_options</string>
+	</attribute>
        </widget>
       </item>
      </layout>
@@ -360,75 +360,75 @@
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
        <widget class="QRadioButton" name="all_detectors">
-        <property name="text">
-         <string>All Detectors</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">detector_options</string>
-        </attribute>
+	<property name="text">
+	 <string>All Detectors</string>
+	</property>
+	<property name="checked">
+	 <bool>true</bool>
+	</property>
+	<attribute name="buttonGroup">
+	 <string notr="true">detector_options</string>
+	</attribute>
        </widget>
       </item>
       <item row="0" column="1" colspan="3">
        <widget class="QLineEdit" name="detector_search">
-        <property name="placeholderText">
-         <string>Search Pattern</string>
-        </property>
+	<property name="placeholderText">
+	 <string>Search Pattern</string>
+	</property>
        </widget>
       </item>
       <item row="0" column="4">
        <widget class="QPushButton" name="search_directories">
-        <property name="text">
-         <string>Search</string>
-        </property>
+	<property name="text">
+	 <string>Search</string>
+	</property>
        </widget>
       </item>
       <item row="1" column="0" colspan="2">
        <widget class="QRadioButton" name="single_detector">
-        <property name="text">
-         <string>Single Detector</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">detector_options</string>
-        </attribute>
+	<property name="text">
+	 <string>Single Detector</string>
+	</property>
+	<attribute name="buttonGroup">
+	 <string notr="true">detector_options</string>
+	</attribute>
        </widget>
       </item>
       <item row="1" column="2">
        <widget class="QComboBox" name="detectors">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
+	<property name="enabled">
+	 <bool>true</bool>
+	</property>
        </widget>
       </item>
       <item row="1" column="3" colspan="2">
        <widget class="QPushButton" name="select_directory">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Select Directory</string>
-        </property>
+	<property name="enabled">
+	 <bool>false</bool>
+	</property>
+	<property name="text">
+	 <string>Select Directory</string>
+	</property>
        </widget>
       </item>
       <item row="2" column="0" colspan="5">
        <widget class="QLineEdit" name="current_directory">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="contextMenuPolicy">
-         <enum>Qt::DefaultContextMenu</enum>
-        </property>
-        <property name="text">
-         <string>(No Directory Selected)</string>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-        <property name="clearButtonEnabled">
-         <bool>false</bool>
-        </property>
+	<property name="enabled">
+	 <bool>true</bool>
+	</property>
+	<property name="contextMenuPolicy">
+	 <enum>Qt::DefaultContextMenu</enum>
+	</property>
+	<property name="text">
+	 <string>(No Directory Selected)</string>
+	</property>
+	<property name="readOnly">
+	 <bool>true</bool>
+	</property>
+	<property name="clearButtonEnabled">
+	 <bool>false</bool>
+	</property>
        </widget>
       </item>
      </layout>

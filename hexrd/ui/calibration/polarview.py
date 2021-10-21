@@ -127,6 +127,14 @@ class PolarView:
         return self._angular_grid
 
     @property
+    def extent(self):
+        ev, tv = self.angular_grid
+        heps = np.radians(0.5*self.eta_pixel_size)
+        htps = np.radians(0.5*self.tth_pixel_size)
+        return [np.min(tv) - htps, np.max(tv) + htps,
+                np.max(ev) + heps, np.min(ev) - heps]
+
+    @property
     def eta_period(self):
         return HexrdConfig().polar_res_eta_period
 
