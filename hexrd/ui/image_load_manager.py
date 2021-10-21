@@ -487,4 +487,3 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             self.wait_with_progress(futures, progress_dict)
 
         return {f.result()[0]: f.result()[1] for f in futures}
-
