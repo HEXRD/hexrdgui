@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -145,13 +145,25 @@
     <property name="title">
      <string>R&amp;un</string>
     </property>
-    <addaction name="action_run_powder_calibration"/>
-    <addaction name="action_run_calibration"/>
+    <widget class="QMenu" name="menu_hedm">
+     <property name="title">
+      <string>HEDM</string>
+     </property>
+     <addaction name="action_run_indexing"/>
+     <addaction name="action_rerun_clustering"/>
+     <addaction name="action_run_fit_grains"/>
+    </widget>
+    <widget class="QMenu" name="menu_calibration">
+     <property name="title">
+      <string>Calibration</string>
+     </property>
+     <addaction name="action_run_laue_and_powder_calibration"/>
+     <addaction name="action_run_fast_powder_calibration"/>
+    </widget>
+    <addaction name="menu_calibration"/>
     <addaction name="action_run_wppf"/>
     <addaction name="separator"/>
-    <addaction name="action_run_indexing"/>
-    <addaction name="action_rerun_clustering"/>
-    <addaction name="action_run_fit_grains"/>
+    <addaction name="menu_hedm"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
@@ -216,7 +228,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>651</height>
+          <height>610</height>
          </rect>
         </property>
         <attribute name="label">
@@ -229,7 +241,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>651</height>
+          <height>610</height>
          </rect>
         </property>
         <attribute name="label">
@@ -414,9 +426,17 @@
     <string>&amp;Materials</string>
    </property>
   </action>
-  <action name="action_run_powder_calibration">
+  <action name="action_run_laue_and_powder_calibration">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
-    <string>&amp;Powder Calibration</string>
+    <string>Laue and Powder</string>
+   </property>
+  </action>
+  <action name="action_run_fast_powder_calibration">
+   <property name="text">
+    <string>Fast Powder</string>
    </property>
   </action>
   <action name="action_edit_euler_angle_convention">
@@ -454,14 +474,6 @@
    </property>
    <property name="text">
     <string>Current View</string>
-   </property>
-  </action>
-  <action name="action_run_calibration">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Calibration</string>
    </property>
   </action>
   <action name="action_edit_reset_instrument_config">
