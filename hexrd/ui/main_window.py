@@ -199,11 +199,11 @@ class MainWindow(QObject):
             self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.image_mode_widget.mask_applied.connect(self.update_all)
-        self.ui.action_run_powder_calibration.triggered.connect(
-            self.start_powder_calibration)
-        self.ui.action_run_calibration.triggered.connect(
-            self.on_action_run_calibration_triggered)
-        self.ui.action_run_calibration.triggered.connect(
+        self.ui.action_run_fast_powder_calibration.triggered.connect(
+            self.start_fast_powder_calibration)
+        self.ui.action_run_laue_and_powder_calibration.triggered.connect(
+            self.on_action_run_laue_and_powder_calibration_triggered)
+        self.ui.action_run_laue_and_powder_calibration.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
@@ -456,7 +456,7 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_current_plot(selected_file)
 
-    def on_action_run_calibration_triggered(self):
+    def on_action_run_laue_and_powder_calibration_triggered(self):
         if not hasattr(self, '_calibration_runner_async_runner'):
             # Initialize this only once and keep it around, so we don't
             # run into issues connecting/disconnecting the messages.
@@ -687,14 +687,15 @@ class MainWindow(QObject):
 
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian) and has_images)
-        self.ui.action_run_calibration.setEnabled(is_polar and has_images)
+        self.ui.action_run_laue_and_powder_calibration.setEnabled(
+            is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
             (is_polar or is_raw) and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
 
-    def start_powder_calibration(self):
+    def start_fast_powder_calibration(self):
         if not HexrdConfig().has_images():
             msg = ('No images available for calibration.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
