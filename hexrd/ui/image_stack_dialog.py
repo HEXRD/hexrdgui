@@ -53,7 +53,7 @@ class ImageStackDialog(QObject):
         self.clear_images.connect(
             self.simple_image_series_dialog.clear_from_stack_dialog)
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
-        self.ui.reverse_frames.toggled(self.reverse_frames)
+        self.ui.reverse_frames.toggled.connect(self.reverse_frames)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
