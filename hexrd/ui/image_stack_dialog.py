@@ -107,7 +107,8 @@ class ImageStackDialog(QObject):
                 'manual_file': True,
                 'apply_to_all': True,
                 'wedges': [],
-                'add_omega_data': True
+                'add_omega_data': True,
+                'reverse_frames': False,
             }
             for det in self.detectors:
                 self.state[det] = {

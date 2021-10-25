@@ -579,4 +579,5 @@ class SimpleImageSeriesDialog(QObject):
 
     def reverse_frames(self, state):
         self.state['frames_reversed'] = state
+        self.ui.reverse_frames.setChecked(state)
         self.enable_read()
