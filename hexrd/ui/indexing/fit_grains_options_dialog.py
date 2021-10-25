@@ -1,5 +1,5 @@
 from PySide2.QtCore import (
-    QItemSelectionModel, QObject, QSignalBlocker, Qt, Signal)
+    QItemSelectionModel, QModelIndex, QObject, QSignalBlocker, Qt, Signal)
 from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -277,7 +277,7 @@ class FitGrainsOptionsDialog(QObject):
         num_rows = self.tolerances_model.rowCount()
         selected_rows = list()
         for row in range(num_rows):
-            if selection_model.isRowSelected(row):
+            if selection_model.isRowSelected(row, QModelIndex()):
                 selected_rows.append(row)
             elif selection_model.rowIntersectsSelection(row):
                 # Partial row is selected - return empty list
