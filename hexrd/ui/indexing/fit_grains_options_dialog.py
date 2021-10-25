@@ -279,7 +279,7 @@ class FitGrainsOptionsDialog(QObject):
         for row in range(num_rows):
             if selection_model.isRowSelected(row, QModelIndex()):
                 selected_rows.append(row)
-            elif selection_model.rowIntersectsSelection(row):
+            elif selection_model.rowIntersectsSelection(row, QModelIndex()):
                 # Partial row is selected - return empty list
                 del selected_rows[:]
                 break
