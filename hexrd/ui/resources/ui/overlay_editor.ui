@@ -55,13 +55,13 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mono_rotation_series_tab">
+     <widget class="QWidget" name="rotation_series_tab">
       <attribute name="title">
-       <string>Mono Rotation Series</string>
+       <string>Rotation Series</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
-        <layout class="QVBoxLayout" name="mono_rotation_series_overlay_editor_layout"/>
+        <layout class="QVBoxLayout" name="rotation_series_overlay_editor_layout"/>
        </item>
       </layout>
      </widget>

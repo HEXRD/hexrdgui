@@ -63,7 +63,7 @@ class OverlayStylePicker(QObject):
             'D'
         ]
 
-        if type in (OverlayType.laue, OverlayType.mono_rotation_series):
+        if type in (OverlayType.laue, OverlayType.rotation_series):
             data_styles = marker_styles
         else:
             data_styles = line_styles
@@ -158,8 +158,7 @@ class OverlayStylePicker(QObject):
             self._keys = {
                 OverlayType.powder: self.powder_keys,
                 OverlayType.laue: self.laue_keys,
-                OverlayType.mono_rotation_series: (
-                    self.mono_rotation_series_keys)
+                OverlayType.rotation_series: self.rotation_series_keys,
             }
 
         type = self.overlay['type']
@@ -191,7 +190,7 @@ class OverlayStylePicker(QObject):
         }
 
     @property
-    def mono_rotation_series_keys(self):
+    def rotation_series_keys(self):
         # Same as laue
         return self.laue_keys
 
@@ -201,8 +200,7 @@ class OverlayStylePicker(QObject):
             self._labels = {
                 OverlayType.powder: self.powder_labels,
                 OverlayType.laue: self.laue_labels,
-                OverlayType.mono_rotation_series: (
-                    self.mono_rotation_series_labels)
+                OverlayType.rotation_series: self.rotation_series_labels,
             }
 
         type = self.overlay['type']
@@ -224,6 +222,6 @@ class OverlayStylePicker(QObject):
         }
 
     @property
-    def mono_rotation_series_labels(self):
+    def rotation_series_labels(self):
         # Same as Laue
         return self.laue_labels

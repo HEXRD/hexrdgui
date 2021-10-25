@@ -1,8 +1,6 @@
 from hexrd.ui.laue_overlay_editor import LaueOverlayEditor
 from hexrd.ui.powder_overlay_editor import PowderOverlayEditor
-from hexrd.ui.mono_rotation_series_overlay_editor import (
-    MonoRotationSeriesOverlayEditor
-)
+from hexrd.ui.rotation_series_overlay_editor import RotationSeriesOverlayEditor
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -20,11 +18,10 @@ class OverlayEditor:
         self.ui.laue_overlay_editor_layout.addWidget(
             self.laue_overlay_editor.ui)
 
-        self.mono_rotation_series_overlay_editor = (
-            MonoRotationSeriesOverlayEditor(self.ui)
-        )
-        self.ui.mono_rotation_series_overlay_editor_layout.addWidget(
-            self.mono_rotation_series_overlay_editor.ui)
+        self.rotation_series_overlay_editor = (
+            RotationSeriesOverlayEditor(self.ui))
+        self.ui.rotation_series_overlay_editor_layout.addWidget(
+            self.rotation_series_overlay_editor.ui)
 
         self.ui.tab_widget.tabBar().hide()
 
@@ -60,7 +57,7 @@ class OverlayEditor:
         widgets = {
             'powder': self.powder_overlay_editor,
             'laue': self.laue_overlay_editor,
-            'mono_rotation_series': self.mono_rotation_series_overlay_editor
+            'rotation_series': self.rotation_series_overlay_editor,
         }
 
         if self.type is None or self.type.value not in widgets:

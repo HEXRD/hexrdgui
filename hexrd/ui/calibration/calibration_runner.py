@@ -86,8 +86,8 @@ class CalibrationRunner:
             options = overlay.get('options', {})
             width_params = ['tth_width', 'eta_width']
             return all(options.get(x) is not None for x in width_params)
-        elif type == OverlayType.mono_rotation_series:
-            raise NotImplementedError('mono_rotation_series not implemented')
+        elif type == OverlayType.rotation_series:
+            raise NotImplementedError('rotation_series not implemented')
         else:
             raise Exception(f'Unknown overlay type: {type}')
 

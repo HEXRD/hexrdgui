@@ -5,7 +5,7 @@ from hexrd import constants
 from hexrd.ui.constants import ViewType
 
 
-class MonoRotationSeriesSpotOverlay:
+class RotationSeriesSpotOverlay:
     def __init__(self, plane_data, instr,
                  crystal_params=None,
                  eta_ranges=None,

@@ -46,7 +46,7 @@ class ViewType:
 class OverlayType(Enum):
     powder = 'powder'
     laue = 'laue'
-    mono_rotation_series = 'mono_rotation_series'
+    rotation_series = 'rotation_series'
 
 
 DEFAULT_EULER_ANGLE_CONVENTION = {
@@ -80,7 +80,7 @@ DEFAULT_LAUE_STYLE = {
     }
 }
 
-DEFAULT_MONO_ROTATION_SERIES_STYLE = {
+DEFAULT_ROTATION_SERIES_STYLE = {
     'data': {
         'c': '#00ffff',  # Cyan
         'marker': 'o',
@@ -119,7 +119,7 @@ HIGHLIGHT_LAUE_STYLE = {
     }
 }
 
-HIGHLIGHT_MONO_ROTATION_SERIES_STYLE = {
+HIGHLIGHT_ROTATION_SERIES_STYLE = {
     'data': {
         'c': '#ff00ff',  # Magenta
         'ls': 'solid',
@@ -149,7 +149,7 @@ DEFAULT_LAUE_OPTIONS = {
     'width_shape': 'ellipse',
 }
 
-DEFAULT_MONO_ROTATION_SERIES_OPTIONS = {
+DEFAULT_ROTATION_SERIES_OPTIONS = {
     'crystal_params': DEFAULT_CRYSTAL_PARAMS.copy(),
     'eta_ranges': [[-np.pi, np.pi]],
     'ome_ranges': [[-np.pi, np.pi]],

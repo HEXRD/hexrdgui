@@ -8,12 +8,11 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
 
-class MonoRotationSeriesOverlayEditor:
+class RotationSeriesOverlayEditor:
 
     def __init__(self, parent=None):
         loader = UiLoader()
-        self.ui = loader.load_file('mono_rotation_series_overlay_editor.ui',
-                                   parent)
+        self.ui = loader.load_file('rotation_series_overlay_editor.ui', parent)
 
         self._overlay = None
 

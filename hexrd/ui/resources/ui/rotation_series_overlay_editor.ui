@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>mono_rotation_series_overlay_editor</class>
- <widget class="QWidget" name="mono_rotation_series_overlay_editor">
+ <class>rotation_series_overlay_editor</class>
+ <widget class="QWidget" name="rotation_series_overlay_editor">
   <property name="geometry">
    <rect>
     <x>0</x>

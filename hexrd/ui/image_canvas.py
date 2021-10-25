@@ -204,8 +204,7 @@ class ImageCanvas(FigureCanvas):
         overlay_funcs = {
             OverlayType.powder: self.draw_powder_overlay,
             OverlayType.laue: self.draw_laue_overlay,
-            OverlayType.mono_rotation_series: (
-                self.draw_mono_rotation_series_overlay)
+            OverlayType.rotation_series: self.draw_rotation_series_overlay,
         }
 
         if type not in overlay_funcs:
@@ -331,7 +330,7 @@ class ImageCanvas(FigureCanvas):
             artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
-    def draw_mono_rotation_series_overlay(self, axis, data, style):
+    def draw_rotation_series_overlay(self, axis, data, style):
         data_points = data['data']
 
         data_style = style['data']
