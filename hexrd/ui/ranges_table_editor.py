@@ -2,8 +2,9 @@ import copy
 import numpy as np
 
 from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Signal
-from PySide2.QtWidgets import QDoubleSpinBox, QSizePolicy
+from PySide2.QtWidgets import QSizePolicy
 
+from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -119,7 +120,7 @@ class RangesTableEditor(QObject):
         self.data_modified.emit()
 
     def create_double_spin_box(self, v):
-        sb = QDoubleSpinBox(self.ui.table)
+        sb = ScientificDoubleSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
         sb.setSuffix(self.suffix)
         sb.setMinimum(self.min)
