@@ -93,12 +93,15 @@
      <property name="text">
       <string>Aggregated</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item row="9" column="3">
     <widget class="QLabel" name="omega_width_label">
      <property name="enabled">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="text">
       <string>Omega Width:</string>
@@ -108,7 +111,7 @@
    <item row="9" column="4">
     <widget class="ScientificDoubleSpinBox" name="omega_width">
      <property name="enabled">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="suffix">
       <string>°</string>
@@ -133,40 +136,9 @@
  <tabstops>
   <tabstop>omega_period_0</tabstop>
   <tabstop>omega_period_1</tabstop>
+  <tabstop>aggregated</tabstop>
+  <tabstop>omega_width</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>aggregated</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>omega_width_label</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>207</x>
-     <y>70</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>340</x>
-     <y>70</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>aggregated</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>omega_width</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>207</x>
-     <y>70</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>473</x>
-     <y>70</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

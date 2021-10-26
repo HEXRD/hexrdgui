@@ -513,6 +513,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return len(self.imageseries_dict) != 0
 
     @property
+    def has_omega_ranges(self):
+        return self.current_imageseries_omega_range is not None
+
+    @property
     def current_imageseries_omega_range(self):
         # Just assume all of the imageseries have the same omega ranges.
         # Grab the first one.
@@ -1434,6 +1438,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 print(f'Warning: resetting overlay refinements for "{name}"',
                       'due to length mismatch')
                 overlay['refinements'] = default_refinements
+
+            if overlay['type'] == constants.OverlayType.rotation_series:
+                if not self.has_omega_imageseries:
+                    # Force aggregation
+                    overlay.get('options', {})['aggregated'] = True
+                    overlay['update_needed'] = True
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']

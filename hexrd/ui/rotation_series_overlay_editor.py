@@ -3,6 +3,7 @@ import numpy as np
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ranges_table_editor import RangesTableEditor
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
@@ -27,14 +28,19 @@ class RotationSeriesOverlayEditor:
         self.crystal_editor = CalibrationCrystalEditor(parent=self.ui)
         self.ui.crystal_editor_layout.addWidget(self.crystal_editor.ui)
 
+        self.update_enable_states()
+
         self.setup_connections()
 
     def setup_connections(self):
         self.eta_ranges_editor.data_modified.connect(self.update_config)
         self.omega_ranges_editor.data_modified.connect(self.update_config)
+        self.ui.aggregated.toggled.connect(self.update_enable_states)
         self.ui.aggregated.toggled.connect(self.update_config)
         self.ui.omega_width.valueChanged.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
+
+        ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
 
         for w in self.omega_period_widgets:
             w.valueChanged.connect(self.update_config)
@@ -46,7 +52,33 @@ class RotationSeriesOverlayEditor:
     @overlay.setter
     def overlay(self, v):
         self._overlay = v
+        self.validate_options()
+        self.update_enable_states()
         self.update_gui()
+
+    def new_images_loaded(self):
+        self.validate_options()
+        self.update_enable_states()
+        self.update_gui()
+
+    def validate_options(self):
+        options = self.overlay.get('options', {})
+
+        force_aggregated = (
+            not HexrdConfig().has_omega_ranges or
+            'aggregated' not in options
+        )
+        if force_aggregated:
+            options['aggregated'] = True
+            self.overlay['update_needed'] = True
+
+        if self.overlay['update_needed']:
+            HexrdConfig().overlay_config_changed.emit()
+
+    def update_enable_states(self):
+        self.ui.aggregated.setEnabled(HexrdConfig().has_omega_ranges)
+        self.ui.omega_width_label.setDisabled(self.aggregated)
+        self.ui.omega_width.setDisabled(self.aggregated)
 
     def update_gui(self):
         if self.overlay is None:
