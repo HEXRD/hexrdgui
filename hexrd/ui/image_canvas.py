@@ -331,14 +331,41 @@ class ImageCanvas(FigureCanvas):
             artists.append(artist)
 
     def draw_rotation_series_overlay(self, axis, data, style):
+        ome_range = HexrdConfig().current_imageseries_omega_range
+        aggregated = data['aggregated'] or ome_range is None
+        if not aggregated:
+            ome_width = data['omega_width']
+            ome_mean = np.mean(ome_range)
+            full_range = (ome_mean - ome_width, ome_mean + ome_width)
+
+        def in_range(x):
+            return aggregated or full_range[0] <= x <= full_range[1]
+
+        ome_points = data['omegas']
         data_points = data['data']
 
         data_style = style['data']
         artists = []
         self.overlay_artists[id(data)] = artists
-        for x, y in data_points:
+        for ome, (x, y) in zip(ome_points, data_points):
+            if not in_range(ome):
+                # Not in the current range
+                continue
+
             artist = axis.scatter(x, y, **data_style)
             artists.append(artist)
+
+    def remove_artists_for_overlay(self, overlay):
+        for data_id in list(self.overlay_artists):
+            if any(data_id == id(x) for x in overlay['data'].values()):
+                self.remove_overlay_artists(data_id)
+
+    def redraw_overlay(self, overlay):
+        # Remove the artists for this overlay
+        self.remove_artists_for_overlay(overlay)
+
+        # Redraw the overlay
+        self.draw_overlay(overlay)
 
     def update_overlays(self):
         if HexrdConfig().loading_state:
