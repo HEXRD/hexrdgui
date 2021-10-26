@@ -513,6 +513,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return len(self.imageseries_dict) != 0
 
     @property
+    def current_imageseries_omega_range(self):
+        # Just assume all of the imageseries have the same omega ranges.
+        # Grab the first one.
+        first_ims = next(iter(self.imageseries_dict.values()))
+        if not utils.is_omega_imageseries(first_ims):
+            return None
+
+        return first_ims.omega[self.current_imageseries_idx]
+
+    @property
     def raw_images_dict(self):
         """Get a dict of images with the current index"""
         idx = self.current_imageseries_idx
