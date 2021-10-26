@@ -12,7 +12,8 @@ class RotationSeriesSpotOverlay:
                  ome_ranges=None,
                  ome_period=None,
                  eta_period=np.r_[-180., 180.],
-                 aggregated=True):
+                 aggregated=True,
+                 ome_width=5.0):
 
         # FIXME: eta_period is currently not in use
 
@@ -51,6 +52,7 @@ class RotationSeriesSpotOverlay:
             self._ome_period = ome_period
 
         self.aggregated = aggregated
+        self.ome_width = ome_width
 
     @property
     def plane_data(self):
@@ -135,6 +137,7 @@ class RotationSeriesSpotOverlay:
                 'data': data,
                 'aggregated': self.aggregated,
                 'omegas': np.degrees(valid_angs[0][:, 2]),
+                'omega_width': self.ome_width,
             }
 
         return point_groups

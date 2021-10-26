@@ -155,6 +155,7 @@ DEFAULT_ROTATION_SERIES_OPTIONS = {
     'ome_ranges': [[-np.pi, np.pi]],
     'ome_period': [-np.pi, np.pi],
     'aggregated': True,
+    'ome_width': 5.0,
 }
 
 DEFAULT_WPPF_PLOT_STYLE = {

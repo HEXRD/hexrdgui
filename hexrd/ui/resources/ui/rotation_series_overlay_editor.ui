@@ -28,7 +28,7 @@
     <layout class="QVBoxLayout" name="crystal_editor_layout"/>
    </item>
    <item row="4" column="4">
-    <widget class="QDoubleSpinBox" name="omega_period_1">
+    <widget class="ScientificDoubleSpinBox" name="omega_period_1">
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -57,7 +57,7 @@
     </spacer>
    </item>
    <item row="4" column="3">
-    <widget class="QDoubleSpinBox" name="omega_period_0">
+    <widget class="ScientificDoubleSpinBox" name="omega_period_0">
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -95,12 +95,78 @@
      </property>
     </widget>
    </item>
+   <item row="9" column="3">
+    <widget class="QLabel" name="omega_width_label">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Omega Width:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="4">
+    <widget class="ScientificDoubleSpinBox" name="omega_width">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="suffix">
+      <string>°</string>
+     </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="maximum">
+      <double>10000000.000000000000000</double>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>omega_period_0</tabstop>
   <tabstop>omega_period_1</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>aggregated</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>omega_width_label</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>207</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>340</x>
+     <y>70</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>aggregated</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>omega_width</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>207</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>473</x>
+     <y>70</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

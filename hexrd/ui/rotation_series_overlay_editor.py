@@ -33,6 +33,7 @@ class RotationSeriesOverlayEditor:
         self.eta_ranges_editor.data_modified.connect(self.update_config)
         self.omega_ranges_editor.data_modified.connect(self.update_config)
         self.ui.aggregated.toggled.connect(self.update_config)
+        self.ui.omega_width.valueChanged.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
 
         for w in self.omega_period_widgets:
@@ -59,6 +60,8 @@ class RotationSeriesOverlayEditor:
                 self.omega_period = options['ome_period']
             if 'aggregated' in options:
                 self.aggregated = options['aggregated']
+            if 'ome_width' in options:
+                self.ome_width = options['ome_width']
             if 'eta_ranges' in options:
                 self.eta_ranges = options['eta_ranges']
             if 'ome_ranges' in options:
@@ -72,6 +75,7 @@ class RotationSeriesOverlayEditor:
         options['crystal_params'] = self.crystal_params
         options['ome_period'] = self.omega_period
         options['aggregated'] = self.aggregated
+        options['ome_width'] = self.ome_width
         options['eta_ranges'] = self.eta_ranges
         options['ome_ranges'] = self.ome_ranges
 
@@ -93,6 +97,14 @@ class RotationSeriesOverlayEditor:
     @aggregated.setter
     def aggregated(self, b):
         self.ui.aggregated.setChecked(b)
+
+    @property
+    def ome_width(self):
+        return self.ui.omega_width.value()
+
+    @ome_width.setter
+    def ome_width(self, v):
+        self.ui.omega_width.setValue(v)
 
     @property
     def eta_ranges(self):
@@ -127,4 +139,5 @@ class RotationSeriesOverlayEditor:
     def widgets(self):
         return [
             self.ui.aggregated,
+            self.ui.omega_width,
         ] + self.omega_period_widgets
