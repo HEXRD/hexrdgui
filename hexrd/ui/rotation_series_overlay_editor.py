@@ -1,7 +1,13 @@
 import copy
+
 import numpy as np
 
+from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
+
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
+from hexrd.ui.constants import (
+    DEFAULT_CRYSTAL_PARAMS, DEFAULT_CRYSTAL_REFINEMENTS
+)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ranges_table_editor import RangesTableEditor
@@ -35,15 +41,20 @@ class RotationSeriesOverlayEditor:
     def setup_connections(self):
         self.eta_ranges_editor.data_modified.connect(self.update_config)
         self.omega_ranges_editor.data_modified.connect(self.update_config)
-        self.ui.aggregated.toggled.connect(self.update_enable_states)
-        self.ui.aggregated.toggled.connect(self.update_config)
-        self.ui.omega_width.valueChanged.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
+        self.crystal_editor.refinements_modified.connect(
+            self.update_refinements)
+
+        for w in self.widgets:
+            if isinstance(w, QDoubleSpinBox):
+                w.valueChanged.connect(self.update_config)
+            elif isinstance(w, QCheckBox):
+                w.toggled.connect(self.update_config)
+
+        self.ui.aggregated.toggled.connect(self.update_enable_states)
+        self.ui.enable_widths.toggled.connect(self.update_enable_states)
 
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
-
-        for w in self.omega_period_widgets:
-            w.valueChanged.connect(self.update_config)
 
     @property
     def overlay(self):
@@ -80,6 +91,16 @@ class RotationSeriesOverlayEditor:
         self.ui.omega_width_label.setDisabled(self.aggregated)
         self.ui.omega_width.setDisabled(self.aggregated)
 
+        enable_widths = self.enable_widths
+        names = [
+            'tth_width_label',
+            'tth_width',
+            'eta_width_label',
+            'eta_width',
+        ]
+        for name in names:
+            getattr(self.ui, name).setEnabled(enable_widths)
+
     def update_gui(self):
         if self.overlay is None:
             return
@@ -98,6 +119,23 @@ class RotationSeriesOverlayEditor:
                 self.eta_ranges = options['eta_ranges']
             if 'ome_ranges' in options:
                 self.ome_ranges = options['ome_ranges']
+            if 'tth_width' in options:
+                self.tth_width = options['tth_width']
+            if 'eta_width' in options:
+                self.eta_width = options['eta_width']
+
+        if 'crystal_params' in options:
+            self.crystal_params = options['crystal_params']
+        else:
+            self.crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
+
+        if 'refinements' in self.overlay:
+            self.refinements = self.overlay['refinements']
+        else:
+            self.refinements = copy.deepcopy(DEFAULT_CRYSTAL_REFINEMENTS)
+
+        widths = ['tth_width', 'eta_width']
+        self.enable_widths = all(options.get(x) is not None for x in widths)
 
     def update_config(self):
         if self.overlay is None:
@@ -110,9 +148,16 @@ class RotationSeriesOverlayEditor:
         options['ome_width'] = self.ome_width
         options['eta_ranges'] = self.eta_ranges
         options['ome_ranges'] = self.ome_ranges
+        options['tth_width'] = self.tth_width
+        options['eta_width'] = self.eta_width
+
+        self.update_refinements()
 
         self.overlay['update_needed'] = True
         HexrdConfig().overlay_config_changed.emit()
+
+    def update_refinements(self):
+        self.overlay['refinements'] = self.refinements
 
     @property
     def crystal_params(self):
@@ -121,6 +166,14 @@ class RotationSeriesOverlayEditor:
     @crystal_params.setter
     def crystal_params(self, v):
         self.crystal_editor.params = v
+
+    @property
+    def refinements(self):
+        return copy.deepcopy(self.crystal_editor.refinements)
+
+    @refinements.setter
+    def refinements(self, v):
+        self.crystal_editor.refinements = v
 
     @property
     def aggregated(self):
@@ -168,8 +221,47 @@ class RotationSeriesOverlayEditor:
             w.setValue(np.degrees(val))
 
     @property
+    def enable_widths(self):
+        return self.ui.enable_widths.isChecked()
+
+    @enable_widths.setter
+    def enable_widths(self, b):
+        self.ui.enable_widths.setChecked(b)
+
+    @property
+    def tth_width(self):
+        if not self.enable_widths:
+            return None
+
+        return np.radians(self.ui.tth_width.value())
+
+    @tth_width.setter
+    def tth_width(self, v):
+        if v is None:
+            return
+
+        self.ui.tth_width.setValue(np.degrees(v))
+
+    @property
+    def eta_width(self):
+        if not self.enable_widths:
+            return None
+
+        return np.radians(self.ui.eta_width.value())
+
+    @eta_width.setter
+    def eta_width(self, v):
+        if v is None:
+            return
+
+        self.ui.eta_width.setValue(np.degrees(v))
+
+    @property
     def widgets(self):
         return [
             self.ui.aggregated,
             self.ui.omega_width,
+            self.ui.enable_widths,
+            self.ui.tth_width,
+            self.ui.eta_width,
         ] + self.omega_period_widgets

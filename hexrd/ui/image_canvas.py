@@ -336,23 +336,35 @@ class ImageCanvas(FigureCanvas):
         if not aggregated:
             ome_width = data['omega_width']
             ome_mean = np.mean(ome_range)
-            full_range = (ome_mean - ome_width, ome_mean + ome_width)
+            full_range = (ome_mean - ome_width / 2, ome_mean + ome_width / 2)
 
         def in_range(x):
             return aggregated or full_range[0] <= x <= full_range[1]
 
+        # Compute the indices that are in range for the current omega value
         ome_points = data['omegas']
+        indices_in_range = [i for i, x in enumerate(ome_points) if in_range(x)]
+
         data_points = data['data']
+        ranges = data['ranges']
 
         data_style = style['data']
+        ranges_style = style['ranges']
+
         artists = []
         self.overlay_artists[id(data)] = artists
-        for ome, (x, y) in zip(ome_points, data_points):
-            if not in_range(ome):
-                # Not in the current range
+        for i in indices_in_range:
+            # data
+            x, y = data_points[i]
+            artist = axis.scatter(x, y, **data_style)
+            artists.append(artist)
+
+            # ranges
+            if i >= len(ranges):
                 continue
 
-            artist = axis.scatter(x, y, **data_style)
+            x, y = zip(*ranges[i])
+            artist, = axis.plot(x, y, **ranges_style)
             artists.append(artist)
 
     def remove_artists_for_overlay(self, overlay):
