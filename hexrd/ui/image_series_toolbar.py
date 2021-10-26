@@ -1,5 +1,5 @@
 from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QGridLayout, QSlider, QSpinBox, QWidget
+from PySide2.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
 
 from hexrd.ui.hexrd_config import HexrdConfig
 
@@ -7,7 +7,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 class ImageSeriesToolbar(QWidget):
 
     def __init__(self, name, parent=None):
-        super(ImageSeriesToolbar, self).__init__(parent)
+        super().__init__(parent)
 
         self.ims = HexrdConfig().imageseries(name)
         self.slider = None
@@ -34,10 +34,13 @@ class ImageSeriesToolbar(QWidget):
         self.frame = QSpinBox(self.parent())
 
         self.widget = QWidget(self.parent())
+        self.omega_label = QLabel(self.parent())
+        self.omega_label.setVisible(False)
 
         self.layout = QGridLayout(self.widget)
         self.layout.addWidget(self.slider, 0, 0, 1, 9)
         self.layout.addWidget(self.frame, 0, 9, 1, 1)
+        self.layout.addWidget(self.omega_label, 0, 10, 1, 1)
 
         self.widget.setLayout(self.layout)
 
@@ -63,6 +66,8 @@ class ImageSeriesToolbar(QWidget):
             self.show = False
             self.widget.setVisible(self.show)
 
+        self.update_omega_label_text()
+
     def update_range(self, current_tab):
         self.ims = HexrdConfig().imageseries(self.name)
         self.set_range(current_tab)
@@ -76,6 +81,17 @@ class ImageSeriesToolbar(QWidget):
 
     def set_visible(self, b=False):
         self.widget.setVisible(b and len(self.ims)>1)
+        self.update_omega_label_text()
 
     def val_changed(self, pos):
         self.parent().change_ims_image(pos)
+        self.update_omega_label_text()
+
+    def update_omega_label_text(self):
+        ome_range = HexrdConfig().current_imageseries_omega_range
+        self.omega_label.setVisible(ome_range is not None)
+        if ome_range is None:
+            return
+
+        ome_min, ome_max = ome_range
+        self.omega_label.setText(f'  Omega range: [{ome_min}°, {ome_max}°]')
