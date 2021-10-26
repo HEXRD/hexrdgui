@@ -119,20 +119,22 @@ class RotationSeriesSpotOverlay:
             ome_period=self.ome_period
         )
         point_groups = {}
-        keys = ['data', 'ranges']
         for det_key, psim in sim_data.items():
             panel = self.instrument.detectors[det_key]
-            point_groups[det_key] = {key: [] for key in keys}
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
-            angles, omegas = np.hsplit(valid_angs[0], [2])
             if display_mode == ViewType.polar:
-                point_groups[det_key]['data'] = np.degrees(angles)
+                data = np.degrees(valid_angs[0][:, :2])
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
-                result = valid_xys[0]
+                data = valid_xys[0]
                 if display_mode == ViewType.raw:
                     # If raw, convert to pixels
-                    result[:] = panel.cartToPixel(result)
-                    result[:, [0, 1]] = result[:, [1, 0]]
-                point_groups[det_key]['data'] = result
+                    data[:] = panel.cartToPixel(data)
+                    data[:, [0, 1]] = data[:, [1, 0]]
+
+            point_groups[det_key] = {
+                'data': data,
+                'aggregated': self.aggregated,
+                'omegas': np.degrees(valid_angs[0][:, 2]),
+            }
 
         return point_groups
