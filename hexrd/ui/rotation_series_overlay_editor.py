@@ -68,9 +68,10 @@ class RotationSeriesOverlayEditor:
         self.update_gui()
 
     def new_images_loaded(self):
-        self.validate_options()
-        self.update_enable_states()
-        self.update_gui()
+        if self.overlay:
+            self.validate_options()
+            self.update_enable_states()
+            self.update_gui()
 
     def validate_options(self):
         options = self.overlay.get('options', {})
