@@ -51,6 +51,7 @@ class OverlayEditor:
 
         if self.active_widget is not None:
             self.active_widget.overlay = self.overlay
+            self.ui.setMinimumSize(self.active_widget.ui.minimumSize())
 
     @property
     def active_widget(self):
