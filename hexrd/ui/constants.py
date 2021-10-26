@@ -154,7 +154,7 @@ DEFAULT_ROTATION_SERIES_OPTIONS = {
     'eta_ranges': [[-np.pi, np.pi]],
     'ome_ranges': [[-np.pi, np.pi]],
     'ome_period': [-np.pi, np.pi],
-    'aggregation_mode': 'Maximum'
+    'aggregated': True,
 }
 
 DEFAULT_WPPF_PLOT_STYLE = {

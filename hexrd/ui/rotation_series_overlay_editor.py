@@ -32,7 +32,7 @@ class RotationSeriesOverlayEditor:
     def setup_connections(self):
         self.eta_ranges_editor.data_modified.connect(self.update_config)
         self.omega_ranges_editor.data_modified.connect(self.update_config)
-        self.ui.aggregation.currentIndexChanged.connect(self.update_config)
+        self.ui.aggregated.toggled.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
 
         for w in self.omega_period_widgets:
@@ -57,8 +57,8 @@ class RotationSeriesOverlayEditor:
                 self.crystal_params = options['crystal_params']
             if 'ome_period' in options:
                 self.omega_period = options['ome_period']
-            if 'aggregation_mode' in options:
-                self.ui.aggregation.setCurrentText(options['aggregation_mode'])
+            if 'aggregated' in options:
+                self.aggregated = options['aggregated']
             if 'eta_ranges' in options:
                 self.eta_ranges = options['eta_ranges']
             if 'ome_ranges' in options:
@@ -71,7 +71,7 @@ class RotationSeriesOverlayEditor:
         options = self.overlay.setdefault('options', {})
         options['crystal_params'] = self.crystal_params
         options['ome_period'] = self.omega_period
-        options['aggregation_mode'] = self.ui.aggregation.currentText()
+        options['aggregated'] = self.aggregated
         options['eta_ranges'] = self.eta_ranges
         options['ome_ranges'] = self.ome_ranges
 
@@ -85,6 +85,14 @@ class RotationSeriesOverlayEditor:
     @crystal_params.setter
     def crystal_params(self, v):
         self.crystal_editor.params = v
+
+    @property
+    def aggregated(self):
+        return self.ui.aggregated.isChecked()
+
+    @aggregated.setter
+    def aggregated(self, b):
+        self.ui.aggregated.setChecked(b)
 
     @property
     def eta_ranges(self):
@@ -118,5 +126,5 @@ class RotationSeriesOverlayEditor:
     @property
     def widgets(self):
         return [
-            self.ui.aggregation
+            self.ui.aggregated,
         ] + self.omega_period_widgets

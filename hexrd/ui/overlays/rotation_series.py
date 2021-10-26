@@ -11,9 +11,8 @@ class RotationSeriesSpotOverlay:
                  eta_ranges=None,
                  ome_ranges=None,
                  ome_period=None,
-                 aggregation_mode=None,
                  eta_period=np.r_[-180., 180.],
-                 ):
+                 aggregated=True):
 
         # FIXME: eta_period is currently not in use
 
@@ -51,7 +50,7 @@ class RotationSeriesSpotOverlay:
         else:
             self._ome_period = ome_period
 
-        self._aggregation_mode = aggregation_mode
+        self.aggregated = aggregated
 
     @property
     def plane_data(self):
@@ -91,18 +90,6 @@ class RotationSeriesSpotOverlay:
     def ome_period(self):
         return self._ome_period
 
-    @property
-    def aggregation_mode(self):
-        return self._aggregation_mode
-
-    @aggregation_mode.setter
-    def aggregation_mode(self, x):
-        assert x in ['Maximum', 'Median', 'Average', 'None']
-        if x == 'None':
-            self._aggregation_mode = None
-        else:
-            self._aggregation_mode = x
-
     def overlay(self, display_mode=ViewType.raw):
         """
         Returns appropriate point groups for displaying bragg reflection
@@ -116,8 +103,6 @@ class RotationSeriesSpotOverlay:
         Raises
         ------
         NotImplementedError
-            Don't have the 3-d case for plotting on un-aggregated imageseries
-            yet.
             TODO: bin omega output as frames; functions exist in
             imageseries.omega
 
@@ -139,13 +124,7 @@ class RotationSeriesSpotOverlay:
             point_groups[det_key] = {key: [] for key in keys}
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
             if display_mode == ViewType.polar:
-                if self.aggregation_mode is None:
-                    raise NotImplementedError
-                else:
-                    point_groups[det_key]['data'] = valid_angs[0]
+                point_groups[det_key]['data'] = valid_angs[0]
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
-                if self.aggregation_mode is None:
-                    raise NotImplementedError
-                else:
-                    point_groups[det_key]['data'] = valid_xys[0]
+                point_groups[det_key]['data'] = valid_xys[0]
         return point_groups

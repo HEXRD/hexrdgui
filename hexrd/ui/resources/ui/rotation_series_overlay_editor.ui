@@ -24,6 +24,9 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="10" column="1" colspan="4">
+    <layout class="QVBoxLayout" name="crystal_editor_layout"/>
+   </item>
    <item row="4" column="4">
     <widget class="QDoubleSpinBox" name="omega_period_1">
      <property name="keyboardTracking">
@@ -39,6 +42,19 @@
       <double>360.000000000000000</double>
      </property>
     </widget>
+   </item>
+   <item row="13" column="1" colspan="4">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="4" column="3">
     <widget class="QDoubleSpinBox" name="omega_period_0">
@@ -59,50 +75,8 @@
    <item row="0" column="3" rowspan="4" colspan="2">
     <layout class="QVBoxLayout" name="omega_ranges_layout"/>
    </item>
-   <item row="5" column="3" colspan="2">
-    <widget class="QComboBox" name="aggregation">
-     <item>
-      <property name="text">
-       <string>Maximum</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Median</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Average</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="12" column="1" colspan="4">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="9" column="1" colspan="4">
-    <layout class="QVBoxLayout" name="crystal_editor_layout"/>
-   </item>
-   <item row="5" column="2">
-    <widget class="QLabel" name="aggregation_label">
-     <property name="text">
-      <string>Aggregation:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
+   <item row="0" column="1" rowspan="4" colspan="2">
+    <layout class="QVBoxLayout" name="eta_ranges_layout"/>
    </item>
    <item row="4" column="2">
     <widget class="QLabel" name="omega_period_label">
@@ -114,8 +88,12 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" rowspan="4" colspan="2">
-    <layout class="QVBoxLayout" name="eta_ranges_layout"/>
+   <item row="9" column="2">
+    <widget class="QCheckBox" name="aggregated">
+     <property name="text">
+      <string>Aggregated</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
