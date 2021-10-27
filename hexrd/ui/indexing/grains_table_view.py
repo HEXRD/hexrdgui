@@ -4,8 +4,6 @@ from PySide2.QtCore import QSortFilterProxyModel, Qt
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu, QTableView
 
-from hexrd.xrdutil import _memo_hkls
-
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import create_indexing_config
@@ -151,20 +149,11 @@ class GrainsTableView(QTableView):
         self.spots_viewer.ui.finished.connect(self.spots_viewer.clear_data)
 
     def run_pull_spots_on_selected_grains(self):
-        # Make sure memoized hkls are removed before and after running
-        # pull_spots(). If pull_spots() was called earlier with different
-        # exclusions, then we would get the wrong answer from pull_spots()
-        # unless we cleared these memo hkls.
-        _memo_hkls.clear()
-
         selected_grains = self.selected_grain_ids
 
         spots_output = {}
-        try:
-            for grain_id in selected_grains:
-                spots_output[grain_id] = self.run_pull_spots(grain_id)
-        finally:
-            _memo_hkls.clear()
+        for grain_id in selected_grains:
+            spots_output[grain_id] = self.run_pull_spots(grain_id)
 
         return spots_output
 
