@@ -11,6 +11,7 @@ from hexrd.ui.constants import (
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ranges_table_editor import RangesTableEditor
+from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
@@ -50,6 +51,8 @@ class RotationSeriesOverlayEditor:
                 w.valueChanged.connect(self.update_config)
             elif isinstance(w, QCheckBox):
                 w.toggled.connect(self.update_config)
+
+        self.ui.reflections_table.pressed.connect(self.show_reflections_table)
 
         self.ui.aggregated.toggled.connect(self.update_enable_states)
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
@@ -137,6 +140,7 @@ class RotationSeriesOverlayEditor:
 
         widths = ['tth_width', 'eta_width']
         self.enable_widths = all(options.get(x) is not None for x in widths)
+        self.update_reflections_table()
 
     def update_config(self):
         if self.overlay is None:
@@ -266,3 +270,28 @@ class RotationSeriesOverlayEditor:
             self.ui.tth_width,
             self.ui.eta_width,
         ] + self.omega_period_widgets
+
+    @property
+    def material(self):
+        if self.overlay is None:
+            return None
+
+        name = self.overlay['material']
+        return HexrdConfig().material(name)
+
+    def update_reflections_table(self):
+        if hasattr(self, '_table'):
+            self._table.material = self.material
+
+    def show_reflections_table(self):
+        if not hasattr(self, '_table'):
+            kwargs = {
+                'material': self.material,
+                'parent': self.ui,
+            }
+            self._table = ReflectionsTable(**kwargs)
+        else:
+            # Make sure the material is up to date
+            self._table.material = self.material
+
+        self._table.show()
