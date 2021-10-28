@@ -1440,7 +1440,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 overlay['refinements'] = default_refinements
 
             if overlay['type'] == constants.OverlayType.rotation_series:
-                if not self.has_omega_imageseries:
+                if not self.has_omega_ranges:
                     # Force aggregation
                     overlay.get('options', {})['aggregated'] = True
                     overlay['update_needed'] = True
