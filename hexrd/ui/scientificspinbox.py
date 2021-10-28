@@ -114,13 +114,8 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
             # We cannot step
             return
 
-        groups = FLOAT_REGEX.search(text).groups()
-        decimal = float(groups[1])
-        decimal += steps
-        new_string = f'{decimal:.10g}' + (groups[3] if groups[3] else '')
-
-        # Set the value so that signals get emitted properly
-        self.setValue(self.valueFromText(new_string))
+        new_value = self.value() + self.singleStep() * steps
+        self.setValue(new_value)
 
         # Select the text just like a regular spin box would...
         self.selectAll()
