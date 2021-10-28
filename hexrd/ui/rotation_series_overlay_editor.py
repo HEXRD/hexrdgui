@@ -67,13 +67,11 @@ class RotationSeriesOverlayEditor:
     def overlay(self, v):
         self._overlay = v
         self.validate_options()
-        self.update_enable_states()
         self.update_gui()
 
     def new_images_loaded(self):
         if self.overlay:
             self.validate_options()
-            self.update_enable_states()
             self.update_gui()
 
     def validate_options(self):
@@ -141,6 +139,7 @@ class RotationSeriesOverlayEditor:
         widths = ['tth_width', 'eta_width']
         self.enable_widths = all(options.get(x) is not None for x in widths)
         self.update_reflections_table()
+        self.update_enable_states()
 
     def update_config(self):
         if self.overlay is None:
