@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>550</width>
-    <height>785</height>
+    <height>680</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>785</height>
+    <height>680</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -24,135 +24,201 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="1" colspan="4">
+    <widget class="QTabWidget" name="tab_widget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="general_settings">
+      <attribute name="title">
+       <string>General</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="2">
+        <widget class="ScientificDoubleSpinBox" name="omega_period_1">
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="suffix">
+          <string>°</string>
+         </property>
+         <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="ScientificDoubleSpinBox" name="omega_period_0">
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="suffix">
+          <string>°</string>
+         </property>
+         <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="omega_period_label">
+         <property name="text">
+          <string>Omega Period:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="aggregated">
+         <property name="text">
+          <string>Aggregated</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="3">
+        <widget class="QGroupBox" name="widths_group">
+         <property name="title">
+          <string>Widths</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="1" column="2">
+           <widget class="ScientificDoubleSpinBox" name="eta_width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="maximum">
+             <double>360.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>5.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="eta_width_label">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>η</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="ScientificDoubleSpinBox" name="tth_width">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="maximum">
+             <double>360.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>5.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="tth_width_label">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>2θ</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="enable_widths">
+            <property name="text">
+             <string>Enable Widths</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="ScientificDoubleSpinBox" name="omega_width">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="suffix">
+          <string>°</string>
+         </property>
+         <property name="decimals">
+          <number>8</number>
+         </property>
+         <property name="maximum">
+          <double>10000000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="omega_width_label">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Omega Width:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="3">
+        <layout class="QVBoxLayout" name="crystal_editor_layout"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="eta_omega_ranges">
+      <attribute name="title">
+       <string>η/ω ranges</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <layout class="QVBoxLayout" name="eta_ranges_layout"/>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="omega_ranges_layout"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
    <item row="11" column="1" colspan="4">
-    <widget class="QGroupBox" name="widths_group">
-     <property name="title">
-      <string>Widths</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="enable_widths">
-        <property name="text">
-         <string>Enable Widths</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="tth_width_label">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>2θ</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="ScientificDoubleSpinBox" name="tth_width">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string>°</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="maximum">
-         <double>360.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>5.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="eta_width_label">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>η</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="ScientificDoubleSpinBox" name="eta_width">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string>°</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="maximum">
-         <double>360.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>5.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="2">
-    <widget class="QLabel" name="omega_period_label">
-     <property name="text">
-      <string>Omega Period:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1" rowspan="4" colspan="2">
-    <layout class="QVBoxLayout" name="eta_ranges_layout"/>
-   </item>
-   <item row="12" column="1" colspan="4">
-    <layout class="QVBoxLayout" name="crystal_editor_layout"/>
-   </item>
-   <item row="10" column="3">
-    <widget class="QLabel" name="omega_width_label">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Omega Width:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="3">
-    <widget class="ScientificDoubleSpinBox" name="omega_period_0">
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="suffix">
-      <string>°</string>
-     </property>
-     <property name="minimum">
-      <double>-360.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>360.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="15" column="1" colspan="4">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -164,51 +230,6 @@
       </size>
      </property>
     </spacer>
-   </item>
-   <item row="5" column="4">
-    <widget class="ScientificDoubleSpinBox" name="omega_period_1">
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="suffix">
-      <string>°</string>
-     </property>
-     <property name="minimum">
-      <double>-360.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>360.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="4">
-    <widget class="ScientificDoubleSpinBox" name="omega_width">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="suffix">
-      <string>°</string>
-     </property>
-     <property name="decimals">
-      <number>8</number>
-     </property>
-     <property name="maximum">
-      <double>10000000.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="2">
-    <widget class="QCheckBox" name="aggregated">
-     <property name="text">
-      <string>Aggregated</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="3" rowspan="4" colspan="2">
-    <layout class="QVBoxLayout" name="omega_ranges_layout"/>
    </item>
    <item row="0" column="1" colspan="4">
     <widget class="QPushButton" name="reflections_table">
@@ -228,6 +249,7 @@
  </customwidgets>
  <tabstops>
   <tabstop>reflections_table</tabstop>
+  <tabstop>tab_widget</tabstop>
   <tabstop>omega_period_0</tabstop>
   <tabstop>omega_period_1</tabstop>
   <tabstop>aggregated</tabstop>
