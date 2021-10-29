@@ -3,7 +3,7 @@ from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 import numpy as np
 
-from hexrd.ui.constants import ViewType, ZOOM, PAN
+from hexrd.ui.constants import OverlayType, PAN, ViewType, ZOOM
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
@@ -124,6 +124,22 @@ class ImageTabWidget(QTabWidget):
         HexrdConfig().current_imageseries_idx = pos
         self.update_needed.emit()
 
+        if not HexrdConfig().has_omega_ranges:
+            return
+
+        # For rotation series, changing the image series index may require
+        # a re-draw of the overlays. The rotation series overlays are designed
+        # so that on an image series index change, the data does not have to
+        # be re-generated, only the overlay needs to be redrawn.
+        for overlay in HexrdConfig().overlays:
+            redraw = (
+                overlay['type'] == OverlayType.rotation_series and
+                overlay.get('options', {}).get('aggregated', True) is False
+            )
+            if redraw:
+                for canvas in self.active_canvases:
+                    canvas.redraw_overlay(overlay)
+
     @Slot(bool)
     def show_toolbar(self, b):
         self.toolbar_visible = b
@@ -211,6 +227,7 @@ class ImageTabWidget(QTabWidget):
         self.tabBar().hide()
         self.switch_toolbar(self.currentIndex())
 
+    @property
     def active_canvases(self):
         """Get the canvases that are actively being used"""
         if not HexrdConfig().tab_images:
@@ -220,12 +237,12 @@ class ImageTabWidget(QTabWidget):
 
     def update_canvas_cmaps(self):
         if self.cmap is not None:
-            for canvas in self.active_canvases():
+            for canvas in self.active_canvases:
                 canvas.set_cmap(self.cmap)
 
     def update_canvas_norms(self):
         if self.norm is not None:
-            for canvas in self.active_canvases():
+            for canvas in self.active_canvases:
                 canvas.set_norm(self.norm)
 
     def set_cmap(self, cmap):

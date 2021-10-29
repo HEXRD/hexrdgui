@@ -204,8 +204,7 @@ class ImageCanvas(FigureCanvas):
         overlay_funcs = {
             OverlayType.powder: self.draw_powder_overlay,
             OverlayType.laue: self.draw_laue_overlay,
-            OverlayType.mono_rotation_series: (
-                self.draw_mono_rotation_series_overlay)
+            OverlayType.rotation_series: self.draw_rotation_series_overlay,
         }
 
         if type not in overlay_funcs:
@@ -331,8 +330,54 @@ class ImageCanvas(FigureCanvas):
             artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
-    def draw_mono_rotation_series_overlay(self, id, axis, data, style):
-        pass
+    def draw_rotation_series_overlay(self, axis, data, style):
+        ome_range = HexrdConfig().current_imageseries_omega_range
+        aggregated = data['aggregated'] or ome_range is None
+        if not aggregated:
+            ome_width = data['omega_width']
+            ome_mean = np.mean(ome_range)
+            full_range = (ome_mean - ome_width / 2, ome_mean + ome_width / 2)
+
+        def in_range(x):
+            return aggregated or full_range[0] <= x <= full_range[1]
+
+        # Compute the indices that are in range for the current omega value
+        ome_points = data['omegas']
+        indices_in_range = [i for i, x in enumerate(ome_points) if in_range(x)]
+
+        data_points = data['data']
+        ranges = data['ranges']
+
+        data_style = style['data']
+        ranges_style = style['ranges']
+
+        artists = []
+        self.overlay_artists[id(data)] = artists
+        for i in indices_in_range:
+            # data
+            x, y = data_points[i]
+            artist = axis.scatter(x, y, **data_style)
+            artists.append(artist)
+
+            # ranges
+            if i >= len(ranges):
+                continue
+
+            x, y = zip(*ranges[i])
+            artist, = axis.plot(x, y, **ranges_style)
+            artists.append(artist)
+
+    def remove_artists_for_overlay(self, overlay):
+        for data_id in list(self.overlay_artists):
+            if any(data_id == id(x) for x in overlay['data'].values()):
+                self.remove_overlay_artists(data_id)
+
+    def redraw_overlay(self, overlay):
+        # Remove the artists for this overlay
+        self.remove_artists_for_overlay(overlay)
+
+        # Redraw the overlay
+        self.draw_overlay(overlay)
 
     def update_overlays(self):
         if HexrdConfig().loading_state:

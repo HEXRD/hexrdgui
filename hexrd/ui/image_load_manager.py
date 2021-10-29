@@ -6,6 +6,7 @@ import glob
 from concurrent.futures import ThreadPoolExecutor
 
 from hexrd import imageseries
+from hexrd.imageseries.omega import OmegaImageSeries
 
 from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
@@ -331,6 +332,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
                     omw.addwedge(start, stop, nsteps)
             ims_dict[key].metadata['omega'] = omw.omegas
+            ims_dict[key] = OmegaImageSeries(ims_dict[key])
 
     def get_range(self, ims):
         start = 0

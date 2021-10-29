@@ -3,9 +3,7 @@ import copy
 from hexrd import unitcell
 
 from hexrd.ui.overlays.laue_diffraction import LaueSpotOverlay
-from hexrd.ui.overlays.mono_rotation_series import (
-    MonoRotationSeriesSpotOverlay
-)
+from hexrd.ui.overlays.rotation_series import RotationSeriesSpotOverlay
 from hexrd.ui.overlays.powder_diffraction import PowderLineOverlay
 
 from hexrd.ui import constants
@@ -17,7 +15,7 @@ def overlay_generator(overlay_type):
     generators = {
         OverlayType.powder: PowderLineOverlay,
         OverlayType.laue: LaueSpotOverlay,
-        OverlayType.mono_rotation_series: MonoRotationSeriesSpotOverlay
+        OverlayType.rotation_series: RotationSeriesSpotOverlay,
     }
 
     if overlay_type not in generators:
@@ -30,8 +28,7 @@ def default_overlay_style(overlay_type):
     default_styles = {
         OverlayType.powder: constants.DEFAULT_POWDER_STYLE,
         OverlayType.laue: constants.DEFAULT_LAUE_STYLE,
-        OverlayType.mono_rotation_series: (
-            constants.DEFAULT_MONO_ROTATION_SERIES_STYLE)
+        OverlayType.rotation_series: constants.DEFAULT_ROTATION_SERIES_STYLE,
     }
 
     if overlay_type not in default_styles:
@@ -44,8 +41,7 @@ def default_overlay_options(overlay_type):
     default_options = {
         OverlayType.powder: constants.DEFAULT_POWDER_OPTIONS,
         OverlayType.laue: constants.DEFAULT_LAUE_OPTIONS,
-        OverlayType.mono_rotation_series: (
-            constants.DEFAULT_MONO_ROTATION_SERIES_OPTIONS)
+        OverlayType.rotation_series: constants.DEFAULT_ROTATION_SERIES_OPTIONS,
     }
 
     if overlay_type not in default_options:
@@ -63,7 +59,7 @@ def default_overlay_refinements(overlay):
     default_refinements = {
         OverlayType.powder: constants.DEFAULT_POWDER_REFINEMENTS,
         OverlayType.laue: constants.DEFAULT_CRYSTAL_REFINEMENTS,
-        OverlayType.mono_rotation_series: constants.DEFAULT_CRYSTAL_REFINEMENTS
+        OverlayType.rotation_series: constants.DEFAULT_CRYSTAL_REFINEMENTS,
     }
 
     if overlay_type not in default_refinements:

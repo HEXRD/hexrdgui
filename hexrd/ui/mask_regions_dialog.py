@@ -47,7 +47,7 @@ class MaskRegionsDialog(QObject):
         self.images.clear()
 
     def setup_canvas_connections(self):
-        for canvas in self.parent.image_tab_widget.active_canvases():
+        for canvas in self.parent.image_tab_widget.active_canvases:
             press = canvas.mpl_connect(
                 'button_press_event', self.button_pressed)
             drag = canvas.mpl_connect(
@@ -108,7 +108,7 @@ class MaskRegionsDialog(QObject):
         self.disconnect()
         if self.ui.isVisible():
             self.setup_canvas_connections()
-        for canvas in self.parent.image_tab_widget.active_canvases():
+        for canvas in self.parent.image_tab_widget.active_canvases:
             for axes in canvas.raw_axes:
                 for p in self.patches.get(axes.get_title(), []):
                     # Artists cannot be reused or simply copied, instead
@@ -238,7 +238,7 @@ class MaskRegionsDialog(QObject):
         self.added_patches.clear()
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
-        for canvas in self.parent.image_tab_widget.active_canvases():
+        for canvas in self.parent.image_tab_widget.active_canvases:
             for axes in canvas.raw_axes:
                 axes.patches.clear()
         self.create_masks()
@@ -251,7 +251,7 @@ class MaskRegionsDialog(QObject):
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
         else:
-            for canvas in self.parent.image_tab_widget.active_canvases():
+            for canvas in self.parent.image_tab_widget.active_canvases:
                 for axes in canvas.raw_axes:
                     axes.patches.clear()
 

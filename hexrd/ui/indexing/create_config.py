@@ -6,11 +6,10 @@ import numpy as np
 from hexrd.config.root import RootConfig
 from hexrd.config.material import MaterialConfig
 from hexrd.config.instrument import Instrument as InstrumentConfig
-from hexrd.imageseries.omega import OmegaImageSeries
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.image_load_manager import ImageLoadManager
+from hexrd.ui.utils import is_omega_imageseries
 
 
 def create_indexing_config():
@@ -56,17 +55,9 @@ def create_indexing_config():
         # Try using the imageseries dict.
         ims_dict = HexrdConfig().imageseries_dict
 
-    # Load omega data if it is missing
-    load_omegas_dict = {
-        k: ims for k, ims in ims_dict.items() if 'omega' not in ims.metadata
-    }
-    if load_omegas_dict:
-        ImageLoadManager().add_omega_metadata(load_omegas_dict)
-
-    # Convert image series into OmegaImageSeries
-    for key, ims in ims_dict.items():
-        if not isinstance(ims, OmegaImageSeries):
-            ims_dict[key] = OmegaImageSeries(ims)
+    if any(not is_omega_imageseries(ims) for ims in ims_dict.values()):
+        # Add an early error that is easier to understand...
+        raise Exception('Omegas not found!')
 
     config.image_series = ims_dict
 

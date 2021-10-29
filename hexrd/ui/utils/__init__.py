@@ -13,6 +13,7 @@ from PySide2.QtCore import QObject, QSignalBlocker
 from PySide2.QtWidgets import QLayout
 
 from hexrd import imageutil
+from hexrd.imageseries.omega import OmegaImageSeries
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 
@@ -419,3 +420,7 @@ def apply_symmetric_constraint(x):
 def hkl_str_to_array(hkl):
     # For instance: '1 -1 10' => np.array((1, -1, 10))
     return np.array(list(map(int, hkl.split())))
+
+
+def is_omega_imageseries(ims):
+    return isinstance(ims, OmegaImageSeries)

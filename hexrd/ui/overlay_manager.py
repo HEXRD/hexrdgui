@@ -55,7 +55,7 @@ class OverlayManager:
         types = {
             OverlayType.powder: 'Powder',
             OverlayType.laue: 'Laue',
-            OverlayType.mono_rotation_series: 'Mono Rotation Series'
+            OverlayType.rotation_series: 'Rotation Series',
         }
 
         if type not in types:
