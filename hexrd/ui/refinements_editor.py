@@ -257,9 +257,14 @@ def refinement_values(overlay):
 
         return ret
 
+    def rotation_series_values():
+        # Currently the same as laue
+        return laue_values()
+
     func_dict = {
         OverlayType.powder: powder_values,
         OverlayType.laue: laue_values,
+        OverlayType.rotation_series: rotation_series_values,
     }
 
     return func_dict[overlay['type']]()
@@ -287,9 +292,14 @@ def set_refinement_values(overlay, values):
 
         return False
 
+    def set_rotation_series():
+        # Currently the same as laue
+        return set_laue()
+
     func_dict = {
         OverlayType.powder: set_powder,
         OverlayType.laue: set_laue,
+        OverlayType.rotation_series: set_rotation_series,
     }
 
     return func_dict[overlay['type']]()

@@ -120,6 +120,7 @@ def path_to_hkl(overlay, detector_name, hkl):
     data_key_map = {
         OverlayType.powder: 'rings',
         OverlayType.laue: 'spots',
+        OverlayType.rotation_series: 'data',
     }
 
     overlay_type = overlay['type']
