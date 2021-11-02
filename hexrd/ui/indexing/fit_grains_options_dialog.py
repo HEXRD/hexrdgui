@@ -35,7 +35,7 @@ class FitGrainsOptionsDialog(QObject):
 
         kwargs = {
             'grains_table': grains_table,
-            'excluded_columns': [1, 2] + list(range(6, len(grains_table[0]))),
+            'excluded_columns': list(range(9, 15)),
             'parent': self.ui.grains_table_view,
         }
         self.data_model = GrainsTableModel(**kwargs)
