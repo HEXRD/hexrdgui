@@ -41,7 +41,8 @@ COLOR_ORIENTATIONS_IND = 23
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, material=None, parent=None, allow_export_workflow=True):
+    def __init__(self, data, material=None,
+                    parent=None, allow_export_workflow=True):
         super().__init__()
 
         if material is None:
