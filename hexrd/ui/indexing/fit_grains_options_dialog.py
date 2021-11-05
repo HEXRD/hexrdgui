@@ -42,7 +42,6 @@ class FitGrainsOptionsDialog(QObject):
         view = self.ui.grains_table_view
         view.data_model = self.data_model
         view.material = self.material
-        view.grains_table = grains_table
 
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')
