@@ -466,7 +466,6 @@ class FitGrainsResultsDialog(QObject):
         # Update the variables on the table view
         view.data_model = self.data_model
         view.material = self.material
-        view.grains_table = self.data
 
     def show(self):
         self.ui.show()

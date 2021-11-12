@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide2.QtCore import QSortFilterProxyModel, Qt
+from PySide2.QtCore import QSortFilterProxyModel, Qt, Signal
 from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import QMenu, QTableView
 
@@ -19,11 +19,14 @@ SORTABLE_COLUMNS = [
 
 
 class GrainsTableView(QTableView):
+
+    selection_changed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self.material = None
-        self.grains_table = None
+        self.pull_spots_allowed = True
         self._data_model = None
         self._tolerances = []
         self.selected_tol_id = -1
@@ -59,31 +62,50 @@ class GrainsTableView(QTableView):
         return super().contextMenuEvent(event)
 
     @property
+    def grains_table(self):
+        if not self.source_model:
+            return None
+
+        return self.source_model.full_grains_table
+
+    @property
     def proxy_model(self):
         return self.model()
 
     @property
-    def results_model(self):
+    def source_model(self):
+        if not self.proxy_model:
+            return None
         return self.proxy_model.sourceModel()
 
     @property
     def selected_rows(self):
+        if not self.selectionModel():
+            return []
         return self.selectionModel().selectedRows()
 
     @property
     def selected_grain_ids(self):
-        rows = self.selectionModel().selectedRows()
         # Map these rows through the proxy in case of sorting
-        rows = [self.proxy_model.mapToSource(x) for x in rows]
-        return [int(self.results_model.data(x)) for x in rows]
+        rows = [self.proxy_model.mapToSource(x) for x in self.selected_rows]
+        return [int(self.source_model.data(x)) for x in rows]
+
+    @property
+    def selected_grains(self):
+        grain_ids = self.selected_grain_ids
+        if not grain_ids or self.grains_table is None:
+            return None
+
+        return self.grains_table[grain_ids]
 
     @property
     def can_run_pull_spots(self):
-        return all((
-            self.selected_grain_ids,
-            self.material is not None,
-            self.grains_table is not None,
-        ))
+        return (
+            self.pull_spots_allowed and
+            self.selected_grain_ids and
+            self.material is not None and
+            self.grains_table is not None
+        )
 
     @property
     def tolerances(self):
@@ -214,7 +236,15 @@ class GrainsTableView(QTableView):
     @data_model.setter
     def data_model(self, v):
         self._data_model = v
+        if v is None:
+            self.setModel(None)
+            return
+
         self.setup_proxy()
+
+        # A new selection model is created each time a new data model is set.
+        self.selectionModel().selectionChanged.connect(
+            self.on_selection_changed)
 
     def setup_proxy(self):
 
@@ -236,6 +266,9 @@ class GrainsTableView(QTableView):
             self.on_sort_indicator_changed)
         self.sortByColumn(0, Qt.AscendingOrder)
         self.horizontalHeader().setSortIndicatorShown(False)
+
+    def on_selection_changed(self):
+        return self.selection_changed.emit()
 
     def on_sort_indicator_changed(self, index, order):
         """Shows sort indicator for sortable columns, hides for all others."""

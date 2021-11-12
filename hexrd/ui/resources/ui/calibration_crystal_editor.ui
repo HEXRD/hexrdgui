@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>767</width>
-    <height>385</height>
+    <height>398</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -523,6 +523,13 @@
           </item>
          </layout>
         </widget>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="load">
+        <property name="text">
+         <string>Load Crystal Parameters</string>
+        </property>
        </widget>
       </item>
      </layout>

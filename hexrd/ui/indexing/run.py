@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 
 from PySide2.QtCore import QObject, QThreadPool, Qt, Signal
@@ -299,6 +301,8 @@ class IndexingRunner(Runner):
         print(msg)
 
         self.grains_table = generate_grains_table(self.qbar)
+        HexrdConfig().find_orientations_grains_table = copy.deepcopy(
+            self.grains_table)
 
     def start_fit_grains_runner(self):
         # We will automatically start fit grains after the indexing
@@ -396,7 +400,10 @@ class FitGrainsRunner(Runner):
             'write_spots_files': write_spots,
         }
         self.fit_grains_results = fit_grains(**kwargs)
+        self.result_grains_table = create_grains_table(self.fit_grains_results)
         print('Fit Grains Complete')
+        HexrdConfig().fit_grains_grains_table = copy.deepcopy(
+            self.result_grains_table)
 
         # If we wrote out the spots, let's write out the grains.out file too
         if write_spots:
@@ -412,7 +419,7 @@ class FitGrainsRunner(Runner):
             print(result)
 
         kwargs = {
-            'fit_grains_results': self.fit_grains_results,
+            'grains_table': self.result_grains_table,
             'parent': self.parent,
         }
         dialog = create_fit_grains_results_dialog(**kwargs)
@@ -420,8 +427,7 @@ class FitGrainsRunner(Runner):
         dialog.show_later()
 
 
-def create_fit_grains_results_dialog(fit_grains_results, parent=None):
-    # Build grains table
+def create_grains_table(fit_grains_results):
     num_grains = len(fit_grains_results)
     shape = (num_grains, 21)
     grains_table = np.empty(shape)
@@ -429,7 +435,10 @@ def create_fit_grains_results_dialog(fit_grains_results, parent=None):
     for result in fit_grains_results:
         gw.dump_grain(*result)
     gw.close()
+    return grains_table
 
+
+def create_fit_grains_results_dialog(grains_table, parent=None):
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
     name = indexing_config.get('_selected_material')

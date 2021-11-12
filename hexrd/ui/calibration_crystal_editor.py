@@ -8,6 +8,7 @@ from hexrd import matrixutil
 
 from hexrd.ui.constants import DEFAULT_CRYSTAL_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.select_grains_dialog import SelectGrainsDialog
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
@@ -60,6 +61,8 @@ class CalibrationCrystalEditor(QObject):
         self.slider_widget.changed.connect(self.slider_widget_changed)
         self.refinements_selector.selection_changed.connect(
             self.refinements_edited)
+
+        self.ui.load.clicked.connect(self.load)
 
     @property
     def params(self):
@@ -262,3 +265,14 @@ class CalibrationCrystalEditor(QObject):
             o_values = [x.value() for x in self.orientation_widgets]
             p_values = [x.value() for x in self.position_widgets]
             self.slider_widget.update_gui(o_values, p_values)
+
+    def load(self):
+        dialog = SelectGrainsDialog(self.ui)
+        if not dialog.exec_():
+            return
+
+        self.load_from_grain(dialog.selected_grain)
+
+    def load_from_grain(self, grain):
+        self.params = grain[3:15]
+        self.params_modified.emit()
