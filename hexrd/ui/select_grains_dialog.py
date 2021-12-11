@@ -15,12 +15,19 @@ class SelectGrainsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, num_requested_grains=1, parent=None):
         super().__init__(parent)
         self.ignore_errors = False
 
         loader = UiLoader()
         self.ui = loader.load_file('select_grains_dialog.ui', parent)
+
+        self.num_requested_grains = num_requested_grains
+
+        if num_requested_grains >= 1:
+            suffix = 's' if num_requested_grains > 1 else ''
+            title = f'Please select {num_requested_grains} grain{suffix}'
+            self.ui.setWindowTitle(title)
 
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()
@@ -46,6 +53,9 @@ class SelectGrainsDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
         self.ui.table_view.selection_changed.connect(self.update_enable_states)
+
+    def show(self):
+        return self.ui.show()
 
     @property
     def find_orientations_grains_table(self):
@@ -179,15 +189,24 @@ class SelectGrainsDialog(QObject):
 
     @property
     def selected_grain(self):
+        if self.num_requested_grains != 1:
+            msg = 'selected_grain() called, but one grain was not requested!'
+            raise Exception(msg)
+
+        if self.num_selected_grains == 1:
+            return self.selected_grains[0]
+
+    @property
+    def selected_grains(self):
         grains = self.ui.table_view.selected_grains
-        if grains is None or len(grains) == 0:
-            return
+        if grains is None:
+            return []
 
-        # Should only be one
-        if len(grains) > 1:
-            raise Exception('Only one grain may be selected')
+        return grains
 
-        return grains[0]
+    @property
+    def num_selected_grains(self):
+        return len(self.selected_grains)
 
     def update_gui(self):
         indexing_config = HexrdConfig().indexing_config
@@ -205,7 +224,8 @@ class SelectGrainsDialog(QObject):
         button_box = self.ui.button_box
         ok_button = button_box.button(QDialogButtonBox.Ok)
         if ok_button:
-            ok_button.setEnabled(self.selected_grain is not None)
+            enable = self.num_selected_grains == self.num_requested_grains
+            ok_button.setEnabled(enable)
 
     @property
     def method_name(self):

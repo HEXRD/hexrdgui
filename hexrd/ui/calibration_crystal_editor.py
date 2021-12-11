@@ -267,7 +267,7 @@ class CalibrationCrystalEditor(QObject):
             self.slider_widget.update_gui(o_values, p_values)
 
     def load(self):
-        dialog = SelectGrainsDialog(self.ui)
+        dialog = SelectGrainsDialog(1, self.ui)
         if not dialog.exec_():
             return
 
