@@ -189,11 +189,11 @@ class RotationSeriesOverlayEditor:
 
     @property
     def ome_width(self):
-        return self.ui.omega_width.value()
+        return np.radians(self.ui.omega_width.value())
 
     @ome_width.setter
     def ome_width(self, v):
-        self.ui.omega_width.setValue(v)
+        self.ui.omega_width.setValue(np.degrees(v))
 
     @property
     def eta_ranges(self):

@@ -155,7 +155,7 @@ DEFAULT_ROTATION_SERIES_OPTIONS = {
     'ome_ranges': [[-np.pi, np.pi]],
     'ome_period': [-np.pi, np.pi],
     'aggregated': True,
-    'ome_width': 5.0,
+    'ome_width': np.radians(5.0),
     'tth_width': None,
     'eta_width': None,
 }
