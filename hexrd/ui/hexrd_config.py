@@ -147,9 +147,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when a new polar mask has been created"""
     polar_masks_changed = Signal()
 
-    """Emitted when point picked calibration is complete"""
-    calibration_complete = Signal()
-
     """Emitted when reflections tables for a given material should update
 
     The string argument is the material name.
@@ -164,6 +161,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Indicate that the state was loaded..."""
     state_loaded = Signal()
+
+    """Indicate that the overlay editor should update its GUI"""
+    update_overlay_editor = Signal()
 
     def __init__(self):
         # Should this have a parent?

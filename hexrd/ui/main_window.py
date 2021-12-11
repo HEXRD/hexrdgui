@@ -257,8 +257,6 @@ class MainWindow(QObject):
         self.image_mode_widget.tab_changed.connect(
             self.mask_manager_dialog.image_mode_changed)
 
-        HexrdConfig().calibration_complete.connect(self.calibration_finished)
-
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)
         self.ui.action_apply_lorentz_polarization_correction.toggled.connect(
@@ -466,11 +464,12 @@ class MainWindow(QObject):
         canvas = self.ui.image_tab_widget.image_canvases[0]
         runner = CalibrationRunner(canvas, async_runner)
         self._calibration_runner = runner
+        runner.finished.connect(self.calibration_finished)
 
         try:
             runner.run()
         except Exception as e:
-            QMessageBox.warning(self.ui, 'HEXRD', str(e))
+            QMessageBox.critical(self.ui, 'HEXRD', str(e))
             raise
 
     def calibration_finished(self):

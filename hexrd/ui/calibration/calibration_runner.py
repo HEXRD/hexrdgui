@@ -3,6 +3,7 @@ from functools import partial
 
 import numpy as np
 
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QMessageBox
 
@@ -30,10 +31,14 @@ from hexrd.ui.utils import (
 from hexrd.ui.utils.conversions import cart_to_angles
 
 
-class CalibrationRunner:
+class CalibrationRunner(QObject):
+
+    finished = Signal()
+
     def __init__(self, canvas, async_runner, parent=None):
+        super().__init__(parent)
+
         self.canvas = canvas
-        self.parent = parent
         self.current_overlay_ind = -1
         self.overlay_data_index = -1
         self.all_overlay_picks = {}
@@ -371,7 +376,8 @@ class CalibrationRunner:
 
         # In case any overlays changed
         HexrdConfig().overlay_config_changed.emit()
-        HexrdConfig().calibration_complete.emit()
+        HexrdConfig().update_overlay_editor.emit()
+        self.finished.emit()
 
     def write_instrument_to_hexrd_config(self, instr):
         output_dict = instr_to_internal_dict(instr)
