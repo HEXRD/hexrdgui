@@ -140,3 +140,11 @@ fit_grains:
 #       panel: ff2_1_1  # must match detector key
 
 # instrument: dexelas_id3a_20200130_comp.yml
+
+
+# Some custom ones we have added for the GUI
+_hedm_calibration:
+  do_refit: false
+  clobber_strain: false
+  clobber_centroid: false
+  clobber_grain_Y: false

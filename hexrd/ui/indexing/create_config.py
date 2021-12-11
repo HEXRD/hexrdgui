@@ -57,7 +57,7 @@ def create_indexing_config():
 
     if any(not is_omega_imageseries(ims) for ims in ims_dict.values()):
         # Add an early error that is easier to understand...
-        raise Exception('Omegas not found!')
+        raise OmegasNotFoundError('Omegas not found!')
 
     config.image_series = ims_dict
 
@@ -78,3 +78,7 @@ def validate_config(config):
 
         # Make sure future configs use the new working dir as well...
         HexrdConfig().indexing_config['working_dir'] = os.getcwd()
+
+
+class OmegasNotFoundError(Exception):
+    pass

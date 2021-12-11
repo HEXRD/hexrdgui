@@ -24,6 +24,7 @@ from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
+from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
@@ -205,6 +206,8 @@ class MainWindow(QObject):
             self.on_action_run_laue_and_powder_calibration_triggered)
         self.ui.action_run_laue_and_powder_calibration.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_run_hedm_calibration.triggered.connect(
+            self.run_hedm_calibration)
         self.ui.action_run_indexing.triggered.connect(
             self.on_action_run_indexing_triggered)
         self.ui.action_rerun_clustering.triggered.connect(
@@ -475,6 +478,31 @@ class MainWindow(QObject):
     def calibration_finished(self):
         print('Calibration finished')
         print('Updating the GUI')
+        self.update_config_gui()
+        self.update_all()
+
+    def run_hedm_calibration(self):
+        cached_async_runner_name = '_hedm_calibration_runner_async_runner'
+        if not hasattr(self, cached_async_runner_name):
+            # Initialize this only once and keep it around, so we don't
+            # run into issues connecting/disconnecting the messages.
+            setattr(self, cached_async_runner_name, AsyncRunner(self.ui))
+
+        async_runner = getattr(self, cached_async_runner_name)
+
+        import hexrd.ui.calibration.hedm.calibration_runner
+        from importlib import reload
+        reload(hexrd.ui.calibration.hedm.calibration_runner)
+        from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
+        runner = HEDMCalibrationRunner(async_runner, self.ui)
+        runner.finished.connect(self.on_hedm_calibration_finished)
+        try:
+            runner.run()
+        except Exception as e:
+            QMessageBox.critical(self.ui, 'HEXRD', str(e))
+            raise
+
+    def on_hedm_calibration_finished(self):
         self.update_config_gui()
         self.update_all()
 
