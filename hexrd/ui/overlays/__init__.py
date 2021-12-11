@@ -150,3 +150,7 @@ def overlay_from_name(name):
         )
         if matches:
             return overlay
+
+
+def overlay_name(overlay):
+    return f'{overlay["material"]} {overlay["type"].value}'
