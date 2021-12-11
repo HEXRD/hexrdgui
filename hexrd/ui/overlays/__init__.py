@@ -153,4 +153,21 @@ def overlay_from_name(name):
 
 
 def overlay_name(overlay):
-    return f'{overlay["material"]} {overlay["type"].value}'
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    material = overlay['material']
+    type = overlay['type']
+
+    duplicate_index = 1
+    for o in HexrdConfig().overlays:
+        if o is overlay:
+            break
+
+        if o['material'] == material and o['type'] == type:
+            duplicate_index += 1
+
+    name = f'{material} {type.value}'
+    if duplicate_index > 1:
+        name += f' {duplicate_index}'
+
+    return name
