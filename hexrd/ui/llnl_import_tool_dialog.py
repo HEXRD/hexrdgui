@@ -445,7 +445,7 @@ class LLNLImportToolDialog(QObject):
             # first need the zxz Euler angles from the panel rotation matrix.
             *zx, z = angles_from_rmat_zxz(panel.rmat)
             # convert updated zxz angles to rmat
-            tilts = [*zx, (z + float(self.edited_images[det]['tilt']))]
+            tilts = [*zx, (z - float(self.edited_images[det]['tilt']))]
             rmat_updated = make_rmat_euler(tilts, 'zxz', extrinsic=False)
             # convert to angle-axis parameters
             rang, raxs = angleAxisOfRotMat(rmat_updated)
