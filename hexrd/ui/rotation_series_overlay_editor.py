@@ -90,8 +90,6 @@ class RotationSeriesOverlayEditor:
 
     def update_enable_states(self):
         self.ui.aggregated.setEnabled(HexrdConfig().has_omega_ranges)
-        self.ui.omega_width_label.setDisabled(self.aggregated)
-        self.ui.omega_width.setDisabled(self.aggregated)
 
         enable_widths = self.enable_widths
         names = [
