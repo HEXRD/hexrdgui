@@ -1,7 +1,10 @@
 from PySide2.QtCore import QObject, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.grains_viewer_dialog import GrainsViewerDialog
+from hexrd.ui.overlays import overlay_name
 from hexrd.ui.reflections_table import ReflectionsTable
+from hexrd.ui.reorder_pairs_widget import ReorderPairsWidget
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -10,30 +13,30 @@ class HEDMCalibrationOptionsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, num_grains_required=1, parent=None):
+    def __init__(self, grains_table, overlays, parent=None):
         super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('hedm_calibration_options_dialog.ui',
                                    parent)
 
-        self.num_grains_required = num_grains_required
+        self.grains_table = grains_table
+        self.overlays = overlays
         self.parent = parent
 
-        self.update_materials()
-        self.selected_material_changed()
+        self.overlay_grain_map = {overlay_name(o): int(g[0])
+                                  for o, g in zip(overlays, grains_table)}
+
+        self.setup_overlay_grain_pairing_widget()
 
         self.update_gui()
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.material.currentIndexChanged.connect(
-            self.selected_material_changed)
+        self.ui.view_grains_table.clicked.connect(self.show_grains_table)
         self.ui.choose_hkls.pressed.connect(self.choose_hkls)
 
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
-
-        HexrdConfig().materials_dict_modified.connect(self.update_materials)
 
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
@@ -44,7 +47,6 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.refit_ome_step_scale = config['refit'][1]
 
         indexing_config = HexrdConfig().indexing_config
-        self.selected_material = indexing_config.get('_selected_material')
 
         calibration_config = indexing_config['_hedm_calibration']
         self.do_refit = calibration_config['do_refit']
@@ -60,8 +62,6 @@ class HEDMCalibrationOptionsDialog(QObject):
         config['refit'][1] = self.refit_ome_step_scale
 
         indexing_config = HexrdConfig().indexing_config
-        indexing_config['_selected_material'] = self.selected_material
-
         calibration_config = indexing_config['_hedm_calibration']
         calibration_config['do_refit'] = self.do_refit
         calibration_config['clobber_strain'] = self.clobber_strain
@@ -127,43 +127,10 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.ui.clobber_grain_Y.setChecked(b)
 
     @property
-    def material_options(self):
-        w = self.ui.material
-        return [w.itemText(i) for i in range(w.count())]
-
-    @property
-    def selected_material(self):
-        return self.ui.material.currentText()
-
-    @selected_material.setter
-    def selected_material(self, name):
-        if name is None or name not in self.material_options:
-            return
-
-        self.ui.material.setCurrentText(name)
-
-    @property
     def material(self):
-        return HexrdConfig().material(self.selected_material)
-
-    def update_materials(self):
-        prev = self.selected_material
-        material_names = list(HexrdConfig().materials)
-
-        self.ui.material.clear()
-        self.ui.material.addItems(material_names)
-
-        if prev in material_names:
-            self.ui.material.setCurrentText(prev)
-        else:
-            self.ui.material.setCurrentText(HexrdConfig().active_material_name)
-
-    def selected_material_changed(self):
-        if hasattr(self, '_reflections_table'):
-            self._reflections_table.material = self.material
-
-        # self.ui.table_view.material = self.material
-        self.update_num_hkls()
+        # The materials of all of the overlays must be the same.
+        # Just get the first one...
+        return HexrdConfig().material(self.overlays[0]['material'])
 
     def choose_hkls(self):
         kwargs = {
@@ -182,3 +149,31 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
+
+    def setup_overlay_grain_pairing_widget(self):
+        num_overlays = len(self.overlays)
+        if num_overlays < 2:
+            # No need for this widget...
+            return
+
+        titles = ('Overlay', 'Grain ID')
+        items = [(k, str(v)) for k, v in self.overlay_grain_map.items()]
+
+        min_height = 125 if num_overlays == 2 else 160
+        layout = self.ui.overlay_grain_pairing_widget_layout
+        w = ReorderPairsWidget(items, titles, self.parent)
+        w.ui.setMinimumHeight(min_height)
+        w.items_reordered.connect(self.on_overlay_grain_pairing_changed)
+        layout.addWidget(w.ui)
+
+        self._overlay_grain_pairing_widget = w
+
+    def on_overlay_grain_pairing_changed(self):
+        w = self._overlay_grain_pairing_widget
+        self.overlay_grain_map = {o: int(g) for o, g in w.items}
+
+    def show_grains_table(self):
+        if not hasattr(self, '_grains_viewer_dialog'):
+            self._grains_viewer_dialog = GrainsViewerDialog(self.grains_table)
+
+        self._grains_viewer_dialog.show()

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>479</width>
-    <height>464</height>
+    <height>558</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,18 +15,80 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QVBoxLayout" name="overlay_grain_pairing_widget_layout"/>
+   </item>
+   <item>
+    <widget class="QPushButton" name="view_grains_table">
+     <property name="text">
+      <string>View Grains Table</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
     <layout class="QGridLayout" name="grid_layout">
-     <item row="1" column="2">
-      <widget class="QComboBox" name="material"/>
+     <item row="4" column="1" colspan="2">
+      <widget class="QGroupBox" name="clobbering_group">
+       <property name="title">
+        <string>Clobbering</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QCheckBox" name="clobber_strain">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the stretch matrix to identity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Clobber strain?</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="clobber_centroid">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the grain position to the origin: (0, 0, 0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Clobber centroid?</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="clobber_grain_Y">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the grain Y to zero.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Clobber grain Y?</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </item>
-     <item row="2" column="1">
+     <item row="1" column="1">
       <widget class="QLabel" name="num_hkls_selected">
        <property name="text">
         <string>Number of hkls selected:</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1" colspan="2">
+     <item row="5" column="1" colspan="2">
       <widget class="QGroupBox" name="refitting_group">
        <property name="title">
         <string>Refitting</string>
@@ -100,57 +162,11 @@
        </layout>
       </widget>
      </item>
-     <item row="2" column="2">
+     <item row="1" column="2">
       <widget class="QPushButton" name="choose_hkls">
        <property name="text">
         <string>Choose HKLs</string>
        </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="material_label">
-       <property name="text">
-        <string>Selected Material:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1" colspan="2">
-      <widget class="QGroupBox" name="clobbering_group">
-       <property name="title">
-        <string>Clobbering</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QCheckBox" name="clobber_strain">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the stretch matrix to identity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Clobber strain?</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="clobber_centroid">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the grain position to the origin: (0, 0, 0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Clobber centroid?</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="clobber_grain_Y">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the grain Y to zero.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Clobber grain Y?</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
       </widget>
      </item>
     </layout>
@@ -191,7 +207,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>material</tabstop>
   <tabstop>choose_hkls</tabstop>
  </tabstops>
  <resources/>

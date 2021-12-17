@@ -490,10 +490,6 @@ class MainWindow(QObject):
 
         async_runner = getattr(self, cached_async_runner_name)
 
-        import hexrd.ui.calibration.hedm.calibration_runner
-        from importlib import reload
-        reload(hexrd.ui.calibration.hedm.calibration_runner)
-        from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
         runner = HEDMCalibrationRunner(async_runner, self.ui)
         runner.finished.connect(self.on_hedm_calibration_finished)
         try:

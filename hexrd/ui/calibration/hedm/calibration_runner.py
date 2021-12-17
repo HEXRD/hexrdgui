@@ -50,6 +50,7 @@ class HEDMCalibrationRunner(QObject):
     def run(self):
         self.clear()
         self.pre_validate()
+        self.synchronize_omega_period()
 
         # Get the grains that we need
         dialog = SelectGrainsDialog(self.num_active_overlays, self.parent)
@@ -58,17 +59,14 @@ class HEDMCalibrationRunner(QObject):
         self.select_grains_dialog = dialog
 
     def on_grains_selected(self):
-        self.grains_table = self.select_grains_dialog.selected_grains
+        grains_table = self.select_grains_dialog.selected_grains
 
-        import hexrd.ui.calibration.hedm.calibration_options_dialog
-        from importlib import reload
-        reload(hexrd.ui.calibration.hedm.calibration_options_dialog)
-        from hexrd.ui.calibration.hedm.calibration_options_dialog import (
-            HEDMCalibrationOptionsDialog,
-        )
+        # The user could have chosen a different sorting, but let's always
+        # sort the table by grain id.
+        self.grains_table = grains_table[np.argsort(grains_table[:, 0])]
 
-        # FIXME: bring up a dialog that sets several things we need
-        dialog = HEDMCalibrationOptionsDialog(self.parent)
+        dialog = HEDMCalibrationOptionsDialog(
+            self.grains_table, self.active_overlays, self.parent)
         dialog.accepted.connect(self.on_options_dialog_accepted)
         dialog.show()
         self.options_dialog = dialog
@@ -81,6 +79,7 @@ class HEDMCalibrationRunner(QObject):
         self.clobber_strain = dialog.clobber_strain
         self.clobber_centroid = dialog.clobber_centroid
         self.clobber_grain_Y = dialog.clobber_grain_Y
+        self.overlay_grain_map = dialog.overlay_grain_map
 
         self.clobber_refinements()
         self.run_calibration()
@@ -91,7 +90,7 @@ class HEDMCalibrationRunner(QObject):
         self.async_runner.success_callback = self.on_pull_spots_finished
         self.async_runner.run(self.run_pull_spots)
 
-    def on_pull_spots_finished(self, spots_data):
+    def on_pull_spots_finished(self, spots_data_dict):
         cfg = create_indexing_config()
 
         # grab instrument
@@ -108,11 +107,17 @@ class HEDMCalibrationRunner(QObject):
         clobber_strain = self.clobber_strain
         clobber_centroid = self.clobber_centroid
         clobber_grain_Y = self.clobber_grain_Y
+        overlay_grain_map = self.overlay_grain_map
 
         # Our grains table only contains the grains that the user
         # selected.
         grain_parameters = self.grains_table[:, 3:15]
         grain_ids = self.grains_table[:, 0].astype(int)
+
+        # Order the spots data list in the order of the grain ids
+        grain_overlay_map = {v: k for k, v in overlay_grain_map.items()}
+        spots_data = [spots_data_dict[grain_overlay_map[gid]]
+                      for gid in grain_ids]
 
         # plane data
         plane_data = cfg.material.plane_data
@@ -150,13 +155,6 @@ class HEDMCalibrationRunner(QObject):
         xyo_i = calibration.calibrate_instrument_from_sx(
             instr, grain_parameters, bmat, xyo_det, hkls,
             ome_period=np.radians(ome_period), sim_only=True
-        )
-
-        import hexrd.ui.calibration.hedm.calibration_results_dialog
-        from importlib import reload
-        reload(hexrd.ui.calibration.hedm.calibration_results_dialog)
-        from hexrd.ui.calibration.hedm.calibration_results_dialog import (
-            HEDMCalibrationResultsDialog,
         )
 
         data = {
@@ -300,8 +298,9 @@ class HEDMCalibrationRunner(QObject):
         instr = cfg.instrument.hedm
         imsd = cfg.image_series
 
-        outputs = []
+        outputs = {}
         for overlay in self.active_overlays:
+            name = overlay_name(overlay)
             options = overlay['options']
             kwargs = {
                 'plane_data': self.material.planeData,
@@ -322,7 +321,7 @@ class HEDMCalibrationRunner(QObject):
                 'interp': 'nearest',
             }
             out = instr.pull_spots(**kwargs)
-            outputs.append(out)
+            outputs[name] = out
 
         return outputs
 
@@ -483,6 +482,12 @@ class HEDMCalibrationRunner(QObject):
                 refinements[4] = (refinements[4][0], False)
 
         HexrdConfig().update_overlay_editor.emit()
+
+    def synchronize_omega_period(self):
+        # This omega period is deprecated, but still used in some places.
+        # Make sure it is synchronized with our overlays' omega period.
+        cfg = HexrdConfig().indexing_config
+        cfg['find_orientations']['omega']['period'] = self.ome_period
 
     def pre_validate(self):
         # Validation to perform before we do anything else

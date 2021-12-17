@@ -44,7 +44,7 @@ class HEDMCalibrationResultsDialog:
 
     def setup_combo_boxes(self):
         self.ui.grain_id.clear()
-        for grain_id in self.grain_ids:
+        for grain_id in sorted(self.grain_ids):
             self.ui.grain_id.addItem(str(grain_id), grain_id)
 
         self.ui.detector.clear()
@@ -161,10 +161,14 @@ class HEDMCalibrationResultsDialog:
         self.canvas.draw()
 
     def draw_entry(self, indices, data, style, label):
-        for idx in indices:
+        for i, idx in enumerate(indices):
             x = data[idx][:, 0]
             y1 = data[idx][:, 1]
             y2 = np.degrees(data[idx][:, 2])
+
+            # Only add the label for the first index
+            if i != 0:
+                label = None
 
             artist1, = self.ax[0].plot(x, y1, style, label=label)
             artist2, = self.ax[1].plot(x, y2, style, label=label)
