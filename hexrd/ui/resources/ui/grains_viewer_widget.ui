@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>grains_viewer_widget</class>
+ <widget class="QWidget" name="grains_viewer_widget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>635</width>
+    <height>372</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Select Grains</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="GrainsTableView" name="table_view">
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GrainsTableView</class>
+   <extends>QTableView</extends>
+   <header>grains_table_view.py</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>table_view</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
