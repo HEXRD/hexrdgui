@@ -467,9 +467,12 @@ class LLNLImportToolDialog(QObject):
         det_names = HexrdConfig().detector_names
         files = [[self.edited_images[det]['img']] for det in det_names]
         ImageLoadManager().read_data(files, parent=self.ui)
+
+        buffer_default = {'status': 0}
         for det in det_names:
-            panel = instr.detectors[det]
-            panel.panel_buffer = self.edited_images[det]['panel_buffer']
+            det_config = HexrdConfig().config['instrument']['detectors'][det]
+            buffer = det_config.setdefault('buffer', buffer_default)
+            buffer['value'] = self.edited_images[det]['panel_buffer']
 
         self.reset_panel()
         self.parent().action_show_toolbar.setEnabled(True)
