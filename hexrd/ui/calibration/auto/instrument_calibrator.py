@@ -169,18 +169,20 @@ class InstrumentCalibrator(object):
             delta_r = sum(resd0**2)/float(len(resd0)) - \
                 sum(resd1**2)/float(len(resd1))
 
+            nrm_ssr_0 = sum(resd0**2)/float(len(resd0))
+            nrm_ssr_1 = sum(resd1**2)/float(len(resd1))
+
+            delta_r = nrm_ssr_0 - nrm_ssr_1
+
             if delta_r > 0:
-                print('OPTIMIZATION SUCCESSFUL!!!')
-                print('Change in residual: '
-                      f'{delta_r}')
+                print('OPTIMIZATION SUCCESSFUL')
+                print('normalized initial ssr: %f\nnormalized final ssr: %f'
+                      % (nrm_ssr_0, nrm_ssr_1))
+                print(('change in resdiual: %f' % delta_r))
+
             else:
                 print('no improvement in residual!!!')
                 step_successful = False
-
-            print('initial ssr: '
-                  f'{sum(resd0**2)/float(len(resd0))}')
-            print('final ssr: '
-                  f'{sum(resd1**2)/float(len(resd1))}')
 
             iter_count += 1
 
