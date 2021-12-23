@@ -550,9 +550,6 @@ class PowderCalibrator(object):
     def _evaluate(self, reduced_params, data_dict, output='residual'):
         """
         """
-        # need this for dsp
-        bmatx = self.plane_data.latVecOps['B']
-
         # first update instrument from input parameters
         full_params = np.asarray(self.full_params)
         full_params[self.flags] = reduced_params
@@ -560,6 +557,8 @@ class PowderCalibrator(object):
         self.instr.update_from_parameter_list(full_params[:self.npi])
         self.params = full_params[self.npi:]
 
+        # need this for dsp
+        bmatx = self.plane_data.latVecOps['B']
         wlen = self.instr.beam_wavelength
 
         # working with Patrick's pick dicts
@@ -605,24 +604,45 @@ class PowderCalibrator(object):
 
             pdata = np.vstack(pdata)
             if len(pdata) > 0:
-                hkls = pdata[:, 4:7]
+                """
+                Here is the strategy:
+                    1. remap the feature points from raw cartesian to
+                       (tth, eta) under the current mapping
+                    2. use the lattice and hkls to calculate the ideal tth0
+                    3. push the (tth0, eta) values back through the mapping to
+                       raw cartesian coordinates
+                    4. build residual on the measured and recalculated (x, y)
+                """
+                # push measured (x, y) ring points through current mapping
+                # to (tth, eta)
+                meas_xy = pdata[:, :2]
+                updates_angles, _ = panel.cart_to_angles(
+                    meas_xy,
+                    tvec_s=self.instr.tvec,
+                    apply_distortion=True
+                )
+
+                # derive ideal tth positions from additional ring point info
+                hkls = pdata[:, 3:6]
                 gvecs = np.dot(hkls, bmatx.T)
                 dsp0 = 1./np.sqrt(np.sum(gvecs*gvecs, axis=1))
-                # dsp0 = pdata[:, -2]
-                eta0 = pdata[:, 3]
-
-                # derive reference tth
                 tth0 = 2.*np.arcsin(0.5*wlen/dsp0)
-                calc_xy = panel.angles_to_cart(np.vstack([tth0, eta0]).T,
-                                               tvec_c=tvec_c)
 
-                # distortion if applicable, from ideal --> warped
-                if panel.distortion is not None:
-                    calc_xy = panel.distortion.apply_inverse(calc_xy)
+                # !!! get eta from mapped markers rather than ref
+                # eta0 = pdata[:, -1]
+                eta0 = updates_angles[:, 1]
+
+                # map updated (tth0, eta0) back to cartesian coordinates
+                tth_eta = np.vstack([tth0, eta0]).T
+                calc_xy = panel.angles_to_cart(
+                    tth_eta,
+                    tvec_s=self.instr.tvec,
+                    apply_distortion=True
+                )
 
                 if output == 'residual':
                     retval.append(
-                        (pdata[:, :2].flatten() - calc_xy.flatten())
+                        (meas_xy.flatten() - calc_xy.flatten())
                     )
                 elif output == 'model':
                     retval.append(
