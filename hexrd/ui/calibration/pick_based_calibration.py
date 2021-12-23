@@ -613,6 +613,9 @@ class PowderCalibrator(object):
                        raw cartesian coordinates
                     4. build residual on the measured and recalculated (x, y)
                 """
+                # the data structure is:
+                #     [x, y, tth, eta, h, k, l, dsp0]
+                #
                 # push measured (x, y) ring points through current mapping
                 # to (tth, eta)
                 meas_xy = pdata[:, :2]
@@ -623,7 +626,7 @@ class PowderCalibrator(object):
                 )
 
                 # derive ideal tth positions from additional ring point info
-                hkls = pdata[:, 3:6]
+                hkls = pdata[:, 4:7]
                 gvecs = np.dot(hkls, bmatx.T)
                 dsp0 = 1./np.sqrt(np.sum(gvecs*gvecs, axis=1))
                 tth0 = 2.*np.arcsin(0.5*wlen/dsp0)
