@@ -105,11 +105,11 @@ class PolarView:
 
     @property
     def ntth(self):
-        return int(np.degrees(self.tth_range) / self.tth_pixel_size)
+        return int(round(np.degrees(self.tth_range) / self.tth_pixel_size))
 
     @property
     def neta(self):
-        return int(np.degrees(self.eta_range) / self.eta_pixel_size)
+        return int(round(np.degrees(self.eta_range) / self.eta_pixel_size))
 
     @property
     def shape(self):
