@@ -446,7 +446,7 @@ class LLNLImportToolDialog(QObject):
             *zx, z = angles_from_rmat_zxz(panel.rmat)
             # convert updated zxz angles to rmat
             # !!! JVB verified that the rotation is stored with + as clockwise;
-            #     hence, the modification of z stays as '+'.  Our convention has
+            #     hence, the modification of z stays as '+'. Our convention has
             #     '+' as counter-clockwise, but the detector rotation is the
             #     inverse of the image rotation...  so '+' is already inverted.
             tilts = [*zx, (z + float(self.edited_images[det]['tilt']))]
