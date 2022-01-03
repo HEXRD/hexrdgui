@@ -1,7 +1,7 @@
 ![platforms](https://anaconda.org/hexrd/hexrdgui/badges/platforms.svg) ![current version](https://anaconda.org/hexrd/hexrdgui/badges/version.svg) ![last updated](https://anaconda.org/hexrd/hexrdgui/badges/latest_release_relative_date.svg) ![downloads](https://anaconda.org/hexrd/hexrdgui/badges/downloads.svg)
 # Installing
 
-Requires Python 3.8+
+Requires Python 3.9+
 
 ### OSX
 
@@ -10,16 +10,7 @@ latest SDK. See the following issue for more details: https://github.com/HEXRD/h
 This can be installed using the following command:
 
 ```bash
-conda install -c conda-forge python=3.8
-```
-
-#### Big Sur (OS X 11)
-
-OS X 11 does not work with the Python from conda-forge. Please install a the version
-from the HEXRD channel
-
-```bash
-conda install -c HEXRD python=3.8.4
+conda install -c conda-forge python=3.9
 ```
 
 ## conda (release)
@@ -49,7 +40,7 @@ hexrdgui
 
 # Development
 
-Requires Python 3.8+.  First clone the Git repositories
+Requires Python 3.9+.  First clone the Git repositories
 
 ```bash
 git clone https://github.com/HEXRD/hexrd.git
@@ -68,9 +59,9 @@ pip install -e hexrdgui
 
 ### Linux
 ```bash
-# First, make sure python3.8+ is installed in your target env.
+# First, make sure python3.9+ is installed in your target env.
 # If it is not, run the following command:
-conda install -c conda-forge python=3.8
+conda install -c conda-forge python=3.9
 # Install deps using conda package
 conda install -c HEXRD -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
@@ -80,10 +71,10 @@ CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrdgui
 
 ### Mac OS
 ```bash
-# First, make sure python3.8+ is installed in your target env.
+# First, make sure python3.9+ is installed in your target env.
 # On OSX you will need to use the Python package from conda-forge
 # See the following issue for more details: https://github.com/HEXRD/hexrdgui/issues/505
-conda install -c conda-forge python=3.8
+conda install -c conda-forge python=3.9
 # Install deps using conda package
 conda install -c HEXRD -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development
@@ -93,9 +84,9 @@ CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrdgui
 
 ### Windows
 ```bash
-# First, make sure python3.8+ is installed in your target env.
+# First, make sure python3.9+ is installed in your target env.
 # If it is not, run the following command:
-conda install -c conda-forge python=3.8
+conda install -c conda-forge python=3.9
 # Install deps using conda package
 conda install -c HEXRD -c conda-forge hexrdgui
 # Now using pip to link repo's into environment for development

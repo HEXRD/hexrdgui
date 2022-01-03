@@ -36,11 +36,11 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.9'
     ],
     packages=find_packages(),
     package_data={'hexrd': ['ui/resources/**/*']},
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=install_reqs,
     entry_points={
         'gui_scripts': [
