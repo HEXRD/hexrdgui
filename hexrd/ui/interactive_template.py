@@ -41,6 +41,10 @@ class InteractiveTemplate:
         verts = self.panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
+        if np.any(np.isnan(verts)):
+            # This template contains more than one polygon and the last point
+            # should not be connected to the first. See Tardis IP for example.
+            self.shape.set_closed(False)
         self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
         self.center = self.get_midpoint()
         self.update_position(instr, det)
