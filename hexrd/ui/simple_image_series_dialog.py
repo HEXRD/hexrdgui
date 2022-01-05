@@ -34,6 +34,8 @@ class SimpleImageSeriesDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('simple_image_series_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.update_config_variables()
 

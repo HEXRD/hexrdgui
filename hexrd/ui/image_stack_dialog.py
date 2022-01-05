@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from pathlib import Path
 
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Signal, Qt
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
@@ -20,6 +20,8 @@ class ImageStackDialog(QObject):
         super(ImageStackDialog, self).__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.simple_image_series_dialog = simple_image_series_dialog
         self.detectors = HexrdConfig().detector_names

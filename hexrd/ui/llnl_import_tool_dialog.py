@@ -4,7 +4,7 @@ import tempfile
 import h5py
 from pathlib import Path
 
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Signal, Qt
 from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
 from PySide2.QtGui import QColor
 
@@ -41,6 +41,9 @@ class LLNLImportToolDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('llnl_import_tool_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
+
         self.it = None
         self.instrument = None
         self.edited_images = {}
