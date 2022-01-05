@@ -11,6 +11,7 @@ from skimage.draw import polygon
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui import resource_loader
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import has_nan
 
 
 class InteractiveTemplate:
@@ -41,6 +42,10 @@ class InteractiveTemplate:
         verts = self.panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
         self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
+        if has_nan(verts):
+            # This template contains more than one polygon and the last point
+            # should not be connected to the first. See Tardis IP for example.
+            self.shape.set_closed(False)
         self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
         self.center = self.get_midpoint()
         self.update_position(instr, det)
