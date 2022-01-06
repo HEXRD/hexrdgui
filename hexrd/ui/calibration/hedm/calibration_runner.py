@@ -483,6 +483,12 @@ class HEDMCalibrationRunner(QObject):
 
         HexrdConfig().update_overlay_editor.emit()
 
+    def synchronize_material(self):
+        # This material is used for creating the indexing config.
+        # Make sure it matches the material we are using.
+        cfg = HexrdConfig().indexing_config
+        cfg['_selected_material'] = self.material.name
+
     def synchronize_omega_period(self):
         # This omega period is deprecated, but still used in some places.
         # Make sure it is synchronized with our overlays' omega period.
@@ -526,6 +532,9 @@ class HEDMCalibrationRunner(QObject):
         if not np.any(self.all_flags):
             msg = 'There are no refinable parameters'
             raise Exception(msg)
+
+        # Make sure the material is updated in the indexing config
+        self.synchronize_material()
 
         # Ensure we have omega metadata
         try:
