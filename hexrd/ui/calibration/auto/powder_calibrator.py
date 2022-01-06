@@ -184,7 +184,10 @@ class PowderCalibrator(object):
                         #     np.vstack([angs[0][:-1], angs[0][1:]]),
                         #     axis=0)
                         # eta_ref = angs[1]
-                        # int1d = np.sum(np.array(intensities).squeeze(), axis=0)
+                        # int1d = np.sum(
+                        #     np.array(intensities).squeeze(),
+                        #     axis=0
+                        # )
                         tth_centers = angs[0]
                         eta_ref = angs[1]
                         int1d = intensities[0]
@@ -308,8 +311,10 @@ class PowderCalibrator(object):
         for det_key, panel in self.instr.detectors.items():
             if len(data_dict[det_key]) == 0:
                 continue
-            pdata = np.vstack(data_dict[det_key])
-            if len(pdata) > 0:
+            else:
+                # recast as array
+                pdata = np.vstack(data_dict[det_key])
+
                 """
                 Here is the strategy:
                     1. remap the feature points from raw cartesian to
@@ -318,6 +323,8 @@ class PowderCalibrator(object):
                     3. push the (tth0, eta) values back through the mapping to
                        raw cartesian coordinates
                     4. build residual on the measured and recalculated (x, y)
+
+                TODO: evaluate just comparing in angular space
                 """
                 # push measured (x, y) ring points through current mapping
                 # to (tth, eta)
@@ -334,32 +341,34 @@ class PowderCalibrator(object):
                 dsp0 = 1./np.sqrt(np.sum(gvecs*gvecs, axis=1))
                 tth0 = 2.*np.arcsin(0.5*wlen/dsp0)
 
-                # !!! get eta from mapped markers rather than ref
-                # eta0 = pdata[:, -1]
-                eta0 = updates_angles[:, 1]
-
-                # map updated (tth0, eta0) back to cartesian coordinates
-                tth_eta = np.vstack([tth0, eta0]).T
-                calc_xy = panel.angles_to_cart(
-                    tth_eta,
-                    tvec_s=self.instr.tvec,
-                    apply_distortion=True
-                )
-
                 # output
                 if output == 'residual':
                     retval.append(
-                        meas_xy.flatten() - calc_xy.flatten()
+                        updates_angles[:, 0].flatten() - tth0.flatten()
                     )
+                    # retval.append(
+                    #     meas_xy.flatten() - calc_xy.flatten()
+                    # )
                 elif output == 'model':
+                    # !!! get eta from mapped markers rather than ref
+                    # eta0 = pdata[:, -1]
+                    eta0 = updates_angles[:, 1]
+
+                    # map updated (tth0, eta0) back to cartesian coordinates
+                    tth_eta = np.vstack([tth0, eta0]).T
+                    calc_xy = panel.angles_to_cart(
+                        tth_eta,
+                        tvec_s=self.instr.tvec,
+                        apply_distortion=True
+                    )
+
                     retval.append(
                         calc_xy.flatten()
                     )
                 else:
                     raise RuntimeError("unrecognized output flag '%s'"
                                        % output)
-            else:
-                continue
+
         return np.hstack(retval)
 
     def residual(self, reduced_params, data_dict):
