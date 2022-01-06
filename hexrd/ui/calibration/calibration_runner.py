@@ -243,7 +243,7 @@ class CalibrationRunner:
 
         # Since python dicts are ordered, I think we can assume that the
         # ordering of the picks should still be the same.
-        for i, new_picks in enumerate(updated_picks):
+        for i, new_picks in zip(self.all_overlay_picks, updated_picks):
             self.all_overlay_picks[i] = new_picks['picks']
 
         self.overlay_picks = self.all_overlay_picks[self.current_overlay_ind]
