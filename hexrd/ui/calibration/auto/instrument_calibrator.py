@@ -27,11 +27,11 @@ class InstrumentCalibrator(object):
         self._calibrators = args
         self._instr = self._calibrators[0].instr
         self.npi = len(self._instr.calibration_parameters)
-        self.full_params = self._instr.calibration_parameters
+        self._full_params = self._instr.calibration_parameters
         for calib in self._calibrators:
             assert calib.instr is self._instr, \
                 "all calibrators must refer to the same instrument"
-            self.full_params = np.hstack([self.full_params, calib.params])
+            self._full_params = np.hstack([self._full_params, calib.params])
 
     @property
     def instr(self):
@@ -48,6 +48,17 @@ class InstrumentCalibrator(object):
         for calib_class in self.calibrators:
             flags.append(calib_class.flags[calib_class.npi:])
         return np.hstack(flags)
+
+    @property
+    def full_params(self):
+        return self._full_params
+
+    @full_params.setter
+    def full_params(self, x):
+        assert len(x) == len(self._full_params), \
+            "input must have length %d; you gave %d" \
+            % (len(self._full_params), len(x))
+        self._full_params = x
 
     @property
     def reduced_params(self):
@@ -183,7 +194,19 @@ class InstrumentCalibrator(object):
             else:
                 print('no improvement in residual!!!')
                 step_successful = False
+                break
 
             iter_count += 1
+
+        # handle exit condition in case step failed
+        if not step_successful:
+            x1 = x0
+            _ = self.residual(x1, master_data_dict_list)
+
+        # update the full_params
+        # FIXME: this class is still hard-coded for one calibrator
+        fp = np.array(self.full_params, dtype=float)
+        fp[self.flags] = x1
+        self.full_params = fp
 
         return x1
