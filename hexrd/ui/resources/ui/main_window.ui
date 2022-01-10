@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -228,7 +228,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>610</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">
@@ -241,7 +241,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>610</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">
@@ -292,7 +292,7 @@
     <string>Color Map</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>4</number>
+    <number>2</number>
    </attribute>
    <widget class="QWidget" name="color_map_dock_widgets">
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -319,7 +319,7 @@
     <string>Image Mode</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>4</number>
+    <number>2</number>
    </attribute>
    <widget class="QWidget" name="image_mode_dock_widgets">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -343,7 +343,7 @@
     <string>Messages</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>1</number>
+    <number>2</number>
    </attribute>
    <widget class="QWidget" name="messages_dock_widget_contents">
     <layout class="QVBoxLayout" name="verticalLayout_3"/>
