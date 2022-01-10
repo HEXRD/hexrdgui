@@ -168,6 +168,7 @@ class HEDMCalibrationRunner(QObject):
             'grain_ids': grain_ids,
             'cfg': cfg,
             'title': 'Initial Guess. Proceed?',
+            'ome_period': ome_period,
             'parent': self.parent,
         }
         dialog = HEDMCalibrationResultsDialog(**kwargs)
@@ -198,6 +199,7 @@ class HEDMCalibrationRunner(QObject):
                 'grain_ids': grain_ids,
                 'cfg': cfg,
                 'title': 'Final results. Accept?',
+                'ome_period': ome_period,
                 'parent': self.parent,
             }
             dialog = HEDMCalibrationResultsDialog(**kwargs)
@@ -280,6 +282,7 @@ class HEDMCalibrationRunner(QObject):
             'grain_ids': grain_ids,
             'cfg': cfg,
             'title': 'Final results. Accept?',
+            'ome_period': ome_period,
             'parent': self.parent,
         }
         dialog = HEDMCalibrationResultsDialog(**kwargs)

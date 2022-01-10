@@ -15,7 +15,7 @@ DEFAULT_LABEL = ''
 
 class HEDMCalibrationResultsDialog:
     def __init__(self, data, styles, labels, grain_ids, cfg, title,
-                 parent=None):
+                 ome_period, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('hedm_calibration_results_dialog.ui',
                                    parent)
@@ -30,6 +30,7 @@ class HEDMCalibrationResultsDialog:
         self.grain_ids = grain_ids
         self.cfg = cfg
         self.title = title
+        self.ome_period = ome_period
 
         self.setup_combo_boxes()
         self.setup_canvas()
@@ -139,7 +140,7 @@ class HEDMCalibrationResultsDialog:
         self.clear_artists()
 
         instr = self.cfg.instrument.hedm
-        ome_period = self.cfg.find_orientations.omega.period
+        ome_period = self.ome_period
 
         grain_ids = self.grain_ids_to_plot
         det_key = self.selected_detector_key
