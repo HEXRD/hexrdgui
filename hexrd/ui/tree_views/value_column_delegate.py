@@ -28,6 +28,10 @@ class ValueColumnDelegate(QStyledItemDelegate):
         key = item.data(BaseTreeItemModel.KEY_COL)
         if key == constants.BUFFER_KEY:
             edit_btn = QPushButton(BUTTON_LABEL, parent)
+            edit_btn.setStyleSheet(
+                'padding: 0px; border: 1px solid lightgray;'
+                'border-radius: 5px; background-color: white;'
+            )
 
             def _clicked():
                 def _set_enable(enabled):
