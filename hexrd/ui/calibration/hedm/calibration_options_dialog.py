@@ -116,7 +116,7 @@ class HEDMCalibrationOptionsDialog(QObject):
 
     @clobber_centroid.setter
     def clobber_centroid(self, b):
-        self.ui.clobber_strain.setChecked(b)
+        self.ui.clobber_centroid.setChecked(b)
 
     @property
     def clobber_grain_Y(self):
