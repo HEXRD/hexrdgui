@@ -40,7 +40,7 @@ class OverlayManager:
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
-        HexrdConfig().calibration_complete.connect(self.update_overlay_editor)
+        HexrdConfig().update_overlay_editor.connect(self.update_overlay_editor)
         HexrdConfig().material_renamed.connect(self.update_table)
         HexrdConfig().materials_removed.connect(self.update_table)
 

@@ -159,6 +159,7 @@
      </property>
      <addaction name="action_run_laue_and_powder_calibration"/>
      <addaction name="action_run_fast_powder_calibration"/>
+     <addaction name="action_run_hedm_calibration"/>
     </widget>
     <addaction name="menu_calibration"/>
     <addaction name="action_run_wppf"/>
@@ -645,6 +646,11 @@
   <action name="action_image_stack">
    <property name="text">
     <string>Image Stack</string>
+   </property>
+  </action>
+  <action name="action_run_hedm_calibration">
+   <property name="text">
+    <string>HEDM</string>
    </property>
   </action>
  </widget>

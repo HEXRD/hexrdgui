@@ -3,8 +3,9 @@ import numpy as np
 from numpy.linalg import LinAlgError
 
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtWidgets import QFileDialog
 
-from hexrd import matrixutil
+from hexrd import instrument, matrixutil
 
 from hexrd.ui.constants import DEFAULT_CRYSTAL_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -63,6 +64,7 @@ class CalibrationCrystalEditor(QObject):
             self.refinements_edited)
 
         self.ui.load.clicked.connect(self.load)
+        self.ui.save.clicked.connect(self.save)
 
     @property
     def params(self):
@@ -267,7 +269,7 @@ class CalibrationCrystalEditor(QObject):
             self.slider_widget.update_gui(o_values, p_values)
 
     def load(self):
-        dialog = SelectGrainsDialog(self.ui)
+        dialog = SelectGrainsDialog(1, self.ui)
         if not dialog.exec_():
             return
 
@@ -276,3 +278,20 @@ class CalibrationCrystalEditor(QObject):
     def load_from_grain(self, grain):
         self.params = grain[3:15]
         self.params_modified.emit()
+
+    def save(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Crystal Parameters', HexrdConfig().working_dir,
+            'Grains.out files (*.out)')
+
+        if not selected_file:
+            return
+
+        self.write_params(selected_file)
+
+    def write_params(self, filepath):
+        gw = instrument.GrainDataWriter(filepath)
+        try:
+            gw.dump_grain(0, 1, 0, self.params)
+        finally:
+            gw.close()

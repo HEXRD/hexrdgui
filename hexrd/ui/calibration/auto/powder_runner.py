@@ -9,7 +9,6 @@ from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays import default_overlay_refinements
 from hexrd.ui.utils import instr_to_internal_dict
 
 from hexrd.ui.calibration.auto import (
@@ -248,13 +247,7 @@ class PowderRunner(QObject):
 
     @property
     def active_overlay_refinements(self):
-        return [x[1] for x in self.overlay_refinements(self.active_overlay)]
-
-    def overlay_refinements(self, overlay):
-        refinements = overlay.get('refinements')
-        if refinements is None:
-            refinements = default_overlay_refinements(overlay)
-        return refinements
+        return [x[1] for x in self.active_overlay['refinements']]
 
     @property
     def refinement_flags_without_overlays(self):

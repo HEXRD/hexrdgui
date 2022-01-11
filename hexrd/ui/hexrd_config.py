@@ -12,6 +12,7 @@ import yaml
 
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
+from hexrd.findorientations import _process_omegas
 from hexrd.instrument import HEDMInstrument
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
@@ -147,9 +148,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when a new polar mask has been created"""
     polar_masks_changed = Signal()
 
-    """Emitted when point picked calibration is complete"""
-    calibration_complete = Signal()
-
     """Emitted when reflections tables for a given material should update
 
     The string argument is the material name.
@@ -164,6 +162,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Indicate that the state was loaded..."""
     state_loaded = Signal()
+
+    """Indicate that the overlay editor should update its GUI"""
+    update_overlay_editor = Signal()
 
     def __init__(self):
         # Should this have a parent?
@@ -515,17 +516,34 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return len(self.imageseries_dict) != 0
 
     @property
-    def has_omega_ranges(self):
-        return self.current_imageseries_omega_range is not None
+    def omega_imageseries_dict(self):
+        if self.is_aggregated:
+            imsd = self.unagg_images
+        else:
+            imsd = self.imageseries_dict
 
-    @property
-    def current_imageseries_omega_range(self):
-        # Just assume all of the imageseries have the same omega ranges.
-        # Grab the first one.
-        first_ims = next(iter(self.imageseries_dict.values()))
-        if not utils.is_omega_imageseries(first_ims):
+        if not imsd:
             return None
 
+        if any(not utils.is_omega_imageseries(ims) for ims in imsd.values()):
+            # This is not an omega imageseries dict...
+            return None
+
+        return imsd
+
+    @property
+    def has_omegas(self):
+        return self.omega_imageseries_dict is not None
+
+    @property
+    def omega_ranges(self):
+        # Just assume all of the imageseries have the same omega ranges.
+        # Grab the first one.
+        imsd = self.omega_imageseries_dict
+        if not imsd:
+            return None
+
+        first_ims = next(iter(imsd.values()))
         return first_ims.omega[self.current_imageseries_idx]
 
     @property
@@ -1442,7 +1460,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 overlay['refinements'] = default_refinements
 
             if overlay['type'] == constants.OverlayType.rotation_series:
-                if not self.has_omega_ranges:
+                if self.is_aggregated or not self.has_omegas:
                     # Force aggregation
                     overlay.get('options', {})['aggregated'] = True
                     overlay['update_needed'] = True
@@ -1806,6 +1824,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def unagg_images(self):
         return self.unaggregated_images
 
+    @property
+    def is_aggregated(self):
+        # Having unaggregated images implies the image series is aggregated
+        return self.unagg_images is not None
+
     def reset_unagg_imgs(self, new_imgs=False):
         if self.unagg_images is not None:
             if not new_imgs:
@@ -1976,3 +1999,36 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @config_image.setter
     def config_image(self, image):
         self.config['image'] = image
+
+    def process_overlay_updates(self):
+        # Perform any overlay processing needed from loading new images
+        rotation_series_overlays = [
+            overlay for overlay in self.overlays
+            if overlay['type'] == constants.OverlayType.rotation_series]
+
+        if rotation_series_overlays:
+            ims_dict = self.omega_imageseries_dict
+            if ims_dict is None:
+                ome_period = None
+                ome_ranges = None
+            else:
+                ome_period, ome_ranges = _process_omegas(ims_dict)
+
+            for overlay in rotation_series_overlays:
+                internal = overlay.get('internal', {})
+                sync_ome_period = internal.get('sync_ome_period', True)
+                sync_ome_ranges = internal.get('sync_ome_ranges', True)
+
+                if sync_ome_period and ome_period is not None:
+                    options = overlay.setdefault('options', {})
+                    options['ome_period'] = np.radians(ome_period)
+                    overlay['update_needed'] = True
+
+                if sync_ome_ranges and ome_ranges is not None:
+                    options = overlay.setdefault('options', {})
+                    options['ome_ranges'] = np.radians(ome_ranges)
+                    overlay['update_needed'] = True
+
+        if any(o['update_needed'] for o in self.overlays):
+            self.overlay_config_changed.emit()
+            self.update_overlay_editor.emit()

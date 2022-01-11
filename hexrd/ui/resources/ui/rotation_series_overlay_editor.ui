@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>710</height>
+    <width>507</width>
+    <height>770</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>710</height>
+    <height>770</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,26 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="11" column="1" colspan="4">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="1" colspan="4">
+    <widget class="QPushButton" name="reflections_table">
+     <property name="text">
+      <string>Reflections Table</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="1" colspan="4">
     <widget class="QTabWidget" name="tab_widget">
      <property name="currentIndex">
@@ -34,49 +54,10 @@
        <string>General</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="0" column="2">
-        <widget class="ScientificDoubleSpinBox" name="omega_period_1">
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="suffix">
-          <string>°</string>
-         </property>
-         <property name="minimum">
-          <double>-360.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="ScientificDoubleSpinBox" name="omega_period_0">
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="suffix">
-          <string>°</string>
-         </property>
-         <property name="minimum">
-          <double>-360.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
+       <item row="5" column="0" colspan="3">
+        <layout class="QVBoxLayout" name="crystal_editor_layout"/>
        </item>
        <item row="0" column="0">
-        <widget class="QLabel" name="omega_period_label">
-         <property name="text">
-          <string>Omega Period:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
         <widget class="QCheckBox" name="aggregated">
          <property name="text">
           <string>Aggregated</string>
@@ -110,7 +91,7 @@
              <double>360.000000000000000</double>
             </property>
             <property name="value">
-             <double>5.000000000000000</double>
+             <double>3.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -145,7 +126,7 @@
              <double>360.000000000000000</double>
             </property>
             <property name="value">
-             <double>5.000000000000000</double>
+             <double>0.250000000000000</double>
             </property>
            </widget>
           </item>
@@ -172,10 +153,77 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="2">
+       <item row="1" column="0" colspan="3">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string>Omega Period</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QCheckBox" name="sync_ome_period">
+            <property name="text">
+             <string>Use from Image Series</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="ScientificDoubleSpinBox" name="omega_period_0">
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="minimum">
+             <double>-360.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>360.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="ScientificDoubleSpinBox" name="omega_period_1">
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="minimum">
+             <double>-360.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>360.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="omega_width_label">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The omega width is used primarily in two areas:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. As the omega tolerance for HEDM calibration&lt;/p&gt;&lt;p&gt;2. If the displayed image series is unaggregated, and this overlay is also unaggregated, the omega width is used to compute which spots to display on the currently displayed frame.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Omega Width:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
         <widget class="ScientificDoubleSpinBox" name="omega_width">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The omega width is used primarily in two areas:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. As the omega tolerance for HEDM calibration&lt;/p&gt;&lt;p&gt;2. If the displayed image series is unaggregated, and this overlay is also unaggregated, the omega width is used to compute which spots to display on the currently displayed frame.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="suffix">
           <string>°</string>
@@ -188,54 +236,56 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="omega_width_label">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Omega Width:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="3">
-        <layout class="QVBoxLayout" name="crystal_editor_layout"/>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="eta_omega_ranges">
       <attribute name="title">
        <string>η/ω ranges</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <layout class="QVBoxLayout" name="eta_ranges_layout"/>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0" rowspan="3">
+        <widget class="QGroupBox" name="eta_range_group">
+         <property name="title">
+          <string>η</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QPushButton" name="mask_eta_by_wedge">
+            <property name="text">
+             <string>Mask by Wedge</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="eta_ranges_layout"/>
+          </item>
+         </layout>
+        </widget>
        </item>
-       <item>
-        <layout class="QVBoxLayout" name="omega_ranges_layout"/>
+       <item row="0" column="1" rowspan="3">
+        <widget class="QGroupBox" name="omega_range_group">
+         <property name="title">
+          <string>ω</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QCheckBox" name="sync_ome_ranges">
+            <property name="text">
+             <string>Use from Image Series</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="omega_ranges_layout"/>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>
-    </widget>
-   </item>
-   <item row="11" column="1" colspan="4">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="1" colspan="4">
-    <widget class="QPushButton" name="reflections_table">
-     <property name="text">
-      <string>Reflections Table</string>
-     </property>
     </widget>
    </item>
   </layout>
@@ -250,13 +300,16 @@
  <tabstops>
   <tabstop>reflections_table</tabstop>
   <tabstop>tab_widget</tabstop>
-  <tabstop>omega_period_0</tabstop>
-  <tabstop>omega_period_1</tabstop>
   <tabstop>aggregated</tabstop>
   <tabstop>omega_width</tabstop>
+  <tabstop>sync_ome_period</tabstop>
+  <tabstop>omega_period_0</tabstop>
+  <tabstop>omega_period_1</tabstop>
   <tabstop>enable_widths</tabstop>
   <tabstop>tth_width</tabstop>
   <tabstop>eta_width</tabstop>
+  <tabstop>mask_eta_by_wedge</tabstop>
+  <tabstop>sync_ome_ranges</tabstop>
  </tabstops>
  <resources/>
  <connections/>

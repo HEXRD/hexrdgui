@@ -13,7 +13,7 @@ class RotationSeriesSpotOverlay:
                  ome_period=None,
                  eta_period=np.r_[-180., 180.],
                  aggregated=True,
-                 ome_width=5.0,
+                 ome_width=np.radians(5.0),
                  tth_width=None,
                  eta_width=None):
 
@@ -150,7 +150,7 @@ class RotationSeriesSpotOverlay:
                 'data': data,
                 'aggregated': self.aggregated,
                 'omegas': np.degrees(omegas),
-                'omega_width': self.ome_width,
+                'omega_width': np.degrees(self.ome_width),
                 'ranges': ranges,
             }
 

@@ -124,7 +124,9 @@ class ImageTabWidget(QTabWidget):
         HexrdConfig().current_imageseries_idx = pos
         self.update_needed.emit()
 
-        if not HexrdConfig().has_omega_ranges:
+        is_aggregated = HexrdConfig().is_aggregated
+        has_omegas = HexrdConfig().has_omegas
+        if is_aggregated or not has_omegas:
             return
 
         # For rotation series, changing the image series index may require

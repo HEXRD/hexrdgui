@@ -19,6 +19,12 @@ class IndexingTreeViewDialog(DictTreeViewDialog):
             ('seed_search', 'method'): self.seed_search_defaults,
         }
         self.tree_view.combo_keys = combo_keys
+
+        # Don't allow the user to see/modify the omega period.
+        # This is deprecated, and we only set it programmatically where
+        # needed.
+        self.tree_view.blacklisted_paths = [('omega', 'period')]
+
         self.expand_rows()
 
     @lazy_property

@@ -39,10 +39,10 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Calibration Crystal</string>
+      <string>Crystal Parameters</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="0" colspan="2">
+      <item row="0" column="0" colspan="3">
        <widget class="QTabWidget" name="tab_widget">
         <property name="enabled">
          <bool>true</bool>
@@ -525,12 +525,23 @@
         </widget>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="load">
-        <property name="text">
-         <string>Load Crystal Parameters</string>
-        </property>
-       </widget>
+      <item row="1" column="0" colspan="3">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QPushButton" name="load">
+          <property name="text">
+           <string>Load</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="save">
+          <property name="text">
+           <string>Save</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
@@ -561,6 +572,8 @@
   <tabstop>stretch_matrix_6</tabstop>
   <tabstop>stretch_matrix_7</tabstop>
   <tabstop>stretch_matrix_8</tabstop>
+  <tabstop>load</tabstop>
+  <tabstop>save</tabstop>
  </tabstops>
  <resources/>
  <connections/>

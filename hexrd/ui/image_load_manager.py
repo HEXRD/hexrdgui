@@ -208,6 +208,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         if self.transformed_images:
             HexrdConfig().deep_rerender_needed.emit()
 
+        HexrdConfig().process_overlay_updates()
+
     def get_dark_aggr_op(self, ims, idx):
         """
         Returns a tuple of the form (function, frames), where func is the
