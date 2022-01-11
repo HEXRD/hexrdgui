@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>944</height>
+    <height>1108</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -650,6 +650,12 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>180</height>
+        </size>
        </property>
        <property name="title">
         <string>HKL Seeds</string>
