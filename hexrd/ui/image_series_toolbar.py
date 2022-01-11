@@ -88,9 +88,12 @@ class ImageSeriesToolbar(QWidget):
         self.update_omega_label_text()
 
     def update_omega_label_text(self):
-        ome_range = HexrdConfig().current_imageseries_omega_range
-        self.omega_label.setVisible(ome_range is not None)
-        if ome_range is None:
+        is_aggregated = HexrdConfig().is_aggregated
+        ome_range = HexrdConfig().omega_ranges
+
+        enable = not is_aggregated and ome_range is not None
+        self.omega_label.setVisible(enable)
+        if not enable:
             return
 
         ome_min, ome_max = ome_range

@@ -9,7 +9,6 @@ from hexrd.config.instrument import Instrument as InstrumentConfig
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import is_omega_imageseries
 
 
 def create_indexing_config():
@@ -48,14 +47,8 @@ def create_indexing_config():
     # Set this so the config won't over-write our tThWidth
     config.set('material:tth_width', np.degrees(material.planeData.tThWidth))
 
-    # Use unaggregated images if possible
-    ims_dict = HexrdConfig().unagg_images
+    ims_dict = HexrdConfig().omega_imageseries_dict
     if ims_dict is None:
-        # This probably means the image series was never aggregated.
-        # Try using the imageseries dict.
-        ims_dict = HexrdConfig().imageseries_dict
-
-    if any(not is_omega_imageseries(ims) for ims in ims_dict.values()):
         # Add an early error that is easier to understand...
         raise OmegasNotFoundError('Omegas not found!')
 

@@ -331,8 +331,9 @@ class ImageCanvas(FigureCanvas):
             artists.append(artist)
 
     def draw_rotation_series_overlay(self, axis, data, style):
-        ome_range = HexrdConfig().current_imageseries_omega_range
-        aggregated = data['aggregated'] or ome_range is None
+        is_aggregated = HexrdConfig().is_aggregated
+        ome_range = HexrdConfig().omega_ranges
+        aggregated = data['aggregated'] or is_aggregated or ome_range is None
         if not aggregated:
             ome_width = data['omega_width']
             ome_mean = np.mean(ome_range)

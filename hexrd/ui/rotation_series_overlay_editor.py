@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
+from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QInputDialog
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.constants import (
@@ -57,6 +57,10 @@ class RotationSeriesOverlayEditor:
         self.ui.aggregated.toggled.connect(self.update_enable_states)
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
 
+        self.ui.mask_eta_by_wedge.clicked.connect(self.mask_eta_by_wedge)
+        self.ui.sync_ome_period.toggled.connect(self.sync_ome_period_toggled)
+        self.ui.sync_ome_ranges.toggled.connect(self.sync_ome_ranges_toggled)
+
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
 
     @property
@@ -78,7 +82,8 @@ class RotationSeriesOverlayEditor:
         options = self.overlay.get('options', {})
 
         force_aggregated = (
-            not HexrdConfig().has_omega_ranges or
+            HexrdConfig().is_aggregated or
+            not HexrdConfig().has_omegas or
             'aggregated' not in options
         )
         if force_aggregated:
@@ -89,7 +94,22 @@ class RotationSeriesOverlayEditor:
             HexrdConfig().overlay_config_changed.emit()
 
     def update_enable_states(self):
-        self.ui.aggregated.setEnabled(HexrdConfig().has_omega_ranges)
+        is_aggregated = HexrdConfig().is_aggregated
+        has_omegas = HexrdConfig().has_omegas
+
+        self.ui.aggregated.setEnabled(has_omegas and not is_aggregated)
+
+        if self.overlay is not None:
+            internal = self.overlay.setdefault('internal', {})
+
+            sync_ome_ranges = internal.get('sync_ome_ranges', True)
+            disable = sync_ome_ranges and has_omegas
+            self.omega_ranges_editor.ui.setDisabled(disable)
+
+            sync_ome_period = internal.get('sync_ome_period', True)
+            disable = sync_ome_period and has_omegas
+            for w in self.omega_period_widgets:
+                w.setDisabled(disable)
 
         enable_widths = self.enable_widths
         names = [
@@ -123,6 +143,10 @@ class RotationSeriesOverlayEditor:
                 self.tth_width = options['tth_width']
             if 'eta_width' in options:
                 self.eta_width = options['eta_width']
+
+            internal = self.overlay.get('internal', {})
+            self.sync_ome_ranges = internal.get('sync_ome_ranges', True)
+            self.sync_ome_period = internal.get('sync_ome_period', True)
 
         if 'crystal_params' in options:
             self.crystal_params = options['crystal_params']
@@ -210,6 +234,22 @@ class RotationSeriesOverlayEditor:
         self.omega_ranges_editor.data = v
 
     @property
+    def sync_ome_ranges(self):
+        return self.ui.sync_ome_ranges.isChecked()
+
+    @sync_ome_ranges.setter
+    def sync_ome_ranges(self, b):
+        self.ui.sync_ome_ranges.setChecked(b)
+
+    @property
+    def sync_ome_period(self):
+        return self.ui.sync_ome_period.isChecked()
+
+    @sync_ome_period.setter
+    def sync_ome_period(self, b):
+        self.ui.sync_ome_period.setChecked(b)
+
+    @property
     def omega_period_widgets(self):
         return [getattr(self.ui, f'omega_period_{i}') for i in range(2)]
 
@@ -292,3 +332,47 @@ class RotationSeriesOverlayEditor:
             self._table.material = self.material
 
         self._table.show()
+
+    def mask_eta_by_wedge(self):
+        title = 'Select Width'
+        label = 'η Mask Width (°)'
+        kwargs = {
+            'value': 5,
+            'min': 0.001,
+            'max': 360,
+            'decimals': 4,
+        }
+        mask, accepted = QInputDialog.getDouble(self.ui, title, label,
+                                                **kwargs)
+        if not accepted:
+            return
+
+        self.eta_ranges = np.radians([[-90 + mask, 90 - mask],
+                                      [90 + mask, 270 - mask]])
+        self.update_config()
+
+    def sync_ome_ranges_toggled(self):
+        b = self.sync_ome_ranges
+        if self.overlay is None:
+            return
+
+        internal = self.overlay.setdefault('internal', {})
+        internal['sync_ome_ranges'] = b
+
+        if b:
+            HexrdConfig().process_overlay_updates()
+
+        self.update_enable_states()
+
+    def sync_ome_period_toggled(self):
+        b = self.sync_ome_period
+        if self.overlay is None:
+            return
+
+        internal = self.overlay.setdefault('internal', {})
+        internal['sync_ome_period'] = b
+
+        if b:
+            HexrdConfig().process_overlay_updates()
+
+        self.update_enable_states()
