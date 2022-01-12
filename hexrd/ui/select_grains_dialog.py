@@ -169,12 +169,14 @@ class SelectGrainsDialog(QObject):
         }
         view.data_model = GrainsTableModel(**kwargs)
 
-        # If there is only one row, select it automatically
-        if len(v) == 1:
+        # If the number of rows is equal to the number of requested grains,
+        # select all rows automatically for convenience.
+        if len(v) == self.num_requested_grains:
             selection_model = view.selectionModel()
-            model_index = selection_model.model().index(0, 0)
             command = QItemSelectionModel.Select | QItemSelectionModel.Rows
-            selection_model.select(model_index, command)
+            for i in range(len(v)):
+                model_index = selection_model.model().index(i, 0)
+                selection_model.select(model_index, command)
 
     def update_grains_table(self):
         functions = {
