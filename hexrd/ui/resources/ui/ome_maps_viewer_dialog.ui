@@ -6,89 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
+    <width>1900</width>
     <height>1108</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="7" column="3">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QGroupBox" name="eta_group_box">
-     <property name="title">
-      <string>Eta</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_8">
-      <item row="0" column="0">
-       <widget class="QLabel" name="eta_tolerance_label">
-        <property name="text">
-         <string>Tolerance:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="ScientificDoubleSpinBox" name="eta_tolerance">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string>°</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>0.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>360.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="eta_mask_label">
-        <property name="text">
-         <string>Mask:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="ScientificDoubleSpinBox" name="eta_mask">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string>°</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>0.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>360.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="2" column="1" colspan="2">
+   <item row="5" column="1" rowspan="2" colspan="2">
     <widget class="QGroupBox" name="quaternion_method_group">
      <property name="title">
       <string>Quaternion Method</string>
@@ -598,92 +521,85 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="3" rowspan="2">
-    <layout class="QGridLayout" name="grid_layout">
-     <item row="2" column="2">
-      <widget class="QCheckBox" name="label_spots">
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>Label Spots</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="export_button">
-       <property name="text">
-        <string>Export</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0" rowspan="4">
-      <layout class="QVBoxLayout" name="color_map_editor_layout"/>
-     </item>
-     <item row="1" column="2">
-      <widget class="QComboBox" name="active_hkl">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="active_hkl_label">
-       <property name="text">
-        <string>Displayed hkl</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1" rowspan="4">
-      <widget class="QGroupBox" name="select_hkls_group">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>180</height>
-        </size>
-       </property>
-       <property name="title">
-        <string>HKL Seeds</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <layout class="QVBoxLayout" name="select_hkls_widget_layout"/>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QGroupBox" name="omega_group_box">
+   <item row="3" column="1" rowspan="2" colspan="2">
+    <widget class="QGroupBox" name="filtering_group">
      <property name="title">
-      <string>Omega</string>
+      <string>Filtering</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_7">
+     <layout class="QGridLayout" name="gridLayout_10">
+      <item row="2" column="1">
+       <widget class="ScientificDoubleSpinBox" name="filtering_fwhm">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-100000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="tolerance_label">
+       <widget class="QCheckBox" name="apply_filtering">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply filtering to the eta omega maps?&lt;/p&gt;&lt;p&gt;Subtracts a row-wise median, and optionally performs a Laplace filter using Gaussian second derivatives&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Apply filtering?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="filtering_apply_gaussian_laplace">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply Laplace filter using Gaussian second derivatives&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Apply Gaussian Laplace?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="filtering_fwhm_label">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>FWHM:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="8" column="1" colspan="2">
+    <widget class="QGroupBox" name="eta_group_box">
+     <property name="title">
+      <string>Eta</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_8">
+      <item row="0" column="0">
+       <widget class="QLabel" name="eta_tolerance_label">
         <property name="text">
          <string>Tolerance:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="ScientificDoubleSpinBox" name="omega_tolerance">
+       <widget class="ScientificDoubleSpinBox" name="eta_tolerance">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
@@ -707,91 +623,36 @@
         </property>
        </widget>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="0" column="1" rowspan="2" colspan="2">
-    <widget class="QGroupBox" name="filtering_group">
-     <property name="title">
-      <string>Filtering</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_10">
-      <item row="2" column="0">
-       <widget class="QLabel" name="filtering_fwhm_label">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>FWHM:</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
-       <widget class="QCheckBox" name="filtering_apply_gaussian_laplace">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply Laplace filter using Gaussian second derivatives&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
+       <widget class="QLabel" name="eta_mask_label">
         <property name="text">
-         <string>Apply Gaussian Laplace?</string>
+         <string>Mask:</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="apply_filtering">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply filtering to the eta omega maps?&lt;/p&gt;&lt;p&gt;Subtracts a row-wise median, and optionally performs a Laplace filter using Gaussian second derivatives&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Apply filtering?</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="ScientificDoubleSpinBox" name="filtering_fwhm">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="1" column="1">
+       <widget class="ScientificDoubleSpinBox" name="eta_mask">
         <property name="keyboardTracking">
          <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string>°</string>
         </property>
         <property name="decimals">
          <number>8</number>
         </property>
         <property name="minimum">
-         <double>-100000.000000000000000</double>
+         <double>0.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
+         <double>360.000000000000000</double>
         </property>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="7" column="2">
-    <widget class="QPushButton" name="select_working_dir">
-     <property name="text">
-      <string>Select Directory</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="3" rowspan="5">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
-   <item row="7" column="1">
-    <widget class="QCheckBox" name="write_scored_orientations">
-     <property name="text">
-      <string>Write scored orientations?</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="2">
+   <item row="9" column="1" colspan="2">
     <widget class="QGroupBox" name="clustering_group_box">
      <property name="title">
       <string>Clustering</string>
@@ -877,6 +738,173 @@
      </layout>
     </widget>
    </item>
+   <item row="11" column="2">
+    <widget class="QPushButton" name="select_working_dir">
+     <property name="text">
+      <string>Select Directory</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="3" rowspan="8">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
+   <item row="11" column="1">
+    <widget class="QCheckBox" name="write_scored_orientations">
+     <property name="text">
+      <string>Write scored orientations?</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1" colspan="2">
+    <widget class="QGroupBox" name="omega_group_box">
+     <property name="title">
+      <string>Omega</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <item row="0" column="0">
+       <widget class="QLabel" name="tolerance_label">
+        <property name="text">
+         <string>Tolerance:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="ScientificDoubleSpinBox" name="omega_tolerance">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>360.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="4" rowspan="4">
+    <widget class="QWidget" name="widget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QVBoxLayout" name="color_map_editor_layout"/>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="select_hkls_group">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>HKL Seeds</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <layout class="QVBoxLayout" name="select_hkls_widget_layout"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="grid_layout">
+        <item row="0" column="3">
+         <widget class="QComboBox" name="active_hkl">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2" colspan="2">
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="3">
+         <widget class="QPushButton" name="export_button">
+          <property name="text">
+           <string>Export</string>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QCheckBox" name="label_spots">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>Label Spots</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="active_hkl_label">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>Displayed hkl:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="11" column="3" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -915,9 +943,7 @@
   <tabstop>clustering_algorithm</tabstop>
   <tabstop>write_scored_orientations</tabstop>
   <tabstop>select_working_dir</tabstop>
-  <tabstop>active_hkl</tabstop>
   <tabstop>label_spots</tabstop>
-  <tabstop>export_button</tabstop>
  </tabstops>
  <resources/>
  <connections>
