@@ -58,6 +58,10 @@ class SelectGrainsDialog(QObject):
         return self.ui.show()
 
     @property
+    def hedm_calibration_grains_table(self):
+        return HexrdConfig().hedm_calibration_output_grains_table
+
+    @property
     def find_orientations_grains_table(self):
         return HexrdConfig().find_orientations_grains_table
 
@@ -66,9 +70,11 @@ class SelectGrainsDialog(QObject):
         return HexrdConfig().fit_grains_grains_table
 
     def setup_methods(self):
+        hc_grains_table = self.hedm_calibration_grains_table
         fo_grains_table = self.find_orientations_grains_table
         fg_grains_table = self.fit_grains_grains_table
         methods_and_enable = {
+            'hedm_calibration_output': hc_grains_table is not None,
             'fit_grains_output': fg_grains_table is not None,
             'find_orientations_output': fo_grains_table is not None,
             'file': True,
@@ -139,6 +145,9 @@ class SelectGrainsDialog(QObject):
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
             self.grains_table = None
 
+    def load_hc_grains_table(self):
+        self.grains_table = self.hedm_calibration_grains_table
+
     def load_fo_grains_table(self):
         self.grains_table = self.find_orientations_grains_table
 
@@ -180,6 +189,7 @@ class SelectGrainsDialog(QObject):
 
     def update_grains_table(self):
         functions = {
+            'hedm_calibration_output': self.load_hc_grains_table,
             'find_orientations_output': self.load_fo_grains_table,
             'fit_grains_output': self.load_fg_grains_table,
             'file': self.file_name_changed,

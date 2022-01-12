@@ -372,6 +372,10 @@ class HEDMCalibrationRunner(QObject):
         self.results_message = msg
 
     def update_config(self):
+        # Print the results message first
+        print('Optimization successful!')
+        print(self.results_message)
+
         kwargs = {
             'title': 'HEXRD',
             'message': 'Optimization successful!',
@@ -416,6 +420,11 @@ class HEDMCalibrationRunner(QObject):
 
         # redraw updated overlays
         HexrdConfig().overlay_config_changed.emit()
+
+        # Keep a copy of the output grains table on HexrdConfig
+        grains_table = self.grains_table.copy()
+        grains_table[:, 3:15] = self.results
+        HexrdConfig().hedm_calibration_output_grains_table = grains_table
 
         # Done!
         self.finished.emit()
