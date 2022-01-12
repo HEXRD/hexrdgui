@@ -84,6 +84,10 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         if item.child_count() == 0:
             parent = item.parent_item.data(KEY_COL)
+            chi_path = ['oscillation_stage', 'chi', 'value']
+            if path == chi_path:
+                # Convert to radians before saving
+                value = np.radians(value).item()
             if (parent == 'tilt' and
                     HexrdConfig().rotation_matrix_euler() is not None and
                     len(path) > 1 and path[-2] == 'value'):
@@ -143,9 +147,15 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         for key in keys:
             if key == 'value':
+                name = cur_tree_item.data(KEY_COL)
                 data = cur_config[key]
-                if (cur_tree_item.data(KEY_COL) == 'tilt' and
-                        HexrdConfig().rotation_matrix_euler() is not None):
+                path = self.path_to_value(cur_tree_item, VALUE_COL)
+
+                chi_path = ['oscillation_stage', 'chi', 'value']
+                if path == chi_path:
+                    data = np.degrees(data).item()
+                elif (name == 'tilt' and
+                      HexrdConfig().rotation_matrix_euler() is not None):
                     data = [np.degrees(rad).item() for rad in cur_config[key]]
                 self.set_value(key, data, cur_tree_item)
                 continue

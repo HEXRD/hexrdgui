@@ -1056,6 +1056,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                         if path[2:-1] == tilt_path:
                             # This will be in degrees. Convert to radians.
                             value = np.radians(value).item()
+                else:
+                    chi_path = ['oscillation_stage', 'chi', 'value']
+                    if path == chi_path:
+                        # This will be in degrees. Convert to radians.
+                        value = np.radians(value).item()
 
                 self.set_instrument_config_val(path, value)
                 return
