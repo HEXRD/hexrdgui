@@ -192,11 +192,16 @@ class CalibrationConfigWidget(QObject):
                     # We give these special treatment
                     continue
 
-                gui_var = getattr(self.ui, var)
                 config_val = self.cfg.get_instrument_config_val(path)
+                chi_path = ['oscillation_stage', 'chi', 'value']
+                if path == chi_path:
+                    # Display chi in degrees
+                    config_val = np.degrees(config_val).item()
+
                 path[path.index('value')] = 'status'
                 status_val = self.cfg.get_instrument_config_val(path)
 
+                gui_var = getattr(self.ui, var)
                 self._set_gui_value(gui_var, config_val, status_val)
         finally:
             self.unblock_all_signals(previously_blocked)
