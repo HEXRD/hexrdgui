@@ -1,7 +1,6 @@
 import numpy as np
 
 from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QMessageBox
 
 from hexrd import constants as cnst
 from hexrd.fitting import calibration
@@ -16,6 +15,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import (
     create_indexing_config, OmegasNotFoundError
 )
+from hexrd.ui.message_box import MessageBox
 from hexrd.ui.overlays import overlay_name
 from hexrd.ui.select_grains_dialog import SelectGrainsDialog
 from hexrd.ui.utils import instr_to_internal_dict
@@ -111,7 +111,7 @@ class HEDMCalibrationRunner(QObject):
 
         # Our grains table only contains the grains that the user
         # selected.
-        grain_parameters = self.grains_table[:, 3:15]
+        grain_parameters = self.grain_parameters
         grain_ids = self.grains_table[:, 0].astype(int)
 
         # Order the spots data list in the order of the grain ids
@@ -337,6 +337,9 @@ class HEDMCalibrationRunner(QObject):
     def write_results_message(self):
         msg = ''
 
+        pnames = calibration.generate_parameter_names(self.instr,
+                                                      self.grain_parameters)
+
         # First, show any updates to instrument parameters
         instr_flags = self.instr.calibration_flags
         if any(instr_flags):
@@ -344,29 +347,42 @@ class HEDMCalibrationRunner(QObject):
             old_instr = cfg.instrument.hedm
             old_values = old_instr.calibration_parameters[instr_flags]
             new_values = self.instr.calibration_parameters[instr_flags]
+            refinable = np.where(instr_flags)[0]
 
-            msg += '*** Instrument ***\n'
-            for old, new in zip(old_values, new_values):
-                msg += f'{old: 12.8f}  => {new: 12.8f}\n'
+            for i, old, new in zip(refinable, old_values, new_values):
+                name = pnames[i]
+                msg += f'\t{name}: {old: 12.8f}  => {new: 12.8f}\n'
 
         # Next, the overlay parameters
+        pname_start_ind = len(instr_flags)
         for results, overlay in zip(self.results, self.active_overlays):
             name = overlay_name(overlay)
             refinements = self.overlay_refinements(overlay)
             if any(refinements):
                 old_values = overlay['options']['crystal_params'][refinements]
                 new_values = results[refinements]
+                refinable = np.where(refinements)[0]
 
-                msg += f'*** {name} ***\n'
-                for old, new in zip(old_values, new_values):
-                    msg += f'{old: 12.8f}  => {new: 12.8f}\n'
+                for i, old, new in zip(refinable, old_values, new_values):
+                    name = pnames[pname_start_ind + i]
+                    msg += f'\t{name}: {old: 12.8f}  => {new: 12.8f}\n'
+
+            pname_start_ind += len(refinements)
 
         self.results_message = msg
 
     def update_config(self):
-        msg = 'Optimization successful!'
-        msg_box = QMessageBox(QMessageBox.Information, 'HEXRD', msg)
-        msg_box.setDetailedText(self.results_message)
+        # Print the results message first
+        print('Optimization successful!')
+        print(self.results_message)
+
+        kwargs = {
+            'title': 'HEXRD',
+            'message': 'Optimization successful!',
+            'details': self.results_message,
+            'parent': self.parent,
+        }
+        msg_box = MessageBox(**kwargs)
         msg_box.exec_()
 
         # Update rotation series parameters from the results
@@ -405,8 +421,17 @@ class HEDMCalibrationRunner(QObject):
         # redraw updated overlays
         HexrdConfig().overlay_config_changed.emit()
 
+        # Keep a copy of the output grains table on HexrdConfig
+        grains_table = self.grains_table.copy()
+        grains_table[:, 3:15] = self.results
+        HexrdConfig().hedm_calibration_output_grains_table = grains_table
+
         # Done!
         self.finished.emit()
+
+    @property
+    def grain_parameters(self):
+        return self.grains_table[:, 3:15]
 
     @property
     def param_flags(self):

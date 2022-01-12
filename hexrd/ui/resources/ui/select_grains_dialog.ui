@@ -14,12 +14,8 @@
    <string>Select Grains</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="0" column="0">
-    <widget class="QLabel" name="method_label">
-     <property name="text">
-      <string>From:</string>
-     </property>
-    </widget>
+   <item row="2" column="0" colspan="2">
+    <widget class="GrainsTableView" name="table_view"/>
    </item>
    <item row="4" column="1">
     <widget class="QDialogButtonBox" name="button_box">
@@ -31,14 +27,17 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QComboBox" name="method"/>
-   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QTabWidget" name="tab_widget">
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <widget class="QWidget" name="hedm_calibration_output_tab">
+      <attribute name="title">
+       <string>Hedm Calibration Output</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+     </widget>
      <widget class="QWidget" name="find_orientations_output_tab">
       <attribute name="title">
        <string>Find Orientations Output</string>
@@ -74,8 +73,15 @@
      </widget>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="GrainsTableView" name="table_view"/>
+   <item row="0" column="0">
+    <widget class="QLabel" name="method_label">
+     <property name="text">
+      <string>From:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="method"/>
    </item>
   </layout>
  </widget>

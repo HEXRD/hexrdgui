@@ -204,6 +204,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.last_loaded_state_file = None
         self.find_orientations_grains_table = None
         self.fit_grains_grains_table = None
+        self.hedm_calibration_output_grains_table = None
 
         self.setup_logging()
 
