@@ -428,12 +428,6 @@ class OmeMapsViewerDialog(QObject):
         layout = self.ui.select_hkls_widget_layout
         layout.addWidget(self.select_hkls_widget.ui)
 
-        # Fix the height so it doesn't take up too much space
-        size = layout.sizeHint()
-        height_adjustment = min(3, len(hkls)) / len(hkls)
-        size.setHeight(size.height() * height_adjustment)
-        layout.parentWidget().setFixedSize(size)
-
     @property
     def selected_hkls(self):
         return self.select_hkls_widget.selected_indices
