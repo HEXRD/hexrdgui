@@ -90,7 +90,7 @@ class RotationSeriesOverlayEditor:
             options['aggregated'] = True
             self.overlay['update_needed'] = True
 
-        if self.overlay['update_needed']:
+        if self.overlay.get('update_needed', True):
             HexrdConfig().overlay_config_changed.emit()
 
     def update_enable_states(self):

@@ -2035,6 +2035,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     options['ome_ranges'] = np.radians(ome_ranges)
                     overlay['update_needed'] = True
 
-        if any(o['update_needed'] for o in self.overlays):
+        if any(o.get('update_needed', True) for o in self.overlays):
             self.overlay_config_changed.emit()
             self.update_overlay_editor.emit()
