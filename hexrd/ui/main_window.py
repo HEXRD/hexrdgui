@@ -747,6 +747,11 @@ class MainWindow(QObject):
 
     def eventFilter(self, target, event):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
+            msg = 'Are you sure you want to quit?'
+            response = QMessageBox.question(self.ui, 'HEXRD', msg)
+            if response == QMessageBox.No:
+                event.ignore()
+                return True
             # If the main window is closing, save the config settings
             HexrdConfig().save_settings()
 
