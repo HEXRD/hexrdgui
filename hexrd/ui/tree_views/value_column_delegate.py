@@ -30,7 +30,7 @@ class ValueColumnDelegate(QStyledItemDelegate):
             edit_btn = QPushButton(BUTTON_LABEL, parent)
             edit_btn.setStyleSheet(
                 'padding: 0px; border: 1px solid lightgray;'
-                'border-radius: 5px; background-color: white;'
+                'border-radius: 5px; background-color: gray;'
             )
 
             def _clicked():
