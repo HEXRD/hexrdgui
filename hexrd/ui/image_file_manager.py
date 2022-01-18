@@ -66,13 +66,13 @@ class ImageFileManager(metaclass=Singleton):
             dset = hdf.select(self.path[1])
             ims = imageseries.open(None, 'array', data=dset)
         elif ext in self.HDF5_FILE_EXTS:
-            data = h5py.File(f, 'r')
-            dset = data['/'.join(self.path)][()]
+            with h5py.File(f, 'r') as data:
+                dset = data['/'.join(self.path)][()]
+
             if dset.ndim < 3:
                 # Handle raw two dimesional data
                 ims = imageseries.open(None, 'array', data=dset)
             else:
-                data.close()
                 ims = imageseries.open(
                     f, 'hdf5', path=self.path[0], dataname=self.path[1])
         elif ext == '.npz':
