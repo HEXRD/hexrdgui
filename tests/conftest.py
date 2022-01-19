@@ -38,5 +38,6 @@ def main_window(qtbot):
     QSettings().clear()
 
     window = MainWindow()
+    window.confirm_application_close = False
     qtbot.addWidget(window.ui)
     return window
