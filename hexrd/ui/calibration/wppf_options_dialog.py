@@ -176,17 +176,17 @@ class WppfOptionsDialog(QObject):
             filename.unlink()
 
         # Save as HDF5
-        f = h5py.File(filename, 'w')
-        for key, value in data.items():
-            f.create_dataset(key, data=value)
+        with h5py.File(filename, 'w') as f:
+            for key, value in data.items():
+                f.create_dataset(key, data=value)
 
-        # Save parameters as well
-        to_save = ('value',)
-        params_group = f.create_group('params')
-        for name, param in self.params.param_dict.items():
-            group = params_group.create_group(name)
-            for item in to_save:
-                group.create_dataset(item, data=getattr(param, item))
+            # Save parameters as well
+            to_save = ('value',)
+            params_group = f.create_group('params')
+            for name, param in self.params.param_dict.items():
+                group = params_group.create_group(name)
+                for item in to_save:
+                    group.create_dataset(item, data=getattr(param, item))
 
     def reset_object(self):
         self._wppf_object = None

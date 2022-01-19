@@ -30,9 +30,9 @@ class LoadHDF5Dialog:
       QMessageBox.warning(self.ui, 'HEXRD', msg)
 
   def get_HDF5_paths(self, f):
-    img = h5py.File(f, 'r')
-    self.file = img
-    img.visit(self.add_path)
+    with h5py.File(f, 'r') as img:
+        self.file = img
+        img.visit(self.add_path)
 
   def get_paths(self, f):
     ext = os.path.splitext(f)[1]

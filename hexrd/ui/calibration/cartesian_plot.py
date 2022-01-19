@@ -337,6 +337,6 @@ class InstrumentViewer:
             np.savez(filename, **data)
         else:
             # Default to HDF5 format
-            f = h5py.File(filename, 'w')
-            for key, value in data.items():
-                f.create_dataset(key, data=value)
+            with h5py.File(filename, 'w') as f:
+                for key, value in data.items():
+                    f.create_dataset(key, data=value)
