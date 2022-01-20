@@ -73,6 +73,7 @@ class MainWindow(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
+        self.confirm_application_close = True
 
         self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
@@ -747,6 +748,12 @@ class MainWindow(QObject):
 
     def eventFilter(self, target, event):
         if type(target) == QMainWindow and event.type() == QEvent.Close:
+            if self.confirm_application_close:
+                msg = 'Are you sure you want to quit?'
+                response = QMessageBox.question(self.ui, 'HEXRD', msg)
+                if response == QMessageBox.No:
+                    event.ignore()
+                    return True
             # If the main window is closing, save the config settings
             HexrdConfig().save_settings()
 
