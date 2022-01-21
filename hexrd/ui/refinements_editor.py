@@ -24,6 +24,8 @@ class RefinementsEditor:
             'Refinable': '_refinable',
         }
         self.tree_view = MultiColumnDictTreeView(self.dict, columns, parent)
+        self.tree_view.check_selection_index = 2
+
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
         self.iconfig_values_modified = False
