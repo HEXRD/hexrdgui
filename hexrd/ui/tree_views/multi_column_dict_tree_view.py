@@ -1,6 +1,8 @@
 from PySide2.QtCore import Signal, QModelIndex, Qt
+from PySide2.QtGui import QCursor
 from PySide2.QtWidgets import (
-    QCheckBox, QDialog, QItemEditorFactory, QStyledItemDelegate, QVBoxLayout
+    QCheckBox, QDialog, QItemEditorFactory, QMenu, QStyledItemDelegate,
+    QVBoxLayout
 )
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
@@ -96,6 +98,10 @@ class MultiColumnDictTreeView(BaseDictTreeView):
     def __init__(self, dictionary, columns, parent=None):
         super().__init__(parent)
 
+        # Set this to the needed check/uncheck index to allow for context
+        # menu actions "Check All" and "Uncheck All"
+        self.check_selection_index = None
+
         self.setModel(MultiColumnDictTreeItemModel(dictionary, columns,
                                                    parent=self))
 
@@ -109,6 +115,93 @@ class MultiColumnDictTreeView(BaseDictTreeView):
         self.open_persistent_editors()
         self.expand_rows()
         self.setup_connections()
+
+    def contextMenuEvent(self, event):
+        actions = {}
+
+        index = self.indexAt(event.pos())
+        item = self.model().get_item(index)
+        children = item.child_items
+
+        # Convenience booleans
+        key_col_with_children = index.column() == KEY_COL and children
+        check_index_set = self.check_selection_index is not None
+
+        menu = QMenu(self)
+
+        # Helper functions
+        def add_actions(d: dict):
+            actions.update({menu.addAction(k): v for k, v in d.items()})
+
+        def add_separator():
+            if not actions:
+                return
+            menu.addSeparator()
+
+        # Context menu methods
+        def collapse_selection():
+            self.collapse_selection(index)
+
+        def expand_selection():
+            self.expand_selection(index)
+
+        def check_selection():
+            self.set_data_on_children(item, self.check_selection_index, True)
+
+        def uncheck_selection():
+            self.set_data_on_children(item, self.check_selection_index, False)
+
+        # Action logic
+        if key_col_with_children:
+            add_actions({
+                'Collapse All': collapse_selection,
+                'Expand All': expand_selection,
+            })
+
+        if key_col_with_children and check_index_set:
+            add_separator()
+            add_actions({
+                'Check All': check_selection,
+                'Uncheck All': uncheck_selection,
+            })
+
+        if not actions:
+            # No context menu
+            return
+
+        # Open up the context menu
+        action_chosen = menu.exec_(QCursor.pos())
+
+        if action_chosen is None:
+            # No action chosen
+            return
+
+        # Run the function for the action that was chosen
+        actions[action_chosen]()
+
+    def expand_selection(self, index):
+        model = self.model()
+        item = model.get_item(index)
+        for i in range(item.child_count()):
+            self.expand_selection(model.index(i, KEY_COL, index))
+        self.expand(index)
+
+    def collapse_selection(self, index):
+        model = self.model()
+        item = model.get_item(index)
+        for i in range(item.child_count()):
+            self.collapse_selection(model.index(i, KEY_COL, index))
+        self.collapse(index)
+
+    def set_data_on_children(self, parent, column, value):
+        for child in parent.child_items:
+            if child.data(column) is not None:
+                # None would imply that column is not supposed to have data
+                index = self.model().createIndex(child.row(), column, child)
+                self.model().setData(index, value)
+                self.model().dataChanged.emit(index, index)
+
+            self.set_data_on_children(child, column, value)
 
     def open_persistent_editors(self, parent=QModelIndex()):
         # If the data type is one of these, open the persistent editor
