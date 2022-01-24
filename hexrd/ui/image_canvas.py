@@ -27,7 +27,7 @@ import hexrd.ui.constants
 class ImageCanvas(FigureCanvas):
 
     def __init__(self, parent=None, image_names=None):
-        self.figure = Figure()
+        self.figure = Figure(tight_layout=True)
         super().__init__(self.figure)
 
         self.raw_axes = []  # only used for raw currently
