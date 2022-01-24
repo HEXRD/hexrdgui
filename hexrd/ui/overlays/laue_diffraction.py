@@ -35,10 +35,11 @@ class LaueSpotOverlay:
 
         self._min_energy = min_energy
         self._max_energy = max_energy
+
         if sample_rmat is None:
-            self._sample_rmat = constants.identity_3x3
-        else:
-            self.sample_rmat = sample_rmat
+            sample_rmat = constants.identity_3x3
+
+        self.sample_rmat = sample_rmat
 
         self.tth_width = tth_width
         self.eta_width = eta_width

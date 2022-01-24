@@ -4,6 +4,8 @@ import numpy as np
 from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
 
+from hexrd.rotations import angles_from_rmat_xyz, rotMatOfExpMap
+
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.constants import (
     DEFAULT_CRYSTAL_PARAMS, DEFAULT_CRYSTAL_REFINEMENTS
@@ -11,6 +13,7 @@ from hexrd.ui.constants import (
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays.laue_diffraction import LaueRangeShape
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import convert_angle_convention
 
 
 class LaueOverlayEditor:
@@ -27,10 +30,6 @@ class LaueOverlayEditor:
         self.setup_combo_boxes()
         self.setup_connections()
 
-    def setup_combo_boxes(self):
-        width_shapes = [x.value.capitalize() for x in LaueRangeShape]
-        self.ui.width_shape.addItems(width_shapes)
-
     def setup_connections(self):
         for w in self.widgets:
             if isinstance(w, QDoubleSpinBox):
@@ -44,6 +43,13 @@ class LaueOverlayEditor:
         self.crystal_editor.params_modified.connect(self.update_config)
         self.crystal_editor.refinements_modified.connect(
             self.update_refinements)
+
+        HexrdConfig().euler_angle_convention_changed.connect(
+            self.euler_angle_convention_changed)
+
+    def setup_combo_boxes(self):
+        width_shapes = [x.value.capitalize() for x in LaueRangeShape]
+        self.ui.width_shape.addItems(width_shapes)
 
     @property
     def overlay(self):
@@ -69,6 +75,8 @@ class LaueOverlayEditor:
             self.crystal_params = options['crystal_params']
         else:
             self.crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
+        if options.get('sample_rmat') is not None:
+            self.sample_rmat = options['sample_rmat']
         if 'refinements' in self.overlay:
             self.refinements = self.overlay['refinements']
         else:
@@ -86,6 +94,7 @@ class LaueOverlayEditor:
         self.ui.enable_widths.setChecked(enable_widths)
 
         self.update_enable_states()
+        self.update_orientation_suffixes()
 
     def update_enable_states(self):
         enable_widths = self.enable_widths
@@ -99,6 +108,9 @@ class LaueOverlayEditor:
         ]
         for name in names:
             getattr(self.ui, name).setEnabled(enable_widths)
+
+    def euler_angle_convention_changed(self):
+        self.update_gui()
 
     @property
     def crystal_params(self):
@@ -124,6 +136,7 @@ class LaueOverlayEditor:
         options['tth_width'] = self.tth_width
         options['eta_width'] = self.eta_width
         options['width_shape'] = self.width_shape
+        options['sample_rmat'] = self.sample_rmat
 
         self.update_refinements()
 
@@ -159,6 +172,47 @@ class LaueOverlayEditor:
     def width_shape(self, v):
         self.ui.width_shape.setCurrentText(v.capitalize())
 
+    def update_orientation_suffixes(self):
+        suffix = '' if HexrdConfig().euler_angle_convention is None else '°'
+        for w in self.sample_orientation_widgets:
+            w.setSuffix(suffix)
+
+    @property
+    def sample_rmat(self):
+        # Convert to rotation matrix
+        angles = [w.value() for w in self.sample_orientation_widgets]
+        old_convention = HexrdConfig().euler_angle_convention
+        if old_convention is not None:
+            angles = np.radians(angles)
+            new_convention = None
+            angles = convert_angle_convention(angles, old_convention,
+                                              new_convention)
+        return rotMatOfExpMap(np.asarray(angles))
+
+    @sample_rmat.setter
+    def sample_rmat(self, v):
+        # Convert from rotation matrix
+        xyz = angles_from_rmat_xyz(v)
+        old_convention = {
+            'axes_order': 'xyz',
+            'extrinsic': True,
+        }
+        new_convention = HexrdConfig().euler_angle_convention
+        angles = convert_angle_convention(xyz, old_convention, new_convention)
+        if new_convention is not None:
+            angles = np.degrees(angles)
+
+        for w, v in zip(self.sample_orientation_widgets, angles):
+            w.setValue(v)
+
+    @property
+    def sample_orientation_widgets(self):
+        return [
+            self.ui.sample_orientation_0,
+            self.ui.sample_orientation_1,
+            self.ui.sample_orientation_2,
+        ]
+
     @property
     def widgets(self):
         return [
@@ -168,4 +222,4 @@ class LaueOverlayEditor:
             self.ui.tth_width,
             self.ui.eta_width,
             self.ui.width_shape,
-        ]
+        ] + self.sample_orientation_widgets

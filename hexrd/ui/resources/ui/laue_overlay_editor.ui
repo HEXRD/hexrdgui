@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>610</height>
+    <width>741</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>610</height>
+    <height>700</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -30,22 +30,6 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="5" column="0" colspan="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="4" column="0" colspan="2">
-    <layout class="QVBoxLayout" name="crystal_editor_layout"/>
-   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="max_energy_label">
      <property name="text">
@@ -59,6 +43,22 @@
       <string>Min Energy:</string>
      </property>
     </widget>
+   </item>
+   <item row="4" column="0" colspan="2">
+    <layout class="QVBoxLayout" name="crystal_editor_layout"/>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="1" column="1">
     <widget class="ScientificDoubleSpinBox" name="max_energy">
@@ -214,20 +214,68 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="ScientificDoubleSpinBox" name="min_energy">
-     <property name="keyboardTracking">
-      <bool>false</bool>
+   <item row="5" column="0" colspan="2">
+    <widget class="QGroupBox" name="sample_frame_group">
+     <property name="title">
+      <string>Sample Frame</string>
      </property>
-     <property name="decimals">
-      <number>8</number>
-     </property>
-     <property name="maximum">
-      <double>100000.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>5.000000000000000</double>
-     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="sample_orientation_label">
+        <property name="text">
+         <string>Orientation:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ScientificDoubleSpinBox" name="sample_orientation_0">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ScientificDoubleSpinBox" name="sample_orientation_1">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ScientificDoubleSpinBox" name="sample_orientation_2">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>
@@ -246,6 +294,9 @@
   <tabstop>width_shape</tabstop>
   <tabstop>tth_width</tabstop>
   <tabstop>eta_width</tabstop>
+  <tabstop>sample_orientation_0</tabstop>
+  <tabstop>sample_orientation_1</tabstop>
+  <tabstop>sample_orientation_2</tabstop>
  </tabstops>
  <resources/>
  <connections/>
