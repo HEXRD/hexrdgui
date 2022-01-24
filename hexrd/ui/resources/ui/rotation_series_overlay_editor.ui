@@ -78,6 +78,9 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
             <property name="keyboardTracking">
              <bool>false</bool>
             </property>
@@ -112,6 +115,9 @@
            <widget class="ScientificDoubleSpinBox" name="tth_width">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
             <property name="keyboardTracking">
              <bool>false</bool>
@@ -171,6 +177,9 @@
           </item>
           <item>
            <widget class="ScientificDoubleSpinBox" name="omega_period_0">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
             <property name="keyboardTracking">
              <bool>false</bool>
             </property>
@@ -187,6 +196,9 @@
           </item>
           <item>
            <widget class="ScientificDoubleSpinBox" name="omega_period_1">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
             <property name="keyboardTracking">
              <bool>false</bool>
             </property>
@@ -224,6 +236,9 @@
          </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The omega width is used primarily in two areas:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. As the omega tolerance for HEDM calibration&lt;/p&gt;&lt;p&gt;2. If the displayed image series is unaggregated, and this overlay is also unaggregated, the omega width is used to compute which spots to display on the currently displayed frame.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <property name="suffix">
           <string>°</string>

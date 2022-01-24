@@ -66,6 +66,9 @@
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
        <property name="keyboardTracking">
         <bool>false</bool>
        </property>
