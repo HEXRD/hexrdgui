@@ -190,17 +190,17 @@ class ImageCanvas(FigureCanvas):
 
     def overlay_axes_data(self, overlay):
         # Return the axes and data for drawing the overlay
-        if not overlay['data']:
+        if not overlay.data:
             return []
 
         if self.mode in [ViewType.cartesian, ViewType.polar]:
             # If it's cartesian or polar, there is only one axis
             # Use the same axis for all of the data
-            return [(self.axis, x) for x in overlay['data'].values()]
+            return [(self.axis, x) for x in overlay.data.values()]
 
         # If it's raw, there is data for each axis.
         # The title of each axis should match the data key.
-        return [(x, overlay['data'][x.get_title()]) for x in self.raw_axes]
+        return [(x, overlay.data[x.get_title()]) for x in self.raw_axes]
 
     def overlay_draw_func(self, type):
         overlay_funcs = {
@@ -215,7 +215,7 @@ class ImageCanvas(FigureCanvas):
         return overlay_funcs[type]
 
     def get_overlay_highlight_ids(self, overlay):
-        highlights = overlay.get('highlights')
+        highlights = overlay.highlights
         if not highlights:
             return []
 
@@ -224,25 +224,26 @@ class ImageCanvas(FigureCanvas):
                 cur = cur[p]
             return cur
 
-        return [id(recursive_get(overlay['data'], h)) for h in highlights]
+        return [id(recursive_get(overlay.data, h)) for h in highlights]
 
     def draw_overlay(self, overlay):
-        if not overlay['visible']:
+        if not overlay.visible:
             return
 
         # Keep track of any overlays we need to highlight
         self.overlay_highlight_ids += self.get_overlay_highlight_ids(overlay)
 
-        type = overlay['type']
-        style = overlay['style']
+        type = overlay.type
+        style = overlay.style
+        highlight_style = overlay.highlight_style
         for axis, data in self.overlay_axes_data(overlay):
             if id(data) in self.overlay_artists:
                 # It's already present. Skip it.
                 continue
 
-            self.overlay_draw_func(type)(axis, data, style)
+            self.overlay_draw_func(type)(axis, data, style, highlight_style)
 
-    def draw_powder_overlay(self, axis, data, style):
+    def draw_powder_overlay(self, axis, data, style, highlight_style):
         rings = data['rings']
         rbnds = data['rbnds']
         rbnd_indices = data['rbnd_indices']
@@ -250,7 +251,6 @@ class ImageCanvas(FigureCanvas):
         data_style = style['data']
         ranges_style = style['ranges']
 
-        highlight_style = hexrd.ui.constants.HIGHLIGHT_POWDER_STYLE
         highlight_indices = [i for i, x in enumerate(rings)
                              if id(x) in self.overlay_highlight_ids]
 
@@ -302,14 +302,13 @@ class ImageCanvas(FigureCanvas):
                 artist = az_axis.axvline(x, **current_style)
                 artists.append(artist)
 
-    def draw_laue_overlay(self, axis, data, style):
+    def draw_laue_overlay(self, axis, data, style, highlight_style):
         spots = data['spots']
         ranges = data['ranges']
 
         data_style = style['data']
         ranges_style = style['ranges']
 
-        highlight_style = hexrd.ui.constants.HIGHLIGHT_LAUE_STYLE
         highlight_indices = [i for i, x in enumerate(spots)
                              if id(x) in self.overlay_highlight_ids]
 
@@ -332,7 +331,7 @@ class ImageCanvas(FigureCanvas):
             artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
-    def draw_rotation_series_overlay(self, axis, data, style):
+    def draw_rotation_series_overlay(self, axis, data, style, highlight_style):
         is_aggregated = HexrdConfig().is_aggregated
         ome_range = HexrdConfig().omega_ranges
         aggregated = data['aggregated'] or is_aggregated or ome_range is None
@@ -372,7 +371,7 @@ class ImageCanvas(FigureCanvas):
 
     def remove_artists_for_overlay(self, overlay):
         for data_id in list(self.overlay_artists):
-            if any(data_id == id(x) for x in overlay['data'].values()):
+            if any(data_id == id(x) for x in overlay.data.values()):
                 self.remove_overlay_artists(data_id)
 
     def redraw_overlay(self, overlay):
@@ -398,7 +397,11 @@ class ImageCanvas(FigureCanvas):
 
         def overlay_with_data_id(data_id):
             for overlay in HexrdConfig().overlays:
-                if any([data_id == id(x) for x in overlay['data'].values()]):
+                if overlay.update_needed or not overlay.visible:
+                    # Don't return modified or hidden overlays
+                    continue
+
+                if any([data_id == id(x) for x in overlay.data.values()]):
                     return overlay
 
             return None
@@ -410,11 +413,6 @@ class ImageCanvas(FigureCanvas):
         for key in list(self.overlay_artists.keys()):
             overlay = overlay_with_data_id(key)
             if overlay is None:
-                # This artist is no longer a part of the overlays
-                self.remove_overlay_artists(key)
-                continue
-
-            if overlay.get('update_needed', True) or not overlay['visible']:
                 self.remove_overlay_artists(key)
                 continue
 

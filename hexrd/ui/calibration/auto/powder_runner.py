@@ -7,7 +7,6 @@ from PySide2.QtWidgets import QCheckBox, QMessageBox
 
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import instr_to_internal_dict
 
@@ -228,12 +227,12 @@ class PowderRunner(QObject):
 
     @property
     def visible_overlays(self):
-        return [x for x in self.overlays if x['visible']]
+        return [x for x in self.overlays if x.visible]
 
     @property
     def visible_powder_overlays(self):
         overlays = self.visible_overlays
-        return [x for x in overlays if x['type'] == OverlayType.powder]
+        return [x for x in overlays if x.is_powder]
 
     @property
     def active_overlay(self):
@@ -243,11 +242,7 @@ class PowderRunner(QObject):
     @property
     def material(self):
         overlay = self.active_overlay
-        return HexrdConfig().material(overlay['material']) if overlay else None
-
-    @property
-    def active_overlay_refinements(self):
-        return [x[1] for x in self.active_overlay['refinements']]
+        return overlay.material if overlay else None
 
     @property
     def refinement_flags_without_overlays(self):
@@ -256,4 +251,4 @@ class PowderRunner(QObject):
     @property
     def refinement_flags(self):
         return np.hstack([self.refinement_flags_without_overlays,
-                          self.active_overlay_refinements])
+                          self.active_overlay.refinements])

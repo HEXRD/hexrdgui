@@ -64,7 +64,7 @@ class LaueAutoPickerDialog:
         self.update_config()
 
         if self.overlay_modified:
-            material = self.overlay['material']
+            material = self.overlay.material_name
             HexrdConfig().material_tth_width_modified.emit(material)
             HexrdConfig().flag_overlay_updates_for_material(material)
 
@@ -72,18 +72,18 @@ class LaueAutoPickerDialog:
 
     @property
     def tth_tol(self):
-        return np.degrees(self.overlay['options']['tth_width'])
+        return np.degrees(self.overlay.tth_width)
 
     @tth_tol.setter
     def tth_tol(self, v):
-        self.overlay['options']['tth_width'] = np.radians(v)
+        self.overlay.tth_width = np.radians(v)
         self.overlay_modified = True
 
     @property
     def eta_tol(self):
-        return np.degrees(self.overlay['options']['eta_width'])
+        return np.degrees(self.overlay.eta_width)
 
     @eta_tol.setter
     def eta_tol(self, v):
-        self.overlay['options']['eta_width'] = np.radians(v)
+        self.overlay.eta_width = np.radians(v)
         self.overlay_modified = True

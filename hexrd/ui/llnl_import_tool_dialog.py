@@ -186,7 +186,7 @@ class LLNLImportToolDialog(QObject):
         with resource_loader.resource_path(
                 hexrd.ui.resources.calibration, fname) as f:
             for overlay in HexrdConfig().overlays:
-                overlay['visible'] = False
+                overlay.visible = False
             HexrdConfig().load_instrument_config(f, import_raw=True)
 
     def config_loaded_from_menu(self):

@@ -30,7 +30,7 @@ from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
     convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.utils import unique_name
-from hexrd.ui.constants import OverlayType, ViewType
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
@@ -606,8 +606,7 @@ class MainWindow(QObject):
             return
 
         overlays = HexrdConfig().overlays
-        laue_overlays = [x for x in overlays if x['type'] == OverlayType.laue]
-        laue_overlays = [x for x in laue_overlays if x['visible']]
+        laue_overlays = [x for x in overlays if x.is_laue and x.visible]
         if not laue_overlays:
             msg = 'No Laue overlays found'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
@@ -615,7 +614,7 @@ class MainWindow(QObject):
 
         data = []
         for overlay in laue_overlays:
-            for det, val in overlay['data'].items():
+            for det, val in overlay.data.items():
                 for ranges in val['ranges']:
                     data.append(ranges)
 
@@ -639,9 +638,7 @@ class MainWindow(QObject):
             return
 
         overlays = HexrdConfig().overlays
-        powder_overlays = (
-            [x for x in overlays if x['type'] == OverlayType.powder])
-        powder_overlays = [x for x in powder_overlays if x['visible']]
+        powder_overlays = [x for x in overlays if x.is_powder and x.visible]
         if not powder_overlays:
             msg = 'No powder overlays found'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
@@ -649,7 +646,7 @@ class MainWindow(QObject):
 
         data = []
         for overlay in powder_overlays:
-            for _, val in overlay['data'].items():
+            for _, val in overlay.data.items():
                 a = iter(val['rbnds'])
                 for start, end in zip(a, a):
                     ranges = np.array(np.flip(start, axis=1))

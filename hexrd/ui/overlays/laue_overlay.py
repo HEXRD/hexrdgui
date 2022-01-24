@@ -7,67 +7,71 @@ from hexrd import constants
 from hexrd.transforms import xfcapi
 from hexrd.utils.decorators import numba_njit_if_available
 
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import OverlayType, ViewType
+from hexrd.ui.overlays.constants import (
+    crystal_refinement_labels, default_crystal_params,
+    default_crystal_refinements
+)
+from hexrd.ui.overlays.overlay import Overlay
 
 
-class LaueRangeShape(str, Enum):
-    ellipse = 'ellipse'
-    rectangle = 'rectangle'
+class LaueOverlay(Overlay):
 
+    type = OverlayType.laue
+    hkl_data_key = 'spots'
 
-class LaueSpotOverlay:
-    def __init__(self, plane_data, instr,
-                 crystal_params=None, sample_rmat=None,
-                 min_energy=5., max_energy=35.,
-                 tth_width=None, eta_width=None,
-                 eta_period=np.r_[-180., 180.],
-                 width_shape=LaueRangeShape.rectangle):
-        self.plane_data = plane_data
-        self._instrument = instr
+    def __init__(self, material_name, crystal_params=None, sample_rmat=None,
+                 min_energy=5, max_energy=35, tth_width=None, eta_width=None,
+                 eta_period=None, width_shape=None, **overlay_kwargs):
+        super().__init__(material_name, **overlay_kwargs)
+
         if crystal_params is None:
-            self._crystal_params = np.hstack(
-                [constants.zeros_3,
-                 constants.zeros_3,
-                 constants.identity_6x1]
-            )
-        else:
-            self.crystal_params = crystal_params
-
-        self._min_energy = min_energy
-        self._max_energy = max_energy
+            crystal_params = default_crystal_params()
 
         if sample_rmat is None:
-            sample_rmat = constants.identity_3x3
+            sample_rmat = constants.identity_3x3.copy()
 
+        if eta_period is None:
+            eta_period = np.r_[-180., 180.]
+
+        if width_shape is None:
+            width_shape = LaueRangeShape.ellipse
+
+        self.crystal_params = crystal_params
         self.sample_rmat = sample_rmat
-
+        self._min_energy = min_energy
+        self._max_energy = max_energy
         self.tth_width = tth_width
         self.eta_width = eta_width
-
-        eta_period = np.asarray(eta_period, float).flatten()
-        assert len(eta_period) == 2, "eta period must be a 2-element sequence"
-        if xfcapi.angularDifference(eta_period[0], eta_period[1],
-                                    units='degrees') > 1e-4:
-            raise RuntimeError("period specification is not 360 degrees")
-        self._eta_period = eta_period
-
+        self.eta_period = eta_period
         self.width_shape = width_shape
 
     @property
-    def plane_data(self):
-        return self._plane_data
-
-    @plane_data.setter
-    def plane_data(self, v):
-        self._plane_data = v
-        # For Laue overlays, we will use all hkl values
-        if self._plane_data.exclusions is not None:
-            self._plane_data = copy.deepcopy(self._plane_data)
-            self._plane_data.exclusions = None
+    def child_attributes_to_save(self):
+        # These names must be identical here, as attributes, and as
+        # arguments to the __init__ method.
+        return [
+            'crystal_params',
+            'sample_rmat',
+            'min_energy',
+            'max_energy',
+            'tth_width',
+            'eta_width',
+            'eta_period',
+            'width_shape',
+        ]
 
     @property
-    def instrument(self):
-        return self._instrument
+    def has_widths(self):
+        widths = ['tth_width', 'eta_width']
+        return all(getattr(self, x) is not None for x in widths)
+
+    @property
+    def plane_data_no_exclusions(self):
+        plane_data = copy.deepcopy(self.plane_data)
+        # For Laue overlays, we will use all hkl values
+        plane_data.exclusions = None
+        return plane_data
 
     @property
     def crystal_params(self):
@@ -122,9 +126,19 @@ class LaueSpotOverlay:
             raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = x
 
-    def overlay(self, display_mode=ViewType.raw):
-        sim_data = self.instrument.simulate_laue_pattern(
-            self.plane_data,
+    @property
+    def refinement_labels(self):
+        return crystal_refinement_labels()
+
+    @property
+    def default_refinements(self):
+        return default_crystal_refinements()
+
+    def generate_overlay(self):
+        instr = self.instrument
+        display_mode = self.display_mode
+        sim_data = instr.simulate_laue_pattern(
+            self.plane_data_no_exclusions,
             minEnergy=self.min_energy,
             maxEnergy=self.max_energy,
             rmat_s=self.sample_rmat,
@@ -138,7 +152,7 @@ class LaueSpotOverlay:
             # grab panel and split out simulation results
             # !!! note that the sim results are lists over number of grains
             #     and here we explicitly have one.
-            panel = self.instrument.detectors[det_key]
+            panel = instr.detectors[det_key]
             xy_det, hkls_in, angles, dspacing, energy = psim
 
             # find valid points
@@ -157,9 +171,9 @@ class LaueSpotOverlay:
             # convert to angles in LAB ref
             angles_corr, _ = xfcapi.detectorXYToGvec(
                 xy_data, panel.rmat, self.sample_rmat,
-                panel.tvec, self.instrument.tvec, constants.zeros_3,
-                beamVec=self.instrument.beam_vector,
-                etaVec=self.instrument.eta_vector
+                panel.tvec, instr.tvec, constants.zeros_3,
+                beamVec=instr.beam_vector,
+                etaVec=instr.eta_vector
             )
             # FIXME modify output to be array
             angles_corr = np.vstack(angles_corr).T
@@ -183,7 +197,7 @@ class LaueSpotOverlay:
                 spots = xy_data
                 spots_for_ranges = angles
 
-            panel = self.instrument.detectors[det_key]
+            panel = instr.detectors[det_key]
             point_groups[det_key]['spots'] = spots
             point_groups[det_key]['ranges'] = self.range_data(
                 spots_for_ranges, display_mode, panel
@@ -283,6 +297,36 @@ class LaueSpotOverlay:
 
         return results
 
+    @property
+    def default_style(self):
+        return {
+            'data': {
+                'c': '#00ffff',  # Cyan
+                'marker': 'o',
+                's': 2.0
+            },
+            'ranges': {
+                'c': '#00ff00',  # Green
+                'ls': 'dotted',
+                'lw': 1.0
+            }
+        }
+
+    @property
+    def default_highlight_style(self):
+        return {
+            'data': {
+                'c': '#ff00ff',  # Magenta
+                'marker': 'o',
+                's': 4.0
+            },
+            'ranges': {
+                'c': '#ff00ff',  # Magenta
+                'ls': 'dotted',
+                'lw': 3.0
+            }
+        }
+
 
 @numba_njit_if_available(cache=True, nogil=True)
 def ellipse_points(h, k, a, b, num_points=30):
@@ -297,3 +341,8 @@ def ellipse_points(h, k, a, b, num_points=30):
     right = np.array(((h + a, k),))
     left = np.array(((h - a, k),))
     return np.vstack((right, upper, left, lower, right))
+
+
+class LaueRangeShape(str, Enum):
+    ellipse = 'ellipse'
+    rectangle = 'rectangle'

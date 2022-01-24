@@ -7,16 +7,16 @@ from PySide2.QtWidgets import QFileDialog
 
 from hexrd import instrument, matrixutil
 
-from hexrd.ui.constants import DEFAULT_CRYSTAL_REFINEMENTS
-from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.select_grains_dialog import SelectGrainsDialog
-from hexrd.ui.select_items_widget import SelectItemsWidget
-from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import convert_angle_convention
 from hexrd.ui.calibration_crystal_slider_widget import (
     CalibrationCrystalSliderWidget,
     WidgetMode as SliderWidgetMode
 )
+from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays.constants import crystal_refinement_labels
+from hexrd.ui.select_grains_dialog import SelectGrainsDialog
+from hexrd.ui.select_items_widget import SelectItemsWidget
+from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import convert_angle_convention
 
 
 class CalibrationCrystalEditor(QObject):
@@ -37,8 +37,8 @@ class CalibrationCrystalEditor(QObject):
         self.slider_widget = CalibrationCrystalSliderWidget(parent=self.ui)
         self.ui.slider_widget_parent.layout().addWidget(self.slider_widget.ui)
 
-        refinements = copy.deepcopy(DEFAULT_CRYSTAL_REFINEMENTS)
-        self.refinements_selector = SelectItemsWidget(refinements, self.ui)
+        defaults = [(x, False) for x in crystal_refinement_labels()]
+        self.refinements_selector = SelectItemsWidget(defaults, self.ui)
         self.ui.refinements_selector_layout.addWidget(
             self.refinements_selector.ui)
 
@@ -78,11 +78,22 @@ class CalibrationCrystalEditor(QObject):
 
     @property
     def refinements(self):
-        return self.refinements_selector.items
+        return [x[1] for x in self.refinements_selector.items]
 
     @refinements.setter
     def refinements(self, v):
-        self.refinements_selector.items = v
+        if len(v) != len(self.refinements_selector.items):
+            msg = (
+                f'Mismatch in {len(v)=} and '
+                f'{len(self.refinements_selector.items)=}'
+            )
+            raise Exception(msg)
+
+        new_items = []
+        for item, value in zip(self.refinements_selector.items, v):
+            new_items.append((item[0], value))
+
+        self.refinements_selector.items = new_items
 
     def refinements_edited(self):
         self.refinements_modified.emit()

@@ -7,11 +7,8 @@ from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
 from hexrd.rotations import angles_from_rmat_xyz, rotMatOfExpMap
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
-from hexrd.ui.constants import (
-    DEFAULT_CRYSTAL_PARAMS, DEFAULT_CRYSTAL_REFINEMENTS
-)
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays.laue_diffraction import LaueRangeShape
+from hexrd.ui.overlays.laue_overlay import LaueRangeShape
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
 
@@ -42,7 +39,7 @@ class LaueOverlayEditor:
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
         self.crystal_editor.params_modified.connect(self.update_config)
         self.crystal_editor.refinements_modified.connect(
-            self.update_refinements)
+            self.update_overlay_refinements)
 
         HexrdConfig().euler_angle_convention_changed.connect(
             self.euler_angle_convention_changed)
@@ -66,32 +63,18 @@ class LaueOverlayEditor:
 
         blockers = [QSignalBlocker(w) for w in self.widgets]  # noqa: F841
 
-        options = self.overlay.get('options', {})
-        if 'min_energy' in options:
-            self.ui.min_energy.setValue(options['min_energy'])
-        if 'max_energy' in options:
-            self.ui.max_energy.setValue(options['max_energy'])
-        if 'crystal_params' in options:
-            self.crystal_params = options['crystal_params']
-        else:
-            self.crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
-        if options.get('sample_rmat') is not None:
-            self.sample_rmat = options['sample_rmat']
-        if 'refinements' in self.overlay:
-            self.refinements = self.overlay['refinements']
-        else:
-            self.refinements = copy.deepcopy(DEFAULT_CRYSTAL_REFINEMENTS)
+        overlay = self.overlay
+        self.ui.min_energy.setValue(overlay.min_energy)
+        self.ui.max_energy.setValue(overlay.max_energy)
+        self.sample_rmat = overlay.sample_rmat
+        self.crystal_params = overlay.crystal_params
+        self.refinements = overlay.refinements
+        self.width_shape = overlay.width_shape
 
-        if options.get('tth_width') is not None:
-            self.ui.tth_width.setValue(np.degrees(options['tth_width']))
-        if options.get('eta_width') is not None:
-            self.ui.eta_width.setValue(np.degrees(options['eta_width']))
-
-        self.width_shape = options.get('width_shape', LaueRangeShape.rectangle)
-
-        widths = ['tth_width', 'eta_width']
-        enable_widths = all(options.get(x) is not None for x in widths)
-        self.ui.enable_widths.setChecked(enable_widths)
+        self.ui.enable_widths.setChecked(overlay.has_widths)
+        if overlay.has_widths:
+            self.ui.tth_width.setValue(np.degrees(overlay.tth_width))
+            self.ui.eta_width.setValue(np.degrees(overlay.eta_width))
 
         self.update_enable_states()
         self.update_orientation_suffixes()
@@ -122,29 +105,30 @@ class LaueOverlayEditor:
 
     @property
     def refinements(self):
-        return copy.deepcopy(self.crystal_editor.refinements)
+        return self.crystal_editor.refinements
 
     @refinements.setter
     def refinements(self, v):
         self.crystal_editor.refinements = v
 
     def update_config(self):
-        options = self.overlay.setdefault('options', {})
-        options['min_energy'] = self.ui.min_energy.value()
-        options['max_energy'] = self.ui.max_energy.value()
-        options['crystal_params'] = self.crystal_params
-        options['tth_width'] = self.tth_width
-        options['eta_width'] = self.eta_width
-        options['width_shape'] = self.width_shape
-        options['sample_rmat'] = self.sample_rmat
+        overlay = self.overlay
+        overlay.min_energy = self.ui.min_energy.value()
+        overlay.max_energy = self.ui.max_energy.value()
+        overlay.crystal_params = self.crystal_params
+        overlay.tth_width = self.tth_width
+        overlay.eta_width = self.eta_width
+        overlay.width_shape = self.width_shape
+        overlay.sample_rmat = self.sample_rmat
+        overlay.refinements = self.refinements
 
-        self.update_refinements()
-
-        self.overlay['update_needed'] = True
+        self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
-    def update_refinements(self):
-        self.overlay['refinements'] = self.refinements
+    def update_overlay_refinements(self):
+        # update_config() does this, but it will also force a redraw
+        # of the overlay, which we don't need.
+        self.overlay.refinements = self.refinements
 
     @property
     def enable_widths(self):
