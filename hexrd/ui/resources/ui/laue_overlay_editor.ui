@@ -62,6 +62,9 @@
    </item>
    <item row="1" column="1">
     <widget class="ScientificDoubleSpinBox" name="max_energy">
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -73,6 +76,25 @@
      </property>
      <property name="value">
       <double>35.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="ScientificDoubleSpinBox" name="min_energy">
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="maximum">
+      <double>100000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>5.000000000000000</double>
      </property>
     </widget>
    </item>
@@ -93,6 +115,9 @@
        <widget class="ScientificDoubleSpinBox" name="eta_width">
         <property name="enabled">
          <bool>false</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>
@@ -115,6 +140,9 @@
        <widget class="ScientificDoubleSpinBox" name="tth_width">
         <property name="enabled">
          <bool>false</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="keyboardTracking">
          <bool>false</bool>

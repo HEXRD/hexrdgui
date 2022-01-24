@@ -76,6 +76,9 @@
    </item>
    <item row="2" column="4">
     <widget class="ScientificDoubleSpinBox" name="offset_2">
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -92,6 +95,9 @@
    </item>
    <item row="2" column="3">
     <widget class="ScientificDoubleSpinBox" name="offset_1">
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -108,6 +114,9 @@
    </item>
    <item row="2" column="2">
     <widget class="ScientificDoubleSpinBox" name="offset_0">
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
