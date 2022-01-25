@@ -15,9 +15,6 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QVBoxLayout" name="overlay_grain_pairing_widget_layout"/>
-   </item>
-   <item>
     <widget class="QPushButton" name="view_grains_table">
      <property name="text">
       <string>View Grains Table</string>
@@ -132,6 +129,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
           <property name="decimals">
            <number>8</number>
           </property>
@@ -147,6 +147,9 @@
          <widget class="ScientificDoubleSpinBox" name="refit_ome_step_scale">
           <property name="enabled">
            <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="decimals">
            <number>8</number>

@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide2.QtCore import QObject, Signal
 
-from hexrd import constants as cnst
+from hexrd import constants as cnst, instrument
 from hexrd.fitting import calibration
 from hexrd.transforms import xfcapi
 
@@ -17,7 +17,6 @@ from hexrd.ui.indexing.create_config import (
 )
 from hexrd.ui.message_box import MessageBox
 from hexrd.ui.overlays import overlay_name
-from hexrd.ui.select_grains_dialog import SelectGrainsDialog
 from hexrd.ui.utils import instr_to_internal_dict
 
 
@@ -52,21 +51,20 @@ class HEDMCalibrationRunner(QObject):
         self.pre_validate()
         self.synchronize_omega_period()
 
-        # Get the grains that we need
-        dialog = SelectGrainsDialog(self.num_active_overlays, self.parent)
-        dialog.show()
-        dialog.accepted.connect(self.on_grains_selected)
-        self.select_grains_dialog = dialog
+        # Create the grains table
+        shape = (self.num_active_overlays, 21)
+        self.grains_table = np.empty(shape, dtype=np.float64)
 
-    def on_grains_selected(self):
-        grains_table = self.select_grains_dialog.selected_grains
+        gw = instrument.GrainDataWriter(array=self.grains_table)
+        for i, overlay in enumerate(self.active_overlays):
+            gw.dump_grain(i, 1, 0, overlay['options']['crystal_params'])
 
-        # The user could have chosen a different sorting, but let's always
-        # sort the table by grain id.
-        self.grains_table = grains_table[np.argsort(grains_table[:, 0])]
-
-        dialog = HEDMCalibrationOptionsDialog(
-            self.grains_table, self.active_overlays, self.parent)
+        kwargs = {
+            'material': self.material,
+            'grains_table': self.grains_table,
+            'parent': self.parent,
+        }
+        dialog = HEDMCalibrationOptionsDialog(**kwargs)
         dialog.accepted.connect(self.on_options_dialog_accepted)
         dialog.show()
         self.options_dialog = dialog
@@ -79,7 +77,6 @@ class HEDMCalibrationRunner(QObject):
         self.clobber_strain = dialog.clobber_strain
         self.clobber_centroid = dialog.clobber_centroid
         self.clobber_grain_Y = dialog.clobber_grain_Y
-        self.overlay_grain_map = dialog.overlay_grain_map
 
         self.clobber_refinements()
         self.run_calibration()
@@ -107,7 +104,6 @@ class HEDMCalibrationRunner(QObject):
         clobber_strain = self.clobber_strain
         clobber_centroid = self.clobber_centroid
         clobber_grain_Y = self.clobber_grain_Y
-        overlay_grain_map = self.overlay_grain_map
 
         # Our grains table only contains the grains that the user
         # selected.
@@ -115,9 +111,7 @@ class HEDMCalibrationRunner(QObject):
         grain_ids = self.grains_table[:, 0].astype(int)
 
         # Order the spots data list in the order of the grain ids
-        grain_overlay_map = {v: k for k, v in overlay_grain_map.items()}
-        spots_data = [spots_data_dict[grain_overlay_map[gid]]
-                      for gid in grain_ids]
+        spots_data = [spots_data_dict[gid] for gid in grain_ids]
 
         # plane data
         plane_data = cfg.material.plane_data
@@ -302,8 +296,7 @@ class HEDMCalibrationRunner(QObject):
         imsd = cfg.image_series
 
         outputs = {}
-        for overlay in self.active_overlays:
-            name = overlay_name(overlay)
+        for i, overlay in enumerate(self.active_overlays):
             options = overlay['options']
             kwargs = {
                 'plane_data': self.material.planeData,
@@ -323,8 +316,7 @@ class HEDMCalibrationRunner(QObject):
                 'check_only': False,
                 'interp': 'nearest',
             }
-            out = instr.pull_spots(**kwargs)
-            outputs[name] = out
+            outputs[i] = instr.pull_spots(**kwargs)
 
         return outputs
 

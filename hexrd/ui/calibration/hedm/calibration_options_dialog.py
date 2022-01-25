@@ -2,9 +2,7 @@ from PySide2.QtCore import QObject, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.grains_viewer_dialog import GrainsViewerDialog
-from hexrd.ui.overlays import overlay_name
 from hexrd.ui.reflections_table import ReflectionsTable
-from hexrd.ui.reorder_pairs_widget import ReorderPairsWidget
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -13,21 +11,16 @@ class HEDMCalibrationOptionsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, grains_table, overlays, parent=None):
+    def __init__(self, material, grains_table, parent=None):
         super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('hedm_calibration_options_dialog.ui',
                                    parent)
 
+        self.material = material
         self.grains_table = grains_table
-        self.overlays = overlays
         self.parent = parent
-
-        self.overlay_grain_map = {overlay_name(o): int(g[0])
-                                  for o, g in zip(overlays, grains_table)}
-
-        self.setup_overlay_grain_pairing_widget()
 
         self.update_gui()
         self.setup_connections()
@@ -126,12 +119,6 @@ class HEDMCalibrationOptionsDialog(QObject):
     def clobber_grain_Y(self, b):
         self.ui.clobber_grain_Y.setChecked(b)
 
-    @property
-    def material(self):
-        # The materials of all of the overlays must be the same.
-        # Just get the first one...
-        return HexrdConfig().material(self.overlays[0]['material'])
-
     def choose_hkls(self):
         kwargs = {
             'material': self.material,
@@ -149,28 +136,6 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
-
-    def setup_overlay_grain_pairing_widget(self):
-        num_overlays = len(self.overlays)
-        if num_overlays < 2:
-            # No need for this widget...
-            return
-
-        titles = ('Overlay', 'Grain ID')
-        items = [(k, str(v)) for k, v in self.overlay_grain_map.items()]
-
-        min_height = 125 if num_overlays == 2 else 160
-        layout = self.ui.overlay_grain_pairing_widget_layout
-        w = ReorderPairsWidget(items, titles, self.parent)
-        w.ui.setMinimumHeight(min_height)
-        w.items_reordered.connect(self.on_overlay_grain_pairing_changed)
-        layout.addWidget(w.ui)
-
-        self._overlay_grain_pairing_widget = w
-
-    def on_overlay_grain_pairing_changed(self):
-        w = self._overlay_grain_pairing_widget
-        self.overlay_grain_map = {o: int(g) for o, g in w.items}
 
     def show_grains_table(self):
         if not hasattr(self, '_grains_viewer_dialog'):
