@@ -226,19 +226,19 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>4</number>
           </property>
           <property name="minimum">
-           <double>0.000010000000000</double>
+           <double>0.000100000000000</double>
           </property>
           <property name="maximum">
-           <double>100000.000000000000000</double>
+           <double>100.000000000000000</double>
           </property>
           <property name="singleStep">
-           <double>0.100000000000000</double>
+           <double>0.010000000000000</double>
           </property>
           <property name="value">
-           <double>1.000000000000000</double>
+           <double>0.750000000000000</double>
           </property>
          </widget>
         </item>
@@ -311,7 +311,7 @@
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
+           <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -320,10 +320,19 @@
            <string>°</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>6</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
           </property>
           <property name="maximum">
-           <double>360.000000000000000</double>
+           <double>180.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>90.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -333,7 +342,7 @@
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
+           <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -342,10 +351,19 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>6</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000000.000000000000000</double>
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>3.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -388,7 +406,7 @@
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
+           <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -397,10 +415,19 @@
            <string>°</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>6</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
           </property>
           <property name="maximum">
-           <double>360.000000000000000</double>
+           <double>180.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>90.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -429,7 +456,7 @@
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
+           <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -438,10 +465,19 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>6</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000000.000000000000000</double>
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>3.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -451,7 +487,7 @@
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
+           <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -460,10 +496,19 @@
            <string> Å</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>6</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000000.000000000000000</double>
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>3.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -473,7 +518,7 @@
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buttonSymbols">
-           <enum>QAbstractSpinBox::NoButtons</enum>
+           <enum>QAbstractSpinBox::UpDownArrows</enum>
           </property>
           <property name="keyboardTracking">
            <bool>false</bool>
@@ -482,10 +527,19 @@
            <string>°</string>
           </property>
           <property name="decimals">
-           <number>8</number>
+           <number>6</number>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
           </property>
           <property name="maximum">
-           <double>360.000000000000000</double>
+           <double>180.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>90.000000000000000</double>
           </property>
          </widget>
         </item>
