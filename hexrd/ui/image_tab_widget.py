@@ -281,8 +281,17 @@ class ImageTabWidget(QTabWidget):
         if event.inaxes.get_images():
             # Image was created with imshow()
             artist = event.inaxes.get_images()[0]
+
             i, j = utils.coords2index(artist, info['x_data'], info['y_data'])
-            intensity = artist.get_array().data[i, j]
+            try:
+                intensity = artist.get_array().data[i, j]
+            except IndexError:
+                # Most likely, this means we are slightly out of bounds,
+                # and the index is too big. Just clear the status bar in
+                # this case.
+                # FIXME: can we avoid this somehow?
+                self.clear_mouse_position.emit()
+                return
         else:
             # This is probably just a plot. Do not calculate intensity.
             intensity = None
