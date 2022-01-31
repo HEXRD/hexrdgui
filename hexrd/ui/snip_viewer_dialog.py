@@ -8,6 +8,8 @@ import numpy as np
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QFileDialog, QSizePolicy
 
+from hexrd.ui.color_map_editor import ColorMapEditor
+from hexrd.ui.constants import DEFAULT_CMAP
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
@@ -20,11 +22,22 @@ class SnipViewerDialog:
         self.data = data
         self.extent = extent
 
+        self.cmap = DEFAULT_CMAP
+        self.norm = None
+
         self.setup_canvas()
+        self.setup_color_map()
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.export_data.clicked.connect(self.export)
+
+    def setup_color_map(self):
+        self.color_map_editor = ColorMapEditor(self, self.ui)
+        self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
+
+        no_nans_data = np.nan_to_num(self.data)
+        self.color_map_editor.update_bounds(no_nans_data)
 
     def setup_canvas(self):
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -45,7 +58,7 @@ class SnipViewerDialog:
             title = f'Algorithm {algorithm}'
         ax.set_title(title)
 
-        im = ax.imshow(self.data)
+        im = ax.imshow(self.data, cmap=self.cmap, norm=self.norm)
 
         ax.relim()
         ax.autoscale_view()
@@ -65,10 +78,23 @@ class SnipViewerDialog:
         self.canvas = canvas
         self.im = im
 
-        figure.canvas.draw_idle()
+        self.draw_later()
+
+    def set_cmap(self, cmap):
+        self.cmap = cmap
+        self.im.set_cmap(cmap)
+        self.draw_later()
+
+    def set_norm(self, norm):
+        self.norm = norm
+        self.im.set_norm(norm)
+        self.draw_later()
 
     def show(self):
         self.ui.show()
+
+    def draw_later(self):
+        self.figure.canvas.draw_idle()
 
     def export(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(

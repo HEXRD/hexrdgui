@@ -26,15 +26,18 @@
    <property name="bottomMargin">
     <number>6</number>
    </property>
-   <item row="1" column="0">
+   <item row="2" column="0">
     <widget class="QPushButton" name="export_data">
      <property name="text">
       <string>Export</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
+   <item row="1" column="0">
     <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
+   <item row="0" column="0">
+    <layout class="QVBoxLayout" name="color_map_editor_layout"/>
    </item>
   </layout>
  </widget>
