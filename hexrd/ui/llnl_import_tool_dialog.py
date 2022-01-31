@@ -247,6 +247,11 @@ class LLNLImportToolDialog(QObject):
                 if not success:
                     return
 
+            # The ImageLoadManager parent needs to be set to the main window
+            # because when set to the ui (QDockWidget) the dock widget is
+            # closed after accepting the image selection. We're not positive
+            # why this is the case but it may be related to being a parent to
+            # the QProgressDialog.
             ImageLoadManager().read_data(files, parent=self.ui.parent())
             self.cmap.block_updates(False)
             self.it = InteractiveTemplate(self.parent())
