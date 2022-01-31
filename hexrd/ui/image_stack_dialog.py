@@ -30,8 +30,8 @@ class ImageStackDialog(QObject):
 
         self.setup_state()
         self.ui.detectors.addItems(self.detectors)
-        self.setup_gui()
         self.setup_connections()
+        self.setup_gui()
 
     def setup_connections(self):
         self.ui.select_directory.clicked.connect(self.select_directory)
@@ -56,6 +56,8 @@ class ImageStackDialog(QObject):
             self.simple_image_series_dialog.clear_from_stack_dialog)
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
         self.ui.reverse_frames.toggled.connect(self.reverse_frames)
+        self.ui.button_box.accepted.connect(self.check_data)
+        self.ui.button_box.rejected.connect(self.close_widget)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -69,7 +71,6 @@ class ImageStackDialog(QObject):
         self.ui.omega_from_file.setChecked(self.state['omega_from_file'])
         if self.state['omega']:
             self.ui.omega_file.setText(self.state['omega'].split(' ')[-1])
-        self.ui.omega_from_file.setChecked(self.state['omega_from_file'])
         self.ui.files_by_selection.setChecked(self.state['manual_file'])
         self.ui.files_by_search.setChecked(not self.state['manual_file'])
         file_count = self.state[self.detector]['file_count']
@@ -130,7 +131,7 @@ class ImageStackDialog(QObject):
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
-                self.ui, 'Select directory', HexrdConfig().working_dir)
+                self.ui, 'Select directory', self.ui.current_directory.text())
         self.state[self.detector]['directory'] = d
         HexrdConfig().working_dir = d.rsplit('/', 1)[0]
         self.ui.current_directory.setText(d)
@@ -367,11 +368,13 @@ class ImageStackDialog(QObject):
                 'max_file_frames': self.state['max_file_frames'],
                 'max_total_frames': self.state['max_total_frames']
             },
-            'reverse_frames': self.state['reverse_frames']
+            'reverse_frames': self.state.get('reverse_frames', False)
         }
-        if not self.state['omega_from_file']:
+        if not self.state['omega_from_file'] and self.state["wedges"]:
             data['frame_data']['wedges'] = self.state['wedges']
-        return data
+
+        self.simple_image_series_dialog.image_stack_loaded(data)
+        self.simple_image_series_dialog.show()
 
     def check_steps(self):
         if self.ui.omega_from_file.isChecked():
@@ -392,49 +395,45 @@ class ImageStackDialog(QObject):
                 total_frames, self.ui.max_file_frames.value() * file_count)
         return (steps, total_frames) if total_frames != steps else (-1, -1)
 
-    def exec_(self):
-        while True:
-            error = False
-            if self.ui.exec_():
-                f, d = [], []
-                for det in self.detectors:
-                    f.append(self.state[det]['file_count'])
-                    d.append(self.state[det]['directory'])
-                if dets := [det for det in d if not det]:
-                    msg = (
-                        f'The directory have not been set for '
-                        f'the following detector(s):\n{" ".join(dets)}.')
-                    QMessageBox.warning(self.ui, 'HEXRD', msg)
-                    error = True
-                    continue
-                if idx := [i for i, n in enumerate(f) if f[0] == 0]:
-                    msg = (f'No files have been selected for the detectors.')
-                    QMessageBox.warning(None, 'HEXRD', msg)
-                    error = True
-                    continue
-                if idx := [i for i, n in enumerate(f) if f[0] != n]:
-                    dets = [self.state['dets'][i] for i in idx]
-                    msg = (
-                        f'The number of files for each detector must match. '
-                        f'The following detector(s) do not:\n{" ".join(dets)}')
-                    QMessageBox.warning(None, 'HEXRD', msg)
-                    error = True
-                    continue
-                steps, total_frames = self.check_steps()
-                if steps >= 0 and self.state['add_omega_data']:
-                    if steps > 0:
-                        msg = (
-                            f'The total number of steps must be equal to the '
-                            f'total number of frames: {steps} total steps, '
-                            f'{total_frames} total frames.')
-                    else:
-                        msg = f'The omega wedges are incomplete.'
-                    QMessageBox.warning(None, 'HEXRD', msg)
-                    error = True
-                    continue
-                if error:
-                    return True
-                else:
-                    return self.build_data()
+    def check_data(self):
+        f, d = [], []
+        steps, total_frames = self.check_steps()
+        for det in self.detectors:
+            f.append(self.state[det]['file_count'])
+            d.append(self.state[det]['directory'])
+        if dets := [det for det in d if not det]:
+            msg = (
+                f'The directory have not been set for '
+                f'the following detector(s):\n{" ".join(dets)}.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+        elif idx := [i for i, n in enumerate(f) if f[0] == 0]:
+            msg = (f'No files have been selected for the detectors.')
+            QMessageBox.warning(None, 'HEXRD', msg)
+            return
+        elif idx := [i for i, n in enumerate(f) if f[0] != n]:
+            dets = [self.state['dets'][i] for i in idx]
+            msg = (
+                f'The number of files for each detector must match. '
+                f'The following detector(s) do not:\n{" ".join(dets)}')
+            QMessageBox.warning(None, 'HEXRD', msg)
+            return
+        elif steps >= 0 and self.state['add_omega_data']:
+            if steps > 0:
+                msg = (
+                    f'The total number of steps must be equal to the '
+                    f'total number of frames: {steps} total steps, '
+                    f'{total_frames} total frames.')
             else:
-                return False
+                msg = f'The omega wedges are incomplete.'
+            QMessageBox.warning(None, 'HEXRD', msg)
+            return
+        self.build_data()
+        self.close_widget()
+
+    def show(self):
+        self.ui.show()
+
+    def close_widget(self):
+        if self.ui.isFloating():
+            self.ui.close()

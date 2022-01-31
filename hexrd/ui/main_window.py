@@ -103,6 +103,8 @@ class MainWindow(QObject):
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
                                         self.color_map_editor, self.ui)
+        self.image_stack_dialog = ImageStackDialog(
+                                    self.ui, self.simple_image_series_dialog)
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.calibration_config_widget = CalibrationConfigWidget(self.ui)
@@ -985,8 +987,4 @@ class MainWindow(QObject):
         self.llnl_import_tool_dialog.show()
 
     def on_action_image_stack_triggered(self):
-        data = ImageStackDialog(
-            self.parent(), self.simple_image_series_dialog).exec_()
-        if data:
-            self.simple_image_series_dialog.image_stack_loaded(data)
-            self.simple_image_series_dialog.show()
+        self.image_stack_dialog.show()

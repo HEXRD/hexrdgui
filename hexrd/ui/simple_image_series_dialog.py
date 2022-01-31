@@ -102,7 +102,9 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.update_image_data.clicked.connect(self.update_image_data)
         self.ui.reverse_frames.toggled.connect(self.reverse_frames)
 
-        self.ui.accepted.connect(self.accept_dialog)
+        self.ui.button_box.accepted.connect(self.accept_dialog)
+        self.ui.button_box.rejected.connect(self.close_widget)
+        self.ui.dockLocationChanged.connect(self.location_changed)
 
         HexrdConfig().state_loaded.connect(self.state_loaded)
 
@@ -578,8 +580,16 @@ class SimpleImageSeriesDialog(QObject):
     def accept_dialog(self):
         if self.ui.read.isEnabled():
             self.read_data()
+        self.close_widget()
 
     def reverse_frames(self, state):
         self.state['frames_reversed'] = state
         self.ui.reverse_frames.setChecked(state)
         self.enable_read()
+
+    def close_widget(self):
+        if self.ui.isFloating():
+            self.ui.close()
+
+    def location_changed(self):
+        self.ui.button_box.setVisible(self.ui.isFloating())

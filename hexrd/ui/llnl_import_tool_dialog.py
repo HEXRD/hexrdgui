@@ -76,9 +76,7 @@ class LLNLImportToolDialog(QObject):
             self.update_template_style)
         self.ui.line_color.clicked.connect(self.pick_line_color)
         self.ui.line_size.valueChanged.connect(self.update_template_style)
-        self.ui.cancel.clicked.connect(self.ui.reject)
-        self.ui.rejected.connect(self.reset_panel)
-        self.ui.rejected.connect(self.cancel_workflow.emit)
+        self.ui.cancel.clicked.connect(self.on_canceled)
         self.ui.select_config.toggled.connect(self.update_config_selection)
         self.ui.default_config.toggled.connect(self.update_config_load)
         self.ui.load_config.clicked.connect(self.load_config)
@@ -249,7 +247,12 @@ class LLNLImportToolDialog(QObject):
                 if not success:
                     return
 
-            ImageLoadManager().read_data(files, parent=self.ui)
+            # The ImageLoadManager parent needs to be set to the main window
+            # because when set to the ui (QDockWidget) the dock widget is
+            # closed after accepting the image selection. We're not positive
+            # why this is the case but it may be related to being a parent to
+            # the QProgressDialog.
+            ImageLoadManager().read_data(files, parent=self.ui.parent())
             self.cmap.block_updates(False)
             self.it = InteractiveTemplate(self.parent())
 
@@ -473,7 +476,12 @@ class LLNLImportToolDialog(QObject):
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
         det_names = HexrdConfig().detector_names
         files = [[self.edited_images[det]['img']] for det in det_names]
-        ImageLoadManager().read_data(files, parent=self.ui)
+        # The ImageLoadManager parent needs to be set to the main window
+        # because when set to the ui (QDockWidget) the dock widget is
+        # closed after accepting the image selection. We're not positive
+        # why this is the case but it may be related to being a parent to
+        # the QProgressDialog.
+        ImageLoadManager().read_data(files, parent=self.ui.parent())
 
         buffer_default = {'status': 0}
         for det in det_names:
@@ -481,10 +489,19 @@ class LLNLImportToolDialog(QObject):
             buffer = det_config.setdefault('buffer', buffer_default)
             buffer['value'] = self.edited_images[det]['panel_buffer']
 
-        self.reset_panel()
+        self.close_widget()
         self.parent().action_show_toolbar.setEnabled(True)
         self.parent().action_show_toolbar.setChecked(True)
         self.cmap.block_updates(False)
 
     def show(self):
         self.ui.show()
+
+    def close_widget(self):
+        self.reset_panel()
+        if self.ui.isFloating():
+            self.ui.close()
+
+    def on_canceled(self):
+        self.close_widget()
+        self.cancel_workflow.emit()
