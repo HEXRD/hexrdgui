@@ -44,6 +44,7 @@ class SelectGrainsDialog(QObject):
         finally:
             self.ignore_errors = False
 
+        self.update_enable_states()
         self.setup_connections()
 
     def setup_connections(self):
