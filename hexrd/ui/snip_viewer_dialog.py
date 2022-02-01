@@ -35,9 +35,7 @@ class SnipViewerDialog:
     def setup_color_map(self):
         self.color_map_editor = ColorMapEditor(self, self.ui)
         self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
-
-        no_nans_data = np.nan_to_num(self.data)
-        self.color_map_editor.update_bounds(no_nans_data)
+        self.color_map_editor.update_bounds(self.data)
 
     def setup_canvas(self):
         canvas = FigureCanvas(Figure(tight_layout=True))

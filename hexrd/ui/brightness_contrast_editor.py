@@ -97,8 +97,8 @@ class BrightnessContrastEditor(QObject):
             return (0, 1)
 
         data = self.data_list
-        mins = [x.min() for x in data]
-        maxes = [x.max() for x in data]
+        mins = [np.nanmin(x) for x in data]
+        maxes = [np.nanmax(x) for x in data]
         return (min(mins), max(maxes))
 
     def reset_data_range(self):
