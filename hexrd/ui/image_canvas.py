@@ -19,6 +19,7 @@ from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.snip_viewer_dialog import SnipViewerDialog
 from hexrd.ui import utils
 from hexrd.ui.utils.conversions import cart_to_angles, cart_to_pixels
 import hexrd.ui.constants
@@ -914,22 +915,9 @@ class ImageCanvas(FigureCanvas):
 
         if self.iviewer.img is None:
             print('No image! Cannot generate snip1d!')
+            return
 
         extent = self.iviewer._extent
-
-        # Create the figure and axes to use
-        fig, ax = plt.subplots()
-        fig.canvas.manager.set_window_title('SNIP Background')
-        ax.set_xlabel(r'2$\theta$ (deg)')
-        ax.set_ylabel(r'$\eta$ (deg)')
-
-        algorithm = HexrdConfig().polar_snip1d_algorithm
-        titles = ['Fast SNIP 1D', 'SNIP 1D', 'SNIP 2D']
-        if algorithm < len(titles):
-            title = titles[algorithm]
-        else:
-            title = f'Algorithm {algorithm}'
-        ax.set_title(title)
 
         if self.iviewer.snip_background is not None:
             background = self.iviewer.snip_background
@@ -943,16 +931,8 @@ class ImageCanvas(FigureCanvas):
 
             background = utils.run_snip1d(img)
 
-        im = ax.imshow(background)
-
-        im.set_extent(extent)
-        ax.relim()
-        ax.autoscale_view()
-        ax.axis('auto')
-        fig.tight_layout()
-
-        fig.canvas.draw_idle()
-        fig.show()
+        self._snip_viewer_dialog = SnipViewerDialog(background, extent)
+        self._snip_viewer_dialog.show()
 
 
 def transform_from_plain_cartesian_func(mode):
