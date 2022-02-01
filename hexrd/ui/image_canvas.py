@@ -114,6 +114,13 @@ class ImageCanvas(FigureCanvas):
 
         images_dict = HexrdConfig().images_dict
 
+        def apply_masks(img, name):
+            visible_masks = HexrdConfig().visible_masks
+            for mask_name, data in HexrdConfig().masks.items():
+                for det, mask in data:
+                    if mask_name in visible_masks and det == name:
+                        img[~mask] = 0
+
         if (self.mode != ViewType.raw or
                 len(image_names) != len(self.axes_images)):
             # Either we weren't in image mode before, we have a different
@@ -134,11 +141,7 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, data in HexrdConfig().masks.items():
-                    for det, mask in data:
-                        if (mask_name in HexrdConfig().visible_masks and
-                                det == name):
-                            img[~mask] = 0
+                apply_masks(img, name)
 
                 axis = self.figure.add_subplot(rows, cols, i + 1)
                 axis.set_title(name)
@@ -158,11 +161,7 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
 
                 # Apply any masks
-                for mask_name, data in HexrdConfig().masks.items():
-                    for det, mask in data:
-                        if (mask_name in HexrdConfig().visible_masks and
-                                det == name):
-                            img[~mask] = 0
+                apply_masks(img, name)
                 self.axes_images[i].set_data(img)
 
         # This will call self.draw_idle()
