@@ -274,6 +274,7 @@ class MainWindow(QObject):
             self.enforce_view_mode)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
+        HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
@@ -988,3 +989,8 @@ class MainWindow(QObject):
 
     def on_action_image_stack_triggered(self):
         self.image_stack_dialog.show()
+
+    def on_image_view_loaded(self, images):
+        # Update the data, but don't reset the bounds
+        # This will update the histogram in the B&C editor
+        self.color_map_editor.data = images

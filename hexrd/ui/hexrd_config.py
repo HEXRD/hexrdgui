@@ -45,6 +45,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when new plane data is generated for the active material"""
     new_plane_data = Signal()
 
+    """Emitted when an image view has finished loading
+
+    The dict contains the images. This is used, for instance, to update
+    the brightness and contrast histogram with the new image data.
+    """
+    image_view_loaded = Signal(dict)
+
     """Emitted when overlay configuration has changed"""
     overlay_config_changed = Signal()
 

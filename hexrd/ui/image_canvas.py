@@ -173,6 +173,8 @@ class ImageCanvas(FigureCanvas):
         self.update_auto_picked_data()
         self.update_overlays()
 
+        HexrdConfig().image_view_loaded.emit(images_dict)
+
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
@@ -605,6 +607,8 @@ class ImageCanvas(FigureCanvas):
         self.update_overlays()
         self.draw_detector_borders()
 
+        HexrdConfig().image_view_loaded.emit({'img': img})
+
         msg = 'Cartesian view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
@@ -710,6 +714,8 @@ class ImageCanvas(FigureCanvas):
         self.update_auto_picked_data()
         self.update_overlays()
         self.draw_detector_borders()
+
+        HexrdConfig().image_view_loaded.emit({'img': img})
 
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
