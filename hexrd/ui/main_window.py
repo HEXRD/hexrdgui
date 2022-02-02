@@ -90,6 +90,7 @@ class MainWindow(QObject):
 
         self.color_map_editor = ColorMapEditor(self.ui.image_tab_widget,
                                                self.ui.central_widget)
+        self.color_map_editor.hide_overlays_during_bc_editing = True
         self.ui.color_map_dock_widgets.layout().addWidget(
             self.color_map_editor.ui)
 

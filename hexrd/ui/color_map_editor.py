@@ -28,6 +28,9 @@ class ColorMapEditor:
         self._data = None
 
         self.bc_editor = None
+        self.hide_overlays_during_bc_editing = False
+
+        self._bc_previous_show_overlays = None
 
         self.load_cmaps()
 
@@ -86,10 +89,11 @@ class ColorMapEditor:
         bc.ui.finished.connect(self.remove_bc_editor)
 
         # Hide overlays while the BC editor is open
-        self._bc_previous_show_overlays = HexrdConfig().show_overlays
-        if self._bc_previous_show_overlays:
-            HexrdConfig().show_overlays = False
-            HexrdConfig().active_material_modified.emit()
+        if self.hide_overlays_during_bc_editing:
+            self._bc_previous_show_overlays = HexrdConfig().show_overlays
+            if self._bc_previous_show_overlays:
+                HexrdConfig().show_overlays = False
+                HexrdConfig().active_material_modified.emit()
 
         self.update_bc_editor()
 
@@ -107,7 +111,12 @@ class ColorMapEditor:
     def remove_bc_editor(self):
         self.bc_editor = None
 
-        if self._bc_previous_show_overlays and not HexrdConfig().show_overlays:
+        show_overlays = (
+            self.hide_overlays_during_bc_editing and
+            self._bc_previous_show_overlays and
+            not HexrdConfig().show_overlays
+        )
+        if show_overlays:
             # Show the overlays again
             HexrdConfig().show_overlays = True
             HexrdConfig().active_material_modified.emit()
