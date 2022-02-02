@@ -93,7 +93,8 @@ class InstrumentViewer:
     def write_image(self, filename='polar_image.npz'):
         filename = Path(filename)
 
-        azimuthal_integration = HexrdConfig().last_azimuthal_integral_data
+        azimuthal_integration = (
+            HexrdConfig().last_unscaled_azimuthal_integral_data)
 
         # Re-format the data so that it is in 2 columns
         azimuthal_integration = np.array(azimuthal_integration).T
