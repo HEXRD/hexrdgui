@@ -293,9 +293,6 @@ class BrightnessContrastEditor(QObject):
         self.canvas = FigureCanvas(self.figure)
         self.axis = self.figure.add_subplot(111)
 
-        # Turn off ticks
-        self.axis.axis('off')
-
         self.figure.tight_layout()
 
         self.ui.plot_layout.addWidget(self.canvas)
@@ -323,13 +320,26 @@ class BrightnessContrastEditor(QObject):
             hist, bins = np.histogram(**kwargs)
             histograms.append(hist)
 
+        # Plot the histogram
+        # Matplotlib's hist() function performs a histogram and THEN
+        # plots it. But we already have a histogram, so just use bar()
+        # instead.
         self.histogram = sum(histograms)
         kwargs = {
-            'x': self.histogram,
-            'bins': HISTOGRAM_NUM_BINS,
+            'x': np.arange(HISTOGRAM_NUM_BINS),
+            'height': self.histogram,
+            'width': 1.0,
             'color': 'black',
+            'align': 'edge',
         }
-        self.histogram_artist = self.axis.hist(**kwargs)[2]
+        self.histogram_artist = self.axis.bar(**kwargs)
+
+        # Remove x margins
+        self.axis.margins(x=0)
+
+        # Hide the axes
+        self.axis.xaxis.set_visible(False)
+        self.axis.yaxis.set_visible(False)
 
         self.canvas.draw()
 

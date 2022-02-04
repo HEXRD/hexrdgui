@@ -40,6 +40,7 @@ class ImageTabWidget(QTabWidget):
         # These will get set later
         self.cmap = None
         self.norm = None
+        self.scaling = None
         self.toolbars = []
         self.toolbar_visible = True
 
@@ -247,6 +248,11 @@ class ImageTabWidget(QTabWidget):
             for canvas in self.active_canvases:
                 canvas.set_norm(self.norm)
 
+    def update_canvas_scaling(self):
+        if self.scaling is not None:
+            for canvas in self.active_canvases:
+                canvas.set_scaling(self.scaling)
+
     def set_cmap(self, cmap):
         self.cmap = cmap
         self.update_canvas_cmaps()
@@ -254,6 +260,16 @@ class ImageTabWidget(QTabWidget):
     def set_norm(self, norm):
         self.norm = norm
         self.update_canvas_norms()
+
+    def set_scaling(self, scaling):
+        self.scaling = scaling
+        self.update_canvas_scaling()
+
+    @property
+    def scaled_image_data(self):
+        # Even for tabbed mode for a raw view, this function should
+        # return the whole image data dict.
+        return self.image_canvases[0].scaled_image_dict
 
     def on_motion_notify_event(self, event):
         # Clear the info if the mouse leaves a plot

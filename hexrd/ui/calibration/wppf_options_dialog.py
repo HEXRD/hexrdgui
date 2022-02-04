@@ -206,9 +206,6 @@ class WppfOptionsDialog(QObject):
             ax.set_ylabel(r'intensity')
             ax.set_title('Computed Spectrum')
 
-            # Match the scaling used...
-            ax.set_yscale(HexrdConfig().azimuthal_integral_axis_scale)
-
             ax.plot(x, y)
             ax.relim()
             ax.autoscale_view()
@@ -675,7 +672,7 @@ class WppfOptionsDialog(QObject):
         if self.use_experiment_file:
             expt_spectrum = np.loadtxt(self.experiment_file)
         else:
-            x, y = HexrdConfig().last_azimuthal_integral_data
+            x, y = HexrdConfig().last_unscaled_azimuthal_integral_data
             if isinstance(y, np.ma.MaskedArray):
                 # Fill any masked values with zero
                 y = y.filled(0)

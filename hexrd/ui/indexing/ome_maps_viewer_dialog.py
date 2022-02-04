@@ -1,7 +1,6 @@
 import copy
 from pathlib import Path
 
-import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -25,7 +24,6 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.select_items_widget import SelectItemsWidget
-from hexrd.ui.utils import has_nan
 from hexrd.ui.ui_loader import UiLoader
 
 import hexrd.ui.constants
@@ -49,6 +47,7 @@ class OmeMapsViewerDialog(QObject):
         self.data = data
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
+        self.transform = lambda x: x
         self.spots = None
         self.reset_internal_config()
 
@@ -101,9 +100,6 @@ class OmeMapsViewerDialog(QObject):
         self.ui.select_working_dir.pressed.connect(self.select_working_dir)
 
         self.select_hkls_widget.selection_changed.connect(self.update_config)
-
-        # A plot reset is needed for log scale to handle the NaN values
-        self.color_map_editor.ui.log_scale.toggled.connect(self.update_plot)
 
         def changed_signal(w):
             if isinstance(w, (QDoubleSpinBox, QSpinBox)):
@@ -453,6 +449,10 @@ class OmeMapsViewerDialog(QObject):
         self.update_cmap_bounds()
 
     @property
+    def scaled_image_data(self):
+        return self.transform(self.image_data)
+
+    @property
     def image_data(self):
         return self.data.dataStore[self.current_hkl_index]
 
@@ -465,7 +465,7 @@ class OmeMapsViewerDialog(QObject):
         if not hasattr(self, 'color_map_editor'):
             return
 
-        self.color_map_editor.update_bounds(self.image_data)
+        self.color_map_editor.update_bounds(self.scaled_image_data)
 
         w = self.color_map_editor.ui.minimum
         w.setStyleSheet('background-color: yellow')
@@ -507,12 +507,7 @@ class OmeMapsViewerDialog(QObject):
     def update_plot(self):
         ax = self.ax
 
-        data = self.image_data
-        if isinstance(self.norm, matplotlib.colors.LogNorm) and has_nan(data):
-            # The log norm can't handle NaNs. Set them to -1.
-            data = copy.deepcopy(data)
-            data[np.isnan(data)] = -1
-
+        data = self.scaled_image_data
         if not hasattr(self, 'im'):
             im = ax.imshow(data)
             self.im = im
@@ -552,6 +547,10 @@ class OmeMapsViewerDialog(QObject):
         if hasattr(self, 'im'):
             self.im.set_norm(norm)
             self.draw()
+
+    def set_scaling(self, transform):
+        self.transform = transform
+        self.update_plot()
 
     def create_spots(self):
         # We will clean the data for spot labeling, so make a deep copy

@@ -43,6 +43,7 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_line_artist = None
         self.wppf_plot = None
         self.auto_picked_data_artists = []
+        self.transform = lambda x: x
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -98,7 +99,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
-        HexrdConfig().last_azimuthal_integral_data = None
+        HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
     def clear_wppf_plot(self):
         if self.wppf_plot:
@@ -112,21 +113,13 @@ class ImageCanvas(FigureCanvas):
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
 
-        images_dict = HexrdConfig().images_dict
-
-        def apply_masks(img, name):
-            visible_masks = HexrdConfig().visible_masks
-            for mask_name, data in HexrdConfig().masks.items():
-                for det, mask in data:
-                    if mask_name in visible_masks and det == name:
-                        img[~mask] = 0
-
         if (self.mode != ViewType.raw or
                 len(image_names) != len(self.axes_images)):
             # Either we weren't in image mode before, we have a different
             # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
             self.mode = ViewType.raw
+            images_dict = self.scaled_image_dict
 
             # This will be used for drawing the rings
             self.iviewer = raw_iviewer()
@@ -139,10 +132,6 @@ class ImageCanvas(FigureCanvas):
 
             for i, name in enumerate(image_names):
                 img = images_dict[name]
-
-                # Apply any masks
-                apply_masks(img, name)
-
                 axis = self.figure.add_subplot(rows, cols, i + 1)
                 axis.set_title(name)
                 kwargs = {
@@ -157,11 +146,9 @@ class ImageCanvas(FigureCanvas):
 
             self.figure.tight_layout()
         else:
+            images_dict = self.scaled_image_dict
             for i, name in enumerate(image_names):
                 img = images_dict[name]
-
-                # Apply any masks
-                apply_masks(img, name)
                 self.axes_images[i].set_data(img)
 
         # This will call self.draw_idle()
@@ -172,10 +159,41 @@ class ImageCanvas(FigureCanvas):
         self.update_auto_picked_data()
         self.update_overlays()
 
+        # This always emits the full images dict, even if we are in
+        # tabbed mode and this canvas is only displaying one of the
+        # images from the dict.
         HexrdConfig().image_view_loaded.emit(images_dict)
 
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    @property
+    def unscaled_image_dict(self):
+        # Returns a dict of the unscaled images
+        if self.mode == ViewType.raw:
+            # Apply masks first
+            return apply_masks_to_raw(HexrdConfig().images_dict)
+        else:
+            # Masks are already applied...
+            return {'img': self.iviewer.img}
+
+    @property
+    def unscaled_images(self):
+        # Returns a list of the unscaled images
+        if self.mode == ViewType.raw:
+            return list(self.unscaled_image_dict.values())
+        else:
+            return [self.iviewer.img]
+
+    @property
+    def scaled_image_dict(self):
+        # Returns a dict of the scaled images
+        unscaled = self.unscaled_image_dict
+        return {k: self.transform(v) for k, v in unscaled.items()}
+
+    @property
+    def scaled_images(self):
+        return [self.transform(x) for x in self.unscaled_images]
 
     def remove_all_overlay_artists(self):
         while self.overlay_artists:
@@ -484,9 +502,12 @@ class ImageCanvas(FigureCanvas):
         if not self.axes_images:
             return
 
-        # Do not show the saturation in calibration mode
+        # Only show the saturation in raw mode.
         if self.mode != ViewType.raw:
             return
+
+        # Use the unscaled image data to determine saturation
+        images_dict = self.unscaled_image_dict
 
         for img in self.axes_images:
             # The titles of the images are currently the detector names
@@ -497,7 +518,7 @@ class ImageCanvas(FigureCanvas):
             detector = HexrdConfig().detector(detector_name)
             saturation_level = detector['saturation_level']['value']
 
-            array = img.get_array()
+            array = images_dict[detector_name]
 
             num_sat = (array >= saturation_level).sum()
             percent = num_sat / array.size * 100.0
@@ -573,7 +594,7 @@ class ImageCanvas(FigureCanvas):
 
     def finish_show_cartesian(self, iviewer):
         self.iviewer = iviewer
-        img = self.iviewer.img
+        img, = self.scaled_images
 
         # It is important to persist the plot so that we don't reset the scale.
         rescale_image = True
@@ -635,7 +656,7 @@ class ImageCanvas(FigureCanvas):
 
     def finish_show_polar(self, iviewer):
         self.iviewer = iviewer
-        img = self.iviewer.img
+        img, = self.scaled_images
         extent = self.iviewer._extent
 
         rescale_image = True
@@ -676,8 +697,9 @@ class ImageCanvas(FigureCanvas):
             if self.azimuthal_integral_axis is None:
                 axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
                 data = (tth, self.compute_azimuthal_integral_sum())
+                unscaled = (tth, self.compute_azimuthal_integral_sum(False))
                 self.azimuthal_line_artist, = axis.plot(*data)
-                HexrdConfig().last_azimuthal_integral_data = data
+                HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
                 axis.set_xlabel(r'2$\theta$ (deg)')
@@ -686,8 +708,6 @@ class ImageCanvas(FigureCanvas):
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
-
-            self.update_azimuthal_integral_plot_y_scale()
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -724,7 +744,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer.reapply_masks()
-        self.axes_images[0].set_data(self.iviewer.img)
+        self.axes_images[0].set_data(self.scaled_images[0])
         self.update_azimuthal_integral_plot()
         self.update_overlays()
         self.draw_idle()
@@ -737,6 +757,15 @@ class ImageCanvas(FigureCanvas):
         self.clear_figure()
         self.draw_idle()
 
+    def set_scaling(self, transform):
+        # Apply the scaling, and set the data
+        self.transform = transform
+        for axes_image, img in zip(self.axes_images, self.scaled_images):
+            axes_image.set_data(img)
+
+        self.update_azimuthal_integral_plot()
+        self.draw_idle()
+
     def set_cmap(self, cmap):
         self.cmap = cmap
         for axes_image in self.axes_images:
@@ -747,13 +776,15 @@ class ImageCanvas(FigureCanvas):
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
-        self.update_azimuthal_integral_plot_y_scale()
         self.draw_idle()
 
-    def compute_azimuthal_integral_sum(self):
+    def compute_azimuthal_integral_sum(self, scaled=True):
         # grab the polar image
-        # !!! NOTE: currenlty not a masked image; just nans
-        pimg = self.iviewer.img
+        # !!! NOTE: currently not a masked image; just nans
+        if scaled:
+            pimg = self.scaled_images[0]
+        else:
+            pimg = self.unscaled_images[0]
         # !!! NOTE: visible polar masks have already been applied
         #           in polarview.py
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
@@ -777,7 +808,8 @@ class ImageCanvas(FigureCanvas):
         data = (tth, self.compute_azimuthal_integral_sum())
         line.set_data(*data)
 
-        HexrdConfig().last_azimuthal_integral_data = data
+        unscaled = (tth, self.compute_azimuthal_integral_sum(scaled=False))
+        HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
         # Update the wppf data if applicable
         self.update_wppf_plot()
@@ -785,12 +817,6 @@ class ImageCanvas(FigureCanvas):
         # Rescale the axes for the new data
         axis.relim()
         axis.autoscale_view(scalex=False)
-
-    def update_azimuthal_integral_plot_y_scale(self):
-        if self.azimuthal_integral_axis is not None:
-            scale = 'log' if isinstance(self.norm, LogNorm) else 'linear'
-            self.azimuthal_integral_axis.set_yscale(scale)
-            HexrdConfig().azimuthal_integral_axis_scale = scale
 
     def update_wppf_plot(self):
         self.clear_wppf_plot()
@@ -867,7 +893,7 @@ class ImageCanvas(FigureCanvas):
 
             return
 
-        self.axes_images[0].set_data(self.iviewer.img)
+        self.axes_images[0].set_data(self.scaled_images[0])
 
         # This will only run if we are in polar mode
         self.update_azimuthal_integral_plot()
@@ -973,3 +999,17 @@ def transform_from_plain_cartesian_func(mode):
         raise Exception(f'Unknown mode: {mode}')
 
     return funcs[mode]
+
+
+def apply_masks_to_raw(images_dict):
+    # Apply needed masks to an image
+    for name, img in images_dict.items():
+        for mask_name, data in HexrdConfig().masks.items():
+            if mask_name not in HexrdConfig().visible_masks:
+                continue
+
+            for det, mask in data:
+                if det == name:
+                    img[~mask] = 0
+
+    return images_dict

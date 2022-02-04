@@ -24,6 +24,7 @@ class SnipViewerDialog:
 
         self.cmap = DEFAULT_CMAP
         self.norm = None
+        self.transform = lambda x: x
 
         self.setup_canvas()
         self.setup_color_map()
@@ -35,7 +36,7 @@ class SnipViewerDialog:
     def setup_color_map(self):
         self.color_map_editor = ColorMapEditor(self, self.ui)
         self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
-        self.color_map_editor.update_bounds(self.data)
+        self.color_map_editor.update_bounds(self.scaled_image_data)
 
     def setup_canvas(self):
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -56,7 +57,7 @@ class SnipViewerDialog:
             title = f'Algorithm {algorithm}'
         ax.set_title(title)
 
-        im = ax.imshow(self.data, cmap=self.cmap, norm=self.norm)
+        im = ax.imshow(self.scaled_image_data, cmap=self.cmap, norm=self.norm)
 
         ax.relim()
         ax.autoscale_view()
@@ -87,6 +88,15 @@ class SnipViewerDialog:
         self.norm = norm
         self.im.set_norm(norm)
         self.draw_later()
+
+    def set_scaling(self, transform):
+        self.transform = transform
+        self.im.set_data(self.scaled_image_data)
+        self.draw_later()
+
+    @property
+    def scaled_image_data(self):
+        return self.transform(self.data)
 
     def show(self):
         self.ui.show()

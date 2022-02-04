@@ -8,6 +8,7 @@ import numpy as np
 import hexrd.ui.constants
 from hexrd.ui.brightness_contrast_editor import BrightnessContrastEditor
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.scaling import SCALING_OPTIONS
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
@@ -18,6 +19,8 @@ class ColorMapEditor:
         # The image_object can be any object with the following functions:
         # 1. set_cmap: a function to set the cmap on the image
         # 2. set_norm: a function to set the norm on the image
+        # 3. set_scaling: a function to set the scaling on the image
+        # 4. scaled_image_data: a property to get the scaled image data
 
         self.image_object = image_object
 
@@ -28,8 +31,12 @@ class ColorMapEditor:
         self._data = None
 
         self.bc_editor = None
+        self.hide_overlays_during_bc_editing = False
+
+        self._bc_previous_show_overlays = None
 
         self.load_cmaps()
+        self.setup_scaling_options()
 
         self.setup_connections()
 
@@ -53,6 +60,10 @@ class ColorMapEditor:
         # Set the combobox to be the default
         self.ui.color_map.setCurrentText(hexrd.ui.constants.DEFAULT_CMAP)
 
+    def setup_scaling_options(self):
+        options = list(SCALING_OPTIONS.keys())
+        self.ui.scaling.addItems(options)
+
     def setup_connections(self):
         self.ui.bc_editor_button.pressed.connect(self.bc_editor_button_pressed)
 
@@ -63,8 +74,7 @@ class ColorMapEditor:
         self.ui.reverse.toggled.connect(self.update_cmap)
         self.ui.show_under.toggled.connect(self.update_cmap)
         self.ui.show_over.toggled.connect(self.update_cmap)
-
-        self.ui.log_scale.toggled.connect(self.update_norm)
+        self.ui.scaling.currentIndexChanged.connect(self.update_scaling)
 
     def range_edited(self):
         self.update_bc_editor()
@@ -86,10 +96,11 @@ class ColorMapEditor:
         bc.ui.finished.connect(self.remove_bc_editor)
 
         # Hide overlays while the BC editor is open
-        self._bc_previous_show_overlays = HexrdConfig().show_overlays
-        if self._bc_previous_show_overlays:
-            HexrdConfig().show_overlays = False
-            HexrdConfig().active_material_modified.emit()
+        if self.hide_overlays_during_bc_editing:
+            self._bc_previous_show_overlays = HexrdConfig().show_overlays
+            if self._bc_previous_show_overlays:
+                HexrdConfig().show_overlays = False
+                HexrdConfig().active_material_modified.emit()
 
         self.update_bc_editor()
 
@@ -107,7 +118,12 @@ class ColorMapEditor:
     def remove_bc_editor(self):
         self.bc_editor = None
 
-        if self._bc_previous_show_overlays and not HexrdConfig().show_overlays:
+        show_overlays = (
+            self.hide_overlays_during_bc_editing and
+            self._bc_previous_show_overlays and
+            not HexrdConfig().show_overlays
+        )
+        if show_overlays:
             # Show the overlays again
             HexrdConfig().show_overlays = True
             HexrdConfig().active_material_modified.emit()
@@ -191,15 +207,13 @@ class ColorMapEditor:
     def update_norm(self):
         min = self.ui.minimum.value()
         max = self.ui.maximum.value()
-
-        if self.ui.log_scale.isChecked():
-            # The min cannot be 0 here, or this will raise an exception
-            # For some reason, if it is less than 1.e-7, for some datasets,
-            # matplotlib will round it to 0, and then raise an exception.
-            # Thus, keep it at 1.e-7 for now.
-            min = 1.e-7 if min < 1.e-7 else min
-            norm = matplotlib.colors.LogNorm(vmin=min, vmax=max)
-        else:
-            norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
-
+        norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
         self.image_object.set_norm(norm)
+
+    def update_scaling(self):
+        new_scaling = SCALING_OPTIONS[self.ui.scaling.currentText()]
+        self.image_object.set_scaling(new_scaling)
+
+        # Reset the bounds, as the histogram could potentially have moved.
+        # This will update the data too.
+        self.update_bounds(self.image_object.scaled_image_data)
