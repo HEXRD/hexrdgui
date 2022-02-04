@@ -20,7 +20,6 @@ from hexrd.wppf.wppfsupport import (
     _generate_default_parameters_Rietveld,
 )
 
-from hexrd.ui.constants import OverlayType
 from hexrd.ui.dynamic_widget import DynamicWidget
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
@@ -281,17 +280,16 @@ class WppfOptionsDialog(QObject):
 
     @property
     def powder_overlay_materials(self):
-        overlays = HexrdConfig().overlays
-        overlays = [x for x in overlays if x['type'] == OverlayType.powder]
-        return list(dict.fromkeys([x['material'] for x in overlays]))
+        overlays = [x for x in HexrdConfig().overlays if x.is_powder]
+        return list(dict.fromkeys([x.material_name for x in overlays]))
 
     @property
     def selected_materials(self):
         if not hasattr(self, '_selected_materials'):
             # Choose the visible ones with powder overlays by default
-            overlays = [x for x in HexrdConfig().overlays if x['visible']]
-            overlays = [x for x in overlays if x['type'] == OverlayType.powder]
-            materials = [x['material'] for x in overlays]
+            overlays = HexrdConfig().overlays
+            overlays = [x for x in overlays if x.is_powder and x.visible]
+            materials = [x.material_name for x in overlays]
             self._selected_materials = list(dict.fromkeys(materials))
 
         return self._selected_materials

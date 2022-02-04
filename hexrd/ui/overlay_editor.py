@@ -38,7 +38,7 @@ class OverlayEditor:
 
     @property
     def type(self):
-        return self.overlay['type'] if self.overlay else None
+        return self.overlay.type if self.overlay else None
 
     def update_type_tab(self):
         if self.type is None:

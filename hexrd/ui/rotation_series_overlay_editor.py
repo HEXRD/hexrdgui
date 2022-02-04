@@ -5,9 +5,6 @@ import numpy as np
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QInputDialog
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
-from hexrd.ui.constants import (
-    DEFAULT_CRYSTAL_PARAMS, DEFAULT_CRYSTAL_REFINEMENTS
-)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ranges_table_editor import RangesTableEditor
@@ -44,7 +41,7 @@ class RotationSeriesOverlayEditor:
         self.omega_ranges_editor.data_modified.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
         self.crystal_editor.refinements_modified.connect(
-            self.update_refinements)
+            self.update_overlay_refinements)
 
         for w in self.widgets:
             if isinstance(w, QDoubleSpinBox):
@@ -70,28 +67,10 @@ class RotationSeriesOverlayEditor:
     @overlay.setter
     def overlay(self, v):
         self._overlay = v
-        self.validate_options()
         self.update_gui()
 
     def new_images_loaded(self):
-        if self.overlay:
-            self.validate_options()
-            self.update_gui()
-
-    def validate_options(self):
-        options = self.overlay.get('options', {})
-
-        force_aggregated = (
-            HexrdConfig().is_aggregated or
-            not HexrdConfig().has_omegas or
-            'aggregated' not in options
-        )
-        if force_aggregated:
-            options['aggregated'] = True
-            self.overlay['update_needed'] = True
-
-        if self.overlay.get('update_needed', True):
-            HexrdConfig().overlay_config_changed.emit()
+        self.update_gui()
 
     def update_enable_states(self):
         is_aggregated = HexrdConfig().is_aggregated
@@ -100,15 +79,13 @@ class RotationSeriesOverlayEditor:
         self.ui.aggregated.setEnabled(has_omegas and not is_aggregated)
 
         if self.overlay is not None:
-            internal = self.overlay.setdefault('internal', {})
-
-            sync_ome_ranges = internal.get('sync_ome_ranges', True)
+            sync_ome_ranges = self.overlay.sync_ome_ranges
             disable = sync_ome_ranges and has_omegas
             self.omega_ranges_editor.ui.setDisabled(disable)
 
-            sync_ome_period = internal.get('sync_ome_period', True)
+            sync_ome_period = self.overlay.sync_ome_period
             disable = sync_ome_period and has_omegas
-            for w in self.omega_period_widgets:
+            for w in self.ome_period_widgets:
                 w.setDisabled(disable)
 
         enable_widths = self.enable_widths
@@ -121,45 +98,32 @@ class RotationSeriesOverlayEditor:
         for name in names:
             getattr(self.ui, name).setEnabled(enable_widths)
 
+    @property
+    def matching_attributes(self):
+        return [
+            'crystal_params',
+            'refinements',
+            'ome_period',
+            'aggregated',
+            'ome_width',
+            'eta_ranges',
+            'ome_ranges',
+            'tth_width',
+            'eta_width',
+            'sync_ome_ranges',
+            'sync_ome_period',
+        ]
+
     def update_gui(self):
-        if self.overlay is None:
+        overlay = self.overlay
+        if overlay is None:
             return
 
         with block_signals(*self.widgets):
-            options = self.overlay.get('options', {})
-            if 'crystal_params' in options:
-                self.crystal_params = options['crystal_params']
-            if 'ome_period' in options:
-                self.omega_period = options['ome_period']
-            if 'aggregated' in options:
-                self.aggregated = options['aggregated']
-            if 'ome_width' in options:
-                self.ome_width = options['ome_width']
-            if 'eta_ranges' in options:
-                self.eta_ranges = options['eta_ranges']
-            if 'ome_ranges' in options:
-                self.ome_ranges = options['ome_ranges']
-            if 'tth_width' in options:
-                self.tth_width = options['tth_width']
-            if 'eta_width' in options:
-                self.eta_width = options['eta_width']
+            for attr in self.matching_attributes:
+                setattr(self, attr, getattr(overlay, attr))
 
-            internal = self.overlay.get('internal', {})
-            self.sync_ome_ranges = internal.get('sync_ome_ranges', True)
-            self.sync_ome_period = internal.get('sync_ome_period', True)
-
-        if 'crystal_params' in options:
-            self.crystal_params = options['crystal_params']
-        else:
-            self.crystal_params = DEFAULT_CRYSTAL_PARAMS.copy()
-
-        if 'refinements' in self.overlay:
-            self.refinements = self.overlay['refinements']
-        else:
-            self.refinements = copy.deepcopy(DEFAULT_CRYSTAL_REFINEMENTS)
-
-        widths = ['tth_width', 'eta_width']
-        self.enable_widths = all(options.get(x) is not None for x in widths)
+        self.enable_widths = overlay.has_widths
         self.update_reflections_table()
         self.update_enable_states()
 
@@ -167,23 +131,16 @@ class RotationSeriesOverlayEditor:
         if self.overlay is None:
             return
 
-        options = self.overlay.setdefault('options', {})
-        options['crystal_params'] = self.crystal_params
-        options['ome_period'] = self.omega_period
-        options['aggregated'] = self.aggregated
-        options['ome_width'] = self.ome_width
-        options['eta_ranges'] = self.eta_ranges
-        options['ome_ranges'] = self.ome_ranges
-        options['tth_width'] = self.tth_width
-        options['eta_width'] = self.eta_width
+        for attr in self.matching_attributes:
+            setattr(self.overlay, attr, getattr(self, attr))
 
-        self.update_refinements()
-
-        self.overlay['update_needed'] = True
+        self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
-    def update_refinements(self):
-        self.overlay['refinements'] = self.refinements
+    def update_overlay_refinements(self):
+        # update_config() does this, but it will also force a redraw
+        # of the overlay, which we don't need.
+        self.overlay.refinements = self.refinements
 
     @property
     def crystal_params(self):
@@ -195,7 +152,7 @@ class RotationSeriesOverlayEditor:
 
     @property
     def refinements(self):
-        return copy.deepcopy(self.crystal_editor.refinements)
+        return self.crystal_editor.refinements
 
     @refinements.setter
     def refinements(self, v):
@@ -250,16 +207,16 @@ class RotationSeriesOverlayEditor:
         self.ui.sync_ome_period.setChecked(b)
 
     @property
-    def omega_period_widgets(self):
+    def ome_period_widgets(self):
         return [getattr(self.ui, f'omega_period_{i}') for i in range(2)]
 
     @property
-    def omega_period(self):
-        return [np.radians(w.value()) for w in self.omega_period_widgets]
+    def ome_period(self):
+        return [np.radians(w.value()) for w in self.ome_period_widgets]
 
-    @omega_period.setter
-    def omega_period(self, v):
-        for val, w in zip(v, self.omega_period_widgets):
+    @ome_period.setter
+    def ome_period(self, v):
+        for val, w in zip(v, self.ome_period_widgets):
             w.setValue(np.degrees(val))
 
     @property
@@ -306,15 +263,11 @@ class RotationSeriesOverlayEditor:
             self.ui.enable_widths,
             self.ui.tth_width,
             self.ui.eta_width,
-        ] + self.omega_period_widgets
+        ] + self.ome_period_widgets
 
     @property
     def material(self):
-        if self.overlay is None:
-            return None
-
-        name = self.overlay['material']
-        return HexrdConfig().material(name)
+        return self.overlay.material if self.overlay is not None else None
 
     def update_reflections_table(self):
         if hasattr(self, '_table'):
@@ -352,27 +305,15 @@ class RotationSeriesOverlayEditor:
         self.update_config()
 
     def sync_ome_ranges_toggled(self):
-        b = self.sync_ome_ranges
         if self.overlay is None:
             return
 
-        internal = self.overlay.setdefault('internal', {})
-        internal['sync_ome_ranges'] = b
-
-        if b:
-            HexrdConfig().process_overlay_updates()
-
+        self.overlay.sync_ome_ranges = self.sync_ome_ranges
         self.update_enable_states()
 
     def sync_ome_period_toggled(self):
-        b = self.sync_ome_period
         if self.overlay is None:
             return
 
-        internal = self.overlay.setdefault('internal', {})
-        internal['sync_ome_period'] = b
-
-        if b:
-            HexrdConfig().process_overlay_updates()
-
+        self.overlay.sync_ome_period = self.sync_ome_period
         self.update_enable_states()

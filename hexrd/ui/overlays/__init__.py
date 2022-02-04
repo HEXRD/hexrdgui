@@ -1,78 +1,40 @@
-import copy
-
-from hexrd import unitcell
-
-from hexrd.ui.overlays.laue_diffraction import LaueSpotOverlay
-from hexrd.ui.overlays.rotation_series import RotationSeriesSpotOverlay
-from hexrd.ui.overlays.powder_diffraction import PowderLineOverlay
-
-from hexrd.ui import constants
 from hexrd.ui.constants import OverlayType
-from hexrd.ui.utils import array_index_in_list
+
+from . import compatibility
+from .laue_overlay import LaueOverlay
+from .overlay import Overlay
+from .powder_overlay import PowderOverlay
+from .rotation_series_overlay import RotationSeriesOverlay
+
+type_dict = {
+    OverlayType.laue: LaueOverlay,
+    OverlayType.powder: PowderOverlay,
+    OverlayType.rotation_series: RotationSeriesOverlay,
+}
 
 
-def overlay_generator(overlay_type):
-    generators = {
-        OverlayType.powder: PowderLineOverlay,
-        OverlayType.laue: LaueSpotOverlay,
-        OverlayType.rotation_series: RotationSeriesSpotOverlay,
-    }
+def create_overlay(material_name, type, **kwargs):
+    if type not in type_dict:
+        raise Exception(f'Unknown overlay type: {type}')
 
-    if overlay_type not in generators:
-        raise Exception(f'Unknown overlay type: {overlay_type}')
-
-    return generators[overlay_type]
+    return type_dict[type](material_name, **kwargs)
 
 
-def default_overlay_style(overlay_type):
-    default_styles = {
-        OverlayType.powder: constants.DEFAULT_POWDER_STYLE,
-        OverlayType.laue: constants.DEFAULT_LAUE_STYLE,
-        OverlayType.rotation_series: constants.DEFAULT_ROTATION_SERIES_STYLE,
-    }
-
-    if overlay_type not in default_styles:
-        raise Exception(f'Unknown overlay type: {overlay_type}')
-
-    return copy.deepcopy(default_styles[overlay_type])
+def to_dict(overlay):
+    # Route the call through the compatibilty module to take care
+    # of versioning.
+    return compatibility.to_dict(overlay)
 
 
-def default_overlay_options(overlay_type):
-    default_options = {
-        OverlayType.powder: constants.DEFAULT_POWDER_OPTIONS,
-        OverlayType.laue: constants.DEFAULT_LAUE_OPTIONS,
-        OverlayType.rotation_series: constants.DEFAULT_ROTATION_SERIES_OPTIONS,
-    }
+def from_dict(d):
+    type = OverlayType(d.pop('type'))
+    if type not in type_dict:
+        raise Exception(f'Unknown overlay type: {type}')
 
-    if overlay_type not in default_options:
-        raise Exception(f'Unknown overlay type: {overlay_type}')
-
-    return copy.deepcopy(default_options[overlay_type])
-
-
-def default_overlay_refinements(overlay):
-    from hexrd.ui.hexrd_config import HexrdConfig
-
-    material = HexrdConfig().material(overlay['material'])
-    overlay_type = overlay['type']
-
-    default_refinements = {
-        OverlayType.powder: constants.DEFAULT_POWDER_REFINEMENTS,
-        OverlayType.laue: constants.DEFAULT_CRYSTAL_REFINEMENTS,
-        OverlayType.rotation_series: constants.DEFAULT_CRYSTAL_REFINEMENTS,
-    }
-
-    if overlay_type not in default_refinements:
-        raise Exception(f'Unknown overlay type: {overlay_type}')
-
-    refinements = copy.deepcopy(default_refinements[overlay_type])
-
-    if overlay_type == OverlayType.powder:
-        # Only give it the required indices
-        indices = unitcell._rqpDict[material.unitcell.latticeType][0]
-        refinements = [refinements[i] for i in indices]
-
-    return refinements
+    cls = type_dict[type]
+    # Route the call through the compatibilty module to take care
+    # of versioning.
+    return compatibility.from_dict(cls, d)
 
 
 def update_overlay_data(instr, display_mode):
@@ -83,91 +45,18 @@ def update_overlay_data(instr, display_mode):
         return
 
     for overlay in HexrdConfig().overlays:
-        if not overlay['visible']:
+        if not overlay.visible:
             # Skip over invisible overlays
             continue
 
-        if not overlay.get('update_needed', True):
-            # If it doesn't need an update, skip it
-            continue
-
-        overlay['data'].clear()
-
-        mat_name = overlay['material']
-        mat = HexrdConfig().material(mat_name)
-
-        if not mat:
-            # Print a warning, as this shouldn't happen
-            print('Warning in update_overlay_data():',
-                  f'{mat_name} is not a valid material')
-            continue
-
-        type = overlay['type']
-        kwargs = {
-            'plane_data': mat.planeData,
-            'instr': instr,
-            'eta_period': HexrdConfig().polar_res_eta_period
-        }
-        # Add any options
-        kwargs.update(overlay.get('options', {}))
-
-        generator = overlay_generator(type)(**kwargs)
-        overlay['data'] = generator.overlay(display_mode)
-        overlay['update_needed'] = False
+        overlay.instrument = instr
+        overlay.display_mode = display_mode
+        overlay.update_needed = True
 
 
-def path_to_hkl(overlay, detector_name, hkl):
-    data_key_map = {
-        OverlayType.powder: 'rings',
-        OverlayType.laue: 'spots',
-        OverlayType.rotation_series: 'data',
-    }
-
-    overlay_type = overlay['type']
-    if overlay_type not in data_key_map:
-        raise NotImplementedError(overlay_type)
-
-    data_key = data_key_map[overlay_type]
-
-    detector_data = overlay['data'][detector_name]
-    ind = array_index_in_list(hkl, detector_data['hkls'])
-    if ind == -1:
-        raise Exception(f'Failed to find path to hkl: {hkl}')
-
-    return (detector_name, data_key, ind)
-
-
-def overlay_from_name(name):
-    # Name is <material> <type>
-    material, type = name.split()
-
-    from hexrd.ui.hexrd_config import HexrdConfig
-
-    for overlay in HexrdConfig().overlays:
-        matches = (
-            material == overlay['material'] and
-            type == overlay['type'].value
-        )
-        if matches:
-            return overlay
-
-
-def overlay_name(overlay):
-    from hexrd.ui.hexrd_config import HexrdConfig
-
-    material = overlay['material']
-    type = overlay['type']
-
-    duplicate_index = 1
-    for o in HexrdConfig().overlays:
-        if o is overlay:
-            break
-
-        if o['material'] == material and o['type'] == type:
-            duplicate_index += 1
-
-    name = f'{material} {type.value}'
-    if duplicate_index > 1:
-        name += f' {duplicate_index}'
-
-    return name
+__all__ = [
+    'LaueOverlay',
+    'Overlay',
+    'PowderOverlay',
+    'RotationSeriesOverlay',
+]

@@ -5,11 +5,13 @@ import time
 import glob
 from concurrent.futures import ThreadPoolExecutor
 
-from hexrd import imageseries
-from hexrd.imageseries.omega import OmegaImageSeries
+import numpy as np
 
 from PySide2.QtCore import QObject, QThreadPool, Signal
 from PySide2.QtWidgets import QMessageBox
+
+from hexrd import imageseries
+from hexrd.imageseries.omega import OmegaImageSeries
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -207,8 +209,6 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             self.update_needed.emit()
         if self.transformed_images:
             HexrdConfig().deep_rerender_needed.emit()
-
-        HexrdConfig().process_overlay_updates()
 
     def get_dark_aggr_op(self, ims, idx):
         """

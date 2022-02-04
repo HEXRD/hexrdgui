@@ -5,7 +5,6 @@ from PySide2.QtCore import QCoreApplication
 from hexrd.wppf import Rietveld
 
 from hexrd.ui.calibration.wppf_options_dialog import WppfOptionsDialog
-from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
@@ -31,10 +30,7 @@ class WppfRunner:
 
     @property
     def visible_powder_overlays(self):
-        return [
-            x for x in HexrdConfig().overlays
-            if (x['type'] == OverlayType.powder and x['visible'])
-        ]
+        return [x for x in HexrdConfig().overlays if x.is_powder and x.visible]
 
     def select_options(self):
         dialog = WppfOptionsDialog(self.parent)

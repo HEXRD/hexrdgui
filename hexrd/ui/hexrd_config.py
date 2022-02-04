@@ -12,7 +12,6 @@ import yaml
 
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
-from hexrd.findorientations import _process_omegas
 from hexrd.instrument import HEDMInstrument
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
@@ -287,7 +286,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('load_panel_state', {}),
             ('stack_state', {}),
             ('llnl_boundary_positions', {}),
-            ('overlays', [])
+            ('overlays_dictified', [])
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -297,6 +296,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'llnl_boundary_positions': 'boundary_positions',
             'stack_state': 'image_stack_state',
             'active_material_name': 'active_material',
+            'overlays_dictified': 'overlays',
         }
 
         if attribute_name in exceptions:
@@ -323,10 +323,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         Return a dict of the parts of HexrdConfig that should persisted to
         preserve the state of the application.
         """
-
-        # Clear the overlay data and before generating state
-        HexrdConfig().clear_overlay_data()
-
         state = {}
         for name, _ in self._attributes_to_persist():
             state[self._attribute_to_settings_key(name)] = getattr(self, name)
@@ -342,11 +338,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # The "active_material_name" is a special case that will be set to
         # "previous_active_material".
-        # We have to special case euler_angle_convention as its need to be set
-        # using set_euler_angle_convention, see below
+        # We need to set euler_angle_convention and overlays in a special way
         skip = [
             'active_material_name',
             'euler_angle_convention',
+            'overlays_dictified',
         ]
 
         try:
@@ -376,7 +372,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.set_euler_angle_convention(conv, convert_config=False)
 
-        self.overlays = self.overlays if self.overlays is not None else []
+        def set_overlays():
+            self.overlays_dictified = state['overlays_dictified']
+
+        if 'overlays_dictified' in state:
+            # Powder overlays need a fully constructed HexrdConfig object
+            # to set the refinements (because it needs to get the material)
+            # Thus, set the overlays later.
+            QTimer.singleShot(0, set_overlays)
 
     def save_settings(self):
         settings = QSettings()
@@ -390,9 +393,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         state = self._load_state_from_settings(settings)
         self.load_from_state(state)
 
-        # For backward compatibility.
-        # Perform after HexrdConfig() has finished being created...
-        QTimer.singleShot(0, self.validate_overlays)
+    @property
+    def overlays_dictified(self):
+        return [overlays.to_dict(x) for x in self.overlays]
+
+    @overlays_dictified.setter
+    def overlays_dictified(self, v):
+        self.overlays = []
+        for overlay_dict in v:
+            self.overlays.append(overlays.from_dict(overlay_dict))
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -1199,8 +1208,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Rename any overlays as well
         for overlay in self.overlays:
-            if overlay['material'] == old_name:
-                overlay['material'] = new_name
+            if overlay.material_name == old_name:
+                overlay.material_name = new_name
 
         if self.active_material_name == old_name:
             # Set the dict directly to bypass the updates that occur
@@ -1329,7 +1338,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if not self.show_overlays:
             return []
 
-        return list({x['material'] for x in self.overlays if x['visible']})
+        return list({x.material_name for x in self.overlays if x.visible})
 
     def reset_tth_max(self, material_name):
         # Sets the tth_max of the material to match that of the polar
@@ -1405,22 +1414,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def prune_overlays(self):
         # Removes overlays for which we do not have a material
         mats = list(self.materials.keys())
-        self.overlays = [x for x in self.overlays if x['material'] in mats]
+        self.overlays = [x for x in self.overlays if x.material_name in mats]
         self.overlay_config_changed.emit()
 
-    def append_overlay(self, material_name, type, style=None, visible=True):
-        if style is None:
-            style = overlays.default_overlay_style(type)
-
-        overlay = {
-            'material': material_name,
-            'type': type,
-            'style': style,
-            'visible': visible,
-            'options': overlays.default_overlay_options(type),
-            'data': {},
-        }
-        overlay['refinements'] = overlays.default_overlay_refinements(overlay)
+    def append_overlay(self, material_name, type):
+        overlay = overlays.create_overlay(material_name, type)
         self.overlays.append(overlay)
         self.overlay_config_changed.emit()
 
@@ -1430,52 +1428,29 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return
 
         overlay = self.overlays[i]
-        if overlay['type'] == type:
+        if overlay.type == type:
             # No change needed
             return
 
-        overlay['type'] = type
-        overlay['style'] = overlays.default_overlay_style(type)
-        overlay['options'] = overlays.default_overlay_options(type)
-        overlay['refinements'] = overlays.default_overlay_refinements(overlay)
-        overlay['update_needed'] = True
+        new_overlay = overlays.create_overlay(overlay.material_name, type)
+        new_overlay.instrument = self.overlays[i].instrument
+        self.overlays[i] = new_overlay
 
     def clear_overlay_data(self):
         for overlay in self.overlays:
-            overlay['data'].clear()
-            if 'update_needed' in overlay:
-                del overlay['update_needed']
-            if 'highlights' in overlay:
-                del overlay['highlights']
+            overlay.update_needed = True
 
     def flag_overlay_updates_for_active_material(self):
         self.flag_overlay_updates_for_material(self.active_material_name)
 
     def flag_overlay_updates_for_material(self, material_name):
         for overlay in self.overlays:
-            if overlay['material'] == material_name:
-                overlay['update_needed'] = True
+            if overlay.material_name == material_name:
+                overlay.update_needed = True
 
     def flag_overlay_updates_for_all_materials(self):
         for name in self.materials:
             self.flag_overlay_updates_for_material(name)
-
-    def validate_overlays(self):
-        # Ensure backward-compatibility with previous settings
-        for overlay in self.overlays:
-            overlay['type'] = constants.OverlayType(overlay['type'])
-            default_refinements = overlays.default_overlay_refinements(overlay)
-            if len(default_refinements) != len(overlay.get('refinements', [])):
-                name = f'{overlay["material"]} {overlay["type"].name}'
-                print(f'Warning: resetting overlay refinements for "{name}"',
-                      'due to length mismatch')
-                overlay['refinements'] = default_refinements
-
-            if overlay['type'] == constants.OverlayType.rotation_series:
-                if self.is_aggregated or not self.has_omegas:
-                    # Force aggregation
-                    overlay.get('options', {})['aggregated'] = True
-                    overlay['update_needed'] = True
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
@@ -2011,36 +1986,3 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @config_image.setter
     def config_image(self, image):
         self.config['image'] = image
-
-    def process_overlay_updates(self):
-        # Perform any overlay processing needed from loading new images
-        rotation_series_overlays = [
-            overlay for overlay in self.overlays
-            if overlay['type'] == constants.OverlayType.rotation_series]
-
-        if rotation_series_overlays:
-            ims_dict = self.omega_imageseries_dict
-            if ims_dict is None:
-                ome_period = None
-                ome_ranges = None
-            else:
-                ome_period, ome_ranges = _process_omegas(ims_dict)
-
-            for overlay in rotation_series_overlays:
-                internal = overlay.get('internal', {})
-                sync_ome_period = internal.get('sync_ome_period', True)
-                sync_ome_ranges = internal.get('sync_ome_ranges', True)
-
-                if sync_ome_period and ome_period is not None:
-                    options = overlay.setdefault('options', {})
-                    options['ome_period'] = np.radians(ome_period)
-                    overlay['update_needed'] = True
-
-                if sync_ome_ranges and ome_ranges is not None:
-                    options = overlay.setdefault('options', {})
-                    options['ome_ranges'] = np.radians(ome_ranges)
-                    overlay['update_needed'] = True
-
-        if any(o.get('update_needed', True) for o in self.overlays):
-            self.overlay_config_changed.emit()
-            self.update_overlay_editor.emit()

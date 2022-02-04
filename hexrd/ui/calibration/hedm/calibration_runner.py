@@ -10,13 +10,11 @@ from hexrd.ui.calibration.hedm import (
     HEDMCalibrationOptionsDialog,
     HEDMCalibrationResultsDialog,
 )
-from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.create_config import (
     create_indexing_config, OmegasNotFoundError
 )
 from hexrd.ui.message_box import MessageBox
-from hexrd.ui.overlays import overlay_name
 from hexrd.ui.utils import instr_to_internal_dict
 
 
@@ -57,7 +55,7 @@ class HEDMCalibrationRunner(QObject):
 
         gw = instrument.GrainDataWriter(array=self.grains_table)
         for i, overlay in enumerate(self.active_overlays):
-            gw.dump_grain(i, 1, 0, overlay['options']['crystal_params'])
+            gw.dump_grain(i, 1, 0, overlay.crystal_params)
 
         kwargs = {
             'material': self.material,
@@ -297,18 +295,17 @@ class HEDMCalibrationRunner(QObject):
 
         outputs = {}
         for i, overlay in enumerate(self.active_overlays):
-            options = overlay['options']
             kwargs = {
                 'plane_data': self.material.planeData,
-                'grain_params': overlay['options']['crystal_params'],
-                'tth_tol': np.degrees(options['tth_width']),
-                'eta_tol': np.degrees(options['eta_width']),
-                'ome_tol': np.degrees(options['ome_width']),
+                'grain_params': overlay.crystal_params,
+                'tth_tol': np.degrees(overlay.tth_width),
+                'eta_tol': np.degrees(overlay.eta_width),
+                'ome_tol': np.degrees(overlay.ome_width),
                 'imgser_dict': imsd,
                 'npdiv': cfg.fit_grains.npdiv,
                 'threshold': cfg.fit_grains.threshold,
-                'eta_ranges': options['eta_ranges'],
-                'ome_period': options['ome_period'],
+                'eta_ranges': overlay.eta_ranges,
+                'ome_period': overlay.ome_period,
                 'dirname': cfg.analysis_dir,
                 'filename': None,
                 'return_spot_list': False,
@@ -348,10 +345,10 @@ class HEDMCalibrationRunner(QObject):
         # Next, the overlay parameters
         pname_start_ind = len(instr_flags)
         for results, overlay in zip(self.results, self.active_overlays):
-            name = overlay_name(overlay)
-            refinements = self.overlay_refinements(overlay)
+            name = overlay.name
+            refinements = overlay.refinements
             if any(refinements):
-                old_values = overlay['options']['crystal_params'][refinements]
+                old_values = overlay.crystal_params[refinements]
                 new_values = results[refinements]
                 refinable = np.where(refinements)[0]
 
@@ -379,7 +376,7 @@ class HEDMCalibrationRunner(QObject):
 
         # Update rotation series parameters from the results
         for results, overlay in zip(self.results, self.active_overlays):
-            overlay['options']['crystal_params'][:] = results
+            overlay.crystal_params[:] = results
 
         # Update modified instrument parameters
         output_dict = instr_to_internal_dict(self.instr)
@@ -443,13 +440,11 @@ class HEDMCalibrationRunner(QObject):
 
     @property
     def visible_overlays(self):
-        return [x for x in self.overlays if x['visible']]
+        return [x for x in self.overlays if x.visible]
 
     @property
     def visible_rotation_series_overlays(self):
-        overlays = self.visible_overlays
-        needed_type = OverlayType.rotation_series
-        return [x for x in overlays if x['type'] == needed_type]
+        return [x for x in self.visible_overlays if x.is_rotation_series]
 
     @property
     def active_overlays(self):
@@ -467,19 +462,15 @@ class HEDMCalibrationRunner(QObject):
     @property
     def ome_period(self):
         # These should be the same for all overlays, and it is pre-validated
-        return np.degrees(self.first_active_overlay['options']['ome_period'])
+        return np.degrees(self.first_active_overlay.ome_period)
 
     @property
     def material(self):
-        overlay = self.first_active_overlay
-        return HexrdConfig().material(overlay['material']) if overlay else None
+        return self.first_active_overlay.material
 
     @property
     def active_overlay_refinements(self):
-        return [self.overlay_refinements(x) for x in self.active_overlays]
-
-    def overlay_refinements(self, overlay):
-        return [x[1] for x in overlay['refinements']]
+        return [x.refinements for x in self.active_overlays]
 
     def clobber_refinements(self):
         any_clobbering = (
@@ -491,15 +482,15 @@ class HEDMCalibrationRunner(QObject):
             return
 
         for overlay in self.active_overlays:
-            refinements = overlay['refinements']
+            refinements = overlay.refinements
             if self.clobber_strain:
                 for i in range(6, len(refinements)):
-                    refinements[i] = (refinements[i][0], False)
+                    refinements[i] = False
             if self.clobber_centroid:
                 for i in range(3, 6):
-                    refinements[i] = (refinements[i][0], False)
+                    refinements[i] = False
             if self.clobber_grain_Y:
-                refinements[4] = (refinements[4][0], False)
+                refinements[4] = False
 
         HexrdConfig().update_overlay_editor.emit()
 
@@ -523,15 +514,14 @@ class HEDMCalibrationRunner(QObject):
 
         ome_periods = []
         for overlay in self.active_overlays:
-            options = overlay['options']
-            if any(options.get(x) is None for x in ('eta_width', 'tth_width')):
+            if not overlay.has_widths:
                 msg = (
                     'All visible rotation series overlays must have widths '
                     'enabled'
                 )
                 raise Exception(msg)
 
-            ome_periods.append(options['ome_period'])
+            ome_periods.append(overlay.ome_period)
 
         for i in range(1, len(ome_periods)):
             if not np.allclose(ome_periods[0], ome_periods[i]):
@@ -541,7 +531,7 @@ class HEDMCalibrationRunner(QObject):
                 )
                 raise Exception(msg)
 
-        materials = [overlay['material'] for overlay in self.active_overlays]
+        materials = [overlay.material_name for overlay in self.active_overlays]
         if not all(x == materials[0] for x in materials):
             msg = (
                 'All visible rotation series overlays must have the same '

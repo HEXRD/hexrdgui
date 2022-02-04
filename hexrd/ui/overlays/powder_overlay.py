@@ -1,39 +1,46 @@
 import numpy as np
 
 from hexrd import constants
+from hexrd import unitcell
 
 from hexrd.transforms import xfcapi
 
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import OverlayType, ViewType
+from hexrd.ui.overlays.overlay import Overlay
 
 
-nans_row = np.nan*np.ones((1, 2))
+class PowderOverlay(Overlay):
 
+    type = OverlayType.powder
+    hkl_data_key = 'rings'
 
-class PowderLineOverlay:
-    def __init__(self, plane_data, instr, tvec=np.zeros(3),
-                 eta_steps=360, eta_period=np.r_[-180., 180.]):
-        self._plane_data = plane_data
-        self._instrument = instr
-        tvec = np.asarray(tvec, float).flatten()
-        assert len(tvec) == 3, "tvec input must have exactly 3 elements"
-        self._tvec = tvec
-        self._eta_steps = eta_steps
+    def __init__(self, material_name, tvec=None, eta_steps=360,
+                 eta_period=None, **overlay_kwargs):
+        super().__init__(material_name, **overlay_kwargs)
 
-        eta_period = np.asarray(eta_period, float).flatten()
-        assert len(eta_period) == 2, "eta period must be a 2-element sequence"
-        if xfcapi.angularDifference(eta_period[0], eta_period[1],
-                                    units='degrees') > 1e-4:
-            raise RuntimeError("period specification is not 360 degrees")
-        self._eta_period = eta_period
+        if tvec is None:
+            tvec = constants.zeros_3.copy()
 
-    @property
-    def plane_data(self):
-        return self._plane_data
+        if eta_period is None:
+            eta_period = np.r_[-180., 180.]
+
+        self.tvec = tvec
+        self.eta_steps = eta_steps
+        self.eta_period = eta_period
 
     @property
-    def instrument(self):
-        return self._instrument
+    def child_attributes_to_save(self):
+        # These names must be identical here, as attributes, and as
+        # arguments to the __init__ method.
+        return [
+            'tvec',
+            'eta_steps',
+            'eta_period',
+        ]
+
+    @property
+    def has_widths(self):
+        return self.material.planeData.tThWidth is not None
 
     @property
     def tvec(self):
@@ -56,7 +63,7 @@ class PowderLineOverlay:
 
     @property
     def delta_eta(self):
-        return 360./float(self.eta_steps)
+        return 360 / self.eta_steps
 
     @property
     def eta_period(self):
@@ -70,9 +77,63 @@ class PowderLineOverlay:
             raise RuntimeError("period specification is not 360 degrees")
         self._eta_period = x
 
-    def overlay(self, display_mode=ViewType.raw):
-        tths = self.plane_data.getTTh()
-        hkls = self.plane_data.getHKLs()
+    @property
+    def all_refinements(self):
+        # This doesn't take into account crystal symmetry
+        if not hasattr(self, '_all_refinements'):
+            self._all_refinements = self.default_refinements
+        return self._all_refinements
+
+    @all_refinements.setter
+    def all_refinements(self, v):
+        if len(v) != 6:
+            raise Exception(f'{len(v)=} must be 6')
+        self._all_refinements = np.asarray(v)
+
+    @property
+    def refinements(self):
+        # Only return the required indices
+        return self.all_refinements[self.refinement_indices]
+
+    @refinements.setter
+    def refinements(self, v):
+        if len(v) == 6:
+            self.all_refinements = v
+        elif len(v) == len(self.refinement_indices):
+            self.all_refinements[self.refinement_indices] = v
+        else:
+            msg = f'{v=} must be length 6 or {len(self.refinement_indices)=}'
+            raise Exception(msg)
+
+    @property
+    def refinement_indices(self):
+        if self.material is None:
+            return np.asarray(range(6))
+        ltype = self.material.unitcell.latticeType
+        return np.asarray(unitcell._rqpDict[ltype][0])
+
+    @property
+    def all_refinement_labels(self):
+        return np.asarray(['a', 'b', 'c', 'α', 'β', 'γ'])
+
+    @property
+    def refinement_labels(self):
+        if self.material is None:
+            return self.all_refinement_labels
+
+        return self.all_refinement_labels[self.refinement_indices]
+
+    @property
+    def default_refinements(self):
+        return np.asarray([False] * 6)
+
+    def generate_overlay(self):
+        instr = self.instrument
+        plane_data = self.plane_data
+        display_mode = self.display_mode
+
+        tths = plane_data.getTTh()
+        hkls = plane_data.getHKLs()
         etas = np.radians(
             np.linspace(
                 -180., 180., num=self.eta_steps + 1
@@ -83,31 +144,31 @@ class PowderLineOverlay:
             # No overlays
             return {}
 
-        if self.plane_data.tThWidth is not None:
+        if plane_data.tThWidth is not None:
             # Need to get width data as well
-            indices, ranges = self.plane_data.getMergedRanges()
+            indices, ranges = plane_data.getMergedRanges()
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]
 
         point_groups = {}
-        for det_key, panel in self.instrument.detectors.items():
+        for det_key, panel in instr.detectors.items():
             keys = ['rings', 'rbnds', 'rbnd_indices', 'hkls']
             point_groups[det_key] = {key: [] for key in keys}
             ring_pts, skipped_tth = self.generate_ring_points(
-                tths, etas, panel, display_mode)
+                instr, tths, etas, panel, display_mode)
 
             det_hkls = [x for i, x in enumerate(hkls) if i not in skipped_tth]
 
             point_groups[det_key]['rings'] = ring_pts
             point_groups[det_key]['hkls'] = det_hkls
 
-            if self.plane_data.tThWidth is not None:
+            if plane_data.tThWidth is not None:
                 # Generate the ranges too
                 lower_pts, _ = self.generate_ring_points(
-                    r_lower, etas, panel, display_mode
+                    instr, r_lower, etas, panel, display_mode
                 )
                 upper_pts, _ = self.generate_ring_points(
-                    r_upper, etas, panel, display_mode
+                    instr, r_upper, etas, panel, display_mode
                 )
                 for lpts, upts in zip(lower_pts, upper_pts):
                     point_groups[det_key]['rbnds'] += [lpts, upts]
@@ -116,7 +177,7 @@ class PowderLineOverlay:
 
         return point_groups
 
-    def generate_ring_points(self, tths, etas, panel, display_mode):
+    def generate_ring_points(self, instr, tths, etas, panel, display_mode):
         delta_eta_nom = np.degrees(np.median(np.diff(etas)))
         ring_pts = []
         skipped_tth = []
@@ -131,7 +192,7 @@ class PowderLineOverlay:
             #     the proper cartesian coords.
             xys_full = panel.angles_to_cart(
                 ang_crds,
-                tvec_s=self.instrument.tvec,
+                tvec_s=instr.tvec,
                 tvec_c=self.tvec
             )
 
@@ -152,7 +213,7 @@ class PowderLineOverlay:
                 #     diffraction COM in the sameple frame!
                 ang_crds, _ = panel.cart_to_angles(
                     xys,
-                    tvec_s=self.instrument.tvec
+                    tvec_s=instr.tvec
                 )
                 if len(ang_crds) == 0:
                     skipped_tth.append(i)
@@ -227,3 +288,37 @@ class PowderLineOverlay:
                     ring_pts.append(np.vstack([nxys, nans_row]))
 
         return ring_pts, skipped_tth
+
+    @property
+    def default_style(self):
+        return {
+            'data': {
+                'c': '#00ffff',  # Cyan
+                'ls': 'solid',
+                'lw': 1.0
+            },
+            'ranges': {
+                'c': '#00ff00',  # Green
+                'ls': 'dotted',
+                'lw': 1.0
+            }
+        }
+
+    @property
+    def default_highlight_style(self):
+        return {
+            'data': {
+                'c': '#ff00ff',  # Magenta
+                'ls': 'solid',
+                'lw': 3.0
+            },
+            'ranges': {
+                'c': '#ff00ff',  # Magenta
+                'ls': 'dotted',
+                'lw': 3.0
+            }
+        }
+
+
+# Constants
+nans_row = np.nan * np.ones((1, 2))

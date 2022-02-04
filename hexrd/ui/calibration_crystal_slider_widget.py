@@ -3,7 +3,6 @@ from enum import IntEnum
 from PySide2.QtCore import QObject, QSignalBlocker, Signal
 from PySide2.QtWidgets import QProxyStyle, QStyle
 
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
 

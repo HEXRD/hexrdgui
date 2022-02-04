@@ -17,9 +17,9 @@ class OverlayStylePicker(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('overlay_style_picker.ui', parent)
 
-        self.original_style = copy.deepcopy(overlay['style'])
+        self.original_style = copy.deepcopy(overlay.style)
         self.overlay = overlay
-        self.ui.material_name.setText(overlay['material'])
+        self.ui.material_name.setText(overlay.material_name)
 
         self.setup_labels()
         self.setup_combo_boxes()
@@ -45,8 +45,6 @@ class OverlayStylePicker(QObject):
             w.setText(v)
 
     def setup_combo_boxes(self):
-        type = self.overlay['type']
-
         line_styles = [
             'solid',
             'dotted',
@@ -63,7 +61,7 @@ class OverlayStylePicker(QObject):
             'D'
         ]
 
-        if type in (OverlayType.laue, OverlayType.rotation_series):
+        if self.overlay.is_laue or self.overlay.is_rotation_series:
             data_styles = marker_styles
         else:
             data_styles = line_styles
@@ -80,7 +78,7 @@ class OverlayStylePicker(QObject):
 
     @property
     def style(self):
-        return self.overlay['style']
+        return self.overlay.style
 
     @property
     def all_widgets(self):
@@ -94,12 +92,11 @@ class OverlayStylePicker(QObject):
         ]
 
     def reset_style(self):
-        if self.overlay['style'] == self.original_style:
+        if self.overlay.style == self.original_style:
             # Nothing really to do...
             return
 
-        self.overlay['style'] = copy.deepcopy(self.original_style)
-        self.overlay['update_needed'] = True
+        self.overlay.style = copy.deepcopy(self.original_style)
         self.update_gui()
         HexrdConfig().overlay_config_changed.emit()
 
@@ -132,7 +129,7 @@ class OverlayStylePicker(QObject):
         ranges[keys['range_color']] = self.ui.range_color.text()
         ranges[keys['range_style']] = self.ui.range_style.currentData()
         ranges[keys['range_size']] = self.ui.range_size.value()
-        self.overlay['update_needed'] = True
+        self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
     def pick_color(self):
@@ -161,7 +158,7 @@ class OverlayStylePicker(QObject):
                 OverlayType.rotation_series: self.rotation_series_keys,
             }
 
-        type = self.overlay['type']
+        type = self.overlay.type
         if type not in self._keys:
             raise Exception(f'Unknown type: {type}')
 
@@ -203,7 +200,7 @@ class OverlayStylePicker(QObject):
                 OverlayType.rotation_series: self.rotation_series_labels,
             }
 
-        type = self.overlay['type']
+        type = self.overlay.type
         if type not in self._labels:
             raise Exception(f'Unknown type: {type}')
 

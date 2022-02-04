@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from hexrd.ui.constants import DEFAULT_CRYSTAL_PARAMS, OverlayType
+from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.tree_views.multi_column_dict_tree_view import (
     MultiColumnDictTreeView)
@@ -100,10 +100,10 @@ class RefinementsEditor:
     def create_materials_dict(self):
         mdict = {}
         for overlay in self.overlays:
-            name = unique_overlay_name(overlay)
+            name = overlay.name
             values = refinement_values(overlay)
             mdict[name] = {}
-            for rname, b in overlay['refinements']:
+            for rname, b in overlay.refinements_with_labels:
                 mdict[name][rname] = {}
                 mdict[name][rname]['_refinable'] = b
                 mdict[name][rname]['_value'] = values[rname]
@@ -151,12 +151,13 @@ class RefinementsEditor:
     def update_materials_config(self):
         mdict = self.dict['materials']
         for overlay in self.overlays:
-            name = unique_overlay_name(overlay)
+            name = overlay.name
+            refinements = []
             values = []
-            for i, ref in enumerate(overlay['refinements']):
-                new = (ref[0], mdict[name][ref[0]]['_refinable'])
-                overlay['refinements'][i] = new
-                values.append(mdict[name][ref[0]]['_value'])
+            for i, label in enumerate(overlay.refinement_labels):
+                refinements.append(mdict[name][label]['_refinable'])
+                values.append(mdict[name][label]['_value'])
+            overlay.refinements = refinements
             any_modified = set_refinement_values(overlay, values)
             if any_modified:
                 self.material_values_modified = True
@@ -219,43 +220,27 @@ class RefinementsEditor:
             set_refinements(det)
 
 
-def unique_overlay_name(overlay):
-    mat_name = overlay['material']
-    all_overlays = HexrdConfig().overlays
-    same_material = [x for x in all_overlays if x['material'] == mat_name]
-
-    if len(same_material) == 1:
-        return mat_name
-
-    for i, o in enumerate(same_material, 1):
-        if o is overlay:
-            return f'{mat_name}_{i}'
-
-
 def refinement_values(overlay):
     ret = {}
-    refinements = overlay['refinements']
 
     def powder_values():
-        material = HexrdConfig().material(overlay['material'])
+        material = overlay.material
         reduced_lparms = material.reduced_lattice_parameters
 
         # These params should be in the same order as the refinements
-        for i, (rname, _) in enumerate(refinements):
+        for i, label in enumerate(overlay.refinement_labels):
             x = reduced_lparms[i]
             units = 'angstrom' if x.isLength() else 'degrees'
-            ret[rname] = to_native(x.getVal(units))
+            ret[label] = to_native(x.getVal(units))
 
         return ret
 
     def laue_values():
-        options = overlay.setdefault('options', {})
-        params = options.get('crystal_params', DEFAULT_CRYSTAL_PARAMS.copy())
+        params = overlay.crystal_params
         # These params should be in the same order as the refinements
-        params = np.array(params)
         params[:3] = to_convention(params[:3])
-        for i, (rname, _) in enumerate(refinements):
-            ret[rname] = to_native(params[i])
+        for i, label in enumerate(overlay.refinement_labels):
+            ret[label] = to_native(params[i])
 
         return ret
 
@@ -269,12 +254,12 @@ def refinement_values(overlay):
         OverlayType.rotation_series: rotation_series_values,
     }
 
-    return func_dict[overlay['type']]()
+    return func_dict[overlay.type]()
 
 
 def set_refinement_values(overlay, values):
     def set_powder():
-        material = HexrdConfig().material(overlay['material'])
+        material = overlay.material
         prev_lparms = material.lparms
         material.latticeParameters = values
         lparms = material.lparms
@@ -284,12 +269,10 @@ def set_refinement_values(overlay, values):
 
     def set_laue():
         nonlocal values
-        options = overlay.setdefault('options', {})
-        params = options.get('crystal_params', DEFAULT_CRYSTAL_PARAMS.copy())
-        values = np.array(values)
+        params = overlay.crystal_params
         values[:3] = from_convention(values[:3])
         if any(not are_close(x, y) for x, y in zip(params, values)):
-            options['crystal_params'] = values
+            overlay.crystal_params = values
             return True
 
         return False
@@ -304,7 +287,7 @@ def set_refinement_values(overlay, values):
         OverlayType.rotation_series: set_rotation_series,
     }
 
-    return func_dict[overlay['type']]()
+    return func_dict[overlay.type]()
 
 
 def to_native(x):

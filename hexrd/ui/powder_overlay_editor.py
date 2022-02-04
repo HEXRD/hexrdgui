@@ -5,9 +5,6 @@ import numpy as np
 from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
-from hexrd import unitcell
-
-from hexrd.ui.constants import DEFAULT_POWDER_REFINEMENTS
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
@@ -22,12 +19,9 @@ class PowderOverlayEditor:
 
         self._overlay = None
 
-        refinements = copy.deepcopy(DEFAULT_POWDER_REFINEMENTS)
-        self.refinements_selector = SelectItemsWidget(refinements, self.ui)
+        self.refinements_selector = SelectItemsWidget([], self.ui)
         self.ui.refinements_selector_layout.addWidget(
             self.refinements_selector.ui)
-
-        self.update_refinement_options()
 
         self.setup_connections()
 
@@ -47,42 +41,36 @@ class PowderOverlayEditor:
         HexrdConfig().material_tth_width_modified.connect(
             self.material_tth_width_modified_externally)
 
-    def update_refinement_options(self):
-        if self.overlay is None:
-            return
-
-        default_refinements = copy.deepcopy(DEFAULT_POWDER_REFINEMENTS)
-        indices = unitcell._rqpDict[self.material.unitcell.latticeType][0]
-
-        # Save the previous values
-        prev_refinements = copy.deepcopy(self.refinements_selector.items)
-
-        def get_prev_val(name, default=True):
-            for entry in prev_refinements:
-                if entry[0] == name:
-                    return entry[1]
-
-            return default
-
-        refinements = []
-        for i in indices:
-            name, val = default_refinements[i]
-            refinements.append((name, get_prev_val(name, default=val)))
-
-        self.refinements_selector.items = refinements
-        self.update_refinements()
-
     @property
     def refinements(self):
-        return self.refinements_selector.items
+        return [x[1] for x in self.refinements_with_labels]
 
     @refinements.setter
     def refinements(self, v):
+        if len(v) != len(self.refinements_with_labels):
+            msg = (
+                f'Mismatch in {len(v)=} and '
+                f'{len(self.refinements_with_labels)=}'
+            )
+            raise Exception(msg)
+
+        with_labels = self.refinements_with_labels
+        for i in range(len(v)):
+            with_labels[i] = (with_labels[i][0], v[i])
+
+        self.refinements_with_labels = with_labels
+
+    @property
+    def refinements_with_labels(self):
+        return self.refinements_selector.items
+
+    @refinements_with_labels.setter
+    def refinements_with_labels(self, v):
         self.refinements_selector.items = copy.deepcopy(v)
         self.refinements_selector.update_table()
 
     def update_refinements(self):
-        self.overlay['refinements'] = copy.deepcopy(self.refinements)
+        self.overlay.refinements = self.refinements
 
     @property
     def overlay(self):
@@ -105,30 +93,21 @@ class PowderOverlayEditor:
 
         self.tth_width_gui = self.tth_width_config
         self.offset_gui = self.offset_config
-
-        if 'refinements' in self.overlay:
-            self.refinements = self.overlay['refinements']
-        else:
-            self.refinements = DEFAULT_POWDER_REFINEMENTS
+        self.refinements_with_labels = self.overlay.refinements_with_labels
 
         self.update_enable_states()
-        self.update_refinement_options()
         self.update_reflections_table()
 
     def update_config(self):
         self.tth_width_config = self.tth_width_gui
         self.offset_config = self.offset_gui
 
-        self.overlay['update_needed'] = True
+        self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
     @property
     def material(self):
-        if self.overlay is None:
-            return None
-
-        name = self.overlay['material']
-        return HexrdConfig().material(name)
+        return self.overlay.material if self.overlay is not None else None
 
     @property
     def tth_width_config(self):
@@ -165,18 +144,14 @@ class PowderOverlayEditor:
         if self.overlay is None:
             return
 
-        options = self.overlay.get('options', {})
-        if 'tvec' not in options:
-            return
-
-        return options['tvec']
+        return self.overlay.tvec
 
     @offset_config.setter
     def offset_config(self, v):
         if self.overlay is None:
             return
 
-        self.overlay['options']['tvec'] = v
+        self.overlay.tvec = v
 
     @property
     def offset_gui(self):

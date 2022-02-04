@@ -3,7 +3,7 @@ from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 import numpy as np
 
-from hexrd.ui.constants import OverlayType, PAN, ViewType, ZOOM
+from hexrd.ui.constants import PAN, ViewType, ZOOM
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
@@ -135,10 +135,7 @@ class ImageTabWidget(QTabWidget):
         # so that on an image series index change, the data does not have to
         # be re-generated, only the overlay needs to be redrawn.
         for overlay in HexrdConfig().overlays:
-            redraw = (
-                overlay['type'] == OverlayType.rotation_series and
-                overlay.get('options', {}).get('aggregated', True) is False
-            )
+            redraw = overlay.is_rotation_series and overlay.aggregated is False
             if redraw:
                 for canvas in self.active_canvases:
                     canvas.redraw_overlay(overlay)

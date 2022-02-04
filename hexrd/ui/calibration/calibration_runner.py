@@ -24,7 +24,6 @@ from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
-from hexrd.ui.overlays import default_overlay_refinements
 from hexrd.ui.utils import (
     array_index_in_list, instr_to_internal_dict, unique_array_list
 )
@@ -59,7 +58,7 @@ class CalibrationRunner(QObject):
         if not visible_overlays:
             raise Exception('No visible overlays')
 
-        if not all(self.has_widths(x) for x in visible_overlays):
+        if not all(x.has_widths for x in visible_overlays):
             raise Exception('All visible overlays must have widths')
 
         flags = HexrdConfig().get_statuses_instrument_format().tolist()
@@ -72,7 +71,7 @@ class CalibrationRunner(QObject):
 
         # Add overlay refinements
         for overlay in visible_overlays:
-            flags += [x[1] for x in self.get_refinements(overlay)]
+            flags += overlay.refinements.tolist()
 
         if np.count_nonzero(flags) == 0:
             raise Exception('There are no refinable parameters')
@@ -80,43 +79,19 @@ class CalibrationRunner(QObject):
     def clear_all_overlay_picks(self):
         self.all_overlay_picks.clear()
 
-    @staticmethod
-    def has_widths(overlay):
-        type = overlay['type']
-        if type == OverlayType.powder:
-            # Make sure the material has a two-theta width
-            name = overlay['material']
-            return HexrdConfig().material(name).planeData.tThWidth is not None
-        elif type == OverlayType.laue:
-            options = overlay.get('options', {})
-            width_params = ['tth_width', 'eta_width']
-            return all(options.get(x) is not None for x in width_params)
-        elif type == OverlayType.rotation_series:
-            raise NotImplementedError('rotation_series not implemented')
-        else:
-            raise Exception(f'Unknown overlay type: {type}')
-
     @property
     def overlays(self):
         return HexrdConfig().overlays
 
     @property
     def visible_overlays(self):
-        return [x for x in self.overlays if x['visible']]
-
-    @staticmethod
-    def overlay_name(overlay):
-        return f'{overlay["material"]} {overlay["type"].name}'
-
-    @property
-    def active_overlay_name(self):
-        return self.overlay_name(self.active_overlay)
+        return [x for x in self.overlays if x.visible]
 
     def next_overlay(self):
         ind = self.current_overlay_ind
         ind += 1
         for i in range(ind, len(self.overlays)):
-            if self.overlays[i]['visible']:
+            if self.overlays[i].visible:
                 self.current_overlay_ind = i
                 return self.overlays[i]
 
@@ -127,10 +102,6 @@ class CalibrationRunner(QObject):
 
         return self.overlays[self.current_overlay_ind]
 
-    @property
-    def active_overlay_type(self):
-        return self.active_overlay['type']
-
     def pick_next_line(self):
         overlay = self.next_overlay()
         if overlay is None:
@@ -138,7 +109,7 @@ class CalibrationRunner(QObject):
             self.finish()
             return
 
-        title = self.active_overlay_name
+        title = self.active_overlay.name
 
         box = QMessageBox(self.canvas)
         box.setIcon(QMessageBox.Question)
@@ -175,7 +146,7 @@ class CalibrationRunner(QObject):
 
     def hand_pick_points(self):
         overlay = self.active_overlay
-        title = self.active_overlay_name
+        title = overlay.name
 
         # Create a backup of the visibilities that we will restore later
         self.backup_overlay_visibilities = self.overlay_visibilities
@@ -190,7 +161,7 @@ class CalibrationRunner(QObject):
         kwargs = {
             'canvas': self.canvas,
             'parent': self.canvas,
-            'single_line_mode': overlay['type'] == OverlayType.laue
+            'single_line_mode': overlay.is_laue,
         }
 
         picker = LinePickerDialog(**kwargs)
@@ -212,8 +183,8 @@ class CalibrationRunner(QObject):
 
     def view_picks_table(self):
         # Backup some settings
-        if 'highlights' in self.active_overlay:
-            highlighting = copy.deepcopy(self.active_overlay['highlights'])
+        if self.active_overlay.has_highlights:
+            highlighting = copy.deepcopy(self.active_overlay.highlights)
         else:
             highlighting = None
 
@@ -266,39 +237,36 @@ class CalibrationRunner(QObject):
         self.save_overlay_picks()
         self.pick_next_line()
 
-    def get_refinements(self, overlay):
-        refinements = overlay.get('refinements')
-        if refinements is None:
-            refinements = default_overlay_refinements(overlay)
-        return refinements
-
     def generate_pick_results(self):
-
-        def get_hkls(overlay):
-            return {
-                key: val.get('hkls', [])
-                for key, val in overlay['data'].items()
-            }
-
         pick_results = []
         for i, val in self.all_overlay_picks.items():
             overlay = self.overlays[i]
+            # Convert hkls to numpy arrays
+            hkls = {k: np.asarray(v) for k, v in overlay.hkls.items()}
+            if overlay.is_powder:
+                options = {
+                    'tvec': overlay.tvec,
+                }
+            elif overlay.is_laue:
+                options = {
+                    'crystal_params': overlay.crystal_params,
+                    'min_energy': overlay.min_energy,
+                    'max_energy': overlay.max_energy,
+                }
+
             pick_results.append({
-                'material': overlay['material'],
-                'type': overlay['type'].value,
-                'options': overlay['options'],
-                'refinements': self.get_refinements(overlay),
-                'hkls': get_hkls(overlay),
+                'material': overlay.material_name,
+                'type': overlay.type.value,
+                'options': options,
+                'refinements': overlay.refinements_with_labels,
+                'hkls': hkls,
                 'picks': val
             })
         return pick_results
 
     @property
     def pick_materials(self):
-        mats = [
-            HexrdConfig().material(self.overlays[i]['material'])
-            for i in self.all_overlay_picks
-        ]
+        mats = [self.overlays[i].material for i in self.all_overlay_picks]
         return {x.name: x for x in mats}
 
     def dump_results(self):
@@ -365,14 +333,14 @@ class CalibrationRunner(QObject):
                 if calibrator.params.size == 0:
                     continue
 
-                mat_name = overlay['material']
+                mat_name = overlay.material_name
                 mat = materials[mat_name]
                 mat.latticeParameters = calibrator.params
                 HexrdConfig().flag_overlay_updates_for_material(mat_name)
                 if mat is HexrdConfig().active_material:
                     HexrdConfig().active_material_modified.emit()
             elif calibrator.calibrator_type == 'laue':
-                overlay['options']['crystal_params'] = calibrator.params
+                overlay.crystal_params = calibrator.params
 
         # In case any overlays changed
         HexrdConfig().overlay_config_changed.emit()
@@ -413,25 +381,24 @@ class CalibrationRunner(QObject):
         HexrdConfig().overlay_config_changed.emit()
 
     def set_highlighting(self, highlighting):
-        self.active_overlay['highlights'] = highlighting
+        self.active_overlay.highlights = highlighting
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
     def remove_all_highlighting(self):
         for overlay in self.overlays:
-            if 'highlights' in overlay:
-                del overlay['highlights']
+            overlay.clear_highlights()
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
     @property
     def overlay_visibilities(self):
-        return [x['visible'] for x in self.overlays]
+        return [x.visible for x in self.overlays]
 
     @overlay_visibilities.setter
     def overlay_visibilities(self, visibilities):
         for o, v in zip(self.overlays, visibilities):
-            o['visible'] = v
+            o.visible = v
         HexrdConfig().overlay_config_changed.emit()
 
     def reset_overlay_picks(self):
@@ -446,15 +413,15 @@ class CalibrationRunner(QObject):
             OverlayType.laue: 'spots',
         }
 
-        if self.active_overlay_type not in data_key_map:
-            raise Exception(f'{self.active_overlay_type} not implemented')
+        if self.active_overlay.type not in data_key_map:
+            raise Exception(f'{self.active_overlay.type} not implemented')
 
-        data_key = data_key_map[self.active_overlay_type]
-        data = self.active_overlay['data']
+        data_key = data_key_map[self.active_overlay.type]
+        data = self.active_overlay.data
 
         data_map = {}
         ind = 0
-        if self.active_overlay_type == OverlayType.powder:
+        if self.active_overlay.is_powder:
             # Order by rings, then detector
             # First, gather all of the hkls
             # We can't use a set() because we can't use a normal comparison
@@ -506,7 +473,7 @@ class CalibrationRunner(QObject):
                     data_map[ind] = (key, data_key, hkl_indices[key])
                     ind += 1
 
-        elif self.active_overlay_type == OverlayType.laue:
+        elif self.active_overlay.is_laue:
             # Order by detector, then spots
             for key, value in data.items():
                 for i in range(len(value[data_key])):
@@ -517,7 +484,7 @@ class CalibrationRunner(QObject):
 
     def save_overlay_picks(self):
         # Make sure there is at least an empty list for each detector
-        for key in self.active_overlay['data'].keys():
+        for key in self.active_overlay.data.keys():
             if key not in self.overlay_picks:
                 self.overlay_picks[key] = []
         self.all_overlay_picks[self.current_overlay_ind] = self.overlay_picks
@@ -534,11 +501,11 @@ class CalibrationRunner(QObject):
     def current_data_list(self):
         key, _, val = self.current_data_path
         root_list = self.overlay_picks.setdefault(key, [])
-        if self.active_overlay_type == OverlayType.powder:
+        if self.active_overlay.is_powder:
             while len(root_list) <= val:
                 root_list.append([])
             return root_list[val]
-        elif self.active_overlay_type == OverlayType.laue:
+        elif self.active_overlay.is_laue:
             # Only a single list for each Laue key
             # Make sure it contains a value for the requested path
             while len(root_list) < val + 1:
@@ -546,7 +513,7 @@ class CalibrationRunner(QObject):
 
             return root_list
 
-        raise Exception(f'Not implemented: {self.active_overlay_type}')
+        raise Exception(f'Not implemented: {self.active_overlay.type}')
 
     def pad_overlay_picks(self):
         prev_overlay_ind = self.current_overlay_ind
@@ -580,12 +547,12 @@ class CalibrationRunner(QObject):
 
         # This increments the overlay data index to the end and inserts
         # empty lists along the way.
-        if self.active_overlay_type == OverlayType.powder:
+        if self.active_overlay.is_powder:
             while self.current_data_path is not None:
                 # This will automatically insert a list for powder
                 self.current_data_list
                 self.overlay_data_index += 1
-        elif self.active_overlay_type == OverlayType.laue:
+        elif self.active_overlay.is_laue:
             while self.current_data_path is not None:
                 # Use NaN's to indicate a skip for laue
                 self.current_data_list
@@ -602,7 +569,7 @@ class CalibrationRunner(QObject):
 
         self.set_highlighting([data_path])
 
-        if self.active_overlay_type == OverlayType.powder:
+        if self.active_overlay.is_powder:
             # Make sure a list is automatically inserted for powder
             self.current_data_list
 
@@ -620,9 +587,9 @@ class CalibrationRunner(QObject):
 
     def point_picked(self, x, y):
         data = (x, y)
-        if self.active_overlay_type == OverlayType.powder:
+        if self.active_overlay.is_powder:
             self.current_data_list.append(data)
-        if self.active_overlay_type == OverlayType.laue:
+        elif self.active_overlay.is_laue:
             _, _, ind = self.current_data_path
             self.current_data_list[ind] = data
             self.increment_overlay_data_index()
@@ -635,7 +602,7 @@ class CalibrationRunner(QObject):
         self.increment_overlay_data_index()
 
     def last_point_removed(self):
-        if self.active_overlay_type == OverlayType.powder:
+        if self.active_overlay.is_powder:
             if len(self.current_data_list) == 0:
                 # Go back one line
                 self.decrement_overlay_data_index()
@@ -644,7 +611,7 @@ class CalibrationRunner(QObject):
                 return
             # Remove the last point of data
             self.current_data_list.pop(-1)
-        elif self.active_overlay_type == OverlayType.laue:
+        elif self.active_overlay.is_laue:
             self.decrement_overlay_data_index()
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
@@ -663,15 +630,15 @@ class CalibrationRunner(QObject):
             return
 
         overlay = self.active_overlay
-        path = ['data'] + list(self.current_data_path)
-        path[2] = 'hkls'
-        cur = overlay
+        path = list(self.current_data_path)
+        path[1] = 'hkls'
+        cur = overlay.data
         for entry in path:
             cur = cur[entry]
 
         hkl = hklToStr(cur)
         label = f'Current hkl:  {hkl}'
-        if self.active_overlay_type == OverlayType.laue:
+        if overlay.is_laue:
             data_list = self.current_data_list
             if self.overlay_data_index < len(data_list):
                 data_entry = data_list[self.overlay_data_index]
@@ -708,13 +675,13 @@ class CalibrationRunner(QObject):
             OverlayType.laue: self.auto_pick_laue_points,
         }
 
-        if self.active_overlay_type not in funcs:
-            raise NotImplementedError(self.active_overlay_type)
+        if self.active_overlay.type not in funcs:
+            raise NotImplementedError(self.active_overlay.type)
 
-        return funcs[self.active_overlay_type]()
+        return funcs[self.active_overlay.type]()
 
     def auto_pick_powder_points(self):
-        material = HexrdConfig().material(self.active_overlay['material'])
+        material = self.active_overlay.material
         dialog = PowderCalibrationDialog(material, self.canvas)
         dialog.show_optimization_parameters(False)
         if not dialog.exec_():
@@ -732,7 +699,7 @@ class CalibrationRunner(QObject):
         statuses = HexrdConfig().get_statuses_instrument_format()
         self.instr.calibration_flags = statuses
 
-        all_flags = np.hstack([statuses, self.active_overlay_refinements])
+        all_flags = np.hstack([statuses, self.active_overlay.refinements])
         kwargs = {
             'instr': self.instr,
             'plane_data': material.planeData,
@@ -786,15 +753,14 @@ class CalibrationRunner(QObject):
         statuses = HexrdConfig().get_statuses_instrument_format()
         self.instr.calibration_flags = statuses
 
-        material = HexrdConfig().material(overlay['material'])
-        all_flags = np.hstack([statuses, self.active_overlay_refinements])
+        all_flags = np.hstack([statuses, self.active_overlay.refinements])
         init_kwargs = {
             'instr': self.instr,
-            'plane_data': material.planeData,
-            'grain_params': overlay['options']['crystal_params'],
+            'plane_data': overlay.plane_data,
+            'grain_params': overlay.crystal_params,
             'flags': all_flags,
-            'min_energy': overlay['options']['min_energy'],
-            'max_energy': overlay['options']['max_energy'],
+            'min_energy': overlay.min_energy,
+            'max_energy': overlay.max_energy,
         }
 
         self.laue_auto_picker = LaueCalibrator(**init_kwargs)
@@ -830,16 +796,6 @@ class CalibrationRunner(QObject):
         else:
             dialog = self.view_picks_table()
             dialog.ui.finished.connect(self.finish_line)
-
-    @property
-    def active_overlay_refinements(self):
-        return [x[1] for x in self.overlay_refinements(self.active_overlay)]
-
-    def overlay_refinements(self, overlay):
-        refinements = overlay.get('refinements')
-        if refinements is None:
-            refinements = default_overlay_refinements(overlay)
-        return refinements
 
 
 def picks_to_tree_format(all_picks):
@@ -891,13 +847,7 @@ def tree_format_to_picks(tree_format):
 
 
 def auto_powder_picks_to_picks(auto_picks, overlay):
-    def get_hkls(overlay):
-        return {
-            key: np.array(val.get('hkls', [])).tolist()
-            for key, val in overlay['data'].items()
-        }
-
-    hkls = get_hkls(overlay)
+    hkls = overlay.hkls
     picks = {det: [[] for _ in val] for det, val in hkls.items()}
     for det, det_picks in auto_picks.items():
         for nested_picks in det_picks:
@@ -919,21 +869,15 @@ def auto_powder_picks_to_picks(auto_picks, overlay):
             det_picks[i] = cart_to_angles(line, **kwargs).tolist()
 
     return {
-        'material': overlay['material'],
-        'type': overlay['type'],
+        'material': overlay.material_name,
+        'type': overlay.type,
         'hkls': hkls,
         'picks': picks,
     }
 
 
 def auto_laue_picks_to_picks(auto_picks, overlay):
-    def get_hkls(overlay):
-        return {
-            key: np.array(val.get('hkls', [])).tolist()
-            for key, val in overlay['data'].items()
-        }
-
-    hkls = get_hkls(overlay)
+    hkls = overlay.hkls
     picks = {det: [[] for _ in val] for det, val in hkls.items()}
     for det, det_picks in auto_picks.items():
         for entry in det_picks:
@@ -958,8 +902,8 @@ def auto_laue_picks_to_picks(auto_picks, overlay):
             det_picks[i] = cart_to_angles(line, **kwargs)[0]
 
     return {
-        'material': overlay['material'],
-        'type': overlay['type'],
+        'material': overlay.material_name,
+        'type': overlay.type,
         'hkls': hkls,
         'picks': picks,
     }

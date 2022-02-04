@@ -131,13 +131,13 @@ class OverlayManager:
         self.clear_table()
         self.ui.table.setRowCount(len(overlays))
         for i, overlay in enumerate(overlays):
-            w = self.create_materials_combo(overlay['material'])
+            w = self.create_materials_combo(overlay.material_name)
             self.ui.table.setCellWidget(i, COLUMNS['material'], w)
 
-            w = self.create_type_combo(overlay['type'])
+            w = self.create_type_combo(overlay.type)
             self.ui.table.setCellWidget(i, COLUMNS['type'], w)
 
-            w = self.create_visibility_checkbox(overlay['visible'])
+            w = self.create_visibility_checkbox(overlay.visible)
             self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
 
         if prev_selected is not None:
@@ -183,9 +183,8 @@ class OverlayManager:
         for i in range(self.ui.table.rowCount()):
             w = self.material_combos[i]
             overlay = HexrdConfig().overlays[i]
-            if overlay['material'] != w.currentData():
-                overlay['material'] = w.currentData()
-                overlay['update_needed'] = True
+            if overlay.material_name != w.currentData():
+                overlay.material_name = w.currentData()
 
                 # In case the active widget depends on material settings
                 self.overlay_editor.update_active_widget_gui()
@@ -205,7 +204,7 @@ class OverlayManager:
     def update_config_visibilities(self):
         for i in range(self.ui.table.rowCount()):
             w = self.visibility_boxes[i]
-            HexrdConfig().overlays[i]['visible'] = w.isChecked()
+            HexrdConfig().overlays[i].visible = w.isChecked()
 
         HexrdConfig().update_visible_material_energies()
         HexrdConfig().overlay_config_changed.emit()

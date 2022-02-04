@@ -9,7 +9,7 @@ from PySide2.QtWidgets import QMenu
 from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
-from hexrd.ui.overlays import overlay_from_name, path_to_hkl
+from hexrd.ui.overlays import Overlay
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
 )
@@ -140,7 +140,7 @@ class PicksTreeView(BaseDictTreeView):
 
     def clear_highlights(self):
         for overlay in HexrdConfig().overlays:
-            overlay.setdefault('highlights', []).clear()
+            overlay.clear_highlights()
 
     def highlight_selected_hkls(self):
         self.clear_highlights()
@@ -150,10 +150,9 @@ class PicksTreeView(BaseDictTreeView):
             path = model.path_to_value(item, 0)
             # Example: ['diamond powder', 'IMAGE-PLATE-2', '1 1 1', 1, -1]
             overlay_name, detector_name, hkl_str, *others = path
-            overlay = overlay_from_name(overlay_name)
+            overlay = Overlay.from_name(overlay_name)
             hkl = hkl_str_to_array(hkl_str)
-            hkl_path = path_to_hkl(overlay, detector_name, hkl)
-            overlay['highlights'].append(hkl_path)
+            overlay.highlight_hkl(detector_name, hkl)
 
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
