@@ -129,8 +129,8 @@ def snip_width_pixels():
     snip_width_deg = HexrdConfig().polar_snip1d_width
 
     # Convert the snip width into pixels using pixel_size_tth
-    # Always round up
-    return math.ceil(snip_width_deg / pixel_size_tth)
+    # Always round up and return int
+    return int(math.ceil(snip_width_deg / pixel_size_tth))
 
 
 def run_snip1d(img):
