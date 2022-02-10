@@ -303,14 +303,16 @@ class PolarView:
             self.snip_background = run_snip1d(img)
             img -= self.snip_background
 
+            # FIXME: the erosion should be applied as a mask, 
+            #        NOT done inside snip computation!
             if HexrdConfig().polar_apply_erosion:
                 niter = HexrdConfig().polar_snip1d_numiter
                 structure = rectangle(
                     1,
-                    int(2.1 * niter * snip_width_pixels()),
+                    int(np.ceil(2.25*niter*snip_width_pixels()))
                 )
                 mask = binary_erosion(~self.raw_img.mask, structure)
-                img[~mask] = 0
+                img[~mask] = np.nan
 
         else:
             self.snip_background = None
