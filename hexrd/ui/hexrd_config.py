@@ -1418,7 +1418,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.overlay_config_changed.emit()
 
     def append_overlay(self, material_name, type):
-        overlay = overlays.create_overlay(material_name, type)
+        kwargs = {
+            'material_name': material_name,
+            'type': type,
+            'eta_period': self.polar_res_eta_period,
+        }
+        overlay = overlays.create_overlay(**kwargs)
         self.overlays.append(overlay)
         self.overlay_config_changed.emit()
 
@@ -1432,7 +1437,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # No change needed
             return
 
-        new_overlay = overlays.create_overlay(overlay.material_name, type)
+        kwargs = {
+            'material_name': overlay.material_name,
+            'type': type,
+            'eta_period': self.polar_res_eta_period,
+        }
+        new_overlay = overlays.create_overlay(**kwargs)
         new_overlay.instrument = self.overlays[i].instrument
         self.overlays[i] = new_overlay
 
@@ -1497,13 +1507,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def set_polar_res_eta_min(self, v, rerender=True):
         self.config['image']['polar']['eta_min'] = v
-        if rerender:
-            self.rerender_needed.emit()
 
-            # If we are drawing outside of the previous extents,
-            # we will need to update the overlays as well.
-            self.flag_overlay_updates_for_all_materials()
-            self.overlay_config_changed.emit()
+        # Update the eta period on all overlays
+        # The eta period is currently only affected by the min value
+        for overlay in self.overlays:
+            overlay.eta_period = self.polar_res_eta_period
+
+        self.flag_overlay_updates_for_all_materials()
+
+        if not rerender:
+            return
+
+        self.rerender_needed.emit()
+        self.overlay_config_changed.emit()
 
     polar_res_eta_min = property(_polar_res_eta_min,
                                  set_polar_res_eta_min)
