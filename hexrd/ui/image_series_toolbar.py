@@ -56,7 +56,8 @@ class ImageSeriesToolbar(QWidget):
             elif size and not self.show and current_tab:
                 self.show = True
             self.widget.setVisible(self.show)
-            self.slider.setMinimumWidth(self.parent().width()/2)
+            if not self.slider.minimumWidth():
+                self.slider.setMinimumWidth(self.parent().width()//2)
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setMaximum(size)
