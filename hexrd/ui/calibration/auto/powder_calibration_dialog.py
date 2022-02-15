@@ -29,10 +29,22 @@ class PowderCalibrationDialog:
 
         options = HexrdConfig().config['calibration']['powder']
         pk_type = options['pk_type']
+        # @psavery
+        # TODO: need an option and selector for bg_type = options['bg_type']
+        # can be:
+        #    linear
+        #    quadratic
+        #    cubic
+        #    quartic
+        #    quintic
 
+        # !!! adding new profile functions
+        # FIXME: probably should be a registry...
         reformat = {
-            'pvoigt': 'PVoigt',
             'gaussian': 'Gaussian',
+            'pvoigt': 'PVoigt',
+            'split_pvoigt': 'SplPVoigt',
+            'pink_beam_dcs': 'DCS',
         }
         self.ui.tth_tolerance.setValue(self.tth_tol)
         self.ui.eta_tolerance.setValue(options['eta_tol'])

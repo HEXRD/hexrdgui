@@ -5,16 +5,13 @@ import numpy as np
 from PySide2.QtCore import QObject, QTimer, Qt, Signal
 from PySide2.QtWidgets import QCheckBox, QMessageBox
 
+from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import instr_to_internal_dict
 
-from hexrd.ui.calibration.auto import (
-    InstrumentCalibrator,
-    PowderCalibrationDialog,
-    PowderCalibrator,
-)
+from hexrd.ui.calibration.auto import PowderCalibrationDialog
 
 
 class PowderRunner(QObject):
