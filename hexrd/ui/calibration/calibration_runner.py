@@ -8,12 +8,9 @@ from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd.crystallography import hklToStr
+from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 
-from hexrd.ui.calibration.auto import (
-    InstrumentCalibrator,
-    PowderCalibrationDialog,
-    PowderCalibrator,
-)
+from hexrd.ui.calibration.auto import PowderCalibrationDialog
 from hexrd.ui.calibration.laue_auto_picker_dialog import LaueAutoPickerDialog
 from hexrd.ui.calibration.pick_based_calibration import (
     LaueCalibrator,
@@ -707,6 +704,7 @@ class CalibrationRunner(QObject):
             'flags': all_flags,
             'eta_tol': options['eta_tol'],
             'pktype': options['pk_type'],
+            'bgtype': options['bg_type'],
         }
 
         self.auto_pc = PowderCalibrator(**kwargs)

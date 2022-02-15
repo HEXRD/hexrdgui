@@ -72,6 +72,7 @@ class PowderRunner(QObject):
             'flags': self.refinement_flags,
             'eta_tol': options['eta_tol'],
             'pktype': options['pk_type'],
+            'bgtype': options['bg_type'],
         }
 
         self.pc = PowderCalibrator(**kwargs)
