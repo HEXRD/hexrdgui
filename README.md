@@ -8,14 +8,14 @@ Requires **Python 3.9+**.  Currently, we build and test `hexrdgui` exclusively w
 To install the latest stable release
 
 ```bash
-> conda install -c hexrd -c conda-forge hexrdgui
+conda install -c hexrd -c conda-forge hexrdgui
 ```
 
 ## conda (prerelease)
 To install the latest changes on master, do the following.  Note that this release may be unstable.
 
 ```bash
-> conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c conda-forge hexrdgui
+conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c conda-forge hexrdgui
 ```
 
 ## Binary packages
@@ -26,7 +26,7 @@ Binary packages for Windows, Mac and Linux can be found attached to each main [r
 
 For conda installs, launch by typing
 ```bash
-> hexrdgui
+hexrdgui
 ```
 in a shell.  Binary installs are native applications that open on double-click.
 
@@ -35,43 +35,43 @@ in a shell.  Binary installs are native applications that open on double-click.
 Requires Python 3.9+.  First clone the Git repositories
 
 ```bash
-> git clone https://github.com/HEXRD/hexrd.git
-> git clone https://github.com/HEXRD/hexrdgui.git
+git clone https://github.com/HEXRD/hexrd.git
+git clone https://github.com/HEXRD/hexrdgui.git
 ```
 
 ## pip
 
 For now we need to explicitly install `hexrd`, until we push it to PyPI.  *Not currently recommended!*
 ```bash
-> pip install -e hexrd
-> pip install -e hexrdgui
+pip install -e hexrd
+pip install -e hexrdgui
 ```
 
 ## conda
 
 First, make sure python3.9+ is installed in your target env.  If it is not, run the following command:
 ```bash
-> conda install -c conda-forge python=3.9
+conda install -c conda-forge python=3.9
 ```
 
 Next install dependencies using the prerelease conda package
 ```bash
-> conda install -c hexrd/label/hexrdgui-prerelease -c hexrd/label/hexrd-prerelease -c conda-forge hexrdgui
+conda install -c hexrd/label/hexrdgui-prerelease -c hexrd/label/hexrd-prerelease -c conda-forge hexrdgui
 ```
 
 Finally, from the directory containing the hexrd and hexrdgui git repositories, use pip to link into environment for development:
 
 #### For Linux and Mac OS X:
 ```bash
-> CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrd
-> CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrdgui
+CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrd
+CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrdgui
 ```
 
 #### For Windows:
 ```bash
-> set CONDA_BUILD=1
-> pip install --no-build-isolation --no-deps -U -e hexrd
-> pip install --no-build-isolation --no-deps -U -e hexrdgui
+set CONDA_BUILD=1
+pip install --no-build-isolation --no-deps -U -e hexrd
+pip install --no-build-isolation --no-deps -U -e hexrdgui
 ```
 
 If you are running in Windows PowerShell or other environments where the stdout
