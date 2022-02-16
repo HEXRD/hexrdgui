@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import sys
 
 from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtGui import QColor
+from PySide2.QtGui import QColor, QTextCursor
 from PySide2.QtWidgets import QApplication
 
 from hexrd.ui.fix_pdb import fix_pdb
@@ -100,6 +100,15 @@ class MessagesWidget(QObject):
         scrollbar = self.ui.text.verticalScrollBar()
         current = scrollbar.value()
         autoscroll = current == scrollbar.maximum()
+
+        # Handle \r if present
+        while '\r' in text:
+            ind = text.find('\r')
+            first, rest = text[:ind], text[ind + 1:]
+            self.ui.text.insertPlainText(first)
+            self.ui.text.moveCursor(QTextCursor.StartOfLine,
+                                    QTextCursor.KeepAnchor)
+            text = rest
 
         self.ui.text.insertPlainText(text)
 

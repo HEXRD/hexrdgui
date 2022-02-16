@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>672</width>
-    <height>372</height>
+    <height>400</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
@@ -73,10 +73,13 @@
       <string>Peak Fitting:</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="2" column="2">
-       <widget class="QLabel" name="int_cutoff_label">
+      <item row="3" column="3">
+       <widget class="QComboBox" name="peak_fit_type"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="fit_tth_tol_label">
         <property name="text">
-         <string>Min Peak Amplitude:</string>
+         <string>Fit 2θ Tolerance:</string>
         </property>
        </widget>
       </item>
@@ -93,13 +96,6 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="fit_tth_tol_label">
-        <property name="text">
-         <string>Fit 2θ Tolerance:</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="3">
        <widget class="ScientificDoubleSpinBox" name="fit_tth_tol">
         <property name="decimals">
@@ -113,18 +109,11 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QComboBox" name="peak_fit_type">
-        <item>
-         <property name="text">
-          <string>PVoigt</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Gaussian</string>
-         </property>
-        </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="int_cutoff_label">
+        <property name="text">
+         <string>Min Peak Amplitude:</string>
+        </property>
        </widget>
       </item>
       <item row="3" column="2">
@@ -133,6 +122,16 @@
          <string>Peak fitting type:</string>
         </property>
        </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QLabel" name="background_type_label">
+        <property name="text">
+         <string>Background type:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QComboBox" name="background_type"/>
       </item>
      </layout>
     </widget>
@@ -220,6 +219,7 @@
   <tabstop>fit_tth_tol</tabstop>
   <tabstop>int_cutoff</tabstop>
   <tabstop>peak_fit_type</tabstop>
+  <tabstop>background_type</tabstop>
   <tabstop>conv_tol</tabstop>
   <tabstop>max_iter</tabstop>
   <tabstop>robust</tabstop>

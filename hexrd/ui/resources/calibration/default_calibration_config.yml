@@ -5,6 +5,7 @@ powder:
   int_cutoff: 0.0001
   conv_tol: 0.0001
   pk_type: 'pvoigt'
+  bg_type: 'linear'
   use_robust_optimization: false
 laue_auto_picker:
   npdiv: 2
