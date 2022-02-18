@@ -82,6 +82,7 @@ class MaskManagerDialog(QObject):
 
         HexrdConfig().save_state.connect(self.save_state)
         HexrdConfig().load_state.connect(self.load_state)
+        HexrdConfig().state_loaded.connect(self.rebuild_masks)
 
     def setup_table(self, status=True):
         with block_signals(self.ui.masks_table):
@@ -291,6 +292,12 @@ class MaskManagerDialog(QObject):
                         mask = mask[()]
                         raw_line_data.setdefault(name, []).append((key, mask))
 
+        if not HexrdConfig().loading_state:
+            # We're importing masks directly,
+            # don't wait for the state loaded signal
+            self.rebuild_masks()
+
+    def rebuild_masks(self):
         if self.image_mode == ViewType.raw:
             rebuild_raw_masks()
             HexrdConfig().raw_masks_changed.emit()
