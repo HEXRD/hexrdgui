@@ -41,6 +41,12 @@ class PowderOverlayEditor:
         HexrdConfig().material_tth_width_modified.connect(
             self.material_tth_width_modified_externally)
 
+    def update_refinement_options(self):
+        if self.overlay is None:
+            return
+
+        self.refinements_with_labels = self.overlay.refinements_with_labels
+
     @property
     def refinements(self):
         return [x[1] for x in self.refinements_with_labels]

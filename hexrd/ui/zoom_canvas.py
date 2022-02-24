@@ -359,7 +359,7 @@ class ZoomCanvas(FigureCanvas):
 
     @property
     def rsimg(self):
-        return self.main_canvas.iviewer.img
+        return self.main_canvas.scaled_images[0]
 
     @property
     def disabled(self):
