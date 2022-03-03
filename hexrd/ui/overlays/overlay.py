@@ -55,10 +55,13 @@ class Overlay(ABC):
         pass
 
     # Concrete methods
-    def __init__(self, material_name, refinements=None, style=None,
+    def __init__(self, material_name, name=None, refinements=None, style=None,
                  highlight_style=None, visible=True):
 
         self._material_name = material_name
+
+        if name is None:
+            name = self._generate_unique_name()
 
         if refinements is None:
             refinements = self.default_refinements
@@ -69,6 +72,7 @@ class Overlay(ABC):
         if highlight_style is None:
             highlight_style = self.default_highlight_style
 
+        self.name = name
         self.refinements = refinements
         self.style = style
         self.highlight_style = highlight_style
@@ -101,6 +105,7 @@ class Overlay(ABC):
         # arguments to the __init__ method.
         return [
             'material_name',
+            'name',
             'refinements',
             'style',
             'highlight_style',
@@ -108,30 +113,25 @@ class Overlay(ABC):
         ]
 
     @property
-    def non_unique_name(self):
+    def _non_unique_name(self):
         return f'{self.material_name} {self.type.value}'
 
-    @property
-    def unique_name(self):
+    def _generate_unique_name(self):
         from hexrd.ui.hexrd_config import HexrdConfig
 
-        name = self.non_unique_name
+        name = self._non_unique_name
         index = 1
         for overlay in HexrdConfig().overlays:
             if overlay is self:
                 break
 
-            if overlay.non_unique_name == name:
+            if overlay._non_unique_name == name:
                 index += 1
 
         if index > 1:
             name = f'{name} {index}'
 
         return name
-
-    @property
-    def name(self):
-        return self.unique_name
 
     @staticmethod
     def from_name(name):
