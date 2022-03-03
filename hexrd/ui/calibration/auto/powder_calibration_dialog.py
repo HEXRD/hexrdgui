@@ -140,6 +140,7 @@ peak_types = [
 
 # If this gets added as a list to hexrd, we can import it from there
 background_types = [
+    'constant',
     'linear',
     'quadratic',
     'cubic',
