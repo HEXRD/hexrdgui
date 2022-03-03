@@ -22,7 +22,8 @@ class LaueOverlay(Overlay):
 
     def __init__(self, material_name, crystal_params=None, sample_rmat=None,
                  min_energy=5, max_energy=35, tth_width=None, eta_width=None,
-                 eta_period=None, width_shape=None, **overlay_kwargs):
+                 eta_period=None, width_shape=None, label_type=None,
+                 label_offsets=None, **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -37,6 +38,9 @@ class LaueOverlay(Overlay):
         if width_shape is None:
             width_shape = LaueRangeShape.ellipse
 
+        if label_offsets is None:
+            label_offsets = [1, 1]
+
         self.crystal_params = crystal_params
         self.sample_rmat = sample_rmat
         self._min_energy = min_energy
@@ -45,6 +49,8 @@ class LaueOverlay(Overlay):
         self.eta_width = eta_width
         self.eta_period = eta_period
         self.width_shape = width_shape
+        self.label_type = label_type
+        self.label_offsets = label_offsets
 
     @property
     def child_attributes_to_save(self):
@@ -59,6 +65,8 @@ class LaueOverlay(Overlay):
             'eta_width',
             'eta_period',
             'width_shape',
+            'label_type',
+            'label_offsets',
         ]
 
     @property
@@ -203,6 +211,21 @@ class LaueOverlay(Overlay):
                 spots_for_ranges, display_mode, panel
             )
 
+            # Add labels
+            if self.label_type == LaueLabelType.hkls:
+                hkls = point_groups[det_key]['hkls']
+                labels = [str(tuple(x)) for x in hkls]
+            elif self.label_type == LaueLabelType.energy:
+                energies = psim[4][0]
+                labels = [f'{x:.3g}' for x in energies]
+            else:
+                labels = []
+
+            point_groups[det_key].update({
+                'labels': labels,
+                'label_offsets': self.label_offsets,
+            })
+
         return point_groups
 
     def range_corners(self, spots):
@@ -309,6 +332,11 @@ class LaueOverlay(Overlay):
                 'c': '#00ff00',  # Green
                 'ls': 'dotted',
                 'lw': 1.0
+            },
+            'labels': {
+                'c': '#000000',  # Black
+                'size': 10,
+                'weight': 'bold',
             }
         }
 
@@ -324,6 +352,11 @@ class LaueOverlay(Overlay):
                 'c': '#ff00ff',  # Magenta
                 'ls': 'dotted',
                 'lw': 3.0
+            },
+            'labels': {
+                'c': '#ff00ff',  # Magenta
+                'size': 10,
+                'weight': 'bold',
             }
         }
 
@@ -346,3 +379,8 @@ def ellipse_points(h, k, a, b, num_points=30):
 class LaueRangeShape(str, Enum):
     ellipse = 'ellipse'
     rectangle = 'rectangle'
+
+
+class LaueLabelType(str, Enum):
+    hkls = 'hkls'
+    energy = 'energy'

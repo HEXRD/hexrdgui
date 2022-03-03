@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import copy
 
 import numpy as np
 
@@ -69,7 +70,7 @@ class Overlay(ABC):
             highlight_style = self.default_highlight_style
 
         self.refinements = refinements
-        self._style = style
+        self.style = style
         self.highlight_style = highlight_style
         self._visible = visible
         self._display_mode = ViewType.raw
@@ -169,8 +170,14 @@ class Overlay(ABC):
 
     @style.setter
     def style(self, v):
-        if self.style == v:
+        if hasattr(self, '_style') and self.style == v:
             return
+
+        # Ensure it has all keys
+        v = copy.deepcopy(v)
+        for key in self.default_style:
+            if key not in v:
+                v[key] = self.default_style[key]
 
         self._style = v
         self.update_needed = True
