@@ -8,7 +8,7 @@ from hexrd.rotations import angles_from_rmat_xyz, rotMatOfExpMap
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays.laue_overlay import LaueRangeShape
+from hexrd.ui.overlays.laue_overlay import LaueLabelType, LaueRangeShape
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import convert_angle_convention
 
@@ -37,6 +37,8 @@ class LaueOverlayEditor:
                 w.currentIndexChanged.connect(self.update_config)
 
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
+        self.ui.label_type.currentIndexChanged.connect(
+            self.update_enable_states)
         self.crystal_editor.params_modified.connect(self.update_config)
         self.crystal_editor.refinements_modified.connect(
             self.update_overlay_refinements)
@@ -47,6 +49,10 @@ class LaueOverlayEditor:
     def setup_combo_boxes(self):
         width_shapes = [x.value.capitalize() for x in LaueRangeShape]
         self.ui.width_shape.addItems(width_shapes)
+
+        self.ui.label_type.addItem('None', None)
+        for t in LaueLabelType:
+            self.ui.label_type.addItem(t.value.capitalize(), t.value)
 
     @property
     def overlay(self):
@@ -70,6 +76,8 @@ class LaueOverlayEditor:
         self.crystal_params = overlay.crystal_params
         self.refinements = overlay.refinements
         self.width_shape = overlay.width_shape
+        self.label_type = overlay.label_type
+        self.label_offsets = overlay.label_offsets
 
         self.ui.enable_widths.setChecked(overlay.has_widths)
         if overlay.has_widths:
@@ -91,6 +99,16 @@ class LaueOverlayEditor:
         ]
         for name in names:
             getattr(self.ui, name).setEnabled(enable_widths)
+
+        enable_label_options = self.label_type is not None
+        names = [
+            'label_offset_x_label',
+            'label_offset_x',
+            'label_offset_y_label',
+            'label_offset_y',
+        ]
+        for name in names:
+            getattr(self.ui, name).setEnabled(enable_label_options)
 
     def euler_angle_convention_changed(self):
         self.update_gui()
@@ -121,6 +139,8 @@ class LaueOverlayEditor:
         overlay.width_shape = self.width_shape
         overlay.sample_rmat = self.sample_rmat
         overlay.refinements = self.refinements
+        overlay.label_type = self.label_type
+        overlay.label_offsets = self.label_offsets
 
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
@@ -190,6 +210,35 @@ class LaueOverlayEditor:
             w.setValue(v)
 
     @property
+    def label_type(self):
+        return self.ui.label_type.currentData()
+
+    @label_type.setter
+    def label_type(self, v):
+        found = False
+        w = self.ui.label_type
+        for i in range(w.count()):
+            if w.itemData(i) == v:
+                w.setCurrentIndex(i)
+                found = True
+                break
+
+        if not found:
+            raise Exception(f'Unknown label type: {v}')
+
+    @property
+    def label_offsets(self):
+        return [
+            self.ui.label_offset_x.value(),
+            self.ui.label_offset_y.value(),
+        ]
+
+    @label_offsets.setter
+    def label_offsets(self, v):
+        self.ui.label_offset_x.setValue(v[0])
+        self.ui.label_offset_y.setValue(v[1])
+
+    @property
     def sample_orientation_widgets(self):
         return [
             self.ui.sample_orientation_0,
@@ -206,4 +255,7 @@ class LaueOverlayEditor:
             self.ui.tth_width,
             self.ui.eta_width,
             self.ui.width_shape,
+            self.ui.label_type,
+            self.ui.label_offset_x,
+            self.ui.label_offset_y,
         ] + self.sample_orientation_widgets

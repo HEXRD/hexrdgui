@@ -1,5 +1,7 @@
 import copy
 
+from matplotlib.font_manager import weight_dict
+
 from PySide2.QtCore import QObject, QSignalBlocker
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QColorDialog
@@ -21,18 +23,27 @@ class OverlayStylePicker(QObject):
         self.overlay = overlay
         self.ui.material_name.setText(overlay.material_name)
 
+        self.ui.label_group.setVisible(self.include_labels)
+
         self.setup_labels()
         self.setup_combo_boxes()
         self.setup_connections()
         self.update_gui()
 
+    def exec_(self):
+        self.ui.adjustSize()
+        return self.ui.exec_()
+
     def setup_connections(self):
         self.ui.data_color.pressed.connect(self.pick_color)
         self.ui.range_color.pressed.connect(self.pick_color)
+        self.ui.label_color.pressed.connect(self.pick_color)
         self.ui.data_style.currentIndexChanged.connect(self.update_config)
         self.ui.range_style.currentIndexChanged.connect(self.update_config)
+        self.ui.label_size.valueChanged.connect(self.update_config)
         self.ui.data_size.valueChanged.connect(self.update_config)
         self.ui.range_size.valueChanged.connect(self.update_config)
+        self.ui.label_weight.currentIndexChanged.connect(self.update_config)
 
         # Reset the style if the dialog is rejected
         self.ui.rejected.connect(self.reset_style)
@@ -76,6 +87,9 @@ class OverlayStylePicker(QObject):
         for s in line_styles:
             w.addItem(s, s)
 
+        weight_options = list(weight_dict.keys())
+        self.ui.label_weight.addItems(weight_options)
+
     @property
     def style(self):
         return self.overlay.style
@@ -88,7 +102,10 @@ class OverlayStylePicker(QObject):
             self.ui.data_size,
             self.ui.range_color,
             self.ui.range_style,
-            self.ui.range_size
+            self.ui.range_size,
+            self.ui.label_color,
+            self.ui.label_size,
+            self.ui.label_weight,
         ]
 
     def reset_style(self):
@@ -113,6 +130,12 @@ class OverlayStylePicker(QObject):
         self.ui.range_style.setCurrentText(ranges[keys['range_style']])
         self.ui.range_size.setValue(ranges[keys['range_size']])
 
+        if self.include_labels:
+            labels = self.style['labels']
+            self.ui.label_color.setText(labels[keys['label_color']])
+            self.ui.label_size.setValue(labels[keys['label_size']])
+            self.ui.label_weight.setCurrentText(labels[keys['label_weight']])
+
         # Unblock
         del blockers
 
@@ -129,6 +152,13 @@ class OverlayStylePicker(QObject):
         ranges[keys['range_color']] = self.ui.range_color.text()
         ranges[keys['range_style']] = self.ui.range_style.currentData()
         ranges[keys['range_size']] = self.ui.range_size.value()
+
+        if self.include_labels:
+            labels = self.style['labels']
+            labels[keys['label_color']] = self.ui.label_color.text()
+            labels[keys['label_size']] = self.ui.label_size.value()
+            labels[keys['label_weight']] = self.ui.label_weight.currentText()
+
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
@@ -145,7 +175,11 @@ class OverlayStylePicker(QObject):
             self.update_config()
 
     def update_button_colors(self):
-        buttons = [self.ui.data_color, self.ui.range_color]
+        buttons = [
+            self.ui.data_color,
+            self.ui.range_color,
+            self.ui.label_color,
+        ]
         for b in buttons:
             b.setStyleSheet('QPushButton {background-color: %s}' % b.text())
 
@@ -172,7 +206,7 @@ class OverlayStylePicker(QObject):
             'data_size': 'lw',
             'range_color': 'c',
             'range_style': 'ls',
-            'range_size': 'lw'
+            'range_size': 'lw',
         }
 
     @property
@@ -183,7 +217,10 @@ class OverlayStylePicker(QObject):
             'data_size': 's',
             'range_color': 'c',
             'range_style': 'ls',
-            'range_size': 'lw'
+            'range_size': 'lw',
+            'label_color': 'c',
+            'label_size': 'size',
+            'label_weight': 'weight',
         }
 
     @property
@@ -222,3 +259,7 @@ class OverlayStylePicker(QObject):
     def rotation_series_labels(self):
         # Same as Laue
         return self.laue_labels
+
+    @property
+    def include_labels(self):
+        return self.overlay.is_laue

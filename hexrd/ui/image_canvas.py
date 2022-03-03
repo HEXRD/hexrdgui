@@ -323,9 +323,12 @@ class ImageCanvas(FigureCanvas):
     def draw_laue_overlay(self, axis, data, style, highlight_style):
         spots = data['spots']
         ranges = data['ranges']
+        labels = data['labels']
+        label_offsets = data['label_offsets']
 
         data_style = style['data']
         ranges_style = style['ranges']
+        label_style = style['labels']
 
         highlight_indices = [i for i, x in enumerate(spots)
                              if id(x) in self.overlay_highlight_ids]
@@ -339,6 +342,20 @@ class ImageCanvas(FigureCanvas):
 
             artist = axis.scatter(x, y, **current_style)
             artists.append(artist)
+
+            if labels:
+                current_label_style = label_style
+                if i in highlight_indices:
+                    current_label_style = highlight_style['labels']
+
+                kwargs = {
+                    'x': x + label_offsets[0],
+                    'y': y + label_offsets[1],
+                    's': labels[i],
+                    **current_label_style,
+                }
+                artist = axis.text(**kwargs)
+                artists.append(artist)
 
         for i, box in enumerate(ranges):
             current_style = ranges_style

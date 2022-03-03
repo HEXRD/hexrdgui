@@ -234,4 +234,4 @@ class OverlayManager:
 
     def edit_style(self):
         self._style_picker = OverlayStylePicker(self.active_overlay, self.ui)
-        self._style_picker.ui.exec_()
+        self._style_picker.exec_()
