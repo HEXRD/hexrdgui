@@ -168,7 +168,7 @@ class CalibrationCrystalSliderWidget(QObject):
         delta = range_value / 2.0
         sliders = self.slider_widgets
         for i, slider in enumerate(sliders):
-            val = data[i]
+            val = data[i] * self.CONF_VAL_TO_SLIDER_VAL
             blocker = QSignalBlocker(slider)  # noqa: F841
             slider.setRange(val - delta, val + delta)
             slider.setValue(val)
