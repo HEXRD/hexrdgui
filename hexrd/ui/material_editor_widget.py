@@ -1,4 +1,5 @@
 from PySide2.QtCore import Signal, QObject
+from PySide2.QtWidgets import QMessageBox
 
 from hexrd.material import _angstroms
 from hexrd import spacegroup
@@ -26,6 +27,9 @@ class MaterialEditorWidget(QObject):
         self.setup_connections()
 
     def setup_connections(self):
+        for w in self.lattice_length_widgets:
+            w.valueChanged.connect(self.confirm_large_lattice_parameter)
+
         for widget in self.lattice_widgets:
             widget.valueChanged.connect(self.set_lattice_params)
 
@@ -66,15 +70,24 @@ class MaterialEditorWidget(QObject):
             self.ui.min_d_spacing.blockSignals(prev_blocked)
 
     @property
-    def lattice_widgets(self):
+    def lattice_length_widgets(self):
         return [
             self.ui.lattice_a,
             self.ui.lattice_b,
             self.ui.lattice_c,
+        ]
+
+    @property
+    def lattice_angle_widgets(self):
+        return [
             self.ui.lattice_alpha,
             self.ui.lattice_beta,
-            self.ui.lattice_gamma
+            self.ui.lattice_gamma,
         ]
+
+    @property
+    def lattice_widgets(self):
+        return self.lattice_length_widgets + self.lattice_angle_widgets
 
     @property
     def space_group_setters(self):
@@ -128,6 +141,23 @@ class MaterialEditorWidget(QObject):
                 widget.setValue(lprm[i].getVal(u))
         finally:
             self.block_lattice_signals(False)
+
+    def confirm_large_lattice_parameter(self):
+        sender = self.sender()
+
+        name = sender.objectName().removeprefix('lattice_')
+        value = sender.value()
+        threshold = 50
+
+        if value > threshold:
+            msg = (
+                f'Warning: lattice parameter "{name}" was set to a '
+                f'large value of "{value:.2f}" Å. This might use too '
+                'many system resources. Proceed anyways?'
+            )
+            if QMessageBox.question(self.ui, 'HEXRD', msg) == QMessageBox.No:
+                # Reset the lattice parameter value.
+                self.update_gui_from_material()
 
     def set_lattice_params(self):
         """update all the lattice parameter boxes when one changes"""
