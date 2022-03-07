@@ -166,15 +166,20 @@ class LaueOverlay(Overlay):
             # find valid points
             idx = ~np.isnan(energy[0])  # there is only one grain here
 
-            # filter (tth, eta) results
+            # filter results
             xy_data = xy_det[0][idx, :]
-            angles = angles[0][idx, :]  # these are in radians
+
             hkls = hkls_in[0][:, idx].T.astype(np.int32)
             point_groups[det_key]['hkls'] = hkls
+
+            angles = angles[0][idx, :]  # these are in radians
             angles[:, 1] = xfcapi.mapAngle(
                 angles[:, 1], np.radians(self.eta_period), units='radians'
             )
 
+            energies = energy[0][idx]
+
+            """
             # !!! apply offset corrections to angles
             # convert to angles in LAB ref
             angles_corr, _ = xfcapi.detectorXYToGvec(
@@ -188,13 +193,14 @@ class LaueOverlay(Overlay):
             angles_corr[:, 1] = xfcapi.mapAngle(
                 angles_corr[:, 1], np.radians(self.eta_period), units='radians'
             )
+            """
 
             if display_mode == ViewType.polar:
                 # Save the Laue spots as a list instead of a numpy array,
                 # so that we can predictably get the id() of spots inside.
                 # Numpy arrays do fancy optimizations that break this.
-                spots = np.degrees(angles_corr).tolist()
-                spots_for_ranges = angles_corr
+                spots = np.degrees(angles).tolist()
+                spots_for_ranges = angles
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 if display_mode == ViewType.raw:
                     # Convert to pixel coordinates
@@ -216,7 +222,6 @@ class LaueOverlay(Overlay):
                 hkls = point_groups[det_key]['hkls']
                 labels = [str(tuple(x)) for x in hkls]
             elif self.label_type == LaueLabelType.energy:
-                energies = psim[4][0]
                 labels = [f'{x:.3g}' for x in energies]
             else:
                 labels = []
