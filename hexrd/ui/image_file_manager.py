@@ -36,6 +36,11 @@ class ImageFileManager(metaclass=Singleton):
             shape = (rows, cols)
             data = np.ones(shape, dtype=np.uint8)
             ims = imageseries.open(None, 'array', data=data)
+
+            # Set a flag on these image series indicating that they are
+            # dummies.
+            ims.is_dummy = True
+
             HexrdConfig().imageseries_dict[det] = ims
 
     def load_images(self, detectors, file_names, options=None):

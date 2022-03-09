@@ -431,7 +431,7 @@ class MainWindow(QObject):
             HexrdConfig().load_materials(selected_file)
 
     def on_action_save_imageseries_triggered(self):
-        if not HexrdConfig().has_images():
+        if not HexrdConfig().has_images:
             msg = ('No ImageSeries available for saving.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
@@ -708,7 +708,7 @@ class MainWindow(QObject):
         is_polar = self.image_mode == ViewType.polar
         is_raw = self.image_mode == ViewType.raw
 
-        has_images = HexrdConfig().has_images()
+        has_images = HexrdConfig().has_images
 
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian) and has_images)
@@ -721,7 +721,7 @@ class MainWindow(QObject):
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
 
     def start_fast_powder_calibration(self):
-        if not HexrdConfig().has_images():
+        if not HexrdConfig().has_images:
             msg = ('No images available for calibration.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
@@ -780,7 +780,7 @@ class MainWindow(QObject):
 
     def update_all(self, clear_canvases=False):
         # If there are no images loaded, skip the request
-        if not HexrdConfig().has_images():
+        if not HexrdConfig().imageseries_dict:
             return
 
         if HexrdConfig().loading_state:
