@@ -82,8 +82,9 @@ class ColorMapEditor:
         self.update_norm()
 
     def update_bc_enable_state(self):
+        has_images = HexrdConfig().has_images
         has_data = self.data is not None
-        self.ui.bc_editor_button.setEnabled(has_data)
+        self.ui.bc_editor_button.setEnabled(has_data and has_images)
 
     def bc_editor_button_pressed(self):
         if self.bc_editor:
