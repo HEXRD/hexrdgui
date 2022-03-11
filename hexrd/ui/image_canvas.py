@@ -352,6 +352,7 @@ class ImageCanvas(FigureCanvas):
                     'x': x + label_offsets[0],
                     'y': y + label_offsets[1],
                     's': labels[i],
+                    'clip_on': True,
                     **current_label_style,
                 }
                 artist = axis.text(**kwargs)
