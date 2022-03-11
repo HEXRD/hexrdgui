@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>494</width>
-    <height>200</height>
+    <width>672</width>
+    <height>245</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -63,9 +63,6 @@
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select row to edit&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
      <property name="dragDropOverwriteMode">
       <bool>false</bool>
      </property>
@@ -97,6 +94,11 @@
      <row/>
      <row/>
      <row/>
+     <column>
+      <property name="text">
+       <string>Name</string>
+      </property>
+     </column>
      <column>
       <property name="text">
        <string>Material</string>

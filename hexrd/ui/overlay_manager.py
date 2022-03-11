@@ -1,6 +1,6 @@
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
 from PySide2.QtWidgets import (
-    QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QWidget
+    QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QTableWidgetItem, QWidget
 )
 
 from hexrd.ui.constants import OverlayType
@@ -11,9 +11,10 @@ from hexrd.ui.ui_loader import UiLoader
 
 
 COLUMNS = {
-    'material': 0,
-    'type': 1,
-    'visible': 2
+    'name': 0,
+    'material': 1,
+    'type': 2,
+    'visible': 3,
 }
 
 
@@ -37,6 +38,7 @@ class OverlayManager:
     def setup_connections(self):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.selection_changed)
+        self.ui.table.itemChanged.connect(self.table_item_changed)
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
@@ -131,6 +133,9 @@ class OverlayManager:
         self.clear_table()
         self.ui.table.setRowCount(len(overlays))
         for i, overlay in enumerate(overlays):
+            w = QTableWidgetItem(overlay.name)
+            self.ui.table.setItem(i, COLUMNS['name'], w)
+
             w = self.create_materials_combo(overlay.material_name)
             self.ui.table.setCellWidget(i, COLUMNS['material'], w)
 
@@ -220,6 +225,29 @@ class OverlayManager:
 
     def update_refinement_options(self):
         self.overlay_editor.update_refinement_options()
+
+    def table_item_changed(self, item):
+        col = item.column()
+        if col == COLUMNS['name']:
+            return self.overlay_name_edited(item)
+        else:
+            raise Exception(f'Item editing not implemented for column: {col}')
+
+    def overlay_name_edited(self, item):
+        row = item.row()
+        new_name = item.text()
+        modified_overlay = HexrdConfig().overlays[row]
+        old_name = modified_overlay.name
+
+        # If the name matches any other overlay names, revert back so that
+        # we can keep unique names.
+        for overlay in HexrdConfig().overlays:
+            if new_name == overlay.name:
+                # This name already exists. Revert changes.
+                item.setText(old_name)
+                return
+
+        modified_overlay.name = new_name
 
     def add(self):
         HexrdConfig().append_overlay(self.active_material_name,
