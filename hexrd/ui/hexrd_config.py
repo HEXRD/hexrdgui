@@ -399,8 +399,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @overlays_dictified.setter
     def overlays_dictified(self, v):
+        material_names = list(self.materials.keys())
+
         self.overlays = []
         for overlay_dict in v:
+            if overlay_dict['material_name'] not in material_names:
+                # Skip over ones that do not have a matching material
+                continue
+
             self.overlays.append(overlays.from_dict(overlay_dict))
 
     def emit_update_status_bar(self, msg):
