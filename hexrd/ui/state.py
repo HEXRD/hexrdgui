@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from PySide2.QtCore import QTimer
+
 import h5py
 import numpy as np
 import yaml
@@ -200,11 +202,16 @@ def load(h5_file):
     # Record the location of the state file in case we save over it
     HexrdConfig().last_loaded_state_file = h5_file.filename
 
-    # Indicate that the state was loaded...
-    HexrdConfig().state_loaded.emit()
+    def finalize():
+        # Indicate that the state was loaded...
+        HexrdConfig().state_loaded.emit()
 
-    # Perform a deep rerender to make sure everything is updated...
-    HexrdConfig().deep_rerender_needed.emit()
+        # Perform a deep rerender to make sure everything is updated...
+        HexrdConfig().deep_rerender_needed.emit()
+
+    # Allow some events to be processed, including loading the overlays,
+    # before finalizing.
+    QTimer.singleShot(0, finalize)
 
 
 def load_imageseries_dict(h5_file):
