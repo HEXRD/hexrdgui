@@ -32,26 +32,6 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
-      <widget class="QLabel" name="max_tth_label">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Max 2θ:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QCheckBox" name="limit_active">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max 2θ or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Limit Active</string>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="0" colspan="3">
       <widget class="QComboBox" name="materials_combo">
        <property name="sizePolicy">
@@ -96,7 +76,7 @@
        </item>
       </widget>
      </item>
-     <item row="8" column="0" colspan="4">
+     <item row="9" column="0" colspan="4">
       <widget class="QTabWidget" name="tab_widget">
        <property name="currentIndex">
         <number>0</number>
@@ -133,34 +113,16 @@
        </widget>
       </widget>
      </item>
-     <item row="6" column="2">
-      <widget class="ScientificDoubleSpinBox" name="min_d_spacing_displayed">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
+     <item row="4" column="0">
+      <widget class="QCheckBox" name="show_overlays">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum d spacing for the HKLs to be displayed. This is applied to the entries in the &amp;quot;Reflections Table&amp;quot; as well as to any powder overlays on display. It does not apply to Laue overlays, however.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display overlays in the canvas for each material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       <property name="text">
+        <string>Show Overlays</string>
        </property>
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="suffix">
-        <string> Å</string>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.100000000000000</double>
-       </property>
-       <property name="value">
-        <double>1.000000000000000</double>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -202,70 +164,6 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="2">
-      <widget class="ScientificDoubleSpinBox" name="max_tth">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The max 2θ for the HKLs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="suffix">
-        <string>°</string>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>360.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.100000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="1">
-      <widget class="QLabel" name="min_d_spacing_displayed_label">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum d spacing for the HKLs to be displayed. This is applied to the entries in the &amp;quot;Materials Table&amp;quot; as well as to any powder overlays on display. It does not apply to Laue overlays, however.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Min d-spacing (displayed):</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QCheckBox" name="show_overlays">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display overlays in the canvas for each material&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Show Overlays</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLabel" name="min_d_spacing_label">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum d-spacing for the HKLs to be generated by hexrd.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Min d-spacing (computed):</string>
-       </property>
-      </widget>
-     </item>
      <item row="4" column="2">
       <widget class="ScientificDoubleSpinBox" name="min_d_spacing">
        <property name="enabled">
@@ -294,6 +192,108 @@
        </property>
        <property name="value">
         <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLabel" name="min_d_spacing_label">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum d-spacing for the HKLs to be generated by hexrd.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Min d-spacing (computed):</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="min_d_spacing_displayed_label">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum d spacing for the HKLs to be displayed. This is applied to the entries in the &amp;quot;Materials Table&amp;quot; as well as to any powder overlays on display. It does not apply to Laue overlays, however.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Min d-spacing (displayed):</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="ScientificDoubleSpinBox" name="max_tth">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The max 2θ for the HKLs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string>°</string>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>360.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="ScientificDoubleSpinBox" name="min_d_spacing_displayed">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The minimum d spacing for the HKLs to be displayed. This is applied to the entries in the &amp;quot;Reflections Table&amp;quot; as well as to any powder overlays on display. It does not apply to Laue overlays, however.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string> Å</string>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+       <property name="value">
+        <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="max_tth_label">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Max 2θ:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QCheckBox" name="limit_active">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the allowed HKLs with the max 2θ or the minimum d spacing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Limit Active</string>
        </property>
       </widget>
      </item>
