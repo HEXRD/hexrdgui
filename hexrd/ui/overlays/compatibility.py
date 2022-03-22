@@ -1,6 +1,16 @@
 CURRENT_DICT_VERSION = 2
 
 
+def material_name(overlay_dict):
+    version = overlay_dict.get('_version', 1)
+    if version == 1:
+        key = 'material'
+    else:
+        key = 'material_name'
+
+    return overlay_dict.get(key)
+
+
 def to_dict(overlay):
     d = overlay.to_dict()
     # Keep track of a version so we can convert between formats properly
