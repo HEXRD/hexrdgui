@@ -403,7 +403,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.overlays = []
         for overlay_dict in v:
-            if overlay_dict['material_name'] not in material_names:
+            material_name = overlays.compatibility.material_name(overlay_dict)
+            if material_name not in material_names:
                 # Skip over ones that do not have a matching material
                 continue
 
