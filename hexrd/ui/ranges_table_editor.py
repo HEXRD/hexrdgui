@@ -18,7 +18,7 @@ class RangesTableEditor(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('ranges_table_editor.ui', parent)
 
-        self._data = data
+        self._data = self._validate_data(data)
         self._suffix = '°'
         self.data_to_gui_func = np.degrees
         self.gui_to_data_func = np.radians
@@ -48,8 +48,15 @@ class RangesTableEditor(QObject):
 
     @data.setter
     def data(self, v):
-        self._data = copy.deepcopy(v)
+        self._data = self._validate_data(v)
         self.update_table()
+
+    @staticmethod
+    def _validate_data(v):
+        if isinstance(v, np.ndarray):
+            return v.tolist()
+        else:
+            return copy.deepcopy(v)
 
     @property
     def suffix(self):
