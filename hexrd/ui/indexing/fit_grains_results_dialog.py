@@ -634,7 +634,7 @@ class FitGrainsResultsDialog(QObject):
 
         worker = AsyncWorker(self._save_workflow_files, selected_directory)
         self.thread_pool.start(worker)
-        self.progress_dialog.setWindowTitle(f'Saving worflow configuration')
+        self.progress_dialog.setWindowTitle(f'Saving workflow configuration')
         self.progress_dialog.setRange(0, 0)
         worker.signals.finished.connect(self.progress_dialog.accept)
         self.progress_dialog.exec_()
