@@ -2067,10 +2067,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return img_dict
 
     @property
-    def agg_images(self):
-        return self.unaggregated_images is not None
-
-    @property
     def is_aggregated(self):
         # Having unaggregated images implies the image series is aggregated
         return self.unagg_images is not None
