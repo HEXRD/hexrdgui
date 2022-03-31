@@ -41,6 +41,7 @@ class IndexingResultsDialog(QObject):
         self.setup_color_map()
         self.setup_grain_id_options()
         self.setup_hkl_options()
+        self.update_enable_states()
 
         self.setup_connections()
 
