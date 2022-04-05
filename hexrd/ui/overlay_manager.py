@@ -204,6 +204,7 @@ class OverlayManager:
             HexrdConfig().change_overlay_type(i, OverlayType(w.currentData()))
 
         HexrdConfig().overlay_config_changed.emit()
+        self.update_table()
         self.update_overlay_editor()
 
     def update_config_visibilities(self):
