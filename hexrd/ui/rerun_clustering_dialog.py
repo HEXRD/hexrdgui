@@ -80,7 +80,7 @@ class RerunClusteringDialog(QDialog):
         worker = AsyncWorker(runner.run_cluster)
         runner.thread_pool.start(worker)
         worker.signals.result.connect(
-            runner.start_fit_grains_runner, Qt.QueuedConnection)
+            runner.confirm_indexing_results, Qt.QueuedConnection)
         worker.signals.finished.connect(runner.accept_progress)
         worker.signals.error.connect(runner.on_async_error)
         runner.progress_dialog.exec_()

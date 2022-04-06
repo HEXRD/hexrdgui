@@ -21,6 +21,7 @@ from hexrd.ui.indexing.create_config import create_indexing_config
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.indexing.fit_grains_select_dialog import FitGrainsSelectDialog
+from hexrd.ui.indexing.indexing_results_dialog import IndexingResultsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrd.ui.indexing.utils import generate_grains_table
@@ -74,6 +75,7 @@ class IndexingRunner(Runner):
     def clear(self):
         self.ome_maps_select_dialog = None
         self.ome_maps_viewer_dialog = None
+        self.indexing_results_dialog = None
         self.ome_maps = None
         self.grains_table = None
 
@@ -241,7 +243,7 @@ class IndexingRunner(Runner):
         worker = AsyncWorker(self.run_cluster_functions)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.start_fit_grains_runner,
+        worker.signals.result.connect(self.confirm_indexing_results,
                                       Qt.QueuedConnection)
         worker.signals.finished.connect(self.accept_progress)
         worker.signals.error.connect(self.on_async_error)
@@ -304,9 +306,24 @@ class IndexingRunner(Runner):
         HexrdConfig().find_orientations_grains_table = copy.deepcopy(
             self.grains_table)
 
-    def start_fit_grains_runner(self):
+    def confirm_indexing_results(self):
+        if self.grains_table is None:
+            msg = 'No grains found'
+            QMessageBox.critical(self.parent, msg, msg)
+            return
+
+        dialog = IndexingResultsDialog(self.ome_maps, self.grains_table,
+                                       self.parent)
+
         # We will automatically start fit grains after the indexing
         # is complete. The user can cancel this if they don't want to do it.
+        dialog.accepted.connect(self.start_fit_grains_runner)
+
+        # Show later so the dialog will move to the front on Mac
+        dialog.show_later()
+        self.indexing_results_dialog = dialog
+
+    def start_fit_grains_runner(self):
         if self.grains_table is None:
             msg = 'No grains found'
             QMessageBox.critical(self.parent, msg, msg)
