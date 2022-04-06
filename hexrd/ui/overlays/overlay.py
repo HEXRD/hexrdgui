@@ -248,7 +248,11 @@ class Overlay(ABC):
                 )
                 raise Exception(msg)
 
-            self._data = self.generate_overlay()
+            # We are identifying this dict by its id() in the image_canvas.
+            # Because of this, make sure we use the same dict so that we
+            # do not change ids.
+            self._data.clear()
+            self._data |= self.generate_overlay()
             self.update_needed = False
         return self._data
 
