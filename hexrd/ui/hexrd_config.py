@@ -1175,6 +1175,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         for name, mat in zip(names, materials):
             self.config['materials']['materials'][name] = mat
+            # Force the material name to match
+            mat.name = name
             self.reset_tth_max(name)
 
         self.materials_added.emit()
