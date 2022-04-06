@@ -1,6 +1,7 @@
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
 from PySide2.QtWidgets import (
-    QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QTableWidgetItem, QWidget
+    QCheckBox, QComboBox, QHBoxLayout, QHeaderView, QSizePolicy,
+    QTableWidgetItem, QWidget
 )
 
 from hexrd.ui.constants import OverlayType
@@ -151,6 +152,14 @@ class OverlayManager:
             self.select_row(select_row)
 
         self.ui.table.resizeColumnsToContents()
+
+        # The last section isn't always stretching automatically, even
+        # though we have setStretchLastSection(True) set.
+        # Force it to stretch manually.
+        last_column = max(v for v in COLUMNS.values())
+        self.ui.table.horizontalHeader().setSectionResizeMode(
+            last_column, QHeaderView.Stretch)
+
         # Just in case the selection actually changed...
         self.selection_changed()
 
