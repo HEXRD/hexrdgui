@@ -1,6 +1,7 @@
 from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
 from PySide2.QtWidgets import (
-    QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QTableWidgetItem, QWidget
+    QCheckBox, QComboBox, QHBoxLayout, QHeaderView, QSizePolicy,
+    QTableWidgetItem, QWidget
 )
 
 from hexrd.ui.constants import OverlayType
@@ -43,6 +44,7 @@ class OverlayManager:
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
         HexrdConfig().update_overlay_editor.connect(self.update_overlay_editor)
+        HexrdConfig().materials_added.connect(self.update_table)
         HexrdConfig().material_renamed.connect(self.update_table)
         HexrdConfig().materials_removed.connect(self.update_table)
 
@@ -151,6 +153,14 @@ class OverlayManager:
             self.select_row(select_row)
 
         self.ui.table.resizeColumnsToContents()
+
+        # The last section isn't always stretching automatically, even
+        # though we have setStretchLastSection(True) set.
+        # Force it to stretch manually.
+        last_column = max(v for v in COLUMNS.values())
+        self.ui.table.horizontalHeader().setSectionResizeMode(
+            last_column, QHeaderView.Stretch)
+
         # Just in case the selection actually changed...
         self.selection_changed()
 
@@ -204,6 +214,7 @@ class OverlayManager:
             HexrdConfig().change_overlay_type(i, OverlayType(w.currentData()))
 
         HexrdConfig().overlay_config_changed.emit()
+        self.update_table()
         self.update_overlay_editor()
 
     def update_config_visibilities(self):
