@@ -139,10 +139,10 @@
            <bool>false</bool>
           </property>
           <property name="minimum">
-           <number>-8388608</number>
+           <number>-999999999</number>
           </property>
           <property name="maximum">
-           <number>8388607</number>
+           <number>999999999</number>
           </property>
           <property name="displayIntegerBase">
            <number>10</number>
@@ -165,10 +165,10 @@
            <bool>false</bool>
           </property>
           <property name="minimum">
-           <number>0</number>
+           <number>-999999999</number>
           </property>
           <property name="maximum">
-           <number>16777215</number>
+           <number>999999999</number>
           </property>
           <property name="value">
            <number>429</number>
