@@ -58,6 +58,7 @@ class ImageStackDialog(QObject):
         self.ui.reverse_frames.toggled.connect(self.reverse_frames)
         self.ui.button_box.accepted.connect(self.check_data)
         self.ui.button_box.rejected.connect(self.close_widget)
+        HexrdConfig().detectors_changed.connect(self.detectors_changed)
 
     def setup_gui(self):
         self.ui.current_directory.setText(
@@ -208,6 +209,8 @@ class ImageStackDialog(QObject):
         self.ui.total_frames.setText(str(total))
 
     def change_detector(self, det):
+        if not det:
+            return
         self.detector = det
         self.setup_gui()
         if self.state['apply_to_all']:
@@ -437,3 +440,20 @@ class ImageStackDialog(QObject):
     def close_widget(self):
         if self.ui.isFloating():
             self.ui.close()
+
+    def detectors_changed(self):
+        self.detectors = HexrdConfig().detector_names
+        self.detector = self.detectors[0]
+        # update the state
+        self.state['dets'] = self.detectors
+        for det in self.detectors:
+            self.state[det] = {
+                'directory': '',
+                'files': '',
+                'search': '',
+                'file_count': 0,
+            }
+        # update the GUI
+        self.ui.detectors.clear()
+        self.ui.detectors.addItems(self.detectors)
+        self.setup_gui()
