@@ -546,7 +546,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def has_images(self):
         # There are images, and they are not dummy images
-        return self.imageseries_dict and not self.has_dummy_images
+        return bool(self.imageseries_dict and not self.has_dummy_images)
 
     @property
     def omega_imageseries_dict(self):
