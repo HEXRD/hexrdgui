@@ -114,13 +114,16 @@ class ImageStackDialog(QObject):
                 'add_omega_data': True,
                 'reverse_frames': False,
             }
-            for det in self.detectors:
-                self.state[det] = {
-                    'directory': '',
-                    'files': '',
-                    'search': '',
-                    'file_count': 0,
-                }
+        self.setup_detectors_state()
+
+    def setup_detectors_state(self):
+        for det in self.detectors:
+            self.state[det] = {
+                'directory': '',
+                'files': '',
+                'search': '',
+                'file_count': 0,
+            }
 
     def set_wedges(self):
         if self.ui.omega_wedges.rowCount() == 0:
@@ -446,13 +449,7 @@ class ImageStackDialog(QObject):
         self.detector = self.detectors[0]
         # update the state
         self.state['dets'] = self.detectors
-        for det in self.detectors:
-            self.state[det] = {
-                'directory': '',
-                'files': '',
-                'search': '',
-                'file_count': 0,
-            }
+        self.setup_detectors_state()
         # update the GUI
         self.ui.detectors.clear()
         self.ui.detectors.addItems(self.detectors)
