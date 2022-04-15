@@ -7,6 +7,8 @@ import numpy as np
 from PySide2.QtCore import Signal, QObject, Qt, QTimer
 from PySide2.QtWidgets import QSizePolicy
 
+from hexrd.transforms import xfcapi
+
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.grains_viewer_dialog import GrainsViewerDialog
@@ -192,6 +194,14 @@ class IndexingResultsDialog(QObject):
     def image_data(self):
         return self.ome_maps.dataStore[self.current_hkl_index]
 
+    @property
+    def ome_period(self):
+        return self.ome_maps.omeEdges[0] + np.radians([0, 360])
+
+    @property
+    def eta_period(self):
+        return self.ome_maps.etaEdges[0] + np.radians([0, 360])
+
     def draw(self):
         self.canvas.draw()
 
@@ -302,7 +312,7 @@ class IndexingResultsDialog(QObject):
         kwargs = {
             'plane_data': plane_data,
             'grain_param_list': [crystal_params],
-            'ome_period': self.ome_maps.omeEdges[0] + np.radians([0, 360]),
+            'ome_period': self.ome_period,
         }
         sim_data = instr.simulate_rotation_series(**kwargs)
 
@@ -323,7 +333,13 @@ class IndexingResultsDialog(QObject):
                 for angles in valid_angs:
                     all_angles.append(angles[:, 1:])
 
-        return np.degrees(np.concatenate(all_angles))
+        output = np.degrees(np.concatenate(all_angles))
+
+        # Fix eta period
+        output[:, 0] = xfcapi.mapAngle(
+            output[:, 0], np.degrees(self.eta_period), units='degrees'
+        )
+        return output
 
     def create_spots(self):
         self.spots = self.generate_spots_data()
