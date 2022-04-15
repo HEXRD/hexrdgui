@@ -302,6 +302,7 @@ class IndexingResultsDialog(QObject):
         kwargs = {
             'plane_data': plane_data,
             'grain_param_list': [crystal_params],
+            'ome_period': self.ome_maps.omeEdges[0] + np.radians([0, 360]),
         }
         sim_data = instr.simulate_rotation_series(**kwargs)
 
