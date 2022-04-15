@@ -1,6 +1,7 @@
 import numpy as np
 
 from hexrd.findorientations import _process_omegas
+from hexrd.transforms.xfcapi import mapAngle
 
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.overlays.constants import (
@@ -41,7 +42,6 @@ class RotationSeriesOverlay(Overlay):
         self.eta_ranges = eta_ranges
         self.ome_ranges = ome_ranges
         self.ome_period = ome_period
-        # FIXME: eta_period is currently not in use
         self.eta_period = eta_period
         self.aggregated = aggregated
         self.ome_width = ome_width
@@ -195,6 +195,11 @@ class RotationSeriesOverlay(Overlay):
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
             angles = valid_angs[0][:, :2]
             omegas = valid_angs[0][:, 2]
+
+            # Fix eta period
+            angles[:, 1] = mapAngle(
+                angles[:, 1], np.radians(self.eta_period), units='radians'
+            )
 
             if display_mode == ViewType.polar:
                 data = np.degrees(angles)
