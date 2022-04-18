@@ -2,12 +2,13 @@ import os
 
 import numpy as np
 
-from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.indexing.utils import generate_grains_table
+from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class FitGrainsSelectDialog(QObject):
@@ -56,7 +57,10 @@ class FitGrainsSelectDialog(QObject):
         self.accepted.emit()
 
     def set_grains_table(self):
-        if self.method == 'indexing':
+        if self.method == 'fit_grains':
+            # Grab the most recent fit grains results
+            self.grains_table = HexrdConfig().fit_grains_grains_table
+        elif self.method == 'indexing':
             # Get the grains table off the indexing runner
             self.grains_table = self.indexing_runner.grains_table
         elif self.method == 'estimate':
@@ -94,7 +98,7 @@ class FitGrainsSelectDialog(QObject):
 
     @property
     def all_methods(self):
-        return ('indexing',) + self.file_methods
+        return ('fit_grains', 'indexing') + self.file_methods
 
     @property
     def file_name(self):
@@ -114,7 +118,7 @@ class FitGrainsSelectDialog(QObject):
 
     @property
     def method(self):
-        return self.ui.method.currentText().lower()
+        return self.ui.method.currentData()
 
     @method.setter
     def method(self, v):
@@ -133,13 +137,20 @@ class FitGrainsSelectDialog(QObject):
     def update_valid_methods(self):
         valid_methods = list(self.all_methods)
 
+        if HexrdConfig().fit_grains_grains_table is None:
+            valid_methods.remove('fit_grains')
+
         if getattr(self.indexing_runner, 'grains_table', None) is None:
             valid_methods.remove('indexing')
 
-        widget = self.ui.method
-        blocker = QSignalBlocker(widget)  # noqa: F841
-        widget.clear()
-        widget.addItems([x.capitalize() for x in valid_methods])
+        def format_label(x):
+            return x.replace('_', ' ').title()
 
-        # In case the current widget changed...
-        self.update_method_tab()
+        w = self.ui.method
+        with block_signals(w):
+            w.clear()
+            for x in valid_methods:
+                w.addItem(format_label(x), x)
+
+            # In case the current widget changed...
+            self.update_method_tab()

@@ -11,23 +11,21 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="0" column="1">
-    <widget class="QComboBox" name="method">
-     <item>
-      <property name="text">
-       <string>Indexing</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Estimate</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Orientations</string>
-      </property>
-     </item>
+   <item row="2" column="1">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Method:</string>
+     </property>
     </widget>
    </item>
    <item row="1" column="0" colspan="2">
@@ -35,6 +33,23 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <widget class="QWidget" name="fit_grains_tab">
+      <attribute name="title">
+       <string>Fit Grains</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QLabel" name="fit_grains_label">
+         <property name="text">
+          <string>Use grains from most recent fit grains output</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="indexing_tab">
       <attribute name="title">
        <string>Indexing</string>
@@ -108,21 +123,28 @@
      </widget>
     </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Method:</string>
-     </property>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>Fit Grains</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Indexing</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Estimate</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Orientations</string>
+      </property>
+     </item>
     </widget>
    </item>
   </layout>
