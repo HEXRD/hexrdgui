@@ -185,6 +185,19 @@
         <item row="2" column="0">
          <widget class="QComboBox" name="lattice_type"/>
         </item>
+        <item row="7" column="1">
+         <widget class="QLabel" name="space_group_setting_label">
+          <property name="text">
+           <string>Setting</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QComboBox" name="space_group_setting"/>
+        </item>
        </layout>
       </widget>
      </item>
@@ -519,6 +532,7 @@
   <tabstop>hall_symbol</tabstop>
   <tabstop>hermann_mauguin</tabstop>
   <tabstop>laue_group</tabstop>
+  <tabstop>space_group_setting</tabstop>
   <tabstop>lattice_a</tabstop>
   <tabstop>lattice_alpha</tabstop>
   <tabstop>lattice_b</tabstop>

@@ -27,6 +27,12 @@ class MaterialEditorWidget(QObject):
         self._material = material
         self.update_gui_from_material()
 
+        # Hide the space group setting stuff, because right now, it is not
+        # actually used for anything. We can bring it back if we start to
+        # use it for something.
+        self.ui.space_group_setting_label.hide()
+        self.ui.space_group_setting.hide()
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -39,9 +45,19 @@ class MaterialEditorWidget(QObject):
         for widget in self.lattice_widgets:
             widget.valueChanged.connect(self.set_lattice_params)
 
-        for widget in self.space_group_setters:
-            widget.currentIndexChanged.connect(self.set_space_group)
-            widget.currentIndexChanged.connect(self.enable_lattice_params)
+        self.ui.space_group.currentIndexChanged.connect(
+            self.space_group_number_modified)
+
+        self.ui.space_group_setting.currentIndexChanged.connect(
+            self.space_group_setting_modified)
+
+        full_idx_setters = [
+            self.ui.hall_symbol,
+            self.ui.hermann_mauguin,
+        ]
+        for w in full_idx_setters:
+            w.currentIndexChanged.connect(self.set_space_group)
+            w.currentIndexChanged.connect(self.enable_lattice_params)
 
         # Flag overlays using this material for an update
         self.material_modified.connect(
@@ -55,15 +71,15 @@ class MaterialEditorWidget(QObject):
     def setup_space_group_widgets(self):
         self.ui.lattice_type.addItems(list(spacegroup._rqpDict.keys()))
 
+        for i in range(230):
+            self.ui.space_group.addItem(str(i + 1), i + 1)
+
         for k in spacegroup.sgid_to_hall:
-            self.ui.space_group.addItem(k)
             self.ui.hall_symbol.addItem(spacegroup.sgid_to_hall[k])
             self.ui.hermann_mauguin.addItem(spacegroup.sgid_to_hm[k])
 
     def update_gui_from_material(self):
-        match = _space_groups_without_settings == self.material.sgnum
-        sgid = np.where(match)[0][0]
-        self.set_space_group(sgid)
+        self.set_space_group_number(self.material.sgnum)
         self.lattice_type_changed()
         self.enable_lattice_params()  # This updates the values also
 
@@ -92,12 +108,30 @@ class MaterialEditorWidget(QObject):
         return [
             self.ui.space_group,
             self.ui.hall_symbol,
-            self.ui.hermann_mauguin
+            self.ui.hermann_mauguin,
+            self.ui.space_group_setting,
         ]
 
     def block_lattice_signals(self, block=True):
         for widget in self.lattice_widgets:
             widget.blockSignals(block)
+
+    @property
+    def sgnum(self):
+        return self.ui.space_group.currentData()
+
+    @sgnum.setter
+    def sgnum(self, sgnum):
+        self.ui.space_group.setCurrentIndex(sgnum - 1)
+
+    def space_group_number_modified(self):
+        self.set_space_group_number(self.sgnum)
+        self.enable_lattice_params()
+
+    def set_space_group_number(self, sgnum):
+        match = _space_groups_without_settings == sgnum
+        sgid = np.where(match)[0][0]
+        self.set_space_group(sgid)
 
     def set_space_group(self, val):
         with block_signals(*self.space_group_setters):
@@ -110,11 +144,34 @@ class MaterialEditorWidget(QObject):
             # Lattice type must be set first
             self.lattice_type = spacegroup._ltDict[lg[1]]
 
-            self.ui.space_group.setCurrentIndex(val)
+            self.ui.space_group.setCurrentIndex(sgid - 1)
+            self.reset_space_group_settings()
+            self.set_space_group_setting_by_idx(val)
+
             self.ui.hall_symbol.setCurrentIndex(val)
             self.ui.hermann_mauguin.setCurrentIndex(val)
 
             self.set_material_space_group(sgid)
+
+    def reset_space_group_settings(self):
+        self.ui.space_group_setting.clear()
+        match = _space_groups_without_settings == self.sgnum
+        indices = np.where(match)[0]
+        for idx in indices:
+            key = _all_space_groups[idx]
+            if ':' in key:
+                setting = key.split(':')[1]
+            else:
+                setting = 'None'
+            self.ui.space_group_setting.addItem(setting, int(idx))
+
+    def set_space_group_setting_by_idx(self, idx):
+        local_idx = self.ui.space_group_setting.findData(int(idx))
+        self.ui.space_group_setting.setCurrentIndex(local_idx)
+
+    def space_group_setting_modified(self):
+        idx = self.ui.space_group_setting.currentData()
+        self.set_space_group(idx)
 
     def enable_lattice_params(self):
         """enable independent lattice parameters"""
@@ -122,9 +179,7 @@ class MaterialEditorWidget(QObject):
         self.block_lattice_signals(True)
         try:
             m = self.material
-            sgid = int(self.ui.space_group.currentText().split(':')[0])
-
-            self.set_material_space_group(sgid)
+            self.set_material_space_group(self.sgnum)
 
             reqp = spacegroup.SpaceGroup(m.sgnum).reqParams
             lprm = m.latticeParameters
@@ -145,11 +200,16 @@ class MaterialEditorWidget(QObject):
 
     def lattice_type_changed(self):
         valid_space_groups = space_groups_for_lattice_type(self.lattice_type)
+
+        # First, do the enable list for the space group combo box
+        enable_list = np.isin(_sgrange(1, 230), valid_space_groups)
+        set_combobox_enabled_items(self.ui.space_group, enable_list)
+
+        # Now, do the enable list for the other combo boxes
         enable_list = np.isin(_space_groups_without_settings,
                               valid_space_groups)
 
         cb_list = [
-            self.ui.space_group,
             self.ui.hall_symbol,
             self.ui.hermann_mauguin,
         ]
