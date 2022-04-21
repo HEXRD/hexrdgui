@@ -40,10 +40,10 @@ class MaterialEditorWidget(QObject):
             self.lattice_type_changed)
 
         for w in self.lattice_length_widgets:
-            w.valueChanged.connect(self.confirm_large_lattice_parameter)
+            w.valueChanged.connect(self.lattice_length_modified)
 
-        for widget in self.lattice_widgets:
-            widget.valueChanged.connect(self.set_lattice_params)
+        for w in self.lattice_angle_widgets:
+            w.valueChanged.connect(self.lattice_angle_modified)
 
         self.ui.space_group.currentIndexChanged.connect(
             self.space_group_number_modified)
@@ -58,6 +58,8 @@ class MaterialEditorWidget(QObject):
         for w in full_idx_setters:
             w.currentIndexChanged.connect(self.set_space_group)
             w.currentIndexChanged.connect(self.enable_lattice_params)
+
+        self.ui.c_to_a.valueChanged.connect(self.c_to_a_ratio_modified)
 
         # Flag overlays using this material for an update
         self.material_modified.connect(
@@ -112,10 +114,6 @@ class MaterialEditorWidget(QObject):
             self.ui.space_group_setting,
         ]
 
-    def block_lattice_signals(self, block=True):
-        for widget in self.lattice_widgets:
-            widget.blockSignals(block)
-
     @property
     def sgnum(self):
         return self.ui.space_group.currentData()
@@ -153,6 +151,8 @@ class MaterialEditorWidget(QObject):
 
             self.set_material_space_group(sgid)
 
+        self.update_c_to_a_enable_state()
+
     def reset_space_group_settings(self):
         self.ui.space_group_setting.clear()
         match = _space_groups_without_settings == self.sgnum
@@ -176,8 +176,7 @@ class MaterialEditorWidget(QObject):
     def enable_lattice_params(self):
         """enable independent lattice parameters"""
         # lattice parameters are stored in the old "ValUnit" class
-        self.block_lattice_signals(True)
-        try:
+        with block_signals(*self.lattice_widgets, self.ui.c_to_a):
             m = self.material
             self.set_material_space_group(self.sgnum)
 
@@ -187,8 +186,8 @@ class MaterialEditorWidget(QObject):
                 widget.setEnabled(i in reqp)
                 u = 'angstrom' if i < 3 else 'degrees'
                 widget.setValue(lprm[i].getVal(u))
-        finally:
-            self.block_lattice_signals(False)
+
+            self.update_c_to_a_ratio()
 
     @property
     def lattice_type(self):
@@ -216,6 +215,14 @@ class MaterialEditorWidget(QObject):
         for cb in cb_list:
             set_combobox_enabled_items(cb, enable_list)
 
+    def lattice_length_modified(self):
+        self.confirm_large_lattice_parameter()
+        self.c_or_a_modified()
+        self.set_lattice_params()
+
+    def lattice_angle_modified(self):
+        self.set_lattice_params()
+
     def confirm_large_lattice_parameter(self):
         sender = self.sender()
 
@@ -233,12 +240,55 @@ class MaterialEditorWidget(QObject):
                 # Reset the lattice parameter value.
                 self.update_gui_from_material()
 
+    def c_or_a_modified(self):
+        w_a = self.ui.lattice_a
+        w_c = self.ui.lattice_c
+
+        # Verify this is true
+        w = self.sender()
+        if w not in (w_a, w_c):
+            return
+
+        if not self.fix_c_to_a:
+            # We need to update the c_to_a ratio
+            self.update_c_to_a_ratio()
+            return
+
+        # We need to modify the opposite widget to keep c_to_a the same
+        c_to_a = self.ui.c_to_a.value()
+        other_w = w_a if w is w_c else w_c
+        other_v = w_a.value() * c_to_a if w is w_a else w_c.value() / c_to_a
+        with block_signals(other_w):
+            other_w.setValue(other_v)
+
+    def update_c_to_a_ratio(self):
+        w = self.ui.c_to_a
+        c = self.ui.lattice_c.value()
+        a = self.ui.lattice_a.value()
+        with block_signals(w):
+            w.setValue(c / a)
+
+    def c_to_a_ratio_modified(self):
+        c_to_a = self.ui.c_to_a.value()
+        c = self.ui.lattice_c.value()
+        self.ui.lattice_a.setValue(c / c_to_a)
+
+    @property
+    def fix_c_to_a(self):
+        return self.c_to_a_ratio_enabled and self.ui.fix_c_to_a.isChecked()
+
+    @property
+    def c_to_a_ratio_enabled(self):
+        return 75 <= self.sgnum <= 194
+
+    def update_c_to_a_enable_state(self):
+        self.ui.c_to_a_ratio_group.setEnabled(self.c_to_a_ratio_enabled)
+
     def set_lattice_params(self):
         """update all the lattice parameter boxes when one changes"""
         # note: material takes reduced set of lattice parameters but outputs
         #       all six
-        self.block_lattice_signals(True)
-        try:
+        with block_signals(*self.lattice_widgets, self.ui.c_to_a):
             m = self.material
             reqp = spacegroup.SpaceGroup(m.sgnum).reqParams
             nreq = len(reqp)
@@ -251,8 +301,8 @@ class MaterialEditorWidget(QObject):
             for i, widget in enumerate(self.lattice_widgets):
                 u = 'angstrom' if i < 3 else 'degrees'
                 widget.setValue(lprm[i].getVal(u))
-        finally:
-            self.block_lattice_signals(False)
+
+            self.update_c_to_a_ratio()
 
         self.material_modified.emit()
 
