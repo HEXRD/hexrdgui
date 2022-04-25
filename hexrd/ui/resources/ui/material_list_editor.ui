@@ -26,10 +26,17 @@
    <property name="bottomMargin">
     <number>6</number>
    </property>
-   <item row="1" column="0">
-    <widget class="QPushButton" name="import_material">
+   <item row="2" column="0">
+    <widget class="QPushButton" name="import_from_defaults">
      <property name="text">
-      <string>Import Material</string>
+      <string>Import from Defaults</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPushButton" name="import_from_cif">
+     <property name="text">
+      <string>Import from CIF</string>
      </property>
     </widget>
    </item>
@@ -38,6 +45,10 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>import_from_cif</tabstop>
+  <tabstop>import_from_defaults</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
