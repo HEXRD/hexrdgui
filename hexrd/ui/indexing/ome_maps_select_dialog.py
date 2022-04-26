@@ -150,6 +150,7 @@ class OmeMapsSelectDialog(QObject):
         # Set the new config options on the internal config
         indexing_config = HexrdConfig().indexing_config
         maps_config = indexing_config['find_orientations']['orientation_maps']
+        maps_config['_select_method'] = self.method_name
         maps_config['file'] = self.file_name
         maps_config['threshold'] = self.threshold
         maps_config['bin_frames'] = self.bin_frames
@@ -161,6 +162,8 @@ class OmeMapsSelectDialog(QObject):
 
         indexing_config = HexrdConfig().indexing_config
         maps_config = indexing_config['find_orientations']['orientation_maps']
+
+        self.method_name = maps_config.get('_select_method', 'load')
 
         file_name = maps_config['file'] if maps_config['file'] else ''
 
