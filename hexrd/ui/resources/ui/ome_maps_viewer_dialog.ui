@@ -404,7 +404,7 @@
       <item row="1" column="0">
        <widget class="QTabWidget" name="quaternion_method_tab_widget">
         <property name="currentIndex">
-         <number>0</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="seed_search_tab">
          <attribute name="title">
@@ -929,6 +929,13 @@
             </layout>
            </widget>
           </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Fiber Step:</string>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0" colspan="2">
            <widget class="QGroupBox" name="current_fiber_group">
             <property name="sizePolicy">
@@ -1051,6 +1058,9 @@
                <property name="enabled">
                 <bool>false</bool>
                </property>
+               <property name="maximum">
+                <number>719</number>
+               </property>
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -1076,6 +1086,31 @@
               </widget>
              </item>
             </layout>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="ScientificDoubleSpinBox" name="hand_picked_fiber_step">
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string>°</string>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="minimum">
+             <double>0.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>360.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.500000000000000</double>
+            </property>
            </widget>
           </item>
          </layout>

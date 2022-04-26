@@ -40,8 +40,6 @@ import hexrd.ui.resources.indexing
 
 DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
 
-NUM_HAND_PICKED_FIBERS = 720
-
 
 class OmeMapsViewerDialog(QObject):
 
@@ -65,12 +63,12 @@ class OmeMapsViewerDialog(QObject):
         self.generated_fibers = np.empty((0,))
         self.current_fiber_spots = np.empty((0,))
         self.hand_picked_fibers = np.empty((0, 3))
+        self.latest_picked_eta = None
+        self.latest_picked_ome = None
 
         self.setup_widget_paths()
 
         self.setup_combo_box_item_data()
-
-        self.ui.current_fiber_slider.setRange(0, NUM_HAND_PICKED_FIBERS - 1)
 
         # Hide these tab bars. The user selects them via combo boxes.
         self.ui.quaternion_method_tab_widget.tabBar().hide()
@@ -144,6 +142,13 @@ class OmeMapsViewerDialog(QObject):
 
         self.ui.picked_fibers_delete_selected.clicked.connect(
             self.delete_selected_fiber_rows)
+
+        self.ui.fiber_step.valueChanged.connect(
+            self.synchronize_fiber_step_boxes)
+        self.ui.hand_picked_fiber_step.valueChanged.connect(
+            self.synchronize_fiber_step_boxes)
+
+        self.ui.fiber_step.valueChanged.connect(self.fiber_step_value_changed)
 
     def setup_combo_box_item_data(self):
         # Set the item data for the combo boxes to be the names we want
@@ -765,6 +770,11 @@ class OmeMapsViewerDialog(QObject):
 
         self.working_dir = config.get('working_dir', HexrdConfig().working_dir)
 
+        self.synchronize_fiber_step_boxes(self.fiber_step)
+
+        self.ui.current_fiber_slider.setRange(
+            0, self.num_hand_picked_fibers - 1)
+
     def update_config(self):
         # Update all of the config with their settings from the widgets
         config = self.config
@@ -850,6 +860,10 @@ class OmeMapsViewerDialog(QObject):
         filter_maps_if_requested(self.data, cfg)
 
     def clear_generated_fibers(self):
+        # Reset the latest picks to None
+        self.latest_picked_eta = None
+        self.latest_picked_ome = None
+
         self.generated_fibers = np.empty((0,))
         self.ui.current_fiber_slider.setValue(0)
         # In case the value didn't change. This shouldn't be expensive,
@@ -865,16 +879,24 @@ class OmeMapsViewerDialog(QObject):
             # Hand-picking quaternions is right-click only
             return
 
+        self.latest_picked_eta = event.xdata
+        self.latest_picked_ome = event.ydata
+
+        self.recreate_generated_fibers()
+
+    def recreate_generated_fibers(self):
+        pick_coords = (self.latest_picked_eta, self.latest_picked_ome)
+        if any(x is None for x in pick_coords):
+            # No picked coords. Just return.
+            return
+
         instr = create_hedm_instrument()
 
-        eta = event.xdata
-        ome = event.ydata
-
         kwargs = {
-            'pick_coords': (eta, ome),
+            'pick_coords': pick_coords,
             'eta_ome_maps': self.data,
             'map_index': self.current_hkl_index,
-            'step': 360 / NUM_HAND_PICKED_FIBERS,
+            'step': self.fiber_step,
             'beam_vec': instr.beam_vector,
             'chi': instr.chi,
             'as_expmap': True,
@@ -904,7 +926,7 @@ class OmeMapsViewerDialog(QObject):
             w = getattr(self.ui, f'selected_fiber_orientation_{i}')
             w.setValue(v)
 
-        angle = self.current_fiber_index / NUM_HAND_PICKED_FIBERS * 360
+        angle = self.current_fiber_index * self.fiber_step
         self.ui.current_fiber_angle.setValue(angle)
 
         self.generate_current_fiber_spots()
@@ -969,8 +991,13 @@ class OmeMapsViewerDialog(QObject):
         self.update_current_fiber()
 
     def current_fiber_angle_value_changed(self, v):
-        new_slider_index = round(v / 360 * NUM_HAND_PICKED_FIBERS)
+        new_slider_index = round(v / self.fiber_step)
         self.ui.current_fiber_slider.setValue(new_slider_index)
+
+        # This usually already happens, but make sure the angle gets
+        # updated to its new value (it may need to round to the nearest).
+        angle = self.current_fiber_index * self.fiber_step
+        self.ui.current_fiber_angle.setValue(angle)
 
     def add_current_fiber(self):
         to_stack = (self.hand_picked_fibers, self.current_fiber_orientation)
@@ -1061,8 +1088,10 @@ class OmeMapsViewerDialog(QObject):
                 'x': spots[:, 0],
                 'y': spots[:, 1],
                 's': 36,
-                'c': 'g',
                 'marker': 'o',
+                'facecolors': 'none',
+                'edgecolors': 'c',
+                'linewidths': 1,
             }
             artists.append(self.ax.scatter(**kwargs))
 
@@ -1095,6 +1124,35 @@ class OmeMapsViewerDialog(QObject):
         # There should be no selection now
         self.select_fiber_rows([])
         self.update_picked_fibers_table()
+
+    def synchronize_fiber_step_boxes(self, v):
+        self.ui.fiber_step.setValue(v)
+        self.ui.hand_picked_fiber_step.setValue(v)
+
+    def fiber_step_value_changed(self, v):
+        prev_angle = self.ui.current_fiber_angle.value()
+
+        self.ui.current_fiber_slider.setRange(
+            0, self.num_hand_picked_fibers - 1)
+        self.ui.current_fiber_angle.setSingleStep(self.fiber_step)
+
+        if self.quaternions_hand_picked:
+            # Re-create the generated fibers
+            # Restore the closest value to the previous angle
+            self.recreate_generated_fibers()
+            self.ui.current_fiber_angle.setValue(prev_angle)
+
+    @property
+    def fiber_step(self):
+        return self.ui.fiber_step.value()
+
+    @fiber_step.setter
+    def fiber_step(self, v):
+        self.ui.fiber_step.setValue(v)
+
+    @property
+    def num_hand_picked_fibers(self):
+        return round(360 / self.fiber_step)
 
 
 class ValidationException(Exception):
