@@ -6,10 +6,12 @@ from matplotlib.figure import Figure
 import numpy as np
 import yaml
 
-from PySide2.QtCore import Signal, QObject, QSignalBlocker, QTimer, Qt
+from PySide2.QtCore import (
+    Signal, QItemSelectionModel, QObject, QSignalBlocker, QTimer, Qt
+)
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox,
-    QSizePolicy, QSpinBox
+    QSizePolicy, QSpinBox, QTableWidgetItem
 )
 
 from hexrd.constants import sigma_to_fwhm
@@ -17,20 +19,28 @@ from hexrd.findorientations import (
     clean_map, filter_maps_if_requested, filter_stdev_DFLT
 )
 from hexrd.imageutil import find_peaks_2d
+from hexrd.rotations import quatOfExpMap
 
 from hexrd.ui import resource_loader
 
 from hexrd.ui.color_map_editor import ColorMapEditor
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.indexing.fiber_pick_utils import (
+    _angles_from_orientation, _pick_to_fiber
+)
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 import hexrd.ui.constants
 import hexrd.ui.resources.indexing
 
 
 DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
+
+NUM_HAND_PICKED_FIBERS = 720
 
 
 class OmeMapsViewerDialog(QObject):
@@ -51,9 +61,16 @@ class OmeMapsViewerDialog(QObject):
         self.spots = None
         self.reset_internal_config()
 
+        self.cached_hand_picked_spots = {}
+        self.generated_fibers = np.empty((0,))
+        self.current_fiber_spots = np.empty((0,))
+        self.hand_picked_fibers = np.empty((0, 3))
+
         self.setup_widget_paths()
 
         self.setup_combo_box_item_data()
+
+        self.ui.current_fiber_slider.setRange(0, NUM_HAND_PICKED_FIBERS - 1)
 
         # Hide these tab bars. The user selects them via combo boxes.
         self.ui.quaternion_method_tab_widget.tabBar().hide()
@@ -80,20 +97,11 @@ class OmeMapsViewerDialog(QObject):
         self.ui.rejected.connect(self.on_rejected)
 
         self.ui.quaternion_method.currentIndexChanged.connect(
-            self.update_quaternion_method_tab)
-        self.ui.quaternion_method.currentIndexChanged.connect(
-            self.update_seed_search_visibilities)
-        self.ui.quaternion_method.currentIndexChanged.connect(
-            self.update_config)
-        self.ui.quaternion_method.currentIndexChanged.connect(
-            self.update_spots)
+            self.quaternion_method_changed)
 
         self.ui.seed_search_method.currentIndexChanged.connect(
-            self.update_seed_search_method_tab)
-        self.ui.seed_search_method.currentIndexChanged.connect(
-            self.update_config)
-        self.ui.seed_search_method.currentIndexChanged.connect(
-            self.update_spots)
+            self.seed_search_method_changed)
+
         self.color_map_editor.ui.minimum.valueChanged.connect(
             self.update_config)
 
@@ -123,11 +131,26 @@ class OmeMapsViewerDialog(QObject):
         self.ui.select_quaternion_grid_file.pressed.connect(
             self.select_quaternion_grid_file)
 
+        self.ui.current_fiber_slider.valueChanged.connect(
+            self.current_fiber_slider_value_changed)
+
+        self.ui.current_fiber_angle.valueChanged.connect(
+            self.current_fiber_angle_value_changed)
+
+        self.ui.add_fiber_button.clicked.connect(self.add_current_fiber)
+
+        self.ui.picked_fibers_table.selectionModel().selectionChanged.connect(
+            self.picked_fibers_table_selection_changed)
+
+        self.ui.picked_fibers_delete_selected.clicked.connect(
+            self.delete_selected_fiber_rows)
+
     def setup_combo_box_item_data(self):
         # Set the item data for the combo boxes to be the names we want
         item_data = [
             'seed_search',
             'grid_search',
+            'hand_picked',
         ]
         for i, data in enumerate(item_data):
             self.ui.quaternion_method.setItemData(i, data)
@@ -205,7 +228,11 @@ class OmeMapsViewerDialog(QObject):
         self.rejected.emit()
 
     def validate(self):
-        if self.quaternion_method_name == 'grid_search':
+        if self.quaternion_method_name == 'hand_picked':
+            if self.hand_picked_fibers.size == 0:
+                msg = 'At least one fiber must be picked'
+                raise ValidationException(msg)
+        elif self.quaternion_method_name == 'grid_search':
             # Make sure the file exists.
             q_file = self.config['find_orientations']['use_quaternion_grid']
             if not q_file or not Path(q_file).exists():
@@ -225,11 +252,14 @@ class OmeMapsViewerDialog(QObject):
                     f'(4, n), but instead has a shape of "{quats.shape}".'
                 )
                 raise ValidationException(msg)
-        else:
+        elif self.quaternion_method_name == 'seed_search':
             # Seed search. Make sure hkls were chosen.
             hkls = self.config['find_orientations']['seed_search']['hkl_seeds']
             if not hkls:
                 raise ValidationException('No hkls selected')
+        else:
+            msg = f'Unhandled quaternion method: {self.quaternion_method_name}'
+            raise ValidationException(msg)
 
     def setup_widget_paths(self):
         text = resource_loader.load_resource(hexrd.ui.resources.indexing,
@@ -268,11 +298,15 @@ class OmeMapsViewerDialog(QObject):
         for i in range(w.count()):
             if v == w.itemData(i):
                 w.setCurrentIndex(i)
-                self.update_seed_search_visibilities()
+                self.update_visibilities()
                 self.update_quaternion_method_tab()
                 return
 
         raise Exception(f'Unable to set quaternion_method: {v}')
+
+    @property
+    def quaternions_hand_picked(self):
+        return self.quaternion_method_name == 'hand_picked'
 
     @property
     def quaternion_grid_file(self):
@@ -282,16 +316,41 @@ class OmeMapsViewerDialog(QObject):
     def quaternion_grid_file(self, v):
         self.ui.quaternion_grid_file.setText(v)
 
-    def update_seed_search_visibilities(self):
-        visible = self.quaternion_method_name == 'seed_search'
+    def update_visibilities(self):
+        self.update_seed_search_visibilities()
+        self.update_indexing_visibilities()
+        self.update_clustering_visibilities()
 
+    @staticmethod
+    def set_widgets_visible(widgets, visible):
+        for w in widgets:
+            w.setVisible(visible)
+
+    def update_seed_search_visibilities(self):
         widgets = [
             self.ui.select_hkls_group,
             self.ui.label_spots,
         ]
+        visible = self.quaternion_method_name == 'seed_search'
 
-        for w in widgets:
-            w.setVisible(visible)
+        self.set_widgets_visible(widgets, visible)
+
+    def update_indexing_visibilities(self):
+        widgets = [
+            self.ui.omega_group_box,
+            self.ui.eta_group_box,
+        ]
+        visible = self.quaternion_method_name in ('seed_search', 'grid_search')
+
+        self.set_widgets_visible(widgets, visible)
+
+    def update_clustering_visibilities(self):
+        widgets = [
+            self.ui.clustering_group_box,
+        ]
+        visible = self.quaternion_method_name in ('seed_search', 'grid_search')
+
+        self.set_widgets_visible(widgets, visible)
 
     @property
     def seed_search_method_name(self):
@@ -348,6 +407,21 @@ class OmeMapsViewerDialog(QObject):
         self.ui.filtering_apply_gaussian_laplace.setChecked(apply_gl)
         self.ui.filtering_fwhm.setValue(fwhm)
 
+    def quaternion_method_changed(self):
+        self.clear_generated_fibers()
+        self.clear_selected_fibers_artists()
+        self.select_fiber_rows([])
+
+        self.update_quaternion_method_tab()
+        self.update_visibilities()
+        self.update_config()
+        self.update_spots()
+
+    def seed_search_method_changed(self):
+        self.update_seed_search_method_tab()
+        self.update_config()
+        self.update_spots()
+
     def update_quaternion_method_tab(self):
         # Take advantage of the naming scheme...
         method_tab = getattr(self.ui, self.quaternion_method_name + '_tab')
@@ -366,9 +440,9 @@ class OmeMapsViewerDialog(QObject):
 
     def update_hkl_options(self):
         # This won't trigger a re-draw. Can change in the future if needed.
-        blocker = QSignalBlocker(self.ui.active_hkl)  # noqa: F841
-        self.ui.active_hkl.clear()
-        self.ui.active_hkl.addItems(self.hkls)
+        with block_signals(self.ui.active_hkl):
+            self.ui.active_hkl.clear()
+            self.ui.active_hkl.addItems(self.hkls)
 
     def setup_plot(self):
         # Create the figure and axes to use
@@ -390,6 +464,8 @@ class OmeMapsViewerDialog(QObject):
 
         # Center the toolbar
         self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+
+        canvas.mpl_connect('button_press_event', self.plot_clicked)
 
         self.fig = fig
         self.ax = ax
@@ -520,12 +596,17 @@ class OmeMapsViewerDialog(QObject):
         im.set_norm(self.norm)
 
         self.update_spots()
+        self.update_current_fiber_plot()
+        self.draw_selected_fibers()
 
         im.set_extent(self.extent)
 
         ax.relim()
         ax.autoscale_view()
         ax.axis('auto')
+
+        # Now disable autoscaling
+        ax.autoscale(False)
 
         self.draw()
 
@@ -661,7 +742,9 @@ class OmeMapsViewerDialog(QObject):
 
         find_orientations = config['find_orientations']
 
-        if find_orientations['use_quaternion_grid']:
+        if find_orientations.get('_hand_picked_quaternions', False):
+            self.quaternion_method_name = 'hand_picked'
+        elif find_orientations['use_quaternion_grid']:
             self.quaternion_method_name = 'grid_search'
         else:
             self.quaternion_method_name = 'seed_search'
@@ -687,10 +770,13 @@ class OmeMapsViewerDialog(QObject):
         config = self.config
         find_orientations = config['find_orientations']
 
-        if self.quaternion_method_name == 'seed_search':
-            quat_file = None
-        else:
+        key = '_hand_picked_quaternions'
+        find_orientations[key] = self.quaternions_hand_picked
+
+        if self.quaternion_method_name == 'grid_search':
             quat_file = self.quaternion_grid_file
+        else:
+            quat_file = None
         find_orientations['use_quaternion_grid'] = quat_file
         find_orientations['_quat_file'] = self.quaternion_grid_file
 
@@ -762,6 +848,253 @@ class OmeMapsViewerDialog(QObject):
 
         # Perform the filtering
         filter_maps_if_requested(self.data, cfg)
+
+    def clear_generated_fibers(self):
+        self.generated_fibers = np.empty((0,))
+        self.ui.current_fiber_slider.setValue(0)
+        # In case the value didn't change. This shouldn't be expensive,
+        # so it's okay to run it twice.
+        self.update_current_fiber()
+
+    def plot_clicked(self, event):
+        if not self.quaternions_hand_picked:
+            # If we are not hand picking quaternions, just return
+            return
+
+        if not event.button == 3:
+            # Hand-picking quaternions is right-click only
+            return
+
+        instr = create_hedm_instrument()
+
+        eta = event.xdata
+        ome = event.ydata
+
+        kwargs = {
+            'pick_coords': (eta, ome),
+            'eta_ome_maps': self.data,
+            'map_index': self.current_hkl_index,
+            'step': 360 / NUM_HAND_PICKED_FIBERS,
+            'beam_vec': instr.beam_vector,
+            'chi': instr.chi,
+            'as_expmap': True,
+        }
+        self.generated_fibers = _pick_to_fiber(**kwargs)
+
+        self.ui.current_fiber_slider.setValue(0)
+        # In case the value didn't change. This shouldn't be expensive,
+        # so it's okay to run it twice.
+        self.update_current_fiber()
+
+    def update_current_fiber(self):
+        enable = len(self.generated_fibers) > 0
+
+        enable_list = [
+            self.ui.current_fiber_slider,
+            self.ui.current_fiber_angle,
+            self.ui.selected_fiber_orientation_0,
+            self.ui.selected_fiber_orientation_1,
+            self.ui.selected_fiber_orientation_2,
+            self.ui.add_fiber_button,
+        ]
+        for w in enable_list:
+            w.setEnabled(enable)
+
+        for i, v in enumerate(self.current_fiber_orientation):
+            w = getattr(self.ui, f'selected_fiber_orientation_{i}')
+            w.setValue(v)
+
+        angle = self.current_fiber_index / NUM_HAND_PICKED_FIBERS * 360
+        self.ui.current_fiber_angle.setValue(angle)
+
+        self.generate_current_fiber_spots()
+        self.update_current_fiber_plot()
+
+    def generate_current_fiber_spots(self):
+        if self.current_fiber_index >= len(self.generated_fibers):
+            fibers = []
+        else:
+            fibers = self.generated_fibers[self.current_fiber_index]
+
+        self.current_fiber_spots = self.generate_fiber_spots(fibers)
+
+    def generate_fiber_spots(self, fibers):
+        if len(fibers) == 0:
+            return np.empty((0,))
+
+        kwargs = {
+            'instr': create_hedm_instrument(),
+            'eta_ome_maps': self.data,
+            'orientation': fibers,
+        }
+        return _angles_from_orientation(**kwargs)
+
+    def clear_current_fiber_plot(self):
+        if hasattr(self, '_current_fiber_lines'):
+            self._current_fiber_lines.remove()
+            del self._current_fiber_lines
+
+    def update_current_fiber_plot(self):
+        self.clear_current_fiber_plot()
+        hkl_idx = self.current_hkl_index
+        if len(self.current_fiber_spots) <= hkl_idx:
+            self.draw()
+            return
+
+        current = self.current_fiber_spots[hkl_idx]
+        if current.size:
+            kwargs = {
+                'x': current[:, 0],
+                'y': current[:, 1],
+                's': 36,
+                'c': 'm',
+                'marker': '+',
+            }
+            self._current_fiber_lines = self.ax.scatter(**kwargs)
+
+        self.draw()
+
+    @property
+    def current_fiber_orientation(self):
+        if len(self.generated_fibers) == 0:
+            return np.array([0, 0, 0])
+
+        return self.generated_fibers[self.current_fiber_index]
+
+    @property
+    def current_fiber_index(self):
+        return self.ui.current_fiber_slider.value()
+
+    def current_fiber_slider_value_changed(self):
+        self.update_current_fiber()
+
+    def current_fiber_angle_value_changed(self, v):
+        new_slider_index = round(v / 360 * NUM_HAND_PICKED_FIBERS)
+        self.ui.current_fiber_slider.setValue(new_slider_index)
+
+    def add_current_fiber(self):
+        to_stack = (self.hand_picked_fibers, self.current_fiber_orientation)
+        self.hand_picked_fibers = np.vstack(to_stack)
+        self.update_picked_fibers_table()
+
+        self.clear_generated_fibers()
+
+        table = self.ui.picked_fibers_table
+        last_row = table.rowCount() - 1
+        self.select_fiber_rows([last_row])
+
+    def update_picked_fibers_table(self):
+        table = self.ui.picked_fibers_table
+        table.clearContents()
+        table.setColumnCount(3)
+        table.setRowCount(len(self.hand_picked_fibers))
+        for i, orientation in enumerate(self.hand_picked_fibers):
+            for j in range(3):
+                item = QTableWidgetItem(f'{orientation[j]:.4f}')
+                item.setTextAlignment(Qt.AlignCenter)
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                table.setItem(i, j, item)
+
+    @property
+    def hand_picked_quaternions(self):
+        # We store these as 3D exp maps. Convert and return as quaternions.
+        quats = quatOfExpMap(self.hand_picked_fibers.T)
+        if quats.ndim == 1:
+            # quatOfExpMap() squeezes the output. We must reshape it.
+            quats = np.atleast_2d(quats).T
+
+        return quats
+
+    @property
+    def hand_picked_fibers(self):
+        return self._hand_picked_fibers
+
+    @hand_picked_fibers.setter
+    def hand_picked_fibers(self, v):
+        self._hand_picked_fibers = v
+        # Clear the cache for hand picked spots
+        self.cached_hand_picked_spots.clear()
+
+    def clear_selected_fibers_artists(self):
+        lines = getattr(self, '_selected_fibers_artists', [])
+        while lines:
+            lines.pop(0).remove()
+
+    @property
+    def selected_fibers_rows(self):
+        selected = self.ui.picked_fibers_table.selectionModel().selectedRows()
+        selected = [] if None else selected
+        return [x.row() for x in selected]
+
+    def picked_fibers_table_selection_changed(self):
+        self.draw_selected_fibers()
+
+        enable_delete = len(self.selected_fibers_rows) > 0
+        self.ui.picked_fibers_delete_selected.setEnabled(enable_delete)
+
+    def spots_for_hand_picked_quaternion(self, i):
+        if i >= len(self.hand_picked_fibers):
+            return None
+
+        cache = self.cached_hand_picked_spots
+
+        # Check the cache first. If not present, add to the cache.
+        if i not in cache:
+            fiber = self.hand_picked_fibers[i]
+            if not fiber.size:
+                return None
+
+            cache[i] = self.generate_fiber_spots(fiber)
+
+        return cache[i][self.current_hkl_index]
+
+    def draw_selected_fibers(self):
+        self.clear_selected_fibers_artists()
+
+        artists = []
+        for i in self.selected_fibers_rows:
+            spots = self.spots_for_hand_picked_quaternion(i)
+            if spots is None:
+                continue
+
+            kwargs = {
+                'x': spots[:, 0],
+                'y': spots[:, 1],
+                's': 36,
+                'c': 'g',
+                'marker': 'o',
+            }
+            artists.append(self.ax.scatter(**kwargs))
+
+        self._selected_fibers_artists = artists
+        self.draw()
+
+    def select_fiber_rows(self, rows):
+        table = self.ui.picked_fibers_table
+        selection_model = table.selectionModel()
+
+        with block_signals(selection_model):
+            selection_model.clearSelection()
+            command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+
+            for i in rows:
+                if i is None or i >= table.rowCount():
+                    # Out of range. Don't do anything.
+                    continue
+
+                # Select the row
+                model_index = selection_model.model().index(i, 0)
+                selection_model.select(model_index, command)
+
+        self.picked_fibers_table_selection_changed()
+
+    def delete_selected_fiber_rows(self):
+        selected = self.selected_fibers_rows
+        self.hand_picked_fibers = np.delete(self.hand_picked_fibers,
+                                            selected, 0)
+        # There should be no selection now
+        self.select_fiber_rows([])
+        self.update_picked_fibers_table()
 
 
 class ValidationException(Exception):

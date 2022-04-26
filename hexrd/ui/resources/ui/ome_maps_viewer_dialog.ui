@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1900</width>
-    <height>1108</height>
+    <height>1149</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -886,6 +886,200 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="hand_picked_tab">
+         <attribute name="title">
+          <string>Hand Picked</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_14">
+          <item row="2" column="0" colspan="2">
+           <widget class="QGroupBox" name="picked_fibers_group">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Picked Fibers</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_16">
+             <item row="0" column="0">
+              <widget class="QTableWidget" name="picked_fibers_table">
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectRows</enum>
+               </property>
+               <attribute name="horizontalHeaderVisible">
+                <bool>false</bool>
+               </attribute>
+               <attribute name="horizontalHeaderStretchLastSection">
+                <bool>true</bool>
+               </attribute>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QPushButton" name="picked_fibers_delete_selected">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Delete Selected</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QGroupBox" name="current_fiber_group">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Current Fiber</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_15">
+             <item row="5" column="0" colspan="3">
+              <layout class="QHBoxLayout" name="selected_fiber_orientation_layout">
+               <item>
+                <widget class="ScientificDoubleSpinBox" name="selected_fiber_orientation_0">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                 <property name="buttonSymbols">
+                  <enum>QAbstractSpinBox::NoButtons</enum>
+                 </property>
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="decimals">
+                  <number>6</number>
+                 </property>
+                 <property name="minimum">
+                  <double>-10.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>10.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ScientificDoubleSpinBox" name="selected_fiber_orientation_1">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                 <property name="buttonSymbols">
+                  <enum>QAbstractSpinBox::NoButtons</enum>
+                 </property>
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="decimals">
+                  <number>6</number>
+                 </property>
+                 <property name="minimum">
+                  <double>-10.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>10.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ScientificDoubleSpinBox" name="selected_fiber_orientation_2">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                 <property name="buttonSymbols">
+                  <enum>QAbstractSpinBox::NoButtons</enum>
+                 </property>
+                 <property name="keyboardTracking">
+                  <bool>false</bool>
+                 </property>
+                 <property name="decimals">
+                  <number>6</number>
+                 </property>
+                 <property name="minimum">
+                  <double>-10.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>10.000000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="6" column="0" colspan="3">
+              <widget class="QPushButton" name="add_fiber_button">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Add Fiber</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0" colspan="2">
+              <widget class="QLabel" name="current_fiber_label">
+               <property name="text">
+                <string>Right-click the canvas to generate fibers for a position</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QSlider" name="current_fiber_slider">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="ScientificDoubleSpinBox" name="current_fiber_angle">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string>°</string>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="maximum">
+                <double>360.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
       <item row="0" column="0">
@@ -898,6 +1092,11 @@
         <item>
          <property name="text">
           <string>Grid Search</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Hand Picked</string>
          </property>
         </item>
        </widget>
@@ -915,9 +1114,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>apply_filtering</tabstop>
-  <tabstop>filtering_apply_gaussian_laplace</tabstop>
-  <tabstop>filtering_fwhm</tabstop>
   <tabstop>quaternion_method</tabstop>
   <tabstop>quaternion_method_tab_widget</tabstop>
   <tabstop>seed_search_method</tabstop>
@@ -935,6 +1131,16 @@
   <tabstop>bl_threshold</tabstop>
   <tabstop>bl_overlap</tabstop>
   <tabstop>fiber_step</tabstop>
+  <tabstop>quaternion_grid_file</tabstop>
+  <tabstop>select_quaternion_grid_file</tabstop>
+  <tabstop>current_fiber_slider</tabstop>
+  <tabstop>current_fiber_angle</tabstop>
+  <tabstop>selected_fiber_orientation_0</tabstop>
+  <tabstop>selected_fiber_orientation_1</tabstop>
+  <tabstop>selected_fiber_orientation_2</tabstop>
+  <tabstop>add_fiber_button</tabstop>
+  <tabstop>picked_fibers_table</tabstop>
+  <tabstop>picked_fibers_delete_selected</tabstop>
   <tabstop>omega_tolerance</tabstop>
   <tabstop>eta_tolerance</tabstop>
   <tabstop>eta_mask</tabstop>
@@ -943,7 +1149,12 @@
   <tabstop>clustering_algorithm</tabstop>
   <tabstop>write_scored_orientations</tabstop>
   <tabstop>select_working_dir</tabstop>
+  <tabstop>apply_filtering</tabstop>
+  <tabstop>filtering_apply_gaussian_laplace</tabstop>
+  <tabstop>filtering_fwhm</tabstop>
+  <tabstop>active_hkl</tabstop>
   <tabstop>label_spots</tabstop>
+  <tabstop>export_button</tabstop>
  </tabstops>
  <resources/>
  <connections>

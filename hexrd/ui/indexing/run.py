@@ -135,6 +135,15 @@ class IndexingRunner(Runner):
         self.ome_maps_viewer_dialog = dialog
 
     def ome_maps_viewed(self):
+        # If we did the hand-picked method, go ahead and skip now to
+        # generating the grains table and running fit grains
+        dialog = self.ome_maps_viewer_dialog
+        if dialog.quaternions_hand_picked:
+            self.qbar = dialog.hand_picked_quaternions
+            self.generate_grains_table()
+            self.start_fit_grains_runner()
+            return
+
         # The dialog should have automatically updated our internal config
         # Let's go ahead and run the indexing!
 
@@ -298,7 +307,9 @@ class IndexingRunner(Runner):
             print('No grains found')
             return
 
-        msg = f'{num_grains} grains found'
+        plural = 's' if num_grains != 1 else ''
+
+        msg = f'{num_grains} grain{plural} found'
         self.update_progress_text(msg)
         print(msg)
 
