@@ -152,6 +152,6 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
                 np.degrees(np.atleast_2d(angs[this_idx, 1:]))
             )
         else:
-            simulated_angles.append(None)
+            simulated_angles.append(np.empty((0,)))
 
     return simulated_angles
