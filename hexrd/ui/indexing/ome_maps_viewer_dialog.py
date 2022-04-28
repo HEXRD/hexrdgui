@@ -1089,7 +1089,7 @@ class OmeMapsViewerDialog(QObject):
         artists = []
         for i in self.selected_fibers_rows:
             spots = self.spots_for_hand_picked_quaternion(i)
-            if spots is None:
+            if spots is None or spots.size == 0:
                 continue
 
             kwargs = {
