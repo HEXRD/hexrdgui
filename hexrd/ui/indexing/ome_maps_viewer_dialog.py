@@ -65,6 +65,7 @@ class OmeMapsViewerDialog(QObject):
         self.hand_picked_fibers = np.empty((0, 3))
         self.latest_picked_eta = None
         self.latest_picked_ome = None
+        self.latest_picked_hkl_index = None
 
         self.setup_widget_paths()
 
@@ -863,6 +864,7 @@ class OmeMapsViewerDialog(QObject):
         # Reset the latest picks to None
         self.latest_picked_eta = None
         self.latest_picked_ome = None
+        self.latest_picked_hkl_index = None
 
         self.generated_fibers = np.empty((0,))
         self.ui.current_fiber_slider.setValue(0)
@@ -881,6 +883,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.latest_picked_eta = event.xdata
         self.latest_picked_ome = event.ydata
+        self.latest_picked_hkl_index = self.current_hkl_index
 
         self.recreate_generated_fibers()
 
@@ -890,12 +893,17 @@ class OmeMapsViewerDialog(QObject):
             # No picked coords. Just return.
             return
 
+        hkl_index = self.latest_picked_hkl_index
+        if hkl_index is None or hkl_index >= len(self.data.dataStore):
+            # Invalid hkl index. Return.
+            return
+
         instr = create_hedm_instrument()
 
         kwargs = {
             'pick_coords': pick_coords,
             'eta_ome_maps': self.data,
-            'map_index': self.current_hkl_index,
+            'map_index': hkl_index,
             'step': self.fiber_step,
             'beam_vec': instr.beam_vector,
             'chi': instr.chi,
