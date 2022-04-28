@@ -109,6 +109,8 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
 
     """
     plane_data = eta_ome_maps.planeData
+    excl_indices = np.where(~plane_data.exclusions)[0]
+    hklDataList_reduced = np.array(plane_data.hklDataList)[excl_indices]
 
     # angle ranges from maps
     eta_range = (eta_ome_maps.etaEdges[0], eta_ome_maps.etaEdges[-1])
@@ -116,7 +118,7 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
     ome_period = eta_ome_maps.omeEdges[0] + np.r_[0., 2*np.pi]
 
     # need the hklids
-    hklids = [i['hklID'] for i in plane_data.hklDataList]
+    hklids = [i['hklID'] for i in hklDataList_reduced]
 
     expmap = np.atleast_1d(orientation).flatten()
     if len(expmap) == 4:
