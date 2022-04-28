@@ -217,7 +217,12 @@ class ImageCanvas(FigureCanvas):
             return [(self.axis, x) for x in overlay.data.values()]
 
         # If it's raw, there is data for each axis.
-        # The title of each axis should match the data key.
+        # The title of each axis should match the detector key.
+        # Add a safety check to ensure everything is synced up.
+        detector_names = [x.get_title() for x in self.raw_axes]
+        if not all(x in overlay.data for x in detector_names):
+            return []
+
         return [(x, overlay.data[x.get_title()]) for x in self.raw_axes]
 
     def overlay_draw_func(self, type):
