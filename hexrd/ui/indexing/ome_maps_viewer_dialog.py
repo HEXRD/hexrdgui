@@ -775,6 +775,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.ui.current_fiber_slider.setRange(
             0, self.num_hand_picked_fibers - 1)
+        self.ui.current_fiber_angle.setSingleStep(self.fiber_step)
 
     def update_config(self):
         # Update all of the config with their settings from the widgets
@@ -1089,7 +1090,7 @@ class OmeMapsViewerDialog(QObject):
         artists = []
         for i in self.selected_fibers_rows:
             spots = self.spots_for_hand_picked_quaternion(i)
-            if spots is None:
+            if spots is None or spots.size == 0:
                 continue
 
             kwargs = {
