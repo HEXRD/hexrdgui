@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide2.QtWidgets import QFileDialog
+from PySide2.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from hexrd.material import Material
 
@@ -30,7 +30,8 @@ class MaterialListEditor:
         editor.item_renamed.connect(self.item_renamed)
         editor.item_added.connect(self.item_added)
 
-        self.ui.import_material.clicked.connect(self.import_material)
+        self.ui.import_from_cif.clicked.connect(self.import_from_cif)
+        self.ui.import_from_defaults.clicked.connect(self.import_from_defaults)
 
         HexrdConfig().materials_dict_modified.connect(self.update_editor_items)
 
@@ -66,7 +67,7 @@ class MaterialListEditor:
         material.name = new_name
         HexrdConfig().add_material(new_name, material)
 
-    def import_material(self):
+    def import_from_cif(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Import Material', HexrdConfig().working_dir,
             'CIF files (*.cif)')
@@ -79,6 +80,26 @@ class MaterialListEditor:
         HexrdConfig().active_material = new_name
 
         self.update_editor_items()
+
+    def import_from_defaults(self):
+        label = 'Import Default Material'
+        items = HexrdConfig().available_default_materials
+        selected, accepted = QInputDialog.getItem(self.ui, 'HEXRD', label,
+                                                  items, 0, False)
+        if not accepted:
+            return
+
+        if selected in HexrdConfig().materials:
+            # This material will be over-written. Confirm with the user.
+            text = (
+                f'Warning: "{selected}" already exists and will be '
+                'overwritten. Proceed?'
+            )
+            response = QMessageBox.question(self.ui, 'Already Exists', text)
+            if response == QMessageBox.No:
+                return
+
+        HexrdConfig().load_default_material(selected)
 
 
 if __name__ == '__main__':

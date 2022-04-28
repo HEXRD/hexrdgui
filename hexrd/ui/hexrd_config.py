@@ -243,7 +243,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.load_calibration_flags_order()
 
         # Load the default materials
-        self.load_default_materials()
+        self.load_default_material('CeO2')
 
         # Re-load the previous active material if available
         mat = self.previous_active_material
@@ -286,7 +286,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('load_panel_state', {}),
             ('stack_state', {}),
             ('llnl_boundary_positions', {}),
-            ('overlays_dictified', [])
+            ('_imported_default_materials', []),
+            ('overlays_dictified', []),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -373,7 +374,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.set_euler_angle_convention(conv, convert_config=False)
 
         def set_overlays():
-            self.overlays_dictified = state['overlays_dictified']
+            v = state.get('overlays_dictified')
+            self.overlays_dictified = v if v is not None else {}
 
         if 'overlays_dictified' in state:
             # Powder overlays need a fully constructed HexrdConfig object
@@ -394,19 +396,35 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.load_from_state(state)
 
     @property
+    def _imported_default_materials(self):
+        material_names = list(self.materials)
+        defaults = self.available_default_materials
+        return [x for x in material_names if x in defaults]
+
+    @_imported_default_materials.setter
+    def _imported_default_materials(self, v):
+        for x in v:
+            self.load_default_material(x)
+
+    @property
     def overlays_dictified(self):
         return [overlays.to_dict(x) for x in self.overlays]
 
     @overlays_dictified.setter
     def overlays_dictified(self, v):
-        material_names = list(self.materials.keys())
+        material_names = list(self.materials)
+        default_materials = self.available_default_materials
 
         self.overlays = []
         for overlay_dict in v:
             material_name = overlays.compatibility.material_name(overlay_dict)
             if material_name not in material_names:
-                # Skip over ones that do not have a matching material
-                continue
+                if material_name in default_materials:
+                    # If this is a default material, try to load it
+                    self.load_default_material(material_name)
+                else:
+                    # Skip over ones that do not have a matching material
+                    continue
 
             self.overlays.append(overlays.from_dict(overlay_dict))
 
@@ -1150,15 +1168,24 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 self.config['instrument']['detectors'][old_name])
             self.remove_detector(old_name)
 
-    # This section is for materials configuration
-    def load_default_materials(self):
+    @property
+    def available_default_materials(self):
         module = hexrd.ui.resources.materials
         with resource_loader.path(module, 'materials.h5') as file_path:
-            self.load_materials(str(file_path))
+            with h5py.File(file_path) as f:
+                return list(f.keys())
 
-        # Set the tth_max of all the materials to match that of the polar
-        # resolution config.
-        self.reset_tth_max_all_materials()
+    # This section is for materials configuration
+    def load_default_material(self, name):
+        module = hexrd.ui.resources.materials
+        materials = self.materials
+        with resource_loader.path(module, 'materials.h5') as file_path:
+            materials[name] = Material(name, file_path)
+
+        self.materials = materials
+
+        # Set the tth_max to match that of the polar resolution config.
+        self.reset_tth_max(name)
 
     def add_material(self, name, material):
         self.add_materials([name], [material])
