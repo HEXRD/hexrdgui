@@ -8,6 +8,7 @@ from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QMessageBox
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import set_combobox_enabled_items
 
 
 class SelectGrainsDialog(QObject):
@@ -84,24 +85,8 @@ class SelectGrainsDialog(QObject):
         methods = list(methods_and_enable.keys())
         self.ui.method.addItems([name_to_label(x) for x in methods])
 
-        # FIXME: it'd be nice to eventually put this QComboBox
-        # item disabling in a utility function.
-        model = self.ui.method.model()
-        for i, method in enumerate(methods):
-            enabled = methods_and_enable[method]
-            if enabled:
-                # Already enabled...
-                continue
-
-            item = model.item(i)
-            item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
-
-        # Set the combo box to the first enabled entry
-        for i, method in enumerate(methods):
-            enabled = methods_and_enable[method]
-            if enabled:
-                self.ui.method.setCurrentIndex(i)
-                break
+        enable_list = list(methods_and_enable.values())
+        set_combobox_enabled_items(self.ui.method, enable_list)
 
     def exec_(self):
         return self.ui.exec_()

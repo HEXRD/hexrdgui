@@ -424,3 +424,25 @@ def hkl_str_to_array(hkl):
 
 def is_omega_imageseries(ims):
     return isinstance(ims, OmegaImageSeries)
+
+
+def set_combobox_enabled_items(cb, enable_list):
+    if not isinstance(enable_list, np.ndarray):
+        enable_list = np.array(enable_list)
+
+    model = cb.model()
+    for i, enable in enumerate(enable_list):
+        item = model.item(i)
+        item.setEnabled(enable)
+
+    # Now see if we need to change to a new index
+    new_index = cb.currentIndex()
+    if not model.item(new_index).isEnabled():
+        # If it is not enabled, set the index to the first enabled entry
+        enabled = np.nonzero(enable_list)[0]
+        if enabled.size != 0:
+            new_index = enabled[0]
+        else:
+            new_index = -1
+
+    cb.setCurrentIndex(new_index)
