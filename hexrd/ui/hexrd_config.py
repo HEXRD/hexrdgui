@@ -346,6 +346,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'overlays_dictified',
         ]
 
+        if self.loading_state:
+            # Do not load default materials if we are loading state
+            skip.append('_imported_default_materials')
+
         try:
             for name, value in state.items():
                 if name not in skip:
