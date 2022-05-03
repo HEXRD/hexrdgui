@@ -50,6 +50,9 @@ class RotationSeriesOverlay(Overlay):
         self._sync_ome_period = sync_ome_period
         self._sync_ome_ranges = sync_ome_ranges
 
+        # In case we need to sync up the omegas
+        self.sync_omegas()
+
     @property
     def child_attributes_to_save(self):
         # These names must be identical here, as attributes, and as
