@@ -33,7 +33,7 @@
          <number>10000000</number>
         </property>
         <property name="value">
-         <number>5</number>
+         <number>1</number>
         </property>
        </widget>
       </item>
@@ -79,14 +79,14 @@
       <item row="1" column="2">
        <widget class="QLabel" name="fit_tth_tol_label">
         <property name="text">
-         <string>Fit 2θ Tolerance:</string>
+         <string>Max fit |Δ2θ|/2θ₀ error:</string>
         </property>
        </widget>
       </item>
       <item row="2" column="3">
        <widget class="ScientificDoubleSpinBox" name="int_cutoff">
         <property name="decimals">
-         <number>8</number>
+         <number>4</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>
@@ -98,21 +98,27 @@
       </item>
       <item row="1" column="3">
        <widget class="ScientificDoubleSpinBox" name="fit_tth_tol">
+        <property name="suffix">
+         <string>%</string>
+        </property>
         <property name="decimals">
-         <number>8</number>
+         <number>2</number>
+        </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
         </property>
         <property name="maximum">
-         <double>1000000.000000000000000</double>
+         <double>100.000000000000000</double>
         </property>
         <property name="value">
-         <double>0.050000000000000</double>
+         <double>5.000000000000000</double>
         </property>
        </widget>
       </item>
       <item row="2" column="2">
        <widget class="QLabel" name="int_cutoff_label">
         <property name="text">
-         <string>Min Peak Amplitude:</string>
+         <string>Min Peak Amplitude (raw units):</string>
         </property>
        </widget>
       </item>
@@ -157,8 +163,11 @@
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modifying this will also modify the 2θ width of the material's PlaneData.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
+        <property name="suffix">
+         <string>°</string>
+        </property>
         <property name="decimals">
-         <number>8</number>
+         <number>2</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>
@@ -187,11 +196,17 @@
       </item>
       <item row="4" column="1">
        <widget class="ScientificDoubleSpinBox" name="eta_tolerance">
+        <property name="suffix">
+         <string>°</string>
+        </property>
         <property name="decimals">
-         <number>8</number>
+         <number>2</number>
+        </property>
+        <property name="minimum">
+         <double>0.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>1000000.000000000000000</double>
+         <double>360.000000000000000</double>
         </property>
         <property name="singleStep">
          <double>0.100000000000000</double>
