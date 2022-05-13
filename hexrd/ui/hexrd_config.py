@@ -407,6 +407,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @_imported_default_materials.setter
     def _imported_default_materials(self, v):
+
+        # A list with a single item will come back from QSettings as a str,
+        # so make sure we convert it to a list.
+        if isinstance(v, str):
+            v = [v]
+
         for x in v:
             self.load_default_material(x)
 
