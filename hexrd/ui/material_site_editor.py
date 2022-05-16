@@ -423,6 +423,7 @@ class ThermalFactorSpinBox(ScientificDoubleSpinBox):
         super().__init__(parent)
         self.editor = ThermalFactorEditor(0, parent)
         self.setLineEdit(ThermalFactorLineEdit(self, self))
+        self.valueChanged.connect(self.update_editor_value)
 
     def value(self):
         return self.editor.value
@@ -439,6 +440,10 @@ class ThermalFactorSpinBox(ScientificDoubleSpinBox):
             self.valueChanged.emit(v)
             self.setReadOnly(False)
 
+    def update_editor_value(self):
+        if not self.editor.is_tensor:
+            self.editor.value = super().value()
+
     def textFromValue(self, value):
         if not hasattr(self, 'editor') or not self.editor.is_tensor:
             return super().textFromValue(value)
@@ -446,10 +451,6 @@ class ThermalFactorSpinBox(ScientificDoubleSpinBox):
         return 'Tensor'
 
     def open_editor(self):
-        if super().value() != 0:
-            # Make sure the value of the scalar is updated
-            self.editor.ui.scalar_value.setValue(super().value())
-
         original = copy.deepcopy(self.editor.value)
         if not self.editor.exec_():
             self.editor.value = original
