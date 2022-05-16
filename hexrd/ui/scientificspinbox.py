@@ -126,7 +126,7 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
 
     @property
     def is_nan(self):
-        return math.isnan(self.value())
+        return math.isnan(super().value())
 
     @is_nan.setter
     def is_nan(self, b):
