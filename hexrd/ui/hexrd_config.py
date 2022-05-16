@@ -387,6 +387,35 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # Thus, set the overlays later.
             QTimer.singleShot(0, set_overlays)
 
+    @property
+    def _instrument_status_dict(self):
+        config = self.internal_instrument_config
+
+        def recurse(cur, result):
+            for k, v in cur.items():
+                if 'status' in v:
+                    result[k] = v['status']
+                else:
+                    result[k] = {}
+                    recurse(v, result[k])
+
+        result = {}
+        recurse(config, result)
+        return result
+
+    @_instrument_status_dict.setter
+    def _instrument_status_dict(self, v):
+        config = self.internal_instrument_config
+
+        def recurse(cur, config):
+            for k, v in cur.items():
+                if 'status' in config[k]:
+                    config[k]['status'] = v
+                else:
+                    recurse(v, config[k])
+
+        recurse(v, config)
+
     def save_settings(self):
         settings = QSettings()
 

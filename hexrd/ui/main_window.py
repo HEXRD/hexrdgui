@@ -937,18 +937,24 @@ class MainWindow(QObject):
             self.ui, 'Load State', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
 
-        if selected_file:
-            path = Path(selected_file)
-            HexrdConfig().working_dir = str(path.parent)
+        if not selected_file:
+            return
 
-            # The image series will take care of closing the file
-            h5_file = h5py.File(selected_file, "r")
-            try:
-                state.load(h5_file)
-            except Exception:
-                # If an exception occurred, assume we should close the file...
-                h5_file.close()
-                raise
+        path = Path(selected_file)
+        HexrdConfig().working_dir = str(path.parent)
+
+        # The image series will take care of closing the file
+        h5_file = h5py.File(selected_file, "r")
+        try:
+            state.load(h5_file)
+        except Exception:
+            # If an exception occurred, assume we should close the file...
+            h5_file.close()
+            raise
+
+        # Since statuses are added after the instrument config is loaded,
+        # the statuses in the GUI might not be up to date. Ensure it is.
+        self.update_config_gui()
 
     def add_view_dock_widget_actions(self):
         # Add actions to show/hide all of the dock widgets
