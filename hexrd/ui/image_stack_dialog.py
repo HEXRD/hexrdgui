@@ -1,4 +1,5 @@
 import copy
+import math
 import numpy as np
 from pathlib import Path
 
@@ -326,14 +327,12 @@ class ImageStackDialog(QObject):
     def reverse_frames(self, state):
         self.state['reverse_frames'] = state
 
-    def frames_per_image(self, num_files):
+    @property
+    def frames_per_image(self):
         frames = self.state['total_frames']
         frames -= self.state['empty_frames']
         if self.state['max_file_frames']:
             frames = min(frames, self.state['max_file_frames'])
-        if self.state['max_total_frames']:
-            frames = min(self.state['max_total_frames'], num_files * frames)
-            frames /= num_files
         return frames
 
     def get_omega_values(self, num_files):
@@ -347,12 +346,17 @@ class ImageStackDialog(QObject):
             # we create a wedge for each image based on the number
             # of frames per image and number of steps in each wedge
             omega = []
-            for start, stop, nsteps in wedges:
-                steps = self.frames_per_image(num_files)
-                images_per_wedge = nsteps // steps
+            max_total_frames = self.state['max_total_frames']
+            steps = self.frames_per_image
+            for i, (start, stop, nsteps) in enumerate(wedges):
+                last_wedge = (i == len(wedges) - 1)
+                images_per_wedge = math.ceil(nsteps / steps)
                 delta = (stop - start) / images_per_wedge
                 for j in range(images_per_wedge):
+                    last_image = (j == images_per_wedge - 1)
                     stop = start + delta
+                    if last_wedge and last_image and max_total_frames:
+                        steps = max_total_frames % steps
                     omega.append([start, stop, steps])
                     start = stop
             omega = np.array(omega)
