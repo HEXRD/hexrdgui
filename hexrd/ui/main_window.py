@@ -420,6 +420,7 @@ class MainWindow(QObject):
         self.update_hedm_enable_states()
         self.color_map_editor.reset_range()
         self.image_mode_widget.reset_masking()
+        self.update_image_mode_enable_states()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
