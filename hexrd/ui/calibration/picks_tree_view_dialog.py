@@ -28,6 +28,9 @@ class PicksTreeViewDialog:
                                        self.ui)
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
+        # Default to a hidden button box
+        self.button_box_visible = False
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -149,6 +152,14 @@ class PicksTreeViewDialog:
     @coords_type.setter
     def coords_type(self, v):
         self.tree_view.coords_type = v
+
+    @property
+    def button_box_visible(self):
+        return self.ui.button_box.isVisible()
+
+    @button_box_visible.setter
+    def button_box_visible(self, b):
+        self.ui.button_box.setVisible(b)
 
 
 def convert_picks(picks, conversion_function, **kwargs):
