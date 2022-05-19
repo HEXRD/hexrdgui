@@ -37,25 +37,26 @@ class CalibrationRunner(QObject):
         self.canvas = canvas
         self.current_overlay_ind = -1
         self.overlay_data_index = -1
-        self.all_overlay_picks = {}
 
         self.line_picker = None
 
         self.async_runner = async_runner
 
     def run(self):
+        # The active overlays will be the ones that are visible when we start
+        self.active_overlays = self.visible_overlays
+
         self.validate()
         self.clear_all_overlay_picks()
-        self.backup_overlay_visibilities = self.overlay_visibilities
         self.pad_overlay_picks()
         self.pick_next_line()
 
     def validate(self):
-        visible_overlays = self.visible_overlays
-        if not visible_overlays:
+        active_overlays = self.active_overlays
+        if not active_overlays:
             raise Exception('No visible overlays')
 
-        if not all(x.has_widths for x in visible_overlays):
+        if not all(x.has_widths for x in active_overlays):
             raise Exception('All visible overlays must have widths')
 
         flags = HexrdConfig().get_statuses_instrument_format().tolist()
@@ -67,14 +68,15 @@ class CalibrationRunner(QObject):
             raise Exception(msg)
 
         # Add overlay refinements
-        for overlay in visible_overlays:
+        for overlay in active_overlays:
             flags += overlay.refinements.tolist()
 
         if np.count_nonzero(flags) == 0:
             raise Exception('There are no refinable parameters')
 
     def clear_all_overlay_picks(self):
-        self.all_overlay_picks.clear()
+        for overlay in self.active_overlays:
+            overlay.reset_calibration_picks()
 
     @property
     def overlays(self):
@@ -85,19 +87,15 @@ class CalibrationRunner(QObject):
         return [x for x in self.overlays if x.visible]
 
     def next_overlay(self):
-        ind = self.current_overlay_ind
-        ind += 1
-        for i in range(ind, len(self.overlays)):
-            if self.overlays[i].visible:
-                self.current_overlay_ind = i
-                return self.overlays[i]
+        self.current_overlay_ind += 1
+        return self.active_overlay
 
     @property
     def active_overlay(self):
-        if not 0 <= self.current_overlay_ind < len(self.overlays):
+        if self.current_overlay_ind >= len(self.active_overlays):
             return None
 
-        return self.overlays[self.current_overlay_ind]
+        return self.active_overlays[self.current_overlay_ind]
 
     def pick_next_line(self):
         overlay = self.next_overlay()
@@ -145,9 +143,6 @@ class CalibrationRunner(QObject):
         overlay = self.active_overlay
         title = overlay.name
 
-        # Create a backup of the visibilities that we will restore later
-        self.backup_overlay_visibilities = self.overlay_visibilities
-
         # Only make the current overlay we are selecting visible
         self.set_exclusive_overlay_visibility(overlay)
 
@@ -175,18 +170,23 @@ class CalibrationRunner(QObject):
         picker.line_completed.connect(self.line_completed)
         picker.last_point_removed.connect(self.last_point_removed)
         picker.finished.connect(self.calibration_line_picker_finished)
-        picker.view_picks.connect(self.view_picks_table)
+        picker.view_picks.connect(self.on_view_picks_clicked)
         picker.accepted.connect(self.finish_line)
+
+    def on_view_picks_clicked(self):
+        # Save the overlay picks so that they will be displayed in the table
+        self.save_overlay_picks()
+        self.view_picks_table()
 
     def view_picks_table(self):
         # Backup some settings
-        if self.active_overlay.has_highlights:
+        if self.active_overlay and self.active_overlay.has_highlights:
             highlighting = copy.deepcopy(self.active_overlay.highlights)
         else:
             highlighting = None
 
         prev_visibilities = self.overlay_visibilities
-        self.restore_backup_overlay_visibilities()
+        self.restore_overlay_visibilities()
         self.disable_line_picker()
 
         picks = self.generate_pick_results()
@@ -216,10 +216,12 @@ class CalibrationRunner(QObject):
 
         # Since python dicts are ordered, I think we can assume that the
         # ordering of the picks should still be the same.
-        for i, new_picks in zip(self.all_overlay_picks, updated_picks):
-            self.all_overlay_picks[i] = new_picks['picks']
+        for i, new_picks in enumerate(updated_picks):
+            self.active_overlays[i].calibration_picks = new_picks['picks']
 
-        self.overlay_picks = self.all_overlay_picks[self.current_overlay_ind]
+        if self.active_overlay:
+            self.reset_overlay_picks()
+
         self.update_lines_from_picks()
 
         # Restore backups
@@ -236,8 +238,8 @@ class CalibrationRunner(QObject):
 
     def generate_pick_results(self):
         pick_results = []
-        for i, val in self.all_overlay_picks.items():
-            overlay = self.overlays[i]
+
+        for overlay in self.active_overlays:
             # Convert hkls to numpy arrays
             hkls = {k: np.asarray(v) for k, v in overlay.hkls.items()}
             if overlay.is_powder:
@@ -257,13 +259,13 @@ class CalibrationRunner(QObject):
                 'options': options,
                 'refinements': overlay.refinements_with_labels,
                 'hkls': hkls,
-                'picks': val
+                'picks': overlay.calibration_picks,
             })
         return pick_results
 
     @property
     def pick_materials(self):
-        mats = [self.overlays[i].material for i in self.all_overlay_picks]
+        mats = [o.material for o in self.active_overlays]
         return {x.name: x for x in mats}
 
     def dump_results(self):
@@ -309,7 +311,10 @@ class CalibrationRunner(QObject):
         response = QMessageBox.question(self.canvas, 'HEXRD', msg)
         if response == QMessageBox.Yes:
             dialog = self.view_picks_table()
-            dialog.ui.finished.connect(self.run_calibration)
+            # Make sure the button box is shown. We will only proceed
+            # if the user accepts the dialog.
+            dialog.button_box_visible = True
+            dialog.ui.accepted.connect(self.run_calibration)
         else:
             self.run_calibration()
 
@@ -324,7 +329,7 @@ class CalibrationRunner(QObject):
         self.write_instrument_to_hexrd_config(instr)
 
         # Update the lattice parameters and overlays
-        overlays = [self.overlays[i] for i in self.all_overlay_picks]
+        overlays = self.active_overlays
         for overlay, calibrator in zip(overlays, instr_calibrator.calibrators):
             if calibrator.calibrator_type == 'powder':
                 if calibrator.params.size == 0:
@@ -370,11 +375,12 @@ class CalibrationRunner(QObject):
         self.restore_state()
 
     def restore_state(self):
-        self.restore_backup_overlay_visibilities()
+        self.restore_overlay_visibilities()
         self.remove_all_highlighting()
 
-    def restore_backup_overlay_visibilities(self):
-        self.overlay_visibilities = self.backup_overlay_visibilities
+    def restore_overlay_visibilities(self):
+        is_visible = [x in self.active_overlays for x in self.overlays]
+        self.overlay_visibilities = is_visible
         HexrdConfig().overlay_config_changed.emit()
 
     def set_highlighting(self, highlighting):
@@ -399,8 +405,7 @@ class CalibrationRunner(QObject):
         HexrdConfig().overlay_config_changed.emit()
 
     def reset_overlay_picks(self):
-        ind = self.current_overlay_ind
-        self.overlay_picks = self.all_overlay_picks.get(ind, {})
+        self.overlay_picks = copy.deepcopy(self.active_overlay.calibration_picks)
 
     def reset_overlay_data_index_map(self):
         self.overlay_data_index = -1
@@ -480,11 +485,8 @@ class CalibrationRunner(QObject):
         self.overlay_data_index_map = data_map
 
     def save_overlay_picks(self):
-        # Make sure there is at least an empty list for each detector
-        for key in self.active_overlay.data.keys():
-            if key not in self.overlay_picks:
-                self.overlay_picks[key] = []
-        self.all_overlay_picks[self.current_overlay_ind] = self.overlay_picks
+        self.active_overlay.calibration_picks = copy.deepcopy(
+            self.overlay_picks)
 
     @property
     def current_data_path(self):
@@ -515,26 +517,28 @@ class CalibrationRunner(QObject):
     def pad_overlay_picks(self):
         prev_overlay_ind = self.current_overlay_ind
         prev_overlay_data_ind = self.overlay_data_index
-        prev_visibilities = self.overlay_visibilities
-        self.restore_backup_overlay_visibilities()
 
         if self.current_overlay_ind == -1:
             self.next_overlay()
-            self.reset_overlay_data_index_map()
-            self.reset_overlay_picks()
 
         cur_overlay = self.active_overlay
         while cur_overlay is not None:
-            self.pad_data_with_empty_lists()
-            self.save_overlay_picks()
-            cur_overlay = self.next_overlay()
-            self.reset_overlay_data_index_map()
+            # This will give us the default picks
             self.reset_overlay_picks()
 
-        self.current_overlay_ind = prev_overlay_ind
-        self.overlay_visibilities = prev_visibilities
-        if prev_overlay_data_ind != -1:
+            # Re-create the map that we use for indexing into the data
             self.reset_overlay_data_index_map()
+
+            # Perform the padding
+            self.pad_data_with_empty_lists()
+
+            # Save the padded list to the current overlays
+            self.save_overlay_picks()
+
+            # Move on to the next overlay
+            cur_overlay = self.next_overlay()
+
+        self.current_overlay_ind = prev_overlay_ind
         self.overlay_data_index = prev_overlay_data_ind
         self.reset_overlay_picks()
 
@@ -660,7 +664,8 @@ class CalibrationRunner(QObject):
             if self.current_data_list:
                 data = list(zip(*self.current_data_list))
             else:
-                data = ([], [])
+                data = [(), ()]
+
             line.set_data(data)
 
         self.overlay_data_index = prev_data_index
@@ -730,7 +735,7 @@ class CalibrationRunner(QObject):
         self.overlay_picks = picks['picks']
         self.save_overlay_picks()
 
-        if len(self.all_overlay_picks) == 1:
+        if len(self.active_overlays) == 1:
             # If this is the only overlay, don't view the picks table,
             # as the GUI will ask anyways...
             self.finish_line()
@@ -787,7 +792,7 @@ class CalibrationRunner(QObject):
         self.overlay_picks = picks['picks']
         self.save_overlay_picks()
 
-        if len(self.all_overlay_picks) == 1:
+        if len(self.active_overlays) == 1:
             # If this is the only overlay, don't view the picks table,
             # as the GUI will ask anyways...
             self.finish_line()
