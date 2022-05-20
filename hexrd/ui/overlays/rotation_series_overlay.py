@@ -162,6 +162,15 @@ class RotationSeriesOverlay(Overlay):
     def default_refinements(self):
         return default_crystal_refinements()
 
+    def pad_picks_data(self):
+        # Rotation series overlays do not currently support picks data
+        pass
+
+    @property
+    def has_picks_data(self):
+        # Rotation series overlays do not currently support picks data
+        return False
+
     def generate_overlay(self):
         """
         Returns appropriate point groups for displaying bragg reflection

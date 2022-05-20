@@ -54,6 +54,15 @@ class Overlay(ABC):
     def default_highlight_style(self):
         pass
 
+    @property
+    @abstractmethod
+    def has_picks_data(self):
+        pass
+
+    @abstractmethod
+    def pad_picks_data(self):
+        pass
+
     # Concrete methods
     def __init__(self, material_name, name=None, refinements=None,
                  calibration_picks=None, style=None, highlight_style=None,
@@ -317,10 +326,6 @@ class Overlay(ABC):
         self.reset_calibration_picks()
         self.calibration_picks.update(picks)
 
-    @property
-    def has_picks_data(self):
-        return any(v for v in self.calibration_picks.values())
-
     def _validate_picks(self, picks):
         for k in picks:
             if k not in self.data:
@@ -334,3 +339,4 @@ class Overlay(ABC):
         # Make an empty list for each detector
         self._calibration_picks.clear()
         self._calibration_picks |= {k: [] for k in self.data}
+        self.pad_picks_data()

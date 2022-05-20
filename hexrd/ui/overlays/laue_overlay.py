@@ -142,6 +142,22 @@ class LaueOverlay(Overlay):
     def default_refinements(self):
         return default_crystal_refinements()
 
+    def pad_picks_data(self):
+        for k, v in self.data.items():
+            num_hkls = len(self.data[k]['hkls'])
+            current = self.calibration_picks.setdefault(k, [])
+            while len(current) < num_hkls:
+                current.append((np.nan, np.nan))
+
+    @property
+    def has_picks_data(self):
+        nan_pick = (np.nan, np.nan)
+        for det_key, hkl_list in self.calibration_picks.items():
+            if any(x != nan_pick for x in hkl_list):
+                return True
+
+        return False
+
     def generate_overlay(self):
         instr = self.instrument
         display_mode = self.display_mode
