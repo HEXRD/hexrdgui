@@ -234,7 +234,10 @@ class CalibrationRunner(QObject):
         # Set the new picks on the overlay
         updated_picks = tree_format_to_picks(results)
         overlay.calibration_picks = updated_picks[0]['picks']
-        self.use_current_pick_points()
+        self.reset_overlay_picks()
+
+        dialog = self.view_picks_table()
+        dialog.ui.finished.connect(self.finish_line)
 
     def on_view_picks_clicked(self):
         # Save the overlay picks so that they will be displayed in the table
