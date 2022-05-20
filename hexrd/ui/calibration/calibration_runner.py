@@ -16,7 +16,10 @@ from hexrd.ui.calibration.pick_based_calibration import (
     LaueCalibrator,
     run_calibration,
 )
-from hexrd.ui.calibration.picks_tree_view_dialog import PicksTreeViewDialog
+from hexrd.ui.calibration.picks_tree_view_dialog import (
+    generate_picks_results, PicksTreeViewDialog, overlays_to_tree_format,
+    tree_format_to_picks,
+)
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -189,9 +192,8 @@ class CalibrationRunner(QObject):
         self.restore_overlay_visibilities()
         self.disable_line_picker()
 
-        picks = self.generate_pick_results()
         kwargs = {
-            'dictionary': picks_to_tree_format(picks),
+            'dictionary': overlays_to_tree_format(self.active_overlays),
             'coords_type': ViewType.polar,
             'canvas': self.canvas,
             'parent': self.canvas,
@@ -236,32 +238,8 @@ class CalibrationRunner(QObject):
         self.save_overlay_picks()
         self.pick_next_line()
 
-    def generate_pick_results(self):
-        pick_results = []
-
-        for overlay in self.active_overlays:
-            # Convert hkls to numpy arrays
-            hkls = {k: np.asarray(v) for k, v in overlay.hkls.items()}
-            if overlay.is_powder:
-                options = {
-                    'tvec': overlay.tvec,
-                }
-            elif overlay.is_laue:
-                options = {
-                    'crystal_params': overlay.crystal_params,
-                    'min_energy': overlay.min_energy,
-                    'max_energy': overlay.max_energy,
-                }
-
-            pick_results.append({
-                'material': overlay.material_name,
-                'type': overlay.type.value,
-                'options': options,
-                'refinements': overlay.refinements_with_labels,
-                'hkls': hkls,
-                'picks': overlay.calibration_picks,
-            })
-        return pick_results
+    def generate_picks_results(self):
+        return generate_picks_results(self.active_overlays)
 
     @property
     def pick_materials(self):
@@ -287,7 +265,7 @@ class CalibrationRunner(QObject):
             with open(mat_file_name, 'wb') as wf:
                 pickle.dump(mat, wf)
 
-        pick_results = self.generate_pick_results()
+        pick_results = self.generate_picks_results()
         out_file = 'calibration_picks.json'
         print(f'Writing out picks to {out_file}')
         with open(out_file, 'w') as wf:
@@ -319,7 +297,7 @@ class CalibrationRunner(QObject):
             self.run_calibration()
 
     def run_calibration(self):
-        picks = self.generate_pick_results()
+        picks = self.generate_picks_results()
         materials = self.pick_materials
         instr = create_hedm_instrument()
         flags = HexrdConfig().get_statuses_instrument_format()
@@ -405,7 +383,8 @@ class CalibrationRunner(QObject):
         HexrdConfig().overlay_config_changed.emit()
 
     def reset_overlay_picks(self):
-        self.overlay_picks = copy.deepcopy(self.active_overlay.calibration_picks)
+        calibration_picks = self.active_overlay.calibration_picks
+        self.overlay_picks = copy.deepcopy(calibration_picks)
 
     def reset_overlay_data_index_map(self):
         self.overlay_data_index = -1
@@ -799,54 +778,6 @@ class CalibrationRunner(QObject):
         else:
             dialog = self.view_picks_table()
             dialog.ui.finished.connect(self.finish_line)
-
-
-def picks_to_tree_format(all_picks):
-    def listify(sequence):
-        sequence = list(sequence)
-        for i, item in enumerate(sequence):
-            if isinstance(item, tuple):
-                sequence[i] = listify(item)
-
-        return sequence
-
-    tree_format = {}
-    for entry in all_picks:
-        hkl_picks = {}
-
-        for det in entry['hkls']:
-            hkl_picks[det] = {}
-            for hkl, picks in zip(entry['hkls'][det], entry['picks'][det]):
-                hkl_picks[det][hklToStr(hkl)] = listify(picks)
-
-        name = f"{entry['material']} {entry['type']}"
-        tree_format[name] = hkl_picks
-
-    return tree_format
-
-
-def tree_format_to_picks(tree_format):
-    all_picks = []
-    for name, entry in tree_format.items():
-        material, type = name.split()
-        hkls = {}
-        picks = {}
-        for det, hkl_picks in entry.items():
-            hkls[det] = []
-            picks[det] = []
-            for hkl, cur_picks in hkl_picks.items():
-                hkls[det].append(list(map(int, hkl.split())))
-                picks[det].append(cur_picks)
-
-        current = {
-            'material': material,
-            'type': type,
-            'hkls': hkls,
-            'picks': picks,
-        }
-        all_picks.append(current)
-
-    return all_picks
 
 
 def auto_powder_picks_to_picks(auto_picks, overlay):

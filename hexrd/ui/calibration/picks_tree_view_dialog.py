@@ -4,6 +4,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 
+from hexrd.crystallography import hklToStr
+
 from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
@@ -189,3 +191,85 @@ def picks_angles_to_cartesian(picks):
 def picks_cartesian_to_angles(picks):
     kwargs = {'eta_period': HexrdConfig().polar_res_eta_period}
     return convert_picks(picks, cart_to_angles, **kwargs)
+
+
+def generate_picks_results(overlays):
+    pick_results = []
+
+    for overlay in overlays:
+        # Convert hkls to numpy arrays
+        hkls = {k: np.asarray(v) for k, v in overlay.hkls.items()}
+        if overlay.is_powder:
+            options = {
+                'tvec': overlay.tvec,
+            }
+        elif overlay.is_laue:
+            options = {
+                'crystal_params': overlay.crystal_params,
+                'min_energy': overlay.min_energy,
+                'max_energy': overlay.max_energy,
+            }
+
+        pick_results.append({
+            'material': overlay.material_name,
+            'type': overlay.type.value,
+            'options': options,
+            'refinements': overlay.refinements_with_labels,
+            'hkls': hkls,
+            'picks': overlay.calibration_picks,
+        })
+
+    return pick_results
+
+
+def overlays_to_tree_format(overlays):
+    picks = generate_picks_results(overlays)
+    return picks_to_tree_format(picks)
+
+
+def picks_to_tree_format(all_picks):
+    def listify(sequence):
+        sequence = list(sequence)
+        for i, item in enumerate(sequence):
+            if isinstance(item, tuple):
+                sequence[i] = listify(item)
+
+        return sequence
+
+    tree_format = {}
+    for entry in all_picks:
+        hkl_picks = {}
+
+        for det in entry['hkls']:
+            hkl_picks[det] = {}
+            for hkl, picks in zip(entry['hkls'][det], entry['picks'][det]):
+                hkl_picks[det][hklToStr(hkl)] = listify(picks)
+
+        name = f"{entry['material']} {entry['type']}"
+        tree_format[name] = hkl_picks
+
+    return tree_format
+
+
+def tree_format_to_picks(tree_format):
+    all_picks = []
+    for name, entry in tree_format.items():
+        material, type = name.split()
+        hkls = {}
+        picks = {}
+        for det, hkl_picks in entry.items():
+            hkls[det] = []
+            picks[det] = []
+            for hkl, cur_picks in hkl_picks.items():
+                hkls[det].append(list(map(int, hkl.split())))
+                picks[det].append(cur_picks)
+
+        current = {
+            'material': material,
+            'type': type,
+            'hkls': hkls,
+            'picks': picks,
+        }
+        all_picks.append(current)
+
+    return all_picks
