@@ -215,9 +215,6 @@ class CalibrationRunner(QObject):
                                prev_visibilities):
         # Update all of the picks with the modified data
         updated_picks = tree_format_to_picks(dialog.dictionary)
-
-        # Since python dicts are ordered, I think we can assume that the
-        # ordering of the picks should still be the same.
         for i, new_picks in enumerate(updated_picks):
             self.active_overlays[i].calibration_picks = new_picks['picks']
 
