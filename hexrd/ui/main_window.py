@@ -857,16 +857,12 @@ class MainWindow(QObject):
 
         canvas = self.ui.image_tab_widget.image_canvases[0]
 
-        # Find overlays that contain picks
-        overlays = [o for o in HexrdConfig().overlays if o.has_picks_data]
+        overlays = HexrdConfig().overlays
 
-        if not overlays:
-            msg = 'None of the overlays appear to contain picks data'
-            print(msg)
-            QMessageBox.critical(self.ui, 'HEXRD', msg)
-            return
+        # Pad all of the overlays to make sure their data is updated
+        for overlay in overlays:
+            overlay.pad_picks_data()
 
-        # Doesn't allow you to write back to the overlays (need to add that)
         kwargs = {
             'dictionary': overlays_to_tree_format(overlays),
             'coords_type': ViewType.polar,
