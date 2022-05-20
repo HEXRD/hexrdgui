@@ -151,9 +151,8 @@ class LaueOverlay(Overlay):
 
     @property
     def has_picks_data(self):
-        nan_pick = (np.nan, np.nan)
         for det_key, hkl_list in self.calibration_picks.items():
-            if any(x != nan_pick for x in hkl_list):
+            if hkl_list and not np.min(np.isnan(hkl_list)):
                 return True
 
         return False
