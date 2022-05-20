@@ -19,8 +19,8 @@ from hexrd.ui.calibration.pick_based_calibration import (
     run_calibration,
 )
 from hexrd.ui.calibration.picks_tree_view_dialog import (
-    generate_picks_results, PicksTreeViewDialog, picks_cartesian_to_angles,
-    overlays_to_tree_format, tree_format_to_picks,
+    generate_picks_results, overlays_to_tree_format, PicksTreeViewDialog,
+    picks_cartesian_to_angles, tree_format_to_picks,
 )
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.constants import OverlayType, ViewType
