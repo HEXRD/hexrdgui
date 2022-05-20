@@ -234,7 +234,6 @@ class CalibrationRunner(QObject):
         # Set the new picks on the overlay
         updated_picks = tree_format_to_picks(results)
         overlay.calibration_picks = updated_picks[0]['picks']
-
         self.use_current_pick_points()
 
     def on_view_picks_clicked(self):
@@ -342,6 +341,10 @@ class CalibrationRunner(QObject):
             json.dump(flags, wf, cls=NumpyEncoder)
 
     def finish(self):
+        # Ensure the line picker is disabled and gone
+        self.disable_line_picker()
+        self.line_picker = None
+
         # Ask the user if they want to review the picks
         msg = 'Point picking complete. Review picks?'
         response = QMessageBox.question(self.canvas, 'HEXRD', msg)
