@@ -1,4 +1,5 @@
 import copy
+import math
 import numpy as np
 from pathlib import Path
 
@@ -326,37 +327,51 @@ class ImageStackDialog(QObject):
     def reverse_frames(self, state):
         self.state['reverse_frames'] = state
 
+    @property
+    def frames_per_image(self):
+        frames = self.state['total_frames']
+        frames -= self.state['empty_frames']
+        if self.state['max_file_frames']:
+            frames = min(frames, self.state['max_file_frames'])
+        return frames
+
     def get_omega_values(self, num_files):
+        # Returns the omega values that are used to populate the
+        # SimpleImageSeries dialog table
+        wedges = self.state['wedges']
         if self.state['omega_from_file'] and self.state['omega']:
-            omega = np.load(self.state['omega'])
-        else:
+            # user selected a file
+            wedges = np.load(self.state['omega'])
+        if wedges and num_files > 1:
+            # we create a wedge for each image based on the number
+            # of frames per image and number of steps in each wedge
             omega = []
-            nframes = int(self.ui.total_frames.text()) // num_files
-            if self.state["wedges"]:
-                nsteps = [w[2] for w in self.state['wedges']]
-                if len(nsteps) != num_files:
-                    nsteps = [sum(nsteps) // num_files] * num_files
-                row_count = self.ui.omega_wedges.rowCount()
-                length = num_files if row_count == 1 else 1
-                for i in range(row_count):
-                    start = float(self.ui.omega_wedges.item(i, 0).text())
-                    stop = float(self.ui.omega_wedges.item(i, 1).text())
-                    steps = int(float(self.ui.omega_wedges.item(i, 2).text()))
-                    delta = (stop - start) / length
-                    omega.extend(np.linspace(
-                        [start, start + delta],
-                        [stop - delta, stop],
-                        length))
-                omega = np.array(omega)
-            else:
-                nsteps = [nframes] * num_files
-        if not len(omega):
+            max_total_frames = self.state['max_total_frames']
+            steps = self.frames_per_image
+            for i, (start, stop, nsteps) in enumerate(wedges):
+                last_wedge = (i == len(wedges) - 1)
+                images_per_wedge = math.ceil(nsteps / steps)
+                delta = (stop - start) / images_per_wedge
+                for j in range(images_per_wedge):
+                    last_image = (j == images_per_wedge - 1)
+                    stop = start + delta
+                    if last_wedge and last_image and max_total_frames:
+                        steps = max_total_frames % steps
+                    omega.append([start, stop, steps])
+                    start = stop
+            omega = np.array(omega)
+        elif wedges and num_files == 1:
+            # single images need a single wedge, even if discontinuous
+            nsteps = sum(np.array(wedges)[:, 2])
+            omega = np.array([[wedges[0][0], wedges[-1][1], nsteps]])
+        else:
+            # user did not select file or enter wedges
             delta = MAXIMUM_OMEGA_RANGE / num_files
             omega = np.linspace(
                 [0, 0 + delta],
                 [MAXIMUM_OMEGA_RANGE - delta, MAXIMUM_OMEGA_RANGE],
                 num_files)
-        return omega[:, 0], omega[:, 1], nsteps
+        return omega[:, 0], omega[:, 1], omega[:, 2]
 
     def build_data(self):
         HexrdConfig().stack_state = copy.deepcopy(self.state)
@@ -376,7 +391,7 @@ class ImageStackDialog(QObject):
             },
             'reverse_frames': self.state.get('reverse_frames', False)
         }
-        if not self.state['omega_from_file'] and self.state["wedges"]:
+        if not self.state['omega_from_file'] and self.state['wedges']:
             data['frame_data']['wedges'] = self.state['wedges']
 
         self.simple_image_series_dialog.image_stack_loaded(data)
