@@ -127,6 +127,22 @@ class PowderOverlay(Overlay):
     def default_refinements(self):
         return np.asarray([False] * 6)
 
+    def pad_picks_data(self):
+        for k, v in self.data.items():
+            num_hkls = len(self.data[k]['hkls'])
+            current = self.calibration_picks.setdefault(k, [])
+            while len(current) < num_hkls:
+                current.append([])
+
+    @property
+    def has_picks_data(self):
+        for det_key, hkl_list in self.calibration_picks.items():
+            for hkl_picks in hkl_list:
+                if hkl_picks:
+                    return True
+
+        return False
+
     def generate_overlay(self):
         instr = self.instrument
         plane_data = self.plane_data

@@ -1225,6 +1225,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Set the tth_max to match that of the polar resolution config.
         self.reset_tth_max(name)
+        self.update_material_energy(materials[name])
 
     def add_material(self, name, material):
         self.add_materials([name], [material])

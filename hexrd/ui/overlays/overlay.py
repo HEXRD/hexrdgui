@@ -54,9 +54,19 @@ class Overlay(ABC):
     def default_highlight_style(self):
         pass
 
+    @property
+    @abstractmethod
+    def has_picks_data(self):
+        pass
+
+    @abstractmethod
+    def pad_picks_data(self):
+        pass
+
     # Concrete methods
-    def __init__(self, material_name, name=None, refinements=None, style=None,
-                 highlight_style=None, visible=True):
+    def __init__(self, material_name, name=None, refinements=None,
+                 calibration_picks=None, style=None, highlight_style=None,
+                 visible=True):
 
         self._material_name = material_name
 
@@ -66,6 +76,9 @@ class Overlay(ABC):
         if refinements is None:
             refinements = self.default_refinements
 
+        if calibration_picks is None:
+            calibration_picks = {}
+
         if style is None:
             style = self.default_style
 
@@ -74,6 +87,7 @@ class Overlay(ABC):
 
         self.name = name
         self.refinements = refinements
+        self._calibration_picks = calibration_picks
         self.style = style
         self.highlight_style = highlight_style
         self._visible = visible
@@ -107,6 +121,7 @@ class Overlay(ABC):
             'material_name',
             'name',
             'refinements',
+            'calibration_picks',
             'style',
             'highlight_style',
             'visible',
@@ -299,3 +314,29 @@ class Overlay(ABC):
     def on_new_images_loaded(self):
         # Do nothing by default. Subclasses can re-implement.
         pass
+
+    @property
+    def calibration_picks(self):
+        return self._calibration_picks
+
+    @calibration_picks.setter
+    def calibration_picks(self, picks):
+        self._validate_picks(picks)
+
+        self.reset_calibration_picks()
+        self.calibration_picks.update(picks)
+
+    def _validate_picks(self, picks):
+        for k in picks:
+            if k not in self.data:
+                msg = (
+                    f'Keys in picks "{list(picks.keys())}" do not match '
+                    f'keys in data "{list(self.data.keys())}"'
+                )
+                raise Exception(msg)
+
+    def reset_calibration_picks(self):
+        # Make an empty list for each detector
+        self._calibration_picks.clear()
+        self._calibration_picks |= {k: [] for k in self.data}
+        self.pad_picks_data()

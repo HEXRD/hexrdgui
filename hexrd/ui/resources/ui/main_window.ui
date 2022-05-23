@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -111,6 +111,7 @@
     <addaction name="action_show_detector_borders"/>
     <addaction name="action_view_indexing_config"/>
     <addaction name="action_view_fit_grains_config"/>
+    <addaction name="action_view_overlay_picks"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
@@ -229,7 +230,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>753</height>
          </rect>
         </property>
         <attribute name="label">
@@ -242,7 +243,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>753</height>
          </rect>
         </property>
         <attribute name="label">
@@ -651,6 +652,11 @@
   <action name="action_run_hedm_calibration">
    <property name="text">
     <string>HEDM</string>
+   </property>
+  </action>
+  <action name="action_view_overlay_picks">
+   <property name="text">
+    <string>Overlay Picks</string>
    </property>
   </action>
  </widget>

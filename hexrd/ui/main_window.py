@@ -25,6 +25,9 @@ from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
+from hexrd.ui.calibration.picks_tree_view_dialog import (
+    PicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
+)
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
@@ -200,6 +203,8 @@ class MainWindow(QObject):
             self.view_indexing_config)
         self.ui.action_view_fit_grains_config.triggered.connect(
             self.view_fit_grains_config)
+        self.ui.action_view_overlay_picks.triggered.connect(
+            self.view_overlay_picks)
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
@@ -420,6 +425,7 @@ class MainWindow(QObject):
         self.update_hedm_enable_states()
         self.color_map_editor.reset_range()
         self.image_mode_widget.reset_masking()
+        self.update_image_mode_enable_states()
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -836,6 +842,54 @@ class MainWindow(QObject):
 
         view = self._fit_grains_config_view = FitGrainsTreeViewDialog(self.ui)
         view.show()
+
+    def view_overlay_picks(self):
+        # Only works in the polar view right now, but could in theory work in
+        # other views.
+        if self.image_mode != ViewType.polar:
+            msg = (
+                'Overlay picks may currently only be viewed in the polar '
+                'image mode'
+            )
+            print(msg)
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
+        canvas = self.ui.image_tab_widget.image_canvases[0]
+
+        overlays = HexrdConfig().overlays
+
+        # Pad all of the overlays to make sure their data is updated
+        for overlay in overlays:
+            overlay.pad_picks_data()
+
+        kwargs = {
+            'dictionary': overlays_to_tree_format(overlays),
+            'coords_type': ViewType.polar,
+            'canvas': canvas,
+            'parent': canvas,
+        }
+        dialog = PicksTreeViewDialog(**kwargs)
+        dialog.button_box_visible = True
+        dialog.ui.show()
+
+        def remove_all_highlighting():
+            for overlay in overlays:
+                overlay.clear_highlights()
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            HexrdConfig().overlay_config_changed.emit()
+
+        def on_accepted():
+            # Write the modified picks to the overlays
+            updated_picks = tree_format_to_picks(dialog.dictionary)
+            for i, new_picks in enumerate(updated_picks):
+                overlays[i].calibration_picks = new_picks['picks']
+
+        def on_finished():
+            remove_all_highlighting()
+
+        dialog.ui.accepted.connect(on_accepted)
+        dialog.ui.finished.connect(on_finished)
 
     def new_mouse_position(self, info):
         labels = []
