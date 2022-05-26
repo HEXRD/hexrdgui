@@ -593,12 +593,20 @@
     <string>Apply Pixel Solid Angle Correction</string>
    </property>
   </action>
-  <action name="action_apply_lorentz_polarization_correction">
+  <action name="action_apply_polarization_correction">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Apply Lorentz Polarization Correction</string>
+    <string>Apply Polarization Correction</string>
+   </property>
+  </action>
+  <action name="action_apply_lorentz_correction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Apply Lorentz Correction</string>
    </property>
   </action>
   <action name="action_subtract_minimum">
