@@ -7,6 +7,7 @@ import yaml
 from hexrd import imageseries
 
 import hexrd.ui
+from hexrd.ui import state_compatibility
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 
@@ -232,3 +233,7 @@ def load_imageseries_dict(h5_file):
 
     ImageLoadManager().update_status = HexrdConfig().live_update
     ImageLoadManager().finish_processing_ims()
+
+
+def update_if_needed(file_path):
+    return state_compatibility.update_if_needed(file_path)
