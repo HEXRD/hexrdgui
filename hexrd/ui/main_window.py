@@ -1048,13 +1048,6 @@ class MainWindow(QObject):
         HexrdConfig().apply_polarization_correction = b
 
     def apply_lorentz_correction_toggled(self, b):
-        if not b:
-            # Just turn it off and return
-            HexrdConfig().apply_lorentz_correction = b
-            return
-
-        # The dialog should have modified HexrdConfig's Lorentz options
-        # already. Just apply it now.
         HexrdConfig().apply_lorentz_correction = b
 
     def on_action_hedm_import_tool_triggered(self):
