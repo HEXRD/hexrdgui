@@ -1,5 +1,7 @@
 import h5py
 
+from hexrd.ui.hexrd_config import HexrdConfig
+
 
 def update_if_needed(file_path):
     # Find and fix any issues with the state file
@@ -17,7 +19,8 @@ def fix_issue_1227(file_path):
     if not has_issue_1227(file_path):
         return
 
-    print('State file found to contain issue #1227. Fixing it up...')
+    logger = HexrdConfig().logger
+    logger.warning('State file found to contain issue #1227. Fixing it up...')
 
     from hexrd.ui.state import _load_config, _save_config
 
