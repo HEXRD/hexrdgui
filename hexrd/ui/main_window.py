@@ -997,6 +997,10 @@ class MainWindow(QObject):
         path = Path(selected_file)
         HexrdConfig().working_dir = str(path.parent)
 
+        # Some older state files have issues that need to be resolved.
+        # Perform an update, if needed, to fix them, before reading.
+        state.update_if_needed(selected_file)
+
         # The image series will take care of closing the file
         h5_file = h5py.File(selected_file, "r")
         try:

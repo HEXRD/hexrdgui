@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from PySide2.QtCore import QTimer
 
 import h5py
@@ -9,11 +7,12 @@ import yaml
 from hexrd import imageseries
 
 import hexrd.ui
+from hexrd.ui import state_compatibility
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 
 CONFIG_PREFIX = "config"
-CONFIG_YAML_PATH = str(Path(CONFIG_PREFIX) / "yaml")
+CONFIG_YAML_PATH = f'{CONFIG_PREFIX}/yaml'
 
 
 class H5StateLoader(yaml.SafeLoader):
@@ -91,10 +90,9 @@ class H5StateDumper(yaml.Dumper):
         if path is None:
             raise ValueError("Unable to determine array path.")
 
-        path = Path(*path)
+        path = '/'.join(path)
         if self.prefix:
-            path = Path(self.prefix) / path
-        path = str(path)
+            path = f'{self.prefix}/{path}'
 
         self.h5_file.create_dataset(path, data.shape, data.dtype, data=data)
 
@@ -235,3 +233,7 @@ def load_imageseries_dict(h5_file):
 
     ImageLoadManager().update_status = HexrdConfig().live_update
     ImageLoadManager().finish_processing_ims()
+
+
+def update_if_needed(file_path):
+    return state_compatibility.update_if_needed(file_path)
