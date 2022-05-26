@@ -132,7 +132,8 @@
       <string>Intensity Corrections</string>
      </property>
      <addaction name="action_apply_pixel_solid_angle_correction"/>
-     <addaction name="action_apply_lorentz_polarization_correction"/>
+     <addaction name="action_apply_lorentz_correction"/>
+     <addaction name="action_apply_polarization_correction"/>
      <addaction name="action_subtract_minimum"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
