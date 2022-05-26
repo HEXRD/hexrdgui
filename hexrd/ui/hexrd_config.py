@@ -680,7 +680,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if HexrdConfig().apply_lorentz_correction:
             for name, img in images_dict.items():
                 panel = instr.detectors[name]
-                factor = panel.lorentz_factor(**kwargs)
+                factor = panel.lorentz_factor()
                 images_dict[name] = img / factor
 
         if HexrdConfig().intensity_subtract_minimum:
