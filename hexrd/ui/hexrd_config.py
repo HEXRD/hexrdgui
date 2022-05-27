@@ -888,11 +888,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         current_material = self.indexing_config['_selected_material']
         selected_material = self.material(current_material)
+
+        # tThMax can be None, bool or np.float64, in the case of np.float64 we
+        # need to convert to float
+        t_th_max = selected_material.planeData.get_tThMax()
+        if isinstance(t_th_max, np.float64):
+            t_th_max = t_th_max.item()
+
         material = {
             'definitions': 'materials.h5',
             'active': current_material,
             'dmin': selected_material.dmin.getVal('angstrom'),
-            'tth_width': selected_material.planeData.get_tThMax().item(),
+            'tth_width': t_th_max,
             'min_sfac_ratio': None
         }
 
