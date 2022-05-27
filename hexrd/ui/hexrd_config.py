@@ -409,6 +409,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         def recurse(cur, config):
             for k, v in cur.items():
+                if k not in config:
+                    continue
+
                 if 'status' in config[k]:
                     config[k]['status'] = v
                 else:
