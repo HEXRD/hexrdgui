@@ -21,6 +21,10 @@ def to_dict(overlay):
 def from_dict(cls, d):
     version = d.pop('_version', 1)
 
+    if 'eta_period' in d:
+        # This is now always taken from HexrdConfig() and is not a setting
+        del d['eta_period']
+
     if version != CURRENT_DICT_VERSION:
         # Convert to the current version
         type_str = cls.type.value

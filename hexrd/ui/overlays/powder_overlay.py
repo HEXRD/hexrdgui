@@ -15,18 +15,14 @@ class PowderOverlay(Overlay):
     hkl_data_key = 'rings'
 
     def __init__(self, material_name, tvec=None, eta_steps=360,
-                 eta_period=None, **overlay_kwargs):
+                 **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if tvec is None:
             tvec = constants.zeros_3.copy()
 
-        if eta_period is None:
-            eta_period = np.r_[-180., 180.]
-
         self.tvec = tvec
         self.eta_steps = eta_steps
-        self.eta_period = eta_period
 
     @property
     def child_attributes_to_save(self):
@@ -35,7 +31,6 @@ class PowderOverlay(Overlay):
         return [
             'tvec',
             'eta_steps',
-            'eta_period',
         ]
 
     @property
@@ -64,18 +59,6 @@ class PowderOverlay(Overlay):
     @property
     def delta_eta(self):
         return 360 / self.eta_steps
-
-    @property
-    def eta_period(self):
-        return self._eta_period
-
-    @eta_period.setter
-    def eta_period(self, x):
-        x = np.asarray(x, float).flatten()
-        assert len(x) == 2, "eta period must be a 2-element sequence"
-        if xfcapi.angularDifference(x[0], x[1], units='degrees') > 1e-4:
-            raise RuntimeError("period specification is not 360 degrees")
-        self._eta_period = x
 
     @property
     def all_refinements(self):

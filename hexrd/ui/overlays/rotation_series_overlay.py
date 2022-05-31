@@ -17,10 +17,10 @@ class RotationSeriesOverlay(Overlay):
     hkl_data_key = 'data'
 
     def __init__(self, material_name, crystal_params=None, eta_ranges=None,
-                 ome_ranges=None, ome_period=None, eta_period=None,
-                 aggregated=True, ome_width=np.radians(5.0).item(),
-                 tth_width=None, eta_width=None, sync_ome_period=True,
-                 sync_ome_ranges=True, **overlay_kwargs):
+                 ome_ranges=None, ome_period=None, aggregated=True,
+                 ome_width=np.radians(5.0).item(), tth_width=None,
+                 eta_width=None, sync_ome_period=True, sync_ome_ranges=True,
+                 **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -35,14 +35,10 @@ class RotationSeriesOverlay(Overlay):
         if ome_period is None:
             ome_period = [-np.pi, np.pi]
 
-        if eta_period is None:
-            eta_period = np.r_[-180., 180.]
-
         self.crystal_params = crystal_params
         self.eta_ranges = eta_ranges
         self.ome_ranges = ome_ranges
         self.ome_period = ome_period
-        self.eta_period = eta_period
         self.aggregated = aggregated
         self.ome_width = ome_width
         self.tth_width = tth_width
@@ -62,7 +58,6 @@ class RotationSeriesOverlay(Overlay):
             'eta_ranges',
             'ome_ranges',
             'ome_period',
-            'eta_period',
             'aggregated',
             'ome_width',
             'tth_width',
