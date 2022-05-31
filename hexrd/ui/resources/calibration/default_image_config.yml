@@ -19,8 +19,9 @@ colormap:
   min: 0
 show_detector_borders: true
 apply_pixel_solid_angle_correction: false
-apply_lorentz_polarization_correction: false
-lorentz_polarization:
+apply_polarization_correction: false
+apply_lorentz_correction: false
+polarization:
   unpolarized: false
   f_hor: 1.0
   f_vert: 0.0

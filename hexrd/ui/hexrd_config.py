@@ -664,8 +664,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 panel = instr.detectors[name]
                 images_dict[name] = img / panel.pixel_solid_angles
 
-        if HexrdConfig().apply_lorentz_polarization_correction:
-            options = self.config['image']['lorentz_polarization']
+        if HexrdConfig().apply_polarization_correction:
+            options = self.config['image']['polarization']
             kwargs = {
                 'unpolarized': options['unpolarized'],
                 'f_hor': options['f_hor'],
@@ -674,7 +674,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
             for name, img in images_dict.items():
                 panel = instr.detectors[name]
-                factor = panel.lorentz_polarization_factor(**kwargs)
+                factor = panel.polarization_factor(**kwargs)
+                images_dict[name] = img / factor
+
+        if HexrdConfig().apply_lorentz_correction:
+            for name, img in images_dict.items():
+                panel = instr.detectors[name]
+                factor = panel.lorentz_factor()
                 images_dict[name] = img / factor
 
         if HexrdConfig().intensity_subtract_minimum:
@@ -1740,13 +1746,23 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         set_apply_pixel_solid_angle_correction)
 
     @property
-    def apply_lorentz_polarization_correction(self):
-        return self.config['image']['apply_lorentz_polarization_correction']
+    def apply_polarization_correction(self):
+        return self.config['image']['apply_polarization_correction']
 
-    @apply_lorentz_polarization_correction.setter
-    def apply_lorentz_polarization_correction(self, v):
-        if v != self.apply_lorentz_polarization_correction:
-            self.config['image']['apply_lorentz_polarization_correction'] = v
+    @apply_polarization_correction.setter
+    def apply_polarization_correction(self, v):
+        if v != self.apply_polarization_correction:
+            self.config['image']['apply_polarization_correction'] = v
+            self.deep_rerender_needed.emit()
+
+    @property
+    def apply_lorentz_correction(self):
+        return self.config['image']['apply_lorentz_correction']
+
+    @apply_lorentz_correction.setter
+    def apply_lorentz_correction(self, v):
+        if v != self.apply_lorentz_correction:
+            self.config['image']['apply_lorentz_correction'] = v
             self.deep_rerender_needed.emit()
 
     def _intensity_subtract_minimum(self):
@@ -1768,7 +1784,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # Add to the list here as needed
         corrections = [
             'apply_pixel_solid_angle_correction',
-            'apply_lorentz_polarization_correction',
+            'apply_polarization_correction',
+            'apply_lorentz_correction',
             'intensity_subtract_minimum',
         ]
 

@@ -40,8 +40,8 @@ from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.simple_image_series_dialog import SimpleImageSeriesDialog
-from hexrd.ui.lorentz_polarization_options_dialog import (
-    LorentzPolarizationOptionsDialog
+from hexrd.ui.polarization_options_dialog import (
+    PolarizationOptionsDialog
 )
 from hexrd.ui.mask_manager_dialog import MaskManagerDialog
 from hexrd.ui.mask_regions_dialog import MaskRegionsDialog
@@ -131,8 +131,10 @@ class MainWindow(QObject):
 
         self.ui.action_apply_pixel_solid_angle_correction.setChecked(
             HexrdConfig().apply_pixel_solid_angle_correction)
-        self.ui.action_apply_lorentz_polarization_correction.setChecked(
-            HexrdConfig().apply_lorentz_polarization_correction)
+        self.ui.action_apply_polarization_correction.setChecked(
+            HexrdConfig().apply_polarization_correction)
+        self.ui.action_apply_lorentz_correction.setChecked(
+            HexrdConfig().apply_lorentz_correction)
         self.ui.action_subtract_minimum.setChecked(
             HexrdConfig().intensity_subtract_minimum)
 
@@ -271,8 +273,10 @@ class MainWindow(QObject):
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)
-        self.ui.action_apply_lorentz_polarization_correction.toggled.connect(
-            self.apply_lorentz_polarization_correction_toggled)
+        self.ui.action_apply_polarization_correction.toggled.connect(
+            self.apply_polarization_correction_toggled)
+        self.ui.action_apply_lorentz_correction.toggled.connect(
+            self.apply_lorentz_correction_toggled)
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
 
@@ -1025,23 +1029,26 @@ class MainWindow(QObject):
         if raw_only:
             self.image_mode_widget.ui.tab_widget.setCurrentIndex(0)
 
-    def apply_lorentz_polarization_correction_toggled(self, b):
+    def apply_polarization_correction_toggled(self, b):
         if not b:
             # Just turn it off and return
-            HexrdConfig().apply_lorentz_polarization_correction = b
+            HexrdConfig().apply_polarization_correction = b
             return
 
         # Get the user to first select the Lorentz polarization options
-        d = LorentzPolarizationOptionsDialog(self.ui)
+        d = PolarizationOptionsDialog(self.ui)
         if not d.exec_():
             # Canceled... uncheck the action.
-            action = self.ui.action_apply_lorentz_polarization_correction
+            action = self.ui.action_apply_polarization_correction
             action.setChecked(False)
             return
 
-        # The dialog should have modified HexrdConfig's Lorentz options
-        # already. Just apply it now.
-        HexrdConfig().apply_lorentz_polarization_correction = b
+        # The dialog should have modified HexrdConfig's polarization
+        # options already. Just apply it now.
+        HexrdConfig().apply_polarization_correction = b
+
+    def apply_lorentz_correction_toggled(self, b):
+        HexrdConfig().apply_lorentz_correction = b
 
     def on_action_hedm_import_tool_triggered(self):
         self.simple_image_series_dialog.show()

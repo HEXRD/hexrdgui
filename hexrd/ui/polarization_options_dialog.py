@@ -3,11 +3,11 @@ from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
 
-class LorentzPolarizationOptionsDialog:
+class PolarizationOptionsDialog:
 
     def __init__(self, parent=None):
         loader = UiLoader()
-        self.ui = loader.load_file('lorentz_polarization_options_dialog.ui',
+        self.ui = loader.load_file('polarization_options_dialog.ui',
                                    parent)
 
         self.update_gui()
@@ -23,13 +23,13 @@ class LorentzPolarizationOptionsDialog:
 
     def accept(self):
         # When the dialog is accepted, save the settings in HexrdConfig.
-        options = HexrdConfig().config['image']['lorentz_polarization']
+        options = HexrdConfig().config['image']['polarization']
         options['unpolarized'] = self.ui.unpolarized.isChecked()
         options['f_hor'] = self.ui.horizontal.value()
         options['f_vert'] = self.ui.vertical.value()
 
     def update_gui(self):
-        options = HexrdConfig().config['image']['lorentz_polarization']
+        options = HexrdConfig().config['image']['polarization']
         self.ui.unpolarized.setChecked(options['unpolarized'])
         self.ui.horizontal.setValue(options['f_hor'])
         self.ui.vertical.setValue(options['f_vert'])
