@@ -22,8 +22,8 @@ class LaueOverlay(Overlay):
 
     def __init__(self, material_name, crystal_params=None, sample_rmat=None,
                  min_energy=5, max_energy=35, tth_width=None, eta_width=None,
-                 eta_period=None, width_shape=None, label_type=None,
-                 label_offsets=None, **overlay_kwargs):
+                 width_shape=None, label_type=None, label_offsets=None,
+                 **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -31,9 +31,6 @@ class LaueOverlay(Overlay):
 
         if sample_rmat is None:
             sample_rmat = constants.identity_3x3.copy()
-
-        if eta_period is None:
-            eta_period = np.r_[-180., 180.]
 
         if width_shape is None:
             width_shape = LaueRangeShape.ellipse
@@ -47,7 +44,6 @@ class LaueOverlay(Overlay):
         self._max_energy = max_energy
         self.tth_width = tth_width
         self.eta_width = eta_width
-        self.eta_period = eta_period
         self.width_shape = width_shape
         self.label_type = label_type
         self.label_offsets = label_offsets
@@ -63,7 +59,6 @@ class LaueOverlay(Overlay):
             'max_energy',
             'tth_width',
             'eta_width',
-            'eta_period',
             'width_shape',
             'label_type',
             'label_offsets',
@@ -121,18 +116,6 @@ class LaueOverlay(Overlay):
     def widths_enabled(self):
         widths = ['tth_width', 'eta_width']
         return all(getattr(self, x) is not None for x in widths)
-
-    @property
-    def eta_period(self):
-        return self._eta_period
-
-    @eta_period.setter
-    def eta_period(self, x):
-        x = np.asarray(x, float).flatten()
-        assert len(x) == 2, "eta period must be a 2-element sequence"
-        if xfcapi.angularDifference(x[0], x[1], units='degrees') > 1e-4:
-            raise RuntimeError("period specification is not 360 degrees")
-        self._eta_period = x
 
     @property
     def refinement_labels(self):

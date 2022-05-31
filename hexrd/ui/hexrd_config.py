@@ -1513,7 +1513,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         kwargs = {
             'material_name': material_name,
             'type': type,
-            'eta_period': self.polar_res_eta_period,
         }
         overlay = overlays.create_overlay(**kwargs)
         self.overlays.append(overlay)
@@ -1532,7 +1531,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         kwargs = {
             'material_name': overlay.material_name,
             'type': type,
-            'eta_period': self.polar_res_eta_period,
         }
         new_overlay = overlays.create_overlay(**kwargs)
         new_overlay.instrument = self.overlays[i].instrument
@@ -1600,11 +1598,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def set_polar_res_eta_min(self, v, rerender=True):
         self.config['image']['polar']['eta_min'] = v
 
-        # Update the eta period on all overlays
+        # Update all overlays
         # The eta period is currently only affected by the min value
-        for overlay in self.overlays:
-            overlay.eta_period = self.polar_res_eta_period
-
         self.flag_overlay_updates_for_all_materials()
 
         if not rerender:

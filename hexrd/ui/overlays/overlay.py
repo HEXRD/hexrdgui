@@ -180,6 +180,11 @@ class Overlay(ABC):
         return self.material.planeData
 
     @property
+    def eta_period(self):
+        from hexrd.ui.hexrd_config import HexrdConfig
+        return HexrdConfig().polar_res_eta_period
+
+    @property
     def style(self):
         return self._style
 
