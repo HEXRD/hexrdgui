@@ -34,12 +34,21 @@ class PicksTreeViewDialog:
         # Default to a hidden button box
         self.button_box_visible = False
 
+        self.update_gui()
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.finished.connect(self.on_finished)
         self.ui.export_picks.clicked.connect(self.export_picks_clicked)
         self.ui.import_picks.clicked.connect(self.import_picks_clicked)
+        self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
+        self.ui.show_all_picks.toggled.connect(self.show_all_picks_toggled)
+
+        HexrdConfig().overlay_config_changed.connect(self.update_gui)
+
+    def update_gui(self):
+        self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
+        self.ui.show_all_picks.setChecked(self.tree_view.show_all_picks)
 
     def on_finished(self):
         self.tree_view.clear_artists()
@@ -117,6 +126,9 @@ class PicksTreeViewDialog:
         # Update the validated data
         data.clear()
         data.update(ret)
+
+    def show_all_picks_toggled(self):
+        self.tree_view.show_all_picks = self.ui.show_all_picks.isChecked()
 
     @property
     def dict_with_cart_coords(self):

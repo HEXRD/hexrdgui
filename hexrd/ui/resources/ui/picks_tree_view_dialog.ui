@@ -31,18 +31,35 @@
     <layout class="QVBoxLayout" name="tree_view_layout"/>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="1" column="2">
+      <widget class="QPushButton" name="import_picks">
+       <property name="text">
+        <string>Import Picks</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
       <widget class="QPushButton" name="export_picks">
        <property name="text">
         <string>Export Picks</string>
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="import_picks">
+     <item row="0" column="1">
+      <widget class="QCheckBox" name="show_overlays">
        <property name="text">
-        <string>Import Picks</string>
+        <string>Show overlays?</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QCheckBox" name="show_all_picks">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, all picks will be shown in blue, and selected picks will be highlighted green.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Show all picks?</string>
        </property>
       </widget>
      </item>
@@ -58,6 +75,8 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>show_overlays</tabstop>
+  <tabstop>show_all_picks</tabstop>
   <tabstop>export_picks</tabstop>
   <tabstop>import_picks</tabstop>
  </tabstops>
