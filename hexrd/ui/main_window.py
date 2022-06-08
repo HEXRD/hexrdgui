@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 import tempfile
 
 import h5py
@@ -974,7 +975,7 @@ class MainWindow(QObject):
             HexrdConfig().imageseries_dict.clear()
 
             # Move the save file to the selected file
-            os.rename(save_file, selected_file)
+            shutil.move(save_file, selected_file)
 
             # Re-load the imageseries
             # Keep the file open and let the imageseries close it...
