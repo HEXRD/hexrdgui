@@ -62,6 +62,7 @@ class FitGrainsResultsDialog(QObject):
         self.canvas = None
         self.fig = None
         self.scatter_artist = None
+        self.highlight_artist = None
         self.colorbar = None
 
         loader = UiLoader()
@@ -213,15 +214,22 @@ class FitGrainsResultsDialog(QObject):
             self.scatter_artist.remove()
             self.scatter_artist = None
 
+        if self.highlight_artist is not None:
+            self.highlight_artist.remove()
+            self.highlight_artist = None
+
     def on_colorby_changed(self):
         self.update_plot()
+
+    @property
+    def glyph_size(self):
+        return self.ui.glyph_size_slider.value()
 
     def update_plot(self):
         data = self.converted_data
         colors = self.colors
 
         coords = data[:, COORDS_SLICE].T
-        sz = self.ui.glyph_size_slider.value()
 
         # I could not find a way to update scatter plot marker colors and
         # the colorbar mappable. So we must re-draw both from scratch...
@@ -229,12 +237,13 @@ class FitGrainsResultsDialog(QObject):
         kwargs = {
             'c': colors,
             'cmap': self.cmap,
-            's': sz,
+            's': self.glyph_size,
             'depthshade': self.depth_shading,
             'picker': True,
         }
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.update_color_settings()
+        self.highlight_selected_grains()
         self.draw_idle()
 
     def update_color_settings(self):
@@ -334,6 +343,8 @@ class FitGrainsResultsDialog(QObject):
         self.data_model.grains_table_modified.connect(
             self.on_grains_table_modified)
 
+        self.ui.table_view.selection_changed.connect(self.selection_changed)
+
     def setup_plot(self):
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -343,8 +354,14 @@ class FitGrainsResultsDialog(QObject):
 
         canvas.mpl_connect('pick_event', self.point_picked)
 
-        fig = canvas.figure
-        ax = fig.add_subplot(111, projection='3d', proj_type=self.projection)
+        kwargs = {
+            'projection': '3d',
+            'proj_type': self.projection,
+            # Do not compute the z order so we can make highlighted points
+            # always appear in front.
+            'computed_zorder': False,
+        }
+        ax = canvas.figure.add_subplot(111, **kwargs)
 
         # Set default limits to -0.5 to 0.5
         for name in ('x', 'y', 'z'):
@@ -353,7 +370,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.canvas_layout.addWidget(canvas)
 
-        self.fig = fig
+        self.fig = canvas.figure
         self.ax = ax
         self.canvas = canvas
 
@@ -407,6 +424,30 @@ class FitGrainsResultsDialog(QObject):
 
         # Select the row
         self.ui.table_view.selectRow(i)
+
+    def selection_changed(self):
+        self.highlight_selected_grains()
+
+    def highlight_selected_grains(self):
+        selected_grain_ids = self.ui.table_view.selected_grain_ids
+
+        if self.highlight_artist is not None:
+            self.highlight_artist.remove()
+
+        # Now draw the highlight markers for these selected grains
+        data = self.converted_data[:, COORDS_SLICE][selected_grain_ids].T
+
+        kwargs = {
+            # Bright yellow
+            'c': '#f9ff00',
+            # Make highlighted glyphs slightly larger
+            's': round(self.glyph_size * 1.2),
+            'alpha': 1.0,
+            # Make sure the highlighted glyphs are always in front
+            'zorder': 1e10,
+        }
+        self.highlight_artist = self.ax.scatter3D(*data, **kwargs)
+        self.draw_idle()
 
     def setup_toolbar(self):
         # These don't work for 3D plots
