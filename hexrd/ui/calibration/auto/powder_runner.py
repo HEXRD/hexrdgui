@@ -58,8 +58,8 @@ class PowderRunner(QObject):
         options = HexrdConfig().config['calibration']['powder']
         self.instr = create_hedm_instrument()
 
-        # Assume there is only one image in each image series for now...
-        img_dict = {k: x[0] for k, x in HexrdConfig().imageseries_dict.items()}
+        # Get an intensity-corrected masked dict of the images
+        img_dict = HexrdConfig().masked_images_dict
 
         statuses = self.refinement_flags_without_overlays
         self.cf = statuses

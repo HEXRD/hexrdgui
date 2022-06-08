@@ -698,6 +698,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         """Default to intensity corrected images dict"""
         return self.intensity_corrected_images_dict
 
+    @property
+    def masked_images_dict(self):
+        """Get an images dict where masks have been applied"""
+        images_dict = self.images_dict
+        for name, img in images_dict.items():
+            for mask_name, data in self.masks.items():
+                if mask_name not in self.visible_masks:
+                    continue
+
+                for det, mask in data:
+                    if det == name:
+                        img[~mask] = 0
+
+        return images_dict
+
     def save_imageseries(self, ims, name, write_file, selected_format,
                          **kwargs):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
