@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from mpl_toolkits.mplot3d import Axes3D, proj3d  # noqa: F401 unused import
 import matplotlib
 import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -360,7 +360,37 @@ class FitGrainsResultsDialog(QObject):
         self.update_axes_labels()
 
     def point_picked(self, event):
-        self.select_grain_in_table(event.ind[0])
+        # Unfortunately, in matplotlib 3d, the indices change
+        # depending on the current orientation of the plot.
+        # We can find the picked point, however, by transforming
+        # the 3D data into 2D points (as they are displayed on the screen),
+        # and finding which data point is the closest to the mouse click.
+
+        # This code was largely inspired by:
+        # https://stackoverflow.com/a/66926265
+
+        xx = event.mouseevent.x
+        yy = event.mouseevent.y
+
+        proj = self.ax.get_proj()
+        data = self.converted_data[:, COORDS_SLICE]
+
+        ind = 0
+        dmin = np.inf
+        for i, (x, y, z) in enumerate(data):
+            # Transform the 3D data points into 2D points on the screen,
+            # then find the closest point.
+            x2, y2, z2 = proj3d.proj_transform(x, y, z, proj)
+            x3, y3 = self.ax.transData.transform((x2, y2))
+
+            # Compute the distance
+            d = np.sqrt((x3 - xx)**2 + (y3 - yy)**2)
+
+            if d < dmin:
+                dmin = d
+                ind = i
+
+        self.select_grain_in_table(ind)
 
     def select_grain_in_table(self, grain_id):
         table_model = self.ui.table_view.model()
