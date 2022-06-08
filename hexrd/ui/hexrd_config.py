@@ -701,9 +701,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def masked_images_dict(self):
         """Get an images dict where masks have been applied"""
+        # We must ensure that we are using raw masks
+        from hexrd.ui.create_raw_mask import rebuild_raw_masks
+        prev_masks = copy.deepcopy(self.masks)
+        try:
+            rebuild_raw_masks()
+            masks = copy.deepcopy(self.masks)
+        finally:
+            self.masks = prev_masks
+
         images_dict = self.images_dict
         for name, img in images_dict.items():
-            for mask_name, data in self.masks.items():
+            for mask_name, data in masks.items():
                 if mask_name not in self.visible_masks:
                     continue
 
