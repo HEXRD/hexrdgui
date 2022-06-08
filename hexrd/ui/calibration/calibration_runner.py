@@ -12,7 +12,10 @@ from hexrd.crystallography import hklToStr
 from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 from hexrd.instrument import unwrap_h5_to_dict
 
-from hexrd.ui.calibration.auto import PowderCalibrationDialog
+from hexrd.ui.calibration.auto import (
+    PowderCalibrationDialog,
+    save_picks_to_overlay,
+)
 from hexrd.ui.calibration.laue_auto_picker_dialog import LaueAutoPickerDialog
 from hexrd.ui.calibration.pick_based_calibration import (
     LaueCalibrator,
@@ -741,9 +744,8 @@ class CalibrationRunner(QObject):
         return self.auto_ic.extract_points(**kwargs)[0]
 
     def auto_powder_pick_finished(self, auto_picks):
-        picks = auto_powder_picks_to_picks(auto_picks, self.active_overlay)
-        self.overlay_picks = picks['picks']
-        self.save_overlay_picks()
+        save_picks_to_overlay(self.active_overlay, auto_picks)
+        self.reset_overlay_picks()
 
         if len(self.active_overlays) == 1:
             # If this is the only overlay, don't view the picks table,
@@ -809,36 +811,6 @@ class CalibrationRunner(QObject):
         else:
             dialog = self.view_picks_table()
             dialog.ui.finished.connect(self.finish_line)
-
-
-def auto_powder_picks_to_picks(auto_picks, overlay):
-    hkls = overlay.hkls
-    picks = {det: [[] for _ in val] for det, val in hkls.items()}
-    for det, det_picks in auto_picks.items():
-        for nested_picks in det_picks:
-            for entry in nested_picks:
-                cart = entry[:2]
-                hkl = entry[3:6].astype(int).tolist()
-                idx = hkls[det].index(hkl)
-                picks[det][idx].append(cart)
-
-    # Now convert the cartesian coordinates to polar
-    instr = create_hedm_instrument()
-    for det, det_picks in picks.items():
-        kwargs = {
-            'panel': instr.detectors[det],
-            'eta_period': HexrdConfig().polar_res_eta_period,
-            'tvec_s': instr.tvec,
-        }
-        for i, line in enumerate(det_picks):
-            det_picks[i] = cart_to_angles(line, **kwargs).tolist()
-
-    return {
-        'material': overlay.material_name,
-        'type': overlay.type,
-        'hkls': hkls,
-        'picks': picks,
-    }
 
 
 def auto_laue_picks_to_picks(auto_picks, overlay):

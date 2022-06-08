@@ -257,41 +257,43 @@ class PowderRunner(QObject):
 
     def save_picks_to_overlay(self):
         # Currently, we only have one active overlay
-        overlay = self.active_overlay
+        save_picks_to_overlay(self.active_overlay, self.data_dict)
 
-        instr = create_hedm_instrument()
 
-        # We store the picks as angles on the overlays
-        def to_angles(xys, panel):
-            # Convert plain cartesian to angles
-            kwargs = {
-                'xys': xys,
-                'panel': panel,
-                'eta_period': HexrdConfig().polar_res_eta_period,
-                'tvec_s': instr.tvec,
-            }
-            return cart_to_angles(**kwargs)
+def save_picks_to_overlay(overlay, data_dict):
+    instr = create_hedm_instrument()
 
-        picks = {}
-        for det_key, data in self.data_dict.items():
-            picks[det_key] = []
+    # We store the picks as angles on the overlays
+    def to_angles(xys, panel):
+        # Convert plain cartesian to angles
+        kwargs = {
+            'xys': xys,
+            'panel': panel,
+            'eta_period': HexrdConfig().polar_res_eta_period,
+            'tvec_s': instr.tvec,
+        }
+        return cart_to_angles(**kwargs)
 
-            hkls = overlay.hkls[det_key]
-            panel = instr.detectors[det_key]
+    picks = {}
+    for det_key, data in data_dict.items():
+        picks[det_key] = []
 
-            for hkl in hkls:
-                hkl_picks = []
-                for ringset in data:
-                    for row in ringset:
-                        if np.array_equal(row[3:6], hkl):
-                            hkl_picks.append(row[:2])
+        hkls = overlay.hkls[det_key]
+        panel = instr.detectors[det_key]
 
-                if not hkl_picks:
-                    # For some reason, to_angles() is returning an x, y value
-                    # if the list is empty. Guard against that.
-                    picks[det_key].append([])
-                    continue
+        for hkl in hkls:
+            hkl_picks = []
+            for ringset in data:
+                for row in ringset:
+                    if np.array_equal(row[3:6], hkl):
+                        hkl_picks.append(row[:2])
 
-                picks[det_key].append(to_angles(hkl_picks, panel).tolist())
+            if not hkl_picks:
+                # For some reason, to_angles() is returning an x, y value
+                # if the list is empty. Guard against that.
+                picks[det_key].append([])
+                continue
 
-        overlay.calibration_picks = picks
+            picks[det_key].append(to_angles(hkl_picks, panel).tolist())
+
+    overlay.calibration_picks = picks
