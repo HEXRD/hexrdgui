@@ -9,7 +9,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 
 import numpy as np
 
@@ -171,8 +170,7 @@ class ImageCanvas(FigureCanvas):
     def unscaled_image_dict(self):
         # Returns a dict of the unscaled images
         if self.mode == ViewType.raw:
-            # Apply masks first
-            return apply_masks_to_raw(HexrdConfig().images_dict)
+            return HexrdConfig().masked_images_dict
         else:
             # Masks are already applied...
             return {'img': self.iviewer.img}
@@ -1020,17 +1018,3 @@ def transform_from_plain_cartesian_func(mode):
         raise Exception(f'Unknown mode: {mode}')
 
     return funcs[mode]
-
-
-def apply_masks_to_raw(images_dict):
-    # Apply needed masks to an image
-    for name, img in images_dict.items():
-        for mask_name, data in HexrdConfig().masks.items():
-            if mask_name not in HexrdConfig().visible_masks:
-                continue
-
-            for det, mask in data:
-                if det == name:
-                    img[~mask] = 0
-
-    return images_dict
