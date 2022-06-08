@@ -103,8 +103,10 @@ class PicksTreeView(BaseDictTreeView):
 
         self.canvas = canvas
         self.allow_hand_picking = True
-        self.line = None
+        self.all_picks_line = None
+        self.selected_picks_line = None
         self.is_deleting_picks = False
+        self._show_all_picks = False
 
         self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
 
@@ -121,6 +123,7 @@ class PicksTreeView(BaseDictTreeView):
         self.set_extended_selection_mode()
         self.expand_rows()
 
+        self.setup_lines()
         self.setup_connections()
 
     def setup_connections(self):
@@ -133,10 +136,10 @@ class PicksTreeView(BaseDictTreeView):
             return
 
         self.highlight_selected_hkls()
-        self.draw_selected_picks()
+        self.draw_picks()
 
     def data_was_modified(self):
-        self.draw_selected_picks()
+        self.draw_picks()
 
     def clear_highlights(self):
         for overlay in HexrdConfig().overlays:
@@ -189,39 +192,104 @@ class PicksTreeView(BaseDictTreeView):
 
         if items_to_remove:
             model.remove_items(items_to_remove)
-            self.draw_selected_picks()
+            self.draw_picks()
 
-    def draw_selected_picks(self):
-        if not self.canvas or not self.selected_items:
-            self.clear_artists()
+    @property
+    def show_all_picks(self):
+        return self._show_all_picks
+
+    @show_all_picks.setter
+    def show_all_picks(self, b):
+        if self.show_all_picks == b:
             return
 
-        if not self.line:
-            self.setup_line()
+        self._show_all_picks = b
+        self.update_line_colors()
+        self.draw_picks()
+
+    def draw_picks(self):
+        self.clear_artists()
+        if not self.canvas:
+            return
+
+        self.draw_all_picks()
+        self.draw_selected_picks()
+
+    @property
+    def all_pick_items(self):
+        # Recurse through all items and pull out all pick items
+        # We assume an item is a pick item if it is not the root, and
+        # it doesn't contain any None values.
+        items = []
+
+        def recurse(parent):
+            for child in parent.child_items:
+                if not any(x is None for x in child.data_list):
+                    items.append(child)
+
+                recurse(child)
+
+        recurse(self.model().root_item)
+        return items
+
+    def draw_all_picks(self):
+        if not self.show_all_picks:
+            return
+
+        xys = [item.data_list[1:] for item in self.all_pick_items]
+        self.all_picks_line.set_data(list(zip(*xys)))
+        self.canvas.draw_idle()
+
+    def draw_selected_picks(self):
+        if not self.selected_items:
+            return
 
         xys = [item.data_list[1:] for item in self.selected_items]
-        self.line.set_data(list(zip(*xys)))
+        self.selected_picks_line.set_data(list(zip(*xys)))
         self.canvas.draw_idle()
 
     def clear_artists(self):
-        if not self.line:
-            return
+        if self.all_picks_line:
+            self.all_picks_line.set_data([], [])
 
-        self.line.set_data([], [])
+        if self.selected_picks_line:
+            self.selected_picks_line.set_data([], [])
+
         self.canvas.draw_idle()
 
-    def setup_line(self):
-        if not self.canvas or self.line:
+    def setup_lines(self):
+        if not self.canvas:
             return
 
-        kwargs = {
-            'color': 'b',
-            'marker': '.',
-            'linestyle': 'None',
-        }
+        if not self.all_picks_line:
+            kwargs = {
+                'color': 'b',
+                'marker': '.',
+                'linestyle': 'None',
+            }
 
-        # empty line
-        self.line, = self.canvas.axis.plot([], [], **kwargs)
+            # empty line
+            self.all_picks_line, = self.canvas.axis.plot([], [], **kwargs)
+
+        if not self.selected_picks_line:
+            kwargs = {
+                'color': 'b',
+                'marker': '.',
+                'linestyle': 'None',
+            }
+
+            # empty line
+            self.selected_picks_line, = self.canvas.axis.plot([], [], **kwargs)
+
+        self.update_line_colors()
+
+    def update_line_colors(self):
+        selected_picks_line_color = 'b'
+        if self.show_all_picks:
+            # Make the selected lines bright green instead
+            selected_picks_line_color = '#00ff13'
+
+        self.selected_picks_line.set_color(selected_picks_line_color)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:

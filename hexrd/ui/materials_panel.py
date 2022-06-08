@@ -92,6 +92,9 @@ class MaterialsPanel(QObject):
 
         self.ui.materials_tool_button.clicked.connect(self.tool_button_clicked)
 
+        HexrdConfig().overlay_config_changed.connect(
+            self.update_gui_from_config)
+
     def tool_button_clicked(self):
         if not hasattr(self, '_material_list_editor'):
             self._material_list_editor = MaterialListEditor(self.ui)
