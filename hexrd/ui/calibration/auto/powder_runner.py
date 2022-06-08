@@ -10,6 +10,7 @@ from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import instr_to_internal_dict
+from hexrd.ui.utils.conversions import cart_to_angles
 
 from hexrd.ui.calibration.auto import PowderCalibrationDialog
 
@@ -93,6 +94,9 @@ class PowderRunner(QObject):
         # FIXME: currently coded to handle only a single material
         #        so grabbing first (only) element
         self.data_dict = self.ic.extract_points(**kwargs)[0]
+
+        # Save the picks to the active overlay in case we need them later
+        self.save_picks_to_overlay()
 
     def extract_powder_lines_finished(self):
         try:
@@ -250,3 +254,44 @@ class PowderRunner(QObject):
     def refinement_flags(self):
         return np.hstack([self.refinement_flags_without_overlays,
                           self.active_overlay.refinements])
+
+    def save_picks_to_overlay(self):
+        # Currently, we only have one active overlay
+        overlay = self.active_overlay
+
+        instr = create_hedm_instrument()
+
+        # We store the picks as angles on the overlays
+        def to_angles(xys, panel):
+            # Convert plain cartesian to angles
+            kwargs = {
+                'xys': xys,
+                'panel': panel,
+                'eta_period': HexrdConfig().polar_res_eta_period,
+                'tvec_s': instr.tvec,
+            }
+            return cart_to_angles(**kwargs)
+
+        picks = {}
+        for det_key, data in self.data_dict.items():
+            picks[det_key] = []
+
+            hkls = overlay.hkls[det_key]
+            panel = instr.detectors[det_key]
+
+            for hkl in hkls:
+                hkl_picks = []
+                for ringset in data:
+                    for row in ringset:
+                        if np.array_equal(row[3:6], hkl):
+                            hkl_picks.append(row[:2])
+
+                if not hkl_picks:
+                    # For some reason, to_angles() is returning an x, y value
+                    # if the list is empty. Guard against that.
+                    picks[det_key].append([])
+                    continue
+
+                picks[det_key].append(to_angles(hkl_picks, panel).tolist())
+
+        overlay.calibration_picks = picks
