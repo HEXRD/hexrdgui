@@ -484,6 +484,7 @@ class LaueCalibrator(object):
 class CompositeCalibration(object):
     def __init__(self, instr, processed_picks, img_dict):
         self.instr = instr
+        self.original_instr = copy.deepcopy(instr)
         self.npi = len(self.instr.calibration_parameters)
         self.data = processed_picks
         calibrator_list = []
@@ -536,17 +537,21 @@ class CompositeCalibration(object):
         return self.full_params[self.flags]
 
     def residual(self, reduced_params, pick_data_list):
-        # first update full parameter list
-        self.full_params[self.flags] = reduced_params
-        instr_params = self.full_params[:self.npi]
-        addtl_params = self.full_params[self.npi:]
+        # first update a copy of the full parameter list
+        full_params = np.array(self.full_params)
+        full_params[self.flags] = reduced_params
+        instr_params = full_params[:self.npi]
+        addtl_params = full_params[self.npi:]
 
         def powder_residual(calib, these_reduced_params, data_dict):
             # Convert our data_dict into the input data format that
             # the powder calibrator is expecting.
             calibration_data = {}
             for det_key in data_dict['hkls']:
-                panel = self.instr.detectors[det_key]
+                # MUST use original instrument to convert these coordinates
+                # so that we are consistent. This is because the instrument
+                # gets modified with each call to `residual()`.
+                panel = self.original_instr.detectors[det_key]
 
                 picks_list = []
                 for i, hkl in enumerate(data_dict['hkls'][det_key]):
@@ -619,10 +624,18 @@ def run_calibration(picks, instr, img_dict, materials):
 
     x0_comp = instr_calibrator.reduced_params()
 
+    # Compute resd0, as hexrd does
+    resd0 = instr_calibrator.residual(x0_comp, picks)  # noqa: F841
+
     x1, cox_x, infodict, mesg, ierr = leastsq(
                         instr_calibrator.residual, x0_comp, args=(picks, ),
-                        factor=0.1, full_output=True
-                    )
+                        full_output=True
+                )
+
+    # Evaluate new residual
+    # This will update the parameters
+    resd1 = instr_calibrator.residual(x1, picks)  # noqa: F841
+
     return instr_calibrator
 
 
