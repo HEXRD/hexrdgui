@@ -312,25 +312,8 @@ class MaskManagerDialog(QObject):
     def masks_panel_to_buffer(self):
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
-        from hexrd.ui.create_raw_mask import rebuild_raw_masks
-        prev_masks = copy.deepcopy(HexrdConfig().masks)
-        try:
-            rebuild_raw_masks()
-            masks = copy.deepcopy(HexrdConfig().masks)
-        finally:
-            HexrdConfig().masks = prev_masks
-
-        for name, img in HexrdConfig().images_dict.items():
-            final_mask = np.ones(img.shape, dtype=bool)
-            for mask_name, data in masks.items():
-                if mask_name not in HexrdConfig().visible_masks:
-                    continue
-
-                for det, mask in data:
-                    if det == name:
-                        final_mask = np.logical_and(final_mask, mask)
-
-            detector_config = HexrdConfig().detector(name)
+        for det, mask in HexrdConfig().masks_dict.items():
+            detector_config = HexrdConfig().detector(det)
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
-            buffer['value'] = final_mask
+            buffer['value'] = mask

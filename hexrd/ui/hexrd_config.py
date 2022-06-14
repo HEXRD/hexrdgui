@@ -699,8 +699,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.intensity_corrected_images_dict
 
     @property
-    def masked_images_dict(self):
-        """Get an images dict where masks have been applied"""
+    def masks_dict(self):
+        """Get a masks dict"""
         # We must ensure that we are using raw masks
         from hexrd.ui.create_raw_mask import rebuild_raw_masks
         prev_masks = copy.deepcopy(self.masks)
@@ -710,15 +710,29 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         finally:
             self.masks = prev_masks
 
+        masks_dict = {}
         images_dict = self.images_dict
         for name, img in images_dict.items():
+            final_mask = np.ones(img.shape, dtype=bool)
             for mask_name, data in masks.items():
                 if mask_name not in self.visible_masks:
                     continue
 
                 for det, mask in data:
                     if det == name:
-                        img[~mask] = 0
+                        final_mask = np.logical_and(final_mask, mask)
+            masks_dict[name] = final_mask
+
+        return masks_dict
+
+    @property
+    def masked_images_dict(self):
+        """Get an images dict where masks have been applied"""
+        images_dict = self.images_dict
+        for name, img in images_dict.items():
+            for det, mask in self.masks_dict.items():
+                if det == name:
+                    img[~mask] = 0
 
         return images_dict
 
