@@ -317,3 +317,5 @@ class MaskManagerDialog(QObject):
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
             buffer['value'] = mask
+        msg = 'Masks set as panel buffers.'
+        QMessageBox.information(self.parent, 'HEXRD', msg)
