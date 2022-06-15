@@ -77,7 +77,7 @@ class MaskManagerDialog(QObject):
             self.context_menu_event)
         self.ui.export_masks.clicked.connect(self.write_all_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
-        self.ui.panel_buffer.clicked.connect(self.masks_panel_to_buffer)
+        self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
 
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
@@ -309,7 +309,7 @@ class MaskManagerDialog(QObject):
 
         self.update_masks_list('raw')
 
-    def masks_panel_to_buffer(self):
+    def masks_to_panel_buffer(self):
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
         for det, mask in HexrdConfig().raw_masks_dict.items():
