@@ -373,13 +373,15 @@ class CalibrationRunner(QObject):
         flags = HexrdConfig().get_statuses_instrument_format()
         instr.calibration_flags = flags
 
-        instr_calibrator = run_calibration(picks, instr, materials)
+        img_dict = HexrdConfig().masked_images_dict
+
+        instr_calibrator = run_calibration(picks, instr, img_dict, materials)
         self.write_instrument_to_hexrd_config(instr)
 
         # Update the lattice parameters and overlays
         overlays = self.active_overlays
         for overlay, calibrator in zip(overlays, instr_calibrator.calibrators):
-            if calibrator.calibrator_type == 'powder':
+            if isinstance(calibrator, PowderCalibrator):
                 if calibrator.params.size == 0:
                     continue
 
@@ -389,7 +391,7 @@ class CalibrationRunner(QObject):
                 HexrdConfig().flag_overlay_updates_for_material(mat_name)
                 if mat is HexrdConfig().active_material:
                     HexrdConfig().active_material_modified.emit()
-            elif calibrator.calibrator_type == 'laue':
+            else:
                 overlay.crystal_params = calibrator.params
 
         # In case any overlays changed
@@ -708,8 +710,7 @@ class CalibrationRunner(QObject):
         options = HexrdConfig().config['calibration']['powder']
         self.instr = create_hedm_instrument()
 
-        # Assume there is only one image in each image series for now...
-        img_dict = {k: x[0] for k, x in HexrdConfig().imageseries_dict.items()}
+        img_dict = HexrdConfig().masked_images_dict
 
         statuses = HexrdConfig().get_statuses_instrument_format()
         self.instr.calibration_flags = statuses
@@ -787,14 +788,12 @@ class CalibrationRunner(QObject):
         self.async_runner.run(self.run_auto_laue_pick)
 
     def run_auto_laue_pick(self):
-        # Assume there is only one image in each image series for now...
-        imsd = HexrdConfig().imageseries_dict
-        raw_img_dict = {k: x[0] for k, x in imsd.items()}
+        img_dict = HexrdConfig().masked_images_dict
 
         # These are the options the user chose earlier...
         options = HexrdConfig().config['calibration']['laue_auto_picker']
         kwargs = {
-            'raw_img_dict': raw_img_dict,
+            'raw_img_dict': img_dict,
             **options
         }
         return self.laue_auto_picker._autopick_points(**kwargs)

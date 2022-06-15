@@ -20,7 +20,9 @@ from hexrd.ui.calibration.calibrationutil import (
     gaussian_2d, gaussian_2d_int, sxcal_obj_func,
     __reflInfo_dtype as reflInfo_dtype
 )
+from hexrd.ui.utils.conversions import angles_to_cart
 from hexrd.constants import fwhm_to_sigma
+from hexrd.fitting.calibration import PowderCalibrator
 from hexrd.transforms import xfcapi
 from hexrd import xrdutil
 
@@ -479,202 +481,10 @@ class LaueCalibrator(object):
         )
 
 
-class PowderCalibrator(object):
-    _CALIBRATOR_TYPE = 'powder'
-
-    def __init__(self, instr, plane_data, flags):
-        self._instr = instr
-        self._plane_data = plane_data
-        self._plane_data.wavelength = self._instr.beam_energy  # force
-        self._params = np.asarray(self._plane_data.lparms, dtype=float)
-        self._full_params = np.hstack(
-            [self._instr.calibration_parameters, self._params]
-        )
-        assert len(flags) == len(self._full_params), \
-            "flags must have %d elements" % len(self._full_params)
-        self._flags = flags
-
-    @property
-    def calibrator_type(self):
-        return self._CALIBRATOR_TYPE
-
-    @property
-    def instr(self):
-        return self._instr
-
-    @property
-    def plane_data(self):
-        self._plane_data.wavelength = self._instr.beam_energy
-        return self._plane_data
-
-    @property
-    def params(self):
-        return self._params
-
-    @params.setter
-    def params(self, x):
-        x = np.atleast_1d(x)
-        if len(x) != len(self.plane_data.lparms):
-            raise RuntimeError("params must have %d elements"
-                               % len(self.plane_data.lparms))
-        self._params = x
-        self._plane_data.lparms = x
-
-    @property
-    def full_params(self):
-        return self._full_params
-
-    @property
-    def npi(self):
-        return len(self._instr.calibration_parameters)
-
-    @property
-    def npe(self):
-        return len(self._params)
-
-    @property
-    def flags(self):
-        return self._flags
-
-    @flags.setter
-    def flags(self, x):
-        x = np.atleast_1d(x)
-        nparams_instr = len(self.instr.calibration_parameters)
-        nparams_extra = len(self.params)
-        nparams = nparams_instr + nparams_extra
-        if len(x) != nparams:
-            raise RuntimeError("flags must have %d elements" % nparams)
-        self._flags = np.asarrasy(x, dtype=bool)
-        self._instr.calibration_flags = self._flags[:nparams_instr]
-
-    def _evaluate(self, reduced_params, data_dict, output='residual'):
-        """
-        """
-        # first update instrument from input parameters
-        full_params = np.asarray(self.full_params)
-        full_params[self.flags] = reduced_params
-
-        self.instr.update_from_parameter_list(full_params[:self.npi])
-        self.params = full_params[self.npi:]
-
-        # need this for dsp
-        bmatx = self.plane_data.latVecOps['B']
-        wlen = self.instr.beam_wavelength
-
-        # working with Patrick's pick dicts
-        pick_angs_dict = data_dict['picks']
-        pick_xys_dict = data_dict['pick_xys']
-        # tvec_c = np.asarray(
-        #     data_dict['options']['tvec'], dtype=float
-        # ).flatten()
-
-        # build residual
-        retval = np.array([], dtype=float)
-        for det_key, panel in self.instr.detectors.items():
-            # !!! now grabbing this from picks
-            hkls_ref = np.asarray(data_dict['hkls'][det_key], dtype=int)
-            if len(hkls_ref) == 0:
-                continue
-
-            gvecs = np.dot(hkls_ref, bmatx.T)
-            dsp_ref = 1./xfcapi.rowNorm(gvecs)
-
-            pick_angs = pick_angs_dict[det_key]
-            pick_xys = pick_xys_dict[det_key]
-            assert len(pick_angs) == len(dsp_ref), "picks are wrong length"
-            assert len(pick_angs) == len(pick_xys), "pick xy data inconsistent"
-            # the data structure is:
-            #     [x, y, tth, eta, h, k, l, dsp0]
-            # FIXME: clean this up!
-            pdata = []  # [xy_meas, tth_eta_meas, hkl]
-            for ir, hkld in enumerate(zip(hkls_ref, dsp_ref)):
-                npts = len(pick_angs[ir])
-                if npts > 0:
-                    tth_eta_meas = np.atleast_2d(np.radians(pick_angs[ir]))
-                    xy_meas = np.atleast_2d(pick_xys[ir])
-                    pdata.append(
-                        np.hstack(
-                            [xy_meas,
-                             tth_eta_meas,
-                             np.tile(np.hstack(hkld), (npts, 1))]
-                        )
-                    )
-            if len(pdata) == 0:
-                raise RuntimeWarning("detector '%s' has no feature points"
-                                     % det_key)
-                continue
-            else:
-                # recast as array
-                pdata = np.vstack(pdata)
-
-                """
-                Here is the strategy:
-                    1. remap the feature points from raw cartesian to
-                       (tth, eta) under the current mapping
-                    2. use the lattice and hkls to calculate the ideal tth0
-                    3. push the (tth0, eta) values back through the mapping to
-                       raw cartesian coordinates
-                    4. build residual on the measured and recalculated (x, y)
-                """
-                # the data structure is:
-                #     [x, y, tth, eta, h, k, l, dsp0]
-                #
-                # push measured (x, y) ring points through current mapping
-                # to (tth, eta)
-                meas_xy = pdata[:, :2]
-                updates_angles, _ = panel.cart_to_angles(
-                    meas_xy,
-                    tvec_s=self.instr.tvec,
-                    apply_distortion=True
-                )
-
-                # derive ideal tth positions from additional ring point info
-                hkls = pdata[:, 4:7]
-                gvecs = np.dot(hkls, bmatx.T)
-                dsp0 = 1./np.sqrt(np.sum(gvecs*gvecs, axis=1))
-                tth0 = 2.*np.arcsin(0.5*wlen/dsp0)
-
-                if output == 'residual':
-                    retval = np.append(
-                        retval,
-                        updates_angles[:, 0].flatten() - tth0.flatten()
-                    )
-                    # retval = np.append(
-                    #     retval,
-                    #     meas_xy.flatten() - calc_xy.flatten()
-                    # )
-                elif output == 'model':
-                    # !!! get eta from mapped markers rather than ref
-                    # eta0 = pdata[:, -1]
-                    eta0 = updates_angles[:, 1]
-
-                    # map updated (tth0, eta0) back to cartesian coordinates
-                    tth_eta = np.vstack([tth0, eta0]).T
-                    calc_xy = panel.angles_to_cart(
-                        tth_eta,
-                        tvec_s=self.instr.tvec,
-                        apply_distortion=True
-                    )
-                    retval = np.append(
-                        retval,
-                        calc_xy.flatten()
-                    )
-                else:
-                    raise RuntimeError("unrecognized output flag '%s'"
-                                       % output)
-
-        return retval
-
-    def residual(self, reduced_params, data_dict):
-        return self._evaluate(reduced_params, data_dict)
-
-    def model(self, reduced_params, data_dict):
-        return self._evaluate(reduced_params, data_dict, output='model')
-
-
 class CompositeCalibration(object):
-    def __init__(self, instr, processed_picks):
+    def __init__(self, instr, processed_picks, img_dict):
         self.instr = instr
+        self.original_instr = copy.deepcopy(instr)
         self.npi = len(self.instr.calibration_parameters)
         self.data = processed_picks
         calibrator_list = []
@@ -689,7 +499,7 @@ class CompositeCalibration(object):
                 )
                 param_flags.append(lpflags)
                 calib = PowderCalibrator(
-                    self.instr, pick_data['plane_data'], flags
+                    self.instr, pick_data['plane_data'], img_dict, flags
                 )
                 params.append(calib.full_params[-calib.npe:])
                 calibrator_list.append(calib)
@@ -727,10 +537,59 @@ class CompositeCalibration(object):
         return self.full_params[self.flags]
 
     def residual(self, reduced_params, pick_data_list):
-        # first update full parameter list
-        self.full_params[self.flags] = reduced_params
-        instr_params = self.full_params[:self.npi]
-        addtl_params = self.full_params[self.npi:]
+        # first update a copy of the full parameter list
+        full_params = np.array(self.full_params)
+        full_params[self.flags] = reduced_params
+        instr_params = full_params[:self.npi]
+        addtl_params = full_params[self.npi:]
+
+        def powder_residual(calib, these_reduced_params, data_dict):
+            # Convert our data_dict into the input data format that
+            # the powder calibrator is expecting.
+            calibration_data = {}
+            for det_key in data_dict['hkls']:
+                # MUST use original instrument to convert these coordinates
+                # so that we are consistent. This is because the instrument
+                # gets modified with each call to `residual()`.
+                panel = self.original_instr.detectors[det_key]
+
+                picks_list = []
+                for i, hkl in enumerate(data_dict['hkls'][det_key]):
+                    picks = data_dict['picks'][det_key][i]
+                    if not picks:
+                        continue
+
+                    # Each row consists of 8 columns:
+                    # First two are measured x, y
+                    # Third is unknown (appears unused in the PowderCalibrator)
+                    # Four - six are the hkl indices
+                    # Seven and Eight are unknown (appears unused here)
+
+                    # We are going to convert our data into rows of 6 columns.
+                    # We will fill in zero for the third column, and ignore
+                    # the last two columns.
+
+                    # Convert the angles to Cartesian
+                    cartesian_picks = angles_to_cart(picks, panel)
+                    repeated_zero = np.repeat([[0]], len(cartesian_picks),
+                                              axis=0)
+                    repeated_hkl = np.repeat([hkl], len(cartesian_picks),
+                                             axis=0)
+                    formatted = np.hstack((cartesian_picks, repeated_zero,
+                                           repeated_hkl))
+                    picks_list.append(formatted)
+
+                calibration_data[det_key] = picks_list
+
+            return calib.residual(these_reduced_params, calibration_data)
+
+        def laue_residual(calib, these_reduced_params, data_dict):
+            return calib.residual(these_reduced_params, data_dict)
+
+        residual_funcs = {
+            PowderCalibrator: powder_residual,
+            LaueCalibrator: laue_residual,
+        }
 
         # loop calibrators and collect residuals
         ii = 0
@@ -744,12 +603,10 @@ class CompositeCalibration(object):
             # pull out reduced list
             these_reduced_params = these_full_params[calib.flags]
 
-            # call to calibrator residual api with porper index into pick data
+            # call to calibrator residual api with proper index into pick data
+            f = residual_funcs[type(calib)]
             residual.append(
-                calib.residual(
-                    these_reduced_params,
-                    pick_data_list[ical]
-                )
+                f(calib, these_reduced_params, pick_data_list[ical])
             )
 
             # advance alibrator extra parameter offset
@@ -759,18 +616,26 @@ class CompositeCalibration(object):
         return np.hstack(residual)
 
 
-def run_calibration(picks, instr, materials):
+def run_calibration(picks, instr, img_dict, materials):
     enrich_pick_data(picks, instr, materials)
 
     # Run composite calibration
-    instr_calibrator = CompositeCalibration(instr, picks)
+    instr_calibrator = CompositeCalibration(instr, picks, img_dict)
 
     x0_comp = instr_calibrator.reduced_params()
 
+    # Compute resd0, as hexrd does
+    resd0 = instr_calibrator.residual(x0_comp, picks)  # noqa: F841
+
     x1, cox_x, infodict, mesg, ierr = leastsq(
                         instr_calibrator.residual, x0_comp, args=(picks, ),
-                        factor=0.1, full_output=True
-                    )
+                        full_output=True
+                )
+
+    # Evaluate new residual
+    # This will update the parameters
+    resd1 = instr_calibrator.residual(x1, picks)  # noqa: F841
+
     return instr_calibrator
 
 
