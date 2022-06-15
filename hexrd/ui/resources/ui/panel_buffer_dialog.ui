@@ -157,6 +157,13 @@
    <item row="5" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
+      <widget class="QPushButton" name="clear_panel_buffer">
+       <property name="text">
+        <string>Clear Panel Buffer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QDialogButtonBox" name="button_box">
        <property name="standardButtons">
         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
@@ -231,6 +238,22 @@
     <hint type="destinationlabel">
      <x>217</x>
      <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clear_panel_buffer</sender>
+   <signal>clicked()</signal>
+   <receiver>detector_panel_buffer</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>76</x>
+     <y>273</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>238</x>
+     <y>147</y>
     </hint>
    </hints>
   </connection>
