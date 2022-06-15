@@ -312,7 +312,7 @@ class MaskManagerDialog(QObject):
     def masks_panel_to_buffer(self):
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
-        for det, mask in HexrdConfig().masks_dict.items():
+        for det, mask in HexrdConfig().raw_masks_dict.items():
             detector_config = HexrdConfig().detector(det)
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
