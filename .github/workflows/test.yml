@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: [3.9]
+        python-version: [3.9, '3.10']
         config:
         - {
             name: "Linux",
@@ -62,6 +62,11 @@ jobs:
     - name: Set environment variable to work around setuptools/numpy issue
       run: echo 'SETUPTOOLS_USE_DISTUTILS=stdlib' >> $GITHUB_ENV
       if: ${{ matrix.config.os == 'windows-latest'}}
+
+    - name: Force build of pycifrw as there is currently no 3.10 wheel (Windows)
+      if: ${{ matrix.config.name != 'Linux' && matrix.python-version == '3.10' }}
+      run: |
+          pip install -U --no-binary pycifrw pycifrw
 
     - name: Install HEXRD
       run: |
