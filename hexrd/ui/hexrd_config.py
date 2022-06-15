@@ -729,8 +729,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def masked_images_dict(self):
         """Get an images dict where masks have been applied"""
         images_dict = self.images_dict
-        for name, img in images_dict.items():
-            for det, mask in self.raw_masks_dict.items():
+        for det, mask in self.raw_masks_dict.items():
+            for name, img in images_dict.items():
                 if det == name:
                     img[~mask] = 0
 
