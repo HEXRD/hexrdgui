@@ -1,3 +1,4 @@
+import copy
 from hexrd.ui.create_polar_mask import rebuild_polar_masks
 from hexrd.ui.create_raw_mask import rebuild_raw_masks
 import os
@@ -76,10 +77,11 @@ class MaskManagerDialog(QObject):
             self.context_menu_event)
         self.ui.export_masks.clicked.connect(self.write_all_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
+        self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
+
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
-
         HexrdConfig().save_state.connect(self.save_state)
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
@@ -306,3 +308,14 @@ class MaskManagerDialog(QObject):
             HexrdConfig().polar_masks_changed.emit()
 
         self.update_masks_list('raw')
+
+    def masks_to_panel_buffer(self):
+        # Set the visible masks as the panel buffer(s)
+        # We must ensure that we are using raw masks
+        for det, mask in HexrdConfig().raw_masks_dict.items():
+            detector_config = HexrdConfig().detector(det)
+            buffer_default = {'status': 0}
+            buffer = detector_config.setdefault('buffer', buffer_default)
+            buffer['value'] = mask
+        msg = 'Masks set as panel buffers.'
+        QMessageBox.information(self.parent, 'HEXRD', msg)
