@@ -109,6 +109,7 @@
     <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
     <addaction name="action_show_detector_borders"/>
+    <addaction name="action_show_beam_marker"/>
     <addaction name="action_view_indexing_config"/>
     <addaction name="action_view_fit_grains_config"/>
     <addaction name="action_view_overlay_picks"/>
@@ -666,6 +667,17 @@
   <action name="action_view_overlay_picks">
    <property name="text">
     <string>Overlay Picks</string>
+   </property>
+  </action>
+  <action name="action_show_beam_marker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Beam Marker</string>
    </property>
   </action>
  </widget>

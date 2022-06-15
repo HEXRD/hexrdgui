@@ -30,7 +30,7 @@ class ImageCanvas(FigureCanvas):
         self.figure = Figure(tight_layout=True)
         super().__init__(self.figure)
 
-        self.raw_axes = []  # only used for raw currently
+        self.raw_axes = {}  # only used for raw currently
         self.axes_images = []
         self.overlay_artists = {}
         self.cached_detector_borders = []
@@ -42,6 +42,7 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_line_artist = None
         self.wppf_plot = None
         self.auto_picked_data_artists = []
+        self.beam_marker_artists = []
         self.transform = lambda x: x
 
         # Track the current mode so that we can more lazily clear on change.
@@ -73,6 +74,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_auto_picked_data.connect(
             self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
+        HexrdConfig().beam_marker_modified.connect(self.update_beam_marker)
         HexrdConfig().oscillation_stage_changed.connect(
             self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
@@ -141,7 +143,7 @@ class ImageCanvas(FigureCanvas):
                 }
                 self.axes_images.append(axis.imshow(**kwargs))
                 axis.autoscale(False)
-                self.raw_axes.append(axis)
+                self.raw_axes[name] = axis
 
             self.figure.tight_layout()
         else:
@@ -153,8 +155,10 @@ class ImageCanvas(FigureCanvas):
         # This will call self.draw_idle()
         self.show_saturation()
 
+        self.update_beam_marker()
+
         # Set the detectors to draw
-        self.iviewer.detectors = [x.get_title() for x in self.raw_axes]
+        self.iviewer.detectors = list(self.raw_axes)
         self.update_auto_picked_data()
         self.update_overlays()
 
@@ -217,11 +221,10 @@ class ImageCanvas(FigureCanvas):
         # If it's raw, there is data for each axis.
         # The title of each axis should match the detector key.
         # Add a safety check to ensure everything is synced up.
-        detector_names = [x.get_title() for x in self.raw_axes]
-        if not all(x in overlay.data for x in detector_names):
+        if not all(x in overlay.data for x in self.raw_axes):
             return []
 
-        return [(x, overlay.data[x.get_title()]) for x in self.raw_axes]
+        return [(self.raw_axes[x], overlay.data[x]) for x in self.raw_axes]
 
     def overlay_draw_func(self, type):
         overlay_funcs = {
@@ -470,8 +473,7 @@ class ImageCanvas(FigureCanvas):
     def draw_detector_borders(self):
         self.clear_detector_borders()
 
-        # If there is no iviewer, we are not currently viewing a
-        # calibration. Just return.
+        # Need an iviewer
         if not self.iviewer:
             self.draw_idle()
             return
@@ -550,6 +552,39 @@ class ImageCanvas(FigureCanvas):
 
         self.draw_idle()
 
+    def clear_beam_marker(self):
+        while self.beam_marker_artists:
+            self.beam_marker_artists.pop(0).remove()
+
+    def update_beam_marker(self):
+        self.clear_beam_marker()
+
+        # Need an iviewer
+        if not self.iviewer:
+            self.draw_idle()
+            return
+
+        # Make sure this is allowed by the configuration
+        if not HexrdConfig().show_beam_marker:
+            self.draw_idle()
+            return
+
+        style = HexrdConfig().beam_marker_style
+
+        instr = self.iviewer.instr
+        for det_key, panel in instr.detectors.items():
+            func = transform_from_plain_cartesian_func(self.mode)
+            cart_beam_position = np.atleast_2d(panel.beam_position)
+            beam_position = func(cart_beam_position, panel, self.iviewer)[0]
+            if utils.has_nan(beam_position):
+                continue
+
+            axis = self.detector_axis(det_key)
+            artist, = axis.plot(*beam_position, **style)
+            self.beam_marker_artists.append(artist)
+
+        self.draw_idle()
+
     def beam_vector_changed(self):
         if self.mode == ViewType.polar:
             # Polar needs a complete re-draw
@@ -574,6 +609,7 @@ class ImageCanvas(FigureCanvas):
         bvec = HexrdConfig().instrument_config['beam']['vector']
         self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
         self.update_overlays()
+        self.update_beam_marker()
 
     def oscillation_stage_changed(self):
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
@@ -645,6 +681,7 @@ class ImageCanvas(FigureCanvas):
         self.update_auto_picked_data()
         self.update_overlays()
         self.draw_detector_borders()
+        self.update_beam_marker()
 
         HexrdConfig().image_view_loaded.emit({'img': img})
 
@@ -752,6 +789,7 @@ class ImageCanvas(FigureCanvas):
         self.update_auto_picked_data()
         self.update_overlays()
         self.draw_detector_borders()
+        self.update_beam_marker()
 
         HexrdConfig().image_view_loaded.emit({'img': img})
 
@@ -866,10 +904,9 @@ class ImageCanvas(FigureCanvas):
             # Only one axis for all detectors...
             return self.axis
         elif self.mode == ViewType.raw:
-            titles = [x.get_title() for x in self.raw_axes]
-            if detector_name not in titles:
+            if detector_name not in self.raw_axes:
                 return None
-            return self.raw_axes[titles.index(detector_name)]
+            return self.raw_axes[detector_name]
 
     def update_auto_picked_data(self):
         self.clear_auto_picked_data_artists()

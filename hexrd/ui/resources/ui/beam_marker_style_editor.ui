@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>beam_marker_style_editor</class>
+ <widget class="QDialog" name="beam_marker_style_editor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>340</width>
+    <height>115</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Beam Marker Style Editor</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>6</number>
+   </property>
+   <property name="topMargin">
+    <number>6</number>
+   </property>
+   <property name="rightMargin">
+    <number>6</number>
+   </property>
+   <property name="bottomMargin">
+    <number>6</number>
+   </property>
+   <item row="0" column="0">
+    <widget class="QLabel" name="color_label">
+     <property name="text">
+      <string>Color:</string>
+     </property>
+     <property name="buddy">
+      <cstring>color</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="color">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="marker">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
+     </property>
+     <property name="currentText">
+      <string/>
+     </property>
+     <property name="maxVisibleItems">
+      <number>5</number>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="marker_label">
+     <property name="text">
+      <string>Marker:</string>
+     </property>
+     <property name="buddy">
+      <cstring>marker</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="markersize_label">
+     <property name="text">
+      <string>Size:</string>
+     </property>
+     <property name="buddy">
+      <cstring>markersize</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="ScientificDoubleSpinBox" name="markersize">
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="maximum">
+      <double>100000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>10.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>color</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
