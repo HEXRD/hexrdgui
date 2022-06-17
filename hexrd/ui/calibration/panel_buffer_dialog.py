@@ -164,15 +164,9 @@ class PanelBufferDialog(QObject):
 
     def clear_panel_buffer(self):
         # Clear the config options on the internal config
-        config = HexrdConfig().config
-        detector_config = config['instrument']['detectors'][self.detector]
+        detector_config = HexrdConfig().detector(self.detector)
 
         buffer_default = {'status': 0}
         buffer = detector_config.setdefault('buffer', buffer_default)
 
-        # Must match the detector size
-        detector_shape = (detector_config['pixels']['rows']['value'],
-                          detector_config['pixels']['columns']['value'])
-
-        empty_mask = np.ones(detector_shape, dtype=bool)
-        buffer['value'] = empty_mask
+        buffer['value'] = buffer['value'] = [0., 0.]
