@@ -99,6 +99,22 @@ class InstrumentViewer:
         # Re-format the data so that it is in 2 columns
         azimuthal_integration = np.array(azimuthal_integration).T
 
+        # Lineout suffixes and their delimiters
+        lineout_suffixes = {
+            '.csv': ',',
+            '.xy': ' ',
+        }
+        if filename.suffix in lineout_suffixes:
+            # Just save the lineout
+            delimiter = lineout_suffixes[filename.suffix]
+
+            # Delete the file if it already exists
+            if filename.exists():
+                filename.unlink()
+
+            np.savetxt(filename, azimuthal_integration, delimiter=delimiter)
+            return
+
         intensities = self.raw_rescaled_img
         intensities[self.raw_mask] = np.nan
 
