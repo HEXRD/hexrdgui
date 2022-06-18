@@ -24,11 +24,65 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="5" column="1">
+    <widget class="QPushButton" name="reset">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Reset</string>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="0">
     <widget class="QPushButton" name="add_site">
      <property name="text">
       <string>+</string>
      </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QPushButton" name="apply">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QTabWidget" name="site_editor_tab_widget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="site_editor_tab">
+      <attribute name="title">
+       <string>Site Editor</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QVBoxLayout" name="material_site_editor_layout"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="empty_tab">
+      <attribute name="title">
+       <string>Empty</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>No Site Selected</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item row="2" column="1">
@@ -68,57 +122,13 @@
      </column>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QTabWidget" name="site_editor_tab_widget">
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="site_editor_tab">
-      <attribute name="title">
-       <string>Site Editor</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <layout class="QVBoxLayout" name="material_site_editor_layout"/>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="empty_tab">
-      <attribute name="title">
-       <string>Empty</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>No Site Selected</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QPushButton" name="apply">
-     <property name="enabled">
-      <bool>false</bool>
+   <item row="4" column="0" colspan="2">
+    <widget class="QPushButton" name="remove_duplicate_atoms">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This will apply any outstanding changes, remove duplicate atoms, and then update the panel with any changes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Apply</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QPushButton" name="reset">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Reset</string>
+      <string>Remove Duplicate Atoms</string>
      </property>
     </widget>
    </item>
@@ -129,6 +139,7 @@
   <tabstop>add_site</tabstop>
   <tabstop>remove_site</tabstop>
   <tabstop>site_editor_tab_widget</tabstop>
+  <tabstop>remove_duplicate_atoms</tabstop>
   <tabstop>apply</tabstop>
   <tabstop>reset</tabstop>
  </tabstops>

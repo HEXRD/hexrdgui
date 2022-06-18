@@ -67,6 +67,8 @@ class MaterialStructureEditor(QObject):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.selection_changed)
 
+        self.ui.remove_duplicate_atoms.clicked.connect(
+            self.remove_duplicate_atoms)
         self.ui.apply.pressed.connect(self.update_material)
         self.ui.reset.pressed.connect(self.update_gui)
 
@@ -198,6 +200,16 @@ class MaterialStructureEditor(QObject):
 
         self.material_edited()
 
+    def remove_duplicate_atoms(self):
+        # Apply any current changes
+        self.update_material()
+
+        # Remove the duplicate atoms
+        self.material.remove_duplicate_atoms()
+
+        # Update the GUI
+        self.update_gui()
+
     def create_table_widget(self, v):
         w = QTableWidgetItem(v)
         w.setTextAlignment(Qt.AlignCenter)
@@ -234,15 +246,15 @@ class MaterialStructureEditor(QObject):
 
     def update_material(self):
         # Convert the sites back to the material data format
-        info_array = []
+        pos_array = []
         type_array = []
         charge_array = []
         U_array = []
 
         for site in self.sites:
             for atom in site['atoms']:
-                info_array.append((*site['fractional_coords'],
-                                   atom['occupancy']))
+                pos_array.append((*site['fractional_coords'],
+                                  atom['occupancy']))
                 type_array.append(ptable[atom['symbol']])
                 charge_array.append(atom['charge'])
                 U_array.append(atom['U'])
@@ -253,7 +265,7 @@ class MaterialStructureEditor(QObject):
                 U_array[i] = scalar_to_tensor(U)
 
         mat = self.material
-        mat._set_atomdata(type_array, info_array, U_array, charge_array)
+        mat._set_atomdata(type_array, pos_array, U_array, charge_array)
 
         self.material_modified.emit()
 
@@ -291,8 +303,8 @@ class MaterialStructureEditor(QObject):
                 all(abs(x - y) < tol for x, y in zip(v1, v2))
             )
 
-        info_array = mat._atominfo
-        type_array = mat._atomtype
+        pos_array = mat.atom_pos
+        type_array = mat.atom_type
         charge_array = mat.charge
         U_array = mat._U
 
@@ -304,7 +316,7 @@ class MaterialStructureEditor(QObject):
 
             U_array = new_U_array
 
-        for i, atom in enumerate(info_array):
+        for i, atom in enumerate(pos_array):
             atom_coords = atom[:3]
             # Check if this one has coords that match any others before it
             match_found = False
@@ -330,7 +342,7 @@ class MaterialStructureEditor(QObject):
                 atom = {
                     'symbol': ptableinverse[type_array[i]],
                     'charge': charge_array[i],
-                    'occupancy': info_array[i][3],
+                    'occupancy': pos_array[i][3],
                     'U': U_array[i]
                 }
                 site['atoms'].append(atom)
