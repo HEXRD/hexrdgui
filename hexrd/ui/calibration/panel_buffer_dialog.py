@@ -35,6 +35,7 @@ class PanelBufferDialog(QObject):
     def setup_connections(self):
         self.ui.select_file_button.pressed.connect(self.select_file)
         self.ui.config_mode.currentIndexChanged.connect(self.update_mode_tab)
+        self.ui.clear_panel_buffer.clicked.connect(self.clear_panel_buffer)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
@@ -160,3 +161,12 @@ class PanelBufferDialog(QObject):
     def update_mode_tab(self):
         mode_tab = getattr(self.ui, self.mode + '_tab')
         self.ui.tab_widget.setCurrentWidget(mode_tab)
+
+    def clear_panel_buffer(self):
+        # Clear the config options on the internal config
+        detector_config = HexrdConfig().detector(self.detector)
+
+        buffer_default = {'status': 0}
+        buffer = detector_config.setdefault('buffer', buffer_default)
+
+        buffer['value'] = buffer['value'] = [0., 0.]
