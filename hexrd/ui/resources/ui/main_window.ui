@@ -679,6 +679,9 @@
    <property name="text">
     <string>Show Beam Marker</string>
    </property>
+   <property name="toolTip">
+    <string>Draw a marker where the beam intersects with any detectors</string>
+   </property>
   </action>
  </widget>
  <customwidgets>

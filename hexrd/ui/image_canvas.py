@@ -574,7 +574,11 @@ class ImageCanvas(FigureCanvas):
         instr = self.iviewer.instr
         for det_key, panel in instr.detectors.items():
             func = transform_from_plain_cartesian_func(self.mode)
-            cart_beam_position = np.atleast_2d(panel.beam_position)
+            cart_beam_position = panel.clip_to_panel(panel.beam_position,
+                                                     buffer_edges=False)[0]
+            if cart_beam_position.size == 0:
+                continue
+
             beam_position = func(cart_beam_position, panel, self.iviewer)[0]
             if utils.has_nan(beam_position):
                 continue
