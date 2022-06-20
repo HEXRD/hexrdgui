@@ -465,9 +465,13 @@ class MainWindow(QObject):
             return HexrdConfig().save_materials(selected_file)
 
     def on_action_export_current_plot_triggered(self):
+        filters = 'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)'
+        if self.image_mode == ViewType.polar:
+            # We can do CSV and XY as well
+            filters += ';; CSV files (*.csv);; XY files (*.xy)'
+
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Current View', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
+            self.ui, 'Save Current View', HexrdConfig().working_dir, filters)
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
