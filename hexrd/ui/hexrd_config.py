@@ -172,6 +172,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Indicate that the overlay editor should update its GUI"""
     update_overlay_editor = Signal()
 
+    """Indicate that the beam marker has been modified"""
+    beam_marker_modified = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -1904,6 +1907,26 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if v != self.show_detector_borders:
             self.config['image']['show_detector_borders'] = v
             self.rerender_detector_borders.emit()
+
+    @property
+    def show_beam_marker(self):
+        return self.config['image']['show_beam_marker']
+
+    @show_beam_marker.setter
+    def show_beam_marker(self, v):
+        if self.show_beam_marker != v:
+            self.config['image']['show_beam_marker'] = v
+            self.beam_marker_modified.emit()
+
+    @property
+    def beam_marker_style(self):
+        return self.config['image']['beam_marker_style']
+
+    @beam_marker_style.setter
+    def beam_marker_style(self, v):
+        if self.beam_marker_style != v:
+            self.config['image']['beam_marker_style'] = v
+            self.beam_marker_modified.emit()
 
     @staticmethod
     def num_distortion_parameters(func_name):

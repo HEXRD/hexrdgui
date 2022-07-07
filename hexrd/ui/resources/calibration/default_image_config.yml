@@ -18,6 +18,12 @@ cartesian:
 colormap:
   min: 0
 show_detector_borders: true
+show_beam_marker: true
+beam_marker_style:
+  color: '#008000'
+  marker: 'x'
+  markersize: 10
+  linestyle: 'None'
 apply_pixel_solid_angle_correction: false
 apply_polarization_correction: false
 apply_lorentz_correction: false

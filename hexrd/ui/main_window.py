@@ -14,9 +14,9 @@ from PySide2.QtWidgets import (
 )
 
 from hexrd.ui.async_runner import AsyncRunner
+from hexrd.ui.beam_marker_style_editor import BeamMarkerStyleEditor
 from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
-
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
@@ -202,6 +202,8 @@ class MainWindow(QObject):
             self.live_update)
         self.ui.action_show_detector_borders.toggled.connect(
             HexrdConfig().set_show_detector_borders)
+        self.ui.action_show_beam_marker.toggled.connect(
+            self.show_beam_marker_toggled)
         self.ui.action_view_indexing_config.triggered.connect(
             self.view_indexing_config)
         self.ui.action_view_fit_grains_config.triggered.connect(
@@ -837,6 +839,15 @@ class MainWindow(QObject):
         # connected
         elif previous:
             HexrdConfig().rerender_needed.disconnect(self.update_all)
+
+    def show_beam_marker_toggled(self, b):
+        HexrdConfig().show_beam_marker = b
+        if b:
+            # Also show the style editor dialog
+            if not hasattr(self, '_beam_marker_style_editor'):
+                self._beam_marker_style_editor = BeamMarkerStyleEditor(self.ui)
+
+            self._beam_marker_style_editor.show()
 
     def view_indexing_config(self):
         if hasattr(self, '_indexing_config_view'):
