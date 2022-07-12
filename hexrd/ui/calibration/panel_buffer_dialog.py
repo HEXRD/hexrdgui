@@ -1,11 +1,15 @@
+import copy
 import os
 
-from PySide2.QtCore import Signal, QObject, QSignalBlocker
+from PySide2.QtCore import Signal, QObject
 from PySide2.QtWidgets import QFileDialog, QMessageBox
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 CONFIG_MODE_BORDER = 'border'
 CONFIG_MODE_NUMPY = 'numpy'
@@ -33,8 +37,10 @@ class PanelBufferDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.select_file_button.pressed.connect(self.select_file)
         self.ui.config_mode.currentIndexChanged.connect(self.update_mode_tab)
+        self.ui.file_name.editingFinished.connect(self.update_enable_states)
+        self.ui.select_file_button.clicked.connect(self.select_file)
+        self.ui.show_panel_buffer.clicked.connect(self.show_panel_buffer)
         self.ui.clear_panel_buffer.clicked.connect(self.clear_panel_buffer)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
@@ -53,6 +59,7 @@ class PanelBufferDialog(QObject):
     def on_accepted(self):
         if self.mode == CONFIG_MODE_NUMPY and self.file_name == '':
             msg = 'Please select a NumPy array file'
+            print(msg)
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             self.show()
             return
@@ -72,11 +79,16 @@ class PanelBufferDialog(QObject):
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
-            self.ui.file_name.setText(selected_file)
+            self.file_name = selected_file
 
     @property
     def file_name(self):
         return self.ui.file_name.text()
+
+    @file_name.setter
+    def file_name(self, v):
+        self.ui.file_name.setText(v)
+        self.update_enable_states()
 
     @property
     def x_border(self):
@@ -94,55 +106,75 @@ class PanelBufferDialog(QObject):
             self.ui.border_y_spinbox
         ]
 
+    @property
+    def current_editing_buffer_value(self):
+        if self.mode == CONFIG_MODE_BORDER:
+            return [self.x_border, self.y_border]
+        elif self.file_name == '':
+            # Just return the currently saved buffer
+            return copy.deepcopy(self.current_saved_buffer_value)
+
+        try:
+            array = np.load(self.file_name)
+        except FileNotFoundError:
+            msg = f'"{self.file_name}" does not exist'
+            print(msg)
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            self.show()
+            return None
+
+        # Must match the detector size
+        if array.shape != self.detector_shape:
+            msg = 'The NumPy array shape must match the detector'
+            print(msg)
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            self.show()
+            return None
+
+        return array
+
+    @property
+    def current_saved_buffer_value(self):
+        return self.detector_config.get('buffer', self.default_buffer)['value']
+
+    @property
+    def detector_config(self):
+        return HexrdConfig().detector(self.detector)
+
+    @property
+    def detector_shape(self):
+        pixels = self.detector_config['pixels']
+        return (pixels['rows']['value'], pixels['columns']['value'])
+
     def update_config(self):
         # Set the new config options on the internal config
-        config = HexrdConfig().config
-        detector_config = config['instrument']['detectors'][self.detector]
+        value = self.current_editing_buffer_value
+        if value is None:
+            return False
 
-        buffer_default = {'status': 0}
-        buffer = detector_config.setdefault('buffer', buffer_default)
-        if self.mode == CONFIG_MODE_BORDER:
-            buffer['value'] = [self.x_border, self.y_border]
-        else:
-            array = np.load(self.file_name)
-
-            # Must match the detector size
-            detector_shape = (detector_config['pixels']['rows']['value'],
-                              detector_config['pixels']['columns']['value'])
-
-            if array.shape != detector_shape:
-                msg = 'The NumPy array shape must match the detector'
-                QMessageBox.critical(self.ui, 'HEXRD', msg)
-                self.show()
-                return False
-
-            buffer['value'] = array
+        buffer = self.detector_config.setdefault('buffer', self.default_buffer)
+        buffer['value'] = value
 
         return True
 
     def update_gui(self):
-        blockers = [QSignalBlocker(x) for x in self.widgets]  # noqa: F841
+        with block_signals(*self.widgets):
+            if 'buffer' in self.detector_config:
+                buffer = np.asarray(self.detector_config['buffer']['value'])
 
-        config = HexrdConfig().config
-        detector_config = config['instrument']['detectors'][self.detector]
+                if buffer.size in (1, 2):
+                    self.mode = CONFIG_MODE_BORDER
+                    if buffer.size == 1:
+                        buffer = [buffer.item()] * 2
 
-        if 'buffer' in detector_config:
-            buffer = detector_config['buffer']['value']
+                    self.ui.border_x_spinbox.setValue(buffer[0])
+                    self.ui.border_y_spinbox.setValue(buffer[1])
+                else:
+                    self.mode = CONFIG_MODE_NUMPY
 
-            if isinstance(buffer, list):
-                buffer = np.array(buffer)
+            self.update_mode_tab()
 
-            if buffer.size in (1, 2):
-                self.mode = CONFIG_MODE_BORDER
-                if buffer.size == 1:
-                    buffer = [buffer.item()] * 2
-
-                self.ui.border_x_spinbox.setValue(buffer[0])
-                self.ui.border_y_spinbox.setValue(buffer[1])
-            else:
-                self.mode = CONFIG_MODE_NUMPY
-
-        self.update_mode_tab()
+        self.update_enable_states()
 
     @property
     def mode(self):
@@ -161,12 +193,35 @@ class PanelBufferDialog(QObject):
     def update_mode_tab(self):
         mode_tab = getattr(self.ui, self.mode + '_tab')
         self.ui.tab_widget.setCurrentWidget(mode_tab)
+        self.update_enable_states()
+
+    def update_enable_states(self):
+        buffer = np.asarray(self.current_editing_buffer_value)
+        has_numpy_array = buffer.size > 2
+        self.ui.show_panel_buffer.setEnabled(has_numpy_array)
 
     def clear_panel_buffer(self):
         # Clear the config options on the internal config
-        detector_config = HexrdConfig().detector(self.detector)
+        self.detector_config['buffer'] = self.default_buffer
+        self.update_enable_states()
 
-        buffer_default = {'status': 0}
-        buffer = detector_config.setdefault('buffer', buffer_default)
+    @property
+    def default_buffer(self):
+        return {
+            'status': 0,
+            'value': [0., 0.],
+        }
 
-        buffer['value'] = buffer['value'] = [0., 0.]
+    def show_panel_buffer(self):
+        buffer = np.asarray(self.current_editing_buffer_value)
+        if buffer.size <= 2:
+            # We only support showing numpy array buffers currently
+            return
+
+        fig, ax = plt.subplots()
+        fig.canvas.manager.set_window_title(f'{self.detector}')
+        ax.set_title('Panel Buffer')
+
+        ax.imshow(buffer)
+        fig.canvas.draw_idle()
+        fig.show()

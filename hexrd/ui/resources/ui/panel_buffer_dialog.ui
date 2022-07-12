@@ -95,17 +95,24 @@
       <attribute name="title">
        <string>Numpy</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="1">
         <widget class="QLineEdit" name="file_name"/>
        </item>
-       <item>
+       <item row="0" column="2">
         <widget class="QPushButton" name="select_file_button">
          <property name="text">
           <string>Select NumPy Array File</string>
          </property>
          <property name="autoDefault">
           <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" colspan="2">
+        <widget class="QPushButton" name="show_panel_buffer">
+         <property name="text">
+          <string>Show Panel Buffer</string>
          </property>
         </widget>
        </item>
@@ -201,11 +208,14 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>config_mode</tabstop>
   <tabstop>tab_widget</tabstop>
-  <tabstop>file_name</tabstop>
-  <tabstop>select_file_button</tabstop>
   <tabstop>border_x_spinbox</tabstop>
   <tabstop>border_y_spinbox</tabstop>
+  <tabstop>file_name</tabstop>
+  <tabstop>select_file_button</tabstop>
+  <tabstop>show_panel_buffer</tabstop>
+  <tabstop>clear_panel_buffer</tabstop>
  </tabstops>
  <resources/>
  <connections>
