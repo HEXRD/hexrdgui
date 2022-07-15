@@ -599,6 +599,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.imageseries_dict.get(name)
 
     @property
+    def is_unary_imageseries(self):
+        return self.imageseries_length == 1
+
+    @property
+    def imageseries_length(self):
+        if not self.imageseries_dict:
+            return 0
+
+        # Assume all imageseries are the same length
+        return len(next(iter(self.imageseries_dict.values())))
+
+    @property
     def has_dummy_images(self):
         if not self.imageseries_dict:
             return False
