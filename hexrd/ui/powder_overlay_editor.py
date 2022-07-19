@@ -2,13 +2,13 @@ import copy
 
 import numpy as np
 
-from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class PowderOverlayEditor:
@@ -95,14 +95,13 @@ class PowderOverlayEditor:
         if self.overlay is None:
             return
 
-        blockers = [QSignalBlocker(w) for w in self.widgets]  # noqa: F841
+        with block_signals(*self.widgets):
+            self.tth_width_gui = self.tth_width_config
+            self.offset_gui = self.offset_config
+            self.refinements_with_labels = self.overlay.refinements_with_labels
 
-        self.tth_width_gui = self.tth_width_config
-        self.offset_gui = self.offset_config
-        self.refinements_with_labels = self.overlay.refinements_with_labels
-
-        self.update_enable_states()
-        self.update_reflections_table()
+            self.update_enable_states()
+            self.update_reflections_table()
 
     def update_config(self):
         self.tth_width_config = self.tth_width_gui

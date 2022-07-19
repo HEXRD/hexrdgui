@@ -2,14 +2,12 @@ import copy
 import numpy as np
 from numpy.linalg import LinAlgError, inv
 
-from PySide2.QtCore import QSignalBlocker
-
 from hexrd.unitcell import _StiffnessDict
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.matrix_editor import MatrixEditor
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import apply_symmetric_constraint, compose
+from hexrd.ui.utils import apply_symmetric_constraint, block_signals, compose
 
 
 class MaterialPropertiesEditor:
@@ -96,17 +94,16 @@ class MaterialPropertiesEditor:
         editor.data = data
 
     def update_misc_gui(self):
-        blocked = [QSignalBlocker(w) for w in self.misc_widgets]  # noqa: F841
+        with block_signals(*self.misc_widgets):
+            material = self.material
 
-        material = self.material
+            density = getattr(material.unitcell, 'density', 0)
+            volume = getattr(material, 'vol', 0)
+            volume_per_atom = getattr(material, 'vol_per_atom', 0)
 
-        density = getattr(material.unitcell, 'density', 0)
-        volume = getattr(material, 'vol', 0)
-        volume_per_atom = getattr(material, 'vol_per_atom', 0)
-
-        self.ui.density.setValue(density)
-        self.ui.volume.setValue(volume)
-        self.ui.volume_per_atom.setValue(volume_per_atom)
+            self.ui.density.setValue(density)
+            self.ui.volume.setValue(volume)
+            self.ui.volume_per_atom.setValue(volume_per_atom)
 
     def update_enable_states(self):
         matrix_valid = not self.elastic_tensor_editor.matrix_invalid

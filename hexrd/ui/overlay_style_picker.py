@@ -2,13 +2,14 @@ import copy
 
 from matplotlib.font_manager import weight_dict
 
-from PySide2.QtCore import QObject, QSignalBlocker
+from PySide2.QtCore import QObject
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QColorDialog
 
 from hexrd.ui.constants import OverlayType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class OverlayStylePicker(QObject):
@@ -122,22 +123,20 @@ class OverlayStylePicker(QObject):
         ranges = self.style['ranges']
         keys = self.keys
 
-        blockers = [QSignalBlocker(x) for x in self.all_widgets]
-        self.ui.data_color.setText(data[keys['data_color']])
-        self.ui.data_style.setCurrentText(data[keys['data_style']])
-        self.ui.data_size.setValue(data[keys['data_size']])
-        self.ui.range_color.setText(ranges[keys['range_color']])
-        self.ui.range_style.setCurrentText(ranges[keys['range_style']])
-        self.ui.range_size.setValue(ranges[keys['range_size']])
+        with block_signals(*self.all_widgets):
+            self.ui.data_color.setText(data[keys['data_color']])
+            self.ui.data_style.setCurrentText(data[keys['data_style']])
+            self.ui.data_size.setValue(data[keys['data_size']])
+            self.ui.range_color.setText(ranges[keys['range_color']])
+            self.ui.range_style.setCurrentText(ranges[keys['range_style']])
+            self.ui.range_size.setValue(ranges[keys['range_size']])
 
-        if self.include_labels:
-            labels = self.style['labels']
-            self.ui.label_color.setText(labels[keys['label_color']])
-            self.ui.label_size.setValue(labels[keys['label_size']])
-            self.ui.label_weight.setCurrentText(labels[keys['label_weight']])
-
-        # Unblock
-        del blockers
+            if self.include_labels:
+                labels = self.style['labels']
+                self.ui.label_color.setText(labels[keys['label_color']])
+                self.ui.label_size.setValue(labels[keys['label_size']])
+                self.ui.label_weight.setCurrentText(
+                    labels[keys['label_weight']])
 
         self.update_button_colors()
 

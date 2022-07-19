@@ -1,6 +1,6 @@
 import math
 
-from PySide2.QtCore import QObject, QSignalBlocker, Qt
+from PySide2.QtCore import QObject, Qt
 from PySide2.QtGui import QFocusEvent, QKeyEvent
 from PySide2.QtWidgets import QComboBox
 
@@ -14,6 +14,7 @@ from hexrd.ui.material_properties_editor import MaterialPropertiesEditor
 from hexrd.ui.material_structure_editor import MaterialStructureEditor
 from hexrd.ui.overlay_manager import OverlayManager
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class MaterialsPanel(QObject):
@@ -164,28 +165,26 @@ class MaterialsPanel(QObject):
             self.ui.min_d_spacing,
             self.ui.limit_active
         ]
-        blockers = [QSignalBlocker(x) for x in block_list]
 
-        combo = self.ui.materials_combo
-        current_items = [combo.itemText(x) for x in range(combo.count())]
-        materials_keys = list(HexrdConfig().materials.keys())
+        with block_signals(*block_list):
+            combo = self.ui.materials_combo
+            current_items = [combo.itemText(x) for x in range(combo.count())]
+            materials_keys = list(HexrdConfig().materials.keys())
 
-        # If the materials in the config have changed, re-build the list
-        if current_items != materials_keys:
-            self.ui.materials_combo.clear()
-            self.ui.materials_combo.addItems(materials_keys)
+            # If the materials in the config have changed, re-build the list
+            if current_items != materials_keys:
+                self.ui.materials_combo.clear()
+                self.ui.materials_combo.addItems(materials_keys)
 
-        self.material_editor_widget.material = self.material
-        self.ui.materials_combo.setCurrentIndex(
-            materials_keys.index(HexrdConfig().active_material_name))
-        self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
+            self.material_editor_widget.material = self.material
+            self.ui.materials_combo.setCurrentIndex(
+                materials_keys.index(HexrdConfig().active_material_name))
+            self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
 
-        self.ui.min_d_spacing.setValue(self.material.dmin.getVal('angstrom'))
+            self.ui.min_d_spacing.setValue(
+                self.material.dmin.getVal('angstrom'))
 
-        self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
-
-        # Unblock the signal blockers before proceeding
-        del blockers
+            self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
 
         self.update_material_limits()
         self.update_table()

@@ -1,9 +1,10 @@
 from enum import IntEnum
 
-from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QProxyStyle, QStyle
 
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class SpinBoxStyle(QProxyStyle):
@@ -90,9 +91,9 @@ class CalibrationCrystalSliderWidget(QObject):
 
         # Update spinbox values
         for i, w in enumerate(self.spinbox_widgets):
-            blocker = QSignalBlocker(w)  # noqa: F841
-            w.setSuffix(suffix)
-            w.setValue(data[i])
+            with block_signals(w):
+                w.setSuffix(suffix)
+                w.setValue(data[i])
 
         # Update slider positions
         self.ui.slider_range.setValue(srange)
@@ -123,10 +124,9 @@ class CalibrationCrystalSliderWidget(QObject):
         slider_value = value * self.CONF_VAL_TO_SLIDER_VAL
         w_name = f'slider_{index}'
         w = getattr(self.ui, w_name)
-        blocker = QSignalBlocker(w)  # noqa: F841
-        w.setValue(slider_value)
-
-        self.changed.emit(mode.value, index, value)
+        with block_signals(w):
+            w.setValue(slider_value)
+            self.changed.emit(mode.value, index, value)
 
     def reset_ranges(self):
         self._orientation_range = self.DEFAULT_SLIDER_RANGE
@@ -156,8 +156,8 @@ class CalibrationCrystalSliderWidget(QObject):
         data = self._orientation if self.mode == WidgetMode.ORIENTATION \
             else self._position
         for i, w in enumerate(self.spinbox_widgets):
-            blocker = QSignalBlocker(w)  # noqa: F841
-            w.setValue(data[i])
+            with block_signals(w):
+                w.setValue(data[i])
         self.update_ranges()
 
     def update_ranges(self):
@@ -169,6 +169,6 @@ class CalibrationCrystalSliderWidget(QObject):
         sliders = self.slider_widgets
         for i, slider in enumerate(sliders):
             val = data[i] * self.CONF_VAL_TO_SLIDER_VAL
-            blocker = QSignalBlocker(slider)  # noqa: F841
-            slider.setRange(val - delta, val + delta)
-            slider.setValue(val)
+            with block_signals(slider):
+                slider.setRange(val - delta, val + delta)
+                slider.setValue(val)

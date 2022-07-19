@@ -3,13 +3,14 @@ from functools import partial
 import multiprocessing
 import numpy as np
 
-from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtCore import QObject, Signal
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_threshold_mask, remove_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class ImageModeWidget(QObject):
@@ -133,45 +134,45 @@ class ImageModeWidget(QObject):
         return widgets
 
     def update_gui_from_config(self):
-        blocked = [QSignalBlocker(x) for x in self.all_widgets()]  # noqa: F841
-        self.ui.raw_threshold_comparison.setCurrentIndex(
-            HexrdConfig().threshold_comparison)
-        self.ui.raw_threshold_value.setValue(
-            HexrdConfig().threshold_value)
-        self.ui.raw_threshold_mask.setChecked(
-            HexrdConfig().threshold_mask_status)
-        self.ui.cartesian_pixel_size.setValue(
-            HexrdConfig().cartesian_pixel_size)
-        self.ui.cartesian_virtual_plane_distance.setValue(
-            HexrdConfig().cartesian_virtual_plane_distance)
-        self.ui.cartesian_plane_normal_rotate_x.setValue(
-            HexrdConfig().cartesian_plane_normal_rotate_x)
-        self.ui.cartesian_plane_normal_rotate_y.setValue(
-            HexrdConfig().cartesian_plane_normal_rotate_y)
-        self.ui.polar_pixel_size_tth.setValue(
-            HexrdConfig().polar_pixel_size_tth)
-        self.ui.polar_pixel_size_eta.setValue(
-            HexrdConfig().polar_pixel_size_eta)
-        self.ui.polar_res_tth_min.setValue(
-            HexrdConfig().polar_res_tth_min)
-        self.ui.polar_res_tth_max.setValue(
-            HexrdConfig().polar_res_tth_max)
-        self.ui.polar_res_eta_min.setValue(
-            HexrdConfig().polar_res_eta_min)
-        self.ui.polar_res_eta_max.setValue(
-            HexrdConfig().polar_res_eta_max)
-        self.ui.polar_snip1d_algorithm.setCurrentIndex(
-            HexrdConfig().polar_snip1d_algorithm)
-        self.ui.polar_apply_snip1d.setChecked(
-            HexrdConfig().polar_apply_snip1d)
-        self.ui.polar_snip1d_width.setValue(
-            HexrdConfig().polar_snip1d_width)
-        self.ui.polar_snip1d_numiter.setValue(
-            HexrdConfig().polar_snip1d_numiter)
-        self.ui.polar_apply_erosion.setChecked(
-            HexrdConfig().polar_apply_erosion)
+        with block_signals(*self.all_widgets()):
+            self.ui.raw_threshold_comparison.setCurrentIndex(
+                HexrdConfig().threshold_comparison)
+            self.ui.raw_threshold_value.setValue(
+                HexrdConfig().threshold_value)
+            self.ui.raw_threshold_mask.setChecked(
+                HexrdConfig().threshold_mask_status)
+            self.ui.cartesian_pixel_size.setValue(
+                HexrdConfig().cartesian_pixel_size)
+            self.ui.cartesian_virtual_plane_distance.setValue(
+                HexrdConfig().cartesian_virtual_plane_distance)
+            self.ui.cartesian_plane_normal_rotate_x.setValue(
+                HexrdConfig().cartesian_plane_normal_rotate_x)
+            self.ui.cartesian_plane_normal_rotate_y.setValue(
+                HexrdConfig().cartesian_plane_normal_rotate_y)
+            self.ui.polar_pixel_size_tth.setValue(
+                HexrdConfig().polar_pixel_size_tth)
+            self.ui.polar_pixel_size_eta.setValue(
+                HexrdConfig().polar_pixel_size_eta)
+            self.ui.polar_res_tth_min.setValue(
+                HexrdConfig().polar_res_tth_min)
+            self.ui.polar_res_tth_max.setValue(
+                HexrdConfig().polar_res_tth_max)
+            self.ui.polar_res_eta_min.setValue(
+                HexrdConfig().polar_res_eta_min)
+            self.ui.polar_res_eta_max.setValue(
+                HexrdConfig().polar_res_eta_max)
+            self.ui.polar_snip1d_algorithm.setCurrentIndex(
+                HexrdConfig().polar_snip1d_algorithm)
+            self.ui.polar_apply_snip1d.setChecked(
+                HexrdConfig().polar_apply_snip1d)
+            self.ui.polar_snip1d_width.setValue(
+                HexrdConfig().polar_snip1d_width)
+            self.ui.polar_snip1d_numiter.setValue(
+                HexrdConfig().polar_snip1d_numiter)
+            self.ui.polar_apply_erosion.setChecked(
+                HexrdConfig().polar_apply_erosion)
 
-        self.update_enable_states()
+            self.update_enable_states()
 
     def update_enable_states(self):
         apply_snip1d = self.ui.polar_apply_snip1d.isChecked()
@@ -280,9 +281,9 @@ class ImageModeWidget(QObject):
             max_value = min_value + 360.0
             update_max = True
         if update_max:
-            blocked = QSignalBlocker(self.ui.polar_res_eta_max)  # noqa: F841
-            self.ui.polar_res_eta_max.setValue(max_value)
-            HexrdConfig().set_polar_res_eta_max(max_value, rerender=False)
+            with block_signals(self.ui.polar_res_eta_max):
+                self.ui.polar_res_eta_max.setValue(max_value)
+                HexrdConfig().set_polar_res_eta_max(max_value, rerender=False)
         HexrdConfig().polar_res_eta_min = min_value
 
     def on_eta_max_changed(self, max_value):
@@ -296,9 +297,9 @@ class ImageModeWidget(QObject):
             min_value = max_value - 360.0
             update_min = True
         if update_min:
-            blocked = QSignalBlocker(self.ui.polar_res_eta_min)  # noqa: F841
-            self.ui.polar_res_eta_min.setValue(min_value)
-            HexrdConfig().set_polar_res_eta_min(min_value, rerender=False)
+            with block_signals(self.ui.polar_res_eta_min):
+                self.ui.polar_res_eta_min.setValue(min_value)
+                HexrdConfig().set_polar_res_eta_min(min_value, rerender=False)
         HexrdConfig().polar_res_eta_max = max_value
 
 

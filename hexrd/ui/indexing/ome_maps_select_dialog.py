@@ -1,11 +1,12 @@
 import os
 
-from PySide2.QtCore import Signal, QObject, QSignalBlocker
+from PySide2.QtCore import Signal, QObject
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class OmeMapsSelectDialog(QObject):
@@ -158,24 +159,24 @@ class OmeMapsSelectDialog(QObject):
         indexing_config['_selected_material'] = self.selected_material
 
     def update_gui(self):
-        blockers = [QSignalBlocker(x) for x in self.widgets]  # noqa: F841
+        with block_signals(*self.widgets):
+            indexing_config = HexrdConfig().indexing_config
+            find_orientations = indexing_config['find_orientations']
+            maps_config = find_orientations['orientation_maps']
 
-        indexing_config = HexrdConfig().indexing_config
-        maps_config = indexing_config['find_orientations']['orientation_maps']
+            self.method_name = maps_config.get('_select_method', 'load')
 
-        self.method_name = maps_config.get('_select_method', 'load')
+            file_name = maps_config['file'] if maps_config['file'] else ''
 
-        file_name = maps_config['file'] if maps_config['file'] else ''
+            self.ui.file_name.setText(file_name)
+            self.threshold = maps_config['threshold']
+            self.ui.bin_frames.setValue(maps_config['bin_frames'])
 
-        self.ui.file_name.setText(file_name)
-        self.threshold = maps_config['threshold']
-        self.ui.bin_frames.setValue(maps_config['bin_frames'])
+            self.selected_material = indexing_config.get('_selected_material')
 
-        self.selected_material = indexing_config.get('_selected_material')
+            self.update_method_tab()
 
-        self.update_method_tab()
-
-        self.update_num_hkls()
+            self.update_num_hkls()
 
     @property
     def method_name(self):

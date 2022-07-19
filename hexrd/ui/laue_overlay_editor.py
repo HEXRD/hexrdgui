@@ -1,7 +1,6 @@
 import copy
 import numpy as np
 
-from PySide2.QtCore import QSignalBlocker
 from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
 
 from hexrd.rotations import angles_from_rmat_xyz, rotMatOfExpMap
@@ -10,7 +9,7 @@ from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays.laue_overlay import LaueLabelType, LaueRangeShape
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import convert_angle_convention
+from hexrd.ui.utils import block_signals, convert_angle_convention
 
 
 class LaueOverlayEditor:
@@ -67,25 +66,24 @@ class LaueOverlayEditor:
         if self.overlay is None:
             return
 
-        blockers = [QSignalBlocker(w) for w in self.widgets]  # noqa: F841
+        with block_signals(*self.widgets):
+            overlay = self.overlay
+            self.ui.min_energy.setValue(overlay.min_energy)
+            self.ui.max_energy.setValue(overlay.max_energy)
+            self.sample_rmat = overlay.sample_rmat
+            self.crystal_params = overlay.crystal_params
+            self.refinements = overlay.refinements
+            self.width_shape = overlay.width_shape
+            self.label_type = overlay.label_type
+            self.label_offsets = overlay.label_offsets
 
-        overlay = self.overlay
-        self.ui.min_energy.setValue(overlay.min_energy)
-        self.ui.max_energy.setValue(overlay.max_energy)
-        self.sample_rmat = overlay.sample_rmat
-        self.crystal_params = overlay.crystal_params
-        self.refinements = overlay.refinements
-        self.width_shape = overlay.width_shape
-        self.label_type = overlay.label_type
-        self.label_offsets = overlay.label_offsets
+            self.ui.enable_widths.setChecked(overlay.has_widths)
+            if overlay.has_widths:
+                self.ui.tth_width.setValue(np.degrees(overlay.tth_width))
+                self.ui.eta_width.setValue(np.degrees(overlay.eta_width))
 
-        self.ui.enable_widths.setChecked(overlay.has_widths)
-        if overlay.has_widths:
-            self.ui.tth_width.setValue(np.degrees(overlay.tth_width))
-            self.ui.eta_width.setValue(np.degrees(overlay.eta_width))
-
-        self.update_enable_states()
-        self.update_orientation_suffixes()
+            self.update_enable_states()
+            self.update_orientation_suffixes()
 
     def update_enable_states(self):
         enable_widths = self.enable_widths

@@ -1,11 +1,12 @@
 from PySide2.QtCore import (
-    QItemSelectionModel, QModelIndex, QObject, QSignalBlocker, Qt, Signal)
+    QItemSelectionModel, QModelIndex, QObject, Qt, Signal)
 from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
@@ -221,47 +222,47 @@ class FitGrainsOptionsDialog(QObject):
         indexing_config['_write_spots'] = self.ui.write_out_spots.isChecked()
 
     def update_gui_from_config(self, config):
-        blocked = [QSignalBlocker(x) for x in self.all_widgets()]
-        self.ui.npdiv.setValue(config.get('npdiv'))
-        self.ui.refit_pixel_scale.setValue(config.get('refit')[0])
-        self.ui.refit_ome_step_scale.setValue(config.get('refit')[1])
-        self.ui.threshold.setValue(config.get('threshold'))
+        with block_signals(*self.all_widgets()):
+            self.ui.npdiv.setValue(config.get('npdiv'))
+            self.ui.refit_pixel_scale.setValue(config.get('refit')[0])
+            self.ui.refit_ome_step_scale.setValue(config.get('refit')[1])
+            self.ui.threshold.setValue(config.get('threshold'))
 
-        tth_max = config.get('tth_max')
-        if isinstance(tth_max, bool):
-            enabled = tth_max
-            instrument = tth_max
-            value = 0.0
-        else:
-            enabled = True
-            instrument = False
-            value = tth_max
+            tth_max = config.get('tth_max')
+            if isinstance(tth_max, bool):
+                enabled = tth_max
+                instrument = tth_max
+                value = 0.0
+            else:
+                enabled = True
+                instrument = False
+                value = tth_max
 
-        self.ui.tth_max_enable.setChecked(enabled)
+            self.ui.tth_max_enable.setChecked(enabled)
 
-        self.ui.tth_max_instrument.setEnabled(enabled)
-        self.ui.tth_max_instrument.setChecked(instrument)
+            self.ui.tth_max_instrument.setEnabled(enabled)
+            self.ui.tth_max_instrument.setChecked(instrument)
 
-        self.ui.tth_max_specify.setEnabled(enabled)
-        self.ui.tth_max_specify.setChecked(not instrument)
+            self.ui.tth_max_specify.setEnabled(enabled)
+            self.ui.tth_max_specify.setChecked(not instrument)
 
-        self.ui.tth_max_value.setEnabled(enabled and (not instrument))
-        self.ui.tth_max_value.setValue(value)
+            self.ui.tth_max_value.setEnabled(enabled and (not instrument))
+            self.ui.tth_max_value.setValue(value)
 
-        tolerances = config.get('tolerance')
-        self.tolerances_model.update_from_config(tolerances)
+            tolerances = config.get('tolerance')
+            self.tolerances_model.update_from_config(tolerances)
 
-        indexing_config = HexrdConfig().indexing_config
-        self.selected_material = indexing_config.get('_selected_material')
-        working_dir = indexing_config.get(
-            'working_dir', str(Path(HexrdConfig().working_dir).parent))
-        analysis_name = indexing_config.get(
-            'analysis_name', Path(HexrdConfig().working_dir).stem)
-        self.spots_path = str(Path(working_dir) / analysis_name)
-        write_spots = indexing_config.get('_write_spots', False)
-        self.ui.write_out_spots.setChecked(write_spots)
+            indexing_config = HexrdConfig().indexing_config
+            self.selected_material = indexing_config.get('_selected_material')
+            working_dir = indexing_config.get(
+                'working_dir', str(Path(HexrdConfig().working_dir).parent))
+            analysis_name = indexing_config.get(
+                'analysis_name', Path(HexrdConfig().working_dir).stem)
+            self.spots_path = str(Path(working_dir) / analysis_name)
+            write_spots = indexing_config.get('_write_spots', False)
+            self.ui.write_out_spots.setChecked(write_spots)
 
-        self.update_num_hkls()
+            self.update_num_hkls()
 
     def run(self):
         self.ui.show()

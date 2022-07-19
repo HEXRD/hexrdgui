@@ -3,9 +3,7 @@ import re
 
 import numpy as np
 
-from PySide2.QtCore import (
-    Qt, QItemSelectionModel, QObject, QSignalBlocker, Signal
-)
+from PySide2.QtCore import Qt, QItemSelectionModel, QObject, Signal
 from PySide2.QtWidgets import (
     QLineEdit, QItemEditorFactory, QStyledItemDelegate, QTableWidgetItem
 )
@@ -15,6 +13,7 @@ from hexrd.constants import ptable, ptableinverse
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.material_site_editor import MaterialSiteEditor
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 DEFAULT_SITE = {
@@ -229,20 +228,19 @@ class MaterialStructureEditor(QObject):
             self.ui.table,
             self.ui.table.selectionModel()
         ]
-        blockers = [QSignalBlocker(x) for x in block_list]  # noqa: F841
+        with block_signals(*block_list):
+            self.ui.table.setRowCount(len(self.sites))
+            for i, site in enumerate(self.sites):
+                w = self.create_table_widget(site['name'])
+                self.ui.table.setItem(i, 0, w)
 
-        self.ui.table.setRowCount(len(self.sites))
-        for i, site in enumerate(self.sites):
-            w = self.create_table_widget(site['name'])
-            self.ui.table.setItem(i, 0, w)
+            if prev_selected is not None:
+                select_row = (prev_selected if prev_selected < len(self.sites)
+                              else len(self.sites) - 1)
+                self.select_row(select_row)
 
-        if prev_selected is not None:
-            select_row = (prev_selected if prev_selected < len(self.sites)
-                          else len(self.sites) - 1)
-            self.select_row(select_row)
-
-        # Just in case the selection actually changed...
-        self.selection_changed()
+            # Just in case the selection actually changed...
+            self.selection_changed()
 
     def update_material(self):
         # Convert the sites back to the material data format

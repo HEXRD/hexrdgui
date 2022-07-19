@@ -1,4 +1,4 @@
-from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
+from PySide2.QtCore import Qt, QItemSelectionModel
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QHBoxLayout, QHeaderView, QSizePolicy,
     QTableWidgetItem, QWidget
@@ -9,6 +9,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlay_editor import OverlayEditor
 from hexrd.ui.overlay_style_picker import OverlayStylePicker
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 COLUMNS = {
@@ -127,42 +128,42 @@ class OverlayManager:
             self.ui.table,
             self.ui.table.selectionModel()
         ]
-        blockers = [QSignalBlocker(x) for x in block_list]  # noqa: F841
 
-        prev_selected = self.selected_row
+        with block_signals(*block_list):
+            prev_selected = self.selected_row
 
-        overlays = HexrdConfig().overlays
-        self.clear_table()
-        self.ui.table.setRowCount(len(overlays))
-        for i, overlay in enumerate(overlays):
-            w = QTableWidgetItem(overlay.name)
-            self.ui.table.setItem(i, COLUMNS['name'], w)
+            overlays = HexrdConfig().overlays
+            self.clear_table()
+            self.ui.table.setRowCount(len(overlays))
+            for i, overlay in enumerate(overlays):
+                w = QTableWidgetItem(overlay.name)
+                self.ui.table.setItem(i, COLUMNS['name'], w)
 
-            w = self.create_materials_combo(overlay.material_name)
-            self.ui.table.setCellWidget(i, COLUMNS['material'], w)
+                w = self.create_materials_combo(overlay.material_name)
+                self.ui.table.setCellWidget(i, COLUMNS['material'], w)
 
-            w = self.create_type_combo(overlay.type)
-            self.ui.table.setCellWidget(i, COLUMNS['type'], w)
+                w = self.create_type_combo(overlay.type)
+                self.ui.table.setCellWidget(i, COLUMNS['type'], w)
 
-            w = self.create_visibility_checkbox(overlay.visible)
-            self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
+                w = self.create_visibility_checkbox(overlay.visible)
+                self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
 
-        if prev_selected is not None:
-            select_row = (prev_selected if prev_selected < len(overlays)
-                          else len(overlays) - 1)
-            self.select_row(select_row)
+            if prev_selected is not None:
+                select_row = (prev_selected if prev_selected < len(overlays)
+                              else len(overlays) - 1)
+                self.select_row(select_row)
 
-        self.ui.table.resizeColumnsToContents()
+            self.ui.table.resizeColumnsToContents()
 
-        # The last section isn't always stretching automatically, even
-        # though we have setStretchLastSection(True) set.
-        # Force it to stretch manually.
-        last_column = max(v for v in COLUMNS.values())
-        self.ui.table.horizontalHeader().setSectionResizeMode(
-            last_column, QHeaderView.Stretch)
+            # The last section isn't always stretching automatically, even
+            # though we have setStretchLastSection(True) set.
+            # Force it to stretch manually.
+            last_column = max(v for v in COLUMNS.values())
+            self.ui.table.horizontalHeader().setSectionResizeMode(
+                last_column, QHeaderView.Stretch)
 
-        # Just in case the selection actually changed...
-        self.selection_changed()
+            # Just in case the selection actually changed...
+            self.selection_changed()
 
     def select_row(self, i):
         if i is None or i >= self.ui.table.rowCount():
