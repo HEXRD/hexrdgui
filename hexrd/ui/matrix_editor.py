@@ -1,9 +1,10 @@
 import numpy as np
 
-from PySide2.QtCore import QSignalBlocker, Signal
+from PySide2.QtCore import Signal
 from PySide2.QtWidgets import QGridLayout, QWidget
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
+from hexrd.ui.utils import block_signals
 
 DEFAULT_ENABLED_STYLE_SHEET = 'background-color: white'
 DEFAULT_DISABLED_STYLE_SHEET = 'background-color: #F0F0F0'
@@ -94,10 +95,10 @@ class MatrixEditor(QWidget):
 
     @gui_data.setter
     def gui_data(self, v):
-        blockers = [QSignalBlocker(w) for w in self.all_widgets]  # noqa: F841
-        for i in range(self.rows):
-            for j in range(self.cols):
-                self.set_gui_value(i, j, v[i][j])
+        with block_signals(*self.all_widgets):
+            for i in range(self.rows):
+                for j in range(self.cols):
+                    self.set_gui_value(i, j, v[i][j])
 
     @property
     def all_widgets(self):

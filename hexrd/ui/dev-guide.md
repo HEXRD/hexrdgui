@@ -109,6 +109,10 @@ class SomeWidget(QObject):
 For updating the GUI with internal config, the design pattern we typically
 use is as follows:
 ```
+from hexrd.ui.utils import block_signals
+
+...
+
     @property
     def all_widgets(self):
         return [
@@ -118,16 +122,14 @@ use is as follows:
         ]
 
     def update_gui(self):
-        blockers = [QSignalBlocker(x) for x in self.all_widgets]  # noqa: F841
-        self.ui.widget1.setValue(...)
-        ...
+        with block_signals(*self.all_widgets):
+            self.ui.widget1.setValue(...)
+            ...
 ```
 
 We need to block the widget signals when we are updating the values, so that
-they do not modify the config as well. The reason we use a list of
-QSignalBlockers is so that if an exception is raised, they will be unblocked
-automatically. `# noqa: F841` is necessary to tell `flake8` to ignore the
-fact that we don't use `blockers` (it is only being used in an RAII fashion).
+they do not modify the config as well. The reason we use a context manager
+is so that if an exception is raised, they will be unblocked automatically.
 
 Resources
 ---------

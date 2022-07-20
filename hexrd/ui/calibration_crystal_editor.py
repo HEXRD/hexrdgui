@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from numpy.linalg import LinAlgError
 
-from PySide2.QtCore import QObject, QSignalBlocker, Signal
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog
 
 from hexrd import instrument, matrixutil
@@ -16,7 +16,7 @@ from hexrd.ui.overlays.constants import crystal_refinement_labels
 from hexrd.ui.select_grains_dialog import SelectGrainsDialog
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import convert_angle_convention
+from hexrd.ui.utils import block_signals, convert_angle_convention
 
 
 class CalibrationCrystalEditor(QObject):
@@ -171,8 +171,8 @@ class CalibrationCrystalEditor(QObject):
         dup_ind = self.stretch_matrix_duplicates.get(ind)
         if dup_ind is not None:
             dup = getattr(self.ui, f'stretch_matrix_{dup_ind}')
-            blocker = QSignalBlocker(dup)  # noqa: F841
-            dup.setValue(w.value())
+            with block_signals(dup):
+                dup.setValue(w.value())
 
     def set_matrix_valid(self):
         self.set_matrix_style_sheet('background-color: white')
@@ -215,8 +215,8 @@ class CalibrationCrystalEditor(QObject):
             v = np.degrees(v)
 
         for i, w in enumerate(self.orientation_widgets):
-            blocker = QSignalBlocker(w)  # noqa: F841
-            w.setValue(v[i])
+            with block_signals(w):
+                w.setValue(v[i])
 
     @property
     def position(self):
@@ -225,8 +225,8 @@ class CalibrationCrystalEditor(QObject):
     @position.setter
     def position(self, v):
         for i, w in enumerate(self.position_widgets):
-            blocker = QSignalBlocker(w)  # noqa: F841
-            w.setValue(v[i])
+            with block_signals(w):
+                w.setValue(v[i])
 
     @property
     def inverse_stretch(self):
@@ -245,8 +245,8 @@ class CalibrationCrystalEditor(QObject):
     @stretch_matrix.setter
     def stretch_matrix(self, v):
         for i, w in enumerate(self.stretch_matrix_widgets):
-            blocker = QSignalBlocker(w)  # noqa: F841
-            w.setValue(v[i])
+            with block_signals(w):
+                w.setValue(v[i])
 
     @property
     def orientation_widgets(self):

@@ -6,7 +6,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import yaml
 
-from PySide2.QtCore import Signal, QObject, QSignalBlocker, QTimer, Qt
+from PySide2.QtCore import Signal, QObject, QTimer, Qt
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox,
     QSizePolicy, QSpinBox
@@ -699,57 +699,60 @@ class OmeMapsViewerDialog(QObject):
     def update_gui(self):
         # Updates all of the widgets with their settings from the config
         self.update_hkl_options()
-        blockers = [QSignalBlocker(x) for x in self.all_widgets]  # noqa: F841
 
-        def setter(w):
-            if isinstance(w, QComboBox):
-                return lambda x: w.setCurrentIndex(w.findData(x))
+        with block_signals(*self.all_widgets):
 
-            # Assume it is a spin box of some kind
-            return w.setValue
+            def setter(w):
+                if isinstance(w, QComboBox):
+                    return lambda x: w.setCurrentIndex(w.findData(x))
 
-        config = self.config
+                # Assume it is a spin box of some kind
+                return w.setValue
 
-        def set_val(w, path):
-            cur = config
-            for x in path:
-                if x not in cur:
-                    # If it's not in the config, skip over it
-                    return
-                cur = cur[x]
+            config = self.config
 
-            setter(w)(cur)
+            def set_val(w, path):
+                cur = config
+                for x in path:
+                    if x not in cur:
+                        # If it's not in the config, skip over it
+                        return
+                    cur = cur[x]
 
-        for w, path in self.widget_paths.items():
-            w = getattr(self.ui, w)
-            set_val(w, path)
+                setter(w)(cur)
 
-        find_orientations = config['find_orientations']
+            for w, path in self.widget_paths.items():
+                w = getattr(self.ui, w)
+                set_val(w, path)
 
-        if find_orientations.get('_hand_picked_quaternions', False):
-            self.quaternion_method_name = 'hand_picked'
-        elif find_orientations['use_quaternion_grid']:
-            self.quaternion_method_name = 'grid_search'
-        else:
-            self.quaternion_method_name = 'seed_search'
+            find_orientations = config['find_orientations']
 
-        self.quaternion_grid_file = find_orientations.get('_quat_file', '')
+            if find_orientations.get('_hand_picked_quaternions', False):
+                self.quaternion_method_name = 'hand_picked'
+            elif find_orientations['use_quaternion_grid']:
+                self.quaternion_method_name = 'grid_search'
+            else:
+                self.quaternion_method_name = 'seed_search'
 
-        # Update the method name
-        method = find_orientations['seed_search']['method']
-        self.seed_search_method_name = next(iter(method))
+            self.quaternion_grid_file = find_orientations.get('_quat_file', '')
 
-        # Also set the color map minimum to the threshold value...
-        self.threshold = find_orientations['threshold']
+            # Update the method name
+            method = find_orientations['seed_search']['method']
+            self.seed_search_method_name = next(iter(method))
 
-        self.filter_maps = find_orientations['orientation_maps']['filter_maps']
+            # Also set the color map minimum to the threshold value...
+            self.threshold = find_orientations['threshold']
 
-        key = '_write_scored_orientations'
-        self.write_scored_orientations = find_orientations.get(key, False)
+            orientation_maps = find_orientations['orientation_maps']
+            self.filter_maps = orientation_maps['filter_maps']
 
-        self.working_dir = config.get('working_dir', HexrdConfig().working_dir)
+            key = '_write_scored_orientations'
+            self.write_scored_orientations = find_orientations.get(key, False)
 
-        self.synchronize_fiber_step_boxes(self.ui.fiber_step.value())
+            self.working_dir = config.get('working_dir',
+                                          HexrdConfig().working_dir)
+
+            self.synchronize_fiber_step_boxes(self.ui.fiber_step.value())
 
     def update_config(self):
         # Update all of the config with their settings from the widgets

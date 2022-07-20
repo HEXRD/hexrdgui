@@ -3,14 +3,14 @@ import math
 
 import numpy as np
 
-from PySide2.QtCore import Qt, QItemSelectionModel, QSignalBlocker
+from PySide2.QtCore import Qt, QItemSelectionModel
 from PySide2.QtWidgets import QTableWidgetItem
 
 from hexrd.crystallography import hklToStr
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import exclusions_off, tth_max_off
+from hexrd.ui.utils import block_signals, exclusions_off, tth_max_off
 
 
 class COLUMNS:
@@ -107,13 +107,13 @@ class ReflectionsTable:
     @selected_rows.setter
     def selected_rows(self, rows):
         selection_model = self.ui.table.selectionModel()
-        blocker = QSignalBlocker(selection_model)  # noqa: F841
-        selection_model.clear()
+        with block_signals(selection_model):
+            selection_model.clear()
 
-        command = QItemSelectionModel.Select | QItemSelectionModel.Rows
-        for i in rows:
-            model_index = selection_model.model().index(i, 0)
-            selection_model.select(model_index, command)
+            command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+            for i in rows:
+                model_index = selection_model.model().index(i, 0)
+                selection_model.select(model_index, command)
 
     def active_material_modified(self):
         if HexrdConfig().active_material is self.material:
@@ -131,78 +131,78 @@ class ReflectionsTable:
             table,
             table.selectionModel()
         ]
-        blockers = [QSignalBlocker(x) for x in block_list]  # noqa: F841
 
-        plane_data = material.planeData
+        with block_signals(*block_list):
+            plane_data = material.planeData
 
-        # For the table, we will turn off exclusions so that all
-        # rows are displayed, even the excluded ones. The user
-        # picks the exclusions by selecting the rows.
-        with exclusions_off(plane_data):
-            with tth_max_off(plane_data):
-                hkls = plane_data.getHKLs(asStr=True)
-                d_spacings = plane_data.getPlaneSpacings()
-                tth = plane_data.getTTh()
-                sf = plane_data.structFact
-                powder_intensity = plane_data.powder_intensity
-                multiplicity = plane_data.getMultiplicity()
+            # For the table, we will turn off exclusions so that all
+            # rows are displayed, even the excluded ones. The user
+            # picks the exclusions by selecting the rows.
+            with exclusions_off(plane_data):
+                with tth_max_off(plane_data):
+                    hkls = plane_data.getHKLs(asStr=True)
+                    d_spacings = plane_data.getPlaneSpacings()
+                    tth = plane_data.getTTh()
+                    sf = plane_data.structFact
+                    powder_intensity = plane_data.powder_intensity
+                    multiplicity = plane_data.getMultiplicity()
 
-        # Grab the hkl ids
-        hkl_ids = [-1] * len(hkls)
-        for hkl_data in plane_data.hklDataList:
-            try:
-                idx = hkls.index(hklToStr(hkl_data['hkl']))
-            except ValueError:
-                continue
-            else:
-                hkl_ids[idx] = hkl_data['hklID']
+            # Grab the hkl ids
+            hkl_ids = [-1] * len(hkls)
+            for hkl_data in plane_data.hklDataList:
+                try:
+                    idx = hkls.index(hklToStr(hkl_data['hkl']))
+                except ValueError:
+                    continue
+                else:
+                    hkl_ids[idx] = hkl_data['hklID']
 
-        # Since structure factors use arbitrary scaling, re-scale them
-        # to a range that's easier on the eyes.
-        rescale_structure_factors(sf)
+            # Since structure factors use arbitrary scaling, re-scale them
+            # to a range that's easier on the eyes.
+            rescale_structure_factors(sf)
 
-        self.update_hkl_index_maps(hkls)
+            self.update_hkl_index_maps(hkls)
 
-        table.clearContents()
-        table.setRowCount(len(hkls))
+            table.clearContents()
+            table.setRowCount(len(hkls))
 
-        # We have to disable sorting while adding items, or else Qt
-        # will automatically move some rows in the middle of setItem().
-        # After sorting is enabled again, Qt sorts the table.
-        with sorting_disabled(table):
-            for i, hkl in enumerate(hkls):
-                table_item = IntTableItem(hkl_ids[i])
-                table.setItem(i, COLUMNS.ID, table_item)
+            # We have to disable sorting while adding items, or else Qt
+            # will automatically move some rows in the middle of setItem().
+            # After sorting is enabled again, Qt sorts the table.
+            with sorting_disabled(table):
+                for i, hkl in enumerate(hkls):
+                    table_item = IntTableItem(hkl_ids[i])
+                    table.setItem(i, COLUMNS.ID, table_item)
 
-                table_item = HklTableItem(hkl)
-                table.setItem(i, COLUMNS.HKL, table_item)
+                    table_item = HklTableItem(hkl)
+                    table.setItem(i, COLUMNS.HKL, table_item)
 
-                table_item = FloatTableItem(d_spacings[i])
-                table.setItem(i, COLUMNS.D_SPACING, table_item)
+                    table_item = FloatTableItem(d_spacings[i])
+                    table.setItem(i, COLUMNS.D_SPACING, table_item)
 
-                table_item = FloatTableItem(math.degrees(tth[i]))
-                table.setItem(i, COLUMNS.TTH, table_item)
+                    table_item = FloatTableItem(math.degrees(tth[i]))
+                    table.setItem(i, COLUMNS.TTH, table_item)
 
-                table_item = FloatTableItem(sf[i])
-                table.setItem(i, COLUMNS.SF, table_item)
+                    table_item = FloatTableItem(sf[i])
+                    table.setItem(i, COLUMNS.SF, table_item)
 
-                table_item = FloatTableItem(powder_intensity[i])
-                table.setItem(i, COLUMNS.POWDER_INTENSITY, table_item)
+                    table_item = FloatTableItem(powder_intensity[i])
+                    table.setItem(i, COLUMNS.POWDER_INTENSITY, table_item)
 
-                table_item = IntTableItem(multiplicity[i])
-                table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
+                    table_item = IntTableItem(multiplicity[i])
+                    table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
 
-                # Set the selectability for the entire row
-                selectable = True
-                if plane_data.tThMax is not None:
-                    selectable = tth[i] <= plane_data.tThMax
+                    # Set the selectability for the entire row
+                    selectable = True
+                    if plane_data.tThMax is not None:
+                        selectable = tth[i] <= plane_data.tThMax
 
-                self.set_row_selectable(i, selectable)
+                    self.set_row_selectable(i, selectable)
 
-        table.resizeColumnsToContents()
+            table.resizeColumnsToContents()
 
-        self.update_selected_rows()
-        self.update_material_name()
+            self.update_selected_rows()
+            self.update_material_name()
 
     def update_hkl_index_maps(self, hkls):
         self.hkl_to_index_map = {x: i for i, x in enumerate(hkls)}

@@ -1,11 +1,12 @@
 import copy
 import numpy as np
 
-from PySide2.QtCore import QItemSelectionModel, QObject, QSignalBlocker, Signal
+from PySide2.QtCore import QItemSelectionModel, QObject, Signal
 from PySide2.QtWidgets import QSizePolicy
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 class RangesTableEditor(QObject):
@@ -154,25 +155,26 @@ class RangesTableEditor(QObject):
             self.ui.table,
             self.ui.table.selectionModel()
         ]
-        blockers = [QSignalBlocker(x) for x in block_list]  # noqa: F841
 
-        prev_selected = self.selected_row
+        with block_signals(*block_list):
 
-        self.ui.table.setRowCount(len(self._data))
-        for i, entry in enumerate(self._data):
-            for j, datum in enumerate(entry):
-                if self.data_to_gui_func is not None:
-                    datum = self.data_to_gui_func(datum)
-                w = self.create_double_spin_box(datum)
-                self.ui.table.setCellWidget(i, j, w)
+            prev_selected = self.selected_row
 
-        if prev_selected is not None:
-            select_row = (prev_selected if prev_selected < len(self._data)
-                          else len(self._data) - 1)
-            self.select_row(select_row)
+            self.ui.table.setRowCount(len(self._data))
+            for i, entry in enumerate(self._data):
+                for j, datum in enumerate(entry):
+                    if self.data_to_gui_func is not None:
+                        datum = self.data_to_gui_func(datum)
+                    w = self.create_double_spin_box(datum)
+                    self.ui.table.setCellWidget(i, j, w)
 
-        # Just in case the selection actually changed...
-        self.update_enable_states()
+            if prev_selected is not None:
+                select_row = (prev_selected if prev_selected < len(self._data)
+                              else len(self._data) - 1)
+                self.select_row(select_row)
+
+            # Just in case the selection actually changed...
+            self.update_enable_states()
 
     def table_data(self, row, column):
         val = self.ui.table.cellWidget(row, column).value()

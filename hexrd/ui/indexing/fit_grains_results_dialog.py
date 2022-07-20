@@ -12,7 +12,7 @@ import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import QObject, QSignalBlocker, QTimer, Qt, Signal
+from PySide2.QtCore import QObject, QTimer, Qt, Signal
 from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
 
 from hexrd.matrixutil import vecMVToSymm
@@ -23,6 +23,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 
 COORDS_SLICE = slice(6, 9)
@@ -445,13 +446,11 @@ class FitGrainsResultsDialog(QObject):
 
         prev_ind = self.ui.plot_color_option.currentIndex()
 
-        blocker = QSignalBlocker(self.ui.plot_color_option)  # noqa: F841
-        self.ui.plot_color_option.clear()
+        with block_signals(self.ui.plot_color_option):
+            self.ui.plot_color_option.clear()
 
-        for item in items:
-            self.ui.plot_color_option.addItem(*item)
-
-        del blocker
+            for item in items:
+                self.ui.plot_color_option.addItem(*item)
 
         if hasattr(self, '_first_selector_update'):
             self.ui.plot_color_option.setCurrentIndex(prev_ind)
@@ -525,8 +524,8 @@ class FitGrainsResultsDialog(QObject):
         self.ranges_mpl = self.ranges_gui
 
     def update_ranges_gui(self):
-        blocked = [QSignalBlocker(w) for w in self.range_widgets]  # noqa: F841
-        self.ranges_gui = self.ranges_mpl
+        with block_signals(*self.range_widgets):
+            self.ranges_gui = self.ranges_mpl
 
     def backup_ranges(self):
         self._ranges_backup = self.ranges_mpl
