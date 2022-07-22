@@ -4,6 +4,7 @@ from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
+from hexrd.ui.plot_grains import plot_grains
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
@@ -83,6 +84,8 @@ class FitGrainsOptionsDialog(QObject):
             self.tolerance_data_modified)
 
         HexrdConfig().materials_dict_modified.connect(self.update_materials)
+
+        self.ui.plot_grains.clicked.connect(self.plot_grains)
 
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
@@ -338,3 +341,6 @@ class FitGrainsOptionsDialog(QObject):
 
         if d:
             self.spots_path = d
+
+    def plot_grains(self):
+        plot_grains(self.grains_table, None, parent=self.ui)

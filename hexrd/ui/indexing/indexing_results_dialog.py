@@ -35,6 +35,7 @@ class IndexingResultsDialog(QObject):
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
         self.norm = None
         self.transform = lambda x: x
+        self._plot_grains_mode = False
 
         # Cache the sim results so we only have to compute them once
         self.cached_sim_results = {}
@@ -74,6 +75,10 @@ class IndexingResultsDialog(QObject):
     def show_all_grains_toggled(self):
         self.update_enable_states()
         self.update_spots()
+
+    def exec_(self):
+        self.update_plot()
+        self.ui.exec_()
 
     def show(self):
         self.update_plot()
@@ -233,6 +238,7 @@ class IndexingResultsDialog(QObject):
         if not hasattr(self, '_grains_viewer_dialog'):
             self._grains_viewer_dialog = GrainsViewerDialog(self.grains_table,
                                                             self.ui)
+            self._grains_viewer_dialog.plot_grains_visible = False
 
         self._grains_viewer_dialog.show()
 
@@ -349,3 +355,21 @@ class IndexingResultsDialog(QObject):
             return
 
         self.color_map_editor.update_bounds(self.scaled_image_data)
+
+    @property
+    def plot_grains_mode(self):
+        return self._plot_grains_mode
+
+    @plot_grains_mode.setter
+    def plot_grains_mode(self, b):
+        if self.plot_grains_mode == b:
+            return
+
+        title = 'Grains Plot' if b else 'Indexing Results'
+        show_results_text = 'Show grains?' if b else 'Show results?'
+
+        self.ui.button_box.setVisible(not b)
+        self.ui.setWindowTitle(title)
+        self.ui.show_results.setText(show_results_text)
+
+        self._plot_grains_mode = b

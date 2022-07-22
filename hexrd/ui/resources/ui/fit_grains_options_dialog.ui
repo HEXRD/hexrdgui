@@ -32,6 +32,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="plot_grains">
+     <property name="text">
+      <string>Plot Grains</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="2">
       <widget class="QComboBox" name="material"/>
@@ -357,6 +364,7 @@
  </customwidgets>
  <tabstops>
   <tabstop>grains_table_view</tabstop>
+  <tabstop>plot_grains</tabstop>
   <tabstop>material</tabstop>
   <tabstop>choose_hkls</tabstop>
   <tabstop>npdiv</tabstop>
