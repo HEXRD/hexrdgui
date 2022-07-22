@@ -400,6 +400,12 @@ class FitGrainsRunner(Runner):
         dialog = FitGrainsOptionsDialog(self.grains_table, self.parent)
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
+
+        def on_grains_table_modified():
+            # Update our grains table
+            self.grains_table = dialog.grains_table
+
+        dialog.grains_table_modified.connect(on_grains_table_modified)
         self.fit_grains_options_dialog = dialog
         dialog.show()
 

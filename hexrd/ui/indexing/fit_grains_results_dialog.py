@@ -70,6 +70,11 @@ class FitGrainsResultsDialog(QObject):
         self.load_cmaps()
         self.reset_glyph_size(update_plot=False)
 
+        self.add_extra_data_columns()
+
+        self.setup_gui()
+
+    def add_extra_data_columns(self):
         # Add columns for equivalent strain and hydrostatic strain
         eqv_strain = np.zeros(self.num_grains)
         hydrostatic_strain = np.zeros(self.num_grains)
@@ -81,8 +86,6 @@ class FitGrainsResultsDialog(QObject):
 
         self.data = np.hstack((self.data, eqv_strain[:, np.newaxis]))
         self.data = np.hstack((self.data, hydrostatic_strain[:, np.newaxis]))
-
-        self.setup_gui()
 
     def setup_gui(self):
         self.update_selectors()
@@ -313,6 +316,9 @@ class FitGrainsResultsDialog(QObject):
         self.ui.convert_strain_to_stress.toggled.connect(
             self.convert_strain_to_stress_toggled)
 
+        self.data_model.grains_table_modified.connect(
+            self.on_grains_table_modified)
+
     def setup_plot(self):
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -465,6 +471,7 @@ class FitGrainsResultsDialog(QObject):
         # Update the variables on the table view
         view.data_model = self.data_model
         view.material = self.material
+        view.can_modify_grains = True
 
     def show(self):
         self.ui.show()
@@ -570,6 +577,12 @@ class FitGrainsResultsDialog(QObject):
 
     def draw_idle(self):
         self.canvas.draw_idle()
+
+    def on_grains_table_modified(self):
+        # Update our grains table
+        self.data = self.data_model.full_grains_table
+        self.add_extra_data_columns()
+        self.update_plot()
 
 
 if __name__ == '__main__':
