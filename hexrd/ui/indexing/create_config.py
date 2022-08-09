@@ -23,9 +23,10 @@ def create_indexing_config():
         raise Exception(f'Selected material {selected_material} not available')
 
     material = HexrdConfig().material(selected_material)
+    pd = material.planeData
 
     omaps = indexing_config['find_orientations']['orientation_maps']
-    omaps['active_hkls'] = list(range(len(material.planeData.getHKLs())))
+    omaps['active_hkls'] = pd.getHKLID(pd.getHKLs().T, master=True)
 
     # Set the active material on the config
     tmp = indexing_config.setdefault('material', {})
