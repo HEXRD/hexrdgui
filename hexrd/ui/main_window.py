@@ -4,7 +4,6 @@ import shutil
 import tempfile
 
 import h5py
-from hexrd.ui.image_stack_dialog import ImageStackDialog
 import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
@@ -21,6 +20,7 @@ from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
+from hexrd.ui.image_stack_dialog import ImageStackDialog
 from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
@@ -36,6 +36,7 @@ from hexrd.ui.create_raw_mask import (
 from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.image_calculator_dialog import ImageCalculatorDialog
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.llnl_import_tool_dialog import LLNLImportToolDialog
@@ -196,6 +197,8 @@ class MainWindow(QObject):
             self.edit_refinements)
         self.ui.action_transform_detectors.triggered.connect(
             self.on_action_transform_detectors_triggered)
+        self.ui.action_image_calculator.triggered.connect(
+            self.open_image_calculator)
         self.ui.action_open_mask_manager.triggered.connect(
             self.on_action_open_mask_manager_triggered)
         self.ui.action_show_live_updates.toggled.connect(
@@ -429,7 +432,7 @@ class MainWindow(QObject):
     def images_loaded(self, enabled=True):
         self.ui.action_transform_detectors.setEnabled(enabled)
         self.update_color_map_bounds()
-        self.update_hedm_enable_states()
+        self.update_enable_states()
         self.color_map_editor.reset_range()
         self.image_mode_widget.reset_masking()
         self.update_image_mode_enable_states()
@@ -933,6 +936,35 @@ class MainWindow(QObject):
         self.image_mode_widget.reset_masking()
         _ = TransformDialog(self.ui).exec_()
         self.image_mode_widget.reset_masking(mask_state)
+
+    def open_image_calculator(self):
+        if dialog := getattr(self, '_image_calculator_dialog', None):
+            dialog.hide()
+
+        dialog = ImageCalculatorDialog(HexrdConfig().images_dict, self.ui)
+        dialog.show()
+        self._image_calculator_dialog = dialog
+
+        def on_accepted():
+            ims = dialog.calculate()
+
+            # Replace the current image series with this one
+            HexrdConfig().imageseries_dict[dialog.detector] = ims
+
+            # Rerender
+            self.update_all()
+
+        dialog.accepted.connect(on_accepted)
+
+    def update_enable_states(self):
+        has_images = HexrdConfig().has_images
+        num_images = HexrdConfig().imageseries_length
+
+        self.ui.action_image_calculator.setEnabled(
+            has_images and num_images == 1)
+
+        # Update the HEDM enable states
+        self.update_hedm_enable_states()
 
     def update_hedm_enable_states(self):
         actions = (self.ui.action_run_indexing, self.ui.action_run_fit_grains)

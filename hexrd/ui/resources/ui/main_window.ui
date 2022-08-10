@@ -143,6 +143,7 @@
     <addaction name="menu_masks"/>
     <addaction name="action_transform_detectors"/>
     <addaction name="action_edit_refinements"/>
+    <addaction name="action_image_calculator"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -681,6 +682,14 @@
    </property>
    <property name="toolTip">
     <string>Draw a marker where the beam intersects with any detectors</string>
+   </property>
+  </action>
+  <action name="action_image_calculator">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Image Calculator</string>
    </property>
   </action>
  </widget>
