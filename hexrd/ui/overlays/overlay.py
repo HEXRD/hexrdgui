@@ -332,13 +332,16 @@ class Overlay(ABC):
         self.calibration_picks.update(picks)
 
     def _validate_picks(self, picks):
-        for k in picks:
-            if k not in self.data:
-                msg = (
-                    f'Keys in picks "{list(picks.keys())}" do not match '
-                    f'keys in data "{list(self.data.keys())}"'
-                )
-                raise Exception(msg)
+        if self.display_mode != ViewType.cartesian:
+            # In Cartesian mode, a fake instrument is used, and thus
+            # we cannot validate the picks keys as easily.
+            for k in picks:
+                if k not in self.data:
+                    msg = (
+                        f'Keys in picks "{list(picks.keys())}" do not match '
+                        f'keys in data "{list(self.data.keys())}"'
+                    )
+                    raise Exception(msg)
 
     def reset_calibration_picks(self):
         # Make an empty list for each detector
