@@ -1,3 +1,4 @@
+import copy
 import traceback
 
 import numpy as np
@@ -7,6 +8,7 @@ from PySide2.QtWidgets import QCheckBox, QMessageBox
 
 from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 from hexrd.ui.async_runner import AsyncRunner
+from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import instr_to_internal_dict
@@ -274,11 +276,25 @@ def save_picks_to_overlay(overlay, data_dict):
         }
         return cart_to_angles(**kwargs)
 
+    if overlay.display_mode == ViewType.cartesian:
+        # Since this one has a fake instrument, we need to create an
+        # overlay with a real instrument, update the data to generate
+        # the hkls, and then take those hkls.
+        overlay_copy = copy.deepcopy(overlay)
+        overlay_copy.instrument = instr
+        overlay_copy.display_mode = ViewType.raw
+        overlay_copy.update_needed = True
+        overlay_copy.data
+        overlay_hkls = overlay_copy.hkls
+    else:
+        # These hkls should work fine
+        overlay_hkls = overlay.hkls
+
     picks = {}
     for det_key, data in data_dict.items():
         picks[det_key] = []
 
-        hkls = overlay.hkls[det_key]
+        hkls = overlay_hkls[det_key]
         panel = instr.detectors[det_key]
 
         for hkl in hkls:
