@@ -83,6 +83,13 @@
    <item row="0" column="1">
     <widget class="QComboBox" name="method"/>
    </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QPushButton" name="plot_grains">
+     <property name="text">
+      <string>Plot Grains</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -95,9 +102,10 @@
  <tabstops>
   <tabstop>method</tabstop>
   <tabstop>tab_widget</tabstop>
-  <tabstop>table_view</tabstop>
   <tabstop>file_name</tabstop>
   <tabstop>select_file_button</tabstop>
+  <tabstop>table_view</tabstop>
+  <tabstop>plot_grains</tabstop>
  </tabstops>
  <resources/>
  <connections>

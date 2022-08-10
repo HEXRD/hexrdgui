@@ -2,11 +2,12 @@ import os
 
 import numpy as np
 
-from PySide2.QtCore import Signal, QItemSelectionModel, QObject, Qt
+from PySide2.QtCore import Signal, QItemSelectionModel, QObject
 from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
+from hexrd.ui.plot_grains import plot_grains
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import set_combobox_enabled_items
 
@@ -55,6 +56,7 @@ class SelectGrainsDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
         self.ui.table_view.selection_changed.connect(self.update_enable_states)
+        self.ui.plot_grains.clicked.connect(self.plot_grains)
 
     def show(self):
         return self.ui.show()
@@ -218,12 +220,22 @@ class SelectGrainsDialog(QObject):
         indexing_config = HexrdConfig().indexing_config
         indexing_config['_loaded_crystal_params_file'] = self.file_name
 
+    @property
+    def num_grains_loaded(self):
+        if self.grains_table is None:
+            return 0
+
+        return len(self.grains_table)
+
     def update_enable_states(self):
         button_box = self.ui.button_box
         ok_button = button_box.button(QDialogButtonBox.Ok)
         if ok_button:
             enable = self.num_selected_grains == self.num_requested_grains
             ok_button.setEnabled(enable)
+
+        grains_loaded = self.num_grains_loaded > 0
+        self.ui.plot_grains.setEnabled(grains_loaded)
 
     @property
     def method_name(self):
@@ -244,6 +256,9 @@ class SelectGrainsDialog(QObject):
 
         visible = self.method_name == 'file'
         self.ui.tab_widget.setVisible(visible)
+
+    def plot_grains(self):
+        plot_grains(self.grains_table, None, parent=self.ui)
 
 
 def name_to_label(s):

@@ -21,6 +21,13 @@
      </property>
     </widget>
    </item>
+   <item>
+    <widget class="QPushButton" name="plot_grains">
+     <property name="text">
+      <string>Plot Grains</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -32,6 +39,7 @@
  </customwidgets>
  <tabstops>
   <tabstop>table_view</tabstop>
+  <tabstop>plot_grains</tabstop>
  </tabstops>
  <resources/>
  <connections/>

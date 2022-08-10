@@ -1,6 +1,7 @@
 from PySide2.QtWidgets import QDialog, QVBoxLayout
 
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
+from hexrd.ui.plot_grains import plot_grains
 from hexrd.ui.ui_loader import UiLoader
 
 
@@ -14,6 +15,11 @@ class GrainsViewerWidget:
 
         # pull_spots is not allowed with this grains table view
         self.ui.table_view.pull_spots_allowed = False
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.ui.plot_grains.clicked.connect(self.plot_grains)
 
     @property
     def grains_table(self):
@@ -38,6 +44,17 @@ class GrainsViewerWidget:
         }
         view.data_model = GrainsTableModel(**kwargs)
 
+    def plot_grains(self):
+        plot_grains(self.grains_table, None, parent=self.ui)
+
+    @property
+    def plot_grains_visible(self):
+        return self.ui.plot_grains.isVisible()
+
+    @plot_grains_visible.setter
+    def plot_grains_visible(self, b):
+        self.ui.plot_grains.setVisible(b)
+
 
 class GrainsViewerDialog(QDialog):
     def __init__(self, grains_table, parent=None):
@@ -52,3 +69,11 @@ class GrainsViewerDialog(QDialog):
         self.resize(800, 200)
 
         UiLoader().install_dialog_enter_key_filters(self)
+
+    @property
+    def plot_grains_visible(self):
+        return self.widget.plot_grains_visible
+
+    @plot_grains_visible.setter
+    def plot_grains_visible(self, b):
+        self.widget.plot_grains_visible = b
