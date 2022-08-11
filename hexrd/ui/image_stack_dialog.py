@@ -371,7 +371,7 @@ class ImageStackDialog(QObject):
             omega = np.linspace(
                 [0, 0 + delta],
                 [MAXIMUM_OMEGA_RANGE - delta, MAXIMUM_OMEGA_RANGE],
-                num_files).astype('uint16')
+                num_files, dtype=np.uint16)
             omega = [[b, e, self.frames_per_image] for [b, e] in omega]
             if max_total := self.state['max_total_frames']:
                 # The max_total is subtracted off of the end of the imageseries
