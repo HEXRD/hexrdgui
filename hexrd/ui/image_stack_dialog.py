@@ -374,9 +374,15 @@ class ImageStackDialog(QObject):
                 num_files).astype('uint16')
             omega = [[b, e, self.frames_per_image] for [b, e] in omega]
             if max_total := self.state['max_total_frames']:
-                start, stop, nsteps = omega[-1]
-                omega[-1] = [start, stop, max_total-nsteps]
-        omega = np.array(omega)
+                # The max_total is subtracted off of the end of the imageseries
+                # We need to account for the edge case where the max_total is
+                # equivalent to ignoring one or more entire files
+                for i, (start, stop, nsteps) in enumerate(omega):
+                    if max_total < nsteps:
+                        omega[i] = [start, stop, max_total]
+
+                    max_total = max(max_total - nsteps, 0)
+        omega = np.asarray(omega)
         return omega[:, 0], omega[:, 1], omega[:, 2]
 
     def build_data(self):
