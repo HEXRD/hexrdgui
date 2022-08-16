@@ -51,7 +51,7 @@ pip install -e hexrdgui
 
 First, make sure python3.9+ is installed in your target env.  If it is not, run the following command:
 ```bash
-conda install -c conda-forge python=3.9
+conda install -c conda-forge python=3.10
 ```
 
 Next install dependencies using the prerelease conda package
