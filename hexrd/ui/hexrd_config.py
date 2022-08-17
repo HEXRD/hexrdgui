@@ -757,6 +757,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                                      **kwargs)
 
     def clear_images(self, initial_load=False):
+        self.reset_unagg_imgs()
         self.imageseries_dict.clear()
         if self.load_panel_state is not None and not initial_load:
             self.load_panel_state.clear()
