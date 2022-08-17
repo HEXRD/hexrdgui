@@ -1,21 +1,21 @@
 ![platforms](https://anaconda.org/hexrd/hexrdgui/badges/platforms.svg) ![current version](https://anaconda.org/hexrd/hexrdgui/badges/version.svg) ![last updated](https://anaconda.org/hexrd/hexrdgui/badges/latest_release_relative_date.svg) ![downloads](https://anaconda.org/hexrd/hexrdgui/badges/downloads.svg)
 # Installing
 
-Requires **Python 3.9+**.  Currently, we build and test `hexrdgui` exclusively with dependencies from the `conda-forge` channel.
+Requires **Python 3.10**.  Currently, we build and test `hexrdgui` exclusively with dependencies from the `conda-forge` channel.
 
 ## conda (main release)
 
 To install the latest stable release
 
 ```bash
-conda install -c hexrd -c conda-forge hexrdgui
+conda install -c hexrd -c conda-forge python=3.10 hexrdgui
 ```
 
 ## conda (prerelease)
 To install the latest changes on master, do the following.  Note that this release may be unstable.
 
 ```bash
-conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c conda-forge hexrdgui
+conda install -c hexrd/label/hexrd-prerelease -c hexrd/label/hexrdgui-prerelease -c conda-forge python=3.10 hexrdgui
 ```
 
 ## Binary packages
@@ -32,7 +32,7 @@ in a shell.  Binary installs are native applications that open on double-click.
 
 # Development
 
-Requires Python 3.9+.  First clone the Git repositories
+Requires Python 3.10.  First clone the Git repositories
 
 ```bash
 git clone https://github.com/HEXRD/hexrd.git
@@ -49,7 +49,7 @@ pip install -e hexrdgui
 
 ## conda
 
-First, make sure python3.9+ is installed in your target env.  If it is not, run the following command:
+First, make sure python3.10 is installed in your target env.  If it is not, run the following command:
 ```bash
 conda install -c conda-forge python=3.10
 ```
