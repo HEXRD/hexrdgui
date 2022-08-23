@@ -259,6 +259,7 @@ class SimpleImageSeriesDialog(QObject):
         self.omega_max = []
         self.nsteps = []
         self.files = []
+        self.nframes = 0
         self.frame_data = None
 
     def clear_from_stack_dialog(self):
@@ -535,7 +536,8 @@ class SimpleImageSeriesDialog(QObject):
             'nsteps': self.nsteps,
             'empty_frames': self.empty_frames,
             'total_frames': self.total_frames,
-            'reverse_frames': self.ui.reverse_frames.isChecked()
+            'reverse_frames': self.ui.reverse_frames.isChecked(),
+            'nframes': self.nframes,
         }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
@@ -556,6 +558,7 @@ class SimpleImageSeriesDialog(QObject):
         self.empty_frames = data['empty_frames']
         self.total_frames = data['total_frames']
         self.frame_data = data['frame_data']
+        self.nframes = data['nframes']
         self.reverse_frames(data['reverse_frames'])
         self.create_table()
         self.enable_read()

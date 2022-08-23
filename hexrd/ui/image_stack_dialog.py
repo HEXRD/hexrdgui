@@ -209,7 +209,9 @@ class ImageStackDialog(QObject):
 
     def total_frames(self):
         file_count = int(self.ui.file_count.text())
-        total = self.state['total_frames'] * file_count
+        total = self.frames_per_image * file_count
+        if max_total := self.state['max_total_frames']:
+            total = min(total, max_total)
         self.ui.total_frames.setText(str(total))
 
     def change_detector(self, det):
@@ -359,37 +361,50 @@ class ImageStackDialog(QObject):
                         steps = max_total_frames % steps
                     omega.append([start, stop, steps])
                     start = stop
-            omega = np.array(omega)
         elif wedges and num_files == 1:
             # single images need a single wedge, even if discontinuous
             nsteps = sum(np.array(wedges)[:, 2])
-            omega = np.array([[wedges[0][0], wedges[-1][1], nsteps]])
+            omega = [[wedges[0][0], wedges[-1][1], nsteps]]
         else:
             # user did not select file or enter wedges
             delta = MAXIMUM_OMEGA_RANGE / num_files
             omega = np.linspace(
                 [0, 0 + delta],
                 [MAXIMUM_OMEGA_RANGE - delta, MAXIMUM_OMEGA_RANGE],
-                num_files)
+                num_files, dtype=np.uint16)
+            omega = [[b, e, self.frames_per_image] for [b, e] in omega]
+            if max_total := self.state['max_total_frames']:
+                # The max_total is subtracted off of the end of the imageseries
+                # We need to account for the edge case where the max_total is
+                # equivalent to ignoring one or more entire files
+                for i, (start, stop, nsteps) in enumerate(omega):
+                    if max_total < nsteps:
+                        omega[i] = [start, stop, max_total]
+
+                    max_total = max(max_total - nsteps, 0)
+        omega = np.asarray(omega)
         return omega[:, 0], omega[:, 1], omega[:, 2]
 
     def build_data(self):
         HexrdConfig().stack_state = copy.deepcopy(self.state)
         img_files, num_files = self.get_files()
         start, stop, nsteps = self.get_omega_values(num_files)
-        self.state['total_frames'] = int(self.ui.total_frames.text()) // num_files
+        total_frames = self.frames_per_image
+        if max_total := self.state['max_total_frames']:
+            total_frames = min(self.frames_per_image, max_total)
         data = {
             'files': img_files,
             'omega_min': start,
             'omega_max': stop,
             'nsteps': nsteps,
             'empty_frames': self.state['empty_frames'],
-            'total_frames': [self.state['total_frames']] * num_files,
+            'total_frames': [total_frames] * num_files,
             'frame_data': {
                 'max_file_frames': self.state['max_file_frames'],
                 'max_total_frames': self.state['max_total_frames']
             },
-            'reverse_frames': self.state.get('reverse_frames', False)
+            'reverse_frames': self.state.get('reverse_frames', False),
+            'nframes': sum(nsteps),
         }
         if not self.state['omega_from_file'] and self.state['wedges']:
             data['frame_data']['wedges'] = self.state['wedges']
