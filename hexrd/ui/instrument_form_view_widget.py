@@ -6,11 +6,15 @@ from PySide2.QtWidgets import (
 
 import numpy as np
 
+from hexrd.instrument import calc_angles_from_beam_vec, calc_beam_vec
+from hexrd.transforms import xfcapi
+
 from hexrd.ui import constants
 from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
+from hexrd.ui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 
 
 class InstrumentFormViewWidget(QObject):
@@ -25,6 +29,10 @@ class InstrumentFormViewWidget(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('instrument_form_view_widget.ui', parent)
+
+        # Make sure the stacked widget starts at 0
+        self.ui.beam_vector_input_stacked_widget.setCurrentIndex(0)
+        self.update_cartesian_beam_vector_normalized_note()
 
         self.detector_widgets_disabled = False
 
@@ -69,6 +77,12 @@ class InstrumentFormViewWidget(QObject):
         self.ui.cal_det_function.currentIndexChanged.connect(
             self.update_gui_from_config)
         self.ui.cal_det_buffer.clicked.connect(self._on_configure_buffer)
+
+        self.ui.beam_vector_input_stacked_widget.currentChanged.connect(
+            self.update_cartesian_beam_vector)
+
+        for w in self.cartesian_beam_vector_widgets:
+            w.valueChanged.connect(self.cartesian_beam_vector_modified)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -210,6 +224,7 @@ class InstrumentFormViewWidget(QObject):
         self.on_energy_changed()
 
         self.update_detector_from_config()
+        self.update_cartesian_beam_vector_styles()
 
     def update_detector_from_config(self):
         previously_blocked = self.block_all_signals()
@@ -406,3 +421,83 @@ class InstrumentFormViewWidget(QObject):
         # Re-enable button
         dialog.ui.finished.connect(
             lambda _: self.ui.cal_det_buffer.setEnabled(True))
+
+    @property
+    def polar_beam_vector(self):
+        beam_vector = self.cfg.instrument_config['beam']['vector']
+        return beam_vector['azimuth'], beam_vector['polar_angle']
+
+    @polar_beam_vector.setter
+    def polar_beam_vector(self, v):
+        beam_vector = self.cfg.config['instrument']['beam']['vector']
+        beam_vector['azimuth']['value'] = v[0]
+        beam_vector['polar_angle']['value'] = v[1]
+
+        self.update_gui_from_config()
+
+    @property
+    def cartesian_beam_vector_widgets(self):
+        axes = ('x', 'y', 'z')
+        return [getattr(self.ui, f'beam_vector_cartesian_{ax}')
+                for ax in axes]
+
+    def update_cartesian_beam_vector(self):
+        self.cartesian_beam_vector = calc_beam_vec(*self.polar_beam_vector)
+        self.update_cartesian_beam_vector_normalized_note()
+        self.update_cartesian_beam_vector_styles()
+
+    def update_cartesian_beam_vector_normalized_note(self):
+        w = self.ui.cartesian_beam_vector_normalized_note
+        w.setVisible(False)
+
+        if self.ui.beam_vector_input_type.currentText() != 'Cartesian':
+            # Only show the note for cartesian input
+            return
+
+        # Only add the note it if is not close to its unit vector
+        beam_vec = np.asarray(self.cartesian_beam_vector)
+        unit_vec = xfcapi.unitRowVector(beam_vec)
+
+        if np.all(np.isclose(unit_vec, beam_vec, atol=1e-3)):
+            return
+
+        w.setVisible(True)
+        values_str = ', '.join([f'{x:0.3f}' for x in unit_vec])
+        text = f'Note: normalized to ({values_str})'
+        w.setText(text)
+
+    def update_cartesian_beam_vector_styles(self):
+        # Set highlighting to reflect whether they are refinable
+        beam_vector = self.cfg.config['instrument']['beam']['vector']
+        az_fixed = not beam_vector['azimuth']['status']
+        po_fixed = not beam_vector['polar_angle']['status']
+
+        fixed = 'QSpinBox, QDoubleSpinBox { background-color: lightgray; }'
+        is_fixed = {
+            'x': az_fixed and po_fixed,
+            'y': po_fixed,
+            'z': az_fixed and po_fixed,
+        }
+
+        for ax, is_fixed in is_fixed.items():
+            w = getattr(self.ui, f'beam_vector_cartesian_{ax}')
+            w.setStyleSheet(fixed if is_fixed else '')
+
+    @property
+    def cartesian_beam_vector(self):
+        return [w.value() for w in self.cartesian_beam_vector_widgets]
+
+    @cartesian_beam_vector.setter
+    def cartesian_beam_vector(self, v):
+        widgets = self.cartesian_beam_vector_widgets
+        with block_signals(*widgets):
+            for i, w in enumerate(widgets):
+                # This is to avoid "-0" from being displayed
+                value = 0 if np.isclose(v[i], 0) else v[i]
+                w.setValue(value)
+
+    def cartesian_beam_vector_modified(self):
+        # Convert to polar
+        self.polar_beam_vector = calc_angles_from_beam_vec(
+            self.cartesian_beam_vector)
+        self.update_cartesian_beam_vector_normalized_note()
