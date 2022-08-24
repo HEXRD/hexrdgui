@@ -13,7 +13,7 @@ from hexrd.ui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 from hexrd.ui.ui_loader import UiLoader
 
 
-class CalibrationConfigWidget(QObject):
+class InstrumentFormViewWidget(QObject):
 
     """Emitted when GUI data has changed"""
     gui_data_changed = Signal()
@@ -24,7 +24,7 @@ class CalibrationConfigWidget(QObject):
         self.cfg = HexrdConfig()
 
         loader = UiLoader()
-        self.ui = loader.load_file('calibration_config_widget.ui', parent)
+        self.ui = loader.load_file('instrument_form_view_widget.ui', parent)
 
         self.detector_widgets_disabled = False
 

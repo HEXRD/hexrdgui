@@ -14,7 +14,7 @@ from PySide2.QtWidgets import (
 
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.beam_marker_style_editor import BeamMarkerStyleEditor
-from hexrd.ui.calibration_config_widget import CalibrationConfigWidget
+from hexrd.ui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
@@ -113,7 +113,7 @@ class MainWindow(QObject):
                                     self.ui, self.simple_image_series_dialog)
 
         self.cal_tree_view = CalTreeView(self.ui)
-        self.calibration_config_widget = CalibrationConfigWidget(self.ui)
+        self.instrument_form_view_widget = InstrumentFormViewWidget(self.ui)
         self.calibration_slider_widget = CalibrationSliderWidget(self.ui)
 
         tab_texts = ['Tree View', 'Form View', 'Slider View']
@@ -121,7 +121,7 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.addTab(self.cal_tree_view,
                                               tab_texts[0])
         self.ui.calibration_tab_widget.addTab(
-            self.calibration_config_widget.ui, tab_texts[1])
+            self.instrument_form_view_widget.ui, tab_texts[1])
         self.ui.calibration_tab_widget.addTab(
             self.calibration_slider_widget.ui, tab_texts[2])
 
@@ -761,8 +761,8 @@ class MainWindow(QObject):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
         if current_widget is self.cal_tree_view:
             self.cal_tree_view.rebuild_tree()
-        elif current_widget is self.calibration_config_widget.ui:
-            self.calibration_config_widget.update_gui_from_config()
+        elif current_widget is self.instrument_form_view_widget.ui:
+            self.instrument_form_view_widget.update_gui_from_config()
         elif current_widget is self.calibration_slider_widget.ui:
             self.calibration_slider_widget.update_gui_from_config()
         self.config_loaded.emit()
@@ -807,7 +807,7 @@ class MainWindow(QObject):
             # Skip the request if we are loading state
             return
 
-        prev_blocked = self.calibration_config_widget.block_all_signals()
+        prev_blocked = self.instrument_form_view_widget.block_all_signals()
 
         # Need to clear focus from current widget if enter is pressed or
         # else all clicks are emit an editingFinished signal and view is
@@ -828,7 +828,7 @@ class MainWindow(QObject):
             rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()
 
-        self.calibration_config_widget.unblock_all_signals(prev_blocked)
+        self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
     def live_update(self, enabled):
         previous = HexrdConfig().live_update
