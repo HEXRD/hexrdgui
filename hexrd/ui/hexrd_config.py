@@ -575,6 +575,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.set_detector_defaults_if_missing()
 
+        # Ensure statuses are added to any missing instrument config keys
+        self.add_status(self.config['instrument'])
+
     def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
         default = self.default_detector
@@ -910,6 +913,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def add_status(self, current):
         for key, value in current.items():
             if isinstance(value, dict):
+                if 'status' in value and 'value' in value:
+                    # It already has status. Continue.
+                    continue
+
                 self.add_status(value)
             else:
                 if isinstance(value, (list, np.ndarray)):

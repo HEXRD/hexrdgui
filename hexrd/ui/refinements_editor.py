@@ -66,7 +66,8 @@ class RefinementsEditor:
 
         # Recurse through it, setting all status keys and renaming them to
         # "_refinable".
-        blacklisted = ['saturation_level', 'buffer', 'pixels', 'id']
+        blacklisted = ['saturation_level', 'buffer', 'pixels', 'id',
+                       'source_distance']
 
         def recurse(cur, idict):
             if 'status' in cur:

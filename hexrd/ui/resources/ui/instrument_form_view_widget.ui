@@ -152,14 +152,7 @@
          <property name="spacing">
           <number>0</number>
          </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="beam_vector_input_type_label">
-           <property name="text">
-            <string>Input Type:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
+         <item row="1" column="1">
           <widget class="QComboBox" name="beam_vector_input_type">
            <item>
             <property name="text">
@@ -173,7 +166,24 @@
            </item>
           </widget>
          </item>
-         <item row="2" column="0" colspan="2">
+         <item row="1" column="0">
+          <widget class="QLabel" name="beam_vector_input_type_label">
+           <property name="text">
+            <string>Input Type:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCheckBox" name="beam_vector_is_finite">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether or not to treat the X-ray source distance as finite.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Finite Source Distance?</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
           <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -189,7 +199,7 @@
            </property>
           </spacer>
          </item>
-         <item row="1" column="0" colspan="2">
+         <item row="2" column="0" colspan="2">
           <widget class="QStackedWidget" name="beam_vector_input_stacked_widget">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -295,7 +305,7 @@
            <widget class="QWidget" name="beam_vector_cartesian">
             <layout class="QGridLayout" name="gridLayout_8">
              <item row="0" column="2">
-              <widget class="QLabel" name="label_2">
+              <widget class="QLabel" name="beam_vector_cartesian_y_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -303,7 +313,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>y:</string>
+                <string>j:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -311,7 +321,7 @@
               </widget>
              </item>
              <item row="0" column="0">
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="beam_vector_cartesian_x_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -319,7 +329,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>x:</string>
+                <string>i:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -359,7 +369,7 @@
               </widget>
              </item>
              <item row="0" column="4">
-              <widget class="QLabel" name="label_5">
+              <widget class="QLabel" name="beam_vector_cartesian_z_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -367,7 +377,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>z:</string>
+                <string>k:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -402,6 +412,31 @@
              </item>
             </layout>
            </widget>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QDoubleSpinBox" name="beam_vector_magnitude">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QSpinBox, QDoubleSpinBox { background-color: lightgray; }</string>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="minimum">
+            <double>0.000001000000000</double>
+           </property>
+           <property name="maximum">
+            <double>10000000.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>1.000000000000000</double>
+           </property>
           </widget>
          </item>
         </layout>
@@ -1318,6 +1353,8 @@
   <tabstop>beam_vector_cartesian_x</tabstop>
   <tabstop>beam_vector_cartesian_y</tabstop>
   <tabstop>beam_vector_cartesian_z</tabstop>
+  <tabstop>beam_vector_is_finite</tabstop>
+  <tabstop>beam_vector_magnitude</tabstop>
   <tabstop>cal_det_current</tabstop>
   <tabstop>cal_det_add</tabstop>
   <tabstop>cal_det_remove</tabstop>
@@ -1363,6 +1400,22 @@
     <hint type="destinationlabel">
      <x>338</x>
      <y>205</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>beam_vector_is_finite</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>beam_vector_magnitude</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>175</x>
+     <y>274</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>515</x>
+     <y>274</y>
     </hint>
    </hints>
   </connection>

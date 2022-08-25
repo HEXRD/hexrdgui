@@ -610,8 +610,10 @@ class ImageCanvas(FigureCanvas):
         # Re-draw all overlays from scratch
         HexrdConfig().clear_overlay_data()
 
-        bvec = HexrdConfig().instrument_config['beam']['vector']
+        beam_config = HexrdConfig().instrument_config['beam']
+        bvec = beam_config['vector']
         self.iviewer.instr.beam_vector = (bvec['azimuth'], bvec['polar_angle'])
+        self.iviewer.instr.source_distance = beam_config['source_distance']
         self.update_overlays()
         self.update_beam_marker()
 

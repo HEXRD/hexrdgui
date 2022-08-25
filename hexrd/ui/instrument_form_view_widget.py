@@ -84,6 +84,11 @@ class InstrumentFormViewWidget(QObject):
         for w in self.cartesian_beam_vector_widgets:
             w.valueChanged.connect(self.cartesian_beam_vector_modified)
 
+        self.ui.beam_vector_is_finite.toggled.connect(
+            self.set_beam_vector_is_finite)
+        self.ui.beam_vector_magnitude.valueChanged.connect(
+            self.beam_vector_magnitude_value_changed)
+
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
 
@@ -224,7 +229,13 @@ class InstrumentFormViewWidget(QObject):
         self.on_energy_changed()
 
         self.update_detector_from_config()
-        self.update_cartesian_beam_vector_styles()
+
+        self.update_beam_vector_magnitude_from_config()
+
+        if self.sender() not in self.cartesian_beam_vector_widgets:
+            # If a cartesian beam vector widget did not trigger this update,
+            # then update the cartesian beam vector widgets.
+            self.update_cartesian_beam_vector()
 
     def update_detector_from_config(self):
         previously_blocked = self.block_all_signals()
@@ -430,10 +441,21 @@ class InstrumentFormViewWidget(QObject):
     @polar_beam_vector.setter
     def polar_beam_vector(self, v):
         beam_vector = self.cfg.config['instrument']['beam']['vector']
-        beam_vector['azimuth']['value'] = v[0]
-        beam_vector['polar_angle']['value'] = v[1]
+
+        any_modified = False
+
+        if beam_vector['azimuth']['value'] != v[0]:
+            beam_vector['azimuth']['value'] = v[0]
+            any_modified = True
+
+        if beam_vector['polar_angle']['value'] != v[1]:
+            beam_vector['polar_angle']['value'] = v[1]
+            any_modified = True
 
         self.update_gui_from_config()
+
+        if any_modified:
+            HexrdConfig().beam_vector_changed.emit()
 
     @property
     def cartesian_beam_vector_widgets(self):
@@ -443,6 +465,7 @@ class InstrumentFormViewWidget(QObject):
 
     def update_cartesian_beam_vector(self):
         self.cartesian_beam_vector = calc_beam_vec(*self.polar_beam_vector)
+        self.update_cartesian_beam_vector_from_magnitude()
         self.update_cartesian_beam_vector_normalized_note()
         self.update_cartesian_beam_vector_styles()
 
@@ -452,6 +475,10 @@ class InstrumentFormViewWidget(QObject):
 
         if self.ui.beam_vector_input_type.currentText() != 'Cartesian':
             # Only show the note for cartesian input
+            return
+
+        if self.beam_vector_is_finite:
+            # Don't normalize the vector if it is finite
             return
 
         # Only add the note it if is not close to its unit vector
@@ -500,4 +527,80 @@ class InstrumentFormViewWidget(QObject):
         # Convert to polar
         self.polar_beam_vector = calc_angles_from_beam_vec(
             self.cartesian_beam_vector)
+        self.update_beam_magnitude_from_cartesian()
         self.update_cartesian_beam_vector_normalized_note()
+
+    def update_beam_magnitude_from_cartesian(self):
+        if not self.beam_vector_is_finite:
+            # If the beam vector is infinite, just return
+            return
+
+        beam_vec = np.atleast_2d(self.cartesian_beam_vector)
+        self.beam_vector_magnitude = xfcapi.rowNorm(beam_vec).item()
+
+    def update_cartesian_beam_vector_from_magnitude(self):
+        if not self.beam_vector_is_finite:
+            # If the beam vector is infinite, just return
+            return
+
+        beam_vec = calc_beam_vec(*self.polar_beam_vector)
+        beam_vec *= self.beam_vector_magnitude
+        self.cartesian_beam_vector = beam_vec
+
+    @property
+    def beam_vector_is_finite(self):
+        return self.ui.beam_vector_is_finite.isChecked()
+
+    @beam_vector_is_finite.setter
+    def beam_vector_is_finite(self, b):
+        self.ui.beam_vector_is_finite.setChecked(b)
+
+    def set_beam_vector_is_finite(self, b):
+        self.beam_vector_is_finite = b
+
+        # Update the config
+        v = self.beam_vector_magnitude
+        beam_config = self.cfg.config['instrument']['beam']
+        if beam_config['source_distance']['value'] != v:
+            beam_config['source_distance']['value'] = v
+            HexrdConfig().beam_vector_changed.emit()
+
+        if self.ui.beam_vector_input_type.currentText() == 'Cartesian':
+            self.update_beam_magnitude_from_cartesian()
+
+        self.update_cartesian_beam_vector_normalized_note()
+
+    @property
+    def beam_vector_magnitude(self):
+        if not self.beam_vector_is_finite:
+            return np.inf
+
+        return self.ui.beam_vector_magnitude.value()
+
+    @beam_vector_magnitude.setter
+    def beam_vector_magnitude(self, v):
+        is_finite = v is not None and v != np.inf
+        self.beam_vector_is_finite = is_finite
+
+        if is_finite:
+            self.ui.beam_vector_magnitude.setValue(v)
+
+    def beam_vector_magnitude_value_changed(self, v):
+        if not self.beam_vector_is_finite:
+            # Don't do anything
+            return
+
+        self.beam_vector_magnitude = v
+
+        # Update the config
+        beam_config = self.cfg.config['instrument']['beam']
+        if beam_config['source_distance']['value'] != v:
+            beam_config['source_distance']['value'] = v
+            HexrdConfig().beam_vector_changed.emit()
+
+        # Update the cartesian vector
+        self.update_cartesian_beam_vector_from_magnitude()
+
+    def update_beam_vector_magnitude_from_config(self):
+        beam_config = self.cfg.config['instrument']['beam']
+        self.beam_vector_magnitude = beam_config['source_distance']['value']
