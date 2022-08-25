@@ -18,6 +18,7 @@ from pathlib import Path
 class FitGrainsOptionsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
+    grains_table_modified = Signal()
 
     def __init__(self, grains_table, parent=None):
         super().__init__(parent)
@@ -44,6 +45,7 @@ class FitGrainsOptionsDialog(QObject):
         view = self.ui.grains_table_view
         view.data_model = self.data_model
         view.material = self.material
+        view.can_modify_grains = True
 
         ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
         ok_button.setText('Fit Grains')
@@ -86,6 +88,8 @@ class FitGrainsOptionsDialog(QObject):
         HexrdConfig().materials_dict_modified.connect(self.update_materials)
 
         self.ui.plot_grains.clicked.connect(self.plot_grains)
+        self.data_model.grains_table_modified.connect(
+            self.on_grains_table_modified)
 
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
@@ -344,3 +348,7 @@ class FitGrainsOptionsDialog(QObject):
 
     def plot_grains(self):
         plot_grains(self.grains_table, None, parent=self.ui)
+
+    def on_grains_table_modified(self):
+        self.grains_table = self.data_model.full_grains_table
+        self.grains_table_modified.emit()

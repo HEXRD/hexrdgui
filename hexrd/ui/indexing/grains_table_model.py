@@ -1,10 +1,12 @@
 import numpy as np
 
-from PySide2.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide2.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
 
 
 class GrainsTableModel(QAbstractTableModel):
     """Model for viewing grains"""
+
+    grains_table_modified = Signal()
 
     def __init__(self, grains_table, excluded_columns=None, parent=None):
         super().__init__(parent)
@@ -23,6 +25,9 @@ class GrainsTableModel(QAbstractTableModel):
 
         self.excluded_columns = excluded_columns if excluded_columns else []
 
+        self.regenerate_grains_table()
+
+    def regenerate_grains_table(self):
         self.grains_table = self.full_grains_table[:, self.included_columns]
         self.headers = [self.full_headers[x] for x in self.included_columns]
 
@@ -51,7 +56,46 @@ class GrainsTableModel(QAbstractTableModel):
 
         return len(self.grains_table)
 
+    def removeRows(self, row, count, parent):
+        while count > 0:
+            self.full_grains_table = np.delete(self.full_grains_table, row,
+                                               axis=0)
+            count -= 1
+
+        self.regenerate_grains_table()
+
+        return True
+
     # Custom methods
+
+    def delete_grains(self, grain_ids):
+        any_modified = False
+        for grain_id in grain_ids:
+            to_delete = np.where(self.full_grains_table[:, 0] == grain_id)[0]
+            if to_delete.size == 0:
+                continue
+
+            self.remove_rows(to_delete)
+            any_modified = True
+
+        if any_modified:
+            self.renumber_grains()
+            self.grains_table_modified.emit()
+
+    def renumber_grains(self):
+        sorted_indices = np.argsort(self.full_grains_table[:, 0])
+        print(f'Renumbering grains from 0 to {len(sorted_indices) - 1}...')
+
+        for i, ind in enumerate(sorted_indices):
+            self.full_grains_table[ind, 0] = i
+
+        self.regenerate_grains_table()
+
+    def remove_rows(self, rows):
+        for row in rows:
+            self.beginRemoveRows(QModelIndex(), row, row)
+            self.removeRow(row)
+            self.endRemoveRows()
 
     @property
     def included_columns(self):

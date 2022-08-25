@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide2.QtCore import QSortFilterProxyModel, Qt, Signal
 from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import QMenu, QTableView
+from PySide2.QtWidgets import QMenu, QMessageBox, QTableView
 
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -27,6 +27,7 @@ class GrainsTableView(QTableView):
 
         self.material = None
         self.pull_spots_allowed = True
+        self.can_modify_grains = False
         self._data_model = None
         self._tolerances = []
         self.selected_tol_id = -1
@@ -46,6 +47,10 @@ class GrainsTableView(QTableView):
 
         if self.can_run_pull_spots:
             add_actions({'Visualize Spots': self.pull_spots})
+
+        if self.can_modify_grains and self.num_selected_grains > 0:
+            suffix = 's' if self.num_selected_grains > 1 else ''
+            add_actions({f'Delete Grain{suffix}': self.delete_selected_grains})
 
         if not actions:
             return super().contextMenuEvent(event)
@@ -99,6 +104,10 @@ class GrainsTableView(QTableView):
         return self.grains_table[grain_ids]
 
     @property
+    def num_selected_grains(self):
+        return len(self.selected_grain_ids)
+
+    @property
     def can_run_pull_spots(self):
         return (
             self.pull_spots_allowed and
@@ -127,6 +136,10 @@ class GrainsTableView(QTableView):
     def tolerances(self, v):
         self._tolerances = v
 
+    @property
+    def num_grains(self):
+        return len(self.data_model.grains_table)
+
     def select_tolerance_id(self):
         tolerances = self.tolerances
         if len(tolerances) == 1:
@@ -149,6 +162,16 @@ class GrainsTableView(QTableView):
 
         self.selected_tol_id = dialog.selected_row
         return True
+
+    def delete_selected_grains(self):
+        if self.num_selected_grains == self.num_grains:
+            # Don't let the user delete all of the grains
+            msg = 'Cannot delete all grains'
+            print(msg)
+            QMessageBox.critical(self, 'HEXRD', msg)
+            return
+
+        self.data_model.delete_grains(self.selected_grain_ids)
 
     def pull_spots(self):
         if not self.select_tolerance_id():
