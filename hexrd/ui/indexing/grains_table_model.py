@@ -79,7 +79,17 @@ class GrainsTableModel(QAbstractTableModel):
             any_modified = True
 
         if any_modified:
+            self.renumber_grains()
             self.grains_table_modified.emit()
+
+    def renumber_grains(self):
+        sorted_indices = np.argsort(self.full_grains_table[:, 0])
+        print(f'Renumbering grains from 0 to {len(sorted_indices) - 1}...')
+
+        for i, ind in enumerate(sorted_indices):
+            self.full_grains_table[ind, 0] = i
+
+        self.regenerate_grains_table()
 
     def remove_rows(self, rows):
         for row in rows:
