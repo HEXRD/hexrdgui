@@ -320,7 +320,10 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         data = self.data if data is None else data
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
         for key, ims in ims_dict.items():
-            nframes = data.get('nframes', len(ims))
+            nframes = data.get('nframes', 0)
+            # If number of frames is 0 we assume that no value was provided
+            # and we should infer that we are using all frames
+            nframes = nframes if nframes > 0 else len(ims)
             omw = imageseries.omega.OmegaWedges(nframes)
             if 'wedges' in data:
                 for wedge in data['wedges']:
