@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>692</width>
-    <height>805</height>
+    <height>834</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -171,6 +171,9 @@
            <property name="text">
             <string>Input Type:</string>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
           </widget>
          </item>
          <item row="3" column="0">
@@ -208,7 +211,7 @@
             </sizepolicy>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="beam_vector_spherical">
             <layout class="QHBoxLayout" name="horizontalLayout">
@@ -304,23 +307,7 @@
            </widget>
            <widget class="QWidget" name="beam_vector_cartesian">
             <layout class="QGridLayout" name="gridLayout_8">
-             <item row="0" column="2">
-              <widget class="QLabel" name="beam_vector_cartesian_y_label">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>j:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
+             <item row="6" column="0">
               <widget class="QLabel" name="beam_vector_cartesian_x_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -336,8 +323,8 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_x">
+             <item row="6" column="5">
+              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_z">
                <property name="keyboardTracking">
                 <bool>false</bool>
                </property>
@@ -350,9 +337,38 @@
                <property name="maximum">
                 <double>1000000.000000000000000</double>
                </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
               </widget>
              </item>
-             <item row="0" column="3">
+             <item row="7" column="0" colspan="6">
+              <widget class="QLabel" name="cartesian_beam_vector_normalized_note">
+               <property name="styleSheet">
+                <string notr="true">QLabel { font: italic; }</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="2">
+              <widget class="QLabel" name="beam_vector_cartesian_y_label">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>j:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="3">
               <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_y">
                <property name="keyboardTracking">
                 <bool>false</bool>
@@ -366,9 +382,12 @@
                <property name="maximum">
                 <double>1000000.000000000000000</double>
                </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
               </widget>
              </item>
-             <item row="0" column="4">
+             <item row="6" column="4">
               <widget class="QLabel" name="beam_vector_cartesian_z_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -384,8 +403,8 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="5">
-              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_z">
+             <item row="6" column="1">
+              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_x">
                <property name="keyboardTracking">
                 <bool>false</bool>
                </property>
@@ -398,17 +417,41 @@
                <property name="maximum">
                 <double>1000000.000000000000000</double>
                </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
               </widget>
              </item>
-             <item row="1" column="0" colspan="6">
-              <widget class="QLabel" name="cartesian_beam_vector_normalized_note">
-               <property name="styleSheet">
-                <string notr="true">QLabel { font: italic; }</string>
-               </property>
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
+             <item row="0" column="0" colspan="6">
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLabel" name="beam_vector_convention_label">
+                 <property name="text">
+                  <string>Vector Convention:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cartesian_beam_vector_convention">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Propagation&amp;quot; is the negative of the &amp;quot;X-Ray Source&amp;quot; method.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>X-Ray Source</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Propagation</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -1350,6 +1393,7 @@
   <tabstop>beam_vector_input_type</tabstop>
   <tabstop>cal_vector_azimuth</tabstop>
   <tabstop>cal_vector_polar</tabstop>
+  <tabstop>cartesian_beam_vector_convention</tabstop>
   <tabstop>beam_vector_cartesian_x</tabstop>
   <tabstop>beam_vector_cartesian_y</tabstop>
   <tabstop>beam_vector_cartesian_z</tabstop>

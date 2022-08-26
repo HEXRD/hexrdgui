@@ -88,6 +88,8 @@ class InstrumentFormViewWidget(QObject):
             self.set_beam_vector_is_finite)
         self.ui.beam_vector_magnitude.valueChanged.connect(
             self.beam_vector_magnitude_value_changed)
+        self.ui.cartesian_beam_vector_convention.currentIndexChanged.connect(
+            self.cartesian_beam_vector_convention_changed)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -488,8 +490,14 @@ class InstrumentFormViewWidget(QObject):
         if np.all(np.isclose(unit_vec, beam_vec, atol=1e-3)):
             return
 
+        # Avoid displaying -0
+        unit_vec = [0 if np.isclose(x, 0) else x for x in unit_vec]
+
+        # Reverse the sign if we are using x-ray source
+        sign = self.cartesian_beam_convention_sign
+
         w.setVisible(True)
-        values_str = ', '.join([f'{x:0.3f}' for x in unit_vec])
+        values_str = ', '.join([f'{x * sign:0.3f}' for x in unit_vec])
         text = f'Note: normalized to ({values_str})'
         w.setText(text)
 
@@ -512,16 +520,18 @@ class InstrumentFormViewWidget(QObject):
 
     @property
     def cartesian_beam_vector(self):
-        return [w.value() for w in self.cartesian_beam_vector_widgets]
+        sign = self.cartesian_beam_convention_sign
+        return [w.value() * sign for w in self.cartesian_beam_vector_widgets]
 
     @cartesian_beam_vector.setter
     def cartesian_beam_vector(self, v):
+        sign = self.cartesian_beam_convention_sign
         widgets = self.cartesian_beam_vector_widgets
         with block_signals(*widgets):
             for i, w in enumerate(widgets):
                 # This is to avoid "-0" from being displayed
                 value = 0 if np.isclose(v[i], 0) else v[i]
-                w.setValue(value)
+                w.setValue(value * sign)
 
     def cartesian_beam_vector_modified(self):
         # Convert to polar
@@ -604,3 +614,32 @@ class InstrumentFormViewWidget(QObject):
     def update_beam_vector_magnitude_from_config(self):
         beam_config = self.cfg.config['instrument']['beam']
         self.beam_vector_magnitude = beam_config['source_distance']['value']
+
+    @property
+    def cartesian_beam_vector_convention(self):
+        return self.ui.cartesian_beam_vector_convention.currentText()
+
+    @cartesian_beam_vector_convention.setter
+    def cartesian_beam_vector_convention(self, text):
+        self.ui.cartesian_beam_vector_convention.setCurrentText(text)
+
+    @property
+    def cartesian_beam_convention_sign(self):
+        convention = self.cartesian_beam_vector_convention
+        signs = {
+            'X-Ray Source': -1,
+            'Propagation': 1,
+        }
+        if convention not in signs:
+            raise Exception(f'Unhandled beam convention: {convention}')
+
+        return signs[convention]
+
+    def cartesian_beam_vector_convention_changed(self):
+        widgets = self.cartesian_beam_vector_widgets
+        with block_signals(*widgets):
+            for w in widgets:
+                # For now, just assume this means we toggle the sign
+                w.setValue(w.value() * -1)
+
+        self.update_cartesian_beam_vector_normalized_note()
