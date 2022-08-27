@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
+from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
@@ -40,6 +40,11 @@ class PowderOverlayEditor:
 
         HexrdConfig().material_tth_width_modified.connect(
             self.material_tth_width_modified_externally)
+
+        self.ui.distortion_type.currentIndexChanged.connect(
+            self.validate_distortion_type)
+        self.ui.pinhole_correction_type.currentIndexChanged.connect(
+            self.validate_pinhole_correction_type)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -206,3 +211,38 @@ class PowderOverlayEditor:
             self._table.material = self.material
 
         self._table.show()
+
+    @property
+    def distortion_type(self):
+        return self.ui.distortion_type.currentText()
+
+    @property
+    def pinhole_correction_type(self):
+        return self.ui.pinhole_correction_type.currentText()
+
+    @pinhole_correction_type.setter
+    def pinhole_correction_type(self, v):
+        self.ui.pinhole_correction_type.setCurrentText(v)
+
+    def validate_distortion_type(self):
+        if self.distortion_type == 'Pinhole Camera Correction':
+            # Warn the user if there is a non-zero oscillation stage vector
+            stage = HexrdConfig().instrument_config['oscillation_stage']
+            if not np.all(np.isclose(stage['translation'], 0)):
+                msg = (
+                    'WARNING: a non-zero oscillation stage vector is being '
+                    'used with the Pinhole Camera Correction.'
+                )
+                QMessageBox.critical(self.ui, 'HEXRD', msg)
+
+    def validate_pinhole_correction_type(self):
+        if self.pinhole_correction_type == 'Pinhole':
+            # Warn the user that we have not yet implemented this method
+            msg = (
+                '"Pinhole" correction has not yet been implemented.\n\n'
+                'Switching back to "Sample Layer".'
+            )
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+
+            # Switch back to Sample Layer
+            self.pinhole_correction_type = 'Sample Layer'

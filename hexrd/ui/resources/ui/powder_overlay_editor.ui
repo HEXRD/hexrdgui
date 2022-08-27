@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>737</width>
-    <height>420</height>
+    <width>815</width>
+    <height>590</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>420</height>
+    <height>590</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -24,18 +24,25 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="4" column="1" colspan="4">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="enable_width">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
+     <property name="text">
+      <string>Enable Width</string>
      </property>
-    </spacer>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="4">
+    <widget class="QPushButton" name="reflections_table">
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
+     <property name="text">
+      <string>Reflections Table</string>
+     </property>
+    </widget>
    </item>
    <item row="1" column="2" colspan="3">
     <widget class="ScientificDoubleSpinBox" name="tth_width">
@@ -74,81 +81,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="4">
-    <widget class="ScientificDoubleSpinBox" name="offset_2">
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="decimals">
-      <number>8</number>
-     </property>
-     <property name="minimum">
-      <double>-100000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>1000000.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="3">
-    <widget class="ScientificDoubleSpinBox" name="offset_1">
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="decimals">
-      <number>8</number>
-     </property>
-     <property name="minimum">
-      <double>-100000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>1000000.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="2">
-    <widget class="ScientificDoubleSpinBox" name="offset_0">
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="decimals">
-      <number>8</number>
-     </property>
-     <property name="minimum">
-      <double>-100000.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>1000000.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QCheckBox" name="enable_width">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Enable Width</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QLabel" name="offset_label">
-     <property name="text">
-      <string>Offset:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1" colspan="4">
+   <item row="5" column="1" colspan="4">
     <widget class="QGroupBox" name="refinements_group">
      <property name="title">
       <string>Refinements</string>
@@ -160,15 +93,410 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="1" colspan="4">
-    <widget class="QPushButton" name="reflections_table">
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
+   <item row="2" column="1" colspan="4">
+    <widget class="QGroupBox" name="distortion_group">
+     <property name="styleSheet">
+      <string notr="true">QGroupBox{padding-top:15px; margin-top:-20px}</string>
      </property>
-     <property name="text">
-      <string>Reflections Table</string>
+     <property name="title">
+      <string/>
      </property>
+     <layout class="QGridLayout" name="gridLayout_6">
+      <item row="0" column="0">
+       <widget class="QLabel" name="distortion_type_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Distortion:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="distortion_type">
+        <item>
+         <property name="text">
+          <string>Offset</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Pinhole Camera Correction</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="HiddenBarTabWidget" name="distortion_tab_widget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="distortion_offset_tab">
+         <attribute name="title">
+          <string>Offset</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="1" column="1">
+           <widget class="ScientificDoubleSpinBox" name="offset_0">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="minimum">
+             <double>-100000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="offset_label">
+            <property name="text">
+             <string>Offset:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="ScientificDoubleSpinBox" name="offset_1">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="minimum">
+             <double>-100000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="ScientificDoubleSpinBox" name="offset_2">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="suffix">
+             <string> mm</string>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="minimum">
+             <double>-100000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="2">
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>1</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="distortion_pinhole_camera_correction_tab">
+         <attribute name="title">
+          <string>Pinhole Camera Correction</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="pinhole_correction_type_label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Correction Type:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="pinhole_correction_type">
+            <item>
+             <property name="text">
+              <string>Sample Layer</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Pinhole</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="HiddenBarTabWidget" name="pinhole_correction_type_tab_widget">
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <widget class="QWidget" name="sample_layer_tab">
+             <attribute name="title">
+              <string>Sample Layer</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <item row="0" column="0">
+               <widget class="QLabel" name="sl_layer_standoff_label">
+                <property name="text">
+                 <string>Layer Standoff</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="ScientificDoubleSpinBox" name="sl_layer_standoff">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="suffix">
+                 <string> μm</string>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-10000000.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>10000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="sl_layer_thickness_label">
+                <property name="text">
+                 <string>Layer Thickness</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="ScientificDoubleSpinBox" name="sl_layer_thickness">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="suffix">
+                 <string> μm</string>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-10000000.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>10000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="sl_pinhole_thickness_label">
+                <property name="text">
+                 <string>Pinhole Thickness</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="ScientificDoubleSpinBox" name="sl_pinhole_thickness">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="suffix">
+                 <string> μm</string>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="minimum">
+                 <double>-10000000.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>10000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <spacer name="verticalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>1</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="pinhole_correction_stacked_widgetPage2">
+             <attribute name="title">
+              <string>Pinhole</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_5">
+              <item row="0" column="1">
+               <widget class="QLabel" name="ph_thickness_label">
+                <property name="text">
+                 <string>Pinhole Thickness</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QDoubleSpinBox" name="ph_thickness">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="maximum">
+                 <double>100000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QDoubleSpinBox" name="ph_diameter">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="maximum">
+                 <double>100000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="ph_diameter_label">
+                <property name="text">
+                 <string>Pinhole Diameter</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <spacer name="verticalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>10</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
     </widget>
+   </item>
+   <item row="6" column="1" colspan="4">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>
@@ -178,15 +506,62 @@
    <extends>QDoubleSpinBox</extends>
    <header>scientificspinbox.py</header>
   </customwidget>
+  <customwidget>
+   <class>HiddenBarTabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>hidden_bar_tab_widget</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>reflections_table</tabstop>
   <tabstop>enable_width</tabstop>
   <tabstop>tth_width</tabstop>
+  <tabstop>distortion_type</tabstop>
+  <tabstop>distortion_tab_widget</tabstop>
   <tabstop>offset_0</tabstop>
   <tabstop>offset_1</tabstop>
   <tabstop>offset_2</tabstop>
+  <tabstop>pinhole_correction_type</tabstop>
+  <tabstop>pinhole_correction_type_tab_widget</tabstop>
+  <tabstop>sl_layer_standoff</tabstop>
+  <tabstop>sl_layer_thickness</tabstop>
+  <tabstop>sl_pinhole_thickness</tabstop>
+  <tabstop>ph_diameter</tabstop>
+  <tabstop>ph_thickness</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>distortion_type</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>distortion_tab_widget</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>452</x>
+     <y>109</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>405</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pinhole_correction_type</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>pinhole_correction_type_tab_widget</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>476</x>
+     <y>192</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>405</x>
+     <y>276</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
