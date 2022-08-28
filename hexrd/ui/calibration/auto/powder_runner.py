@@ -76,6 +76,7 @@ class PowderRunner(QObject):
             'eta_tol': options['eta_tol'],
             'pktype': options['pk_type'],
             'bgtype': options['bg_type'],
+            'tth_distortion': self.active_overlay.tth_distortion_dict,
         }
 
         self.pc = PowderCalibrator(**kwargs)

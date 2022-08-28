@@ -498,9 +498,16 @@ class CompositeCalibration(object):
                     [self.instr.calibration_flags, lpflags]
                 )
                 param_flags.append(lpflags)
-                calib = PowderCalibrator(
-                    self.instr, pick_data['plane_data'], img_dict, flags
-                )
+
+                kwargs = {
+                    'instr': self.instr,
+                    'plane_data': pick_data['plane_data'],
+                    'img_dict': img_dict,
+                    'flags': flags,
+                    'tth_distortion': pick_data['tth_distortion'],
+                }
+                calib = PowderCalibrator(**kwargs)
+
                 params.append(calib.full_params[-calib.npe:])
                 calibrator_list.append(calib)
 

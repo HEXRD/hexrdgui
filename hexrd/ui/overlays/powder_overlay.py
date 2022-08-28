@@ -4,6 +4,7 @@ from hexrd import constants
 from hexrd import unitcell
 
 from hexrd.transforms import xfcapi
+from hexrd.xrdutil.phutil import SampleLayerDistortion
 
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.overlays.overlay import Overlay
@@ -15,14 +16,20 @@ class PowderOverlay(Overlay):
     hkl_data_key = 'rings'
 
     def __init__(self, material_name, tvec=None, eta_steps=360,
+                 tth_distortion_type=None, tth_distortion_kwargs=None,
                  **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if tvec is None:
             tvec = constants.zeros_3.copy()
 
+        if tth_distortion_kwargs is None:
+            tth_distortion_kwargs = {}
+
         self.tvec = tvec
         self.eta_steps = eta_steps
+        self.tth_distortion_type = tth_distortion_type
+        self.tth_distortion_kwargs = tth_distortion_kwargs
 
     @property
     def child_attributes_to_save(self):
@@ -31,6 +38,8 @@ class PowderOverlay(Overlay):
         return [
             'tvec',
             'eta_steps',
+            'tth_distortion_type',
+            'tth_distortion_kwargs',
         ]
 
     @property
@@ -287,6 +296,39 @@ class PowderOverlay(Overlay):
                     ring_pts.append(np.vstack([nxys, nans_row]))
 
         return ring_pts, skipped_tth
+
+    @property
+    def has_tth_distortion(self):
+        return self.tth_distortion_type is not None
+
+    @property
+    def tth_distortion_dict(self):
+        if not self.has_tth_distortion or self.instrument is None:
+            return None
+
+        def tth_sample_layer_distortion(panel):
+            kwargs = {
+                'detector': panel,
+                'source_distance': self.instrument.source_distance,
+                **self.tth_distortion_kwargs,
+            }
+            return SampleLayerDistortion(**kwargs)
+
+        known_types = {
+            'SampleLayerDistortion': tth_sample_layer_distortion,
+        }
+
+        if self.tth_distortion_type not in known_types:
+            msg = f'Unhandled distortion type: {self.tth_distortion_type}'
+            raise Exception(msg)
+
+        f = known_types[self.tth_distortion_type]
+
+        ret = {}
+        for det_key, panel in self.instrument.detectors.items():
+            ret[det_key] = f(panel)
+
+        return ret
 
     @property
     def default_style(self):
