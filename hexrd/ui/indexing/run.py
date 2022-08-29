@@ -514,8 +514,16 @@ class FitGrainsRunner(Runner):
         for result in self.fit_grains_results:
             print(result)
 
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        quaternion_method = find_orientations.get('_quaternion_method')
+        allow_export_workflow = (
+            self.started_from_indexing and
+            quaternion_method == 'seed_search'
+        )
+
         kwargs = {
             'grains_table': self.result_grains_table,
+            'allow_export_workflow': allow_export_workflow,
             'parent': self.parent,
         }
         dialog = create_fit_grains_results_dialog(**kwargs)
@@ -534,7 +542,8 @@ def create_grains_table(fit_grains_results):
     return grains_table
 
 
-def create_fit_grains_results_dialog(grains_table, parent=None):
+def create_fit_grains_results_dialog(grains_table, parent=None,
+                                     allow_export_workflow=True):
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
     name = indexing_config.get('_selected_material')
@@ -543,7 +552,13 @@ def create_fit_grains_results_dialog(grains_table, parent=None):
     material = HexrdConfig().material(name)
 
     # Create the dialog
-    dialog = FitGrainsResultsDialog(grains_table, material, parent)
+    kwargs = {
+        'data': grains_table,
+        'material': material,
+        'parent': parent,
+        'allow_export_workflow': allow_export_workflow,
+    }
+    dialog = FitGrainsResultsDialog(**kwargs)
     dialog.ui.resize(1200, 800)
 
     return dialog

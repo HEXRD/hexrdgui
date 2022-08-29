@@ -894,7 +894,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # we need to convert to float.
         tth_width = plane_data.tThWidth
         if isinstance(tth_width, np.float64):
-            tth_width = tth_width.item()
+            tth_width = np.degrees(tth_width).item()
 
         material = {
             'definitions': 'materials.h5',
@@ -917,6 +917,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'data': data
         }
 
+        # Find out which quaternion method was used
+        quaternion_method = self.indexing_config['find_orientations'].get(
+            '_quaternion_method')
+
         omaps = cfg['find_orientations']['orientation_maps']
         active_hkls = omaps.get('active_hkls', None)
 
@@ -926,8 +930,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if not active_hkls:
             # Make sure this is saved as an empty list
             omaps['active_hkls'] = []
-            # Remove the seed search if present, as it will not be used
-            cfg['find_orientations'].pop('seed_search', None)
         else:
             if isinstance(active_hkls[0], int):
                 # This is a master list. Save the active hkls as the more human
@@ -935,6 +937,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 active_hkls = plane_data.getHKLs(*active_hkls).tolist()
 
             omaps['active_hkls'] = active_hkls
+
+        if quaternion_method != 'seed_search':
+            cfg['find_orientations'].pop('seed_search', None)
+
+        if quaternion_method != 'grid_search':
             # Make sure the file is None
             omaps['file'] = None
 

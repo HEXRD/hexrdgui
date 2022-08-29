@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>826</height>
+    <height>830</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -92,7 +92,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Export</string>
+             <string>Export Grains Table</string>
             </property>
            </widget>
           </item>
@@ -313,7 +313,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <number>0</number>
+                   <double>0.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -329,7 +329,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <number>0</number>
+                   <double>0.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -345,7 +345,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <number>0</number>
+                   <double>0.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -361,7 +361,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <number>0</number>
+                   <double>0.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -409,7 +409,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <number>0</number>
+                   <double>0.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -438,7 +438,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="singleStep">
-                   <number>0</number>
+                   <double>0.000000000000000</double>
                   </property>
                  </widget>
                 </item>

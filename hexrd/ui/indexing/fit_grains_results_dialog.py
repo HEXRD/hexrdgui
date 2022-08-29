@@ -70,6 +70,13 @@ class FitGrainsResultsDialog(QObject):
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
         self.ui.export_workflow.setEnabled(allow_export_workflow)
+        if not allow_export_workflow:
+            # Give some possible reasons
+            self.ui.export_workflow.setToolTip(
+                'Currently only supported if a full HEDM workflow was '
+                'performed (including indexing) and the quaternion '
+                'generation method was a seed search.'
+            )
 
         self.setup_tableview()
         self.load_cmaps()
