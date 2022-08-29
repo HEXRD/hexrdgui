@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>635</width>
-    <height>267</height>
+    <width>649</width>
+    <height>295</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
@@ -20,14 +20,27 @@
       <attribute name="title">
        <string>Load</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QLineEdit" name="file_name"/>
-       </item>
-       <item>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="1" column="2">
         <widget class="QPushButton" name="select_file_button">
          <property name="text">
           <string>Select File</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QLineEdit" name="file_name"/>
+       </item>
+       <item row="2" column="0" colspan="3">
+        <widget class="QLabel" name="load_note">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;The selected material must exactly match the one used to generate this file&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
