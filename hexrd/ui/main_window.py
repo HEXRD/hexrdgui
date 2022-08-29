@@ -542,6 +542,7 @@ class MainWindow(QObject):
         kwargs = {
             'grains_table': None,
             'indexing_runner': getattr(self, '_indexing_runner', None),
+            'started_from_indexing': False,
             'parent': self.ui,
         }
         runner = self._grain_fitting_runner = FitGrainsRunner(**kwargs)

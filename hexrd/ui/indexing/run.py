@@ -146,10 +146,15 @@ class IndexingRunner(Runner):
         self.ome_maps_viewer_dialog = dialog
 
     def ome_maps_viewed(self):
-        # If we did the hand-picked method, go ahead and skip now to
-        # generating the grains table and running fit grains
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
         dialog = self.ome_maps_viewer_dialog
+
+        # Save the quaternion method used so we can check it in other places
+        find_orientations['_quaternion_method'] = dialog.quaternion_method_name
+
         if dialog.quaternions_hand_picked:
+            # If we did the hand-picked method, go ahead and skip now to
+            # generating the grains table and running fit grains
             self.qbar = dialog.hand_picked_quaternions
             self.generate_grains_table()
             self.start_fit_grains_runner()
@@ -169,7 +174,6 @@ class IndexingRunner(Runner):
         self.progress_dialog.setWindowTitle('Find Orientations')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
-        find_orientations = HexrdConfig().indexing_config['find_orientations']
         if find_orientations['use_quaternion_grid']:
             # Load qfib from a numpy file
             self.qfib = np.load(find_orientations['use_quaternion_grid'])
@@ -354,6 +358,7 @@ class IndexingRunner(Runner):
         kwargs = {
             'grains_table': self.grains_table,
             'indexing_runner': self,
+            'started_from_indexing': True,
             'parent': self.parent,
         }
         runner = self._fit_grains_runner = FitGrainsRunner(**kwargs)
@@ -362,7 +367,8 @@ class IndexingRunner(Runner):
 
 class FitGrainsRunner(Runner):
 
-    def __init__(self, grains_table=None, indexing_runner=None, parent=None):
+    def __init__(self, grains_table=None, indexing_runner=None,
+                 started_from_indexing=False, parent=None):
         """
         If the grains_table is set, the user will not be asked to specify a
         grains table. Otherwise, a dialog will appear asking the user to
@@ -375,6 +381,7 @@ class FitGrainsRunner(Runner):
         super().__init__(parent)
         self.grains_table = grains_table
         self.indexing_runner = indexing_runner
+        self.started_from_indexing = started_from_indexing
         self.clear()
 
     def clear(self):
@@ -407,8 +414,20 @@ class FitGrainsRunner(Runner):
         self.view_fit_grains_options()
 
     def view_fit_grains_options(self):
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        quaternion_method = find_orientations.get('_quaternion_method')
+        ensure_hkl_seeds_not_excluded = (
+            self.started_from_indexing and
+            quaternion_method == 'seed_search'
+        )
+
         # Run dialog for user options
-        dialog = FitGrainsOptionsDialog(self.grains_table, self.parent)
+        kwargs = {
+            'grains_table': self.grains_table,
+            'ensure_seed_hkls_not_excluded': ensure_hkl_seeds_not_excluded,
+            'parent': self.parent,
+        }
+        dialog = FitGrainsOptionsDialog(**kwargs)
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
 
