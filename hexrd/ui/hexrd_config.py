@@ -917,18 +917,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         }
 
         omaps = self.indexing_config['find_orientations']['orientation_maps']
-        active_hkls = omaps.get('_active_hkl_strings', None)
+        active_hkls = omaps.get('active_hkls', None)
         seed_search = self.indexing_config['find_orientations']['seed_search']
-        hkl_seeds = seed_search.get('_hkl_seed_strings', [])
         if active_hkls is None:
             cfg['find_orientations']['orientation_maps']['active_hkls'] = []
         else:
             curr_hkls = selected_material.planeData.getHKLs(asStr=True)
             hkls = [curr_hkls.index(x) for x in active_hkls if x in curr_hkls]
-            seeds = [active_hkls.index(x) for x in hkl_seeds if x in curr_hkls]
             cfg['find_orientations']['orientation_maps']['active_hkls'] = hkls
             cfg['find_orientations']['orientation_maps']['file'] = None
-            cfg['find_orientations']['seed_search']['hkl_seeds'] = seeds
+            cfg['find_orientations']['seed_search'] = seed_search
 
         cfg['material'] = material
         cfg['instrument'] = 'instrument.yml'
