@@ -922,23 +922,28 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             '_quaternion_method')
 
         omaps = cfg['find_orientations']['orientation_maps']
-        active_hkls = omaps.get('active_hkls', None)
 
-        if isinstance(active_hkls, np.ndarray):
-            active_hkls = active_hkls.tolist()
+        if quaternion_method == 'seed_search':
+            # There must be some active hkls
+            active_hkls = omaps['active_hkls']
+            if isinstance(active_hkls, np.ndarray):
+                active_hkls = active_hkls.tolist()
 
-        if not active_hkls:
-            # Make sure this is saved as an empty list
-            omaps['active_hkls'] = []
-        else:
             if isinstance(active_hkls[0], int):
                 # This is a master list. Save the active hkls as the more human
                 # readable (h, k, l) tuples instead.
                 active_hkls = plane_data.getHKLs(*active_hkls).tolist()
 
-            omaps['active_hkls'] = active_hkls
+            # Do not save all active hkls, but only the ones used in the seed
+            # search. Those are the only ones we need.
+            seed_search = cfg['find_orientations']['seed_search']
+            active_hkls = [active_hkls[i] for i in seed_search['hkl_seeds']]
 
-        if quaternion_method != 'seed_search':
+            omaps['active_hkls'] = active_hkls
+        else:
+            # Do not need active hkls
+            omaps['active_hkls'] = []
+            # Seed search settings are not needed
             cfg['find_orientations'].pop('seed_search', None)
 
         if quaternion_method != 'grid_search':
