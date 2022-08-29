@@ -26,7 +26,7 @@ from hexrd.ui.indexing.fit_grains_select_dialog import FitGrainsSelectDialog
 from hexrd.ui.indexing.indexing_results_dialog import IndexingResultsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
-from hexrd.ui.indexing.utils import generate_grains_table
+from hexrd.ui.indexing.utils import generate_grains_table, hkls_missing_in_list
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.utils import format_big_int
 
@@ -100,15 +100,47 @@ class IndexingRunner(Runner):
         if dialog is None:
             return
 
-        omaps = HexrdConfig().indexing_config['find_orientations']['orientation_maps']
+        indexing_config = HexrdConfig().indexing_config
+        omaps = indexing_config['find_orientations']['orientation_maps']
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
-            self.ome_maps_loaded()
+
+            # Perform a little validation to ensure the plane data matches the
+            # currently selected material. They should match *exactly*.
+            pd = self.ome_maps.planeData
+            material = get_indexing_material()
+
+            file_hkls = pd.getHKLs().tolist()
+            mat_hkls = material.planeData.getHKLs().tolist()
+            missing1 = hkls_missing_in_list(mat_hkls, file_hkls)
+            missing2 = hkls_missing_in_list(file_hkls, mat_hkls)
+            if missing1 or missing2:
+                msg = (
+                    'The selected material must match the material used to '
+                    'generate the eta omega maps exactly. The HKLs, however, '
+                    'do not match.'
+                )
+                if missing1:
+                    msg += (
+                        '\n\nThe following hkls were found in the selected '
+                        'material, but not in the file:\n\n'
+                    )
+                    msg += ', '.join([str(x) for x in missing1])
+                if missing2:
+                    msg += (
+                        '\n\nThe following hkls were found in the file, '
+                        'but not in the selected material:\n\n'
+                    )
+                    msg += ', '.join([str(x) for x in missing2])
+                print(msg)
+                QMessageBox.critical(self.parent, 'Error', msg)
+                return
 
             # Save selected hkls as the active hkls. Convert them to tuples.
-            pd = self.ome_maps.planeData
             omaps['active_hkls'] = pd.getHKLs(*self.ome_maps.iHKLList).tolist()
+
+            self.ome_maps_loaded()
         else:
             # First, save the currently selected hkls as the active hkls
             material = get_indexing_material()
