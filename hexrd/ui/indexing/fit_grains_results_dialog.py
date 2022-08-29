@@ -609,26 +609,6 @@ class FitGrainsResultsDialog(QObject):
                     ims_dict.get(det), det, path, 'hdf5', **kwargs)
 
     def on_export_workflow_selected(self):
-        idx_cfg = HexrdConfig().indexing_config
-        omaps = idx_cfg['find_orientations']['orientation_maps']
-        active = omaps.get("_active_hkl_strings", [])
-        current = self.material.planeData.getHKLs(asStr=True)
-        missing = [a for a in active if a not in current]
-
-        if missing:
-            msg = (
-                f'The following HKLs are excluded: {(", ").join(missing)}.'
-                f' Would you like to remove them from the exclusions list?')
-            response = QMessageBox.question(
-                self.ui, 'HEXRD', msg, (QMessageBox.Yes | QMessageBox.No))
-            if response == QMessageBox.Yes:
-                exclusions = self.material.planeData.exclusions
-                hkls = self.material.planeData.getHKLs(
-                    asStr=True, allHKLs=True)
-                idx = [hkls.index(m) for m in missing]
-                exclusions[idx] = False
-                self.material.planeData.exclusions = exclusions
-
         selected_directory = QFileDialog.getExistingDirectory(
                 self.ui, 'Select directory', HexrdConfig().working_dir)
 
