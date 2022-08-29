@@ -891,15 +891,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # tThMax can be None, bool or np.float64, in the case of np.float64 we
         # need to convert to float
-        t_th_max = selected_material.planeData.get_tThMax()
-        if isinstance(t_th_max, np.float64):
-            t_th_max = t_th_max.item()
+        tth_width = selected_material.planeData.tThWidth
+        if isinstance(tth_width, np.float64):
+            tth_width = tth_width.item()
 
         material = {
             'definitions': 'materials.h5',
             'active': current_material,
             'dmin': selected_material.dmin.getVal('angstrom'),
-            'tth_width': t_th_max,
+            'tth_width': tth_width,
             'min_sfac_ratio': None
         }
 
