@@ -888,10 +888,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         current_material = self.indexing_config['_selected_material']
         selected_material = self.material(current_material)
+        plane_data = selected_material.planeData
 
-        # tThMax can be None, bool or np.float64, in the case of np.float64 we
-        # need to convert to float
-        tth_width = selected_material.planeData.tThWidth
+        # tThWidth can be None, bool, or np.float64, in the case of np.float64,
+        # we need to convert to float.
+        tth_width = plane_data.tThWidth
         if isinstance(tth_width, np.float64):
             tth_width = tth_width.item()
 
@@ -916,17 +917,26 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'data': data
         }
 
-        omaps = self.indexing_config['find_orientations']['orientation_maps']
+        omaps = cfg['find_orientations']['orientation_maps']
         active_hkls = omaps.get('active_hkls', None)
-        seed_search = self.indexing_config['find_orientations']['seed_search']
-        if active_hkls is None:
-            cfg['find_orientations']['orientation_maps']['active_hkls'] = []
+
+        if isinstance(active_hkls, np.ndarray):
+            active_hkls = active_hkls.tolist()
+
+        if not active_hkls:
+            # Make sure this is saved as an empty list
+            omaps['active_hkls'] = []
+            # Remove the seed search if present, as it will not be used
+            cfg['find_orientations'].pop('seed_search', None)
         else:
-            curr_hkls = selected_material.planeData.getHKLs(asStr=True)
-            hkls = [curr_hkls.index(x) for x in active_hkls if x in curr_hkls]
-            cfg['find_orientations']['orientation_maps']['active_hkls'] = hkls
-            cfg['find_orientations']['orientation_maps']['file'] = None
-            cfg['find_orientations']['seed_search'] = seed_search
+            if isinstance(active_hkls[0], int):
+                # This is a master list. Save the active hkls as the more human
+                # readable (h, k, l) tuples instead.
+                active_hkls = plane_data.getHKLs(*active_hkls).tolist()
+
+            omaps['active_hkls'] = active_hkls
+            # Make sure the file is None
+            omaps['file'] = None
 
         cfg['material'] = material
         cfg['instrument'] = 'instrument.yml'

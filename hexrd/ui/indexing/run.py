@@ -17,7 +17,9 @@ from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.indexing.create_config import create_indexing_config
+from hexrd.ui.indexing.create_config import (
+    create_indexing_config, get_indexing_material
+)
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.indexing.fit_grains_select_dialog import FitGrainsSelectDialog
@@ -98,18 +100,22 @@ class IndexingRunner(Runner):
         if dialog is None:
             return
 
-        indexing_config = HexrdConfig().indexing_config
-        omaps = indexing_config['find_orientations']['orientation_maps']
+        omaps = HexrdConfig().indexing_config['find_orientations']['orientation_maps']
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
             self.ome_maps_loaded()
+
+            # Save selected hkls as the active hkls. Convert them to tuples.
+            pd = self.ome_maps.planeData
+            omaps['active_hkls'] = pd.getHKLs(*self.ome_maps.iHKLList).tolist()
         else:
+            # First, save the currently selected hkls as the active hkls
+            material = get_indexing_material()
+            omaps['active_hkls'] = material.planeData.getHKLs().tolist()
+
             # Create a full indexing config
             config = create_indexing_config()
-            # Save the hkls strings for future comparison
-            selected_material = indexing_config.get('_selected_material')
-            material = HexrdConfig().material(selected_material)
 
             # Setup to generate maps in background
             self.progress_dialog.setWindowTitle('Generating Eta Omega Maps')

@@ -11,22 +11,25 @@ from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
-def create_indexing_config():
-    # Creates a hexrd.config class from the indexing configuration
-
-    # Make a copy to modify
-    indexing_config = copy.deepcopy(HexrdConfig().indexing_config)
-    available_materials = list(HexrdConfig().materials.keys())
+def get_indexing_material():
+    indexing_config = HexrdConfig().indexing_config
+    available_materials = list(HexrdConfig().materials)
     selected_material = indexing_config.get('_selected_material')
 
     if selected_material not in available_materials:
         raise Exception(f'Selected material {selected_material} not available')
 
-    material = HexrdConfig().material(selected_material)
+    return HexrdConfig().material(selected_material)
+
+
+def create_indexing_config():
+    # Creates a hexrd.config class from the indexing configuration
+
+    material = get_indexing_material()
     pd = material.planeData
 
-    omaps = indexing_config['find_orientations']['orientation_maps']
-    omaps['active_hkls'] = pd.getHKLID(pd.getHKLs().T, master=True)
+    # Make a copy to modify
+    indexing_config = copy.deepcopy(HexrdConfig().indexing_config)
 
     # Set the active material on the config
     tmp = indexing_config.setdefault('material', {})
