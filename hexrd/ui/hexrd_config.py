@@ -939,6 +939,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             seed_search = cfg['find_orientations']['seed_search']
             active_hkls = [active_hkls[i] for i in seed_search['hkl_seeds']]
 
+            # Renumber the hkl_seeds from 0 to len(hkl_seeds)
+            num_hkl_seeds = len(seed_search['hkl_seeds'])
+            seed_search['hkl_seeds'] = list(range(num_hkl_seeds))
+
             omaps['active_hkls'] = active_hkls
         else:
             # Do not need active hkls
