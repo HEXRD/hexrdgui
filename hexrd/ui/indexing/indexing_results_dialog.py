@@ -97,9 +97,7 @@ class IndexingResultsDialog(QObject):
 
     @property
     def hkls(self):
-        hkl_indices = self.ome_maps.iHKLList
-        all_hkls = self.plane_data.getHKLs(asStr=True)
-        return [all_hkls[i] for i in hkl_indices]
+        return self.plane_data.getHKLs(*self.ome_maps.iHKLList, asStr=True)
 
     @property
     def show_all_grains(self):

@@ -416,9 +416,7 @@ class OmeMapsViewerDialog(QObject):
 
     @property
     def hkls(self):
-        hkl_indices = self.data.iHKLList
-        all_hkls = self.data.planeData.getHKLs(asStr=True)
-        return [all_hkls[i] for i in hkl_indices]
+        return self.data.planeData.getHKLs(*self.data.iHKLList, asStr=True)
 
     def update_hkl_options(self):
         # This won't trigger a re-draw. Can change in the future if needed.
