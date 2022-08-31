@@ -353,7 +353,8 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = str(path.parent)
 
             data = np.loadtxt(selected_file, ndmin=2)
-            dialog = FitGrainsResultsDialog(data, parent=self.ui)
+            dialog = FitGrainsResultsDialog(
+                data, parent=self.ui, allow_export_workflow=False)
             dialog.show()
             self._fit_grains_results_dialog = dialog
 
@@ -541,6 +542,7 @@ class MainWindow(QObject):
         kwargs = {
             'grains_table': None,
             'indexing_runner': getattr(self, '_indexing_runner', None),
+            'started_from_indexing': False,
             'parent': self.ui,
         }
         runner = self._grain_fitting_runner = FitGrainsRunner(**kwargs)
@@ -972,9 +974,6 @@ class MainWindow(QObject):
             action.setEnabled(False)
 
         image_series_dict = HexrdConfig().unagg_images
-        if image_series_dict is None:
-            image_series_dict = HexrdConfig().imageseries_dict
-
         if not image_series_dict:
             return
 

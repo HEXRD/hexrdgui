@@ -13,12 +13,13 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide2.QtCore import QObject, QTimer, Qt, Signal
-from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
+from PySide2.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
 
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.rotations import rotMatOfExpMap
 
 import hexrd.ui.constants
+from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
@@ -38,8 +39,9 @@ COLOR_ORIENTATIONS_IND = 23
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, material=None, parent=None):
-        super().__init__()
+    def __init__(self, data, material=None, parent=None,
+                 allow_export_workflow=True):
+        super().__init__(parent)
 
         if material is None:
             # Assume the active material is the correct one.
@@ -49,6 +51,8 @@ class FitGrainsResultsDialog(QObject):
                 # Warn the user so this is clear.
                 print(f'Assuming material of {material.name} for needed '
                       'computations')
+
+        self.async_runner = AsyncRunner(parent)
 
         self.ax = None
         self.cmap = hexrd.ui.constants.DEFAULT_CMAP
@@ -65,6 +69,14 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
+        self.ui.export_workflow.setEnabled(allow_export_workflow)
+        if not allow_export_workflow:
+            # Give some possible reasons
+            self.ui.export_workflow.setToolTip(
+                'Currently only supported if a full HEDM workflow was '
+                'performed (including indexing) and the quaternion '
+                'generation method was a seed search.'
+            )
 
         self.setup_tableview()
         self.load_cmaps()
@@ -303,6 +315,8 @@ class FitGrainsResultsDialog(QObject):
         self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
         self.ui.cylindrical_reference.toggled.connect(
             self.cylindrical_reference_toggled)
+        self.ui.export_workflow.clicked.connect(
+            self.on_export_workflow_clicked)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -584,6 +598,60 @@ class FitGrainsResultsDialog(QObject):
         self.add_extra_data_columns()
         self.update_plot()
 
+    def _save_workflow_files(self, selected_directory):
+
+        def full_path(file_name):
+            # Convenience function to generate full path via pathlib
+            return str(Path(selected_directory) / file_name)
+
+        HexrdConfig().working_dir = selected_directory
+
+        HexrdConfig().save_indexing_config(full_path('workflow.yml'))
+        HexrdConfig().save_materials(full_path('materials.h5'))
+        HexrdConfig().save_instrument_config(full_path('instrument.yml'))
+
+        ims_dict = HexrdConfig().unagg_images
+        for det in HexrdConfig().detector_names:
+            kwargs = {
+                'ims': ims_dict.get(det),
+                'name': det,
+                'write_file': full_path(f'{det}.h5'),
+                'selected_format': 'hdf5',
+                'path': 'imageseries',
+            }
+            HexrdConfig().save_imageseries(**kwargs)
+
+    def on_export_workflow_clicked(self):
+        selected_directory = QFileDialog.getExistingDirectory(
+                self.ui, 'Select Directory', HexrdConfig().working_dir)
+
+        if not selected_directory:
+            # User canceled
+            return
+
+        # Warn the user if any files will be over-written
+        write_files = [
+            'workflow.yml',
+            'materials.h5',
+            'instrument.yml',
+        ] + [f'{det}.h5' for det in HexrdConfig().detector_names]
+
+        overwrite_files = []
+        for f in write_files:
+            full_path = Path(selected_directory) / f
+            if full_path.exists():
+                overwrite_files.append(str(full_path))
+
+        if overwrite_files:
+            msg = 'The following files will be overwritten:\n\n'
+            msg += '\n'.join(overwrite_files)
+            msg += '\n\nProceed?'
+            response = QMessageBox.question(self.parent(), 'WARNING', msg)
+            if response == QMessageBox.No:
+                return
+
+        self.async_runner.progress_title = 'Saving workflow configuration'
+        self.async_runner.run(self._save_workflow_files, selected_directory)
 
 if __name__ == '__main__':
     from PySide2.QtCore import QCoreApplication

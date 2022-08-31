@@ -20,8 +20,8 @@ class AsyncRunner:
 
         self.reset_callbacks()
 
-    def run(self, f):
-        worker = AsyncWorker(f)
+    def run(self, f, *args, **kwargs):
+        worker = AsyncWorker(f, *args, **kwargs)
         self.thread_pool.start(worker)
 
         if self.success_callback:

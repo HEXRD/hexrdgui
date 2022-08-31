@@ -873,6 +873,98 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return name
 
+    def save_indexing_config(self, output_file):
+        cfg = {}
+
+        def recursive_key_check(d, c):
+            for k, v in d.items():
+                if k.startswith('_'):
+                    continue
+
+                if isinstance(v, dict):
+                    c[k] = {}
+                    recursive_key_check(v, c[k])
+                else:
+                    c[k] = v
+
+        recursive_key_check(self.indexing_config, cfg)
+
+        current_material = self.indexing_config['_selected_material']
+        selected_material = self.material(current_material)
+        plane_data = selected_material.planeData
+
+        # tThWidth can be None, bool, or np.float64, in the case of np.float64,
+        # we need to convert to float.
+        tth_width = plane_data.tThWidth
+        if isinstance(tth_width, np.float64):
+            tth_width = np.degrees(tth_width).item()
+
+        material = {
+            'definitions': 'materials.h5',
+            'active': current_material,
+            'dmin': selected_material.dmin.getVal('angstrom'),
+            'tth_width': tth_width,
+            'min_sfac_ratio': None
+        }
+
+        data = []
+        for det in self.detector_names:
+            data.append({
+                'file': f'{det}.h5',
+                'args': {'path': 'imageseries'},
+                'panel': det
+            })
+
+        image_series = {
+            'format': 'hdf5',
+            'data': data
+        }
+
+        # Find out which quaternion method was used
+        quaternion_method = self.indexing_config['find_orientations'].get(
+            '_quaternion_method')
+
+        omaps = cfg['find_orientations']['orientation_maps']
+
+        if quaternion_method == 'seed_search':
+            # There must be some active hkls
+            active_hkls = omaps['active_hkls']
+            if isinstance(active_hkls, np.ndarray):
+                active_hkls = active_hkls.tolist()
+
+            if isinstance(active_hkls[0], int):
+                # This is a master list. Save the active hkls as the more human
+                # readable (h, k, l) tuples instead.
+                active_hkls = plane_data.getHKLs(*active_hkls).tolist()
+
+            # Do not save all active hkls, but only the ones used in the seed
+            # search. Those are the only ones we need.
+            seed_search = cfg['find_orientations']['seed_search']
+            active_hkls = [active_hkls[i] for i in seed_search['hkl_seeds']]
+
+            # Renumber the hkl_seeds from 0 to len(hkl_seeds)
+            num_hkl_seeds = len(seed_search['hkl_seeds'])
+            seed_search['hkl_seeds'] = list(range(num_hkl_seeds))
+
+            omaps['active_hkls'] = active_hkls
+        else:
+            # Do not need active hkls
+            omaps['active_hkls'] = []
+            # Seed search settings are not needed
+            cfg['find_orientations'].pop('seed_search', None)
+
+        if quaternion_method != 'grid_search':
+            # Make sure the file is None
+            omaps['file'] = None
+
+        cfg['material'] = material
+        cfg['instrument'] = 'instrument.yml'
+        cfg['image_series'] = image_series
+        cfg['working_dir'] = str(Path(output_file).parent)
+
+        with open(output_file, 'w') as f:
+            yaml.dump(cfg, f)
+
     def set_live_update(self, status):
         self.live_update = status
 
@@ -2007,18 +2099,20 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def unagg_images(self):
-        return self.unaggregated_images
+        img_dict = self.unaggregated_images
+        if img_dict is None:
+            img_dict = self.imageseries_dict
+        return img_dict
 
     @property
     def is_aggregated(self):
         # Having unaggregated images implies the image series is aggregated
-        return self.unagg_images is not None
+        return self.unaggregated_images is not None
 
     def reset_unagg_imgs(self, new_imgs=False):
-        if self.unagg_images is not None:
-            if not new_imgs:
-                HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
-            self.unaggregated_images = None
+        if not new_imgs:
+            HexrdConfig().imageseries_dict = copy.copy(self.unagg_images)
+        self.unaggregated_images = None
 
     def set_unagg_images(self):
         self.unaggregated_images = copy.copy(self.imageseries_dict)

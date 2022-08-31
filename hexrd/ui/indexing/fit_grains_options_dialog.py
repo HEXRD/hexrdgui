@@ -1,6 +1,8 @@
 from PySide2.QtCore import (
     QItemSelectionModel, QModelIndex, QObject, Qt, Signal)
-from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView
+from PySide2.QtWidgets import (
+    QDialogButtonBox, QFileDialog, QHeaderView, QMessageBox
+)
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
@@ -11,6 +13,7 @@ from hexrd.ui.utils import block_signals
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
+from hexrd.ui.indexing.utils import hkls_missing_in_list
 
 from pathlib import Path
 
@@ -20,10 +23,12 @@ class FitGrainsOptionsDialog(QObject):
     rejected = Signal()
     grains_table_modified = Signal()
 
-    def __init__(self, grains_table, parent=None):
+    def __init__(self, grains_table, ensure_seed_hkls_not_excluded=True,
+                 parent=None):
         super().__init__(parent)
 
         self.grains_table = grains_table
+        self.ensure_seed_hkls_not_excluded = ensure_seed_hkls_not_excluded
 
         config = HexrdConfig().indexing_config['fit_grains']
         if config.get('do_fit') is False:
@@ -122,9 +127,36 @@ class FitGrainsOptionsDialog(QObject):
             self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
     def on_accepted(self):
+        if not self.validate():
+            self.ui.show()
+            return
+
         # Save the selected options on the config
         self.update_config()
         self.accepted.emit()
+
+    def validate(self):
+        if self.ensure_seed_hkls_not_excluded:
+            # Verify that the seed hkls are not excluded
+            indexing_config = HexrdConfig().indexing_config
+            omaps = indexing_config['find_orientations']['orientation_maps']
+            active_hkls = omaps.get('active_hkls', [])
+            seed_search = indexing_config['find_orientations']['seed_search']
+            hkl_seeds = [active_hkls[i] for i in seed_search['hkl_seeds']]
+
+            hkl_list = self.material.planeData.getHKLs()
+            missing = hkls_missing_in_list(hkl_seeds, hkl_list)
+            if missing:
+                msg = (
+                    'Seed HKLs used in indexing must not be excluded. '
+                    'Missing seed HKLs are:\n\n'
+                )
+                msg += '\n'.join([str(x) for x in missing])
+                print(msg)
+                QMessageBox.critical(self.parent(), 'Error', msg)
+                return False
+
+        return True
 
     def on_tolerances_add_row(self):
         new_row_num = self.tolerances_model.rowCount()

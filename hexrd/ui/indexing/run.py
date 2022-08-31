@@ -17,14 +17,16 @@ from hexrd.xrdutil import EtaOmeMaps
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.indexing.create_config import create_indexing_config
+from hexrd.ui.indexing.create_config import (
+    create_indexing_config, get_indexing_material
+)
 from hexrd.ui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrd.ui.indexing.fit_grains_select_dialog import FitGrainsSelectDialog
 from hexrd.ui.indexing.indexing_results_dialog import IndexingResultsDialog
 from hexrd.ui.indexing.ome_maps_select_dialog import OmeMapsSelectDialog
 from hexrd.ui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
-from hexrd.ui.indexing.utils import generate_grains_table
+from hexrd.ui.indexing.utils import generate_grains_table, hkls_missing_in_list
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.utils import format_big_int
 
@@ -98,11 +100,52 @@ class IndexingRunner(Runner):
         if dialog is None:
             return
 
+        indexing_config = HexrdConfig().indexing_config
+        omaps = indexing_config['find_orientations']['orientation_maps']
         if dialog.method_name == 'load':
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
+
+            # Perform a little validation to ensure the plane data matches the
+            # currently selected material. They should match *exactly*.
+            pd = self.ome_maps.planeData
+            material = get_indexing_material()
+
+            file_hkls = pd.getHKLs().tolist()
+            mat_hkls = material.planeData.getHKLs().tolist()
+            missing1 = hkls_missing_in_list(mat_hkls, file_hkls)
+            missing2 = hkls_missing_in_list(file_hkls, mat_hkls)
+            if missing1 or missing2:
+                msg = (
+                    'The selected material must match the material used to '
+                    'generate the eta omega maps exactly. The HKLs, however, '
+                    'do not match.'
+                )
+                if missing1:
+                    msg += (
+                        '\n\nThe following hkls were found in the selected '
+                        'material, but not in the file:\n\n'
+                    )
+                    msg += ', '.join([str(x) for x in missing1])
+                if missing2:
+                    msg += (
+                        '\n\nThe following hkls were found in the file, '
+                        'but not in the selected material:\n\n'
+                    )
+                    msg += ', '.join([str(x) for x in missing2])
+                print(msg)
+                QMessageBox.critical(self.parent, 'Error', msg)
+                return
+
+            # Save selected hkls as the active hkls. Convert them to tuples.
+            omaps['active_hkls'] = pd.getHKLs(*self.ome_maps.iHKLList).tolist()
+
             self.ome_maps_loaded()
         else:
+            # First, save the currently selected hkls as the active hkls
+            material = get_indexing_material()
+            omaps['active_hkls'] = material.planeData.getHKLs().tolist()
+
             # Create a full indexing config
             config = create_indexing_config()
 
@@ -135,10 +178,15 @@ class IndexingRunner(Runner):
         self.ome_maps_viewer_dialog = dialog
 
     def ome_maps_viewed(self):
-        # If we did the hand-picked method, go ahead and skip now to
-        # generating the grains table and running fit grains
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
         dialog = self.ome_maps_viewer_dialog
+
+        # Save the quaternion method used so we can check it in other places
+        find_orientations['_quaternion_method'] = dialog.quaternion_method_name
+
         if dialog.quaternions_hand_picked:
+            # If we did the hand-picked method, go ahead and skip now to
+            # generating the grains table and running fit grains
             self.qbar = dialog.hand_picked_quaternions
             self.generate_grains_table()
             self.start_fit_grains_runner()
@@ -158,7 +206,6 @@ class IndexingRunner(Runner):
         self.progress_dialog.setWindowTitle('Find Orientations')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
-        find_orientations = HexrdConfig().indexing_config['find_orientations']
         if find_orientations['use_quaternion_grid']:
             # Load qfib from a numpy file
             self.qfib = np.load(find_orientations['use_quaternion_grid'])
@@ -343,6 +390,7 @@ class IndexingRunner(Runner):
         kwargs = {
             'grains_table': self.grains_table,
             'indexing_runner': self,
+            'started_from_indexing': True,
             'parent': self.parent,
         }
         runner = self._fit_grains_runner = FitGrainsRunner(**kwargs)
@@ -351,7 +399,8 @@ class IndexingRunner(Runner):
 
 class FitGrainsRunner(Runner):
 
-    def __init__(self, grains_table=None, indexing_runner=None, parent=None):
+    def __init__(self, grains_table=None, indexing_runner=None,
+                 started_from_indexing=False, parent=None):
         """
         If the grains_table is set, the user will not be asked to specify a
         grains table. Otherwise, a dialog will appear asking the user to
@@ -364,6 +413,7 @@ class FitGrainsRunner(Runner):
         super().__init__(parent)
         self.grains_table = grains_table
         self.indexing_runner = indexing_runner
+        self.started_from_indexing = started_from_indexing
         self.clear()
 
     def clear(self):
@@ -396,8 +446,20 @@ class FitGrainsRunner(Runner):
         self.view_fit_grains_options()
 
     def view_fit_grains_options(self):
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        quaternion_method = find_orientations.get('_quaternion_method')
+        ensure_hkl_seeds_not_excluded = (
+            self.started_from_indexing and
+            quaternion_method == 'seed_search'
+        )
+
         # Run dialog for user options
-        dialog = FitGrainsOptionsDialog(self.grains_table, self.parent)
+        kwargs = {
+            'grains_table': self.grains_table,
+            'ensure_seed_hkls_not_excluded': ensure_hkl_seeds_not_excluded,
+            'parent': self.parent,
+        }
+        dialog = FitGrainsOptionsDialog(**kwargs)
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
 
@@ -452,8 +514,16 @@ class FitGrainsRunner(Runner):
         for result in self.fit_grains_results:
             print(result)
 
+        find_orientations = HexrdConfig().indexing_config['find_orientations']
+        quaternion_method = find_orientations.get('_quaternion_method')
+        allow_export_workflow = (
+            self.started_from_indexing and
+            quaternion_method == 'seed_search'
+        )
+
         kwargs = {
             'grains_table': self.result_grains_table,
+            'allow_export_workflow': allow_export_workflow,
             'parent': self.parent,
         }
         dialog = create_fit_grains_results_dialog(**kwargs)
@@ -472,7 +542,8 @@ def create_grains_table(fit_grains_results):
     return grains_table
 
 
-def create_fit_grains_results_dialog(grains_table, parent=None):
+def create_fit_grains_results_dialog(grains_table, parent=None,
+                                     allow_export_workflow=True):
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
     name = indexing_config.get('_selected_material')
@@ -481,7 +552,13 @@ def create_fit_grains_results_dialog(grains_table, parent=None):
     material = HexrdConfig().material(name)
 
     # Create the dialog
-    dialog = FitGrainsResultsDialog(grains_table, material, parent)
+    kwargs = {
+        'data': grains_table,
+        'material': material,
+        'parent': parent,
+        'allow_export_workflow': allow_export_workflow,
+    }
+    dialog = FitGrainsResultsDialog(**kwargs)
     dialog.ui.resize(1200, 800)
 
     return dialog

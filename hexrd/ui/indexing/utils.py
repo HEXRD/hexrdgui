@@ -18,3 +18,23 @@ def generate_grains_table(qbar):
         gw.dump_grain(i, 1, 0, grain_params)
     gw.close()
     return grains_table
+
+
+def hkl_in_list(hkl, hkl_list):
+    def hkls_equal(hkl_a, hkl_b):
+        return all(x == y for x, y in zip(hkl_a, hkl_b))
+
+    for hkl_b in hkl_list:
+        if hkls_equal(hkl, hkl_b):
+            return True
+
+    return False
+
+
+def hkls_missing_in_list(hkls, hkl_list):
+    missing = []
+    for hkl in hkls:
+        if not hkl_in_list(hkl, hkl_list):
+            missing.append(hkl)
+
+    return missing
