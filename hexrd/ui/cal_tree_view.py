@@ -145,8 +145,19 @@ class CalTreeItemModel(BaseTreeItemModel):
             cur_tree_item.set_data(STATUS_COL, cur_config)
             return
 
+        blacklisted_keys = []
+
+        if ('source_distance' in keys and
+                cur_config['source_distance']['value'] == np.inf):
+            # Hide the source distance if it is infinite, as the infinite
+            # value does not get displayed correctly by Qt
+            # (maybe we need to register it as a custom type?)
+            blacklisted_keys.append('source_distance')
+
         for key in keys:
-            if key == 'value':
+            if key in blacklisted_keys:
+                continue
+            elif key == 'value':
                 name = cur_tree_item.data(KEY_COL)
                 data = cur_config[key]
                 path = self.path_to_value(cur_tree_item, VALUE_COL)
@@ -361,7 +372,7 @@ class CalTreeView(QTreeView):
             return
 
         # If the key is blacklisted, return
-        blacklisted_keys = ['saturation_level', 'buffer']
+        blacklisted_keys = ['saturation_level', 'buffer', 'source_distance']
         if item.data(KEY_COL) in blacklisted_keys:
             return
 

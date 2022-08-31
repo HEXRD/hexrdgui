@@ -250,7 +250,7 @@
          </rect>
         </property>
         <attribute name="label">
-         <string>Instrument Calibration</string>
+         <string>Instrument</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="spacing">

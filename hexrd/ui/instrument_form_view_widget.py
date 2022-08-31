@@ -6,14 +6,18 @@ from PySide2.QtWidgets import (
 
 import numpy as np
 
+from hexrd.instrument import calc_angles_from_beam_vec, calc_beam_vec
+from hexrd.transforms import xfcapi
+
 from hexrd.ui import constants
 from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
+from hexrd.ui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 
 
-class CalibrationConfigWidget(QObject):
+class InstrumentFormViewWidget(QObject):
 
     """Emitted when GUI data has changed"""
     gui_data_changed = Signal()
@@ -24,7 +28,11 @@ class CalibrationConfigWidget(QObject):
         self.cfg = HexrdConfig()
 
         loader = UiLoader()
-        self.ui = loader.load_file('calibration_config_widget.ui', parent)
+        self.ui = loader.load_file('instrument_form_view_widget.ui', parent)
+
+        # Make sure the stacked widget starts at 0
+        self.ui.beam_vector_input_stacked_widget.setCurrentIndex(0)
+        self.update_cartesian_beam_vector_normalized_note()
 
         self.detector_widgets_disabled = False
 
@@ -69,6 +77,19 @@ class CalibrationConfigWidget(QObject):
         self.ui.cal_det_function.currentIndexChanged.connect(
             self.update_gui_from_config)
         self.ui.cal_det_buffer.clicked.connect(self._on_configure_buffer)
+
+        self.ui.beam_vector_input_stacked_widget.currentChanged.connect(
+            self.update_cartesian_beam_vector)
+
+        for w in self.cartesian_beam_vector_widgets:
+            w.valueChanged.connect(self.cartesian_beam_vector_modified)
+
+        self.ui.beam_vector_is_finite.toggled.connect(
+            self.set_beam_vector_is_finite)
+        self.ui.beam_vector_magnitude.valueChanged.connect(
+            self.beam_vector_magnitude_value_changed)
+        self.ui.cartesian_beam_vector_convention.currentIndexChanged.connect(
+            self.cartesian_beam_vector_convention_changed)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -210,6 +231,13 @@ class CalibrationConfigWidget(QObject):
         self.on_energy_changed()
 
         self.update_detector_from_config()
+
+        self.update_beam_vector_magnitude_from_config()
+
+        if self.sender() not in self.cartesian_beam_vector_widgets:
+            # If a cartesian beam vector widget did not trigger this update,
+            # then update the cartesian beam vector widgets.
+            self.update_cartesian_beam_vector()
 
     def update_detector_from_config(self):
         previously_blocked = self.block_all_signals()
@@ -406,3 +434,212 @@ class CalibrationConfigWidget(QObject):
         # Re-enable button
         dialog.ui.finished.connect(
             lambda _: self.ui.cal_det_buffer.setEnabled(True))
+
+    @property
+    def polar_beam_vector(self):
+        beam_vector = self.cfg.instrument_config['beam']['vector']
+        return beam_vector['azimuth'], beam_vector['polar_angle']
+
+    @polar_beam_vector.setter
+    def polar_beam_vector(self, v):
+        beam_vector = self.cfg.config['instrument']['beam']['vector']
+
+        any_modified = False
+
+        if beam_vector['azimuth']['value'] != v[0]:
+            beam_vector['azimuth']['value'] = v[0]
+            any_modified = True
+
+        if beam_vector['polar_angle']['value'] != v[1]:
+            beam_vector['polar_angle']['value'] = v[1]
+            any_modified = True
+
+        self.update_gui_from_config()
+
+        if any_modified:
+            HexrdConfig().beam_vector_changed.emit()
+
+    @property
+    def cartesian_beam_vector_widgets(self):
+        axes = ('x', 'y', 'z')
+        return [getattr(self.ui, f'beam_vector_cartesian_{ax}')
+                for ax in axes]
+
+    def update_cartesian_beam_vector(self):
+        self.cartesian_beam_vector = calc_beam_vec(*self.polar_beam_vector)
+        self.update_cartesian_beam_vector_from_magnitude()
+        self.update_cartesian_beam_vector_normalized_note()
+        self.update_cartesian_beam_vector_styles()
+
+    def update_cartesian_beam_vector_normalized_note(self):
+        w = self.ui.cartesian_beam_vector_normalized_note
+        w.setVisible(False)
+
+        if self.ui.beam_vector_input_type.currentText() != 'Cartesian':
+            # Only show the note for cartesian input
+            return
+
+        if self.beam_vector_is_finite:
+            # Don't normalize the vector if it is finite
+            return
+
+        # Only add the note it if is not close to its unit vector
+        beam_vec = np.asarray(self.cartesian_beam_vector)
+        unit_vec = xfcapi.unitRowVector(beam_vec)
+
+        if np.all(np.isclose(unit_vec, beam_vec, atol=1e-3)):
+            return
+
+        # Avoid displaying -0
+        unit_vec = [0 if np.isclose(x, 0) else x for x in unit_vec]
+
+        # Reverse the sign if we are using x-ray source
+        sign = self.cartesian_beam_convention_sign
+
+        w.setVisible(True)
+        values_str = ', '.join([f'{x * sign:0.3f}' for x in unit_vec])
+        text = f'Note: normalized to ({values_str})'
+        w.setText(text)
+
+    def update_cartesian_beam_vector_styles(self):
+        # Set highlighting to reflect whether they are refinable
+        beam_vector = self.cfg.config['instrument']['beam']['vector']
+        az_fixed = not beam_vector['azimuth']['status']
+        po_fixed = not beam_vector['polar_angle']['status']
+
+        fixed = 'QSpinBox, QDoubleSpinBox { background-color: lightgray; }'
+        is_fixed = {
+            'x': az_fixed and po_fixed,
+            'y': po_fixed,
+            'z': az_fixed and po_fixed,
+        }
+
+        for ax, is_fixed in is_fixed.items():
+            w = getattr(self.ui, f'beam_vector_cartesian_{ax}')
+            w.setStyleSheet(fixed if is_fixed else '')
+
+    @property
+    def cartesian_beam_vector(self):
+        sign = self.cartesian_beam_convention_sign
+        return [w.value() * sign for w in self.cartesian_beam_vector_widgets]
+
+    @cartesian_beam_vector.setter
+    def cartesian_beam_vector(self, v):
+        sign = self.cartesian_beam_convention_sign
+        widgets = self.cartesian_beam_vector_widgets
+        with block_signals(*widgets):
+            for i, w in enumerate(widgets):
+                # This is to avoid "-0" from being displayed
+                value = 0 if np.isclose(v[i], 0) else v[i]
+                w.setValue(value * sign)
+
+    def cartesian_beam_vector_modified(self):
+        # Convert to polar
+        self.polar_beam_vector = calc_angles_from_beam_vec(
+            self.cartesian_beam_vector)
+        self.update_beam_magnitude_from_cartesian()
+        self.update_cartesian_beam_vector_normalized_note()
+
+    def update_beam_magnitude_from_cartesian(self):
+        if not self.beam_vector_is_finite:
+            # If the beam vector is infinite, just return
+            return
+
+        beam_vec = np.atleast_2d(self.cartesian_beam_vector)
+        self.beam_vector_magnitude = xfcapi.rowNorm(beam_vec).item()
+
+    def update_cartesian_beam_vector_from_magnitude(self):
+        if not self.beam_vector_is_finite:
+            # If the beam vector is infinite, just return
+            return
+
+        beam_vec = calc_beam_vec(*self.polar_beam_vector)
+        beam_vec *= self.beam_vector_magnitude
+        self.cartesian_beam_vector = beam_vec
+
+    @property
+    def beam_vector_is_finite(self):
+        return self.ui.beam_vector_is_finite.isChecked()
+
+    @beam_vector_is_finite.setter
+    def beam_vector_is_finite(self, b):
+        self.ui.beam_vector_is_finite.setChecked(b)
+
+    def set_beam_vector_is_finite(self, b):
+        self.beam_vector_is_finite = b
+
+        # Update the config
+        v = self.beam_vector_magnitude
+        beam_config = self.cfg.config['instrument']['beam']
+        if beam_config['source_distance']['value'] != v:
+            beam_config['source_distance']['value'] = v
+            HexrdConfig().beam_vector_changed.emit()
+
+        if self.ui.beam_vector_input_type.currentText() == 'Cartesian':
+            self.update_beam_magnitude_from_cartesian()
+
+        self.update_cartesian_beam_vector_normalized_note()
+
+    @property
+    def beam_vector_magnitude(self):
+        if not self.beam_vector_is_finite:
+            return np.inf
+
+        return self.ui.beam_vector_magnitude.value()
+
+    @beam_vector_magnitude.setter
+    def beam_vector_magnitude(self, v):
+        is_finite = v is not None and v != np.inf
+        self.beam_vector_is_finite = is_finite
+
+        if is_finite:
+            self.ui.beam_vector_magnitude.setValue(v)
+
+    def beam_vector_magnitude_value_changed(self, v):
+        if not self.beam_vector_is_finite:
+            # Don't do anything
+            return
+
+        self.beam_vector_magnitude = v
+
+        # Update the config
+        beam_config = self.cfg.config['instrument']['beam']
+        if beam_config['source_distance']['value'] != v:
+            beam_config['source_distance']['value'] = v
+            HexrdConfig().beam_vector_changed.emit()
+
+        # Update the cartesian vector
+        self.update_cartesian_beam_vector_from_magnitude()
+
+    def update_beam_vector_magnitude_from_config(self):
+        beam_config = self.cfg.config['instrument']['beam']
+        self.beam_vector_magnitude = beam_config['source_distance']['value']
+
+    @property
+    def cartesian_beam_vector_convention(self):
+        return self.ui.cartesian_beam_vector_convention.currentText()
+
+    @cartesian_beam_vector_convention.setter
+    def cartesian_beam_vector_convention(self, text):
+        self.ui.cartesian_beam_vector_convention.setCurrentText(text)
+
+    @property
+    def cartesian_beam_convention_sign(self):
+        convention = self.cartesian_beam_vector_convention
+        signs = {
+            'X-Ray Source': -1,
+            'Propagation': 1,
+        }
+        if convention not in signs:
+            raise Exception(f'Unhandled beam convention: {convention}')
+
+        return signs[convention]
+
+    def cartesian_beam_vector_convention_changed(self):
+        widgets = self.cartesian_beam_vector_widgets
+        with block_signals(*widgets):
+            for w in widgets:
+                # For now, just assume this means we toggle the sign
+                w.setValue(w.value() * -1)
+
+        self.update_cartesian_beam_vector_normalized_note()

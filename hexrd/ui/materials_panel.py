@@ -290,9 +290,9 @@ class MaterialsPanel(QObject):
         self._overlay_manager.update_refinement_options()
 
     def eventFilter(self, target, event):
-        # This is almost identical to CalibrationConfigWidget.eventFilter
+        # This is almost identical to InstrumentFormViewWidget.eventFilter
         # The logic is explained there.
-        # We should keep this and CalibrationConfigWidget.eventFilter similar.
+        # We should keep this and InstrumentFormViewWidget.eventFilter similar.
         if type(target) == QComboBox:
             if target.objectName() == 'materials_combo':
                 enter_keys = [Qt.Key_Return, Qt.Key_Enter]

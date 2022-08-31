@@ -1,6 +1,7 @@
 beam:
   energy: 71.6764
   vector: {azimuth: 90.0, polar_angle: 90.0}
+  source_distance: .inf
 detectors:
   detector_1:
     pixels:
