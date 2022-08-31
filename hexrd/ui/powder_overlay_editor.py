@@ -255,14 +255,14 @@ class PowderOverlayEditor:
             return None
         elif dtype == 'SampleLayerDistortion':
             return {
-                'layer_standoff': self.ui.sl_layer_standoff.value(),
-                'layer_thickness': self.ui.sl_layer_thickness.value(),
-                'pinhole_thickness': self.ui.sl_pinhole_thickness.value(),
+                'layer_standoff': self.ui.sl_layer_standoff.value() * 1e-3,
+                'layer_thickness': self.ui.sl_layer_thickness.value() * 1e-3,
+                'pinhole_thickness': self.ui.sl_pinhole_thickness.value() * 1e-3,
             }
         elif dtype == 'Pinhole':
             return {
-                'diameter': self.ui.ph_diameter.value(),
-                'thickness': self.ui.ph_thickness.value(),
+                'diameter': self.ui.ph_diameter.value() * 1e-3,
+                'thickness': self.ui.ph_thickness.value() * 1e-3,
             }
 
         raise Exception(f'Not implemented for: {dtype}')
@@ -273,13 +273,13 @@ class PowderOverlayEditor:
         if dtype is None:
             return
         elif dtype == 'SampleLayerDistortion':
-            self.ui.sl_layer_standoff.setValue(v.get('layer_standoff', 0))
-            self.ui.sl_layer_thickness.setValue(v.get('layer_thickness', 0))
+            self.ui.sl_layer_standoff.setValue(v.get('layer_standoff', 0) * 1e3)
+            self.ui.sl_layer_thickness.setValue(v.get('layer_thickness', 0) * 1e3)
             self.ui.sl_pinhole_thickness.setValue(v.get('pinhole_thickness',
-                                                        0))
+                                                        0) * 1e3)
         elif dtype == 'Pinhole':
-            self.ui.ph_diameter.setValue(v.get('diameter', 0))
-            self.ui.thickness.setValue(v.get('thickness', 0))
+            self.ui.ph_diameter.setValue(v.get('diameter', 0) * 1e3)
+            self.ui.thickness.setValue(v.get('thickness', 0) * 1e3)
         else:
             raise Exception(f'Not implemented for: {dtype}')
 

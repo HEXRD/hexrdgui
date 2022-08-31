@@ -308,6 +308,9 @@
                   <height>30</height>
                  </size>
                 </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="suffix">
                  <string> μm</string>
                 </property>
@@ -315,13 +318,16 @@
                  <number>8</number>
                 </property>
                 <property name="minimum">
-                 <double>-10000000.000000000000000</double>
+                 <double>0.100000000000000</double>
                 </property>
                 <property name="maximum">
                  <double>10000000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>150.000000000000000</double>
                 </property>
                </widget>
               </item>
@@ -340,6 +346,9 @@
                   <height>30</height>
                  </size>
                 </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="suffix">
                  <string> μm</string>
                 </property>
@@ -347,13 +356,16 @@
                  <number>8</number>
                 </property>
                 <property name="minimum">
-                 <double>-10000000.000000000000000</double>
+                 <double>0.100000000000000</double>
                 </property>
                 <property name="maximum">
                  <double>10000000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>5.000000000000000</double>
                 </property>
                </widget>
               </item>
@@ -372,6 +384,9 @@
                   <height>30</height>
                  </size>
                 </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
                 <property name="suffix">
                  <string> μm</string>
                 </property>
@@ -379,13 +394,16 @@
                  <number>8</number>
                 </property>
                 <property name="minimum">
-                 <double>-10000000.000000000000000</double>
+                 <double>0.100000000000000</double>
                 </property>
                 <property name="maximum">
                  <double>10000000.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>100.000000000000000</double>
                 </property>
                </widget>
               </item>
@@ -417,12 +435,15 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QDoubleSpinBox" name="ph_thickness">
+               <widget class="ScientificDoubleSpinBox" name="ph_thickness">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
                   <height>30</height>
                  </size>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
                 </property>
                 <property name="decimals">
                  <number>8</number>
@@ -436,12 +457,15 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QDoubleSpinBox" name="ph_diameter">
+               <widget class="ScientificDoubleSpinBox" name="ph_diameter">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
                   <height>30</height>
                  </size>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
                 </property>
                 <property name="decimals">
                  <number>8</number>
