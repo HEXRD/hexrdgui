@@ -189,9 +189,15 @@ class PowderOverlay(Overlay):
         delta_eta_nom = np.degrees(np.median(np.diff(etas)))
         ring_pts = []
         skipped_tth = []
+
+        # Grab the distortion object if we have one
+        sd = None
+        if self.has_tth_distortion:
+            sd = self.tth_distortion_dict[panel.name]
+
         for i, tth in enumerate(tths):
             # construct ideal angular coords
-            ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
+            ang_crds_full = np.vstack([np.tile(tth, len(etas)), etas]).T
 
             # Convert nominal powder angle coords to cartesian
             # !!! Tricky business; here we must consider _both_ the SAMPLE
@@ -199,7 +205,7 @@ class PowderOverlay(Overlay):
             #     overlay.  This is so they get properly mapped back to the
             #     the proper cartesian coords.
             xys_full = panel.angles_to_cart(
-                ang_crds,
+                ang_crds_full,
                 tvec_s=instr.tvec,
                 tvec_c=self.tvec
             )
@@ -214,15 +220,25 @@ class PowderOverlay(Overlay):
                 xys_full, buffer_edges=False
             )
 
+            if sd is not None:
+                # Apply distortion correction
+                ang_crds = sd.apply(xys)
+
+                if display_mode in (ViewType.raw, ViewType.cartesian):
+                    # These need the updated xys
+                    xys = panel.angles_to_cart(ang_crds)
+
             if display_mode == ViewType.polar:
-                # Apply offset correction
-                # !!! In polar view, the nominal angles refer to the SAMPLE
-                #     CS origin, so we omit the addition of any offset to the
-                #     diffraction COM in the sameple frame!
-                ang_crds, _ = panel.cart_to_angles(
-                    xys,
-                    tvec_s=instr.tvec
-                )
+                if sd is None:
+                    # Apply offset correction
+                    # In polar view, the nominal angles refer to the SAMPLE
+                    # CS origin, so we omit the addition of any offset to the
+                    # diffraction COM in the sample frame!
+                    ang_crds, _ = panel.cart_to_angles(
+                        xys,
+                        tvec_s=instr.tvec
+                    )
+
                 if len(ang_crds) == 0:
                     skipped_tth.append(i)
                     continue
