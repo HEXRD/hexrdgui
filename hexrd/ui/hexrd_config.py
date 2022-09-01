@@ -471,6 +471,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     # Skip over ones that do not have a matching material
                     continue
 
+            self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
 
     def emit_update_status_bar(self, msg):
