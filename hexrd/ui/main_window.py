@@ -58,6 +58,7 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 )
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrd.ui import state
 
@@ -131,16 +132,8 @@ class MainWindow(QObject):
 
         self.update_config_gui()
 
-        self.ui.action_apply_pixel_solid_angle_correction.setChecked(
-            HexrdConfig().apply_pixel_solid_angle_correction)
-        self.ui.action_apply_polarization_correction.setChecked(
-            HexrdConfig().apply_polarization_correction)
-        self.ui.action_apply_lorentz_correction.setChecked(
-            HexrdConfig().apply_lorentz_correction)
-        self.ui.action_subtract_minimum.setChecked(
-            HexrdConfig().intensity_subtract_minimum)
+        self.update_action_check_states()
 
-        self.ui.action_show_live_updates.setChecked(HexrdConfig().live_update)
         self.live_update(HexrdConfig().live_update)
 
         ImageFileManager().load_dummy_images(True)
@@ -290,7 +283,27 @@ class MainWindow(QObject):
             self.enforce_view_mode)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
+        HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
+
+    def on_state_loaded(self):
+        self.update_action_check_states()
+
+    def update_action_check_states(self):
+        checkbox_to_hexrd_config_mappings = {
+            'action_apply_pixel_solid_angle_correction':
+                'apply_pixel_solid_angle_correction',
+            'action_apply_polarization_correction':
+                'apply_polarization_correction',
+            'action_apply_lorentz_correction': 'apply_lorentz_correction',
+            'action_subtract_minimum': 'intensity_subtract_minimum',
+            'action_show_live_updates': 'live_update',
+        }
+
+        for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
+            cb = getattr(self.ui, cb_name)
+            with block_signals(cb):
+                cb.setChecked(getattr(HexrdConfig(), attr_name))
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
