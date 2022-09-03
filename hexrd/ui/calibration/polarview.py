@@ -3,6 +3,7 @@ import numpy as np
 from skimage.exposure import rescale_intensity
 from skimage.filters.edges import binary_erosion
 from skimage.morphology import rectangle
+from skimage.transform import warp
 
 from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
 
@@ -219,12 +220,16 @@ class PolarView:
         return borders
 
     def create_warp_image(self, det):
+        # lcount = 0
+        img = self.images_dict[det]
+        panel = self.detectors[det]
+
+        self.warp_dict[det] = self.warp_image(img, panel)
+        return self.warp_dict[det]
+
+    def warp_image(self, img, panel):
         angpts = self.angular_grid
         dummy_ome = np.zeros((self.ntth * self.neta))
-
-        # lcount = 0
-        panel = self.detectors[det]
-        img = self.images_dict[det]
 
         gvec_angs = np.vstack([
                 angpts[1].flatten(),
@@ -247,12 +252,43 @@ class PolarView:
         nan_mask = np.isnan(wimg)
 
         # Store as masked array
-        self.warp_dict[det] = np.ma.masked_array(
+        return np.ma.masked_array(
             data=wimg, mask=nan_mask, fill_value=0.
         )
-        return self.warp_dict[det]
+
+    def apply_tth_distortion(self, overlay, pimg):
+        corr_field = overlay.tth_displacement_field
+
+        corr_field_polar_dict = {}
+        for key in corr_field:
+            panel = self.detectors[key]
+            corr_field_polar_dict[key] = self.warp_image(corr_field[key],
+                                                         panel)
+
+        # Save these so that the overlay generator may use them
+        HexrdConfig().polar_corr_field_polar_dict = corr_field_polar_dict
+        HexrdConfig().polar_angular_grid = self.angular_grid
+
+        corr_field_polar = np.ma.sum(np.ma.stack(
+            corr_field_polar_dict.values()), axis=0)
+
+        nr, nc = pimg.shape
+        row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),
+                                             indexing='ij')
+        displ_field = np.array(
+            [row_coords,
+             col_coords - np.degrees(corr_field_polar) / self.tth_pixel_size]
+        )
+
+        # mask_warp = warp(pimg.mask, displ_field, mode='edge')
+        image1_warp = warp(pimg, displ_field, mode='edge')
+
+        # image1_warp = rescale_intensity(image1_warp, out_range=np.uint32)
+        return np.ma.array(image1_warp) # , mask=mask_warp)
 
     def generate_image(self):
+        self.reset_cached_distortion_fields()
+
         # sum masked images in self.warp_dict using np.ma ufuncs
         #
         # !!! checked that np.ma.sum is applying logical OR across masks (JVB)
@@ -275,6 +311,10 @@ class PolarView:
         img = self.apply_snip(img)
         # cache this step so we can just re-apply masks if needed
         self.snipped_img = img
+
+        if HexrdConfig().polar_tth_distortion:
+            overlay = HexrdConfig().polar_tth_distortion_overlay
+            img = self.apply_tth_distortion(overlay, img)
 
         img = self.apply_masks(img)
 
@@ -344,6 +384,8 @@ class PolarView:
         return self.processed_img
 
     def warp_all_images(self):
+        self.reset_cached_distortion_fields()
+
         # Create the warped image for each detector
         for det in self.images_dict.keys():
             self.create_warp_image(det)
@@ -356,6 +398,8 @@ class PolarView:
             self.images_dict = HexrdConfig().images_dict
 
     def update_detector(self, det):
+        self.reset_cached_distortion_fields()
+
         # If there are intensity corrections and the detector transform
         # has been modified, we need to update the images dict.
         self.update_images_dict()
@@ -372,3 +416,7 @@ class PolarView:
 
         # Generate the final image
         self.generate_image()
+
+    def reset_cached_distortion_fields(self):
+        HexrdConfig().polar_corr_field_polar_dict = None
+        HexrdConfig().polar_angular_grid = None

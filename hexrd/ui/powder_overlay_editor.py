@@ -26,6 +26,10 @@ class PowderOverlayEditor:
         self.setup_connections()
 
     def setup_connections(self):
+        # Do this before the update_config calls
+        self.ui.pinhole_correction_type.currentIndexChanged.connect(
+            self.validate_pinhole_correction_type)
+
         for w in self.widgets:
             if isinstance(w, QDoubleSpinBox):
                 w.valueChanged.connect(self.update_config)
@@ -45,8 +49,6 @@ class PowderOverlayEditor:
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed)
-        self.ui.pinhole_correction_type.currentIndexChanged.connect(
-            self.validate_pinhole_correction_type)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -193,7 +195,11 @@ class PowderOverlayEditor:
         if self.overlay is None:
             return
 
+        if self.overlay.tth_distortion_type == v:
+            return
+
         self.overlay.tth_distortion_type = v
+        HexrdConfig().overlay_distortions_changed.emit()
 
     @property
     def distortion_type_gui(self):
@@ -257,7 +263,8 @@ class PowderOverlayEditor:
             return {
                 'layer_standoff': self.ui.sl_layer_standoff.value() * 1e-3,
                 'layer_thickness': self.ui.sl_layer_thickness.value() * 1e-3,
-                'pinhole_thickness': self.ui.sl_pinhole_thickness.value() * 1e-3,
+                'pinhole_thickness': (
+                    self.ui.sl_pinhole_thickness.value() * 1e-3),
             }
         elif dtype == 'Pinhole':
             return {
@@ -273,8 +280,10 @@ class PowderOverlayEditor:
         if dtype is None:
             return
         elif dtype == 'SampleLayerDistortion':
-            self.ui.sl_layer_standoff.setValue(v.get('layer_standoff', 0) * 1e3)
-            self.ui.sl_layer_thickness.setValue(v.get('layer_thickness', 0) * 1e3)
+            self.ui.sl_layer_standoff.setValue(v.get('layer_standoff', 0)
+                                               * 1e3)
+            self.ui.sl_layer_thickness.setValue(v.get('layer_thickness', 0)
+                                                * 1e3)
             self.ui.sl_pinhole_thickness.setValue(v.get('pinhole_thickness',
                                                         0) * 1e3)
         elif dtype == 'Pinhole':
@@ -351,14 +360,9 @@ class PowderOverlayEditor:
     def pinhole_correction_type(self, v):
         self.ui.pinhole_correction_type.setCurrentText(v)
 
-    def reset_offsets(self):
-        self.offset_gui = [0, 0, 0]
-        self.offset_config = [0, 0, 0]
-
     def distortion_type_changed(self):
-        # If the distortion type is changed, zero the offsets
-        self.reset_offsets()
         self.validate_distortion_type()
+        self.update_config()
 
     def validate_distortion_type(self):
         if self.distortion_type == 'Pinhole Camera Correction':

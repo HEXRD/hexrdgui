@@ -9,6 +9,7 @@ from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_threshold_mask, remove_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.overlays import Overlay
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
@@ -97,6 +98,25 @@ class ImageModeWidget(QObject):
 
         HexrdConfig().state_loaded.connect(self.update_gui_from_config)
 
+        HexrdConfig().overlay_distortions_changed.connect(
+            self.update_polar_tth_distortion_overlay_options)
+        HexrdConfig().overlay_renamed.connect(
+            self.update_polar_tth_distortion_overlay_options)
+
+        # FIXME: it would be nice if we did not have to update our
+        # combo box for every kind of change to the overlays.
+        # For instance, this updates the combo box if the beam energy
+        # changes. What we probably need is a couple of signals that
+        # indicate when overlays were removed/added or changed type, and
+        # that would probably work here instead of every possible change.
+        HexrdConfig().overlay_config_changed.connect(
+            self.update_polar_tth_distortion_overlay_options)
+
+        self.ui.polar_apply_tth_distortion.toggled.connect(
+            self.polar_tth_distortion_overlay_changed)
+        self.ui.polar_tth_distortion_overlay.currentIndexChanged.connect(
+            self.polar_tth_distortion_overlay_changed)
+
     def currentChanged(self, index):
         modes = {
             0: ViewType.raw,
@@ -129,6 +149,8 @@ class ImageModeWidget(QObject):
             self.ui.polar_snip1d_numiter,
             self.ui.polar_show_snip1d,
             self.ui.polar_apply_erosion,
+            self.ui.polar_apply_tth_distortion,
+            self.ui.polar_tth_distortion_overlay,
         ]
 
         return widgets
@@ -172,6 +194,7 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_erosion.setChecked(
                 HexrdConfig().polar_apply_erosion)
 
+            self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()
 
     def update_enable_states(self):
@@ -269,6 +292,70 @@ class ImageModeWidget(QObject):
 
     def reset_masking(self, checked=False):
         self.ui.raw_threshold_mask.setChecked(checked)
+
+    @property
+    def polar_apply_tth_distortion(self):
+        return self.ui.polar_apply_tth_distortion.isChecked()
+
+    @polar_apply_tth_distortion.setter
+    def polar_apply_tth_distortion(self, b):
+        self.ui.polar_apply_tth_distortion.setChecked(b)
+        self.ui.polar_tth_distortion_overlay.setEnabled(b)
+
+    @property
+    def polar_tth_distortion_overlay(self):
+        if (not self.polar_apply_tth_distortion or
+                self.ui.polar_tth_distortion_overlay.currentIndex() == -1):
+            return None
+
+        return self.ui.polar_tth_distortion_overlay.currentText()
+
+    @polar_tth_distortion_overlay.setter
+    def polar_tth_distortion_overlay(self, name):
+        if isinstance(name, Overlay):
+            # Grab the name.
+            name = name.name
+
+        w = self.ui.polar_tth_distortion_overlay
+        options = [w.itemText(i) for i in range(w.count())]
+        enabled = name in options
+        self.polar_apply_tth_distortion = enabled
+        if enabled:
+            w.setCurrentText(name)
+
+    def update_polar_tth_distortion_overlay_options(self):
+        w = self.ui.polar_tth_distortion_overlay
+        prev_text = w.currentText()
+        with block_signals(w):
+            w.clear()
+            names = []
+            for overlay in HexrdConfig().overlays:
+                if overlay.is_powder and overlay.has_tth_distortion:
+                    names.append(overlay.name)
+
+            w.addItems(names)
+
+            current = HexrdConfig().polar_tth_distortion_overlay
+            if current and current.name in names:
+                w.setCurrentText(current.name)
+                self.polar_apply_tth_distortion = True
+            elif prev_text in names:
+                # Keep the previous one saved, even if there is no
+                # distortion. This is so that we can toggle on/off and
+                # keep the same one selected.
+                w.setCurrentText(prev_text)
+                if self.polar_apply_tth_distortion:
+                    # Make sure this change gets saved to the config
+                    self.polar_tth_distortion_overlay_changed()
+
+        enable = w.count() != 0
+        self.ui.polar_apply_tth_distortion.setEnabled(enable)
+        if not enable:
+            self.polar_apply_tth_distortion = False
+
+    def polar_tth_distortion_overlay_changed(self):
+        HexrdConfig().polar_tth_distortion_overlay = (
+            self.polar_tth_distortion_overlay)
 
     def on_eta_min_changed(self, min_value):
         """Sync max when min is changed."""

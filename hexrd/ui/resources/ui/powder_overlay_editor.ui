@@ -286,7 +286,7 @@
           <item row="1" column="0" colspan="2">
            <widget class="HiddenBarTabWidget" name="pinhole_correction_type_tab_widget">
             <property name="currentIndex">
-             <number>1</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="sample_layer_tab">
              <attribute name="title">
@@ -445,6 +445,9 @@
                 <property name="keyboardTracking">
                  <bool>false</bool>
                 </property>
+                <property name="suffix">
+                 <string> μm</string>
+                </property>
                 <property name="decimals">
                  <number>8</number>
                 </property>
@@ -466,6 +469,9 @@
                 </property>
                 <property name="keyboardTracking">
                  <bool>false</bool>
+                </property>
+                <property name="suffix">
+                 <string> μm</string>
                 </property>
                 <property name="decimals">
                  <number>8</number>

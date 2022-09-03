@@ -232,8 +232,12 @@ class OverlayManager:
 
     @property
     def active_overlay(self):
+        overlays = HexrdConfig().overlays
         i = self.selected_row
-        return HexrdConfig().overlays[i] if i is not None else None
+        if i is None or i >= len(overlays):
+            return None
+
+        return overlays[i]
 
     def update_refinement_options(self):
         self.overlay_editor.update_refinement_options()
@@ -260,6 +264,7 @@ class OverlayManager:
                 return
 
         modified_overlay.name = new_name
+        HexrdConfig().overlay_renamed.emit(old_name, new_name)
 
     def add(self):
         HexrdConfig().append_overlay(self.active_material_name,
