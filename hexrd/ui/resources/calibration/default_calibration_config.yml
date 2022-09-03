@@ -7,6 +7,8 @@ powder:
   pk_type: 'pvoigt'
   bg_type: 'linear'
   use_robust_optimization: false
+  auto_guess_initial_fwhm: true
+  initial_fwhm: 0.5
 laue_auto_picker:
   npdiv: 2
   tth_tol: 5.0

@@ -49,6 +49,9 @@ class PowderCalibrationDialog:
         self.ui.conv_tol.setValue(options['conv_tol'])
         self.ui.robust.setChecked(options['use_robust_optimization'])
 
+        self.auto_guess_initial_fwhm = options['auto_guess_initial_fwhm']
+        self.initial_fwhm = options['initial_fwhm']
+
         self.peak_fit_type = options['pk_type']
         self.background_type = options['bg_type']
 
@@ -62,6 +65,9 @@ class PowderCalibrationDialog:
         options['conv_tol'] = self.ui.conv_tol.value()
         options['use_robust_optimization'] = self.ui.robust.isChecked()
 
+        options['auto_guess_initial_fwhm'] = self.auto_guess_initial_fwhm
+        options['initial_fwhm'] = self.initial_fwhm
+
         options['pk_type'] = self.peak_fit_type
         options['bg_type'] = self.background_type
 
@@ -71,6 +77,22 @@ class PowderCalibrationDialog:
 
         self.update_config()
         return True
+
+    @property
+    def auto_guess_initial_fwhm(self):
+        return self.ui.auto_guess_initial_fwhm.isChecked()
+
+    @auto_guess_initial_fwhm.setter
+    def auto_guess_initial_fwhm(self, b):
+        self.ui.auto_guess_initial_fwhm.setChecked(b)
+
+    @property
+    def initial_fwhm(self):
+        return self.ui.initial_fwhm.value()
+
+    @initial_fwhm.setter
+    def initial_fwhm(self, v):
+        self.ui.initial_fwhm.setValue(v)
 
     @property
     def tth_tol(self):

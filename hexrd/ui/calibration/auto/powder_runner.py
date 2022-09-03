@@ -61,6 +61,11 @@ class PowderRunner(QObject):
         options = HexrdConfig().config['calibration']['powder']
         self.instr = create_hedm_instrument()
 
+        if options['auto_guess_initial_fwhm']:
+            fwhm_estimate = None
+        else:
+            fwhm_estimate = options['initial_fwhm']
+
         # Get an intensity-corrected masked dict of the images
         img_dict = HexrdConfig().masked_images_dict
 
@@ -74,6 +79,7 @@ class PowderRunner(QObject):
             'img_dict': img_dict,
             'flags': self.refinement_flags,
             'eta_tol': options['eta_tol'],
+            'fwhm_estimate': fwhm_estimate,
             'pktype': options['pk_type'],
             'bgtype': options['bg_type'],
             'tth_distortion': self.active_overlay.tth_distortion_dict,
