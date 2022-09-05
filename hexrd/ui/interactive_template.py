@@ -18,7 +18,7 @@ class InteractiveTemplate:
     def __init__(self, parent=None):
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
-        self.raw_axes = self.parent.raw_axes[0]
+        self.raw_axes = list(self.parent.raw_axes.values())[0]
         self.panels = create_hedm_instrument().detectors
         self.img = None
         self.shape = None

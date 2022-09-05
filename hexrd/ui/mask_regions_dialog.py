@@ -109,7 +109,7 @@ class MaskRegionsDialog(QObject):
         if self.ui.isVisible():
             self.setup_canvas_connections()
         for canvas in self.parent.image_tab_widget.active_canvases:
-            for axes in canvas.raw_axes:
+            for axes in canvas.raw_axes.values():
                 for p in self.patches.get(axes.get_title(), []):
                     # Artists cannot be reused or simply copied, instead
                     # a new artist must be created
@@ -140,7 +140,7 @@ class MaskRegionsDialog(QObject):
         if det == ViewType.polar and hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.remove(last_patch)
         else:
-            for a in self.canvas.raw_axes:
+            for a in self.canvas.raw_axes.values():
                 if a.get_title() == det:
                     a.patches.remove(last_patch)
         self.canvas.draw_idle()
@@ -239,7 +239,7 @@ class MaskRegionsDialog(QObject):
         if hasattr(self.canvas, 'axis'):
             self.canvas.axis.patches.clear()
         for canvas in self.parent.image_tab_widget.active_canvases:
-            for axes in canvas.raw_axes:
+            for axes in canvas.raw_axes.values():
                 axes.patches.clear()
         self.create_masks()
         self.new_mask_added.emit(self.image_mode)
@@ -252,7 +252,7 @@ class MaskRegionsDialog(QObject):
             self.canvas.axis.patches.clear()
         else:
             for canvas in self.parent.image_tab_widget.active_canvases:
-                for axes in canvas.raw_axes:
+                for axes in canvas.raw_axes.values():
                     axes.patches.clear()
 
         self.disconnect()
