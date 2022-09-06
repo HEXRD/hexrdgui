@@ -313,37 +313,48 @@ class MaskManagerDialog(QObject):
         self.update_masks_list('raw')
 
     def masks_to_panel_buffer(self):
+        show_dialog = False
+        selection = 'Replace buffer'
+        for det in HexrdConfig().detectors.values():
+            buff_val = det.get('buffer', {}).get('value', None)
+            if isinstance(buff_val, np.ndarray) and buff_val.ndim == 2:
+                show_dialog = True
+                break
+
+        if show_dialog:
+            dialog = QDialog(self.ui)
+            layout = QVBoxLayout()
+            dialog.setLayout(layout)
+
+            options = QComboBox(dialog)
+            options.addItem('Replace buffer')
+            options.addItem('Logical AND with buffer')
+            options.addItem('Logical OR with buffer')
+            layout.addWidget(options)
+
+            buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            button_box = QDialogButtonBox(buttons, dialog)
+            button_box.accepted.connect(dialog.accept)
+            button_box.rejected.connect(dialog.reject)
+            layout.addWidget(button_box)
+
+            if not dialog.exec_():
+                # canceled
+                return
+
+            selection = options.currentText()
+
         # Set the visible masks as the panel buffer(s)
-        dialog = QDialog(self.ui)
-        layout = QVBoxLayout()
-        dialog.setLayout(layout)
-
-        options = QComboBox(dialog)
-        options.addItem('Replace buffer')
-        options.addItem('Logical AND with buffer')
-        options.addItem('Logical OR with buffer')
-        layout.addWidget(options)
-
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        button_box = QDialogButtonBox(buttons, dialog)
-        button_box.accepted.connect(dialog.accept)
-        button_box.rejected.connect(dialog.reject)
-        layout.addWidget(button_box)
-
-        if not dialog.exec_():
-            # canceled
-            return
-
         # We must ensure that we are using raw masks
         for det, mask in HexrdConfig().raw_masks_dict.items():
             detector_config = HexrdConfig().detector(det)
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
             buffer_value = detector_config['buffer'].get('value', None)
-            if buffer_value is not None:
-                if options.currentText() == 'Logical AND with buffer':
+            if isinstance(buffer_value, np.ndarray) and buff_val.ndim == 2:
+                if selection == 'Logical AND with buffer':
                     mask = np.logical_and(mask, buffer_value)
-                elif options.currentText() == 'Logical OR with buffer':
+                elif selection == 'Logical OR with buffer':
                     mask = np.logical_or(mask, buffer_value)
             buffer['value'] = mask
         msg = 'Masks set as panel buffers.'
