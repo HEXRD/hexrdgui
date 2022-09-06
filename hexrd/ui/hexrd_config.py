@@ -2152,8 +2152,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.mode_threshold_mask_changed.emit(v)
             self._threshold_data['mask_status'] = v
 
-    def set_threshold_mask(self, m):
-        self._threshold_data['mask'] = m
+    def set_threshold_mask(self, det, m):
+        masks = self._threshold_data.setdefault('mask', {})
+        masks[det] = m
 
     threshold_comparison = property(threshold_comparison,
                                     set_threshold_comparison)

@@ -144,7 +144,8 @@ class MaskManagerDialog(QObject):
         self.threshold = False
         HexrdConfig().set_threshold_comparison(0)
         HexrdConfig().set_threshold_value(0.0)
-        HexrdConfig().set_threshold_mask(None)
+        for det in HexrdConfig().detector_names:
+            HexrdConfig().set_threshold_mask(det, None)
         HexrdConfig().set_threshold_mask_status(False)
 
     def remove_mask(self, row, name):
