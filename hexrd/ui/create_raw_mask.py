@@ -10,15 +10,13 @@ from hexrd.ui.utils.conversions import angles_to_pixels
 
 
 def apply_threshold_mask(imageseries):
-    comparison = HexrdConfig().threshold_comparison
-    value = HexrdConfig().threshold_value
     for det in HexrdConfig().detector_names:
         ims = imageseries[det]
         masked_ims = [None for i in range(len(ims))]
         masks = [None for i in range(len(ims))]
         for idx in range(len(ims)):
             img = copy.copy(ims[idx])
-            masked_img, mask = _create_threshold_mask(img, comparison, value)
+            masked_img, mask = create_threshold_mask(img)
             masked_ims[idx] = masked_img
             masks[idx] = mask
         HexrdConfig().set_threshold_mask(det, masks)
@@ -29,7 +27,9 @@ def remove_threshold_mask(ims_dict_copy):
     HexrdConfig().imageseries_dict = copy.copy(ims_dict_copy)
 
 
-def _create_threshold_mask(img, comparison, value):
+def create_threshold_mask(img):
+    comparison = HexrdConfig().threshold_comparison
+    value = HexrdConfig().threshold_value
     mask = np.ones(img.shape, dtype=bool)
     if comparison == constants.UI_THRESHOLD_LESS_THAN:
         mask = (img > value)
