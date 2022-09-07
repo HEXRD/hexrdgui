@@ -522,7 +522,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.deep_rerender_needed.emit()
 
         self.update_visible_material_energies()
-        self.update_active_material_energy()
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
@@ -821,7 +820,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         prev = self.show_overlays
         self.config['materials']['show_overlays'] = False
         self.update_visible_material_energies()
-        self.update_active_material_energy()
         self.config['materials']['show_overlays'] = prev
 
         if not import_raw:
@@ -1569,6 +1567,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def update_visible_material_energies(self):
         for mat in self.visible_materials:
             self.update_material_energy(mat)
+
+        # Also update the energy of the active material, since
+        # its reflections table is visible.
+        self.update_material_energy(self.active_material)
 
         self.new_plane_data.emit()
         self.overlay_config_changed.emit()
