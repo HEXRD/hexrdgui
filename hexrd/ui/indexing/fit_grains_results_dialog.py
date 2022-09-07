@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from mpl_toolkits.mplot3d import Axes3D, proj3d  # noqa: F401 unused import
 import matplotlib
 import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -62,6 +62,7 @@ class FitGrainsResultsDialog(QObject):
         self.canvas = None
         self.fig = None
         self.scatter_artist = None
+        self.highlight_artist = None
         self.colorbar = None
 
         loader = UiLoader()
@@ -213,15 +214,22 @@ class FitGrainsResultsDialog(QObject):
             self.scatter_artist.remove()
             self.scatter_artist = None
 
+        if self.highlight_artist is not None:
+            self.highlight_artist.remove()
+            self.highlight_artist = None
+
     def on_colorby_changed(self):
         self.update_plot()
+
+    @property
+    def glyph_size(self):
+        return self.ui.glyph_size_slider.value()
 
     def update_plot(self):
         data = self.converted_data
         colors = self.colors
 
         coords = data[:, COORDS_SLICE].T
-        sz = self.ui.glyph_size_slider.value()
 
         # I could not find a way to update scatter plot marker colors and
         # the colorbar mappable. So we must re-draw both from scratch...
@@ -229,11 +237,13 @@ class FitGrainsResultsDialog(QObject):
         kwargs = {
             'c': colors,
             'cmap': self.cmap,
-            's': sz,
+            's': self.glyph_size,
             'depthshade': self.depth_shading,
+            'picker': True,
         }
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.update_color_settings()
+        self.highlight_selected_grains()
         self.draw_idle()
 
     def update_color_settings(self):
@@ -333,6 +343,8 @@ class FitGrainsResultsDialog(QObject):
         self.data_model.grains_table_modified.connect(
             self.on_grains_table_modified)
 
+        self.ui.table_view.selection_changed.connect(self.selection_changed)
+
     def setup_plot(self):
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -340,8 +352,16 @@ class FitGrainsResultsDialog(QObject):
         # Get the canvas to take up the majority of the screen most of the time
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        fig = canvas.figure
-        ax = fig.add_subplot(111, projection='3d', proj_type=self.projection)
+        canvas.mpl_connect('pick_event', self.point_picked)
+
+        kwargs = {
+            'projection': '3d',
+            'proj_type': self.projection,
+            # Do not compute the z order so we can make highlighted points
+            # always appear in front.
+            'computed_zorder': False,
+        }
+        ax = canvas.figure.add_subplot(111, **kwargs)
 
         # Set default limits to -0.5 to 0.5
         for name in ('x', 'y', 'z'):
@@ -350,11 +370,84 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.canvas_layout.addWidget(canvas)
 
-        self.fig = fig
+        self.fig = canvas.figure
         self.ax = ax
         self.canvas = canvas
 
         self.update_axes_labels()
+
+    def point_picked(self, event):
+        # Unfortunately, in matplotlib 3d, the indices change
+        # depending on the current orientation of the plot.
+        # We can find the picked point, however, by transforming
+        # the 3D data into 2D points (as they are displayed on the screen),
+        # and finding which data point is the closest to the mouse click.
+
+        # This code was largely inspired by:
+        # https://stackoverflow.com/a/66926265
+
+        xx = event.mouseevent.x
+        yy = event.mouseevent.y
+
+        proj = self.ax.get_proj()
+        data = self.converted_data[:, COORDS_SLICE]
+
+        ind = 0
+        dmin = np.inf
+        for i, (x, y, z) in enumerate(data):
+            # Transform the 3D data points into 2D points on the screen,
+            # then find the closest point.
+            x2, y2, z2 = proj3d.proj_transform(x, y, z, proj)
+            x3, y3 = self.ax.transData.transform((x2, y2))
+
+            # Compute the distance
+            d = np.sqrt((x3 - xx)**2 + (y3 - yy)**2)
+
+            if d < dmin:
+                dmin = d
+                ind = i
+
+        self.select_grain_in_table(ind)
+
+    def select_grain_in_table(self, grain_id):
+        table_model = self.ui.table_view.model()
+        for i in range(self.data_model.rowCount()):
+            if grain_id == table_model.index(i, 0).data():
+                return self.select_row(i)
+
+        raise Exception(f'Failed to find grain_id {grain_id} in table')
+
+    def select_row(self, i):
+        if i is None or i >= self.data_model.rowCount():
+            # Out of range. Don't do anything.
+            return
+
+        # Select the row
+        self.ui.table_view.selectRow(i)
+
+    def selection_changed(self):
+        self.highlight_selected_grains()
+
+    def highlight_selected_grains(self):
+        selected_grain_ids = self.ui.table_view.selected_grain_ids
+
+        if self.highlight_artist is not None:
+            self.highlight_artist.remove()
+
+        # Now draw the highlight markers for these selected grains
+        data = self.converted_data[:, COORDS_SLICE][selected_grain_ids].T
+
+        kwargs = {
+            # Bright yellow
+            'c': '#f9ff00',
+            # Make highlighted glyphs slightly larger
+            's': round(self.glyph_size * 1.2),
+            'alpha': 1.0,
+            # Make sure the highlighted glyphs are always in front
+            'zorder': 1e10,
+        }
+        self.highlight_artist = self.ax.scatter3D(*data, **kwargs)
+        self.draw_idle()
 
     def setup_toolbar(self):
         # These don't work for 3D plots
