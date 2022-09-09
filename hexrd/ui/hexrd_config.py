@@ -1499,10 +1499,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def _set_materials(self, materials):
         self.config['materials']['materials'] = materials
+
+        self.prune_overlays()
+
         if materials.keys():
             self.active_material = list(materials.keys())[0]
 
-        self.prune_overlays()
         self.flag_overlay_updates_for_all_materials()
         self.overlay_config_changed.emit()
 
