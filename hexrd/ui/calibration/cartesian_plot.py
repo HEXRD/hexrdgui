@@ -103,6 +103,7 @@ class InstrumentViewer:
         self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
                                                 self.pixel_size,
                                                 self.instr.beam_vector)
+        self.dpanel.name = 'dpanel'
 
     @property
     def extent(self):
