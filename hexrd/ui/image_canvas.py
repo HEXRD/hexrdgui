@@ -330,6 +330,10 @@ class ImageCanvas(FigureCanvas):
             az_axis = self.azimuthal_integral_axis
             for pr in rings:
                 x, _ = self.extract_ring_coords(pr)
+                if len(x) == 0:
+                    # Skip over rings that are out of bounds
+                    continue
+
                 # Average the points together for the vertical line
                 x = np.nanmean(x)
                 artist = az_axis.axvline(x, **data_style)
@@ -338,6 +342,10 @@ class ImageCanvas(FigureCanvas):
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
                 x, _ = self.extract_ring_coords(pr)
+                if len(x) == 0:
+                    # Skip over rbnds that are out of bounds
+                    continue
+
                 # Average the points together for the vertical line
                 x = np.nanmean(x)
 

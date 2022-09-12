@@ -311,9 +311,15 @@ class PowderOverlay(Overlay):
                 eidx = np.argsort(ang_crds[:, 0])
                 ang_crds = ang_crds[eidx, :]
 
+                diff = np.diff(ang_crds[:, 0])
+                if len(diff) == 0:
+                    skipped_tth.append(i)
+                    continue
+
                 # branch cut
                 # FIXME: still is not quite right
-                delta_eta_est = np.median(np.diff(ang_crds[:, 0]))
+                delta_eta_est = np.median(diff)
+
                 cut_on_panel = bool(
                     xfcapi.angularDifference(
                         np.min(ang_crds[:, 0]),
