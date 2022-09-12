@@ -337,9 +337,10 @@ class ImageModeWidget(QObject):
                 # distortion. This is so that we can toggle on/off and
                 # keep the same one selected.
                 w.setCurrentText(prev_text)
-                if self.polar_apply_tth_distortion:
-                    # Make sure this change gets saved to the config
-                    self.polar_tth_distortion_overlay_changed()
+
+            if self.polar_apply_tth_distortion:
+                # Make sure any changes get saved to the config
+                self.polar_tth_distortion_overlay_changed()
 
         enable = w.count() != 0
         self.ui.polar_apply_tth_distortion.setEnabled(enable)
