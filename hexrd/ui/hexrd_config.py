@@ -184,6 +184,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     overlay_renamed = Signal(str, str)
 
+    """Emitted when overlays were added, removed, or upon type change"""
+    overlay_list_modified = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -488,6 +491,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
             self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
+
+        self.overlay_list_modified.emit()
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -1685,8 +1690,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def prune_overlays(self):
         # Removes overlays for which we do not have a material
         mats = list(self.materials.keys())
-        self.overlays = [x for x in self.overlays if x.material_name in mats]
-        self.overlay_config_changed.emit()
+        pruned_overlays = [x for x in self.overlays if x.material_name in mats]
+        if len(self.overlays) != len(pruned_overlays):
+            self.overlays = pruned_overlays
+            self.overlay_list_modified.emit()
+            self.overlay_config_changed.emit()
 
     def append_overlay(self, material_name, type):
         kwargs = {
@@ -1695,6 +1703,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         }
         overlay = overlays.create_overlay(**kwargs)
         self.overlays.append(overlay)
+        self.overlay_list_modified.emit()
         self.overlay_config_changed.emit()
 
     def change_overlay_type(self, i, type):
@@ -1714,6 +1723,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         new_overlay = overlays.create_overlay(**kwargs)
         new_overlay.instrument = self.overlays[i].instrument
         self.overlays[i] = new_overlay
+        self.overlay_list_modified.emit()
 
     def clear_overlay_data(self):
         for overlay in self.overlays:

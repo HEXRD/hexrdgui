@@ -274,6 +274,7 @@ class OverlayManager:
 
     def remove(self):
         HexrdConfig().overlays.pop(self.selected_row)
+        HexrdConfig().overlay_list_modified.emit()
         HexrdConfig().overlay_config_changed.emit()
         self.update_table()
 

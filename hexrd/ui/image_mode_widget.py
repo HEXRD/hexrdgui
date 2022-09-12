@@ -102,14 +102,7 @@ class ImageModeWidget(QObject):
             self.update_polar_tth_distortion_overlay_options)
         HexrdConfig().overlay_renamed.connect(
             self.update_polar_tth_distortion_overlay_options)
-
-        # FIXME: it would be nice if we did not have to update our
-        # combo box for every kind of change to the overlays.
-        # For instance, this updates the combo box if the beam energy
-        # changes. What we probably need is a couple of signals that
-        # indicate when overlays were removed/added or changed type, and
-        # that would probably work here instead of every possible change.
-        HexrdConfig().overlay_config_changed.connect(
+        HexrdConfig().overlay_list_modified.connect(
             self.update_polar_tth_distortion_overlay_options)
 
         self.ui.polar_apply_tth_distortion.toggled.connect(
