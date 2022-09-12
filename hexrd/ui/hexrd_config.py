@@ -1893,7 +1893,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if self._polar_tth_distortion_overlay_name != name:
             self._polar_tth_distortion_overlay_name = name
             self.flag_overlay_updates_for_all_materials()
-            self.overlay_config_changed.emit()
             self.rerender_needed.emit()
 
     def on_overlay_renamed(self, old_name, new_name):
