@@ -118,16 +118,12 @@ class MaskManagerDialog(QObject):
 
     def setup_threshold_connections(self, checkbox, row, name):
         HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
-        checkbox.toggled.connect(self.threshold_toggled)
         self.ui.masks_table.cellWidget(row, 2).clicked.connect(
             lambda row=row, name=name: self.remove_mask(row, name))
 
 
     def image_mode_changed(self, mode):
         self.image_mode = mode
-
-    def threshold_toggled(self, v):
-        HexrdConfig().set_threshold_mask_status(v, set_by_mgr=True)
 
     def toggle_visibility(self, checked, name):
         if checked and name not in HexrdConfig().visible_masks:
@@ -136,7 +132,7 @@ class MaskManagerDialog(QObject):
             HexrdConfig().visible_masks.remove(name)
 
         if name == self.threshold:
-            HexrdConfig().set_threshold_mask_status(checked)
+            HexrdConfig().set_threshold_mask_status(checked, set_by_mgr=True)
 
         if self.image_mode == ViewType.polar:
             HexrdConfig().polar_masks_changed.emit()
@@ -149,10 +145,12 @@ class MaskManagerDialog(QObject):
         HexrdConfig().set_threshold_value(0.0)
         for det in HexrdConfig().detector_names:
             HexrdConfig().set_threshold_mask(det, None)
-        HexrdConfig().set_threshold_mask_status(False)
+        HexrdConfig().set_threshold_mask_status(False, set_by_mgr=True)
 
     def remove_mask(self, row, name):
-        mtype, _ = self.masks[name]
+        mtype, _ = self.masks.get(name, (None, None))
+        if mtype is None:
+            return
 
         del self.masks[name]
         if name in HexrdConfig().visible_masks:
