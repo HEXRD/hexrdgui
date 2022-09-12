@@ -370,7 +370,7 @@ class PolarView:
             mask = HexrdConfig().masks[name]
             total_mask = np.logical_or(total_mask, ~mask)
         if HexrdConfig().threshold_mask_status:
-            _, thresh_mask = create_threshold_mask(img)
+            thresh_mask = create_threshold_mask(img)
             total_mask = np.logical_or(total_mask, ~thresh_mask)
         img[total_mask] = np.nan
 

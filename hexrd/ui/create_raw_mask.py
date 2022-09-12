@@ -9,22 +9,16 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils.conversions import angles_to_pixels
 
 
-def apply_threshold_mask(imageseries):
+# TODO: Rename to something like update_threshold_mask
+def apply_threshold_mask():
     for det in HexrdConfig().detector_names:
-        ims = imageseries[det]
-        masked_ims = [None for i in range(len(ims))]
+        ims = HexrdConfig().imageseries(det)
         masks = [None for i in range(len(ims))]
         for idx in range(len(ims)):
-            img = copy.copy(ims[idx])
-            masked_img, mask = create_threshold_mask(img)
-            masked_ims[idx] = masked_img
+            img = HexrdConfig().image(det, idx)
+            mask = create_threshold_mask(img)
             masks[idx] = mask
         HexrdConfig().set_threshold_mask(det, masks)
-        HexrdConfig().imageseries_dict[det] = masked_ims
-
-
-def remove_threshold_mask(ims_dict_copy):
-    HexrdConfig().imageseries_dict = copy.copy(ims_dict_copy)
 
 
 def create_threshold_mask(img):
@@ -37,8 +31,7 @@ def create_threshold_mask(img):
         mask = (img < value)
     elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
         mask = (img == value)
-    img[~mask] = 0
-    return img, mask
+    return mask
 
 
 def convert_polar_to_raw(line_data):

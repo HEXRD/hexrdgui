@@ -33,7 +33,7 @@ class MaskManagerDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
         self.create_masks_list()
-        self.threshold = False
+        self.threshold = None
         self.image_mode = ViewType.raw
 
         self.setup_connections()
@@ -50,7 +50,7 @@ class MaskManagerDialog(QObject):
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = val
         if HexrdConfig().threshold_mask_status:
-            self.threshold = True
+            self.threshold = 'threshold'
             self.masks['threshold'] = (
                 'threshold', HexrdConfig().threshold_mask)
         HexrdConfig().visible_masks = list(self.masks.keys())
@@ -65,11 +65,11 @@ class MaskManagerDialog(QObject):
                 if any(np.array_equal(val, m) for _, m in vals):
                     continue
                 self.masks[name] = (det, val)
-        elif not self.threshold:
+        elif self.threshold is None:
             name = unique_name(self.masks, 'threshold')
             self.masks[name] = ('threshold', HexrdConfig().threshold_mask)
             HexrdConfig().visible_masks.append(name)
-            self.threshold = True
+            self.threshold = name
         self.setup_table()
 
     def setup_connections(self):
@@ -135,13 +135,16 @@ class MaskManagerDialog(QObject):
         elif not checked and name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
 
+        if name == self.threshold:
+            HexrdConfig().set_threshold_mask_status(checked)
+
         if self.image_mode == ViewType.polar:
             HexrdConfig().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             HexrdConfig().raw_masks_changed.emit()
 
     def reset_threshold(self):
-        self.threshold = False
+        self.threshold = None
         HexrdConfig().set_threshold_comparison(0)
         HexrdConfig().set_threshold_value(0.0)
         for det in HexrdConfig().detector_names:
@@ -346,11 +349,7 @@ class MaskManagerDialog(QObject):
 
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
-        threshold_masks = HexrdConfig().threshold_mask
         for det, mask in HexrdConfig().raw_masks_dict.items():
-            idx = HexrdConfig().current_imageseries_idx
-            if HexrdConfig().threshold_mask_status:
-                mask = np.logical_and(mask, threshold_masks[det][idx])
             detector_config = HexrdConfig().detector(det)
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
