@@ -196,17 +196,23 @@ class OverlayManager:
         self.overlay_editor.overlay = self.active_overlay
 
     def update_config_materials(self):
+        any_changed = False
         for i in range(self.ui.table.rowCount()):
             w = self.material_combos[i]
             overlay = HexrdConfig().overlays[i]
             if overlay.material_name != w.currentData():
                 overlay.material_name = w.currentData()
+                any_changed = True
 
-                # In case the active widget depends on material settings
-                self.overlay_editor.update_active_widget_gui()
+        if any_changed:
+            # In case the material was renamed
+            self.update_table()
 
-        HexrdConfig().update_visible_material_energies()
-        HexrdConfig().overlay_config_changed.emit()
+            # In case the active widget depends on material settings
+            self.overlay_editor.update_active_widget_gui()
+
+            HexrdConfig().update_visible_material_energies()
+            HexrdConfig().overlay_config_changed.emit()
 
     def update_config_types(self):
         for i in range(self.ui.table.rowCount()):

@@ -167,8 +167,14 @@ class Overlay(ABC):
         if self.material_name == v:
             return
 
+        need_rename = self.name.startswith(self._non_unique_name)
+
         self._material_name = v
         self.update_needed = True
+
+        if need_rename:
+            # Update the name to reflect the new material
+            self.name = self._generate_unique_name()
 
     @property
     def material(self):
