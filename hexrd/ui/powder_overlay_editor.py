@@ -375,6 +375,17 @@ class PowderOverlayEditor:
                 )
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
 
+            beam = HexrdConfig().instrument_config['beam']
+            source_distance = beam.get('source_distance', np.inf)
+            if source_distance is None or source_distance == np.inf:
+                    msg = (
+                        'WARNING: the source distance is infinite.\n\nThe '
+                        'Pinhole Camera Correction will have no effect '
+                        'unless the source distance is finite.\n\nThe source '
+                        'distance may be edited in the Instrument "Form View"'
+                    )
+                    QMessageBox.critical(self.ui, 'HEXRD', msg)
+
     def validate_pinhole_correction_type(self):
         if self.pinhole_correction_type == 'Pinhole':
             # Warn the user that we have not yet implemented this method
