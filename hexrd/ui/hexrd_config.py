@@ -1876,11 +1876,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def polar_tth_distortion_overlay(self):
-        try:
-            return overlays.Overlay.from_name(
-                self._polar_tth_distortion_overlay_name)
-        except Exception:
+        name = self._polar_tth_distortion_overlay_name
+        if name is None:
             return None
+
+        for overlay in self.overlays:
+            if overlay.name == name:
+                return overlay
+
+        # This overlay must not exist
+        return None
 
     @polar_tth_distortion_overlay.setter
     def polar_tth_distortion_overlay(self, overlay):

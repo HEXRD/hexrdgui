@@ -213,7 +213,8 @@ class ImageCanvas(FigureCanvas):
         del self.overlay_artists[key]
 
     def prune_overlay_artists(self):
-        # Remove overlay artists that no longer have an overlay associated with them
+        # Remove overlay artists that no longer have an overlay associated
+        # with them
         overlay_names = [x.name for x in HexrdConfig().overlays]
         for key in list(self.overlay_artists):
             if key not in overlay_names:
@@ -761,7 +762,7 @@ class ImageCanvas(FigureCanvas):
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
-                self.axis.set_ylabel(r'$\eta$ (deg)')
+                self.axis.set_ylabel(r'$\eta$ [deg]')
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -779,12 +780,14 @@ class ImageCanvas(FigureCanvas):
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_xlabel(r'2$\theta$ (deg)')
                 axis.set_ylabel(r'Azimuthal Integration')
                 self.update_wppf_plot()
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
+
+            # Update the xlabel in case it was modified (via tth distortion)
+            axis.set_xlabel(self.polar_xlabel)
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -796,11 +799,13 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_xlabel(r'2$\theta$ (deg)')
-                self.axis.set_ylabel(r'$\eta$ (deg)')
+                self.axis.set_ylabel(r'$\eta$ [deg]')
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
+
+            # Update the xlabel in case it was modified (via tth distortion)
+            self.axis.set_xlabel(self.polar_xlabel)
 
         if rescale_image:
             self.axis.relim()
@@ -816,6 +821,21 @@ class ImageCanvas(FigureCanvas):
 
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    @property
+    def polar_xlabel(self):
+        overlay = HexrdConfig().polar_tth_distortion_overlay
+        if overlay is None:
+            return r'2$\theta_{nom}$ [deg]'
+
+        xlabel = r'2$\theta_{sam}$'
+        standoff = overlay.tth_distortion_kwargs.get('layer_standoff', None)
+        if standoff is not None:
+            xlabel += f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
+
+        xlabel += ' [deg]'
+
+        return xlabel
 
     def polar_masks_changed(self):
         if not self.iviewer or self.mode != ViewType.polar:
