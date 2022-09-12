@@ -203,6 +203,9 @@ class MaskManagerDialog(QObject):
                 HexrdConfig().visible_masks.append(new_name)
                 HexrdConfig().visible_masks.remove(self.old_name)
 
+            if self.old_name == self.threshold:
+                self.threshold = new_name
+
         self.old_name = None
         self.setup_table()
 
