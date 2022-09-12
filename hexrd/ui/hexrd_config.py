@@ -1885,15 +1885,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @polar_tth_distortion_overlay.setter
     def polar_tth_distortion_overlay(self, overlay):
         if isinstance(overlay, overlays.Overlay):
-            self._polar_tth_distortion_overlay_name = overlay.name
+            name = overlay.name
         else:
-            # Assume it is the name
-            self._polar_tth_distortion_overlay_name = overlay
+            # Assume it is the name or None
+            name = overlay
 
-        self.flag_overlay_updates_for_all_materials()
-        self.deep_rerender_needed.emit()
-        # self.rerender_needed.emit()
-        self.overlay_config_changed.emit()
+        if self._polar_tth_distortion_overlay_name != name:
+            self._polar_tth_distortion_overlay_name = name
+            self.flag_overlay_updates_for_all_materials()
+            self.overlay_config_changed.emit()
+            self.rerender_needed.emit()
 
     def on_overlay_renamed(self, old_name, new_name):
         if self._polar_tth_distortion_overlay_name == old_name:
