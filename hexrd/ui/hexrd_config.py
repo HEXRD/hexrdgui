@@ -175,6 +175,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Indicate that the beam marker has been modified"""
     beam_marker_modified = Signal()
 
+    """Emitted when any overlay distortions have been changed"""
+    overlay_distortions_changed = Signal()
+
+    """Emitted when an overlay's name has been changed
+
+    The arguments are the old_name and the new_name
+    """
+    overlay_renamed = Signal(str, str)
+
+    """Emitted when overlays were added, removed, or upon type change"""
+    overlay_list_modified = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -213,6 +225,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.find_orientations_grains_table = None
         self.fit_grains_grains_table = None
         self.hedm_calibration_output_grains_table = None
+        self._polar_tth_distortion_overlay_name = None
+        self.polar_corr_field_polar_dict = None
+        self.polar_angular_grid = None
 
         self.setup_logging()
 
@@ -269,6 +284,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for signal in materials_dict_modified_signals:
             signal.connect(self.materials_dict_modified.emit)
 
+        self.overlay_renamed.connect(self.on_overlay_renamed)
+
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration
     # state.
@@ -291,6 +308,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('llnl_boundary_positions', {}),
             ('_imported_default_materials', []),
             ('overlays_dictified', []),
+            ('_polar_tth_distortion_overlay_name', None),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -471,7 +489,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     # Skip over ones that do not have a matching material
                     continue
 
+            self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
+
+        self.overlay_list_modified.emit()
 
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
@@ -1500,7 +1521,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def _set_materials(self, materials):
         self.config['materials']['materials'] = materials
 
-        self.prune_overlays()
+        with utils.block_signals(self):
+            # Prevent the GUI from updating while we are in an invalid
+            # state.
+            self.prune_overlays()
 
         if materials.keys():
             self.active_material = list(materials.keys())[0]
@@ -1666,8 +1690,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def prune_overlays(self):
         # Removes overlays for which we do not have a material
         mats = list(self.materials.keys())
-        self.overlays = [x for x in self.overlays if x.material_name in mats]
-        self.overlay_config_changed.emit()
+        pruned_overlays = [x for x in self.overlays if x.material_name in mats]
+        if len(self.overlays) != len(pruned_overlays):
+            self.overlays = pruned_overlays
+            self.overlay_list_modified.emit()
+            self.overlay_config_changed.emit()
 
     def append_overlay(self, material_name, type):
         kwargs = {
@@ -1676,6 +1703,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         }
         overlay = overlays.create_overlay(**kwargs)
         self.overlays.append(overlay)
+        self.overlay_list_modified.emit()
         self.overlay_config_changed.emit()
 
     def change_overlay_type(self, i, type):
@@ -1695,6 +1723,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         new_overlay = overlays.create_overlay(**kwargs)
         new_overlay.instrument = self.overlays[i].instrument
         self.overlays[i] = new_overlay
+        self.overlay_list_modified.emit()
 
     def clear_overlay_data(self):
         for overlay in self.overlays:
@@ -1840,6 +1869,40 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     polar_snip1d_numiter = property(_polar_snip1d_numiter,
                                     set_polar_snip1d_numiter)
+
+    @property
+    def polar_tth_distortion(self):
+        return self.polar_tth_distortion_overlay is not None
+
+    @property
+    def polar_tth_distortion_overlay(self):
+        name = self._polar_tth_distortion_overlay_name
+        if name is None:
+            return None
+
+        for overlay in self.overlays:
+            if overlay.name == name:
+                return overlay
+
+        # This overlay must not exist
+        return None
+
+    @polar_tth_distortion_overlay.setter
+    def polar_tth_distortion_overlay(self, overlay):
+        if isinstance(overlay, overlays.Overlay):
+            name = overlay.name
+        else:
+            # Assume it is the name or None
+            name = overlay
+
+        if self._polar_tth_distortion_overlay_name != name:
+            self._polar_tth_distortion_overlay_name = name
+            self.flag_overlay_updates_for_all_materials()
+            self.rerender_needed.emit()
+
+    def on_overlay_renamed(self, old_name, new_name):
+        if self._polar_tth_distortion_overlay_name == old_name:
+            self._polar_tth_distortion_overlay_name = new_name
 
     def _cartesian_pixel_size(self):
         return self.config['image']['cartesian']['pixel_size']

@@ -3,7 +3,11 @@ import numpy as np
 from hexrd import constants
 from hexrd import unitcell
 
+from hexrd.gridutil import cellIndices
 from hexrd.transforms import xfcapi
+from hexrd.xrdutil.phutil import (
+    SampleLayerDistortion, tth_corr_map_sample_layer
+)
 
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.overlays.overlay import Overlay
@@ -15,14 +19,20 @@ class PowderOverlay(Overlay):
     hkl_data_key = 'rings'
 
     def __init__(self, material_name, tvec=None, eta_steps=360,
+                 tth_distortion_type=None, tth_distortion_kwargs=None,
                  **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if tvec is None:
             tvec = constants.zeros_3.copy()
 
+        if tth_distortion_kwargs is None:
+            tth_distortion_kwargs = {}
+
         self.tvec = tvec
         self.eta_steps = eta_steps
+        self.tth_distortion_type = tth_distortion_type
+        self.tth_distortion_kwargs = tth_distortion_kwargs
 
     @property
     def child_attributes_to_save(self):
@@ -31,6 +41,8 @@ class PowderOverlay(Overlay):
         return [
             'tvec',
             'eta_steps',
+            'tth_distortion_type',
+            'tth_distortion_kwargs',
         ]
 
     @property
@@ -39,6 +51,10 @@ class PowderOverlay(Overlay):
 
     @property
     def tvec(self):
+        if self.has_tth_distortion:
+            # If there is a distortion, act as if there is no tvec
+            return constants.zeros_3.copy()
+
         return self._tvec
 
     @tvec.setter
@@ -177,12 +193,52 @@ class PowderOverlay(Overlay):
         return point_groups
 
     def generate_ring_points(self, instr, tths, etas, panel, display_mode):
+        from hexrd.ui.hexrd_config import HexrdConfig
+
         delta_eta_nom = np.degrees(np.median(np.diff(etas)))
         ring_pts = []
         skipped_tth = []
+
+        # Grab the distortion object if we have one
+        sd = None
+        if self.has_tth_distortion:
+            sd = self.tth_distortion_dict[panel.name]
+
+        # Apply tth_distortion if:
+        # 1. tth_distortion was set (sd is not None)
+        # 2. We are not distorting the polar image with the current overlay
+        distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
+        polar_distortion_with_self = (
+            display_mode == ViewType.polar and
+            distortion_overlay is self
+        )
+        apply_distortion = (
+            sd is not None and
+            not polar_distortion_with_self
+        )
+
+        if apply_distortion:
+            # Offset the distortion if we are distorting the polar image
+            # with a different overlay, and we have all the required
+            # variables defined.
+            offset_distortion = (
+                display_mode == ViewType.polar and
+                distortion_overlay is not None and
+                HexrdConfig().polar_corr_field_polar_dict and
+                HexrdConfig().polar_angular_grid is not None
+            )
+
+            if offset_distortion:
+                # Set these up outside of the loop
+                polar_corr_field = HexrdConfig().polar_corr_field_polar_dict
+                polar_field = polar_corr_field[panel.name].filled(np.nan)
+                eta_centers, tth_centers = HexrdConfig().polar_angular_grid
+                first_eta_col = eta_centers[:, 0]
+                first_tth_row = tth_centers[0]
+
         for i, tth in enumerate(tths):
             # construct ideal angular coords
-            ang_crds = np.vstack([np.tile(tth, len(etas)), etas]).T
+            ang_crds_full = np.vstack([np.tile(tth, len(etas)), etas]).T
 
             # Convert nominal powder angle coords to cartesian
             # !!! Tricky business; here we must consider _both_ the SAMPLE
@@ -190,7 +246,7 @@ class PowderOverlay(Overlay):
             #     overlay.  This is so they get properly mapped back to the
             #     the proper cartesian coords.
             xys_full = panel.angles_to_cart(
-                ang_crds,
+                ang_crds_full,
                 tvec_s=instr.tvec,
                 tvec_c=self.tvec
             )
@@ -205,15 +261,40 @@ class PowderOverlay(Overlay):
                 xys_full, buffer_edges=False
             )
 
+            if apply_distortion:
+                # Apply distortion correction
+                ang_crds = sd.apply(xys)
+
+                if offset_distortion:
+                    # Need to offset according to another overlay's distortion
+
+                    # Need to ensure the angles are mapped
+                    ang_crds[:, 1] = xfcapi.mapAngle(
+                        ang_crds[:, 1], np.radians(self.eta_period),
+                        units='radians'
+                    )
+
+                    # Compute and apply offset
+                    for ic, ang_crd in enumerate(ang_crds):
+                        i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
+                        j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
+                        ang_crds[ic, 0] += polar_field[j, i]
+
+                if display_mode in (ViewType.raw, ViewType.cartesian):
+                    # These need the updated xys
+                    xys = panel.angles_to_cart(ang_crds)
+
             if display_mode == ViewType.polar:
-                # Apply offset correction
-                # !!! In polar view, the nominal angles refer to the SAMPLE
-                #     CS origin, so we omit the addition of any offset to the
-                #     diffraction COM in the sameple frame!
-                ang_crds, _ = panel.cart_to_angles(
-                    xys,
-                    tvec_s=instr.tvec
-                )
+                if not apply_distortion:
+                    # The ang_crds have not yet been computed. Do so now.
+                    # In the polar view, the nominal angles refer to the SAMPLE
+                    # CS origin, so we omit the addition of any offset to the
+                    # diffraction COM in the sample frame!
+                    ang_crds, _ = panel.cart_to_angles(
+                        xys,
+                        tvec_s=instr.tvec
+                    )
+
                 if len(ang_crds) == 0:
                     skipped_tth.append(i)
                     continue
@@ -230,9 +311,15 @@ class PowderOverlay(Overlay):
                 eidx = np.argsort(ang_crds[:, 0])
                 ang_crds = ang_crds[eidx, :]
 
+                diff = np.diff(ang_crds[:, 0])
+                if len(diff) == 0:
+                    skipped_tth.append(i)
+                    continue
+
                 # branch cut
                 # FIXME: still is not quite right
-                delta_eta_est = np.median(np.diff(ang_crds[:, 0]))
+                delta_eta_est = np.median(diff)
+
                 cut_on_panel = bool(
                     xfcapi.angularDifference(
                         np.min(ang_crds[:, 0]),
@@ -287,6 +374,47 @@ class PowderOverlay(Overlay):
                     ring_pts.append(np.vstack([nxys, nans_row]))
 
         return ring_pts, skipped_tth
+
+    @property
+    def has_tth_distortion(self):
+        return self.tth_distortion_type is not None
+
+    @property
+    def tth_distortion_dict(self):
+        if not self.has_tth_distortion or self.instrument is None:
+            return None
+
+        def tth_sample_layer_distortion(panel):
+            kwargs = {
+                'detector': panel,
+                'source_distance': self.instrument.source_distance,
+                **self.tth_distortion_kwargs,
+            }
+            return SampleLayerDistortion(**kwargs)
+
+        known_types = {
+            'SampleLayerDistortion': tth_sample_layer_distortion,
+        }
+
+        if self.tth_distortion_type not in known_types:
+            msg = f'Unhandled distortion type: {self.tth_distortion_type}'
+            raise Exception(msg)
+
+        f = known_types[self.tth_distortion_type]
+
+        ret = {}
+        for det_key, panel in self.instrument.detectors.items():
+            ret[det_key] = f(panel)
+
+        return ret
+
+    @property
+    def tth_displacement_field(self):
+        kwargs = {
+            'instrument': self.instrument,
+            **self.tth_distortion_kwargs,
+        }
+        return tth_corr_map_sample_layer(**kwargs)
 
     @property
     def default_style(self):

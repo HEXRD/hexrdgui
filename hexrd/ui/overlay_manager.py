@@ -196,17 +196,23 @@ class OverlayManager:
         self.overlay_editor.overlay = self.active_overlay
 
     def update_config_materials(self):
+        any_changed = False
         for i in range(self.ui.table.rowCount()):
             w = self.material_combos[i]
             overlay = HexrdConfig().overlays[i]
             if overlay.material_name != w.currentData():
                 overlay.material_name = w.currentData()
+                any_changed = True
 
-                # In case the active widget depends on material settings
-                self.overlay_editor.update_active_widget_gui()
+        if any_changed:
+            # In case the material was renamed
+            self.update_table()
 
-        HexrdConfig().update_visible_material_energies()
-        HexrdConfig().overlay_config_changed.emit()
+            # In case the active widget depends on material settings
+            self.overlay_editor.update_active_widget_gui()
+
+            HexrdConfig().update_visible_material_energies()
+            HexrdConfig().overlay_config_changed.emit()
 
     def update_config_types(self):
         for i in range(self.ui.table.rowCount()):
@@ -232,8 +238,12 @@ class OverlayManager:
 
     @property
     def active_overlay(self):
+        overlays = HexrdConfig().overlays
         i = self.selected_row
-        return HexrdConfig().overlays[i] if i is not None else None
+        if i is None or i >= len(overlays):
+            return None
+
+        return overlays[i]
 
     def update_refinement_options(self):
         self.overlay_editor.update_refinement_options()
@@ -260,6 +270,7 @@ class OverlayManager:
                 return
 
         modified_overlay.name = new_name
+        HexrdConfig().overlay_renamed.emit(old_name, new_name)
 
     def add(self):
         HexrdConfig().append_overlay(self.active_material_name,
@@ -269,6 +280,7 @@ class OverlayManager:
 
     def remove(self):
         HexrdConfig().overlays.pop(self.selected_row)
+        HexrdConfig().overlay_list_modified.emit()
         HexrdConfig().overlay_config_changed.emit()
         self.update_table()
 

@@ -186,10 +186,12 @@ def generate_picks_results(overlays):
     for overlay in overlays:
         # Convert hkls to numpy arrays
         hkls = {k: np.asarray(v) for k, v in overlay.hkls.items()}
+        extras = {}
         if overlay.is_powder:
             options = {
                 'tvec': overlay.tvec,
             }
+            extras['tth_distortion'] = overlay.tth_distortion_dict
         elif overlay.is_laue:
             options = {
                 'crystal_params': overlay.crystal_params,
@@ -204,6 +206,7 @@ def generate_picks_results(overlays):
             'refinements': overlay.refinements_with_labels,
             'hkls': hkls,
             'picks': overlay.calibration_picks,
+            **extras,
         })
 
     return pick_results

@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox
+from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
@@ -26,11 +26,17 @@ class PowderOverlayEditor:
         self.setup_connections()
 
     def setup_connections(self):
+        # Do this before the update_config calls
+        self.ui.pinhole_correction_type.currentIndexChanged.connect(
+            self.validate_pinhole_correction_type)
+
         for w in self.widgets:
             if isinstance(w, QDoubleSpinBox):
                 w.valueChanged.connect(self.update_config)
             elif isinstance(w, QCheckBox):
                 w.toggled.connect(self.update_config)
+            elif isinstance(w, QComboBox):
+                w.currentIndexChanged.connect(self.update_config)
 
         self.ui.enable_width.toggled.connect(self.update_enable_states)
         self.refinements_selector.selection_changed.connect(
@@ -40,6 +46,9 @@ class PowderOverlayEditor:
 
         HexrdConfig().material_tth_width_modified.connect(
             self.material_tth_width_modified_externally)
+
+        self.ui.distortion_type.currentIndexChanged.connect(
+            self.distortion_type_changed)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -98,6 +107,8 @@ class PowderOverlayEditor:
         with block_signals(*self.widgets):
             self.tth_width_gui = self.tth_width_config
             self.offset_gui = self.offset_config
+            self.distortion_type_gui = self.distortion_type_config
+            self.distortion_kwargs_gui = self.distortion_kwargs_config
             self.refinements_with_labels = self.overlay.refinements_with_labels
 
             self.update_enable_states()
@@ -106,6 +117,8 @@ class PowderOverlayEditor:
     def update_config(self):
         self.tth_width_config = self.tth_width_gui
         self.offset_config = self.offset_gui
+        self.distortion_type_config = self.distortion_type_gui
+        self.distortion_kwargs_config = self.distortion_kwargs_gui
 
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
@@ -171,15 +184,143 @@ class PowderOverlayEditor:
             w.setValue(v[i])
 
     @property
+    def distortion_type_config(self):
+        if self.overlay is None:
+            return None
+
+        return self.overlay.tth_distortion_type
+
+    @distortion_type_config.setter
+    def distortion_type_config(self, v):
+        if self.overlay is None:
+            return
+
+        if self.overlay.tth_distortion_type == v:
+            return
+
+        self.overlay.tth_distortion_type = v
+        HexrdConfig().overlay_distortions_changed.emit()
+
+    @property
+    def distortion_type_gui(self):
+        if self.ui.distortion_type.currentText() == 'Offset':
+            return None
+
+        v = self.ui.pinhole_correction_type.currentText()
+
+        conversions = {
+            'Sample Layer': 'SampleLayerDistortion',
+        }
+        if v in conversions:
+            v = conversions[v]
+
+        return v
+
+    @distortion_type_gui.setter
+    def distortion_type_gui(self, v):
+        widgets = [self.ui.distortion_type, self.ui.pinhole_correction_type]
+        with block_signals(*widgets):
+            if v is None:
+                self.ui.distortion_type.setCurrentText('Offset')
+                idx = self.ui.distortion_type.currentIndex()
+                self.ui.distortion_tab_widget.setCurrentIndex(idx)
+                return
+
+            self.ui.distortion_type.setCurrentText('Pinhole Camera Correction')
+            idx = self.ui.distortion_type.currentIndex()
+            self.ui.distortion_tab_widget.setCurrentIndex(idx)
+
+            conversions = {
+                'SampleLayerDistortion': 'Sample Layer',
+            }
+            if v in conversions:
+                v = conversions[v]
+
+            self.ui.pinhole_correction_type.setCurrentText(v)
+            idx = self.ui.pinhole_correction_type.currentIndex()
+            self.ui.pinhole_correction_type_tab_widget.setCurrentIndex(idx)
+
+    @property
+    def distortion_kwargs_config(self):
+        if self.overlay is None:
+            return
+
+        return self.overlay.tth_distortion_kwargs
+
+    @distortion_kwargs_config.setter
+    def distortion_kwargs_config(self, v):
+        if self.overlay is None:
+            return
+
+        self.overlay.tth_distortion_kwargs = v
+
+    @property
+    def distortion_kwargs_gui(self):
+        dtype = self.distortion_type_gui
+        if dtype is None:
+            return None
+        elif dtype == 'SampleLayerDistortion':
+            return {
+                'layer_standoff': self.ui.sl_layer_standoff.value() * 1e-3,
+                'layer_thickness': self.ui.sl_layer_thickness.value() * 1e-3,
+                'pinhole_thickness': (
+                    self.ui.sl_pinhole_thickness.value() * 1e-3),
+            }
+        elif dtype == 'Pinhole':
+            return {
+                'diameter': self.ui.ph_diameter.value() * 1e-3,
+                'thickness': self.ui.ph_thickness.value() * 1e-3,
+            }
+
+        raise Exception(f'Not implemented for: {dtype}')
+
+    @distortion_kwargs_gui.setter
+    def distortion_kwargs_gui(self, v):
+        dtype = self.distortion_type_gui
+        if dtype is None:
+            return
+        elif dtype == 'SampleLayerDistortion':
+            self.ui.sl_layer_standoff.setValue(v.get('layer_standoff', 0)
+                                               * 1e3)
+            self.ui.sl_layer_thickness.setValue(v.get('layer_thickness', 0)
+                                                * 1e3)
+            self.ui.sl_pinhole_thickness.setValue(v.get('pinhole_thickness',
+                                                        0) * 1e3)
+        elif dtype == 'Pinhole':
+            self.ui.ph_diameter.setValue(v.get('diameter', 0) * 1e3)
+            self.ui.thickness.setValue(v.get('thickness', 0) * 1e3)
+        else:
+            raise Exception(f'Not implemented for: {dtype}')
+
+    @property
     def offset_widgets(self):
         return [getattr(self.ui, f'offset_{i}') for i in range(3)]
 
     @property
+    def sample_layer_widgets(self):
+        widgets = [
+            'sl_layer_standoff',
+            'sl_layer_thickness',
+            'sl_pinhole_thickness',
+        ]
+        return [getattr(self.ui, w) for w in widgets]
+
+    @property
+    def pinhole_widgets(self):
+        return [self.ui.ph_diameter, self.ui.ph_thickness]
+
+    @property
     def widgets(self):
+        distortion_widgets = (
+            self.offset_widgets +
+            self.sample_layer_widgets +
+            self.pinhole_widgets +
+            [self.ui.distortion_type, self.ui.pinhole_correction_type]
+        )
         return [
             self.ui.enable_width,
             self.ui.tth_width
-        ] + self.offset_widgets
+        ] + distortion_widgets
 
     def material_tth_width_modified_externally(self, material_name):
         if not self.material:
@@ -206,3 +347,53 @@ class PowderOverlayEditor:
             self._table.material = self.material
 
         self._table.show()
+
+    @property
+    def distortion_type(self):
+        return self.ui.distortion_type.currentText()
+
+    @property
+    def pinhole_correction_type(self):
+        return self.ui.pinhole_correction_type.currentText()
+
+    @pinhole_correction_type.setter
+    def pinhole_correction_type(self, v):
+        self.ui.pinhole_correction_type.setCurrentText(v)
+
+    def distortion_type_changed(self):
+        self.validate_distortion_type()
+        self.update_config()
+
+    def validate_distortion_type(self):
+        if self.distortion_type == 'Pinhole Camera Correction':
+            # Warn the user if there is a non-zero oscillation stage vector
+            stage = HexrdConfig().instrument_config['oscillation_stage']
+            if not np.all(np.isclose(stage['translation'], 0)):
+                msg = (
+                    'WARNING: a non-zero oscillation stage vector is being '
+                    'used with the Pinhole Camera Correction.'
+                )
+                QMessageBox.critical(self.ui, 'HEXRD', msg)
+
+            beam = HexrdConfig().instrument_config['beam']
+            source_distance = beam.get('source_distance', np.inf)
+            if source_distance is None or source_distance == np.inf:
+                    msg = (
+                        'WARNING: the source distance is infinite.\n\nThe '
+                        'Pinhole Camera Correction will have no effect '
+                        'unless the source distance is finite.\n\nThe source '
+                        'distance may be edited in the Instrument "Form View"'
+                    )
+                    QMessageBox.critical(self.ui, 'HEXRD', msg)
+
+    def validate_pinhole_correction_type(self):
+        if self.pinhole_correction_type == 'Pinhole':
+            # Warn the user that we have not yet implemented this method
+            msg = (
+                '"Pinhole" correction has not yet been implemented.\n\n'
+                'Switching back to "Sample Layer".'
+            )
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+
+            # Switch back to Sample Layer
+            self.pinhole_correction_type = 'Sample Layer'

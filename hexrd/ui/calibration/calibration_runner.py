@@ -698,7 +698,8 @@ class CalibrationRunner(QObject):
         return funcs[overlay.type]()
 
     def auto_pick_powder_points(self):
-        material = self.active_overlay.material
+        overlay = self.active_overlay
+        material = overlay.material
         dialog = PowderCalibrationDialog(material, self.canvas)
         dialog.show_optimization_parameters(False)
         if not dialog.exec_():
@@ -715,7 +716,7 @@ class CalibrationRunner(QObject):
         statuses = HexrdConfig().get_statuses_instrument_format()
         self.instr.calibration_flags = statuses
 
-        all_flags = np.hstack([statuses, self.active_overlay.refinements])
+        all_flags = np.hstack([statuses, overlay.refinements])
         kwargs = {
             'instr': self.instr,
             'plane_data': material.planeData,
@@ -724,6 +725,7 @@ class CalibrationRunner(QObject):
             'eta_tol': options['eta_tol'],
             'pktype': options['pk_type'],
             'bgtype': options['bg_type'],
+            'tth_distortion': overlay.tth_distortion_dict,
         }
 
         self.auto_pc = PowderCalibrator(**kwargs)

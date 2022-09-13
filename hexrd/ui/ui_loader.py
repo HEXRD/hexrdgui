@@ -17,6 +17,7 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
 
     def register_custom_widgets(self):
         # Import these here to avoid circular imports
+        from hexrd.ui.hidden_bar_tab_widget import HiddenBarTabWidget
         from hexrd.ui.indexing.grains_table_view import GrainsTableView
         from hexrd.ui.image_canvas import ImageCanvas
         from hexrd.ui.image_tab_widget import ImageTabWidget
@@ -24,6 +25,7 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
 
         register_list = [
             GrainsTableView,
+            HiddenBarTabWidget,
             ImageCanvas,
             ImageTabWidget,
             ScientificDoubleSpinBox,

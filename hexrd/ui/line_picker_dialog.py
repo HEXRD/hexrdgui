@@ -132,9 +132,11 @@ class LinePickerDialog(QObject):
         self.canvas.draw_idle()
 
     def zoom_width_changed(self):
-        self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
-        self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
-        self.zoom_canvas.render()
+        canvas = self.zoom_canvas
+        canvas.tth_tol = self.ui.zoom_tth_width.value()
+        canvas.eta_tol = self.ui.zoom_eta_width.value()
+        if all(x is not None for x in (canvas.xdata, canvas.ydata)):
+            canvas.render()
 
     def zoom_point_picked(self, event):
         self.zoom_frozen = False

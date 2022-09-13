@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
-    <height>400</height>
+    <width>744</width>
+    <height>479</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
@@ -76,10 +76,43 @@
       <item row="3" column="3">
        <widget class="QComboBox" name="peak_fit_type"/>
       </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="fit_tth_tol_label">
+      <item row="2" column="2">
+       <widget class="QLabel" name="int_cutoff_label">
         <property name="text">
-         <string>Max fit |Δ2θ|/2θ₀ error:</string>
+         <string>Min Peak Amplitude (raw units):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QComboBox" name="background_type"/>
+      </item>
+      <item row="4" column="2">
+       <widget class="QLabel" name="background_type_label">
+        <property name="text">
+         <string>Background type:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2" colspan="2">
+       <widget class="QCheckBox" name="auto_guess_initial_fwhm">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The initial FWHM cannot always be accurately guessed, and in some cases it is essential to start with an accurate value.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Automatically guess initial FWHM?</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="peak_fit_type_label">
+        <property name="text">
+         <string>Peak fitting type:</string>
         </property>
        </widget>
       </item>
@@ -115,29 +148,50 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QLabel" name="int_cutoff_label">
+      <item row="1" column="2">
+       <widget class="QLabel" name="fit_tth_tol_label">
         <property name="text">
-         <string>Min Peak Amplitude (raw units):</string>
+         <string>Max fit |Δ2θ|/2θ₀ error:</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QLabel" name="peak_fit_type_label">
+      <item row="6" column="2">
+       <widget class="QLabel" name="initial_fwhm_label">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The initial FWHM cannot always be accurately guessed, and in some cases it is essential to start with an accurate value.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
-         <string>Peak fitting type:</string>
+         <string>Initial FWHM:</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="2">
-       <widget class="QLabel" name="background_type_label">
-        <property name="text">
-         <string>Background type:</string>
+      <item row="6" column="3">
+       <widget class="ScientificDoubleSpinBox" name="initial_fwhm">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The initial FWHM cannot always be accurately guessed, and in some cases it is essential to start with an accurate value.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-10000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.500000000000000</double>
         </property>
        </widget>
-      </item>
-      <item row="4" column="3">
-       <widget class="QComboBox" name="background_type"/>
       </item>
      </layout>
     </widget>
@@ -235,6 +289,8 @@
   <tabstop>int_cutoff</tabstop>
   <tabstop>peak_fit_type</tabstop>
   <tabstop>background_type</tabstop>
+  <tabstop>auto_guess_initial_fwhm</tabstop>
+  <tabstop>initial_fwhm</tabstop>
   <tabstop>conv_tol</tabstop>
   <tabstop>max_iter</tabstop>
   <tabstop>robust</tabstop>
@@ -270,6 +326,38 @@
     <hint type="destinationlabel">
      <x>217</x>
      <y>113</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>auto_guess_initial_fwhm</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>initial_fwhm_label</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>483</x>
+     <y>208</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>auto_guess_initial_fwhm</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>initial_fwhm</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>483</x>
+     <y>208</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>616</x>
+     <y>243</y>
     </hint>
    </hints>
   </connection>
