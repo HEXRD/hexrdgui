@@ -10,7 +10,6 @@ from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
 from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane
 
-from hexrd.ui.create_raw_mask import create_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
@@ -370,8 +369,13 @@ class PolarView:
             mask = HexrdConfig().masks[name]
             total_mask = np.logical_or(total_mask, ~mask)
         if HexrdConfig().threshold_mask_status:
-            thresh_mask = create_threshold_mask(img)
-            total_mask = np.logical_or(total_mask, ~thresh_mask)
+            idx = HexrdConfig().current_imageseries_idx
+            thresh_masks = HexrdConfig().threshold_mask
+            for det in self.images_dict.keys():
+                mask = thresh_masks[det][idx]
+                panel = self.detectors[det]
+                warped_mask = self.warp_image(mask, panel).astype(bool)
+                total_mask = np.logical_or(total_mask, ~warped_mask)
         img[total_mask] = np.nan
 
         return img
