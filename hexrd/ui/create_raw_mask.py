@@ -30,7 +30,7 @@ def create_threshold_mask(img):
     elif comparison == constants.UI_THRESHOLD_GREATER_THAN:
         mask = (img < value)
     elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
-        mask = (img == value)
+        mask = (img != value)
     return mask
 
 
