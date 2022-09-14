@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>401</width>
     <height>300</height>
    </rect>
   </property>
@@ -104,6 +104,13 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="view_masks">
+     <property name="text">
+      <string>View Masks</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

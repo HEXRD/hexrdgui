@@ -1,4 +1,4 @@
-import copy
+import math
 from hexrd.ui.create_polar_mask import rebuild_polar_masks
 from hexrd.ui.create_raw_mask import rebuild_raw_masks
 import os
@@ -19,6 +19,8 @@ from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import ViewType
+
+import matplotlib.pyplot as plt
 
 
 class MaskManagerDialog(QObject):
@@ -80,6 +82,7 @@ class MaskManagerDialog(QObject):
         self.ui.export_masks.clicked.connect(self.write_all_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
+        self.ui.view_masks.clicked.connect(self.show_masks)
 
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
@@ -369,3 +372,17 @@ class MaskManagerDialog(QObject):
             buffer['value'] = mask
         msg = 'Masks set as panel buffers.'
         QMessageBox.information(self.parent, 'HEXRD', msg)
+
+    def show_masks(self):
+        num_dets = len(HexrdConfig().detector_names)
+        cols = 2 if num_dets > 1 else 1
+        rows = math.ceil(num_dets / cols)
+
+        fig = plt.figure()
+        fig.canvas.manager.set_window_title('User Created Masks')
+        for i, det in enumerate(HexrdConfig().detector_names):
+            axis = fig.add_subplot(rows, cols, i + 1)
+            axis.set_title(det)
+            axis.imshow(HexrdConfig().raw_masks_dict[det])
+        fig.canvas.draw_idle()
+        fig.show()
