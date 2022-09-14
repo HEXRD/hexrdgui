@@ -759,6 +759,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 for det, mask in data:
                     if det == name:
                         final_mask = np.logical_and(final_mask, mask)
+            if self.threshold_mask_status:
+                idx = self.current_imageseries_idx
+                thresh_mask = self.threshold_mask[name][idx]
+                final_mask = np.logical_and(final_mask, thresh_mask)
             masks_dict[name] = final_mask
 
         return masks_dict
@@ -2152,8 +2156,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.mode_threshold_mask_changed.emit(v)
             self._threshold_data['mask_status'] = v
 
-    def set_threshold_mask(self, m):
-        self._threshold_data['mask'] = m
+    def set_threshold_mask(self, det, m):
+        masks = self._threshold_data.setdefault('mask', {})
+        masks[det] = m
 
     threshold_comparison = property(threshold_comparison,
                                     set_threshold_comparison)

@@ -1,4 +1,4 @@
-import copy
+import math
 from hexrd.ui.create_polar_mask import rebuild_polar_masks
 from hexrd.ui.create_raw_mask import rebuild_raw_masks
 import os
@@ -7,7 +7,9 @@ import h5py
 
 from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import (
-    QCheckBox, QFileDialog, QMenu, QMessageBox, QPushButton, QTableWidgetItem)
+    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
+    QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout
+)
 from PySide2.QtGui import QCursor
 
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
@@ -17,6 +19,8 @@ from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import ViewType
+
+import matplotlib.pyplot as plt
 
 
 class MaskManagerDialog(QObject):
@@ -31,7 +35,7 @@ class MaskManagerDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
         self.create_masks_list()
-        self.threshold = False
+        self.threshold = None
         self.image_mode = ViewType.raw
 
         self.setup_connections()
@@ -48,7 +52,7 @@ class MaskManagerDialog(QObject):
             if not any(np.array_equal(m, val) for m in self.masks.values()):
                 self.masks[key] = val
         if HexrdConfig().threshold_mask_status:
-            self.threshold = True
+            self.threshold = 'threshold'
             self.masks['threshold'] = (
                 'threshold', HexrdConfig().threshold_mask)
         HexrdConfig().visible_masks = list(self.masks.keys())
@@ -63,11 +67,11 @@ class MaskManagerDialog(QObject):
                 if any(np.array_equal(val, m) for _, m in vals):
                     continue
                 self.masks[name] = (det, val)
-        elif not self.threshold:
+        elif self.threshold is None:
             name = unique_name(self.masks, 'threshold')
             self.masks[name] = ('threshold', HexrdConfig().threshold_mask)
             HexrdConfig().visible_masks.append(name)
-            self.threshold = True
+            self.threshold = name
         self.setup_table()
 
     def setup_connections(self):
@@ -78,15 +82,19 @@ class MaskManagerDialog(QObject):
         self.ui.export_masks.clicked.connect(self.write_all_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
+        self.ui.view_masks.clicked.connect(self.show_masks)
 
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
+        HexrdConfig().mode_threshold_mask_changed.connect(
+            self.toggle_threshold_visibility)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
         HexrdConfig().save_state.connect(self.save_state)
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
 
     def setup_table(self, status=True):
+        self.threshold_cb = None
         with block_signals(self.ui.masks_table):
             self.ui.masks_table.setRowCount(0)
             for i, key in enumerate(self.masks.keys()):
@@ -112,20 +120,19 @@ class MaskManagerDialog(QObject):
                 # for threshold mask
                 mtype, _ = self.masks[key]
                 if mtype == 'threshold':
-                    self.setup_threshold_connections(cb, i, key)
+                    self.setup_threshold_connections(i, key)
+                    self.threshold_cb = cb
 
-    def setup_threshold_connections(self, checkbox, row, name):
-        HexrdConfig().mode_threshold_mask_changed.connect(checkbox.setChecked)
-        checkbox.toggled.connect(self.threshold_toggled)
+    def setup_threshold_connections(self, row, name):
         self.ui.masks_table.cellWidget(row, 2).clicked.connect(
             lambda row=row, name=name: self.remove_mask(row, name))
-
 
     def image_mode_changed(self, mode):
         self.image_mode = mode
 
-    def threshold_toggled(self, v):
-        HexrdConfig().set_threshold_mask_status(v, set_by_mgr=True)
+    def toggle_threshold_visibility(self, status):
+        if self.threshold_cb is not None:
+            self.threshold_cb.setChecked(status)
 
     def toggle_visibility(self, checked, name):
         if checked and name not in HexrdConfig().visible_masks:
@@ -133,20 +140,26 @@ class MaskManagerDialog(QObject):
         elif not checked and name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
 
+        if name == self.threshold:
+            HexrdConfig().set_threshold_mask_status(checked, set_by_mgr=True)
+
         if self.image_mode == ViewType.polar:
             HexrdConfig().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             HexrdConfig().raw_masks_changed.emit()
 
     def reset_threshold(self):
-        self.threshold = False
+        self.threshold = None
         HexrdConfig().set_threshold_comparison(0)
         HexrdConfig().set_threshold_value(0.0)
-        HexrdConfig().set_threshold_mask(None)
-        HexrdConfig().set_threshold_mask_status(False)
+        for det in HexrdConfig().detector_names:
+            HexrdConfig().set_threshold_mask(det, None)
+        HexrdConfig().set_threshold_mask_status(False, set_by_mgr=True)
 
     def remove_mask(self, row, name):
-        mtype, _ = self.masks[name]
+        mtype, _ = self.masks.get(name, (None, None))
+        if mtype is None:
+            return
 
         del self.masks[name]
         if name in HexrdConfig().visible_masks:
@@ -192,6 +205,9 @@ class MaskManagerDialog(QObject):
             if self.old_name in HexrdConfig().visible_masks:
                 HexrdConfig().visible_masks.append(new_name)
                 HexrdConfig().visible_masks.remove(self.old_name)
+
+            if self.old_name == self.threshold:
+                self.threshold = new_name
 
         self.old_name = None
         self.setup_table()
@@ -310,12 +326,63 @@ class MaskManagerDialog(QObject):
         self.update_masks_list('raw')
 
     def masks_to_panel_buffer(self):
+        show_dialog = False
+        selection = 'Replace buffer'
+        for det in HexrdConfig().detectors.values():
+            buff_val = det.get('buffer', {}).get('value', None)
+            if isinstance(buff_val, np.ndarray) and buff_val.ndim == 2:
+                show_dialog = True
+                break
+
+        if show_dialog:
+            dialog = QDialog(self.ui)
+            layout = QVBoxLayout()
+            dialog.setLayout(layout)
+
+            options = QComboBox(dialog)
+            options.addItem('Replace buffer')
+            options.addItem('Logical AND with buffer')
+            options.addItem('Logical OR with buffer')
+            layout.addWidget(options)
+
+            buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            button_box = QDialogButtonBox(buttons, dialog)
+            button_box.accepted.connect(dialog.accept)
+            button_box.rejected.connect(dialog.reject)
+            layout.addWidget(button_box)
+
+            if not dialog.exec_():
+                # canceled
+                return
+
+            selection = options.currentText()
+
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
         for det, mask in HexrdConfig().raw_masks_dict.items():
             detector_config = HexrdConfig().detector(det)
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
+            buffer_value = detector_config['buffer'].get('value', None)
+            if isinstance(buffer_value, np.ndarray) and buff_val.ndim == 2:
+                if selection == 'Logical AND with buffer':
+                    mask = np.logical_and(mask, buffer_value)
+                elif selection == 'Logical OR with buffer':
+                    mask = np.logical_or(mask, buffer_value)
             buffer['value'] = mask
         msg = 'Masks set as panel buffers.'
         QMessageBox.information(self.parent, 'HEXRD', msg)
+
+    def show_masks(self):
+        num_dets = len(HexrdConfig().detector_names)
+        cols = 2 if num_dets > 1 else 1
+        rows = math.ceil(num_dets / cols)
+
+        fig = plt.figure()
+        fig.canvas.manager.set_window_title('User Created Masks')
+        for i, det in enumerate(HexrdConfig().detector_names):
+            axis = fig.add_subplot(rows, cols, i + 1)
+            axis.set_title(det)
+            axis.imshow(HexrdConfig().raw_masks_dict[det])
+        fig.canvas.draw_idle()
+        fig.show()

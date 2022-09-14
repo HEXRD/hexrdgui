@@ -9,34 +9,29 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils.conversions import angles_to_pixels
 
 
-def apply_threshold_mask(imageseries):
+# TODO: Rename to something like update_threshold_mask
+def apply_threshold_mask():
+    for det in HexrdConfig().detector_names:
+        ims = HexrdConfig().imageseries(det)
+        masks = [None for i in range(len(ims))]
+        for idx in range(len(ims)):
+            img = HexrdConfig().image(det, idx)
+            mask = create_threshold_mask(img)
+            masks[idx] = mask
+        HexrdConfig().set_threshold_mask(det, masks)
+
+
+def create_threshold_mask(img):
     comparison = HexrdConfig().threshold_comparison
     value = HexrdConfig().threshold_value
-    for det in HexrdConfig().detector_names:
-        ims = imageseries[det]
-        masked_ims = [None for i in range(len(ims))]
-        for idx in range(len(ims)):
-            img = copy.copy(ims[idx])
-            masked_img, mask = _create_threshold_mask(img, comparison, value)
-            masked_ims[idx] = masked_img
-            HexrdConfig().set_threshold_mask(mask)
-        HexrdConfig().imageseries_dict[det] = masked_ims
-
-
-def remove_threshold_mask(ims_dict_copy):
-    HexrdConfig().imageseries_dict = copy.copy(ims_dict_copy)
-
-
-def _create_threshold_mask(img, comparison, value):
     mask = np.ones(img.shape, dtype=bool)
     if comparison == constants.UI_THRESHOLD_LESS_THAN:
-        mask = (img < value)
-    elif comparison == constants.UI_THRESHOLD_GREATER_THAN:
         mask = (img > value)
+    elif comparison == constants.UI_THRESHOLD_GREATER_THAN:
+        mask = (img < value)
     elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
-        mask = (img == value)
-    img[mask] = 0
-    return img, mask
+        mask = (img != value)
+    return mask
 
 
 def convert_polar_to_raw(line_data):

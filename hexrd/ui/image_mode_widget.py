@@ -7,7 +7,7 @@ from PySide2.QtCore import QObject, Signal
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui.create_raw_mask import apply_threshold_mask, remove_threshold_mask
+from hexrd.ui.create_raw_mask import apply_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import Overlay
 from hexrd.ui.ui_loader import UiLoader
@@ -270,17 +270,12 @@ class ImageModeWidget(QObject):
             HexrdConfig().threshold_comparison)
         self.ui.raw_threshold_value.setEnabled(checked)
         self.ui.raw_threshold_value.setValue(HexrdConfig().threshold_value)
-        if not hasattr(self, 'ims_copy') or self.ims_copy is None:
-            self.ims_copy = copy.copy(HexrdConfig().imageseries_dict)
         self.update_mask(checked)
 
     def update_mask(self, masking):
         # Add or remove the mask. This will cause a re-render
         if not isinstance(masking, bool) or masking:
-            apply_threshold_mask(self.ims_copy)
-        else:
-            remove_threshold_mask(self.ims_copy)
-            self.ims_copy = None
+            apply_threshold_mask()
         self.mask_applied.emit()
 
     def reset_masking(self, checked=False):
