@@ -93,6 +93,7 @@
     <addaction name="menu_save"/>
     <addaction name="menu_import"/>
     <addaction name="menu_export"/>
+    <addaction name="action_about"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -690,6 +691,11 @@
    </property>
    <property name="text">
     <string>Image Calculator</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>

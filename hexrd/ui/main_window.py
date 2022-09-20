@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 import h5py
+from hexrd.ui.about_dialog import AboutDialog
 import numpy as np
 
 from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
@@ -285,6 +286,7 @@ class MainWindow(QObject):
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
+        self.ui.action_about.triggered.connect(self.on_action_about_triggered)
 
     def on_state_loaded(self):
         self.update_action_check_states()
@@ -1123,3 +1125,7 @@ class MainWindow(QObject):
         # Update the data, but don't reset the bounds
         # This will update the histogram in the B&C editor
         self.color_map_editor.data = images
+
+    def on_action_about_triggered(self):
+        dialog = AboutDialog(self.ui)
+        dialog.ui.exec_()
