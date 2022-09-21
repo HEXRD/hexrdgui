@@ -187,6 +187,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when overlays were added, removed, or upon type change"""
     overlay_list_modified = Signal()
 
+    """Emitted when the loaded images change"""
+    recent_images_changed = Signal()
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -228,6 +231,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._polar_tth_distortion_overlay_name = None
         self.polar_corr_field_polar_dict = None
         self.polar_angular_grid = None
+        self._recent_images = {}
 
         self.setup_logging()
 
@@ -309,6 +313,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_imported_default_materials', []),
             ('overlays_dictified', []),
             ('_polar_tth_distortion_overlay_name', None),
+            ('_recent_images', {}),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -407,6 +412,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # to set the refinements (because it needs to get the material)
             # Thus, set the overlays later.
             QTimer.singleShot(0, set_overlays)
+
+        self.recent_images_changed.emit()
 
     @property
     def _instrument_status_dict(self):
@@ -786,6 +793,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def clear_images(self, initial_load=False):
         self.reset_unagg_imgs()
         self.imageseries_dict.clear()
+        self._recent_images.clear()
         if self.load_panel_state is not None and not initial_load:
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
@@ -2350,3 +2358,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @config_image.setter
     def config_image(self, image):
         self.config['image'] = image
+
+    @property
+    def recent_images(self):
+        return self._recent_images
+
+    @recent_images.setter
+    def recent_images(self, images):
+        v = {}
+        for det, imgs in zip(self.detector_names, images):
+            v[det] = imgs if isinstance(imgs, list) else [imgs]
+        self._recent_images = v
+        self.recent_images_changed.emit()

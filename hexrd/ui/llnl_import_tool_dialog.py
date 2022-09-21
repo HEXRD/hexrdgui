@@ -54,6 +54,7 @@ class LLNLImportToolDialog(QObject):
         self.detectors = []
         self.defaults = {}
         self.import_in_progress = False
+        self.loaded_images = []
 
         self.set_default_color()
         self.setup_connections()
@@ -222,6 +223,7 @@ class LLNLImportToolDialog(QObject):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, caption, dir=HexrdConfig().images_dir)
         if selected_file:
+            self.loaded_images.append(selected_file)
             HexrdConfig().set_images_dir(selected_file)
 
             files, manual = ImageLoadManager().load_images([selected_file])
@@ -436,6 +438,7 @@ class LLNLImportToolDialog(QObject):
         self.defaults.clear()
         self.config_file = None
         self.import_in_progress = False
+        self.loaded_images.clear()
 
     def completed(self):
         self.import_in_progress = False
@@ -492,6 +495,8 @@ class LLNLImportToolDialog(QObject):
             det_config = HexrdConfig().config['instrument']['detectors'][det]
             buffer = det_config.setdefault('buffer', buffer_default)
             buffer['value'] = self.edited_images[det]['panel_buffer']
+
+        HexrdConfig().recent_images = self.loaded_images
 
         self.close_widget()
         self.parent().action_show_toolbar.setEnabled(True)

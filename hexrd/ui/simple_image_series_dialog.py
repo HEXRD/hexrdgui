@@ -545,6 +545,7 @@ class SimpleImageSeriesDialog(QObject):
             data['yml_files'] = self.yml_files
         if self.frame_data is not None:
             data.update(self.frame_data)
+        HexrdConfig().recent_images = self.files
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
         ImageLoadManager().read_data(self.files, data, self.parent())
         self.update_allowed = True
