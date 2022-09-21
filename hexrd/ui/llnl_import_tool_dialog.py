@@ -139,6 +139,9 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_file_label.setToolTip(self.config_file)
 
     def instrument_selected(self, idx):
+        if HexrdConfig().show_beam_marker:
+            HexrdConfig().show_beam_marker = False
+
         self.detectors.clear()
         self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
@@ -234,8 +237,9 @@ class LLNLImportToolDialog(QObject):
                 if not path_selected:
                     return
 
-            if not self.canvas.raw_axes[0].get_autoscale_on():
-                self.canvas.raw_axes[0].set_autoscale_on(True)
+            for raw_axes in self.canvas.raw_axes.values():
+                if not raw_axes.get_autoscale_on():
+                    raw_axes.set_autoscale_on(True)
 
             if self.completed_detectors:
                 # Only reset the color map range for first detector processed
