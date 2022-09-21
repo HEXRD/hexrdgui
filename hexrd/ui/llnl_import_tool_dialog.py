@@ -139,6 +139,9 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_file_label.setToolTip(self.config_file)
 
     def instrument_selected(self, idx):
+        if HexrdConfig().show_beam_marker:
+            HexrdConfig().show_beam_marker = False
+
         self.detectors.clear()
         self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
