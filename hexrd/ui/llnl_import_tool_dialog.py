@@ -237,8 +237,9 @@ class LLNLImportToolDialog(QObject):
                 if not path_selected:
                     return
 
-            if not self.canvas.raw_axes[0].get_autoscale_on():
-                self.canvas.raw_axes[0].set_autoscale_on(True)
+            for raw_axes in self.canvas.raw_axes.values():
+                if not raw_axes.get_autoscale_on():
+                    raw_axes.set_autoscale_on(True)
 
             if self.completed_detectors:
                 # Only reset the color map range for first detector processed

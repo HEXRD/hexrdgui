@@ -18,7 +18,6 @@ class InteractiveTemplate:
     def __init__(self, parent=None):
         self.parent = parent.image_tab_widget.image_canvases[0]
         self.ax = self.parent.axes_images[0]
-        self.raw_axes = list(self.parent.raw_axes.values())[0]
         self.panels = create_hedm_instrument().detectors
         self.img = None
         self.shape = None
@@ -27,6 +26,10 @@ class InteractiveTemplate:
         self.translating = True
         self.shape_styles = []
         self.parent.setFocusPolicy(Qt.ClickFocus)
+
+    @property
+    def raw_axes(self):
+        return list(self.parent.raw_axes.values())[0]
 
     def update_image(self, img):
         self.img = img
@@ -50,7 +53,6 @@ class InteractiveTemplate:
         self.center = self.get_midpoint()
         self.update_position(instr, det)
         self.connect_translate()
-        self.raw_axes = self.parent.raw_axes[0]
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
@@ -113,7 +115,6 @@ class InteractiveTemplate:
 
     def toggle_boundaries(self, show):
         if show:
-            self.raw_axes = self.parent.raw_axes[0]
             for patch, style in zip(self.patches, self.shape_styles):
                 shape = patches.Polygon(
                     patch.xy,
@@ -135,7 +136,7 @@ class InteractiveTemplate:
         else:
             if self.shape:
                 self.disconnect()
-            self.patches = self.raw_axes.patches
+            self.patches = [p for p in self.raw_axes.patches]
         self.redraw()
 
     def disconnect(self):
