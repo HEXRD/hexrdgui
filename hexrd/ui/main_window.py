@@ -259,6 +259,8 @@ class MainWindow(QObject):
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().raw_masks_changed.connect(
             self.ui.image_tab_widget.load_images)
+        HexrdConfig().recent_images_changed.connect(
+            self.update_view_recent_images_list)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -379,6 +381,7 @@ class MainWindow(QObject):
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
         self.simple_image_series_dialog.config_changed()
+        self.update_view_recent_images_list()
 
     def load_dummy_images(self):
         if HexrdConfig().loading_state:
@@ -443,6 +446,7 @@ class MainWindow(QObject):
                 for d, f in zip(detector_names, image_files):
                     pos = HexrdConfig().detector_names.index(d)
                     files[pos].append(f)
+                HexrdConfig().recent_images = image_files
                 ImageLoadManager().read_data(files, parent=self.ui)
 
     def images_loaded(self, enabled=True):
@@ -1129,3 +1133,10 @@ class MainWindow(QObject):
     def on_action_about_triggered(self):
         dialog = AboutDialog(self.ui)
         dialog.ui.exec_()
+
+    def update_view_recent_images_list(self):
+        self.ui.view_recent_images.clear()
+        for det, images in HexrdConfig().recent_images.items():
+            self.ui.view_recent_images.addSection(det)
+            for image in images:
+                self.ui.view_recent_images.addAction(image)
