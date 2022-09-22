@@ -7,7 +7,10 @@ import h5py
 from hexrd.ui.about_dialog import AboutDialog
 import numpy as np
 
-from PySide2.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer
+from PySide2.QtCore import (
+    QEvent, QObject, Qt, QThreadPool, Signal, QTimer, QUrl
+)
+from PySide2.QtGui import QDesktopServices
 from PySide2.QtWidgets import (
     QApplication, QDockWidget, QFileDialog, QInputDialog, QMainWindow,
     QMessageBox
@@ -35,7 +38,7 @@ from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
     convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.utils import unique_name
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import ViewType, DOCUMENTATION_URL
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_calculator_dialog import ImageCalculatorDialog
 from hexrd.ui.image_file_manager import ImageFileManager
@@ -288,7 +291,10 @@ class MainWindow(QObject):
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
+
         self.ui.action_about.triggered.connect(self.on_action_about_triggered)
+        self.ui.action_documentation.triggered.connect(
+            self.on_action_documentation_triggered)
 
     def on_state_loaded(self):
         self.update_action_check_states()
@@ -1140,3 +1146,6 @@ class MainWindow(QObject):
             self.ui.view_recent_images.addSection(det)
             for image in images:
                 self.ui.view_recent_images.addAction(image)
+
+    def on_action_documentation_triggered(self):
+        QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
