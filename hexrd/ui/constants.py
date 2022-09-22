@@ -68,3 +68,5 @@ BUFFER_KEY = 'buffer'
 # determine which mode has been set by the navigation bar
 ZOOM = 'zoom rect'
 PAN = 'pan/zoom'
+
+DOCUMENTATION_URL = 'https://hexrd-canonical.readthedocs.io/'

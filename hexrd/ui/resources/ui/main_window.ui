@@ -93,7 +93,6 @@
     <addaction name="menu_save"/>
     <addaction name="menu_import"/>
     <addaction name="menu_export"/>
-    <addaction name="action_about"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -177,10 +176,18 @@
     <addaction name="separator"/>
     <addaction name="menu_hedm"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>H&amp;elp</string>
+    </property>
+    <addaction name="action_documentation"/>
+    <addaction name="action_about"/>
+   </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_edit"/>
    <addaction name="menu_view"/>
    <addaction name="menu_run"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="status_bar">
    <property name="sizeGripEnabled">
@@ -700,6 +707,16 @@
    </property>
   </action>
   <action name="action_about">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="action_documentation">
+   <property name="text">
+    <string>Documentation</string>
+   </property>
+  </action>
+  <action name="action_about_2">
    <property name="text">
     <string>About</string>
    </property>
