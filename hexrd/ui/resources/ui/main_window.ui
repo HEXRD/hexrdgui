@@ -167,8 +167,8 @@
      <property name="title">
       <string>Calibration</string>
      </property>
-     <addaction name="action_run_laue_and_powder_calibration"/>
      <addaction name="action_run_fast_powder_calibration"/>
+     <addaction name="action_run_laue_and_powder_calibration"/>
      <addaction name="action_run_hedm_calibration"/>
     </widget>
     <addaction name="menu_calibration"/>
@@ -450,7 +450,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Laue and Powder</string>
+    <string>Composite (Laue and Powder)</string>
    </property>
   </action>
   <action name="action_run_fast_powder_calibration">
@@ -676,7 +676,7 @@
   </action>
   <action name="action_run_hedm_calibration">
    <property name="text">
-    <string>HEDM</string>
+    <string>Rotation Series (ff-HEDM)</string>
    </property>
   </action>
   <action name="action_view_overlay_picks">

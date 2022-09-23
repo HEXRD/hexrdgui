@@ -211,7 +211,7 @@
             </sizepolicy>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="beam_vector_spherical">
             <layout class="QHBoxLayout" name="horizontalLayout">
@@ -224,7 +224,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>θ:</string>
+                <string>Azimuth θ:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -268,7 +268,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>φ:</string>
+                <string>Elevation φ:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -316,7 +316,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>i:</string>
+                <string>Xₗ:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -327,6 +327,9 @@
               <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_z">
                <property name="keyboardTracking">
                 <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
                </property>
                <property name="decimals">
                 <number>8</number>
@@ -361,7 +364,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>j:</string>
+                <string>Yₗ:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -372,6 +375,9 @@
               <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_y">
                <property name="keyboardTracking">
                 <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
                </property>
                <property name="decimals">
                 <number>8</number>
@@ -396,7 +402,7 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>k:</string>
+                <string>Zₗ:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -407,6 +413,9 @@
               <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_x">
                <property name="keyboardTracking">
                 <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
                </property>
                <property name="decimals">
                 <number>8</number>
@@ -570,6 +579,9 @@
            <property name="prefix">
             <string/>
            </property>
+           <property name="suffix">
+            <string> mm</string>
+           </property>
            <property name="decimals">
             <number>8</number>
            </property>
@@ -605,6 +617,9 @@
            <property name="prefix">
             <string/>
            </property>
+           <property name="suffix">
+            <string> mm</string>
+           </property>
            <property name="decimals">
             <number>8</number>
            </property>
@@ -630,6 +645,9 @@
            <property name="prefix">
             <string/>
            </property>
+           <property name="suffix">
+            <string> mm</string>
+           </property>
            <property name="decimals">
             <number>8</number>
            </property>
@@ -647,7 +665,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_16">
            <property name="text">
-            <string>Tilt Angles:</string>
+            <string>Rotation Parameters:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1109,6 +1127,9 @@
            <property name="keyboardTracking">
             <bool>false</bool>
            </property>
+           <property name="suffix">
+            <string> mm</string>
+           </property>
            <property name="decimals">
             <number>8</number>
            </property>
@@ -1133,6 +1154,9 @@
            </property>
            <property name="keyboardTracking">
             <bool>false</bool>
+           </property>
+           <property name="suffix">
+            <string> mm</string>
            </property>
            <property name="decimals">
             <number>8</number>
@@ -1246,7 +1270,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>chi:</string>
+         <string>χ:</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1263,6 +1287,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="suffix">
+         <string> mm</string>
         </property>
         <property name="decimals">
          <number>8</number>
@@ -1289,6 +1316,9 @@
         <property name="prefix">
          <string/>
         </property>
+        <property name="suffix">
+         <string> mm</string>
+        </property>
         <property name="decimals">
          <number>8</number>
         </property>
@@ -1313,6 +1343,9 @@
         </property>
         <property name="prefix">
          <string/>
+        </property>
+        <property name="suffix">
+         <string> mm</string>
         </property>
         <property name="decimals">
          <number>8</number>
