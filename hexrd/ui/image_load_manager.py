@@ -334,7 +334,6 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                     nsteps = data['nsteps'][i]
                     start = data['omega_min'][i]
                     stop = data['omega_max'][i]
-
                     omw.addwedge(start, stop, nsteps)
             ims_dict[key].metadata['omega'] = omw.omegas
             ims_dict[key] = OmegaImageSeries(ims_dict[key])

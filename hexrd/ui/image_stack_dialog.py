@@ -340,6 +340,9 @@ class ImageStackDialog(QObject):
     def get_omega_values(self, num_files):
         # Returns the omega values that are used to populate the
         # SimpleImageSeries dialog table
+        ome_arr_dtype = np.dtype([('start', float),
+                                  ('stop', float),
+                                  ('steps', int)])
         wedges = self.state['wedges']
         if self.state['omega_from_file'] and self.state['omega']:
             # user selected a file
@@ -359,12 +362,12 @@ class ImageStackDialog(QObject):
                     stop = start + delta
                     if last_wedge and last_image and max_total_frames:
                         steps = max_total_frames % steps
-                    omega.append([start, stop, steps])
+                    omega.append((start, stop, steps))
                     start = stop
         elif wedges and num_files == 1:
             # single images need a single wedge, even if discontinuous
-            nsteps = sum(np.array(wedges)[:, 2])
-            omega = [[wedges[0][0], wedges[-1][1], nsteps]]
+            nsteps = sum([i[-1] for i in wedges])
+            omega = [(wedges[0][0], wedges[-1][1], nsteps)]
         else:
             # user did not select file or enter wedges
             delta = MAXIMUM_OMEGA_RANGE / num_files
@@ -372,18 +375,17 @@ class ImageStackDialog(QObject):
                 [0, 0 + delta],
                 [MAXIMUM_OMEGA_RANGE - delta, MAXIMUM_OMEGA_RANGE],
                 num_files, dtype=np.uint16)
-            omega = [[b, e, self.frames_per_image] for [b, e] in omega]
+            omega = [(b, e, self.frames_per_image) for [b, e] in omega]
             if max_total := self.state['max_total_frames']:
                 # The max_total is subtracted off of the end of the imageseries
                 # We need to account for the edge case where the max_total is
                 # equivalent to ignoring one or more entire files
                 for i, (start, stop, nsteps) in enumerate(omega):
                     if max_total < nsteps:
-                        omega[i] = [start, stop, max_total]
-
+                        omega[i] = (start, stop, max_total)
                     max_total = max(max_total - nsteps, 0)
-        omega = np.asarray(omega)
-        return omega[:, 0], omega[:, 1], omega[:, 2]
+        omega = np.asarray(omega, dtype=ome_arr_dtype)
+        return omega['start'], omega['stop'], omega['steps']
 
     def build_data(self):
         HexrdConfig().stack_state = copy.deepcopy(self.state)
