@@ -3,10 +3,10 @@ import numpy as np
 from hexrd import constants
 from hexrd import unitcell
 
-from hexrd.gridutil import cellIndices
 from hexrd.transforms import xfcapi
 from hexrd.xrdutil.phutil import (
-    SampleLayerDistortion, tth_corr_map_sample_layer
+    PinholeDistortion, SampleLayerDistortion, tth_corr_map_pinhole,
+    tth_corr_map_sample_layer
 )
 
 from hexrd.ui.constants import OverlayType, ViewType
@@ -195,7 +195,6 @@ class PowderOverlay(Overlay):
     def generate_ring_points(self, instr, tths, etas, panel, display_mode):
         from hexrd.ui.hexrd_config import HexrdConfig
 
-        delta_eta_nom = np.degrees(np.median(np.diff(etas)))
         ring_pts = []
         skipped_tth = []
 
@@ -221,18 +220,20 @@ class PowderOverlay(Overlay):
             # Offset the distortion if we are distorting the polar image
             # with a different overlay, and we have all the required
             # variables defined.
+            polar_corr_field = HexrdConfig().polar_corr_field_polar_dict
+            polar_angular_grid = HexrdConfig().polar_angular_grid
+
             offset_distortion = (
                 display_mode == ViewType.polar and
                 distortion_overlay is not None and
-                HexrdConfig().polar_corr_field_polar_dict and
-                HexrdConfig().polar_angular_grid is not None
+                polar_corr_field and
+                polar_angular_grid is not None
             )
 
             if offset_distortion:
                 # Set these up outside of the loop
-                polar_corr_field = HexrdConfig().polar_corr_field_polar_dict
                 polar_field = polar_corr_field[panel.name].filled(np.nan)
-                eta_centers, tth_centers = HexrdConfig().polar_angular_grid
+                eta_centers, tth_centers = polar_angular_grid
                 first_eta_col = eta_centers[:, 0]
                 first_tth_row = tth_centers[0]
 
@@ -392,8 +393,16 @@ class PowderOverlay(Overlay):
             }
             return SampleLayerDistortion(**kwargs)
 
+        def tth_pinhole_distortion(panel):
+            kwargs = {
+                'detector': panel,
+                **self.tth_distortion_kwargs,
+            }
+            return PinholeDistortion(**kwargs)
+
         known_types = {
             'SampleLayerDistortion': tth_sample_layer_distortion,
+            'PinholeDistortion': tth_pinhole_distortion,
         }
 
         if self.tth_distortion_type not in known_types:
@@ -410,11 +419,22 @@ class PowderOverlay(Overlay):
 
     @property
     def tth_displacement_field(self):
+        funcs = {
+            'SampleLayerDistortion': tth_corr_map_sample_layer,
+            'PinholeDistortion': tth_corr_map_pinhole,
+        }
+
+        if self.tth_distortion_type not in funcs:
+            msg = f'Unhandled distortion type: {self.tth_distortion_type}'
+            raise Exception(msg)
+
+        f = funcs[self.tth_distortion_type]
+
         kwargs = {
             'instrument': self.instrument,
             **self.tth_distortion_kwargs,
         }
-        return tth_corr_map_sample_layer(**kwargs)
+        return f(**kwargs)
 
     @property
     def default_style(self):
