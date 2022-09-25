@@ -1,9 +1,8 @@
-import copy
 from functools import partial
 import multiprocessing
 import numpy as np
 
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, QTimer, Signal
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
@@ -98,8 +97,8 @@ class ImageModeWidget(QObject):
 
         HexrdConfig().state_loaded.connect(self.update_gui_from_config)
 
-        HexrdConfig().overlay_distortions_changed.connect(
-            self.update_polar_tth_distortion_overlay_options)
+        HexrdConfig().overlay_distortions_modified.connect(
+            self.overlay_distortions_modified)
         HexrdConfig().overlay_renamed.connect(
             self.update_polar_tth_distortion_overlay_options)
         HexrdConfig().overlay_list_modified.connect(
@@ -310,6 +309,16 @@ class ImageModeWidget(QObject):
         self.polar_apply_tth_distortion = enabled
         if enabled:
             w.setCurrentText(name)
+
+    def overlay_distortions_modified(self, name):
+        if name == self.polar_tth_distortion_overlay:
+            # We need to rerender the whole polar view
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            # Give the overlays a second to finish updating before we rerender
+            QTimer.singleShot(0, lambda: HexrdConfig().rerender_needed.emit())
+
+        # Need to update the names
+        self.update_polar_tth_distortion_overlay_options()
 
     def update_polar_tth_distortion_overlay_options(self):
         w = self.ui.polar_tth_distortion_overlay

@@ -175,8 +175,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Indicate that the beam marker has been modified"""
     beam_marker_modified = Signal()
 
-    """Emitted when any overlay distortions have been changed"""
-    overlay_distortions_changed = Signal()
+    """Emitted when an overlay's distortions have been modified.
+
+    The argument is the name of the overlay that was modified.
+    """
+    overlay_distortions_modified = Signal(str)
 
     """Emitted when an overlay's name has been changed
 
