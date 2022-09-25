@@ -195,7 +195,7 @@ class PowderOverlayEditor:
             return
 
         self.overlay.tth_distortion_type = v
-        HexrdConfig().overlay_distortions_modified.emit()
+        HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
 
     @property
     def distortion_type_gui(self):
@@ -254,7 +254,7 @@ class PowderOverlayEditor:
             return
 
         self.overlay.tth_distortion_kwargs = v
-        HexrdConfig().overlay_distortions_modified.emit()
+        HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
 
     @property
     def distortion_kwargs_gui(self):

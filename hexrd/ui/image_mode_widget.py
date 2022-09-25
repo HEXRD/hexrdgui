@@ -310,12 +310,15 @@ class ImageModeWidget(QObject):
         if enabled:
             w.setCurrentText(name)
 
-    def overlay_distortions_modified(self):
-        HexrdConfig().flag_overlay_updates_for_all_materials()
-        self.update_polar_tth_distortion_overlay_options()
+    def overlay_distortions_modified(self, name):
+        if name == self.polar_tth_distortion_overlay:
+            # We need to rerender the whole polar view
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            # Give the overlays a second to finish updating before we rerender
+            QTimer.singleShot(0, lambda: HexrdConfig().rerender_needed.emit())
 
-        # Give the overlays a second to finish updating before we rerender
-        QTimer.singleShot(0, lambda: HexrdConfig().rerender_needed.emit())
+        # Need to update the names
+        self.update_polar_tth_distortion_overlay_options()
 
     def update_polar_tth_distortion_overlay_options(self):
         w = self.ui.polar_tth_distortion_overlay
