@@ -4,6 +4,7 @@ import numpy as np
 
 from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
@@ -45,6 +46,9 @@ class PowderOverlayEditor:
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed)
+
+        self.ui.ph_apply_panel_buffers.clicked.connect(
+            self.ph_apply_panel_buffers)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -399,3 +403,56 @@ class PowderOverlayEditor:
                     'distance may be edited in the Instrument "Form View"'
                 )
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
+
+    def ph_apply_panel_buffers(self):
+        instr = create_hedm_instrument()
+
+        config = self.distortion_kwargs_config
+        required_keys = ('pinhole_radius', 'pinhole_thickness')
+        if config is None or any(x not in config for x in required_keys):
+            raise Exception(f'Failed to create panel buffer with {config=}')
+
+        ph_radius = config['pinhole_radius']
+        ph_thickness = config['pinhole_thickness']
+
+        # make beam vector the pinhole axis on copy of instrument
+        instr.beam_vector = np.r_[0., 0., -1.]
+        ph_buffer = {}
+        for det_key, det in instr.detectors.items():
+            crit_angle = np.arctan(2*ph_radius/ph_thickness)
+            ptth, peta = det.pixel_angles()
+            ph_buffer[det_key] = ptth < crit_angle
+
+        # merge with any existing panel buffer
+        for det_key, det in instr.detectors.items():
+            pb = det.panel_buffer
+            if pb is not None:
+                if pb.ndim == 2:
+                    new_buff = np.logical_or(pb, ph_buffer[det_key])
+                elif pb.ndim == 1:
+                    # have edge buffer
+                    ebuff = np.ones(det.shape, dtype=bool)
+                    npix_row = int(np.ceil(pb[0]/det.pixel_size_row))
+                    npix_col = int(np.ceil(pb[1]/det.pixel_size_col))
+                    ebuff[:npix_row, :] = False
+                    ebuff[-npix_row:, :] = False
+                    ebuff[:, :npix_col] = False
+                    ebuff[:, -npix_col:] = False
+                    new_buff = np.logical_or(ebuff, ph_buffer[det_key])
+                det.panel_buffer = new_buff
+            else:
+                det.panel_buffer = ph_buffer[det_key]
+
+        # Now set them in the hexrdgui config
+        iconfig = HexrdConfig().config['instrument']
+        for det_key, det in instr.detectors.items():
+            det_config = iconfig['detectors'][det_key]
+            det_config['buffer']['value'] = det.panel_buffer
+
+        msg = 'Pinhole dimensions were applied to the panel buffers'
+        QMessageBox.information(self.ui, 'HEXRD', msg)
+
+        # This probably doesn't need to be done every time, but we'll do it
+        # anyways since they won't be pressing the button very often.
+        HexrdConfig().flag_overlay_updates_for_all_materials()
+        HexrdConfig().rerender_needed.emit()

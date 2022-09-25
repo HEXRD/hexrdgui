@@ -459,6 +459,26 @@
                 </property>
                </widget>
               </item>
+              <item row="3" column="1">
+               <spacer name="verticalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>10</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="ph_radius_label">
+                <property name="text">
+                 <string>Pinhole Radius</string>
+                </property>
+               </widget>
+              </item>
               <item row="1" column="0">
                <widget class="ScientificDoubleSpinBox" name="ph_radius">
                 <property name="minimumSize">
@@ -484,25 +504,15 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="ph_radius_label">
+              <item row="2" column="0" colspan="2">
+               <widget class="QPushButton" name="ph_apply_panel_buffers">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
-                 <string>Pinhole Radius</string>
+                 <string>Apply Panel Buffers from Pinhole Dimensions</string>
                 </property>
                </widget>
-              </item>
-              <item row="2" column="1">
-               <spacer name="verticalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>10</height>
-                 </size>
-                </property>
-               </spacer>
               </item>
              </layout>
             </widget>
