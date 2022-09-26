@@ -290,8 +290,8 @@ class PowderOverlayEditor:
             'sl_layer_standoff': ('layer_standoff', 0.15),
             'sl_layer_thickness': ('layer_thickness', 0.005),
             'sl_pinhole_thickness': ('pinhole_thickness', 0.1),
-            'ph_radius': ('pinhole_radius', 0.1),
-            'ph_thickness': ('pinhole_thickness', 0.1),
+            'ph_radius': ('pinhole_radius', 0.15),
+            'ph_thickness': ('pinhole_thickness', 0.075),
         }
 
         dtype = self.distortion_type_gui
