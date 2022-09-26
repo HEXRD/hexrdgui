@@ -46,6 +46,8 @@ class PowderOverlayEditor:
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed)
+        self.ui.pinhole_correction_type.currentIndexChanged.connect(
+            self.pinhole_correction_type_changed)
 
         self.ui.ph_apply_panel_buffers.clicked.connect(
             self.ph_apply_panel_buffers)
@@ -385,6 +387,10 @@ class PowderOverlayEditor:
         self.validate_distortion_type()
         self.update_config()
 
+    def pinhole_correction_type_changed(self):
+        self.validate_distortion_type()
+        self.update_config()
+
     def validate_distortion_type(self):
         if self.distortion_type == 'Pinhole Camera Correction':
             # Warn the user if there is a non-zero oscillation stage vector
@@ -396,17 +402,17 @@ class PowderOverlayEditor:
                 )
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
 
-            # FIXME: do we need to produce this warning for PinholeDistortion?
-            beam = HexrdConfig().instrument_config['beam']
-            source_distance = beam.get('source_distance', np.inf)
-            if source_distance is None or source_distance == np.inf:
-                msg = (
-                    'WARNING: the source distance is infinite.\n\nThe '
-                    'Pinhole Camera Correction will have no effect '
-                    'unless the source distance is finite.\n\nThe source '
-                    'distance may be edited in the Instrument "Form View"'
-                )
-                QMessageBox.critical(self.ui, 'HEXRD', msg)
+            if self.distortion_type_gui == 'SampleLayerDistortion':
+                beam = HexrdConfig().instrument_config['beam']
+                source_distance = beam.get('source_distance', np.inf)
+                if source_distance is None or source_distance == np.inf:
+                    msg = (
+                        'WARNING: the source distance is infinite.\n\nThe '
+                        'Sample Layer Distortion will have no effect '
+                        'unless the source distance is finite.\n\nThe source '
+                        'distance may be edited in the Instrument "Form View"'
+                    )
+                    QMessageBox.critical(self.ui, 'HEXRD', msg)
 
     def ph_apply_panel_buffers(self):
         instr = create_hedm_instrument()
