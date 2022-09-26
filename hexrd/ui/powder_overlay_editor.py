@@ -110,6 +110,8 @@ class PowderOverlayEditor:
             self.distortion_type_gui = self.distortion_type_config
             self.distortion_kwargs_gui = self.distortion_kwargs_config
             self.refinements_with_labels = self.overlay.refinements_with_labels
+            self.clip_with_panel_buffer_gui = (
+                self.clip_with_panel_buffer_config)
 
             self.update_enable_states()
             self.update_reflections_table()
@@ -119,6 +121,7 @@ class PowderOverlayEditor:
         self.offset_config = self.offset_gui
         self.distortion_type_config = self.distortion_type_gui
         self.distortion_kwargs_config = self.distortion_kwargs_gui
+        self.clip_with_panel_buffer_config = self.clip_with_panel_buffer_gui
 
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
@@ -336,7 +339,8 @@ class PowderOverlayEditor:
         )
         return [
             self.ui.enable_width,
-            self.ui.tth_width
+            self.ui.tth_width,
+            self.ui.clip_with_panel_buffer,
         ] + distortion_widgets
 
     def material_tth_width_modified_externally(self, material_name):
@@ -456,3 +460,25 @@ class PowderOverlayEditor:
         # anyways since they won't be pressing the button very often.
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().rerender_needed.emit()
+
+    @property
+    def clip_with_panel_buffer_config(self):
+        if self.overlay is None:
+            return False
+
+        return self.overlay.clip_with_panel_buffer
+
+    @clip_with_panel_buffer_config.setter
+    def clip_with_panel_buffer_config(self, b):
+        if self.overlay is None:
+            return
+
+        self.overlay.clip_with_panel_buffer = b
+
+    @property
+    def clip_with_panel_buffer_gui(self):
+        return self.ui.clip_with_panel_buffer.isChecked()
+
+    @clip_with_panel_buffer_gui.setter
+    def clip_with_panel_buffer_gui(self, b):
+        self.ui.clip_with_panel_buffer.setChecked(b)

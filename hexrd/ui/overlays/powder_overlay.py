@@ -20,7 +20,7 @@ class PowderOverlay(Overlay):
 
     def __init__(self, material_name, tvec=None, eta_steps=360,
                  tth_distortion_type=None, tth_distortion_kwargs=None,
-                 **overlay_kwargs):
+                 clip_with_panel_buffer=False, **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if tvec is None:
@@ -33,6 +33,7 @@ class PowderOverlay(Overlay):
         self.eta_steps = eta_steps
         self.tth_distortion_type = tth_distortion_type
         self.tth_distortion_kwargs = tth_distortion_kwargs
+        self.clip_with_panel_buffer = clip_with_panel_buffer
 
     @property
     def child_attributes_to_save(self):
@@ -43,6 +44,7 @@ class PowderOverlay(Overlay):
             'eta_steps',
             'tth_distortion_type',
             'tth_distortion_kwargs',
+            'clip_with_panel_buffer',
         ]
 
     @property
@@ -259,7 +261,7 @@ class PowderOverlay(Overlay):
 
             # clip to detector panel
             xys, on_panel = panel.clip_to_panel(
-                xys_full, buffer_edges=False
+                xys_full, buffer_edges=self.clip_with_panel_buffer
             )
 
             if apply_distortion:
