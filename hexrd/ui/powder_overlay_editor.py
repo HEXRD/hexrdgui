@@ -422,16 +422,11 @@ class PowderOverlayEditor:
         if config is None or any(x not in config for x in required_keys):
             raise Exception(f'Failed to create panel buffer with {config=}')
 
-        ph_radius = config['pinhole_radius']
-        ph_thickness = config['pinhole_thickness']
-
-        # make beam vector the pinhole axis on copy of instrument
-        instr.beam_vector = np.r_[0., 0., -1.]
-        ph_buffer = {}
-        for det_key, det in instr.detectors.items():
-            crit_angle = np.arctan(2*ph_radius/ph_thickness)
-            ptth, peta = det.pixel_angles()
-            ph_buffer[det_key] = ptth < crit_angle
+        kwargs = {
+            'pinhole_radius': config['pinhole_radius'],
+            'pinhole_thickness': config['pinhole_thickness'],
+        }
+        ph_buffer = self.overlay.generate_pinhole_panel_buffer(**kwargs)
 
         # merge with any existing panel buffer
         for det_key, det in instr.detectors.items():
