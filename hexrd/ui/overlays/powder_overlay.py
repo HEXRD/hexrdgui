@@ -1,5 +1,3 @@
-import copy
-
 import numpy as np
 
 from hexrd import constants
@@ -420,22 +418,6 @@ class PowderOverlay(Overlay):
             ret[det_key] = f(panel)
 
         return ret
-
-    def generate_pinhole_panel_buffer(self, pinhole_radius, pinhole_thickness):
-        instr = copy.deepcopy(self.instrument)
-
-        if instr is None:
-            raise Exception('No instrument')
-
-        # make beam vector the pinhole axis on copy of instrument
-        instr.beam_vector = np.r_[0., 0., -1.]
-        ph_buffer = {}
-        for det_key, det in instr.detectors.items():
-            crit_angle = np.arctan(2 * pinhole_radius / pinhole_thickness)
-            ptth, peta = det.pixel_angles()
-            ph_buffer[det_key] = ptth < crit_angle
-
-        return ph_buffer
 
     @property
     def tth_displacement_field(self):

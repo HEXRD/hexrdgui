@@ -6,6 +6,7 @@ from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
@@ -423,10 +424,11 @@ class PowderOverlayEditor:
             raise Exception(f'Failed to create panel buffer with {config=}')
 
         kwargs = {
+            'instr': instr,
             'pinhole_radius': config['pinhole_radius'],
             'pinhole_thickness': config['pinhole_thickness'],
         }
-        ph_buffer = self.overlay.generate_pinhole_panel_buffer(**kwargs)
+        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
 
         # merge with any existing panel buffer
         for det_key, det in instr.detectors.items():
