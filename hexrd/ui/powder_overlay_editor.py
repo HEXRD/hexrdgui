@@ -435,7 +435,7 @@ class PowderOverlayEditor:
             pb = det.panel_buffer
             if pb is not None:
                 if pb.ndim == 2:
-                    new_buff = np.logical_or(pb, ph_buffer[det_key])
+                    new_buff = np.logical_and(pb, ph_buffer[det_key])
                 elif pb.ndim == 1:
                     # have edge buffer
                     ebuff = np.ones(det.shape, dtype=bool)
@@ -445,7 +445,7 @@ class PowderOverlayEditor:
                     ebuff[-npix_row:, :] = False
                     ebuff[:, :npix_col] = False
                     ebuff[:, -npix_col:] = False
-                    new_buff = np.logical_or(ebuff, ph_buffer[det_key])
+                    new_buff = np.logical_and(ebuff, ph_buffer[det_key])
                 det.panel_buffer = new_buff
             else:
                 det.panel_buffer = ph_buffer[det_key]
