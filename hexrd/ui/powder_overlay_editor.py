@@ -6,6 +6,7 @@ from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
@@ -46,6 +47,8 @@ class PowderOverlayEditor:
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed)
+        self.ui.pinhole_correction_type.currentIndexChanged.connect(
+            self.pinhole_correction_type_changed)
 
         self.ui.ph_apply_panel_buffers.clicked.connect(
             self.ph_apply_panel_buffers)
@@ -290,8 +293,8 @@ class PowderOverlayEditor:
             'sl_layer_standoff': ('layer_standoff', 0.15),
             'sl_layer_thickness': ('layer_thickness', 0.005),
             'sl_pinhole_thickness': ('pinhole_thickness', 0.1),
-            'ph_radius': ('pinhole_radius', 0.1),
-            'ph_thickness': ('pinhole_thickness', 0.1),
+            'ph_radius': ('pinhole_radius', 0.15),
+            'ph_thickness': ('pinhole_thickness', 0.075),
         }
 
         dtype = self.distortion_type_gui
@@ -385,6 +388,10 @@ class PowderOverlayEditor:
         self.validate_distortion_type()
         self.update_config()
 
+    def pinhole_correction_type_changed(self):
+        self.validate_distortion_type()
+        self.update_config()
+
     def validate_distortion_type(self):
         if self.distortion_type == 'Pinhole Camera Correction':
             # Warn the user if there is a non-zero oscillation stage vector
@@ -396,17 +403,17 @@ class PowderOverlayEditor:
                 )
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
 
-            # FIXME: do we need to produce this warning for PinholeDistortion?
-            beam = HexrdConfig().instrument_config['beam']
-            source_distance = beam.get('source_distance', np.inf)
-            if source_distance is None or source_distance == np.inf:
-                msg = (
-                    'WARNING: the source distance is infinite.\n\nThe '
-                    'Pinhole Camera Correction will have no effect '
-                    'unless the source distance is finite.\n\nThe source '
-                    'distance may be edited in the Instrument "Form View"'
-                )
-                QMessageBox.critical(self.ui, 'HEXRD', msg)
+            if self.distortion_type_gui == 'SampleLayerDistortion':
+                beam = HexrdConfig().instrument_config['beam']
+                source_distance = beam.get('source_distance', np.inf)
+                if source_distance is None or source_distance == np.inf:
+                    msg = (
+                        'WARNING: the source distance is infinite.\n\nThe '
+                        'Sample Layer Distortion will have no effect '
+                        'unless the source distance is finite.\n\nThe source '
+                        'distance may be edited in the Instrument "Form View"'
+                    )
+                    QMessageBox.critical(self.ui, 'HEXRD', msg)
 
     def ph_apply_panel_buffers(self):
         instr = create_hedm_instrument()
@@ -416,23 +423,19 @@ class PowderOverlayEditor:
         if config is None or any(x not in config for x in required_keys):
             raise Exception(f'Failed to create panel buffer with {config=}')
 
-        ph_radius = config['pinhole_radius']
-        ph_thickness = config['pinhole_thickness']
-
-        # make beam vector the pinhole axis on copy of instrument
-        instr.beam_vector = np.r_[0., 0., -1.]
-        ph_buffer = {}
-        for det_key, det in instr.detectors.items():
-            crit_angle = np.arctan(2*ph_radius/ph_thickness)
-            ptth, peta = det.pixel_angles()
-            ph_buffer[det_key] = ptth < crit_angle
+        kwargs = {
+            'instr': instr,
+            'pinhole_radius': config['pinhole_radius'],
+            'pinhole_thickness': config['pinhole_thickness'],
+        }
+        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
 
         # merge with any existing panel buffer
         for det_key, det in instr.detectors.items():
             pb = det.panel_buffer
             if pb is not None:
                 if pb.ndim == 2:
-                    new_buff = np.logical_or(pb, ph_buffer[det_key])
+                    new_buff = np.logical_and(pb, ph_buffer[det_key])
                 elif pb.ndim == 1:
                     # have edge buffer
                     ebuff = np.ones(det.shape, dtype=bool)
@@ -442,7 +445,7 @@ class PowderOverlayEditor:
                     ebuff[-npix_row:, :] = False
                     ebuff[:, :npix_col] = False
                     ebuff[:, -npix_col:] = False
-                    new_buff = np.logical_or(ebuff, ph_buffer[det_key])
+                    new_buff = np.logical_and(ebuff, ph_buffer[det_key])
                 det.panel_buffer = new_buff
             else:
                 det.panel_buffer = ph_buffer[det_key]
