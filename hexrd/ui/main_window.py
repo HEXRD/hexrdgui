@@ -4,8 +4,8 @@ import shutil
 import tempfile
 
 import h5py
-from hexrd.ui.about_dialog import AboutDialog
 import numpy as np
+from skimage import measure
 
 from PySide2.QtCore import (
     QEvent, QObject, Qt, QThreadPool, Signal, QTimer, QUrl
@@ -16,10 +16,11 @@ from PySide2.QtWidgets import (
     QMessageBox
 )
 
+from hexrd.ui.about_dialog import AboutDialog
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.beam_marker_style_editor import BeamMarkerStyleEditor
-from hexrd.ui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
@@ -27,6 +28,7 @@ from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.image_stack_dialog import ImageStackDialog
 from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
+from hexrd.ui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
@@ -37,7 +39,6 @@ from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
 from hexrd.ui.create_raw_mask import (
     convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
-from hexrd.ui.utils import unique_name
 from hexrd.ui.constants import ViewType, DOCUMENTATION_URL
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_calculator_dialog import ImageCalculatorDialog
@@ -46,6 +47,8 @@ from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.simple_image_series_dialog import SimpleImageSeriesDialog
+from hexrd.ui.pinhole_mask_dialog import PinholeMaskDialog
+from hexrd.ui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrd.ui.polarization_options_dialog import (
     PolarizationOptionsDialog
 )
@@ -62,7 +65,7 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 )
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import block_signals
+from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrd.ui import state
 
@@ -188,6 +191,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_polygon_mask_triggered)
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_edit_apply_pinhole_mask.triggered.connect(
+            self.apply_pinhole_mask)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_edit_refinements.triggered.connect(
@@ -719,6 +724,46 @@ class MainWindow(QObject):
         mrd = MaskRegionsDialog(self.ui)
         mrd.new_mask_added.connect(self.new_mask_added.emit)
         mrd.show()
+
+    def apply_pinhole_mask(self):
+        d = PinholeMaskDialog(self.ui)
+        if not d.exec_():
+            return
+
+        kwargs = {
+            'instr': create_hedm_instrument(),
+            'pinhole_radius': d.pinhole_radius,
+            'pinhole_thickness': d.pinhole_thickness,
+        }
+        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
+
+        ph_masks = []
+        for det_key, buffer in ph_buffer.items():
+            # Expand it so we get a contour around the whole masked regions
+            expanded_shape = tuple(x + 4 for x in buffer.shape)
+            expanded_array = np.zeros(expanded_shape, dtype=bool)
+            expanded_array[2:-2, 2:-2] = ~buffer
+
+            contours = measure.find_contours(expanded_array)
+
+            for contour in contours:
+                # Fix the coordinates
+                contour -= 2
+
+                # Swap x and y
+                contour[:, [1, 0]] = contour[:, [0, 1]]
+
+                ph_masks.append((det_key, contour))
+
+        name = unique_name(HexrdConfig().raw_mask_coords,
+                           'pinhole_mask_0')
+
+        HexrdConfig().raw_mask_coords[name] = ph_masks
+        HexrdConfig().visible_masks.append(name)
+
+        HexrdConfig().raw_masks_changed.emit()
+
+        self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_reset_instrument_config(self):
         HexrdConfig().restore_instrument_config_backup()
