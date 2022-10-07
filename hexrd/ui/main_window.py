@@ -265,8 +265,7 @@ class MainWindow(QObject):
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
-        HexrdConfig().raw_masks_changed.connect(
-            self.ui.image_tab_widget.load_images)
+        HexrdConfig().raw_masks_changed.connect(self.update_all)
         HexrdConfig().recent_images_changed.connect(
             self.update_view_recent_images_list)
 
