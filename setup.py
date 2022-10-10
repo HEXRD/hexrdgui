@@ -17,7 +17,7 @@ install_reqs = [
 # pkg_resources.DistributionNotFound, even though the package is available. So we
 # only added it if we aren't building with conda.
 if os.environ.get('CONDA_BUILD') != '1':
-    install_reqs.append('pyside2')
+    install_reqs.append('pyside2>=5.15')
 
 setup(
     name='hexrdgui',

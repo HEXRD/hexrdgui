@@ -18,7 +18,7 @@ requirements:
 
   run:
     - python
-    - pyside2
+    - pyside2>=5.15
     - Pillow
     - matplotlib
     - importlib_resources
