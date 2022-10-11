@@ -145,10 +145,7 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
 
     Conda.run_command(
         Conda.Commands.CREATE,
-        '--prefix', env_prefix,
-        '--override-channels',
-        *channels,
-        'python=3.10'
+        '--prefix', env_prefix
     )
 
     hexrdgui_output_folder_uri = Path(hexrdgui_output_folder).absolute().as_uri()
