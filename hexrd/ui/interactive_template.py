@@ -123,6 +123,10 @@ class InteractiveTemplate:
                     lw=style['width'],
                     color=style['color']
                 )
+                if has_nan(patch.xy):
+                    # This template contains more than one polygon and the last point
+                    # should not be connected to the first. See Tardis IP for example.
+                    shape.set_closed(False)
                 self.raw_axes.add_patch(shape)
             if self.shape:
                 self.shape = self.raw_axes.patches.pop()
@@ -286,6 +290,9 @@ class InteractiveTemplate:
         contains, info = self.shape.contains(event)
         if not contains:
             return
+        # FIXME: Need to come back to this to understand why we
+        # need to set the press value twice
+        self.press = self.shape.xy, event.xdata, event.ydata
         self.center = self.get_midpoint()
         self.shape.set_transform(self.ax.axes.transData)
         self.press = self.shape.xy, event.xdata, event.ydata
@@ -297,7 +304,7 @@ class InteractiveTemplate:
         self.shape.set_xy(verts)
 
     def on_rotate(self, event):
-        if self.press is None:
+        if self.press is None or event.inaxes != self.shape.axes:
             return
 
         x, y = self.center
