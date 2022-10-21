@@ -123,6 +123,10 @@ class InteractiveTemplate:
                     lw=style['width'],
                     color=style['color']
                 )
+                if has_nan(patch.xy):
+                    # This template contains more than one polygon and the last point
+                    # should not be connected to the first. See Tardis IP for example.
+                    shape.set_closed(False)
                 self.raw_axes.add_patch(shape)
             if self.shape:
                 self.shape = self.raw_axes.patches.pop()
