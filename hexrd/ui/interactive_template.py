@@ -290,6 +290,9 @@ class InteractiveTemplate:
         contains, info = self.shape.contains(event)
         if not contains:
             return
+        # FIXME: Need to come back to this to understand why we
+        # need to set the press value twice
+        self.press = self.shape.xy, event.xdata, event.ydata
         self.center = self.get_midpoint()
         self.shape.set_transform(self.ax.axes.transData)
         self.press = self.shape.xy, event.xdata, event.ydata
@@ -301,7 +304,7 @@ class InteractiveTemplate:
         self.shape.set_xy(verts)
 
     def on_rotate(self, event):
-        if self.press is None:
+        if self.press is None or event.inaxes != self.shape.axes:
             return
 
         x, y = self.center
