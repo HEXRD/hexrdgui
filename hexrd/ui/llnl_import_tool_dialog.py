@@ -385,6 +385,8 @@ class LLNLImportToolDialog(QObject):
         self.it.cropped_image(height, width)
 
         img, panel_buffer = self.it.masked_image
+        if self.instrument == 'PXRDIP':
+            panel_buffer = panel_buffer.T[::-1, :]  # !!! need to rotate buffers
 
         self.edited_images[self.detector] = {
             'img': img,
