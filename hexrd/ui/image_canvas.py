@@ -980,6 +980,7 @@ class ImageCanvas(FigureCanvas):
         if self.mode == ViewType.raw:
             # Overlays need to be updated
             HexrdConfig().flag_overlay_updates_for_all_materials()
+            self.update_beam_marker()
 
             if HexrdConfig().any_intensity_corrections:
                 # A re-render may be needed, as the images may change
