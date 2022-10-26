@@ -220,14 +220,15 @@ class InteractiveTemplate:
 
     def on_key_translate(self, event):
         dx, dy = 0, 0
+        delta = 0.5
         if event.key == 'right':
-            dx = 1
+            dx = delta
         elif event.key == 'left':
-            dx = -1
+            dx = -delta
         elif event.key == 'up':
-            dy = -1
+            dy = -delta
         elif event.key == 'down':
-            dy = 1
+            dy = delta
         else:
             return
 
@@ -314,7 +315,7 @@ class InteractiveTemplate:
         self.redraw()
 
     def on_key_rotate(self, event):
-        angle = 0.01
+        angle = 0.00175
         if event.key == 'left' or event.key == 'up':
             angle *= -1
         elif event.key != 'right' and event.key != 'down':
