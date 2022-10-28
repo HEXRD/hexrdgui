@@ -107,6 +107,7 @@ class InteractiveTemplate:
         if self.shape in self.raw_axes.patches:
             self.raw_axes.patches.remove(self.shape)
             self.redraw()
+        self.total_rotation = 0.
 
     def save_boundary(self, color):
         if self.shape in self.raw_axes.patches:
