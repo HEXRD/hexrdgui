@@ -22,7 +22,7 @@ class InteractiveTemplate:
         self.img = None
         self.shape = None
         self.press = None
-        self.total_rotation = 0
+        self.total_rotation = 0.
         self.translating = True
         self.shape_styles = []
         self.parent.setFocusPolicy(Qt.ClickFocus)
@@ -155,7 +155,7 @@ class InteractiveTemplate:
         self.img = None
         self.shape = None
         self.press = None
-        self.total_rotation = 0
+        self.total_rotation = 0.
 
     def mask(self):
         col, row = self.cropped_shape.T
@@ -317,11 +317,14 @@ class InteractiveTemplate:
 
     def on_key_rotate(self, event):
         angle = 0.00175
+        # !!! only catch arrow keys
         if event.key == 'left' or event.key == 'up':
-            angle *= -1
+            angle *= -1.
         elif event.key != 'right' and event.key != 'down':
-            return
-
+            angle *= 1.            
+        # DEBUG
+        # print(f'In "on_key_rotate": {angle}')
+        self.total_rotation += angle
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
@@ -359,7 +362,6 @@ class InteractiveTemplate:
     def on_rotate_release(self, event):
         if self.press is None:
             return
-
         angle = self.get_angle(event)
         self.total_rotation += angle
         y, x = self.center
@@ -367,6 +369,8 @@ class InteractiveTemplate:
         self.press = None
         self.rotate_template(xy, angle)
         self.redraw()
+        # DEBUG
+        # print(f'In rotate release {angle}, {self.total_rotation}')
 
     def disconnect_rotate(self):
         self.parent.mpl_disconnect(self.button_press_cid)
