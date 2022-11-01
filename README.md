@@ -1,4 +1,7 @@
 ![platforms](https://anaconda.org/hexrd/hexrdgui/badges/platforms.svg) ![current version](https://anaconda.org/hexrd/hexrdgui/badges/version.svg) ![last updated](https://anaconda.org/hexrd/hexrdgui/badges/latest_release_relative_date.svg) ![downloads](https://anaconda.org/hexrd/hexrdgui/badges/downloads.svg)
+
+![image](https://user-images.githubusercontent.com/1154130/199154866-f46c7847-9e7f-456f-9c14-962144f8958c.png)
+
 # Installing
 
 Requires **Python 3.10**.  Currently, we build and test `hexrdgui` exclusively with dependencies from the `conda-forge` channel.
@@ -69,8 +72,8 @@ CONDA_BUILD=1 pip install --no-build-isolation --no-deps -U -e hexrdgui
 
 #### For Windows:
 ```bash
-set CONDA_BUILD=1
-pip install --no-build-isolation --no-deps -U -e hexrd
+set CONDA_BUILD=1; `
+pip install --no-build-isolation --no-deps -U -e hexrd; `
 pip install --no-build-isolation --no-deps -U -e hexrdgui
 ```
 
