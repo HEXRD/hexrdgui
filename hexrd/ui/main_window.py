@@ -977,7 +977,7 @@ class MainWindow(QObject):
             # Write the modified picks to the overlays
             updated_picks = tree_format_to_picks(dialog.dictionary)
             for i, new_picks in enumerate(updated_picks):
-                overlays[i].calibration_picks = new_picks['picks']
+                overlays[i].calibration_picks_polar = new_picks['picks']
 
         def on_finished():
             remove_all_highlighting()

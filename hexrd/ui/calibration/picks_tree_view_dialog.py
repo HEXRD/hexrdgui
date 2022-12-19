@@ -205,7 +205,7 @@ def generate_picks_results(overlays):
             'options': options,
             'refinements': overlay.refinements_with_labels,
             'hkls': hkls,
-            'picks': overlay.calibration_picks,
+            'picks': overlay.calibration_picks_polar,
             **extras,
         })
 

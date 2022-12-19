@@ -319,4 +319,4 @@ def save_picks_to_overlay(overlay, data_dict):
 
             picks[det_key].append(to_angles(hkl_picks, panel).tolist())
 
-    overlay.calibration_picks = picks
+    overlay.calibration_picks_polar = picks
