@@ -30,12 +30,8 @@ jobs:
     defaults:
       run:
         shell: bash
+
     steps:
-    - name: Use XCode 11.7 so pycifrw will build
-      if: ${{ matrix.config.name == 'MacOSX' }}
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: '11.7'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -62,11 +58,6 @@ jobs:
     - name: Set environment variable to work around setuptools/numpy issue
       run: echo 'SETUPTOOLS_USE_DISTUTILS=stdlib' >> $GITHUB_ENV
       if: ${{ matrix.config.os == 'windows-latest'}}
-
-    - name: Force build of pycifrw as there is currently no 3.10 wheel (Windows)
-      if: ${{ matrix.config.name != 'Linux' && matrix.python-version == '3.10' }}
-      run: |
-          pip install -U --no-binary pycifrw pycifrw
 
     - name: Install HEXRD
       run: |
