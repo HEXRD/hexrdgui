@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 
 from hexrd import constants
@@ -11,6 +13,7 @@ from hexrd.xrdutil.phutil import (
 
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.overlays.overlay import Overlay
+from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
 
 
 class PowderOverlay(Overlay):
@@ -143,6 +146,46 @@ class PowderOverlay(Overlay):
                     return True
 
         return False
+
+    @property
+    def calibration_picks_polar(self):
+        # Convert from cartesian to polar
+        from hexrd.ui.hexrd_config import HexrdConfig
+
+        eta_period = HexrdConfig().polar_res_eta_period
+
+        instr = self.instrument
+        picks = copy.deepcopy(self.calibration_picks)
+        for det_key, det_picks in picks.items():
+            panel = instr.detectors[det_key]
+            for i in range(len(det_picks)):
+                if len(det_picks[i]) == 0:
+                    continue
+
+                det_picks[i] = cart_to_angles(
+                    det_picks[i],
+                    panel,
+                    eta_period,
+                ).tolist()
+
+        return picks
+
+    @calibration_picks_polar.setter
+    def calibration_picks_polar(self, picks):
+        self._validate_picks(picks)
+
+        # Convert from polar to cartesian
+        instr = self.instrument
+        picks = copy.deepcopy(picks)
+        for det_key, det_picks in picks.items():
+            panel = instr.detectors[det_key]
+            for i in range(len(det_picks)):
+                if len(det_picks[i]) == 0:
+                    continue
+
+                det_picks[i] = angles_to_cart(det_picks[i], panel).tolist()
+
+        self.calibration_picks = picks
 
     def generate_overlay(self):
         instr = self.instrument

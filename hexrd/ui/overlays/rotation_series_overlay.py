@@ -166,6 +166,16 @@ class RotationSeriesOverlay(Overlay):
         # Rotation series overlays do not currently support picks data
         return False
 
+    @property
+    def calibration_picks_polar(self):
+        # Rotation series overlays do not currently support picks data
+        return []
+
+    @calibration_picks_polar.setter
+    def calibration_picks_polar(self, picks):
+        # Rotation series overlays do not currently support picks data
+        pass
+
     def generate_overlay(self):
         """
         Returns appropriate point groups for displaying bragg reflection

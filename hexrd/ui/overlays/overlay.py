@@ -63,6 +63,16 @@ class Overlay(ABC):
     def pad_picks_data(self):
         pass
 
+    @property
+    @abstractmethod
+    def calibration_picks_polar(self):
+        pass
+
+    @calibration_picks_polar.setter
+    @abstractmethod
+    def calibration_picks_polar(self, picks):
+        pass
+
     # Concrete methods
     def __init__(self, material_name, name=None, refinements=None,
                  calibration_picks=None, style=None, highlight_style=None,

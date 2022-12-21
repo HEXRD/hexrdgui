@@ -239,7 +239,7 @@ class CalibrationRunner(QObject):
 
         # Set the new picks on the overlay
         updated_picks = tree_format_to_picks(results)
-        overlay.calibration_picks = updated_picks[0]['picks']
+        overlay.calibration_picks_polar = updated_picks[0]['picks']
         self.reset_overlay_picks()
 
         dialog = self.view_picks_table()
@@ -285,7 +285,7 @@ class CalibrationRunner(QObject):
         # Update all of the picks with the modified data
         updated_picks = tree_format_to_picks(dialog.dictionary)
         for i, new_picks in enumerate(updated_picks):
-            self.active_overlays[i].calibration_picks = new_picks['picks']
+            self.active_overlays[i].calibration_picks_polar = new_picks['picks']
 
         if self.active_overlay:
             self.reset_overlay_picks()
@@ -455,7 +455,7 @@ class CalibrationRunner(QObject):
         HexrdConfig().overlay_config_changed.emit()
 
     def reset_overlay_picks(self):
-        calibration_picks = self.active_overlay.calibration_picks
+        calibration_picks = self.active_overlay.calibration_picks_polar
         self.overlay_picks = copy.deepcopy(calibration_picks)
 
     def reset_overlay_data_index_map(self):
@@ -536,7 +536,7 @@ class CalibrationRunner(QObject):
         self.overlay_data_index_map = data_map
 
     def save_overlay_picks(self):
-        self.active_overlay.calibration_picks = copy.deepcopy(
+        self.active_overlay.calibration_picks_polar = copy.deepcopy(
             self.overlay_picks)
 
     @property
