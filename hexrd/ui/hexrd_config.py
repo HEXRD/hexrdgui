@@ -2373,3 +2373,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             v[det] = imgs if isinstance(imgs, list) else [imgs]
         self._recent_images = v
         self.recent_images_changed.emit()
+
+    def apply_masks_to_panel_buffers(self, instr):
+        # Apply raw masks to the panel buffers on the passed instrument
+        for det_key, mask in self.raw_masks_dict.items():
+            panel = instr.detectors[det_key]
+
+            # Make sure it is a 2D array
+            utils.convert_panel_buffer_to_2d_array(panel)
+
+            # Add the mask
+            panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
