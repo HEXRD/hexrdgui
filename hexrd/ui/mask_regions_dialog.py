@@ -6,6 +6,7 @@ from hexrd.ui.utils import unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import add_sample_points
 
 from matplotlib import patches
 
@@ -186,6 +187,11 @@ class MaskRegionsDialog(QObject):
     def save_line_data(self):
         data_coords = self.patch.get_patch_transform().transform(
             self.patch.get_path().vertices[:-1])
+
+        # So that this gets converted between raw and polar correctly,
+        # make sure there are at least 50 points.
+        data_coords = add_sample_points(data_coords, 50)
+
         if self.image_mode == ViewType.raw:
             self.raw_mask_coords.append((self.det, data_coords))
         elif self.image_mode == ViewType.polar:

@@ -446,3 +446,30 @@ def set_combobox_enabled_items(cb, enable_list):
             new_index = -1
 
     cb.setCurrentIndex(new_index)
+
+
+def add_sample_points(points, min_output_length):
+    """Add extra sample points to a 2D array of points
+
+    This takes a 2D array of points and uses np.linspace() to add extra
+    points in between each point and its nearest index neighbors (nearest
+    neighbors by index, not by distance).
+
+    The min_output_length is the minimum number of points for the output.
+    The actual output will likely have more points than this.
+    """
+    if len(points) > min_output_length:
+        # It's already greater than what was specified
+        return points
+
+    # Figure out how many repititions we should have with np.linspace
+    num_reps = int(np.ceil(min_output_length / len(points)))
+
+    # Roll the points over so we can pair each point with its neighbor
+    rolled = np.roll(points, -1, axis=0)
+
+    # Generate the extra points between each point and its neighbor
+    output = np.linspace(points, rolled, num=num_reps)
+
+    # Transform back into the correct shape and return
+    return output.T.reshape(2, -1).T

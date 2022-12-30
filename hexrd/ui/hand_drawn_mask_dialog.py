@@ -9,6 +9,7 @@ from matplotlib.widgets import Cursor
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import add_sample_points
 
 
 class HandDrawnMaskDialog(QObject):
@@ -120,6 +121,11 @@ class HandDrawnMaskDialog(QObject):
             return
 
         linebuilder.disconnect()
+
+        # Make sure there are at least 50 points, so that conversions
+        # between raw/polar views come out okay.
+        ring_data = add_sample_points(ring_data, 50)
+
         self.ring_data.append(ring_data)
         self.dets.append(self.ax.get_title())
         self.drawing = False
