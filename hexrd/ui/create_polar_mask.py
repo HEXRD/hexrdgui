@@ -5,10 +5,15 @@ from skimage.draw import polygon
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.calibration.polarview import PolarView
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.utils import add_sample_points
 from hexrd.ui.utils.conversions import pixels_to_angles
 
 
 def convert_raw_to_polar(det, line):
+    # Make sure there at least 50 sample points so that the conversion
+    # looks correct.
+    line = add_sample_points(line, 50)
+
     instr = create_hedm_instrument()
     kwargs = {
         'ij': line,
