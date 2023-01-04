@@ -11,7 +11,7 @@ from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.utils import instr_to_internal_dict
+from hexrd.ui.utils import instr_to_internal_dict, masks_applied_to_panel_buffers
 from hexrd.ui.utils.conversions import cart_to_angles
 
 from hexrd.ui.calibration.auto import PowderCalibrationDialog
@@ -100,9 +100,13 @@ class PowderRunner(QObject):
             'fit_tth_tol': options['fit_tth_tol'],
             'int_cutoff': options['int_cutoff'],
         }
-        # FIXME: currently coded to handle only a single material
-        #        so grabbing first (only) element
-        self.data_dict = self.ic.extract_points(**kwargs)[0]
+
+        # Apply any masks to the panel buffer for our instrument.
+        # This is done so that the auto picking will skip over masked regions.
+        with masks_applied_to_panel_buffers(self.instr):
+            # FIXME: currently coded to handle only a single material
+            #        so grabbing first (only) element
+            self.data_dict = self.ic.extract_points(**kwargs)[0]
 
         # Save the picks to the active overlay in case we need them later
         self.save_picks_to_overlay()

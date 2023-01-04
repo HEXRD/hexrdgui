@@ -1,6 +1,7 @@
 # Some general utilities that are used in multiple places
 
 from contextlib import contextmanager
+import copy
 from enum import IntEnum
 from functools import reduce
 import math
@@ -473,3 +474,39 @@ def add_sample_points(points, min_output_length):
 
     # Transform back into the correct shape and return
     return output.T.reshape(2, -1).T
+
+
+def convert_panel_buffer_to_2d_array(panel):
+    # Take whatever the panel buffer is and convert it to a 2D array
+    if panel.panel_buffer is None:
+        # Just make a panel buffer with all True values
+        panel.panel_buffer = np.ones(panel.shape, dtype=np.bool)
+    elif panel.panel_buffer.shape == (2,):
+        # The two integers are specifying the borders in x and y
+        borders = panel.panel_buffer.astype(int)
+
+        # Convert to array
+        panel_buffer = np.zeros(panel.shape, dtype=np.bool)
+        panel_buffer[borders[0]:-borders[0], borders[1]:-borders[1]] = True
+        panel.panel_buffer = panel_buffer
+    elif panel.panel_buffer.ndim != 2:
+        raise NotImplementedError(panel.panel_buffer.ndim)
+
+
+@contextmanager
+def masks_applied_to_panel_buffers(instr):
+    # Temporarily apply the masks to the panel buffers
+    # This is useful, for instance, for auto point picking, where
+    # we want the masked regions to be avoided.
+
+    from hexrd.ui.hexrd_config import HexrdConfig
+
+    panel_buffers = {k: copy.deepcopy(v.panel_buffer)
+                     for k, v in instr.detectors.items()}
+
+    try:
+        HexrdConfig().apply_masks_to_panel_buffers(instr)
+        yield
+    finally:
+        for det_key, panel in instr.detectors.items():
+            panel.panel_buffer = panel_buffers[det_key]

@@ -31,7 +31,8 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.select_item_dialog import SelectItemDialog
 from hexrd.ui.utils import (
-    array_index_in_list, instr_to_internal_dict, unique_array_list
+    array_index_in_list, instr_to_internal_dict,
+    masks_applied_to_panel_buffers, unique_array_list
 )
 from hexrd.ui.utils.conversions import cart_to_angles
 from hexrd.ui.utils.dicts import ensure_all_keys_match, ndarrays_to_lists
@@ -743,8 +744,11 @@ class CalibrationRunner(QObject):
             'fit_tth_tol': options['fit_tth_tol'],
             'int_cutoff': options['int_cutoff'],
         }
-        # We are only doing a single material. Grab the only element...
-        return self.auto_ic.extract_points(**kwargs)[0]
+        # Apply any masks to the panel buffer for our instrument.
+        # This is done so that the auto picking will skip over masked regions.
+        with masks_applied_to_panel_buffers(self.instr):
+            # We are only doing a single material. Grab the only element...
+            return self.auto_ic.extract_points(**kwargs)[0]
 
     def auto_powder_pick_finished(self, auto_picks):
         save_picks_to_overlay(self.active_overlay, auto_picks)
@@ -798,7 +802,10 @@ class CalibrationRunner(QObject):
             'raw_img_dict': img_dict,
             **options
         }
-        return self.laue_auto_picker._autopick_points(**kwargs)
+        # Apply any masks to the panel buffer for our instrument.
+        # This is done so that the auto picking will skip over masked regions.
+        with masks_applied_to_panel_buffers(self.instr):
+            return self.laue_auto_picker._autopick_points(**kwargs)
 
     def auto_laue_pick_finished(self, auto_picks):
         picks = auto_laue_picks_to_picks(auto_picks, self.active_overlay)
