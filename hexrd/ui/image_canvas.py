@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
+from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -46,6 +47,7 @@ class ImageCanvas(FigureCanvas):
         self.beam_marker_artists = []
         self.transform = lambda x: x
         self._last_stereo_size = None
+        self.stereo_border_artists = []
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -488,17 +490,17 @@ class ImageCanvas(FigureCanvas):
         while self.cached_detector_borders:
             self.cached_detector_borders.pop(0).remove()
 
+        self.draw_idle()
+
     def draw_detector_borders(self):
         self.clear_detector_borders()
 
         # Need an iviewer
         if not self.iviewer:
-            self.draw_idle()
             return
 
         # Make sure this is allowed by the configuration
         if not HexrdConfig().show_detector_borders:
-            self.draw_idle()
             return
 
         borders = self.iviewer.all_detector_borders
@@ -508,7 +510,36 @@ class ImageCanvas(FigureCanvas):
                 plot, = self.axis.plot(*line, color='y', lw=2)
                 self.cached_detector_borders.append(plot)
 
+    def clear_stereo_border_artists(self):
+        while self.stereo_border_artists:
+            self.stereo_border_artists.pop(0).remove()
+
         self.draw_idle()
+
+    def draw_stereo_border(self):
+        self.clear_stereo_border_artists()
+
+        skip = (
+            self.mode != ViewType.stereo or
+            not HexrdConfig().stereo_show_border
+        )
+        if skip:
+            return
+
+        stereo_size = HexrdConfig().stereo_size
+        radius = (stereo_size - 1) / 2
+        center = (stereo_size / 2, stereo_size / 2)
+
+        circle = Circle(**{
+            'xy': center,
+            'radius': radius,
+            'linewidth': 2,
+            'edgecolor': 'black',
+            'facecolor': 'none',
+            'linestyle': '--',
+        })
+        artist = self.axis.add_patch(circle)
+        self.stereo_border_artists.append(artist)
 
     def draw_wppf(self):
         self.update_wppf_plot()
@@ -887,6 +918,7 @@ class ImageCanvas(FigureCanvas):
             self.axis.autoscale_view()
             self.figure.tight_layout()
 
+        self.draw_stereo_border()
         self.update_auto_picked_data()
         self.update_overlays()
         self.draw_detector_borders()

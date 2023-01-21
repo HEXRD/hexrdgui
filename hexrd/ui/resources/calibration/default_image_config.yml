@@ -17,6 +17,7 @@ cartesian:
   plane_normal_rotate_y: 0.0
 stereo:
   stereo_size: 1501
+  show_border: true
 colormap:
   min: 0
 show_detector_borders: true

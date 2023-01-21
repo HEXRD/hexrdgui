@@ -834,13 +834,6 @@
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <layout class="QGridLayout" name="stereo_tab_grid_layout">
-         <item row="0" column="0">
-          <widget class="QLabel" name="stereo_size_label">
-           <property name="text">
-            <string>Stereo Size:</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QSpinBox" name="stereo_size">
            <property name="keyboardTracking">
@@ -854,6 +847,20 @@
            </property>
            <property name="value">
             <number>1501</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="stereo_size_label">
+           <property name="text">
+            <string>Stereo Size:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="stereo_show_border">
+           <property name="text">
+            <string>Show Stereo Border?</string>
            </property>
           </widget>
          </item>
