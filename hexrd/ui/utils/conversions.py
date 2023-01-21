@@ -43,3 +43,22 @@ def pixels_to_angles(ij, panel, eta_period, tvec_s=None, tvec_c=None):
         'tvec_c': tvec_c,
     }
     return cart_to_angles(xys, panel, **kwargs)
+
+
+def stereo_to_angles(ij, stereo_size):
+    rad = (stereo_size - 1) / 2
+    X = (ij[:, 0] - rad) / rad
+    Y = (ij[:, 1] - rad) / rad
+    condition = X**2 + Y**2 <= 1
+    X = np.where(condition, X, np.nan)
+    Y = np.where(condition, Y, np.nan)
+    den = 1 + X**2 + Y**2
+
+    vx = 2.0 * X / den
+    vy = 2.0 * Y / den
+    vz = (1.0 - X**2 - Y**2) / den
+
+    tth = np.arccos(vz)
+    eta = np.mod(np.arctan2(vy, vx), 2 * np.pi)
+
+    return np.array([tth, eta])

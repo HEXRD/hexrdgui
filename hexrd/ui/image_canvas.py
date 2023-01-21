@@ -16,6 +16,7 @@ from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
+from hexrd.ui.calibration.stereo_plot import stereo_viewer
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.snip_viewer_dialog import SnipViewerDialog
@@ -44,6 +45,7 @@ class ImageCanvas(FigureCanvas):
         self.auto_picked_data_artists = []
         self.beam_marker_artists = []
         self.transform = lambda x: x
+        self._last_stereo_size = None
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -230,18 +232,18 @@ class ImageCanvas(FigureCanvas):
         if not overlay.data:
             return []
 
-        if self.mode in [ViewType.cartesian, ViewType.polar]:
-            # If it's cartesian or polar, there is only one axis
-            # Use the same axis for all of the data
-            return [(self.axis, x) for x in overlay.data.values()]
+        if self.mode == ViewType.raw:
+            # If it's raw, there is data for each axis.
+            # The title of each axis should match the detector key.
+            # Add a safety check to ensure everything is synced up.
+            if not all(x in overlay.data for x in self.raw_axes):
+                return []
 
-        # If it's raw, there is data for each axis.
-        # The title of each axis should match the detector key.
-        # Add a safety check to ensure everything is synced up.
-        if not all(x in overlay.data for x in self.raw_axes):
-            return []
+            return [(self.raw_axes[x], overlay.data[x]) for x in self.raw_axes]
 
-        return [(self.raw_axes[x], overlay.data[x]) for x in self.raw_axes]
+        # If it is anything else, there is only one axis
+        # Use the same axis for all of the data
+        return [(self.axis, x) for x in overlay.data.values()]
 
     def overlay_draw_func(self, type):
         overlay_funcs = {
@@ -585,6 +587,12 @@ class ImageCanvas(FigureCanvas):
             self.draw_idle()
             return
 
+        # FIXME stereo: need to add stereo support for
+        # `transform_from_plain_cartesian_func()` before we can do this.
+        if self.mode == ViewType.stereo:
+            self.draw_idle()
+            return
+
         style = HexrdConfig().beam_marker_style
 
         instr = self.iviewer.instr
@@ -607,6 +615,7 @@ class ImageCanvas(FigureCanvas):
 
     def beam_vector_changed(self):
         if self.mode == ViewType.polar:
+            # FIXME stereo: do something with stereo
             # Polar needs a complete re-draw
             # Only emit this once every 100 milliseconds or so to avoid
             # too many updates if the slider widget is being used.
@@ -822,6 +831,72 @@ class ImageCanvas(FigureCanvas):
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
+    def show_stereo(self):
+        HexrdConfig().emit_update_status_bar('Loading stereo view...')
+
+        stereo_size = HexrdConfig().config['image']['stereo']['stereo_size']
+        last_stereo_size = self._last_stereo_size
+
+        polar_res_config = HexrdConfig().config['image']['polar']
+
+        reset_needed = (
+            self.mode != ViewType.stereo or
+            self._polar_reset_needed(polar_res_config) or
+            stereo_size != last_stereo_size
+        )
+        if reset_needed:
+            self.clear()
+            self.mode = ViewType.stereo
+
+        self.polar_res_config = polar_res_config.copy()
+
+        # Run the view generation in a background thread
+        worker = AsyncWorker(stereo_viewer)
+        self.thread_pool.start(worker)
+
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self.finish_show_stereo)
+        worker.signals.error.connect(self.async_worker_error)
+
+    def finish_show_stereo(self, iviewer):
+        self.iviewer = iviewer
+        img, = self.scaled_images
+        extent = iviewer._extent
+
+        rescale_image = True
+        if len(self.axes_images) == 0:
+            self.axis = self.figure.add_subplot(111)
+            kwargs = {
+                'X': img,
+                'cmap': self.cmap,
+                'norm': self.norm,
+                'picker': True,
+                'interpolation': 'none',
+            }
+            self.axes_images.append(self.axis.imshow(**kwargs))
+            # self.axis.set_ylabel(r'$\eta$ [deg]')
+        else:
+            rescale_image = False
+            self.axes_images[0].set_data(img)
+
+            # Update the xlabel in case it was modified (via tth distortion)
+            # self.axis.set_xlabel(self.polar_xlabel)
+
+        if rescale_image:
+            self.axis.relim()
+            self.axis.autoscale_view()
+            self.figure.tight_layout()
+
+        self.update_auto_picked_data()
+        self.update_overlays()
+        self.draw_detector_borders()
+        self.update_beam_marker()
+
+        HexrdConfig().image_view_loaded.emit({'img': img})
+
+        msg = 'Stereo view loaded!'
+        HexrdConfig().emit_update_status_bar(msg)
+
     @property
     def polar_xlabel(self):
         overlay = HexrdConfig().polar_tth_distortion_overlay
@@ -838,7 +913,8 @@ class ImageCanvas(FigureCanvas):
         return xlabel
 
     def polar_masks_changed(self):
-        if not self.iviewer or self.mode != ViewType.polar:
+        # FIXME stereo: do something with stereo here
+        if not self.iviewer or self.mode not in ViewType.polar:
             return
 
         self.iviewer.reapply_masks()
@@ -941,13 +1017,13 @@ class ImageCanvas(FigureCanvas):
         self.wppf_plot = axis.scatter(*wppf_data, **style)
 
     def detector_axis(self, detector_name):
-        if self.mode in (ViewType.cartesian, ViewType.polar):
-            # Only one axis for all detectors...
-            return self.axis
-        elif self.mode == ViewType.raw:
+        if self.mode == ViewType.raw:
             if detector_name not in self.raw_axes:
                 return None
             return self.raw_axes[detector_name]
+        else:
+            # Only one axis for all detectors...
+            return self.axis
 
     def update_auto_picked_data(self):
         self.clear_auto_picked_data_artists()
@@ -978,7 +1054,7 @@ class ImageCanvas(FigureCanvas):
 
         self.iviewer.update_detector(det)
         if self.mode == ViewType.raw:
-            # Overlays need to be updated
+            # Only overlays need to be updated
             HexrdConfig().flag_overlay_updates_for_all_materials()
             self.update_beam_marker()
 
@@ -1000,15 +1076,16 @@ class ImageCanvas(FigureCanvas):
         # This will call self.draw_idle()
         self.draw_detector_borders()
 
-        # In polar mode, the overlays are clipped to the detectors, so
+        # In polar/stereo mode, the overlays are clipped to the detectors, so
         # they must be re-drawn as well
-        if self.mode == ViewType.polar:
+        if self.mode in (ViewType.polar, ViewType.stereo):
+            # FIXME stereo: is this true? Are we clipping overlays to the detectors?
             HexrdConfig().flag_overlay_updates_for_all_materials()
             self.update_overlays()
 
     def export_current_plot(self, filename):
-        if self.mode == ViewType.raw:
-            msg = 'Must be in cartesisan or polar mode. Cannot export plot.'
+        if self.mode not in (ViewType.cartesian, ViewType.polar):
+            msg = 'Must be in cartesian or polar mode. Cannot export plot.'
             raise Exception(msg)
 
         if not self.iviewer:
@@ -1044,6 +1121,7 @@ class ImageCanvas(FigureCanvas):
         return False
 
     def polar_show_snip1d(self):
+        # FIXME stereo: should we show snip1d for stereo too?
         if self.mode != ViewType.polar:
             print('snip1d may only be shown in polar mode!')
             return
@@ -1097,6 +1175,7 @@ def transform_from_plain_cartesian_func(mode):
         }
         return cart_to_angles(**kwargs)
 
+    # FIXME stereo: need to add stereo here
     funcs = {
         ViewType.raw: to_pixels,
         ViewType.cartesian: transform_cart,

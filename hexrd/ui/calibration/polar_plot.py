@@ -22,11 +22,6 @@ class InstrumentViewer:
         self.type = ViewType.polar
         self.instr = create_hedm_instrument()
 
-        # Resolution settings
-        # As far as I can tell, self.pixel_size won't actually change
-        # anything for a polar plot, so just hard-code it.
-        self.pixel_size = 0.5
-
         self.draw_polar()
 
     @property

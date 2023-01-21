@@ -811,9 +811,11 @@ class MainWindow(QObject):
         is_cartesian = self.image_mode == ViewType.cartesian
         is_polar = self.image_mode == ViewType.polar
         is_raw = self.image_mode == ViewType.raw
+        is_stereo = self.image_mode == ViewType.stereo
 
         has_images = HexrdConfig().has_images
 
+        # FIXME stereo: should we add export support to stereo?
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian) and has_images)
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
@@ -909,6 +911,8 @@ class MainWindow(QObject):
         elif self.image_mode == ViewType.polar:
             rebuild_polar_masks()
             self.ui.image_tab_widget.show_polar()
+        elif self.image_mode == ViewType.stereo:
+            self.ui.image_tab_widget.show_stereo()
         else:
             rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()

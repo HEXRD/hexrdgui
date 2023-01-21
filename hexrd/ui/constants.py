@@ -40,6 +40,7 @@ class ViewType:
     raw = 'raw'
     cartesian = 'cartesian'
     polar = 'polar'
+    stereo = 'stereo'
 
 
 class OverlayType(Enum):

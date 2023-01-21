@@ -8,6 +8,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
 from hexrd.ui.navigation_toolbar import NavigationToolbar
+from hexrd.ui.utils.conversions import stereo_to_angles
 from hexrd.ui import utils
 
 
@@ -25,7 +26,7 @@ class ImageTabWidget(QTabWidget):
     new_mouse_position = Signal(dict)
 
     def __init__(self, parent=None):
-        super(ImageTabWidget, self).__init__(parent)
+        super().__init__(parent)
         self.image_canvases = [ImageCanvas(self)]
 
         # Set up a mouse move connection to use with the status bar
@@ -227,6 +228,22 @@ class ImageTabWidget(QTabWidget):
         self.tabBar().hide()
         self.switch_toolbar(self.currentIndex())
 
+    def show_stereo(self):
+        self.update_image_names()
+        self.update_ims_toolbar()
+
+        # Make sure we actually have images
+        if len(self.image_names) == 0:
+            msg = 'Cannot show Stereo view without images!'
+            QMessageBox.warning(self, 'HEXRD', msg)
+            return
+
+        self.clear()
+        self.image_canvases[0].show_stereo()
+        self.addTab(self.image_canvases[0], '')
+        self.tabBar().hide()
+        self.switch_toolbar(self.currentIndex())
+
     @property
     def active_canvases(self):
         """Get the canvases that are actively being used"""
@@ -329,6 +346,12 @@ class ImageTabWidget(QTabWidget):
                 ang_data, gvec = dpanel.cart_to_angles(xy_data)
                 tth = ang_data[:, 0][0]
                 eta = ang_data[:, 1][0]
+            elif mode == ViewType.stereo:
+                # The i and j need to be reversed here, because the function
+                # expects `i` to be the row and `j` to be the column.
+                stereo_size = HexrdConfig().stereo_size
+                tth, eta = stereo_to_angles(np.vstack([j, i]).T,
+                                            stereo_size)[:, 0]
             else:
                 tth = np.radians(info['x_data'])
                 eta = np.radians(info['y_data'])

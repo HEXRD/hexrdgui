@@ -26,7 +26,7 @@ class ImageModeWidget(QObject):
     mask_applied = Signal()
 
     def __init__(self, parent=None):
-        super(ImageModeWidget, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('image_mode_widget.ui', parent)
@@ -109,11 +109,14 @@ class ImageModeWidget(QObject):
         self.ui.polar_tth_distortion_overlay.currentIndexChanged.connect(
             self.polar_tth_distortion_overlay_changed)
 
+        self.ui.stereo_size.valueChanged.connect(HexrdConfig().set_stereo_size)
+
     def currentChanged(self, index):
         modes = {
             0: ViewType.raw,
             1: ViewType.cartesian,
-            2: ViewType.polar
+            2: ViewType.polar,
+            3: ViewType.stereo,
         }
         ind = self.ui.tab_widget.currentIndex()
         self.tab_changed.emit(modes[ind])
@@ -143,6 +146,7 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_erosion,
             self.ui.polar_apply_tth_distortion,
             self.ui.polar_tth_distortion_overlay,
+            self.ui.stereo_size,
         ]
 
         return widgets
@@ -185,6 +189,7 @@ class ImageModeWidget(QObject):
                 HexrdConfig().polar_snip1d_numiter)
             self.ui.polar_apply_erosion.setChecked(
                 HexrdConfig().polar_apply_erosion)
+            self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
 
             self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()
