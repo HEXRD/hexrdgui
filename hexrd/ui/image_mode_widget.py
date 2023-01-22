@@ -112,6 +112,8 @@ class ImageModeWidget(QObject):
         self.ui.stereo_size.valueChanged.connect(HexrdConfig().set_stereo_size)
         self.ui.stereo_show_border.toggled.connect(
             HexrdConfig().set_stereo_show_border)
+        self.ui.stereo_project_from_polar.toggled.connect(
+            HexrdConfig().set_stereo_project_from_polar)
 
     def currentChanged(self, index):
         modes = {
@@ -150,6 +152,7 @@ class ImageModeWidget(QObject):
             self.ui.polar_tth_distortion_overlay,
             self.ui.stereo_size,
             self.ui.stereo_show_border,
+            self.ui.stereo_project_from_polar,
         ]
 
         return widgets
@@ -195,6 +198,8 @@ class ImageModeWidget(QObject):
             self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
             self.ui.stereo_show_border.setChecked(
                 HexrdConfig().stereo_show_border)
+            self.ui.stereo_project_from_polar.setChecked(
+                HexrdConfig().stereo_project_from_polar)
 
             self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()

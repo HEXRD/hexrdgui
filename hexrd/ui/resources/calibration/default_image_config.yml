@@ -18,6 +18,7 @@ cartesian:
 stereo:
   stereo_size: 1501
   show_border: true
+  project_from_polar: false
 colormap:
   min: 0
 show_detector_borders: true

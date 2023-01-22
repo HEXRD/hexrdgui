@@ -527,7 +527,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         stereo_size = HexrdConfig().stereo_size
-        radius = (stereo_size - 1) / 2
+        radius = stereo_size / 2
         center = (stereo_size / 2, stereo_size / 2)
 
         circle = Circle(**{
@@ -868,18 +868,15 @@ class ImageCanvas(FigureCanvas):
         stereo_size = HexrdConfig().config['image']['stereo']['stereo_size']
         last_stereo_size = self._last_stereo_size
 
-        polar_res_config = HexrdConfig().config['image']['polar']
-
         reset_needed = (
             self.mode != ViewType.stereo or
-            self._polar_reset_needed(polar_res_config) or
             stereo_size != last_stereo_size
         )
         if reset_needed:
             self.clear()
             self.mode = ViewType.stereo
 
-        self.polar_res_config = polar_res_config.copy()
+        self._last_stereo_size = stereo_size
 
         # Run the view generation in a background thread
         worker = AsyncWorker(stereo_viewer)
@@ -892,26 +889,22 @@ class ImageCanvas(FigureCanvas):
     def finish_show_stereo(self, iviewer):
         self.iviewer = iviewer
         img, = self.scaled_images
-        extent = iviewer._extent
 
         rescale_image = True
         if len(self.axes_images) == 0:
             self.axis = self.figure.add_subplot(111)
             kwargs = {
                 'X': img,
+                'extent': iviewer.extent,
                 'cmap': self.cmap,
                 'norm': self.norm,
                 'picker': True,
                 'interpolation': 'none',
             }
             self.axes_images.append(self.axis.imshow(**kwargs))
-            # self.axis.set_ylabel(r'$\eta$ [deg]')
         else:
             rescale_image = False
             self.axes_images[0].set_data(img)
-
-            # Update the xlabel in case it was modified (via tth distortion)
-            # self.axis.set_xlabel(self.polar_xlabel)
 
         if rescale_image:
             self.axis.relim()
