@@ -1016,6 +1016,16 @@ class ImageCanvas(FigureCanvas):
 
         self.iviewer.write_image(filename)
 
+    def export_to_maud(self, filename):
+        if self.mode != ViewType.polar:
+            msg = 'Must be in polar mode. Cannot export.'
+            raise Exception(msg)
+
+        if not self.iviewer:
+            raise Exception('No iviewer. Cannot export')
+
+        self.iviewer.write_maud(filename)
+
     def _polar_reset_needed(self, new_polar_config):
         # If any of the entries on this list were changed, a reset is needed
         reset_needed_list = [

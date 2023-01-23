@@ -80,6 +80,7 @@
       <string>Export</string>
      </property>
      <addaction name="action_export_current_plot"/>
+     <addaction name="action_export_to_maud"/>
     </widget>
     <widget class="QMenu" name="menu_import">
      <property name="title">
@@ -494,6 +495,14 @@
    </property>
    <property name="text">
     <string>Current View</string>
+   </property>
+  </action>
+  <action name="action_export_to_maud">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>To Maud</string>
    </property>
   </action>
   <action name="action_edit_reset_instrument_config">
