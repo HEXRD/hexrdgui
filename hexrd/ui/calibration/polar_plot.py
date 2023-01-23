@@ -9,6 +9,7 @@ from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import update_overlay_data
+from hexrd.ui.calibration.utils.maud_headers import header0, header, block_hdr
 
 
 def polar_viewer():
@@ -151,3 +152,21 @@ class InstrumentViewer:
             with h5py.File(filename, 'w') as f:
                 for key, value in data.items():
                     f.create_dataset(key, data=value)
+
+    def write_maud(self, filename='polar_to_maud.esg'):
+        filename = Path(filename)
+
+        with open(filename, 'wb') as fid:
+            eta_vec = np.degrees(self.angular_grid[0])
+            for i, eta in enumerate(np.average(eta_vec, axis=1).flatten()):
+                if i == 0:
+                    hstr = header0 % (i, np.linalg.norm(self.pv.tvec_s), eta)
+                else:
+                    hstr = header % (i, eta)
+                fid.write(hstr.encode('ascii'))
+                fid.write(block_hdr.encode('ascii'))
+                tth = HexrdConfig().last_unscaled_azimuthal_integral_data[0]
+                intensities = self.raw_rescaled_img
+                for rho, inten in zip(tth, intensities[i]):
+                    vals = f' {rho}  {inten}\n'
+                    fid.write(vals.encode('ascii'))
