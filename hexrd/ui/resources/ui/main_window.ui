@@ -504,6 +504,9 @@
    <property name="text">
     <string>To Maud</string>
    </property>
+   <property name="toolTip">
+    <string>Export to Maud ESG format. Only available in the polar view.</string>
+   </property>
   </action>
   <action name="action_edit_reset_instrument_config">
    <property name="text">

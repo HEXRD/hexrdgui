@@ -822,7 +822,7 @@ class MainWindow(QObject):
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
-        self.ui.action_export_to_maud.setEnabled(is_polar)
+        self.ui.action_export_to_maud.setEnabled(is_polar and has_images)
 
     def start_fast_powder_calibration(self):
         if not HexrdConfig().has_images:
