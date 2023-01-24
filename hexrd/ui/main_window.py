@@ -517,8 +517,9 @@ class MainWindow(QObject):
     def on_action_export_to_maud_triggered(self):
         filters = 'ESG files (*.esg)'
 
+        default_path = os.path.join(HexrdConfig().working_dir, "maud.esg")
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export to Maud', HexrdConfig().working_dir, filters)
+            self.ui, 'Export to Maud', default_path, filters)
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
