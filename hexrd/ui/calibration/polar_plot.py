@@ -156,17 +156,17 @@ class InstrumentViewer:
     def write_maud(self, filename='polar_to_maud.esg'):
         filename = Path(filename)
 
-        with open(filename, 'wb') as fid:
+        with open(filename, 'w') as fid:
             eta_vec = np.degrees(self.angular_grid[0])
             for i, eta in enumerate(np.average(eta_vec, axis=1).flatten()):
                 if i == 0:
                     hstr = header0 % (i, np.linalg.norm(self.pv.tvec_s), eta)
                 else:
                     hstr = header % (i, eta)
-                fid.write(hstr.encode('ascii'))
-                fid.write(block_hdr.encode('ascii'))
+                fid.write(hstr)
+                fid.write(block_hdr)
                 tth = HexrdConfig().last_unscaled_azimuthal_integral_data[0]
                 intensities = self.raw_rescaled_img
                 for rho, inten in zip(tth, intensities[i]):
                     vals = f' {rho}  {inten}\n'
-                    fid.write(vals.encode('ascii'))
+                    fid.write(vals)
