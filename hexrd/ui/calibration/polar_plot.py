@@ -158,15 +158,25 @@ class InstrumentViewer:
 
         with open(filename, 'w') as fid:
             eta_vec = np.degrees(self.angular_grid[0])
-            intensities = self.raw_rescaled_img
+            intensities = self.img
+            first_block = True
             for i, eta in enumerate(np.average(eta_vec, axis=1).flatten()):
-                if i == 0:
+                if np.all(np.isnan(intensities[i])):
+                    # Skip this block
+                    continue
+
+                if first_block:
                     hstr = header0 % (i, np.linalg.norm(self.pv.tvec_s), eta)
+                    first_block = False
                 else:
                     hstr = header % (i, eta)
+
                 fid.write(hstr)
                 fid.write(block_hdr)
                 tth = HexrdConfig().last_unscaled_azimuthal_integral_data[0]
                 for rho, inten in zip(tth, intensities[i]):
+                    if np.isnan(inten):
+                        continue
+
                     vals = f' {rho}  {inten}\n'
                     fid.write(vals)
