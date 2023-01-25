@@ -177,6 +177,8 @@ class MainWindow(QObject):
             self.on_action_load_state_triggered)
         self.ui.action_export_current_plot.triggered.connect(
             self.on_action_export_current_plot_triggered)
+        self.ui.action_export_to_maud.triggered.connect(
+            self.on_action_export_to_maud_triggered)
         self.ui.action_edit_euler_angle_convention.triggered.connect(
             self.on_action_edit_euler_angle_convention)
         self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
@@ -512,6 +514,17 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_current_plot(selected_file)
 
+    def on_action_export_to_maud_triggered(self):
+        filters = 'ESG files (*.esg)'
+
+        default_path = os.path.join(HexrdConfig().working_dir, "maud.esg")
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Export to Maud', default_path, filters)
+
+        if selected_file:
+            HexrdConfig().working_dir = os.path.dirname(selected_file)
+            return self.ui.image_tab_widget.export_to_maud(selected_file)
+
     def on_action_run_laue_and_powder_calibration_triggered(self):
         if not hasattr(self, '_calibration_runner_async_runner'):
             # Initialize this only once and keep it around, so we don't
@@ -810,6 +823,7 @@ class MainWindow(QObject):
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
+        self.ui.action_export_to_maud.setEnabled(is_polar and has_images)
 
     def start_fast_powder_calibration(self):
         if not HexrdConfig().has_images:

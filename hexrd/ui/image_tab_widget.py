@@ -352,6 +352,9 @@ class ImageTabWidget(QTabWidget):
     def polar_show_snip1d(self):
         self.image_canvases[0].polar_show_snip1d()
 
+    def export_to_maud(self, filename):
+        self.image_canvases[0].export_to_maud(filename)
+
 
 if __name__ == '__main__':
     import sys
