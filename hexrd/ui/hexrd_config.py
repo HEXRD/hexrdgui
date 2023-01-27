@@ -2383,4 +2383,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             utils.convert_panel_buffer_to_2d_array(panel)
 
             # Add the mask
+            # NOTE: the mask here is False when pixels should be masked.
+            # This is the same as the panel buffer, which is why we are
+            # doing a `np.logical_and()`.
             panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
