@@ -90,9 +90,7 @@ class InstrumentViewer:
         self.pv.warp_all_images()
 
     def update_overlay_data(self):
-        # update_overlay_data(self.instr, self.type)
-        # FIXME stereo: no overlays yet for stereographic
-        pass
+        update_overlay_data(self.instr, self.type)
 
     def update_detector(self, det):
         if self.project_from_polar:
