@@ -620,12 +620,6 @@ class ImageCanvas(FigureCanvas):
             self.draw_idle()
             return
 
-        # FIXME stereo: need to add stereo support for
-        # `transform_from_plain_cartesian_func()` before we can do this.
-        if self.mode == ViewType.stereo:
-            self.draw_idle()
-            return
-
         style = HexrdConfig().beam_marker_style
 
         instr = self.iviewer.instr
