@@ -350,8 +350,11 @@ class ImageTabWidget(QTabWidget):
                 # The i and j need to be reversed here, because the function
                 # expects `i` to be the row and `j` to be the column.
                 stereo_size = HexrdConfig().stereo_size
-                tth, eta = stereo_to_angles(np.vstack([j, i]).T,
-                                            stereo_size)[:, 0]
+                tth, eta = stereo_to_angles(
+                    ij=np.vstack([j, i]).T,
+                    instr=iviewer.instr,
+                    stereo_size=stereo_size,
+                )
             else:
                 tth = np.radians(info['x_data'])
                 eta = np.radians(info['y_data'])

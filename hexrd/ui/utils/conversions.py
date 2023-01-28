@@ -2,6 +2,8 @@ import numpy as np
 
 from hexrd.transforms.xfcapi import mapAngle
 
+from .stereo2angle import ij2ang as stereo_ij2ang, ang2ij as ang2stereo_ij
+
 
 def cart_to_pixels(xys, panel):
     return panel.cartToPixel(xys)[:, [1, 0]]
@@ -45,20 +47,9 @@ def pixels_to_angles(ij, panel, eta_period, tvec_s=None, tvec_c=None):
     return cart_to_angles(xys, panel, **kwargs)
 
 
-def stereo_to_angles(ij, stereo_size):
-    rad = (stereo_size - 1) / 2
-    X = (ij[:, 0] - rad) / rad
-    Y = (ij[:, 1] - rad) / rad
-    condition = X**2 + Y**2 <= 1
-    X = np.where(condition, X, np.nan)
-    Y = np.where(condition, Y, np.nan)
-    den = 1 + X**2 + Y**2
-
-    vx = 2.0 * X / den
-    vy = 2.0 * Y / den
-    vz = (1.0 - X**2 - Y**2) / den
-
-    tth = np.arccos(vz)
-    eta = np.mod(np.arctan2(vy, vx), 2 * np.pi)
-
-    return np.array([tth, eta])
+def stereo_to_angles(ij, instr, stereo_size):
+    return stereo_ij2ang(
+        ij=ij,
+        stereo_size=stereo_size,
+        bvec=instr.beam_vector,
+    )
