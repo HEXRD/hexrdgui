@@ -22,7 +22,9 @@ from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.snip_viewer_dialog import SnipViewerDialog
 from hexrd.ui import utils
-from hexrd.ui.utils.conversions import cart_to_angles, cart_to_pixels
+from hexrd.ui.utils.conversions import (
+    angles_to_stereo, cart_to_angles, cart_to_pixels,
+)
 import hexrd.ui.constants
 
 
@@ -1200,11 +1202,20 @@ def transform_from_plain_cartesian_func(mode):
         }
         return cart_to_angles(**kwargs)
 
-    # FIXME stereo: need to add stereo here
+    def to_stereo(xys, panel, iviewer):
+        # First convert to angles, then to stereo from there
+        angs = np.radians(to_angles(xys, panel, iviewer))
+        return angles_to_stereo(
+            angs,
+            iviewer.instr,
+            HexrdConfig().stereo_size,
+        )
+
     funcs = {
         ViewType.raw: to_pixels,
         ViewType.cartesian: transform_cart,
         ViewType.polar: to_angles,
+        ViewType.stereo: to_stereo,
     }
 
     if mode not in funcs:

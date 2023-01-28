@@ -48,8 +48,18 @@ def pixels_to_angles(ij, panel, eta_period, tvec_s=None, tvec_c=None):
 
 
 def stereo_to_angles(ij, instr, stereo_size):
+    # Returns radians
     return stereo_ij2ang(
         ij=ij,
+        stereo_size=stereo_size,
+        bvec=instr.beam_vector,
+    )
+
+
+def angles_to_stereo(angs, instr, stereo_size):
+    # angs is in radians
+    return ang2stereo_ij(
+        angs=angs,
         stereo_size=stereo_size,
         bvec=instr.beam_vector,
     )
