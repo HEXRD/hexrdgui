@@ -482,12 +482,20 @@ def convert_panel_buffer_to_2d_array(panel):
         # Just make a panel buffer with all True values
         panel.panel_buffer = np.ones(panel.shape, dtype=np.bool)
     elif panel.panel_buffer.shape == (2,):
-        # The two integers are specifying the borders in x and y
-        borders = panel.panel_buffer.astype(int)
+        # The two floats are specifying the borders in mm for x and y.
+        # Convert to pixel borders. Swap x and y so we have i, j in pixels.
+        borders = np.round([
+            panel.panel_buffer[1] / panel.pixel_size_row,
+            panel.panel_buffer[0] / panel.pixel_size_col,
+        ]).astype(int)
 
         # Convert to array
         panel_buffer = np.zeros(panel.shape, dtype=np.bool)
-        panel_buffer[borders[0]:-borders[0], borders[1]:-borders[1]] = True
+
+        # We can't do `-borders[i]` since that doesn't work for 0,
+        # so we must do `panel.shape[i] - borders[i]` instead.
+        panel_buffer[borders[0]:panel.shape[0] - borders[0],
+                     borders[1]:panel.shape[1] - borders[1]] = True
         panel.panel_buffer = panel_buffer
     elif panel.panel_buffer.ndim != 2:
         raise NotImplementedError(panel.panel_buffer.ndim)
