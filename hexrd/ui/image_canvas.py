@@ -934,8 +934,13 @@ class ImageCanvas(FigureCanvas):
         return xlabel
 
     def polar_masks_changed(self):
-        # FIXME stereo: do something with stereo here
-        if not self.iviewer or self.mode not in ViewType.polar:
+        skip = (
+            not self.iviewer or
+            self.mode not in (ViewType.polar, ViewType.stereo) or
+            (self.mode == ViewType.stereo and
+             not self.iviewer.project_from_polar)
+        )
+        if skip:
             return
 
         self.iviewer.reapply_masks()
