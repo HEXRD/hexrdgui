@@ -1105,7 +1105,6 @@ class ImageCanvas(FigureCanvas):
         # In polar/stereo mode, the overlays are clipped to the detectors, so
         # they must be re-drawn as well
         if self.mode in (ViewType.polar, ViewType.stereo):
-            # FIXME stereo: is this true? Are we clipping overlays to the detectors?
             HexrdConfig().flag_overlay_updates_for_all_materials()
             self.update_overlays()
 
@@ -1147,7 +1146,6 @@ class ImageCanvas(FigureCanvas):
         return False
 
     def polar_show_snip1d(self):
-        # FIXME stereo: should we show snip1d for stereo too?
         if self.mode != ViewType.polar:
             print('snip1d may only be shown in polar mode!')
             return
