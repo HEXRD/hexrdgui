@@ -641,8 +641,7 @@ class ImageCanvas(FigureCanvas):
         self.draw_idle()
 
     def beam_vector_changed(self):
-        if self.mode == ViewType.polar:
-            # FIXME stereo: do something with stereo
+        if self.mode == ViewType.polar or self.is_stereo_from_polar:
             # Polar needs a complete re-draw
             # Only emit this once every 100 milliseconds or so to avoid
             # too many updates if the slider widget is being used.
@@ -933,12 +932,19 @@ class ImageCanvas(FigureCanvas):
 
         return xlabel
 
+    @property
+    def is_stereo_from_polar(self):
+        return (
+            self.mode == ViewType.stereo and
+            self.iviewer and
+            self.iviewer.project_from_polar
+        )
+
     def polar_masks_changed(self):
         skip = (
             not self.iviewer or
             self.mode not in (ViewType.polar, ViewType.stereo) or
-            (self.mode == ViewType.stereo and
-             not self.iviewer.project_from_polar)
+            (self.mode == ViewType.stereo and not self.is_stereo_from_polar)
         )
         if skip:
             return
