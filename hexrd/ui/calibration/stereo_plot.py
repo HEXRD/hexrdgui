@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import h5py
 import numpy as np
 
 from hexrd import constants as ct
@@ -137,3 +140,27 @@ class InstrumentViewer:
             self.pv.update_detector(det)
 
         self.draw_stereo()
+
+    def write_image(self, filename):
+        filename = Path(filename)
+
+        # Prepare the data to write out
+        data = {
+            'intensities': self.img,
+        }
+
+        # Delete the file if it already exists
+        if filename.exists():
+            filename.unlink()
+
+        # Check the file extension
+        ext = filename.suffix.lower()
+
+        if ext == '.npz':
+            # If it looks like npz, save as npz
+            np.savez(filename, **data)
+        else:
+            # Default to HDF5 format
+            with h5py.File(filename, 'w') as f:
+                for key, value in data.items():
+                    f.create_dataset(key, data=value)

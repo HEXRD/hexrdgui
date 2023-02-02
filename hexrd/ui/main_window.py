@@ -507,8 +507,10 @@ class MainWindow(QObject):
             # We can do CSV and XY as well
             filters += ';; CSV files (*.csv);; XY files (*.xy)'
 
+        default_name = f'{self.image_mode}_view.h5'
+        default_path = os.path.join(HexrdConfig().working_dir, default_name)
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Current View', HexrdConfig().working_dir, filters)
+            self.ui, 'Save Current View', default_path, filters)
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -815,9 +817,8 @@ class MainWindow(QObject):
 
         has_images = HexrdConfig().has_images
 
-        # FIXME stereo: should we add export support to stereo?
         self.ui.action_export_current_plot.setEnabled(
-            (is_polar or is_cartesian) and has_images)
+            (is_polar or is_cartesian or is_stereo) and has_images)
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
             is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(

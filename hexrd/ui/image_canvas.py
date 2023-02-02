@@ -1109,12 +1109,19 @@ class ImageCanvas(FigureCanvas):
             self.update_overlays()
 
     def export_current_plot(self, filename):
-        if self.mode not in (ViewType.cartesian, ViewType.polar):
-            msg = 'Must be in cartesian or polar mode. Cannot export plot.'
-            raise Exception(msg)
+        allowed_view_types = [
+            ViewType.cartesian,
+            ViewType.polar,
+            ViewType.stereo,
+        ]
+        if self.mode not in allowed_view_types:
+            msg = (
+                f'View mode not implemented: {self.mode}. Cannot export.'
+            )
+            raise NotImplementedError(msg)
 
         if not self.iviewer:
-            raise Exception('No iviewer. Cannot export polar plot')
+            raise Exception('No iviewer. Cannot export')
 
         self.iviewer.write_image(filename)
 
