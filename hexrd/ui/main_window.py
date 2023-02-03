@@ -141,7 +141,7 @@ class MainWindow(QObject):
 
         self.update_action_check_states()
 
-        self.live_update(HexrdConfig().live_update)
+        self.set_live_update(HexrdConfig().live_update)
 
         ImageFileManager().load_dummy_images(True)
 
@@ -206,7 +206,7 @@ class MainWindow(QObject):
         self.ui.action_open_mask_manager.triggered.connect(
             self.on_action_open_mask_manager_triggered)
         self.ui.action_show_live_updates.toggled.connect(
-            self.live_update)
+            self.set_live_update)
         self.ui.action_show_detector_borders.toggled.connect(
             HexrdConfig().set_show_detector_borders)
         self.ui.action_show_beam_marker.toggled.connect(
@@ -274,7 +274,7 @@ class MainWindow(QObject):
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
-        ImageLoadManager().live_update_status.connect(self.live_update)
+        ImageLoadManager().live_update_status.connect(self.set_live_update)
         ImageLoadManager().state_updated.connect(
             self.simple_image_series_dialog.setup_gui)
 
@@ -920,17 +920,21 @@ class MainWindow(QObject):
 
         self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
-    def live_update(self, enabled):
+    def set_live_update(self, enabled):
         previous = HexrdConfig().live_update
         HexrdConfig().set_live_update(enabled)
 
         if enabled:
-            HexrdConfig().rerender_needed.connect(self.update_all)
+            # When a state file is loaded, this function gets called again, and
+            # a repeated connection is getting made to perform this update.
+            # As such, let's set `Qt.UniqueConnection` to prevent this from
+            # being connected repeatedly.
+            HexrdConfig().rerender_needed.connect(self.update_all, Qt.UniqueConnection)
             # Go ahead and trigger an update as well
             self.update_all()
-        # Only disconnect if we were previously enabled. i.e. the signal was
-        # connected
         elif previous:
+            # Only disconnect if we were previously enabled. i.e. the signal was
+            # connected
             HexrdConfig().rerender_needed.disconnect(self.update_all)
 
     def show_beam_marker_toggled(self, b):
