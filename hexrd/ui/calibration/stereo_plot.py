@@ -102,9 +102,8 @@ class InstrumentViewer:
         })
 
     def draw_stereo_from_polar(self):
-        # FIXME stereo: sometimes, some instrument settings are modified that
-        # should cause the polar view to be regenerated here, but it is not
-        # regenerated. We should perform some checks/memoization.
+        # We need to make sure `self.pv` is always updated when it needs
+        # to be. But that can be done elsewhere.
         if self.pv is None:
             # Don't redraw the polar view unless we have to
             self.draw_polar()
