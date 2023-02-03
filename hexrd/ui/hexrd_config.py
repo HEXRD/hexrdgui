@@ -1990,6 +1990,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.config['image']['stereo']['project_from_polar']
 
     def set_stereo_project_from_polar(self, b):
+        if not b:
+            print('Warning: projecting from raw is currently disabled\n',
+                  'Setting stereo mode to project from polar...')
+            b = True
+
         if b != self.stereo_project_from_polar:
             self.config['image']['stereo']['project_from_polar'] = b
             self.rerender_needed.emit()

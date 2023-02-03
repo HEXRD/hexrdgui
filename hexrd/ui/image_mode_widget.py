@@ -34,6 +34,12 @@ class ImageModeWidget(QObject):
         # Always start with raw tab
         self.ui.tab_widget.setCurrentIndex(0)
 
+        # Hide stereo_project_from_polar for now, as projecting from polar
+        # appears to give a better image (lines up better with overlays)
+        # than projecting from raw.
+        # FIXME: why is projecting from raw different?
+        self.ui.stereo_project_from_polar.setVisible(False)
+
         self.setup_connections()
         self.update_gui_from_config()
 
