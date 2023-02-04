@@ -834,16 +834,6 @@
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <layout class="QGridLayout" name="stereo_tab_grid_layout">
-         <item row="0" column="0">
-          <widget class="QLabel" name="stereo_size_label">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of pixels used for both width and height of the projection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Stereo Size:</string>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="0">
           <widget class="QCheckBox" name="stereo_show_border">
            <property name="toolTip">
@@ -854,15 +844,28 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QCheckBox" name="stereo_project_from_polar">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to create the stereographic projection from the polar view.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This can be helpful, for instance, if SNIP background subtraction is important. However, it also means that the polar view must be generated beforehand, which may take some time depending on its resolution settings. The current polar view settings are used, and thus, those settings will have a direct impact on the stereographic view.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If unchecked, the stereo view is projected from the raw images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <item row="2" column="0" colspan="2">
+          <spacer name="verticalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <widget class="QLabel" name="stereo_description">
            <property name="text">
-            <string>Project from Polar?</string>
+            <string>The stereographic view is generated from the polar view and includes all image processing such as background subtraction, intensity correction, etc.</string>
            </property>
-           <property name="checked">
+           <property name="wordWrap">
             <bool>true</bool>
            </property>
           </widget>
@@ -886,31 +889,28 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0" colspan="2">
-          <widget class="QLabel" name="stereo_description">
-           <property name="text">
-            <string>The stereographic view is generated from the polar view and includes all image processing such as background subtraction, intensity correction, etc.</string>
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="stereo_project_from_polar">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to create the stereographic projection from the polar view.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This can be helpful, for instance, if SNIP background subtraction is important. However, it also means that the polar view must be generated beforehand, which may take some time depending on its resolution settings. The current polar view settings are used, and thus, those settings will have a direct impact on the stereographic view.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If unchecked, the stereo view is projected from the raw images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
-           <property name="wordWrap">
+           <property name="text">
+            <string>Project from Polar?</string>
+           </property>
+           <property name="checked">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="2" column="0" colspan="2">
-          <spacer name="verticalSpacer_4">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
+         <item row="0" column="0">
+          <widget class="QLabel" name="stereo_size_label">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of pixels used for both width and height of the projection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
+           <property name="text">
+            <string>Stereo Size:</string>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
+          </widget>
          </item>
         </layout>
        </item>
