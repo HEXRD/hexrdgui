@@ -110,11 +110,22 @@ class InstrumentViewer:
 
         polar_img = self.pv.img
 
-        tth_grid = np.degrees(self.pv.angular_grid[1][0, :])
-        eta_grid = np.degrees(self.pv.angular_grid[0][:, 0])
+        extent = np.degrees(self.pv.extent)
+        tth_range = extent[:2]
+        eta_range = np.sort(extent[2:])
+
+        tth_grid = np.linspace(*tth_range, polar_img.shape[1])
+        eta_grid = np.linspace(*eta_range, polar_img.shape[0])
+
+        # This is the old way of making the grids, but this would
+        # result in a small gap at eta == 360 for full coverage.
+        # tth_grid = np.degrees(self.pv.angular_grid[1][0, :])
+        # eta_grid = np.degrees(self.pv.angular_grid[0][:, 0])
 
         # Make eta between 0 and 360
-        eta_grid = np.mod(eta_grid, 360)
+        # The small extra tolerance at the end is to avoid a gap for full
+        # coverage.
+        eta_grid = np.mod(eta_grid, 360 + 1e-6)
         idx = np.argsort(eta_grid)
         eta_grid = eta_grid[idx]
         polar_img = polar_img[idx, :]
