@@ -362,8 +362,7 @@ class PolarView:
         for name in HexrdConfig().visible_masks:
             if name not in HexrdConfig().masks:
                 continue
-            # This should be a numpy array, but convert it if it isn't
-            mask = np.asarray(HexrdConfig().masks[name])
+            mask = HexrdConfig().masks[name]
             total_mask = np.logical_or(total_mask, ~mask)
         if HexrdConfig().threshold_mask_status:
             idx = HexrdConfig().current_imageseries_idx

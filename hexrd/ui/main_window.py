@@ -913,6 +913,8 @@ class MainWindow(QObject):
             rebuild_polar_masks()
             self.ui.image_tab_widget.show_polar()
         elif self.image_mode == ViewType.stereo:
+            # Need to rebuild the polar masks since stereo may be using them
+            rebuild_polar_masks()
             self.ui.image_tab_widget.show_stereo()
         else:
             rebuild_raw_masks()
