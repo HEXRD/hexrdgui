@@ -63,6 +63,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
+    """Emitted when the option to show the stereo border is changed"""
+    show_stereo_border_changed = Signal()
+
     """Emitted when the option to tab images is changed"""
     tab_images_changed = Signal()
 
@@ -1982,7 +1985,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def set_stereo_show_border(self, b):
         if b != self.stereo_size:
             self.config['image']['stereo']['show_border'] = b
-            self.rerender_needed.emit()
+            self.show_stereo_border_changed.emit()
 
     stereo_show_border = property(_stereo_show_border, set_stereo_show_border)
 
