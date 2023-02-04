@@ -280,7 +280,7 @@ class PolarView:
         image1_warp = warp(pimg, displ_field, mode='edge')
 
         # image1_warp = rescale_intensity(image1_warp, out_range=np.uint32)
-        return np.ma.array(image1_warp) # , mask=mask_warp)
+        return np.ma.array(image1_warp)  # , mask=mask_warp)
 
     def generate_image(self):
         self.reset_cached_distortion_fields()
@@ -362,7 +362,8 @@ class PolarView:
         for name in HexrdConfig().visible_masks:
             if name not in HexrdConfig().masks:
                 continue
-            mask = HexrdConfig().masks[name]
+            # This should be a numpy array, but convert it if it isn't
+            mask = np.asarray(HexrdConfig().masks[name])
             total_mask = np.logical_or(total_mask, ~mask)
         if HexrdConfig().threshold_mask_status:
             idx = HexrdConfig().current_imageseries_idx
@@ -443,7 +444,8 @@ def project_on_detector_plane(angular_grid, ntth, neta, *args, **kwargs):
             dummy_ome]).T
 
     xypts = np.nan * np.ones((len(gvec_angs), 2))
-    valid_xys, rmats_s, on_plane = _project_on_detector_plane(gvec_angs, *args, **kwargs)
+    valid_xys, rmats_s, on_plane = _project_on_detector_plane(
+        gvec_angs, *args, **kwargs)
     xypts[on_plane] = valid_xys
 
     return xypts
