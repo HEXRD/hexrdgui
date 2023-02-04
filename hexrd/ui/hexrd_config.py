@@ -1966,6 +1966,43 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         _cartesian_plane_normal_rotate_y,
         set_cartesian_plane_normal_rotate_y)
 
+    def _stereo_size(self):
+        return self.config['image']['stereo']['stereo_size']
+
+    def set_stereo_size(self, v):
+        if v != self.stereo_size:
+            self.config['image']['stereo']['stereo_size'] = v
+            self.rerender_needed.emit()
+
+    stereo_size = property(_stereo_size, set_stereo_size)
+
+    def _stereo_show_border(self):
+        return self.config['image']['stereo']['show_border']
+
+    def set_stereo_show_border(self, b):
+        if b != self.stereo_size:
+            self.config['image']['stereo']['show_border'] = b
+            self.rerender_needed.emit()
+
+    stereo_show_border = property(_stereo_show_border, set_stereo_show_border)
+
+    def _stereo_project_from_polar(self):
+        return self.config['image']['stereo']['project_from_polar']
+
+    def set_stereo_project_from_polar(self, b):
+        if not b:
+            print('Warning: projecting from raw is currently disabled\n',
+                  'Setting stereo mode to project from polar...')
+            b = True
+
+        if b != self.stereo_project_from_polar:
+            self.config['image']['stereo']['project_from_polar'] = b
+            self.rerender_needed.emit()
+
+    stereo_project_from_polar = property(
+        _stereo_project_from_polar,
+        set_stereo_project_from_polar)
+
     def _apply_pixel_solid_angle_correction(self):
         return self.config['image']['apply_pixel_solid_angle_correction']
 

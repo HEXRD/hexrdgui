@@ -319,7 +319,7 @@ class MaskManagerDialog(QObject):
         if self.image_mode == ViewType.raw:
             rebuild_raw_masks()
             HexrdConfig().raw_masks_changed.emit()
-        elif self.image_mode == ViewType.polar:
+        elif self.image_mode in (ViewType.polar, ViewType.stereo):
             rebuild_polar_masks()
             HexrdConfig().polar_masks_changed.emit()
 

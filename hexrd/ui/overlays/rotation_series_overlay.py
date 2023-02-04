@@ -9,6 +9,7 @@ from hexrd.ui.overlays.constants import (
     default_crystal_refinements,
 )
 from hexrd.ui.overlays.overlay import Overlay
+from hexrd.ui.utils.conversions import angles_to_stereo
 
 
 class RotationSeriesOverlay(Overlay):
@@ -198,6 +199,8 @@ class RotationSeriesOverlay(Overlay):
             DESCRIPTION.
 
         """
+        from hexrd.ui.hexrd_config import HexrdConfig
+
         instr = self.instrument
         display_mode = self.display_mode
         sim_data = instr.simulate_rotation_series(
@@ -220,6 +223,12 @@ class RotationSeriesOverlay(Overlay):
 
             if display_mode == ViewType.polar:
                 data = np.degrees(angles)
+            elif display_mode == ViewType.stereo:
+                data = angles_to_stereo(
+                    angles,
+                    instr,
+                    HexrdConfig().stereo_size,
+                )
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 data = valid_xys[0]
                 if display_mode == ViewType.raw:
@@ -269,10 +278,19 @@ class RotationSeriesOverlay(Overlay):
         return self.rectangular_range_data(spots, display_mode, panel)
 
     def rectangular_range_data(self, spots, display_mode, panel):
+        from hexrd.ui.hexrd_config import HexrdConfig
+
         range_corners = self.range_corners(spots)
         if display_mode == ViewType.polar:
             # All done...
             return np.degrees(range_corners)
+        elif display_mode == ViewType.stereo:
+            # Convert the angles to stereo ij
+            return [angles_to_stereo(
+                angles,
+                self.instrument,
+                HexrdConfig().stereo_size,
+            ) for angles in range_corners]
 
         # The range data is curved for raw and cartesian.
         # Get more intermediate points so the data reflects this.

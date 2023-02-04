@@ -26,13 +26,19 @@ class ImageModeWidget(QObject):
     mask_applied = Signal()
 
     def __init__(self, parent=None):
-        super(ImageModeWidget, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('image_mode_widget.ui', parent)
 
         # Always start with raw tab
         self.ui.tab_widget.setCurrentIndex(0)
+
+        # Hide stereo_project_from_polar for now, as projecting from polar
+        # appears to give a better image (lines up better with overlays)
+        # than projecting from raw.
+        # FIXME: why is projecting from raw different?
+        self.ui.stereo_project_from_polar.setVisible(False)
 
         self.setup_connections()
         self.update_gui_from_config()
@@ -109,11 +115,18 @@ class ImageModeWidget(QObject):
         self.ui.polar_tth_distortion_overlay.currentIndexChanged.connect(
             self.polar_tth_distortion_overlay_changed)
 
+        self.ui.stereo_size.valueChanged.connect(HexrdConfig().set_stereo_size)
+        self.ui.stereo_show_border.toggled.connect(
+            HexrdConfig().set_stereo_show_border)
+        self.ui.stereo_project_from_polar.toggled.connect(
+            HexrdConfig().set_stereo_project_from_polar)
+
     def currentChanged(self, index):
         modes = {
             0: ViewType.raw,
             1: ViewType.cartesian,
-            2: ViewType.polar
+            2: ViewType.polar,
+            3: ViewType.stereo,
         }
         ind = self.ui.tab_widget.currentIndex()
         self.tab_changed.emit(modes[ind])
@@ -143,6 +156,9 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_erosion,
             self.ui.polar_apply_tth_distortion,
             self.ui.polar_tth_distortion_overlay,
+            self.ui.stereo_size,
+            self.ui.stereo_show_border,
+            self.ui.stereo_project_from_polar,
         ]
 
         return widgets
@@ -185,6 +201,11 @@ class ImageModeWidget(QObject):
                 HexrdConfig().polar_snip1d_numiter)
             self.ui.polar_apply_erosion.setChecked(
                 HexrdConfig().polar_apply_erosion)
+            self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
+            self.ui.stereo_show_border.setChecked(
+                HexrdConfig().stereo_show_border)
+            self.ui.stereo_project_from_polar.setChecked(
+                HexrdConfig().stereo_project_from_polar)
 
             self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()

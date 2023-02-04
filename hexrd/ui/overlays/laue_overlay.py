@@ -13,7 +13,9 @@ from hexrd.ui.overlays.constants import (
     default_crystal_refinements
 )
 from hexrd.ui.overlays.overlay import Overlay
-from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
+from hexrd.ui.utils.conversions import (
+    angles_to_cart, angles_to_stereo, cart_to_angles
+)
 
 
 class LaueOverlay(Overlay):
@@ -174,6 +176,8 @@ class LaueOverlay(Overlay):
         self.calibration_picks = picks
 
     def generate_overlay(self):
+        from hexrd.ui.hexrd_config import HexrdConfig
+
         instr = self.instrument
         display_mode = self.display_mode
         sim_data = instr.simulate_laue_pattern(
@@ -231,6 +235,14 @@ class LaueOverlay(Overlay):
                 # so that we can predictably get the id() of spots inside.
                 # Numpy arrays do fancy optimizations that break this.
                 spots = np.degrees(angles).tolist()
+                spots_for_ranges = angles
+            elif display_mode == ViewType.stereo:
+                # Convert the angles to stereo ij
+                spots = angles_to_stereo(
+                    angles,
+                    instr,
+                    HexrdConfig().stereo_size,
+                ).tolist()
                 spots_for_ranges = angles
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
                 if display_mode == ViewType.raw:
@@ -330,6 +342,8 @@ class LaueOverlay(Overlay):
         return results
 
     def ellipsoidal_range_data(self, spots, display_mode, panel):
+        from hexrd.ui.hexrd_config import HexrdConfig
+
         num_points = 300
         a = self.tth_width / 2
         b = self.eta_width / 2
@@ -340,6 +354,14 @@ class LaueOverlay(Overlay):
 
         if display_mode == ViewType.polar:
             return np.degrees(results)
+
+        if display_mode == ViewType.stereo:
+            # Convert the angles to stereo ij
+            return [angles_to_stereo(
+                angles,
+                self.instrument,
+                HexrdConfig().stereo_size,
+            ) for angles in results]
 
         # Must be cartesian or raw
         if display_mode not in (ViewType.raw, ViewType.cartesian):

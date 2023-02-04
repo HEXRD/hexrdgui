@@ -141,7 +141,7 @@ class MainWindow(QObject):
 
         self.update_action_check_states()
 
-        self.live_update(HexrdConfig().live_update)
+        self.set_live_update(HexrdConfig().live_update)
 
         ImageFileManager().load_dummy_images(True)
 
@@ -206,7 +206,7 @@ class MainWindow(QObject):
         self.ui.action_open_mask_manager.triggered.connect(
             self.on_action_open_mask_manager_triggered)
         self.ui.action_show_live_updates.toggled.connect(
-            self.live_update)
+            self.set_live_update)
         self.ui.action_show_detector_borders.toggled.connect(
             HexrdConfig().set_show_detector_borders)
         self.ui.action_show_beam_marker.toggled.connect(
@@ -274,7 +274,7 @@ class MainWindow(QObject):
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
-        ImageLoadManager().live_update_status.connect(self.live_update)
+        ImageLoadManager().live_update_status.connect(self.set_live_update)
         ImageLoadManager().state_updated.connect(
             self.simple_image_series_dialog.setup_gui)
 
@@ -507,8 +507,10 @@ class MainWindow(QObject):
             # We can do CSV and XY as well
             filters += ';; CSV files (*.csv);; XY files (*.xy)'
 
+        default_name = f'{self.image_mode}_view.h5'
+        default_path = os.path.join(HexrdConfig().working_dir, default_name)
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Current View', HexrdConfig().working_dir, filters)
+            self.ui, 'Save Current View', default_path, filters)
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -811,11 +813,12 @@ class MainWindow(QObject):
         is_cartesian = self.image_mode == ViewType.cartesian
         is_polar = self.image_mode == ViewType.polar
         is_raw = self.image_mode == ViewType.raw
+        is_stereo = self.image_mode == ViewType.stereo
 
         has_images = HexrdConfig().has_images
 
         self.ui.action_export_current_plot.setEnabled(
-            (is_polar or is_cartesian) and has_images)
+            (is_polar or is_cartesian or is_stereo) and has_images)
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
             is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
@@ -909,23 +912,31 @@ class MainWindow(QObject):
         elif self.image_mode == ViewType.polar:
             rebuild_polar_masks()
             self.ui.image_tab_widget.show_polar()
+        elif self.image_mode == ViewType.stereo:
+            # Need to rebuild the polar masks since stereo may be using them
+            rebuild_polar_masks()
+            self.ui.image_tab_widget.show_stereo()
         else:
             rebuild_raw_masks()
             self.ui.image_tab_widget.load_images()
 
         self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
-    def live_update(self, enabled):
+    def set_live_update(self, enabled):
         previous = HexrdConfig().live_update
         HexrdConfig().set_live_update(enabled)
 
         if enabled:
-            HexrdConfig().rerender_needed.connect(self.update_all)
+            # When a state file is loaded, this function gets called again, and
+            # a repeated connection is getting made to perform this update.
+            # As such, let's set `Qt.UniqueConnection` to prevent this from
+            # being connected repeatedly.
+            HexrdConfig().rerender_needed.connect(self.update_all, Qt.UniqueConnection)
             # Go ahead and trigger an update as well
             self.update_all()
-        # Only disconnect if we were previously enabled. i.e. the signal was
-        # connected
         elif previous:
+            # Only disconnect if we were previously enabled. i.e. the signal was
+            # connected
             HexrdConfig().rerender_needed.disconnect(self.update_all)
 
     def show_beam_marker_toggled(self, b):

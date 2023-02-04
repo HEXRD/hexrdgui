@@ -17,6 +17,7 @@ from hexrd import imageutil
 from hexrd.imageseries.omega import OmegaImageSeries
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
+from hexrd.utils.decorators import memoize
 
 
 class SnipAlgorithmType(IntEnum):
@@ -142,6 +143,11 @@ def run_snip1d(img):
     numiter = HexrdConfig().polar_snip1d_numiter
     algorithm = HexrdConfig().polar_snip1d_algorithm
 
+    # Call the memoized function
+    return _run_snip1d(img, snip_width, numiter, algorithm)
+
+@memoize
+def _run_snip1d(img, snip_width, numiter, algorithm):
     if algorithm == SnipAlgorithmType.Fast_SNIP_1D:
         return imageutil.fast_snip1d(img, snip_width, numiter)
     elif algorithm == SnipAlgorithmType.SNIP_1D:

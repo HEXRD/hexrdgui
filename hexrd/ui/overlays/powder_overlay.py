@@ -13,7 +13,9 @@ from hexrd.xrdutil.phutil import (
 
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.overlays.overlay import Overlay
-from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
+from hexrd.ui.utils.conversions import (
+    angles_to_cart, angles_to_stereo, cart_to_angles
+)
 
 
 class PowderOverlay(Overlay):
@@ -330,7 +332,7 @@ class PowderOverlay(Overlay):
                     # These need the updated xys
                     xys = panel.angles_to_cart(ang_crds)
 
-            if display_mode == ViewType.polar:
+            if display_mode in [ViewType.polar, ViewType.stereo]:
                 if not apply_distortion:
                     # The ang_crds have not yet been computed. Do so now.
                     # In the polar view, the nominal angles refer to the SAMPLE
@@ -384,8 +386,26 @@ class PowderOverlay(Overlay):
                          ang_crds[split_idx:, :]]
                     )
 
-                # append to list with nan padding
-                ring_pts.append(np.vstack([ang_crds, nans_row]))
+                if display_mode == ViewType.polar:
+                    # append to list with nan padding
+                    ring_pts.append(np.vstack([ang_crds, nans_row]))
+                elif display_mode == ViewType.stereo:
+                    # Swap back, convert to radians
+                    ang_crds[:, [0, 1]] = np.radians(ang_crds[:, [1, 0]])
+
+                    # Convert the ang_crds to stereo ij
+                    stereo_ij = angles_to_stereo(
+                        ang_crds,
+                        instr,
+                        HexrdConfig().stereo_size,
+                    )
+
+                    # FIXME: why??
+                    # swap i and j
+                    stereo_ij[:, [0, 1]] = stereo_ij[:, [1, 0]]
+
+                    # append to list with nan padding
+                    ring_pts.append(np.vstack([stereo_ij, nans_row]))
 
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
 
