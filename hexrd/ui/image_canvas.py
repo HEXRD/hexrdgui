@@ -72,6 +72,8 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().overlay_config_changed.connect(self.update_overlays)
         HexrdConfig().show_saturation_level_changed.connect(
             self.show_saturation)
+        HexrdConfig().show_stereo_border_changed.connect(
+            self.draw_stereo_border)
         HexrdConfig().detector_transform_modified.connect(
             self.on_detector_transform_modified)
         HexrdConfig().rerender_detector_borders.connect(
