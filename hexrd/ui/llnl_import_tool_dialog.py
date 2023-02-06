@@ -60,7 +60,7 @@ class LLNLImportToolDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.instruments.currentIndexChanged.connect(
+        self.ui.instruments.currentTextChanged.connect(
             self.instrument_selected)
         self.ui.load.clicked.connect(self.load_images)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
@@ -139,14 +139,13 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_file_label.setText(os.path.basename(self.config_file))
         self.ui.config_file_label.setToolTip(self.config_file)
 
-    def instrument_selected(self, idx):
+    def instrument_selected(self, instrument):
         if HexrdConfig().show_beam_marker:
             HexrdConfig().show_beam_marker = False
 
         self.detectors.clear()
         self.detector_defaults.clear()
-        instruments = {1: 'TARDIS', 2: 'PXRDIP'}
-        self.instrument = instruments.get(idx, None)
+        self.instrument = instrument
 
         if self.instrument is None:
             self.import_in_progress = False
@@ -186,6 +185,8 @@ class LLNLImportToolDialog(QObject):
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         self.config_file = temp.name
         HexrdConfig().save_instrument_config(self.config_file)
+        if self.ui.instruments.currentIndex() == 0: # No instrument selected
+            return
         fname = f'default_{self.instrument.lower()}_config.yml'
         with resource_loader.resource_path(
                 hexrd.ui.resources.calibration, fname) as f:
