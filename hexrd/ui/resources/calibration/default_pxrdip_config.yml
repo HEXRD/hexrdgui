@@ -8,8 +8,8 @@ detectors:
       rows: 750
       size: [0.1, 0.1]
     transform:
-      tilt: [0.0, 0.0, 0.0]
-      translation: [0.0, 0.0, 0.0]
+      tilt: [-1.2091995761561454e+00, 1.2091995761561454e+00, -1.2091995761561454e+00]
+      translation: [-24.75, 0.0, -37.5]
 oscillation_stage:
   chi: 0.0
   translation: [0.0, 0.0, 0.0]

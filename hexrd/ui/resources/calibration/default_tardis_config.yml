@@ -9,8 +9,8 @@ detectors:
       size: [0.1, 0.1]
     buffer: [0.2, 0.2]
     transform:
-      tilt: [0.0, 0.0, 0.0]
-      translation: [0.0, 0.0, 0.0]
+      tilt: [-1.57079633e+00, 0.0, 0.0]
+      translation: [0.0, -11.565, -25.08]
 oscillation_stage:
   chi: 0.0
   translation: [0.0, 0.0, 0.0]
