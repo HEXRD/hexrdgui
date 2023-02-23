@@ -1,6 +1,8 @@
 import copy
 import os
 
+import numpy as np
+
 from hexrd.config.root import RootConfig
 from hexrd.config.material import MaterialConfig
 from hexrd.config.instrument import Instrument as InstrumentConfig
@@ -44,6 +46,11 @@ def create_indexing_config():
     mconfig = MaterialConfig(config)
     mconfig.materials = copy.deepcopy(HexrdConfig().materials)
     config.material = mconfig
+
+    tth_width = material.planeData.tThWidth
+    if tth_width is not None:
+        # Set this so it will be used in HEXRD
+        config.set('material:tth_width', np.degrees(tth_width))
 
     ims_dict = HexrdConfig().omega_imageseries_dict
     if ims_dict is None:
