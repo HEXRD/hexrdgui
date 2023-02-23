@@ -22,9 +22,9 @@ def main():
 
     app = QApplication(sys.argv)
 
-    # Initialize the HexrdConfig object so that it will parse arguments
-    # and exit early if needed.
-    HexrdConfig()
+    # Initialize the HexrdConfig object and parse the arguments
+    # so that it will exit early if needed.
+    HexrdConfig().parse_args()
 
     data = resource_loader.load_resource(hexrd.ui.resources.icons,
                                          'hexrd.ico', binary=True)

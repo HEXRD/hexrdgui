@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 
-from PySide2.QtCore import Signal, QObject, QSettings, QTimer
+from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
 
 import h5py
 import numpy as np
@@ -239,6 +239,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.polar_corr_field_polar_dict = None
         self.polar_angular_grid = None
         self._recent_images = {}
+        self.max_cpus = None
 
         self.setup_logging()
 
@@ -251,9 +252,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['materials'] = copy.deepcopy(
             self.default_config['materials'])
 
-        self.parse_args()
-
-        if not self._initial_load_ignore_settings:
+        # We can't use the parsed args yet for this since this is in the
+        # __init__ method. So just check for this flag manually.
+        if '--ignore-settings' not in QCoreApplication.arguments():
             self.load_settings()
 
         self.set_defaults_if_missing()
@@ -319,7 +320,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # The key is the attribute to set on HexrdConfig().
         # The value is the parsed variable name.
         to_set = {
-            '_initial_load_ignore_settings': 'ignore_settings',
             'max_cpus': 'ncpus',
         }
 
