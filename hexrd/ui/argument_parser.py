@@ -1,6 +1,21 @@
 import argparse
 
 
+def check_positive_int(value):
+    """Ensure the value is a positive int"""
+    error_msg = f"invalid positive int value: {value}"
+
+    try:
+        ivalue = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(error_msg)
+
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError(error_msg)
+
+    return ivalue
+
+
 class ArgumentParser(argparse.ArgumentParser):
     """The ArgumentParser used by HEXRDGUI
 
@@ -22,4 +37,10 @@ class ArgumentParser(argparse.ArgumentParser):
             '--ignore-settings',
             action='store_true',
             help='Ignore previous settings when HEXRDGUI starts',
+        )
+
+        self.add_argument(
+            '-n', '--ncpus',
+            type=check_positive_int,
+            help='Set the number of CPUs to use for parallel operations',
         )

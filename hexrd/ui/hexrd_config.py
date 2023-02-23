@@ -316,14 +316,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._program_args = self._arg_parser.parse_args()
 
         # Set some of these on the HexrdConfig object
-        # The key is the parsed variable name. The value is the attribute to
-        # set on HexrdConfig().
+        # The key is the attribute to set on HexrdConfig().
+        # The value is the parsed variable name.
         to_set = {
-            'ignore_settings': '_initial_load_ignore_settings',
+            '_initial_load_ignore_settings': 'ignore_settings',
+            'max_cpus': 'ncpus',
         }
 
         for k, v in to_set.items():
-            setattr(self, v, getattr(self._program_args, k))
+            setattr(self, k, getattr(self._program_args, v))
 
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration

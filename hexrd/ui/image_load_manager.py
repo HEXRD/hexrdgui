@@ -446,9 +446,11 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         :param f: The aggregation function
         :param ims_dict: The imageseries to aggregate
         """
+        max_workers = HexrdConfig().max_cpus
+
         futures = []
         progress_dict = {key: 0.0 for key in ims_dict.keys()}
-        with ThreadPoolExecutor() as tp:
+        with ThreadPoolExecutor(max_workers=max_workers) as tp:
             for (key, ims) in ims_dict.items():
                 futures.append(tp.submit(f, key, ims, progress_dict=progress_dict))
 
@@ -483,9 +485,11 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                             the aggregation, frames is number of images to aggregate, and
                             ims is the image series to perform the aggregation on.
         """
+        max_workers = HexrdConfig().max_cpus
+
         futures = []
         progress_dict = {key: 0.0 for key in aggr_op_dict.keys()}
-        with ThreadPoolExecutor() as tp:
+        with ThreadPoolExecutor(max_workers=max_workers) as tp:
             for (key, (op, frames, ims)) in aggr_op_dict.items():
                 futures.append(tp.submit(
                     self.aggregate_dark, key, op, ims, frames, progress_dict))

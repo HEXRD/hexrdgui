@@ -7,7 +7,12 @@ def create_hedm_instrument():
     # HEDMInstrument expects None Euler angle convention for the
     # config. Let's get it as such.
     iconfig = HexrdConfig().instrument_config_none_euler_convention
-    rme = HexrdConfig().rotation_matrix_euler()
+    kwargs = {
+        'instrument_config': iconfig,
+        'tilt_calibration_mapping': HexrdConfig().rotation_matrix_euler(),
+    }
 
-    return HEDMInstrument(instrument_config=iconfig,
-                          tilt_calibration_mapping=rme)
+    if HexrdConfig().max_cpus is not None:
+        kwargs['max_workers'] = HexrdConfig().max_cpus
+
+    return HEDMInstrument(**kwargs)

@@ -31,6 +31,10 @@ def create_indexing_config():
     # Make a copy to modify
     indexing_config = copy.deepcopy(HexrdConfig().indexing_config)
 
+    if HexrdConfig().max_cpus is not None:
+        # Set the max number of CPUs
+        indexing_config['multiprocessing'] = HexrdConfig().max_cpus
+
     # Set the active material on the config
     tmp = indexing_config.setdefault('material', {})
     tmp['active'] = material.name
