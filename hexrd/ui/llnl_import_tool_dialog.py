@@ -258,7 +258,7 @@ class LLNLImportToolDialog(QObject):
             # closed after accepting the image selection. We're not positive
             # why this is the case but it may be related to being a parent to
             # the QProgressDialog.
-            ImageLoadManager().read_data(files, parent=self.ui.parent())
+            ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
             self.it = InteractiveTemplate(self.parent())
 
@@ -490,7 +490,7 @@ class LLNLImportToolDialog(QObject):
         # closed after accepting the image selection. We're not positive
         # why this is the case but it may be related to being a parent to
         # the QProgressDialog.
-        ImageLoadManager().read_data(files, parent=self.ui.parent())
+        ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
 
         buffer_default = {'status': 0}
         for det in det_names:
