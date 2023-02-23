@@ -162,27 +162,6 @@ def det_panel_mask(instr, img_dict, tolerance=1e-6):
         panel.panel_buffer = mask
 
 
-# instrument
-def load_instrument(yml):
-    try:
-        with h5py.File(yml, 'r') as f:
-            instr = instrument.HEDMInstrument(f)
-    except(OSError):
-        with open(yml, 'r') as f:
-            instr = instrument.HEDMInstrument(yaml.safe_load(f))
-    return instr
-
-
-# instrument
-def load_crystal(yml):
-    with open(yml, 'r') as f:
-        icfg = yaml.load(f)
-        expmap = np.r_[icfg['calibration_crystal']['orientation']]
-        tvec = np.r_[icfg['calibration_crystal']['position']]
-        vinv = np.r_[icfg['calibration_crystal']['inv_stretch']]
-    return expmap, tvec, vinv
-
-
 def load_images(img_stem, ip_keys,
                 threshold=None,
                 denoise=False,

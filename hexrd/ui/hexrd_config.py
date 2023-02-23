@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 
-from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
+from PySide2.QtCore import Signal, QObject, QSettings, QTimer
 
 import h5py
 import numpy as np
@@ -17,6 +17,7 @@ from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
 from hexrd.valunits import valWUnit
 
+from hexrd.ui.argument_parser import ArgumentParser
 from hexrd.ui import constants
 from hexrd.ui import overlays
 from hexrd.ui import resource_loader
@@ -250,7 +251,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['materials'] = copy.deepcopy(
             self.default_config['materials'])
 
-        if '--ignore-settings' not in QCoreApplication.arguments():
+        self.parse_args()
+
+        if not self._initial_load_ignore_settings:
             self.load_settings()
 
         self.set_defaults_if_missing()
@@ -295,6 +298,33 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             signal.connect(self.materials_dict_modified.emit)
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
+
+    def parse_args(self):
+        """Create the argument parser and parse the arguments
+
+        The ArgumentParser object adds all of the command line arguments that
+        may be used by HEXRDGUI. We then parse these arguments and cache the
+        results on the HexrdConfig() object.
+
+        We are doing this on the HexrdConfig() object so that the parsed
+        arguments are accessible throughout the program.
+
+        Note that the program will exit early when this function is called
+        if `--help` was passed.
+        """
+        self._arg_parser = ArgumentParser()
+        self._program_args = self._arg_parser.parse_args()
+
+        # Set some of these on the HexrdConfig object
+        # The key is the attribute to set on HexrdConfig().
+        # The value is the parsed variable name.
+        to_set = {
+            '_initial_load_ignore_settings': 'ignore_settings',
+            'max_cpus': 'ncpus',
+        }
+
+        for k, v in to_set.items():
+            setattr(self, k, getattr(self._program_args, v))
 
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration

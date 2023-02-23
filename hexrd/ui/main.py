@@ -6,6 +6,7 @@ from PySide2.QtGui import QIcon, QPixmap
 from PySide2.QtWidgets import QApplication
 
 from hexrd.ui import resource_loader
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.main_window import MainWindow
 import hexrd.ui.resources.icons
 
@@ -20,6 +21,10 @@ def main():
     QCoreApplication.setApplicationName('hexrd')
 
     app = QApplication(sys.argv)
+
+    # Initialize the HexrdConfig object so that it will parse arguments
+    # and exit early if needed.
+    HexrdConfig()
 
     data = resource_loader.load_resource(hexrd.ui.resources.icons,
                                          'hexrd.ico', binary=True)
