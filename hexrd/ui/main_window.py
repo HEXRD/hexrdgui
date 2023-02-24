@@ -459,7 +459,7 @@ class MainWindow(QObject):
                     pos = HexrdConfig().detector_names.index(d)
                     files[pos].append(f)
                 HexrdConfig().recent_images = image_files
-                ImageLoadManager().read_data(files, parent=self.ui)
+                ImageLoadManager().read_data(files, ui_parent=self.ui)
 
     def images_loaded(self, enabled=True):
         self.ui.action_transform_detectors.setEnabled(enabled)
