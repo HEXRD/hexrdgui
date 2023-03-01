@@ -122,18 +122,18 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                     files[idx].append('/'.join([path, f]))
         return files
 
-    def read_data(self, files, data=None, ui_parent=None):
+    def read_data(self, files=None, data=None, ui_parent=None, **kwargs):
         # When this is pressed read in a complete set of data for all detectors.
         # Run the imageseries processing in a background thread and display a
         # loading dialog
-        self.parent_dir = HexrdConfig().images_dir
-        self.set_state()
-        self.ui_parent = ui_parent
-        self.files = files
+        if files:
+            self.parent_dir = HexrdConfig().images_dir
+            self.files = files
+            self.empty_frames = data['empty_frames'] if data else 0
         self.data = {} if data is None else data
-        self.empty_frames = data['empty_frames'] if data else 0
-
-        self.begin_processing()
+        self.ui_parent = ui_parent
+        self.set_state(kwargs.get('state', None))
+        self.begin_processing(kwargs.get('postprocess', False))
 
     def begin_processing(self, postprocess=False):
         self.update_status = HexrdConfig().live_update
