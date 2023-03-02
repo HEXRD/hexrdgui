@@ -72,5 +72,4 @@ class TransformDialog:
             'agg': state.get('agg', 0),
         }
 
-        ilm.set_state(new_state)
-        ilm.begin_processing(postprocess=True)
+        ilm.read_data(ui_parent=self.ui, state=new_state, postprocess=True)
