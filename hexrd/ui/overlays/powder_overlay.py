@@ -7,8 +7,8 @@ from hexrd import unitcell
 
 from hexrd.transforms import xfcapi
 from hexrd.xrdutil.phutil import (
-    PinholeDistortion, SampleLayerDistortion, tth_corr_map_pinhole,
-    tth_corr_map_sample_layer
+    PinholeDistortion, RyggPinholeDistortion, SampleLayerDistortion,
+    tth_corr_map_pinhole, tth_corr_map_rygg_pinhole, tth_corr_map_sample_layer
 )
 
 from hexrd.ui.constants import OverlayType, ViewType
@@ -461,9 +461,10 @@ class PowderOverlay(Overlay):
         def tth_pinhole_distortion(panel):
             kwargs = {
                 'detector': panel,
+                'material': self.material,
                 **self.tth_distortion_kwargs,
             }
-            return PinholeDistortion(**kwargs)
+            return RyggPinholeDistortion(**kwargs)
 
         known_types = {
             'SampleLayerDistortion': tth_sample_layer_distortion,
@@ -486,7 +487,7 @@ class PowderOverlay(Overlay):
     def tth_displacement_field(self):
         funcs = {
             'SampleLayerDistortion': tth_corr_map_sample_layer,
-            'PinholeDistortion': tth_corr_map_pinhole,
+            'PinholeDistortion': tth_corr_map_rygg_pinhole,
         }
 
         if self.tth_distortion_type not in funcs:
@@ -499,6 +500,9 @@ class PowderOverlay(Overlay):
             'instrument': self.instrument,
             **self.tth_distortion_kwargs,
         }
+        if f is tth_corr_map_rygg_pinhole:
+            kwargs['material'] = self.material
+
         return f(**kwargs)
 
     @property

@@ -138,7 +138,7 @@
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="distortion_offset_tab">
          <attribute name="title">
@@ -427,13 +427,6 @@
               <string>Pinhole</string>
              </attribute>
              <layout class="QGridLayout" name="gridLayout_5">
-              <item row="0" column="1">
-               <widget class="QLabel" name="ph_thickness_label">
-                <property name="text">
-                 <string>Pinhole Thickness</string>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="1">
                <widget class="ScientificDoubleSpinBox" name="ph_thickness">
                 <property name="minimumSize">
@@ -475,6 +468,13 @@
                 </property>
                </spacer>
               </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="ph_thickness_label">
+                <property name="text">
+                 <string>Pinhole Thickness</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="0">
                <widget class="QLabel" name="ph_radius_label">
                 <property name="text">
@@ -510,13 +510,42 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" colspan="2">
+              <item row="0" column="2">
+               <widget class="QLabel" name="ph_num_phi_elements_label">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of φ elements to use for integration.&lt;/p&gt;&lt;p&gt;Larger is more accurate, but also takes longer to compute.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of φ Elements&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="3">
                <widget class="QPushButton" name="ph_apply_panel_buffers">
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Apply Panel Buffers from Pinhole Dimensions</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QSpinBox" name="ph_num_phi_elements">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of φ elements to use for integration.&lt;/p&gt;&lt;p&gt;Larger is more accurate, but also takes longer to compute.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>10000</number>
+                </property>
+                <property name="value">
+                 <number>120</number>
                 </property>
                </widget>
               </item>
@@ -584,6 +613,9 @@
   <tabstop>sl_pinhole_thickness</tabstop>
   <tabstop>ph_radius</tabstop>
   <tabstop>ph_thickness</tabstop>
+  <tabstop>ph_num_phi_elements</tabstop>
+  <tabstop>ph_apply_panel_buffers</tabstop>
+  <tabstop>clip_with_panel_buffer</tabstop>
  </tabstops>
  <resources/>
  <connections>

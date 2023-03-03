@@ -2,7 +2,9 @@ import copy
 
 import numpy as np
 
-from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox
+from PySide2.QtWidgets import (
+    QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
+)
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -29,7 +31,7 @@ class PowderOverlayEditor:
 
     def setup_connections(self):
         for w in self.widgets:
-            if isinstance(w, QDoubleSpinBox):
+            if isinstance(w, (QDoubleSpinBox, QSpinBox)):
                 w.valueChanged.connect(self.update_config)
             elif isinstance(w, QCheckBox):
                 w.toggled.connect(self.update_config)
@@ -282,6 +284,7 @@ class PowderOverlayEditor:
             return {
                 'pinhole_radius': self.ui.ph_radius.value() * 1e-3,
                 'pinhole_thickness': self.ui.ph_thickness.value() * 1e-3,
+                'num_phi_elements': self.ui.ph_num_phi_elements.value(),
             }
 
         raise Exception(f'Not implemented for: {dtype}')
@@ -295,6 +298,7 @@ class PowderOverlayEditor:
             'sl_pinhole_thickness': ('pinhole_thickness', 0.1),
             'ph_radius': ('pinhole_radius', 0.15),
             'ph_thickness': ('pinhole_thickness', 0.075),
+            'ph_num_phi_elements': ('num_phi_elements', 120),
         }
 
         dtype = self.distortion_type_gui
@@ -312,8 +316,13 @@ class PowderOverlayEditor:
                 # Extract the value from the dict
                 value = v.get(key, value)
 
+            if key == 'num_phi_elements':
+                multiplier = 1
+            else:
+                multiplier = 1e3
+
             w = getattr(self.ui, w_name)
-            w.setValue(value * 1e3)
+            w.setValue(value * multiplier)
 
     @property
     def offset_widgets(self):
@@ -330,7 +339,11 @@ class PowderOverlayEditor:
 
     @property
     def pinhole_widgets(self):
-        return [self.ui.ph_radius, self.ui.ph_thickness]
+        return [
+            self.ui.ph_radius,
+            self.ui.ph_thickness,
+            self.ui.ph_num_phi_elements,
+        ]
 
     @property
     def widgets(self):
