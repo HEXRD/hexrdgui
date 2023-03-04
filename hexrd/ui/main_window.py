@@ -1142,12 +1142,15 @@ class MainWindow(QObject):
         path = Path(selected_file)
         HexrdConfig().working_dir = str(path.parent)
 
+        self.load_state_file(selected_file)
+
+    def load_state_file(self, filepath):
         # Some older state files have issues that need to be resolved.
         # Perform an update, if needed, to fix them, before reading.
-        state.update_if_needed(selected_file)
+        state.update_if_needed(filepath)
 
         # The image series will take care of closing the file
-        h5_file = h5py.File(selected_file, "r")
+        h5_file = h5py.File(filepath, "r")
         try:
             state.load(h5_file)
         except Exception:

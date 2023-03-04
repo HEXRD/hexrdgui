@@ -42,6 +42,10 @@ def main():
     window.set_icon(icon)
     window.show()
 
+    if parsed_args.state_file is not None:
+        # Load the state file
+        window.load_state_file(parsed_args.state_file)
+
     sys.exit(app.exec_())
 
 
