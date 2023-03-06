@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 
 def check_positive_int(value):
@@ -14,6 +15,15 @@ def check_positive_int(value):
         raise argparse.ArgumentTypeError(error_msg)
 
     return ivalue
+
+
+def check_state_file(value):
+    """Ensure the value is a valid state file"""
+    path = Path(value)
+    if not path.exists():
+        raise argparse.ArgumentTypeError(f'No such file: "{value}"')
+
+    return value
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -34,13 +44,20 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Add arguments here
         self.add_argument(
+            'state_file',
+            help='Load a state file during startup',
+            type=check_state_file,
+            nargs='?',
+        )
+
+        self.add_argument(
             '--ignore-settings',
-            action='store_true',
             help='Ignore previous settings when HEXRDGUI starts',
+            action='store_true',
         )
 
         self.add_argument(
             '-n', '--ncpus',
-            type=check_positive_int,
             help='Set the number of CPUs to use for parallel operations',
+            type=check_positive_int,
         )
