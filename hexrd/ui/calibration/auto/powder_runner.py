@@ -12,7 +12,6 @@ from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import instr_to_internal_dict, masks_applied_to_panel_buffers
-from hexrd.ui.utils.conversions import cart_to_angles
 
 from hexrd.ui.calibration.auto import PowderCalibrationDialog
 
@@ -276,17 +275,6 @@ class PowderRunner(QObject):
 def save_picks_to_overlay(overlay, data_dict):
     instr = create_hedm_instrument()
 
-    # We store the picks as angles on the overlays
-    def to_angles(xys, panel):
-        # Convert plain cartesian to angles
-        kwargs = {
-            'xys': xys,
-            'panel': panel,
-            'eta_period': HexrdConfig().polar_res_eta_period,
-            'tvec_s': instr.tvec,
-        }
-        return cart_to_angles(**kwargs)
-
     if overlay.display_mode == ViewType.cartesian:
         # Since this one has a fake instrument, we need to create an
         # overlay with a real instrument, update the data to generate
@@ -306,7 +294,6 @@ def save_picks_to_overlay(overlay, data_dict):
         picks[det_key] = []
 
         hkls = overlay_hkls[det_key]
-        panel = instr.detectors[det_key]
 
         for hkl in hkls:
             hkl_picks = []
@@ -315,12 +302,6 @@ def save_picks_to_overlay(overlay, data_dict):
                     if np.array_equal(row[3:6], hkl):
                         hkl_picks.append(row[:2])
 
-            if not hkl_picks:
-                # For some reason, to_angles() is returning an x, y value
-                # if the list is empty. Guard against that.
-                picks[det_key].append([])
-                continue
+            picks[det_key].append(hkl_picks)
 
-            picks[det_key].append(to_angles(hkl_picks, panel).tolist())
-
-    overlay.calibration_picks_polar = picks
+    overlay.calibration_picks = picks

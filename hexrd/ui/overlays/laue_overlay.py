@@ -180,6 +180,19 @@ class LaueOverlay(Overlay):
 
         instr = self.instrument
         display_mode = self.display_mode
+
+        point_groups = {}
+        keys = ['spots', 'ranges', 'hkls', 'labels', 'label_offsets']
+        for det_key in instr.detectors:
+            point_groups[det_key] = {key: [] for key in keys}
+
+        # This will be an empty list if there are none.
+        # And if there are none, the Laue simulator produces an error.
+        # Guard against that error.
+        sym_hkls = self.plane_data.getSymHKLs()
+        if not sym_hkls:
+            return point_groups
+
         sim_data = instr.simulate_laue_pattern(
             self.plane_data_no_exclusions,
             minEnergy=self.min_energy,
@@ -187,11 +200,7 @@ class LaueOverlay(Overlay):
             rmat_s=self.sample_rmat,
             grain_params=[self.crystal_params, ])
 
-        point_groups = {}
-        keys = ['spots', 'ranges', 'hkls']
         for det_key, psim in sim_data.items():
-            point_groups[det_key] = {key: [] for key in keys}
-
             # grab panel and split out simulation results
             # !!! note that the sim results are lists over number of grains
             #     and here we explicitly have one.
