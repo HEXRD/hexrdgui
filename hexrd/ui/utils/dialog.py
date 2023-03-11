@@ -4,6 +4,10 @@ from PySide2.QtWidgets import QDialogButtonBox
 
 def open_url(url):
     # Open the specified URL in a web browser
+    if not url.startswith('http'):
+        # Assume that this is a relative path for the HEXRDGUI docs
+        url = f'https://hexrdgui.readthedocs.io/en/latest/{url}'
+
     return QDesktopServices.openUrl(url)
 
 

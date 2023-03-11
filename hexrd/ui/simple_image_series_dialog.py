@@ -55,7 +55,7 @@ class SimpleImageSeriesDialog(QObject):
         self.detectors_changed()
         self.setup_connections()
 
-        help_url = 'https://hexrdgui.readthedocs.io/en/latest/configuration/images/#simple-image-series'
+        help_url = 'configuration/images/#simple-image-series'
         add_help_url(self.ui.button_box, help_url)
 
     # Setup GUI
