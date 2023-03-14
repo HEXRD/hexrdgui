@@ -15,6 +15,7 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils.dialog import add_help_url
 
 """
     This panel is in charge of loading file(s) for the experiment. It is built
@@ -53,6 +54,9 @@ class SimpleImageSeriesDialog(QObject):
         self.setup_gui()
         self.detectors_changed()
         self.setup_connections()
+
+        help_url = 'configuration/images/#simple-image-series'
+        add_help_url(self.ui.button_box, help_url)
 
     # Setup GUI
 
