@@ -9,13 +9,14 @@ from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
 from hexrd.utils.decorators import memoize
 
 from hexrd import constants as ct
-from hexrd.xrdutil import _project_on_detector_plane
+from hexrd.xrdutil import _project_on_detector_plane, \
+_project_on_detector_cylinder
+from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
 tvec_c = ct.zeros_3
-
 
 def sqrt_scale_img(img):
     fimg = np.array(img, dtype=float)
@@ -228,25 +229,58 @@ class PolarView:
         self.warp_dict[det] = self.warp_image(img, panel)
         return self.warp_dict[det]
 
+    def func_project_on_detector(self, detector):
+        '''
+        helper function to decide which function to 
+        use for mapping of g-vectors to detector
+        '''
+        if isinstance(detector, instrument.CylindricalDetector):
+            return _project_on_detector_cylinder
+        else:
+            return _project_on_detector_plane
+
+    def args_project_on_detector(self, detector):
+        kwargs = {'beamVec': detector.bvec}
+        arg = (detector.rmat, 
+               ct.identity_3x3, 
+               self.chi,
+               detector.tvec, 
+               ct.zeros_3, 
+               detector.tvec,
+               detector.distortion)
+        if isinstance(detector, instrument.CylindricalDetector):
+            arg = (detector.rmat,
+                   self.chi,
+                   detector.tvec,
+                   detector.caxis,
+                   detector.paxis,
+                   detector.radius,
+                   detector.physical_size,
+                   detector.angle_extent,
+                   detector.distortion)
+
+        return arg, kwargs
+
     def warp_image(self, img, panel):
         # The first 3 arguments of this function get converted into
         # the first argument of `_project_on_detector_plane`, and then
         # the rest are just passed as *args and **kwargs.
-        xypts = project_on_detector_plane(
+        args, kwargs = self.args_project_on_detector(panel)
+        func_projection = self.func_project_on_detector(panel)
+        print(args, kwargs, func_projection)
+        xypts = project_on_detector(
                     self.angular_grid,
                     self.ntth,
                     self.neta,
-                    panel.rmat, np.eye(3),
-                    self.chi,
-                    panel.tvec, tvec_c, self.tvec_s,
-                    panel.distortion,
-                    beamVec=panel.bvec)
+                    func_projection,
+                    *args,
+                    **kwargs)
 
         wimg = panel.interpolate_bilinear(
             xypts, img, pad_with_nans=True,
         ).reshape(self.shape)
         nan_mask = np.isnan(wimg)
-
+        breakpoint()
         # Store as masked array
         return np.ma.masked_array(
             data=wimg, mask=nan_mask, fill_value=0.
@@ -442,8 +476,11 @@ class PolarView:
 # `_project_on_detector_plane()` is one of the functions that takes the
 # longest when generating the polar view.
 # Memoize this so we can regenerate the polar view faster
-@memoize(maxsize=16)
-def project_on_detector_plane(angular_grid, ntth, neta, *args, **kwargs):
+# @memoize(maxsize=16)
+def project_on_detector(angular_grid, 
+                        ntth, neta, 
+                        func_projection, 
+                        *args, **kwargs):
     # This will take `angular_grid`, `ntth`, and `neta`, and make the
     # `gvec_angs` argument with them. Then, the `gvec_args` will be passed
     # first to `_project_on_detector_plane`, along with any extra args and
@@ -456,8 +493,9 @@ def project_on_detector_plane(angular_grid, ntth, neta, *args, **kwargs):
             dummy_ome]).T
 
     xypts = np.nan * np.ones((len(gvec_angs), 2))
-    valid_xys, rmats_s, on_plane = _project_on_detector_plane(
+    valid_xys, rmats_s, on_plane = func_projection(
         gvec_angs, *args, **kwargs)
     xypts[on_plane] = valid_xys
 
     return xypts
+
