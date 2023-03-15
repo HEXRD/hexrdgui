@@ -240,13 +240,17 @@ class PolarView:
             return _project_on_detector_plane
 
     def args_project_on_detector(self, detector):
+        """
+        prepare the arguments to be passed for
+        mapping to plane or cylinder
+        """
         kwargs = {'beamVec': detector.bvec}
         arg = (detector.rmat, 
                ct.identity_3x3, 
                self.chi,
                detector.tvec, 
-               ct.zeros_3, 
-               detector.tvec,
+               tvec_c,
+               self.tvec_s,
                detector.distortion)
         if isinstance(detector, instrument.CylindricalDetector):
             arg = (detector.rmat,
