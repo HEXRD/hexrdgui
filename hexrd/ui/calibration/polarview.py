@@ -265,8 +265,8 @@ class PolarView:
         # The first 3 arguments of this function get converted into
         # the first argument of `_project_on_detector_plane`, and then
         # the rest are just passed as *args and **kwargs.
-        args, kwargs = args_project_on_detector(panel)
-        func_projection = func_project_on_detector(panel)
+        args, kwargs = self.args_project_on_detector(panel)
+        func_projection = self.func_project_on_detector(panel)
 
         xypts = project_on_detector(
                     self.angular_grid,
