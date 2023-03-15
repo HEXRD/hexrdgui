@@ -265,9 +265,9 @@ class PolarView:
         # The first 3 arguments of this function get converted into
         # the first argument of `_project_on_detector_plane`, and then
         # the rest are just passed as *args and **kwargs.
-        args, kwargs = self.args_project_on_detector(panel)
-        func_projection = self.func_project_on_detector(panel)
-        print(args, kwargs, func_projection)
+        args, kwargs = args_project_on_detector(panel)
+        func_projection = func_project_on_detector(panel)
+
         xypts = project_on_detector(
                     self.angular_grid,
                     self.ntth,
@@ -280,7 +280,6 @@ class PolarView:
             xypts, img, pad_with_nans=True,
         ).reshape(self.shape)
         nan_mask = np.isnan(wimg)
-        breakpoint()
         # Store as masked array
         return np.ma.masked_array(
             data=wimg, mask=nan_mask, fill_value=0.
