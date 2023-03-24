@@ -334,9 +334,7 @@ class InteractiveTemplate:
         if event.key == 'left' or event.key == 'up':
             angle *= -1.
         elif event.key != 'right' and event.key != 'down':
-            angle *= 1.            
-        # DEBUG
-        # print(f'In "on_key_rotate": {angle}')
+            angle *= 1.
         self.total_rotation += angle
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
