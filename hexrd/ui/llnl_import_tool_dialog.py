@@ -354,7 +354,7 @@ class LLNLImportToolDialog(QObject):
             self.it.clear()
 
     def save_boundary_position(self):
-        position = {'coords': self.it.template.xy, 'angle': self.it.rotation}
+        position = {'angle': self.it.rotation, 'translation': self.it.translation}
         HexrdConfig().set_boundary_position(
             self.instrument, self.detector, position)
         if self.it.shape:

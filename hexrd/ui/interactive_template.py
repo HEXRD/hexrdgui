@@ -25,6 +25,7 @@ class InteractiveTemplate:
         self.total_rotation = 0.
         self.translating = True
         self.shape_styles = []
+        self.translation = [0, 0]
         self.parent.setFocusPolicy(Qt.ClickFocus)
 
     @property
@@ -50,7 +51,6 @@ class InteractiveTemplate:
             # should not be connected to the first. See Tardis IP for example.
             self.shape.set_closed(False)
         self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
-        self.center = self.get_midpoint()
         self.update_position(instr, det)
         self.connect_translate()
         self.raw_axes.add_patch(self.shape)
@@ -65,12 +65,16 @@ class InteractiveTemplate:
 
     def update_position(self, instr, det):
         pos = HexrdConfig().boundary_position(instr, det)
-        if pos is not None:
-            self.shape.set_xy(pos['coords'])
-            self.total_rotation = pos['angle']
+        if pos is None:
             self.center = self.get_midpoint()
-        elif instr == 'PXRDIP':
-            self.rotate_shape(angle=90)
+            if instr == 'PXRDIP':
+                self.rotate_shape(angle=90)
+        else:
+            dx, dy = pos.get('translation', [0, 0])
+            self.translation = [dx, dy]
+            self.translate_template(dx, dy)
+            self.total_rotation = pos['angle']
+            self.rotate_template(self.shape.xy, pos['angle'])
 
     @property
     def template(self):
@@ -219,21 +223,28 @@ class InteractiveTemplate:
         self.parent.setFocus()
         self.translating = True
 
+    def translate_template(self, dx, dy):
+        self.shape.set_xy(self.shape.xy + np.array([dx, dy]))
+        self.center = self.get_midpoint()
+        self.redraw()
+
     def on_key_translate(self, event):
-        dx, dy = 0, 0
+        dx0, dy0 = self.translation
+        dx1, dy1 = 0, 0
         delta = 0.5
         if event.key == 'right':
-            dx = delta
+            dx1 = delta
         elif event.key == 'left':
-            dx = -delta
+            dx1 = -delta
         elif event.key == 'up':
-            dy = -delta
+            dy1 = -delta
         elif event.key == 'down':
-            dy = delta
+            dy1 = delta
         else:
             return
 
-        self.shape.set_xy(self.shape.xy + np.array([dx, dy]))
+        self.translation = [dx0 + dx1, dy0 + dy1]
+        self.shape.set_xy(self.shape.xy + np.array([dx1, dy1]))
         self.redraw()
 
     def on_press_translate(self, event):
@@ -261,9 +272,11 @@ class InteractiveTemplate:
             return
 
         xy, xpress, ypress = self.press
-        dx = event.xdata - xpress
-        dy = event.ydata - ypress
-        self.shape.set_xy(xy + np.array([dx, dy]))
+        dx0, dy0 = self.translation
+        dx1 = event.xdata - xpress
+        dy1 = event.ydata - ypress
+        self.translation = [dx0 + dx1, dy0 + dy1]
+        self.shape.set_xy(xy + np.array([dx1, dy1]))
         self.press = None
         self.redraw()
 
