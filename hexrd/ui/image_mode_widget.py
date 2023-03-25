@@ -4,6 +4,7 @@ import numpy as np
 
 from PySide2.QtCore import QObject, QTimer, Signal
 
+from hexrd.ui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_threshold_mask
@@ -97,6 +98,8 @@ class ImageModeWidget(QObject):
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
+
+        self.ui.polar_azimuthal_overlays.pressed.connect(self.show_overlay_manager)
 
         HexrdConfig().mgr_threshold_mask_changed.connect(
             self.ui.raw_threshold_mask.setChecked)
@@ -407,6 +410,14 @@ class ImageModeWidget(QObject):
                 self.ui.polar_res_eta_min.setValue(min_value)
                 HexrdConfig().set_polar_res_eta_min(min_value, rerender=False)
         HexrdConfig().polar_res_eta_max = max_value
+
+    def show_overlay_manager(self):
+        if hasattr(self, '_overlay_manager'):
+            self._overlay_manager.ui.reject()
+            del self._overlay_manager
+
+        self._overlay_manager = AzimuthalOverlayManager(self.ui)
+        self._overlay_manager.show()
 
 
 def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):

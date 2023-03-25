@@ -239,6 +239,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.polar_angular_grid = None
         self._recent_images = {}
         self.max_cpus = None
+        self.azimuthal_overlays = []
 
         self.setup_logging()
 
@@ -396,6 +397,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # a boolean and convert if necessary
         if not isinstance(self.live_update, bool):
             self.live_update = self.live_update == 'true'
+        if not isinstance(self.azimuthal_legend, bool):
+            self.azimuthal_legend = self.azimuthal_legend == 'true'
+
+        if self.azimuthal_overlays is None:
+            self.azimuthal_overlays = []
 
         self.previous_active_material = state.get('active_material_name')
 
