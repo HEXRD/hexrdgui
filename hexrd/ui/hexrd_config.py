@@ -196,6 +196,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the loaded images change"""
     recent_images_changed = Signal()
 
+    """Emitted when an azimuthal overlay gets modified"""
+    azimuthal_overlay_modified = Signal()
+
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -324,6 +328,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('overlays_dictified', []),
             ('_polar_tth_distortion_overlay_name', None),
             ('_recent_images', {}),
+            ('azimuthal_overlays', []),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state

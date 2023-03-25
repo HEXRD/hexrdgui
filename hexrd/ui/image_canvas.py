@@ -50,6 +50,7 @@ class ImageCanvas(FigureCanvas):
         self.transform = lambda x: x
         self._last_stereo_size = None
         self.stereo_border_artists = []
+        self.azimuthal_overlay_artists = []
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -87,6 +88,7 @@ class ImageCanvas(FigureCanvas):
             self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
+        HexrdConfig().azimuthal_overlay_modified.connect(self.update_azimuthal_integral_plot)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -1019,12 +1021,30 @@ class ImageCanvas(FigureCanvas):
         unscaled = (tth, self.compute_azimuthal_integral_sum(scaled=False))
         HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
+        while self.azimuthal_overlay_artists:
+            item = self.azimuthal_overlay_artists.pop(0)
+            item['artist'].remove()
+        # Apply the visible overlays
+        for overlay in HexrdConfig().azimuthal_overlays:
+            if overlay['visible']:
+                material = HexrdConfig().materials[overlay['material']]
+                material.compute_powder_overlay(tth, fwhm=overlay['fwhm'], scale=overlay['scale'])
+                result = material.powder_overlay
+                artist = axis.fill_between(
+                    tth,
+                    result,
+                    color=overlay['color'],
+                    alpha=overlay['opacity']
+                )
+                self.azimuthal_overlay_artists.append({'material': overlay['material'], 'artist': artist})
+
         # Update the wppf data if applicable
         self.update_wppf_plot()
 
         # Rescale the axes for the new data
         axis.relim()
         axis.autoscale_view(scalex=False)
+        self.draw_idle()
 
     def update_wppf_plot(self):
         self.clear_wppf_plot()
