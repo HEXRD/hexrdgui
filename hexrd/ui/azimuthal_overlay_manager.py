@@ -6,6 +6,7 @@ from PySide2.QtWidgets import (
 from hexrd.ui import utils
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.azimuthal_overlay_editor import AzimuthalOverlayEditor
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
@@ -23,6 +24,8 @@ class AzimuthalOverlayManager:
         loader = UiLoader()
         self.ui = loader.load_file('azimuthal_overlay_manager.ui', parent)
 
+        self.overlay_editor = AzimuthalOverlayEditor(self.ui)
+        self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
@@ -143,11 +146,19 @@ class AzimuthalOverlayManager:
 
     def selection_changed(self):
         self.update_enable_states()
+        self.update_overlay_editor()
 
     def update_enable_states(self):
         row_selected = self.selected_row is not None
         self.ui.remove_button.setEnabled(row_selected)
         self.ui.edit_style_button.setEnabled(row_selected)
+        self.overlay_editor.enable_inputs(row_selected)
+
+    def update_overlay_editor(self):
+        if self.selected_row is not None:
+            self.overlay_editor.selected_overlay = self.overlays[self.selected_row]
+        else:
+            self.overlay_editor.selected_overlay = None
 
     def update_config_materials(self):
         any_changed = False
@@ -203,6 +214,7 @@ class AzimuthalOverlayManager:
                 return
 
         modified_overlay['name'] = new_name
+        self.overlay_editor.update_name_label(new_name)
 
     def create_unique_name(self):
         existing_names = [o['name'] for o in self.overlays]
