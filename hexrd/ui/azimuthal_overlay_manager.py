@@ -7,6 +7,7 @@ from hexrd.ui import utils
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.azimuthal_overlay_editor import AzimuthalOverlayEditor
+from hexrd.ui.azimuthal_overlay_style_picker import AzimuthalOverlayStylePicker
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
@@ -244,4 +245,5 @@ class AzimuthalOverlayManager:
         HexrdConfig().azimuthal_overlay_modified.emit()
 
     def edit_style(self):
-        pass
+        self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay, self.ui)
+        self._style_picker.exec_()
