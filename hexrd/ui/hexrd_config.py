@@ -1729,6 +1729,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.overlays = pruned_overlays
             self.overlay_list_modified.emit()
             self.overlay_config_changed.emit()
+        pruned_overlays = [x for x in self.azimuthal_overlays if x['material'] in mats]
+        if len(self.azimuthal_overlays) != len(pruned_overlays):
+            self.azimuthal_overlays = pruned_overlays
+            HexrdConfig().azimuthal_overlay_modified.emit()
 
     def append_overlay(self, material_name, type):
         kwargs = {
