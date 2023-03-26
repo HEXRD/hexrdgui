@@ -11,6 +11,7 @@ from hexrd.ui.azimuthal_overlay_style_picker import AzimuthalOverlayStylePicker
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
+import numpy as np
 
 COLUMNS = {
     'name': 0,
@@ -222,12 +223,13 @@ class AzimuthalOverlayManager:
         return utils.unique_name(existing_names, self.active_material_name)
 
     def add_azimuthal_overlay(self):
+        tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
         data = {
             'name': self.create_unique_name(),
             'material': self.active_material_name,
             'visible': True,
-            'fwhm': 0.25,
-            'scale': 1.0,
+            'fwhm': 2.0,
+            'scale': np.max(sum)/100,
             'color': '#ff0000',
             'opacity': 0.3,
         }
