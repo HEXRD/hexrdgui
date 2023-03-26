@@ -111,6 +111,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
+        self.azimuthal_overlay_artists.clear()
         HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
     def clear_wppf_plot(self):
@@ -820,6 +821,7 @@ class ImageCanvas(FigureCanvas):
 
                 self.azimuthal_integral_axis = axis
                 axis.set_ylabel(r'Azimuthal Integration')
+                self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
             else:
                 self.update_azimuthal_integral_plot()
@@ -1000,6 +1002,34 @@ class ImageCanvas(FigureCanvas):
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
 
+    def update_azimuthal_plot_overlays(self):
+        while self.azimuthal_overlay_artists:
+            item = self.azimuthal_overlay_artists.pop(0)
+            item['artist'].remove()
+            item['line'].remove()
+
+        # Apply new, visible overlays
+        tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
+        for overlay in HexrdConfig().azimuthal_overlays:
+            if overlay['visible']:
+                material = HexrdConfig().materials[overlay['material']]
+                material.compute_powder_overlay(tth, fwhm=overlay['fwhm'], scale=overlay['scale'])
+                result = material.powder_overlay
+                line, = self.azimuthal_integral_axis.plot(tth, result, lw=0)
+                artist = self.azimuthal_integral_axis.fill_between(
+                    tth,
+                    result,
+                    color=overlay['color'],
+                    alpha=overlay['opacity']
+                )
+                self.azimuthal_overlay_artists.append({
+                    'name': overlay['name'],
+                    'material': overlay['material'],
+                    'artist': artist,
+                    'line': line,
+                })
+        self.draw_idle()
+
     def update_azimuthal_integral_plot(self):
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
@@ -1021,22 +1051,8 @@ class ImageCanvas(FigureCanvas):
         unscaled = (tth, self.compute_azimuthal_integral_sum(scaled=False))
         HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
-        while self.azimuthal_overlay_artists:
-            item = self.azimuthal_overlay_artists.pop(0)
-            item['artist'].remove()
-        # Apply the visible overlays
-        for overlay in HexrdConfig().azimuthal_overlays:
-            if overlay['visible']:
-                material = HexrdConfig().materials[overlay['material']]
-                material.compute_powder_overlay(tth, fwhm=overlay['fwhm'], scale=overlay['scale'])
-                result = material.powder_overlay
-                artist = axis.fill_between(
-                    tth,
-                    result,
-                    color=overlay['color'],
-                    alpha=overlay['opacity']
-                )
-                self.azimuthal_overlay_artists.append({'material': overlay['material'], 'artist': artist})
+        # Apply any selected overlays
+        self.update_azimuthal_plot_overlays()
 
         # Update the wppf data if applicable
         self.update_wppf_plot()
@@ -1044,7 +1060,6 @@ class ImageCanvas(FigureCanvas):
         # Rescale the axes for the new data
         axis.relim()
         axis.autoscale_view(scalex=False)
-        self.draw_idle()
 
     def update_wppf_plot(self):
         self.clear_wppf_plot()
