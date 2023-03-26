@@ -1022,12 +1022,21 @@ class ImageCanvas(FigureCanvas):
                     color=overlay['color'],
                     alpha=overlay['opacity']
                 )
+                artist.set_label(overlay['name'])
                 self.azimuthal_overlay_artists.append({
                     'name': overlay['name'],
                     'material': overlay['material'],
                     'artist': artist,
                     'line': line,
                 })
+        if HexrdConfig().azimuthal_legend and len(self.azimuthal_overlay_artists):
+            self.azimuthal_integral_axis.legend()
+        elif self.azimuthal_integral_axis:
+            try:
+                self.azimuthal_integral_axis.get_legend().remove()
+            except:
+                # No legend to remove
+                pass
         self.draw_idle()
 
     def update_azimuthal_integral_plot(self):

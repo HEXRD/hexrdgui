@@ -124,6 +124,8 @@ class ImageModeWidget(QObject):
         self.ui.stereo_project_from_polar.toggled.connect(
             HexrdConfig().set_stereo_project_from_polar)
 
+        self.ui.toggle_azimuthal_legend.toggled.connect(self.toggle_legend)
+
     def currentChanged(self, index):
         modes = {
             0: ViewType.raw,
@@ -209,6 +211,8 @@ class ImageModeWidget(QObject):
                 HexrdConfig().stereo_show_border)
             self.ui.stereo_project_from_polar.setChecked(
                 HexrdConfig().stereo_project_from_polar)
+            self.ui.toggle_azimuthal_legend.setChecked(
+                HexrdConfig().azimuthal_legend)
 
             self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()
@@ -419,6 +423,9 @@ class ImageModeWidget(QObject):
         self._overlay_manager = AzimuthalOverlayManager(self.ui)
         self._overlay_manager.show()
 
+    def toggle_legend(self, value):
+        HexrdConfig().azimuthal_legend = value
+        HexrdConfig().azimuthal_overlay_modified.emit()
 
 def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     # Other than panel, all arguments are lists for appending results
