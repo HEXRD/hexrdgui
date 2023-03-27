@@ -1029,7 +1029,7 @@ class ImageCanvas(FigureCanvas):
                     'artist': artist,
                     'line': line,
                 })
-        if HexrdConfig().azimuthal_legend and len(self.azimuthal_overlay_artists):
+        if HexrdConfig().show_azimuthal_legend and len(self.azimuthal_overlay_artists):
             self.azimuthal_integral_axis.legend()
         elif self.azimuthal_integral_axis:
             try:

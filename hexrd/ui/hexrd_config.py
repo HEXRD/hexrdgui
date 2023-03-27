@@ -244,7 +244,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._recent_images = {}
         self.max_cpus = None
         self.azimuthal_overlays = []
-        self.azimuthal_legend = True
+        self.show_azimuthal_legend = True
 
         self.setup_logging()
 
@@ -330,7 +330,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_polar_tth_distortion_overlay_name', None),
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
-            ('azimuthal_legend', True),
+            ('show_azimuthal_legend', True),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -404,8 +404,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # a boolean and convert if necessary
         if not isinstance(self.live_update, bool):
             self.live_update = self.live_update == 'true'
-        if not isinstance(self.azimuthal_legend, bool):
-            self.azimuthal_legend = self.azimuthal_legend == 'true'
+        if not isinstance(self.show_azimuthal_legend, bool):
+            self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
 
         if self.azimuthal_overlays is None:
             self.azimuthal_overlays = []
