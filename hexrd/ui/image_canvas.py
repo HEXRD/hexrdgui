@@ -111,7 +111,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
-        self.azimuthal_overlay_artists.clear()
+        self.clear_azimuthal_integral_axis()
         HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
     def clear_wppf_plot(self):
@@ -1002,11 +1002,14 @@ class ImageCanvas(FigureCanvas):
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
 
-    def update_azimuthal_plot_overlays(self):
+    def clear_azimuthal_integral_axis(self):
         while self.azimuthal_overlay_artists:
             item = self.azimuthal_overlay_artists.pop(0)
-            item['artist'].remove()
-            item['line'].remove()
+            for artist in item['artists'].values():
+                artist.remove()
+
+    def update_azimuthal_plot_overlays(self):
+        self.clear_azimuthal_integral_axis()
 
         # Apply new, visible overlays
         tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
@@ -1016,18 +1019,20 @@ class ImageCanvas(FigureCanvas):
                 material.compute_powder_overlay(tth, fwhm=overlay['fwhm'], scale=overlay['scale'])
                 result = material.powder_overlay
                 line, = self.azimuthal_integral_axis.plot(tth, result, lw=0)
-                artist = self.azimuthal_integral_axis.fill_between(
+                fill = self.azimuthal_integral_axis.fill_between(
                     tth,
                     result,
                     color=overlay['color'],
                     alpha=overlay['opacity']
                 )
-                artist.set_label(overlay['name'])
+                fill.set_label(overlay['name'])
                 self.azimuthal_overlay_artists.append({
                     'name': overlay['name'],
                     'material': overlay['material'],
-                    'artist': artist,
-                    'line': line,
+                    'artists' :{
+                        'fill': fill,
+                        'line': line,
+                    },
                 })
         if HexrdConfig().show_azimuthal_legend and len(self.azimuthal_overlay_artists):
             self.azimuthal_integral_axis.legend()
