@@ -16,6 +16,9 @@
     <height>0</height>
    </size>
   </property>
+  <property name="windowTitle">
+   <string>Azimuthal Overlay Manager</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QGroupBox" name="plot_manager">

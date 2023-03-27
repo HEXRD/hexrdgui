@@ -16,6 +16,9 @@
     <height>0</height>
    </size>
   </property>
+  <property name="windowTitle">
+   <string>Overlay Manager</string>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
     <number>6</number>
