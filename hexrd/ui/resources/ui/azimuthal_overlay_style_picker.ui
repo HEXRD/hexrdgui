@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>overlay_style_picker</class>
- <widget class="QDialog" name="overlay_style_picker">
+ <class>azimuthal_overlay_style_picker</class>
+ <widget class="QDialog" name="azimuthal_overlay_style_picker">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>632</width>
-    <height>136</height>
+    <height>157</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -58,6 +58,9 @@
       </item>
       <item row="0" column="3">
        <widget class="ScientificDoubleSpinBox" name="opacity">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
         <property name="decimals">
          <number>8</number>
         </property>
@@ -110,7 +113,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>overlay_style_picker</receiver>
+   <receiver>azimuthal_overlay_style_picker</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -126,7 +129,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>overlay_style_picker</receiver>
+   <receiver>azimuthal_overlay_style_picker</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

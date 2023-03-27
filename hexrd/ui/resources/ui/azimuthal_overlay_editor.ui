@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>264</width>
-    <height>80</height>
+    <width>297</width>
+    <height>82</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,9 +37,12 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="fwhm">
+      <widget class="ScientificDoubleSpinBox" name="fwhm">
        <property name="enabled">
         <bool>true</bool>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
        </property>
        <property name="minimum">
         <double>0.010000000000000</double>
@@ -66,9 +69,12 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="scale">
+      <widget class="ScientificDoubleSpinBox" name="scale">
        <property name="enabled">
         <bool>true</bool>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
        </property>
        <property name="decimals">
         <number>3</number>
@@ -88,6 +94,17 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.py</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>fwhm</tabstop>
+  <tabstop>scale</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
