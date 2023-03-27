@@ -43,6 +43,9 @@ class AzimuthalOverlayManager:
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
+        self.ui.toggle_legend.toggled.connect(self.toggle_legend)
+        self.ui.toggle_legend.setChecked(
+            HexrdConfig().show_azimuthal_legend)
 
     def show(self):
         self.update_table()
@@ -249,3 +252,7 @@ class AzimuthalOverlayManager:
     def edit_style(self):
         self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay, self.ui)
         self._style_picker.exec_()
+
+    def toggle_legend(self, value):
+        HexrdConfig().show_azimuthal_legend = value
+        HexrdConfig().azimuthal_overlay_modified.emit()
