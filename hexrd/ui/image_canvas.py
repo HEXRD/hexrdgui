@@ -1039,12 +1039,9 @@ class ImageCanvas(FigureCanvas):
             })
         if HexrdConfig().show_azimuthal_legend and len(self.azimuthal_overlay_artists):
             self.azimuthal_integral_axis.legend()
-        elif self.azimuthal_integral_axis:
-            try:
-                self.azimuthal_integral_axis.get_legend().remove()
-            except:
-                # No legend to remove
-                pass
+        elif (axis := self.azimuthal_integral_axis) and axis.get_legend():
+            # Only remove the legend if the axis exists and it has a legend
+            axis.get_legend().remove()
         self.draw_idle()
 
     def update_azimuthal_integral_plot(self):
