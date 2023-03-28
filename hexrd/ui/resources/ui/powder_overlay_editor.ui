@@ -138,7 +138,7 @@
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="distortion_offset_tab">
          <attribute name="title">
@@ -286,7 +286,7 @@
           <item row="1" column="0" colspan="2">
            <widget class="HiddenBarTabWidget" name="pinhole_correction_type_tab_widget">
             <property name="currentIndex">
-             <number>1</number>
+             <number>0</number>
             </property>
             <widget class="QWidget" name="sample_layer_tab">
              <attribute name="title">
@@ -545,7 +545,7 @@
                  <number>10000</number>
                 </property>
                 <property name="value">
-                 <number>120</number>
+                 <number>60</number>
                 </property>
                </widget>
               </item>
