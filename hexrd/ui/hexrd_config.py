@@ -1511,6 +1511,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for overlay in self.overlays:
             if overlay.material_name == old_name:
                 overlay.material_name = new_name
+        for polar_overlay in self.azimuthal_overlays:
+            if polar_overlay['material'] == old_name:
+                polar_overlay['material'] = new_name
 
         if self.active_material_name == old_name:
             # Set the dict directly to bypass the updates that occur
