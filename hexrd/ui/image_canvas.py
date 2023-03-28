@@ -626,6 +626,12 @@ class ImageCanvas(FigureCanvas):
 
         instr = self.iviewer.instr
         for det_key, panel in instr.detectors.items():
+            axis = self.detector_axis(det_key)
+            if axis is None:
+                # Probably, we are in tabbed view, and this is not the
+                # right canvas for this detector...
+                continue
+
             func = transform_from_plain_cartesian_func(self.mode)
             cart_beam_position = panel.clip_to_panel(panel.beam_position,
                                                      buffer_edges=False)[0]
@@ -636,7 +642,6 @@ class ImageCanvas(FigureCanvas):
             if utils.has_nan(beam_position):
                 continue
 
-            axis = self.detector_axis(det_key)
             artist, = axis.plot(*beam_position, **style)
             self.beam_marker_artists.append(artist)
 
