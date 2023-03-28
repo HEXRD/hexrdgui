@@ -1,3 +1,4 @@
+import random
 from PySide2.QtCore import Qt, QItemSelectionModel
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QHBoxLayout, QHeaderView, QSizePolicy,
@@ -243,7 +244,7 @@ class AzimuthalOverlayManager:
             'visible': True,
             'fwhm': 2.0,
             'scale': np.max(sum)/100,
-            'color': '#ff0000',
+            'color': f'#{random.randint(0, 0xFFFFFF):06x}',
             'opacity': 0.3,
         }
         self.overlays.append(data)
