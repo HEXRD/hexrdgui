@@ -1017,6 +1017,7 @@ class ImageCanvas(FigureCanvas):
             if not overlay['visible']:
                 continue
             material = HexrdConfig().materials[overlay['material']]
+            density = round(material.unitcell.density, 2)
             material.compute_powder_overlay(tth, fwhm=overlay['fwhm'], scale=overlay['scale'])
             result = material.powder_overlay
             # Plot the result so that the plot scales correctly with the data
@@ -1028,7 +1029,7 @@ class ImageCanvas(FigureCanvas):
                 color=overlay['color'],
                 alpha=overlay['opacity']
             )
-            fill.set_label(overlay['name'])
+            fill.set_label(f'{overlay["name"]}({density}g cm^-3)')
             self.azimuthal_overlay_artists.append({
                 'name': overlay['name'],
                 'material': overlay['material'],
