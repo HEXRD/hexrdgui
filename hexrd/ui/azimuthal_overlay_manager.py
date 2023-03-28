@@ -171,6 +171,9 @@ class AzimuthalOverlayManager:
             w = self.material_combos[i]
             overlay = self.overlays[i]
             if overlay['material'] != w.currentData():
+                new_name = self.create_unique_name(w.currentData())
+                if overlay['material'] in overlay['name']:
+                    overlay['name'] = new_name
                 overlay['material'] = w.currentData()
                 any_changed = True
 
@@ -221,9 +224,11 @@ class AzimuthalOverlayManager:
         modified_overlay['name'] = new_name
         self.overlay_editor.update_name_label(new_name)
 
-    def create_unique_name(self):
+    def create_unique_name(self, name=None):
+        if name is None:
+            name = self.active_material_name
         existing_names = [o['name'] for o in self.overlays]
-        return utils.unique_name(existing_names, self.active_material_name)
+        return utils.unique_name(existing_names, name)
 
     def add_azimuthal_overlay(self):
         tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
