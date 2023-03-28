@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Signal, Qt
 
 from itertools import cycle
 
@@ -22,6 +22,8 @@ class HandDrawnMaskDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('hand_drawn_mask_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.canvas = canvas
         self.ring_data = []

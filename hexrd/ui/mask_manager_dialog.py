@@ -5,7 +5,7 @@ import os
 import numpy as np
 import h5py
 
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Signal, Qt
 from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
     QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout
@@ -34,6 +34,8 @@ class MaskManagerDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
         self.create_masks_list()
         self.threshold = None
         self.image_mode = ViewType.raw
