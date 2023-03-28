@@ -2,7 +2,7 @@ import copy
 import math
 
 from PySide2.QtCore import QThreadPool, QTimer
-from PySide2.QtWidgets import QMessageBox
+from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
@@ -88,7 +88,9 @@ class ImageCanvas(FigureCanvas):
             self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
-        HexrdConfig().azimuthal_overlay_modified.connect(self.update_azimuthal_integral_plot)
+        HexrdConfig().azimuthal_overlay_modified.connect(
+            self.update_azimuthal_integral_plot)
+        HexrdConfig().azimuthal_plot_saved.connect(self.save_azimuthal_plot)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -1007,6 +1009,23 @@ class ImageCanvas(FigureCanvas):
             item = self.azimuthal_overlay_artists.pop(0)
             for artist in item['artists'].values():
                 artist.remove()
+
+    def save_azimuthal_plot(self):
+        # Save just the second axis (the azimuthal integral plot)
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self, 'Save Azimuthal Integral Plot', HexrdConfig().working_dir,
+            'Image files (*.png, *.jpg, *.jpeg)')
+
+        if not selected_file:
+            return
+        # Find and invert the physical inches from the bottom left corner
+        size = self.figure.dpi_scale_trans.inverted()
+        # Get the bbox for the second plot
+        extent = self.azimuthal_integral_axis.get_window_extent().transformed(size)
+        # The bbox does not include the axis so manually scale it up so it does
+        new_extent = extent.from_extents([[0, 0], [extent.xmax*1.05, extent.ymax*1.05]])
+        # Save the clipped region of the figure
+        self.figure.savefig(selected_file, bbox_inches=new_extent)
 
     def update_azimuthal_plot_overlays(self):
         self.clear_azimuthal_integral_axis()

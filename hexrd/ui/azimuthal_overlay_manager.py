@@ -47,6 +47,8 @@ class AzimuthalOverlayManager:
         self.ui.toggle_legend.toggled.connect(self.toggle_legend)
         self.ui.toggle_legend.setChecked(
             HexrdConfig().show_azimuthal_legend)
+        self.ui.save_plot.clicked.connect(
+            HexrdConfig().azimuthal_plot_saved.emit)
         HexrdConfig().materials_added.connect(self.update_table)
         HexrdConfig().material_renamed.connect(self.update_table)
         HexrdConfig().materials_removed.connect(self.update_table)

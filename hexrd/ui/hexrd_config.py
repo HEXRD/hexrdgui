@@ -199,6 +199,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when an azimuthal overlay gets modified"""
     azimuthal_overlay_modified = Signal()
 
+    """Emitted when an azimuthal overlay gets modified"""
+    azimuthal_plot_saved = Signal()
+
 
     def __init__(self):
         # Should this have a parent?
