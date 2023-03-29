@@ -1027,6 +1027,9 @@ class ImageCanvas(FigureCanvas):
         self.figure.savefig(selected_file, bbox_inches=new_extent)
 
     def update_azimuthal_plot_overlays(self):
+        if self.mode != ViewType.polar:
+            # Nothing to do. Just return.
+            return
         self.clear_azimuthal_integral_axis()
 
         # Apply new, visible overlays

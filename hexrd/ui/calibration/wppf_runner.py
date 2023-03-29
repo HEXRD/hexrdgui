@@ -82,9 +82,7 @@ class WppfRunner:
 
             mat.latticeParameters = lparms
             HexrdConfig().flag_overlay_updates_for_material(name)
-
-            if mat is HexrdConfig().active_material:
-                HexrdConfig().active_material_modified.emit()
+            HexrdConfig().material_modified.emit(name)
 
         HexrdConfig().overlay_config_changed.emit()
 

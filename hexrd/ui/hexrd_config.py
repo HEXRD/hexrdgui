@@ -202,6 +202,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when an azimuthal overlay gets modified"""
     azimuthal_plot_saved = Signal()
 
+    """Emitted when material parameters are modified"""
+    material_modified = Signal(str)
 
     def __init__(self):
         # Should this have a parent?
@@ -307,6 +309,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             signal.connect(self.materials_dict_modified.emit)
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
+        self.material_modified.connect(self.check_active_material_changed)
 
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration
@@ -1578,6 +1581,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def material(self, name):
         return self.config['materials']['materials'].get(name)
+
+    def check_active_material_changed(self, material_name):
+        if material_name == self.active_material_name:
+            self.active_material_modified.emit()
 
     def _active_material(self):
         m = self.active_material_name

@@ -390,8 +390,7 @@ class CalibrationRunner(QObject):
                 mat = materials[mat_name]
                 mat.latticeParameters = calibrator.params
                 HexrdConfig().flag_overlay_updates_for_material(mat_name)
-                if mat is HexrdConfig().active_material:
-                    HexrdConfig().active_material_modified.emit()
+                HexrdConfig().material_modified.emit(mat_name)
             else:
                 overlay.crystal_params = calibrator.params
 

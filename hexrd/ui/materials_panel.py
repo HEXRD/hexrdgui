@@ -200,6 +200,7 @@ class MaterialsPanel(QObject):
         self.update_table()
         self.update_refinement_options()
         self.update_properties_tab()
+        HexrdConfig().material_modified.emit(self.current_material())
 
     def material_structure_edited(self):
         self.update_table()
@@ -276,7 +277,6 @@ class MaterialsPanel(QObject):
 
     def update_table(self):
         HexrdConfig().update_reflections_tables.emit(self.current_material())
-        HexrdConfig().azimuthal_overlay_modified.emit()
 
     def update_overlay_editor(self):
         if not hasattr(self, '_overlay_manager'):
