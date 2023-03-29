@@ -40,6 +40,19 @@ def from_dict(d):
 def update_overlay_data(instr, display_mode):
     from hexrd.ui.hexrd_config import HexrdConfig
 
+    def flag_update(overlay):
+        overlay.instrument = instr
+        overlay.display_mode = display_mode
+        overlay.update_needed = True
+
+    # First, if there is a polar tth distortion overlay, make sure
+    # that is flagged for updating.
+    # Even if this isn't visible, we must update it if it is using to
+    # compute the distortion.
+    overlay = HexrdConfig().polar_tth_distortion_overlay
+    if overlay:
+        flag_update(overlay)
+
     if not HexrdConfig().show_overlays:
         # Nothing to do
         return
@@ -49,9 +62,7 @@ def update_overlay_data(instr, display_mode):
             # Skip over invisible overlays
             continue
 
-        overlay.instrument = instr
-        overlay.display_mode = display_mode
-        overlay.update_needed = True
+        flag_update(overlay)
 
 
 __all__ = [
