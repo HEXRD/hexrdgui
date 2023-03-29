@@ -106,14 +106,14 @@ class ImageCanvas(FigureCanvas):
         self.raw_axes.clear()
         self.axes_images.clear()
         self.remove_all_overlay_artists()
-        self.clear_azimuthal_integral_axis()
+        self.clear_azimuthal_integral_artists()
         self.mode = None
 
     def clear_azimuthal_integral_axis(self):
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
-        self.clear_azimuthal_integral_axis()
+        self.clear_azimuthal_integral_artists()
         HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
     def clear_wppf_plot(self):
@@ -1004,7 +1004,7 @@ class ImageCanvas(FigureCanvas):
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
 
-    def clear_azimuthal_integral_axis(self):
+    def clear_azimuthal_integral_artists(self):
         while self.azimuthal_overlay_artists:
             item = self.azimuthal_overlay_artists.pop(0)
             for artist in item['artists'].values():
@@ -1030,7 +1030,8 @@ class ImageCanvas(FigureCanvas):
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
             return
-        self.clear_azimuthal_integral_axis()
+
+        self.clear_azimuthal_integral_artists()
 
         # Apply new, visible overlays
         tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
