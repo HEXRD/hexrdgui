@@ -1013,8 +1013,7 @@ class ImageCanvas(FigureCanvas):
     def save_azimuthal_plot(self):
         # Save just the second axis (the azimuthal integral plot)
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self, 'Save Azimuthal Integral Plot', HexrdConfig().working_dir,
-            'Image files (*.png, *.jpg, *.jpeg)')
+            self, 'Save Azimuthal Integral Plot', HexrdConfig().working_dir)
 
         if not selected_file:
             return
@@ -1048,7 +1047,7 @@ class ImageCanvas(FigureCanvas):
                 color=overlay['color'],
                 alpha=overlay['opacity']
             )
-            fill.set_label(f'{overlay["name"]}({density}g cm^-3)')
+            fill.set_label(f'{overlay["name"]}({density}g/cm³)')
             self.azimuthal_overlay_artists.append({
                 'name': overlay['name'],
                 'material': overlay['material'],
