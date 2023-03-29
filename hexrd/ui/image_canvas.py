@@ -91,6 +91,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().azimuthal_overlay_modified.connect(
             self.update_azimuthal_integral_plot)
         HexrdConfig().azimuthal_plot_saved.connect(self.save_azimuthal_plot)
+        HexrdConfig().material_modified.connect(self.update_azimuthal_plot_overlays)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
