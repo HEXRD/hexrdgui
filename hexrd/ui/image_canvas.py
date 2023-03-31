@@ -90,8 +90,8 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
         HexrdConfig().azimuthal_overlay_modified.connect(
             self.update_azimuthal_integral_plot)
-        HexrdConfig().azimuthal_plot_saved.connect(self.save_azimuthal_plot)
-        HexrdConfig().material_modified.connect(self.update_azimuthal_plot_overlays)
+        HexrdConfig().azimuthal_plot_save_requested.connect(
+            self.save_azimuthal_plot)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -107,14 +107,14 @@ class ImageCanvas(FigureCanvas):
         self.raw_axes.clear()
         self.axes_images.clear()
         self.remove_all_overlay_artists()
-        self.clear_azimuthal_integral_artists()
+        self.clear_azimuthal_integral_axis()
         self.mode = None
 
     def clear_azimuthal_integral_axis(self):
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
-        self.clear_azimuthal_integral_artists()
+        self.clear_azimuthal_overlay_artists()
         HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
     def clear_wppf_plot(self):
@@ -1005,13 +1005,17 @@ class ImageCanvas(FigureCanvas):
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
 
-    def clear_azimuthal_integral_artists(self):
+    def clear_azimuthal_overlay_artists(self):
         while self.azimuthal_overlay_artists:
             item = self.azimuthal_overlay_artists.pop(0)
             for artist in item['artists'].values():
                 artist.remove()
 
     def save_azimuthal_plot(self):
+        if self.mode != ViewType.polar:
+            # Nothing to do. Just return.
+            return
+
         # Save just the second axis (the azimuthal integral plot)
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self, 'Save Azimuthal Integral Plot', HexrdConfig().working_dir)
@@ -1021,9 +1025,11 @@ class ImageCanvas(FigureCanvas):
         # Find and invert the physical inches from the bottom left corner
         size = self.figure.dpi_scale_trans.inverted()
         # Get the bbox for the second plot
-        extent = self.azimuthal_integral_axis.get_window_extent().transformed(size)
+        extent = self.azimuthal_integral_axis.get_window_extent().transformed(
+            size)
         # The bbox does not include the axis so manually scale it up so it does
-        new_extent = extent.from_extents([[0, 0], [extent.xmax*1.05, extent.ymax*1.05]])
+        new_extent = extent.from_extents(
+            [[0, 0], [extent.xmax*1.05, extent.ymax*1.05]])
         # Save the clipped region of the figure
         self.figure.savefig(selected_file, bbox_inches=new_extent)
 
@@ -1032,16 +1038,18 @@ class ImageCanvas(FigureCanvas):
             # Nothing to do. Just return.
             return
 
-        self.clear_azimuthal_integral_artists()
+        self.clear_azimuthal_overlay_artists()
 
         # Apply new, visible overlays
         tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
         for overlay in HexrdConfig().azimuthal_overlays:
             if not overlay['visible']:
                 continue
+
             material = HexrdConfig().materials[overlay['material']]
             density = round(material.unitcell.density, 2)
-            material.compute_powder_overlay(tth, fwhm=overlay['fwhm'], scale=overlay['scale'])
+            material.compute_powder_overlay(tth, fwhm=overlay['fwhm'],
+                                            scale=overlay['scale'])
             result = material.powder_overlay
             # Plot the result so that the plot scales correctly with the data
             # since the fill artist is not taken into account for rescaling.
@@ -1056,12 +1064,13 @@ class ImageCanvas(FigureCanvas):
             self.azimuthal_overlay_artists.append({
                 'name': overlay['name'],
                 'material': overlay['material'],
-                'artists' :{
+                'artists': {
                     'fill': fill,
                     'line': line,
                 },
             })
-        if HexrdConfig().show_azimuthal_legend and len(self.azimuthal_overlay_artists):
+        if (HexrdConfig().show_azimuthal_legend and
+                len(self.azimuthal_overlay_artists)):
             self.azimuthal_integral_axis.legend()
         elif (axis := self.azimuthal_integral_axis) and axis.get_legend():
             # Only remove the legend if the axis exists and it has a legend

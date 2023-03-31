@@ -420,6 +420,7 @@ class ImageModeWidget(QObject):
         self._polar_overlay_manager = AzimuthalOverlayManager(self.ui)
         self._polar_overlay_manager.show()
 
+
 def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     # Other than panel, all arguments are lists for appending results
     # pixel sizes

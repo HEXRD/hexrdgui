@@ -200,7 +200,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     azimuthal_overlay_modified = Signal()
 
     """Emitted when an azimuthal overlay gets modified"""
-    azimuthal_plot_saved = Signal()
+    azimuthal_plot_save_requested = Signal()
 
     """Emitted when material parameters are modified"""
     material_modified = Signal(str)
@@ -1742,7 +1742,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.overlays = pruned_overlays
             self.overlay_list_modified.emit()
             self.overlay_config_changed.emit()
-        pruned_overlays = [x for x in self.azimuthal_overlays if x['material'] in mats]
+
+        pruned_overlays = [x for x in self.azimuthal_overlays
+                           if x['material'] in mats]
         if len(self.azimuthal_overlays) != len(pruned_overlays):
             self.azimuthal_overlays = pruned_overlays
             HexrdConfig().azimuthal_overlay_modified.emit()

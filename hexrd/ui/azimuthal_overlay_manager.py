@@ -44,16 +44,17 @@ class AzimuthalOverlayManager:
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
-        self.ui.toggle_legend.toggled.connect(self.toggle_legend)
-        self.ui.toggle_legend.setChecked(
+        self.ui.show_legend.toggled.connect(self.show_legend)
+        self.ui.show_legend.setChecked(
             HexrdConfig().show_azimuthal_legend)
         self.ui.save_plot.clicked.connect(
-            HexrdConfig().azimuthal_plot_saved.emit)
+            HexrdConfig().azimuthal_plot_save_requested.emit)
         HexrdConfig().materials_added.connect(self.update_table)
         HexrdConfig().material_renamed.connect(self.update_table)
         HexrdConfig().materials_removed.connect(self.update_table)
 
         HexrdConfig().state_loaded.connect(self.update_table)
+        HexrdConfig().material_modified.connect(self.on_material_modified)
 
     def show(self):
         self.update_table()
@@ -119,8 +120,10 @@ class AzimuthalOverlayManager:
                 self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
 
             if prev_selected is not None:
-                select_row = (prev_selected if prev_selected < len(self.overlays)
-                              else len(self.overlays) - 1)
+                select_row = (
+                    prev_selected if prev_selected < len(self.overlays)
+                    else len(self.overlays) - 1
+                )
                 self.select_row(select_row)
 
             self.ui.table.resizeColumnsToContents()
@@ -169,7 +172,8 @@ class AzimuthalOverlayManager:
 
     def update_overlay_editor(self):
         if self.selected_row is not None:
-            self.overlay_editor.selected_overlay = self.overlays[self.selected_row]
+            overlay = self.overlays[self.selected_row]
+            self.overlay_editor.selected_overlay = overlay
         else:
             self.overlay_editor.selected_overlay = None
 
@@ -263,9 +267,20 @@ class AzimuthalOverlayManager:
         HexrdConfig().azimuthal_overlay_modified.emit()
 
     def edit_style(self):
-        self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay, self.ui)
+        self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay,
+                                                         self.ui)
         self._style_picker.exec_()
 
-    def toggle_legend(self, value):
+    def show_legend(self, value):
         HexrdConfig().show_azimuthal_legend = value
         HexrdConfig().azimuthal_overlay_modified.emit()
+
+    def on_material_modified(self, material_name):
+        update_needed = False
+        for overlay in self.overlays:
+            if overlay['material'] == material_name:
+                update_needed = True
+                break
+
+        if update_needed:
+            HexrdConfig().azimuthal_overlay_modified.emit()

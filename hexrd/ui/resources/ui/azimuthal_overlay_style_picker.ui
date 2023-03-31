@@ -10,6 +10,9 @@
     <height>157</height>
    </rect>
   </property>
+  <property name="windowTitle">
+   <string>Azimuthal Overlay Style Editor</string>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
     <number>6</number>
@@ -68,7 +71,7 @@
          <double>1.000000000000000</double>
         </property>
         <property name="singleStep">
-         <double>0.010000000000000</double>
+         <double>0.100000000000000</double>
         </property>
         <property name="value">
          <double>0.300000000000000</double>
@@ -88,13 +91,6 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -109,38 +105,5 @@
   <tabstop>opacity</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>button_box</sender>
-   <signal>accepted()</signal>
-   <receiver>azimuthal_overlay_style_picker</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>296</x>
-     <y>80</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>196</x>
-     <y>47</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>button_box</sender>
-   <signal>rejected()</signal>
-   <receiver>azimuthal_overlay_style_picker</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>296</x>
-     <y>80</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>196</x>
-     <y>47</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

@@ -1,5 +1,3 @@
-import copy
-
 from PySide2.QtCore import QObject
 from PySide2.QtGui import QColor
 from PySide2.QtWidgets import QColorDialog
@@ -41,7 +39,11 @@ class AzimuthalOverlayStylePicker(QObject):
         ]
 
     def reset_style(self):
-        if self.color == self.overlay['color'] and self.opacity == self.overlay['opacity']:
+        any_changes = (
+            self.color != self.overlay['color'] or
+            self.opacity != self.overlay['opacity']
+        )
+        if not any_changes:
             # Nothing really to do...
             return
 
@@ -76,4 +78,5 @@ class AzimuthalOverlayStylePicker(QObject):
             self.update_config()
 
     def update_button_colors(self):
-        self.ui.color.setStyleSheet('QPushButton {background-color: %s}' % self.ui.color.text())
+        self.ui.color.setStyleSheet(
+            'QPushButton {background-color: %s}' % self.ui.color.text())
