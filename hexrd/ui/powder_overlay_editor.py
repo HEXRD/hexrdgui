@@ -52,7 +52,9 @@ class PowderOverlayEditor:
         self.ui.pinhole_correction_type.currentIndexChanged.connect(
             self.pinhole_correction_type_changed)
 
-        self.ui.ph_apply_panel_buffers.clicked.connect(
+        self.ui.jph_apply_panel_buffers.clicked.connect(
+            self.ph_apply_panel_buffers)
+        self.ui.rph_apply_panel_buffers.clicked.connect(
             self.ph_apply_panel_buffers)
 
     def update_refinement_options(self):
@@ -217,8 +219,9 @@ class PowderOverlayEditor:
         v = self.ui.pinhole_correction_type.currentText()
 
         conversions = {
+            'Pinhole (JHE)': 'JHEPinholeDistortion',
+            'Pinhole (Rygg)': 'RyggPinholeDistortion',
             'Sample Layer': 'SampleLayerDistortion',
-            'Pinhole': 'PinholeDistortion',
         }
         if v in conversions:
             v = conversions[v]
@@ -240,8 +243,9 @@ class PowderOverlayEditor:
             self.ui.distortion_tab_widget.setCurrentIndex(idx)
 
             conversions = {
+                'JHEPinholeDistortion': 'Pinhole (JHE)',
+                'RyggPinholeDistortion': 'Pinhole (Rygg)',
                 'SampleLayerDistortion': 'Sample Layer',
-                'PinholeDistortion': 'Pinhole',
             }
             if v in conversions:
                 v = conversions[v]
@@ -280,11 +284,16 @@ class PowderOverlayEditor:
                 'pinhole_thickness': (
                     self.ui.sl_pinhole_thickness.value() * 1e-3),
             }
-        elif dtype == 'PinholeDistortion':
+        elif dtype == 'JHEPinholeDistortion':
             return {
-                'pinhole_radius': self.ui.ph_radius.value() * 1e-3,
-                'pinhole_thickness': self.ui.ph_thickness.value() * 1e-3,
-                'num_phi_elements': self.ui.ph_num_phi_elements.value(),
+                'pinhole_radius': self.ui.jph_radius.value() * 1e-3,
+                'pinhole_thickness': self.ui.jph_thickness.value() * 1e-3,
+            }
+        elif dtype == 'RyggPinholeDistortion':
+            return {
+                'pinhole_radius': self.ui.rph_radius.value() * 1e-3,
+                'pinhole_thickness': self.ui.rph_thickness.value() * 1e-3,
+                'num_phi_elements': self.ui.rph_num_phi_elements.value(),
             }
 
         raise Exception(f'Not implemented for: {dtype}')
@@ -296,16 +305,20 @@ class PowderOverlayEditor:
             'sl_layer_standoff': ('layer_standoff', 0.15),
             'sl_layer_thickness': ('layer_thickness', 0.005),
             'sl_pinhole_thickness': ('pinhole_thickness', 0.1),
-            'ph_radius': ('pinhole_radius', 0.2),
-            'ph_thickness': ('pinhole_thickness', 0.1),
-            'ph_num_phi_elements': ('num_phi_elements', 60),
+            'rph_radius': ('pinhole_radius', 0.2),
+            'rph_thickness': ('pinhole_thickness', 0.1),
+            'rph_num_phi_elements': ('num_phi_elements', 60),
+            'jph_radius': ('pinhole_radius', 0.2),
+            'jph_thickness': ('pinhole_thickness', 0.1),
         }
 
         dtype = self.distortion_type_gui
         if dtype == 'SampleLayerDistortion':
             widget_prefix = 'sl_'
-        elif dtype == 'PinholeDistortion':
-            widget_prefix = 'ph_'
+        elif dtype == 'RyggPinholeDistortion':
+            widget_prefix = 'rph_'
+        elif dtype == 'JHEPinholeDistortion':
+            widget_prefix = 'jph_'
         elif dtype is None:
             widget_prefix = '_'
         else:
@@ -338,11 +351,18 @@ class PowderOverlayEditor:
         return [getattr(self.ui, w) for w in widgets]
 
     @property
-    def pinhole_widgets(self):
+    def jhe_pinhole_widgets(self):
         return [
-            self.ui.ph_radius,
-            self.ui.ph_thickness,
-            self.ui.ph_num_phi_elements,
+            self.ui.jph_radius,
+            self.ui.jph_thickness,
+        ]
+
+    @property
+    def rygg_pinhole_widgets(self):
+        return [
+            self.ui.rph_radius,
+            self.ui.rph_thickness,
+            self.ui.rph_num_phi_elements,
         ]
 
     @property
@@ -350,7 +370,8 @@ class PowderOverlayEditor:
         distortion_widgets = (
             self.offset_widgets +
             self.sample_layer_widgets +
-            self.pinhole_widgets +
+            self.jhe_pinhole_widgets +
+            self.rygg_pinhole_widgets +
             [self.ui.distortion_type, self.ui.pinhole_correction_type]
         )
         return [

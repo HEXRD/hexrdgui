@@ -7,8 +7,8 @@ from hexrd import unitcell
 
 from hexrd.transforms import xfcapi
 from hexrd.xrdutil.phutil import (
-    polar_tth_corr_map_rygg_pinhole, RyggPinholeDistortion,
-    SampleLayerDistortion, tth_corr_map_rygg_pinhole,
+    polar_tth_corr_map_rygg_pinhole, PinholeDistortion, RyggPinholeDistortion,
+    SampleLayerDistortion, tth_corr_map_pinhole, tth_corr_map_rygg_pinhole,
     tth_corr_map_sample_layer,
 )
 
@@ -34,6 +34,11 @@ class PowderOverlay(Overlay):
 
         if tth_distortion_kwargs is None:
             tth_distortion_kwargs = {}
+
+        if tth_distortion_type == 'PinholeDistortion':
+            # This was renamed to RyggPinholeDistortion
+            # FIXME: should this be in the compatibility file instead?
+            tth_distortion_type = 'RyggPinholeDistortion'
 
         self.tvec = tvec
         self.eta_steps = eta_steps
@@ -451,6 +456,21 @@ class PowderOverlay(Overlay):
         if not self.has_tth_distortion or self.instrument is None:
             return None
 
+        def tth_jhe_pinhole_distortion(panel):
+            kwargs = {
+                'detector': panel,
+                **self.tth_distortion_kwargs,
+            }
+            return PinholeDistortion(**kwargs)
+
+        def tth_rygg_pinhole_distortion(panel):
+            kwargs = {
+                'detector': panel,
+                'material': self.material,
+                **self.tth_distortion_kwargs,
+            }
+            return RyggPinholeDistortion(**kwargs)
+
         def tth_sample_layer_distortion(panel):
             kwargs = {
                 'detector': panel,
@@ -459,17 +479,10 @@ class PowderOverlay(Overlay):
             }
             return SampleLayerDistortion(**kwargs)
 
-        def tth_pinhole_distortion(panel):
-            kwargs = {
-                'detector': panel,
-                'material': self.material,
-                **self.tth_distortion_kwargs,
-            }
-            return RyggPinholeDistortion(**kwargs)
-
         known_types = {
+            'JHEPinholeDistortion': tth_jhe_pinhole_distortion,
+            'RyggPinholeDistortion': tth_rygg_pinhole_distortion,
             'SampleLayerDistortion': tth_sample_layer_distortion,
-            'PinholeDistortion': tth_pinhole_distortion,
         }
 
         if self.tth_distortion_type not in known_types:
@@ -496,8 +509,9 @@ class PowderOverlay(Overlay):
         tth displacement field.
         """
         funcs = {
+            'JHEPinholeDistortion': tth_corr_map_pinhole,
+            'RyggPinholeDistortion': tth_corr_map_rygg_pinhole,
             'SampleLayerDistortion': tth_corr_map_sample_layer,
-            'PinholeDistortion': tth_corr_map_rygg_pinhole,
         }
 
         if self.tth_distortion_type not in funcs:
@@ -509,7 +523,9 @@ class PowderOverlay(Overlay):
             'instrument': self.instrument,
             **self.tth_distortion_kwargs,
         }
-        if f is tth_corr_map_rygg_pinhole:
+
+        if self.tth_distortion_type == 'RyggPinholeDistortion':
+            # Need the material as well for this one
             kwargs['material'] = self.material
 
         return f(**kwargs)
@@ -524,8 +540,9 @@ class PowderOverlay(Overlay):
         and then warp the images to the polar view.
         """
         rets = {
+            'JHEPinholeDistortion': False,
+            'RyggPinholeDistortion': True,
             'SampleLayerDistortion': False,
-            'PinholeDistortion': True,
         }
 
         if self.tth_distortion_type not in rets:
@@ -542,7 +559,7 @@ class PowderOverlay(Overlay):
 
         For the Rygg pinhole distortion, this is significantly more efficient.
         """
-        if self.tth_distortion_type == 'PinholeDistortion':
+        if self.tth_distortion_type == 'RyggPinholeDistortion':
             return polar_tth_corr_map_rygg_pinhole(
                 tth, eta, self.instrument, self.material,
                 **self.tth_distortion_kwargs,
