@@ -196,6 +196,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the loaded images change"""
     recent_images_changed = Signal()
 
+    """Emitted when an azimuthal overlay gets modified"""
+    azimuthal_overlay_modified = Signal()
+
+    """Emitted when an azimuthal overlay gets modified"""
+    azimuthal_plot_save_requested = Signal()
+
+    """Emitted when material parameters are modified"""
+    material_modified = Signal(str)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -239,6 +248,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.polar_angular_grid = None
         self._recent_images = {}
         self.max_cpus = None
+        self.azimuthal_overlays = []
+        self.show_azimuthal_legend = True
 
         self.setup_logging()
 
@@ -298,6 +309,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             signal.connect(self.materials_dict_modified.emit)
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
+        self.material_modified.connect(self.check_active_material_changed)
 
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration
@@ -323,6 +335,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('overlays_dictified', []),
             ('_polar_tth_distortion_overlay_name', None),
             ('_recent_images', {}),
+            ('azimuthal_overlays', []),
+            ('show_azimuthal_legend', True),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -396,6 +410,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # a boolean and convert if necessary
         if not isinstance(self.live_update, bool):
             self.live_update = self.live_update == 'true'
+        if not isinstance(self.show_azimuthal_legend, bool):
+            self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
+
+        if self.azimuthal_overlays is None:
+            self.azimuthal_overlays = []
 
         self.previous_active_material = state.get('active_material_name')
 
@@ -1498,6 +1517,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for overlay in self.overlays:
             if overlay.material_name == old_name:
                 overlay.material_name = new_name
+        for polar_overlay in self.azimuthal_overlays:
+            if polar_overlay['material'] == old_name:
+                polar_overlay['material'] = new_name
 
         if self.active_material_name == old_name:
             # Set the dict directly to bypass the updates that occur
@@ -1559,6 +1581,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def material(self, name):
         return self.config['materials']['materials'].get(name)
+
+    def check_active_material_changed(self, material_name):
+        if material_name == self.active_material_name:
+            self.active_material_modified.emit()
 
     def _active_material(self):
         m = self.active_material_name
@@ -1716,6 +1742,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.overlays = pruned_overlays
             self.overlay_list_modified.emit()
             self.overlay_config_changed.emit()
+
+        pruned_overlays = [x for x in self.azimuthal_overlays
+                           if x['material'] in mats]
+        if len(self.azimuthal_overlays) != len(pruned_overlays):
+            self.azimuthal_overlays = pruned_overlays
+            HexrdConfig().azimuthal_overlay_modified.emit()
 
     def append_overlay(self, material_name, type):
         kwargs = {

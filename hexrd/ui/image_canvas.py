@@ -2,7 +2,7 @@ import copy
 import math
 
 from PySide2.QtCore import QThreadPool, QTimer
-from PySide2.QtWidgets import QMessageBox
+from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
@@ -50,6 +50,7 @@ class ImageCanvas(FigureCanvas):
         self.transform = lambda x: x
         self._last_stereo_size = None
         self.stereo_border_artists = []
+        self.azimuthal_overlay_artists = []
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -87,6 +88,10 @@ class ImageCanvas(FigureCanvas):
             self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
+        HexrdConfig().azimuthal_overlay_modified.connect(
+            self.update_azimuthal_integral_plot)
+        HexrdConfig().azimuthal_plot_save_requested.connect(
+            self.save_azimuthal_plot)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -109,6 +114,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
+        self.clear_azimuthal_overlay_artists()
         HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
     def clear_wppf_plot(self):
@@ -823,6 +829,7 @@ class ImageCanvas(FigureCanvas):
 
                 self.azimuthal_integral_axis = axis
                 axis.set_ylabel(r'Azimuthal Integration')
+                self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
             else:
                 self.update_azimuthal_integral_plot()
@@ -1003,6 +1010,78 @@ class ImageCanvas(FigureCanvas):
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
 
+    def clear_azimuthal_overlay_artists(self):
+        while self.azimuthal_overlay_artists:
+            item = self.azimuthal_overlay_artists.pop(0)
+            for artist in item['artists'].values():
+                artist.remove()
+
+    def save_azimuthal_plot(self):
+        if self.mode != ViewType.polar:
+            # Nothing to do. Just return.
+            return
+
+        # Save just the second axis (the azimuthal integral plot)
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self, 'Save Azimuthal Integral Plot', HexrdConfig().working_dir)
+
+        if not selected_file:
+            return
+        # Find and invert the physical inches from the bottom left corner
+        size = self.figure.dpi_scale_trans.inverted()
+        # Get the bbox for the second plot
+        extent = self.azimuthal_integral_axis.get_window_extent().transformed(
+            size)
+        # The bbox does not include the axis so manually scale it up so it does
+        new_extent = extent.from_extents(
+            [[0, 0], [extent.xmax*1.05, extent.ymax*1.05]])
+        # Save the clipped region of the figure
+        self.figure.savefig(selected_file, bbox_inches=new_extent)
+
+    def update_azimuthal_plot_overlays(self):
+        if self.mode != ViewType.polar:
+            # Nothing to do. Just return.
+            return
+
+        self.clear_azimuthal_overlay_artists()
+
+        # Apply new, visible overlays
+        tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
+        for overlay in HexrdConfig().azimuthal_overlays:
+            if not overlay['visible']:
+                continue
+
+            material = HexrdConfig().materials[overlay['material']]
+            density = round(material.unitcell.density, 2)
+            material.compute_powder_overlay(tth, fwhm=overlay['fwhm'],
+                                            scale=overlay['scale'])
+            result = material.powder_overlay
+            # Plot the result so that the plot scales correctly with the data
+            # since the fill artist is not taken into account for rescaling.
+            line, = self.azimuthal_integral_axis.plot(tth, result, lw=0)
+            fill = self.azimuthal_integral_axis.fill_between(
+                tth,
+                result,
+                color=overlay['color'],
+                alpha=overlay['opacity']
+            )
+            fill.set_label(f'{overlay["name"]}({density}g/cm³)')
+            self.azimuthal_overlay_artists.append({
+                'name': overlay['name'],
+                'material': overlay['material'],
+                'artists': {
+                    'fill': fill,
+                    'line': line,
+                },
+            })
+        if (HexrdConfig().show_azimuthal_legend and
+                len(self.azimuthal_overlay_artists)):
+            self.azimuthal_integral_axis.legend()
+        elif (axis := self.azimuthal_integral_axis) and axis.get_legend():
+            # Only remove the legend if the axis exists and it has a legend
+            axis.get_legend().remove()
+        self.draw_idle()
+
     def update_azimuthal_integral_plot(self):
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
@@ -1023,6 +1102,9 @@ class ImageCanvas(FigureCanvas):
 
         unscaled = (tth, self.compute_azimuthal_integral_sum(scaled=False))
         HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
+
+        # Apply any selected overlays
+        self.update_azimuthal_plot_overlays()
 
         # Update the wppf data if applicable
         self.update_wppf_plot()

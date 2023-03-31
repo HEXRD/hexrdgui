@@ -222,13 +222,10 @@ class PowderRunner(QObject):
             #        this array is the reduce lattice parameter set.
             refined_lattice_params = self.ic.full_params[self.ic.npi:]
             self.material.latticeParameters = refined_lattice_params
+            HexrdConfig().material_modified.emit(self.material.name)
 
         # Tell GUI that the overlays need to be re-computed
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
-
-        # update the materials panel
-        if self.material is HexrdConfig().active_material:
-            HexrdConfig().active_material_modified.emit()
 
         # redraw updated overlays
         HexrdConfig().overlay_config_changed.emit()

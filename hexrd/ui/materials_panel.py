@@ -200,6 +200,7 @@ class MaterialsPanel(QObject):
         self.update_table()
         self.update_refinement_options()
         self.update_properties_tab()
+        HexrdConfig().material_modified.emit(self.current_material())
 
     def material_structure_edited(self):
         self.update_table()
