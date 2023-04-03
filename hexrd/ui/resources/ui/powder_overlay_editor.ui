@@ -278,7 +278,12 @@
             </item>
             <item>
              <property name="text">
-              <string>Pinhole</string>
+              <string>Pinhole (Rygg)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Pinhole (JHE)</string>
              </property>
             </item>
            </widget>
@@ -422,20 +427,13 @@
               </item>
              </layout>
             </widget>
-            <widget class="QWidget" name="pinhole_correction_stacked_widgetPage2">
+            <widget class="QWidget" name="rygg_pinhole_correction_tab">
              <attribute name="title">
-              <string>Pinhole</string>
+              <string>Pinhole (Rygg)</string>
              </attribute>
              <layout class="QGridLayout" name="gridLayout_5">
-              <item row="0" column="1">
-               <widget class="QLabel" name="ph_thickness_label">
-                <property name="text">
-                 <string>Pinhole Thickness</string>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="1">
-               <widget class="ScientificDoubleSpinBox" name="ph_thickness">
+               <widget class="ScientificDoubleSpinBox" name="rph_thickness">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -458,7 +456,7 @@
                  <double>0.010000000000000</double>
                 </property>
                 <property name="value">
-                 <double>75.000000000000000</double>
+                 <double>100.000000000000000</double>
                 </property>
                </widget>
               </item>
@@ -475,15 +473,22 @@
                 </property>
                </spacer>
               </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="rph_thickness_label">
+                <property name="text">
+                 <string>Pinhole Thickness</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="0">
-               <widget class="QLabel" name="ph_radius_label">
+               <widget class="QLabel" name="rph_radius_label">
                 <property name="text">
                  <string>Pinhole Radius</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="ScientificDoubleSpinBox" name="ph_radius">
+               <widget class="ScientificDoubleSpinBox" name="rph_radius">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -506,12 +511,134 @@
                  <double>0.010000000000000</double>
                 </property>
                 <property name="value">
-                 <double>150.000000000000000</double>
+                 <double>200.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="rph_num_phi_elements_label">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of φ elements to use for integration.&lt;/p&gt;&lt;p&gt;Larger is more accurate, but also takes longer to compute.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of φ Elements&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="3">
+               <widget class="QPushButton" name="rph_apply_panel_buffers">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Apply Panel Buffers from Pinhole Dimensions</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QSpinBox" name="rph_num_phi_elements">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of φ elements to use for integration.&lt;/p&gt;&lt;p&gt;Larger is more accurate, but also takes longer to compute.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>10000</number>
+                </property>
+                <property name="value">
+                 <number>60</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+            <widget class="QWidget" name="jhe_pinhole_correction_tab">
+             <attribute name="title">
+              <string>Pinhole (JHE)</string>
+             </attribute>
+             <layout class="QGridLayout" name="gridLayout_7">
+              <item row="0" column="0">
+               <widget class="QLabel" name="jph_radius_label">
+                <property name="text">
+                 <string>Pinhole Radius</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="jph_thickness_label">
+                <property name="text">
+                 <string>Pinhole Thickness</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="ScientificDoubleSpinBox" name="jph_radius">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="suffix">
+                 <string> μm</string>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="maximum">
+                 <double>100000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>200.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="ScientificDoubleSpinBox" name="jph_thickness">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>30</height>
+                 </size>
+                </property>
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="suffix">
+                 <string> μm</string>
+                </property>
+                <property name="decimals">
+                 <number>8</number>
+                </property>
+                <property name="maximum">
+                 <double>100000000.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+                <property name="value">
+                 <double>100.000000000000000</double>
                 </property>
                </widget>
               </item>
               <item row="2" column="0" colspan="2">
-               <widget class="QPushButton" name="ph_apply_panel_buffers">
+               <widget class="QPushButton" name="jph_apply_panel_buffers">
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
@@ -582,8 +709,14 @@
   <tabstop>sl_layer_standoff</tabstop>
   <tabstop>sl_layer_thickness</tabstop>
   <tabstop>sl_pinhole_thickness</tabstop>
-  <tabstop>ph_radius</tabstop>
-  <tabstop>ph_thickness</tabstop>
+  <tabstop>rph_radius</tabstop>
+  <tabstop>rph_thickness</tabstop>
+  <tabstop>rph_num_phi_elements</tabstop>
+  <tabstop>rph_apply_panel_buffers</tabstop>
+  <tabstop>jph_radius</tabstop>
+  <tabstop>jph_thickness</tabstop>
+  <tabstop>jph_apply_panel_buffers</tabstop>
+  <tabstop>clip_with_panel_buffer</tabstop>
  </tabstops>
  <resources/>
  <connections>

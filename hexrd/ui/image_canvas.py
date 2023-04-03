@@ -937,10 +937,13 @@ class ImageCanvas(FigureCanvas):
         if overlay is None:
             return r'2$\theta_{nom}$ [deg]'
 
-        xlabel = r'2$\theta_{sam}$'
-        standoff = overlay.tth_distortion_kwargs.get('layer_standoff', None)
-        if standoff is not None:
-            xlabel += f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
+        if overlay.tth_distortion_type == 'SampleLayerDistortion':
+            xlabel = r'2$\theta_{sam}$'
+            standoff = overlay.tth_distortion_kwargs.get('layer_standoff', None)
+            if standoff is not None:
+                xlabel += f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
+        else:
+            xlabel = r'2$\theta_{pin}$'
 
         xlabel += ' [deg]'
 

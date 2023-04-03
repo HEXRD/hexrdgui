@@ -253,20 +253,33 @@ class PolarView:
         )
 
     def apply_tth_distortion(self, overlay, pimg):
-        corr_field = overlay.tth_displacement_field
+        if overlay.has_polar_tth_displacement_field:
+            # Compute the polar tth displacement field directly
+            eta, tth = self.angular_grid
+            corr_field_polar = overlay.create_polar_tth_displacement_field(
+                tth, eta
+            )
 
-        corr_field_polar_dict = {}
-        for key in corr_field:
-            panel = self.detectors[key]
-            corr_field_polar_dict[key] = self.warp_image(corr_field[key],
-                                                         panel)
+            # Mask out nan values
+            mask = np.isnan(corr_field_polar)
+            corr_field_polar = np.ma.masked_array(corr_field_polar, mask=mask)
+        else:
+            # Get the tth displacement field for each detector, and then warp
+            # them to the polar view.
+            corr_field = overlay.tth_displacement_field
+
+            corr_field_polar_dict = {}
+            for key in corr_field:
+                panel = self.detectors[key]
+                corr_field_polar_dict[key] = self.warp_image(corr_field[key],
+                                                             panel)
+
+            corr_field_polar = np.ma.sum(np.ma.stack(
+                corr_field_polar_dict.values()), axis=0)
 
         # Save these so that the overlay generator may use them
-        HexrdConfig().polar_corr_field_polar_dict = corr_field_polar_dict
+        HexrdConfig().polar_corr_field_polar = corr_field_polar
         HexrdConfig().polar_angular_grid = self.angular_grid
-
-        corr_field_polar = np.ma.sum(np.ma.stack(
-            corr_field_polar_dict.values()), axis=0)
 
         nr, nc = pimg.shape
         row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),
@@ -422,7 +435,7 @@ class PolarView:
         self.generate_image()
 
     def reset_cached_distortion_fields(self):
-        HexrdConfig().polar_corr_field_polar_dict = None
+        HexrdConfig().polar_corr_field_polar = None
         HexrdConfig().polar_angular_grid = None
 
 
