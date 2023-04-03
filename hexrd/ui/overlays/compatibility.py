@@ -25,6 +25,10 @@ def from_dict(cls, d):
         # This is now always taken from HexrdConfig() and is not a setting
         del d['eta_period']
 
+    if d.get('tth_distortion_type') == 'PinholeDistortion':
+        # This was renamed to `RyggPinholeDistortion` in 93c5a50b
+        d['tth_distortion_type'] = 'RyggPinholeDistortion'
+
     if version != CURRENT_DICT_VERSION:
         # Convert to the current version
         type_str = cls.type.value

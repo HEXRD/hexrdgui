@@ -35,11 +35,6 @@ class PowderOverlay(Overlay):
         if tth_distortion_kwargs is None:
             tth_distortion_kwargs = {}
 
-        if tth_distortion_type == 'PinholeDistortion':
-            # This was renamed to RyggPinholeDistortion
-            # FIXME: should this be in the compatibility file instead?
-            tth_distortion_type = 'RyggPinholeDistortion'
-
         self.tvec = tvec
         self.eta_steps = eta_steps
         self.tth_distortion_type = tth_distortion_type
