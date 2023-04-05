@@ -1131,6 +1131,18 @@ class MainWindow(QObject):
 
         HexrdConfig().working_dir = os.path.dirname(selected_file)
 
+    def load_entrypoint_file(self, filepath):
+        # First, identify what type of entrypoint file it is, and then
+        # load based upon whatever it is.
+
+        filepath = Path(filepath)
+        if filepath.suffix in ('.yml', '.hexrd'):
+            # It is an instrument file
+            return HexrdConfig().load_instrument_config(str(filepath))
+
+        # Assume it is a state file
+        return self.load_state_file(filepath)
+
     def on_action_load_state_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load State', HexrdConfig().working_dir,

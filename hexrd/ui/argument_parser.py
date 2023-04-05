@@ -45,7 +45,7 @@ class ArgumentParser(argparse.ArgumentParser):
         # Add arguments here
         self.add_argument(
             'state_file',
-            help='Load a state file during startup',
+            help='Load a state file or instrument config file during startup',
             type=check_state_file,
             nargs='?',
         )

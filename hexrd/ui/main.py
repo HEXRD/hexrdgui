@@ -43,8 +43,8 @@ def main():
     window.show()
 
     if parsed_args.state_file is not None:
-        # Load the state file
-        window.load_state_file(parsed_args.state_file)
+        # Load the entrypoint file
+        window.load_entrypoint_file(parsed_args.state_file)
 
     sys.exit(app.exec_())
 
