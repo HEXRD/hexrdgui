@@ -365,27 +365,14 @@ class PowderOverlay(Overlay):
                     skipped_tth.append(i)
                     continue
 
-                # branch cut
-                # FIXME: still is not quite right
+                # Some detectors, such as cylindrical, can easily end up
+                # with points that are connected far apart, and run across
+                # other detectors. Thus, we should insert nans at any gaps.
+                # FIXME: is this a reasonable tolerance?
                 delta_eta_est = np.median(diff)
-
-                cut_on_panel = bool(
-                    xfcapi.angularDifference(
-                        np.min(ang_crds[:, 0]),
-                        np.max(ang_crds[:, 0]),
-                        units='degrees'
-                    ) < 2*delta_eta_est
-                )
-                if cut_on_panel and len(ang_crds) > 2:
-                    split_idx = np.argmax(
-                        np.abs(np.diff(ang_crds[:, 0]) - delta_eta_est)
-                    ) + 1
-
-                    ang_crds = np.vstack(
-                        [ang_crds[:split_idx, :],
-                         nans_row,
-                         ang_crds[split_idx:, :]]
-                    )
+                tolerance = delta_eta_est * 2
+                gaps, = np.nonzero(diff > tolerance)
+                ang_crds = np.insert(ang_crds, gaps + 1, np.nan, axis=0)
 
                 if display_mode == ViewType.polar:
                     # append to list with nan padding
