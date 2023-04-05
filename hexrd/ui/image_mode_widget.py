@@ -240,8 +240,10 @@ class ImageModeWidget(QObject):
         average_size = sum([x[0] + x[1] for x in sizes]) / (2 * len(sizes))
 
         cart_config = HexrdConfig().config['image']['cartesian']
-        cart_config['pixel_size'] = average_size * 5
-        cart_config['virtual_plane_distance'] = abs(average_dist)
+
+        # Round these to two for a nicer display
+        cart_config['pixel_size'] = round(average_size * 5, 2)
+        cart_config['virtual_plane_distance'] = round(abs(average_dist), 2)
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
@@ -275,6 +277,10 @@ class ImageModeWidget(QObject):
         # Sometimes, this is too big. Bring it down if it is.
         px_eta = params['pixel_size_eta']
         params['pixel_size_eta'] = px_eta if px_eta < 90 else 5
+
+        # Round these to two decimal places for a nicer display
+        for k, v in params.items():
+            params[k] = round(v, 2)
 
         HexrdConfig().config['image']['polar'].update(params)
 

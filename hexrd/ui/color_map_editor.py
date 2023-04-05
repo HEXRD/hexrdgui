@@ -131,8 +131,11 @@ class ColorMapEditor:
 
     def bc_editor_modified(self):
         with block_signals(self.ui.minimum, self.ui.maximum):
-            self.ui.minimum.setValue(self.bc_editor.ui_min)
-            self.ui.maximum.setValue(self.bc_editor.ui_max)
+            # Round these values for a nicer display
+            bc_min = round(self.bc_editor.ui_min, 2)
+            bc_max = round(self.bc_editor.ui_max, 2)
+            self.ui.minimum.setValue(bc_min)
+            self.ui.maximum.setValue(bc_max)
             self.range_edited()
 
     def update_mins_and_maxes(self):
@@ -171,6 +174,10 @@ class ColorMapEditor:
 
         if h - l < 5:
             h = l + 5
+
+        # Round these to two decimal places
+        l = round(l, 2)
+        h = round(h, 2)
 
         return l, h
 
