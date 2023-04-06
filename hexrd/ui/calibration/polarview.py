@@ -170,11 +170,8 @@ class PolarView:
 
         # Convert each border to angles
         for i, border in enumerate(borders):
-            angles, _ = detectorXYToGvec(
-                border, panel.rmat, ct.identity_3x3,
-                panel.tvec, ct.zeros_3, ct.zeros_3,
-                beamVec=panel.bvec, etaVec=panel.evec)
-            angles = np.array(angles)
+            angles, _ = panel.cart_to_angles(border)
+            angles = angles.T
             angles[1:, :] = mapAngle(
                 angles[1:, :], np.radians(self.eta_period), units='radians'
             )
@@ -231,7 +228,7 @@ class PolarView:
 
     def func_project_on_detector(self, detector):
         '''
-        helper function to decide which function to 
+        helper function to decide which function to
         use for mapping of g-vectors to detector
         '''
         if isinstance(detector, instrument.CylindricalDetector):
@@ -245,10 +242,10 @@ class PolarView:
         mapping to plane or cylinder
         """
         kwargs = {'beamVec': detector.bvec}
-        arg = (detector.rmat, 
-               ct.identity_3x3, 
+        arg = (detector.rmat,
+               ct.identity_3x3,
                self.chi,
-               detector.tvec, 
+               detector.tvec,
                tvec_c,
                self.tvec_s,
                detector.distortion)
@@ -480,9 +477,9 @@ class PolarView:
 # longest when generating the polar view.
 # Memoize this so we can regenerate the polar view faster
 # @memoize(maxsize=16)
-def project_on_detector(angular_grid, 
-                        ntth, neta, 
-                        func_projection, 
+def project_on_detector(angular_grid,
+                        ntth, neta,
+                        func_projection,
                         *args, **kwargs):
     # This will take `angular_grid`, `ntth`, and `neta`, and make the
     # `gvec_angs` argument with them. Then, the `gvec_args` will be passed
