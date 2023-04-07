@@ -737,7 +737,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if HexrdConfig().apply_pixel_solid_angle_correction:
             sangle = dict.fromkeys(images_dict.keys())
-            mi = 1E12 # some large number
+            mi = np.finfo(np.float64).max # largest floating point number
             # normalize by minimum of the entire instrument
             # not each detector individually
             for name, img in images_dict.items():
@@ -746,7 +746,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 mi = np.min((mi, sangle[name].min()))
             for name, img in images_dict.items():
                 images_dict[name] = mi * img / sangle[name]
-            del sangle
+
         if HexrdConfig().apply_polarization_correction:
             options = self.config['image']['polarization']
             kwargs = {
