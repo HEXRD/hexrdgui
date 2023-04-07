@@ -746,7 +746,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 mi = np.min((mi, sangle[name].min()))
             for name, img in images_dict.items():
                 images_dict[name] = mi * img / sangle[name]
-
+            del sangle
         if HexrdConfig().apply_polarization_correction:
             options = self.config['image']['polarization']
             kwargs = {
