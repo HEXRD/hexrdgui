@@ -736,9 +736,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         instr = create_hedm_instrument()
 
         if HexrdConfig().apply_pixel_solid_angle_correction:
+            sangle = dict.fromkeys(images_dict.keys())
+            mi = 1E12 # some large number
+            # normalize by minimum of the entire instrument
+            # not each detector individually
             for name, img in images_dict.items():
                 panel = instr.detectors[name]
-                images_dict[name] = img / panel.pixel_solid_angles
+                sangle[name] = panel.pixel_solid_angles
+                mi = np.min((mi, sangle[name].min()))
+            for name, img in images_dict.items():
+                images_dict[name] = mi * img / sangle[name]
 
         if HexrdConfig().apply_polarization_correction:
             options = self.config['image']['polarization']
