@@ -54,8 +54,8 @@ class ZoomCanvas(FigureCanvas):
         self.disabled = False
 
         # user-specified ROI in degrees (from interactors)
-        self.tth_tol = 0.5
-        self.eta_tol = 10.0
+        self.tth_tol = 15
+        self.eta_tol = 60
 
         self.setup_connections()
 
