@@ -156,16 +156,14 @@ class PolarView:
     def detector_borders(self, det):
         panel = self.detectors[det]
 
-        row_vec, col_vec = panel.row_pixel_vec, panel.col_pixel_vec
-        x_start, x_stop = col_vec[0], col_vec[-1]
-        y_start, y_stop = row_vec[0], row_vec[-1]
+        row_vec, col_vec = panel.row_edge_vec, panel.col_edge_vec
 
         # Create the borders in Cartesian
         borders = [
-            [[x, y_start] for x in col_vec],
-            [[x, y_stop] for x in col_vec],
-            [[x_start, y] for y in row_vec],
-            [[x_stop, y] for y in row_vec]
+            np.vstack((col_vec, np.full(col_vec.shape, row_vec[0]))).T,
+            np.vstack((col_vec, np.full(col_vec.shape, row_vec[-1]))).T,
+            np.vstack((np.full(row_vec.shape, col_vec[0]), row_vec)).T,
+            np.vstack((np.full(row_vec.shape, col_vec[-1]), row_vec)).T,
         ]
 
         # Convert each border to angles
@@ -188,25 +186,25 @@ class PolarView:
 
         # "Far apart" is currently defined as half of the y range
         max_y_distance = abs(y_range[1] - y_range[0]) / 2.0
-        for j in range(4):
-            border_x, border_y = borders[j][0], borders[j][1]
-            i = 0
-            # These should be the same length, but just in case...
-            while i < len(border_x) and i < len(border_y):
-                x, y = border_x[i], border_y[i]
-                if (not x_range[0] <= x <= x_range[1] or
-                        not y_range[0] <= y <= y_range[1]):
-                    # The point is out of bounds, remove it
-                    del border_x[i], border_y[i]
-                    continue
+        for i, border in enumerate(borders):
+            border_x = border[0]
+            border_y = border[1]
 
-                if i != 0 and abs(y - border_y[i - 1]) > max_y_distance:
-                    # Points are too far apart. Insert a None
-                    border_x.insert(i, None)
-                    border_y.insert(i, None)
-                    i += 1
+            # Remove any points out of bounds
+            in_range_x = np.logical_and(x_range[0] <= border_x,
+                                        border_x <= x_range[1])
+            in_range_y = np.logical_and(y_range[0] <= border_y,
+                                        border_y <= y_range[1])
+            in_range = np.logical_and(in_range_x, in_range_y)
 
-                i += 1
+            # Insert nans for points far apart
+            border = np.asarray(border).T[in_range].T
+            big_diff = np.argwhere(np.abs(np.diff(border[1])) > max_y_distance)
+            if big_diff.size != 0:
+                border = np.insert(border.T, big_diff.squeeze() + 1, np.nan,
+                                   axis=0).T
+
+            borders[i] = border
 
         return borders
 
