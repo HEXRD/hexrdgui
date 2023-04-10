@@ -213,8 +213,15 @@ class RotationSeriesOverlay(Overlay):
         for det_key, psim in sim_data.items():
             panel = instr.detectors[det_key]
             valid_ids, valid_hkls, valid_angs, valid_xys, ang_pixel_size = psim
-            angles = valid_angs[0][:, :2]
             omegas = valid_angs[0][:, 2]
+
+            # !!! FIXME: these angles do not change with a change in grain position
+            # Is this expected? See: https://github.com/HEXRD/hexrdgui/issues/1383#issuecomment-1501950293
+            # For now, do not use them, and instead take the valid_xys and convert
+            # them to angles.
+            # angles = valid_angs[0][:, :2]
+            # !!! FIXME: does the above issue also mean the omegas are wrong?
+            angles, _ = panel.cart_to_angles(valid_xys[0], tvec_c=self.tvec_c)
 
             # Fix eta period
             angles[:, 1] = mapAngle(
