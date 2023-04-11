@@ -369,7 +369,7 @@ class PowderOverlay(Overlay):
                 # with points that are connected far apart, and run across
                 # other detectors. Thus, we should insert nans at any gaps.
                 # FIXME: is this a reasonable tolerance?
-                delta_eta_est = np.median(diff)
+                delta_eta_est = np.nanmedian(diff)
                 tolerance = delta_eta_est * 2
                 gaps, = np.nonzero(diff > tolerance)
                 ang_crds = np.insert(ang_crds, gaps + 1, np.nan, axis=0)
