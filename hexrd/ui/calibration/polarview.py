@@ -256,6 +256,10 @@ class PolarView:
                    detector.physical_size,
                    detector.angle_extent,
                    detector.distortion)
+            kwargs = {'beamVec': detector.bvec,
+                      'tVec_s': self.tvec_s,
+                      'tVec_c': tvec_c,
+                      'rmat_s': ct.identity_3x3}
 
         return arg, kwargs
 
