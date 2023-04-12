@@ -248,8 +248,7 @@ class PolarView:
                self.tvec_s,
                detector.distortion)
         if isinstance(detector, instrument.CylindricalDetector):
-            arg = (detector.rmat,
-                   self.chi,
+            arg = (self.chi,
                    detector.tvec,
                    detector.caxis,
                    detector.paxis,
