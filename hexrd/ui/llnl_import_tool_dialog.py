@@ -354,14 +354,26 @@ class LLNLImportToolDialog(QObject):
             self.it.clear()
 
     def save_boundary_position(self):
-        position = {'coords': self.it.template.xy, 'angle': self.it.rotation}
+        position = {'angle': self.it.rotation, 'translation': self.it.translation}
         HexrdConfig().set_boundary_position(
             self.instrument, self.detector, position)
         if self.it.shape:
             self.it.save_boundary(self.outline_color)
 
+    def swap_bounds_for_cropped(self):
+        self.it.clear()
+        self.it.create_shape(
+            module=hexrd_resources,
+            file_name=f'TARDIS_IMAGE-PLATE-3_bnd_cropped.txt',
+            det=self.detector,
+            instr=self.instrument)
+        line, width, color = self.it.shape_styles[-1].values()
+        self.it.update_style(line, width, color)
+
     def crop_and_mask(self):
         self.save_boundary_position()
+        if self.detector == 'IMAGE-PLATE-3':
+            self.swap_bounds_for_cropped()
         self.finalize()
         self.completed_detectors.append(self.detector)
         self.enable_widgets(self.ui.association, self.ui.file_selection,

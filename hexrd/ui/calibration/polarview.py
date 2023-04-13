@@ -9,13 +9,14 @@ from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
 from hexrd.utils.decorators import memoize
 
 from hexrd import constants as ct
-from hexrd.xrdutil import _project_on_detector_plane
+from hexrd.xrdutil import _project_on_detector_plane, \
+_project_on_detector_cylinder
+from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
 tvec_c = ct.zeros_3
-
 
 def sqrt_scale_img(img):
     fimg = np.array(img, dtype=float)
@@ -155,25 +156,20 @@ class PolarView:
     def detector_borders(self, det):
         panel = self.detectors[det]
 
-        row_vec, col_vec = panel.row_pixel_vec, panel.col_pixel_vec
-        x_start, x_stop = col_vec[0], col_vec[-1]
-        y_start, y_stop = row_vec[0], row_vec[-1]
+        row_vec, col_vec = panel.row_edge_vec, panel.col_edge_vec
 
         # Create the borders in Cartesian
         borders = [
-            [[x, y_start] for x in col_vec],
-            [[x, y_stop] for x in col_vec],
-            [[x_start, y] for y in row_vec],
-            [[x_stop, y] for y in row_vec]
+            np.vstack((col_vec, np.full(col_vec.shape, row_vec[0]))).T,
+            np.vstack((col_vec, np.full(col_vec.shape, row_vec[-1]))).T,
+            np.vstack((np.full(row_vec.shape, col_vec[0]), row_vec)).T,
+            np.vstack((np.full(row_vec.shape, col_vec[-1]), row_vec)).T,
         ]
 
         # Convert each border to angles
         for i, border in enumerate(borders):
-            angles, _ = detectorXYToGvec(
-                border, panel.rmat, ct.identity_3x3,
-                panel.tvec, ct.zeros_3, ct.zeros_3,
-                beamVec=panel.bvec, etaVec=panel.evec)
-            angles = np.array(angles)
+            angles, _ = panel.cart_to_angles(border)
+            angles = angles.T
             angles[1:, :] = mapAngle(
                 angles[1:, :], np.radians(self.eta_period), units='radians'
             )
@@ -190,25 +186,25 @@ class PolarView:
 
         # "Far apart" is currently defined as half of the y range
         max_y_distance = abs(y_range[1] - y_range[0]) / 2.0
-        for j in range(4):
-            border_x, border_y = borders[j][0], borders[j][1]
-            i = 0
-            # These should be the same length, but just in case...
-            while i < len(border_x) and i < len(border_y):
-                x, y = border_x[i], border_y[i]
-                if (not x_range[0] <= x <= x_range[1] or
-                        not y_range[0] <= y <= y_range[1]):
-                    # The point is out of bounds, remove it
-                    del border_x[i], border_y[i]
-                    continue
+        for i, border in enumerate(borders):
+            border_x = border[0]
+            border_y = border[1]
 
-                if i != 0 and abs(y - border_y[i - 1]) > max_y_distance:
-                    # Points are too far apart. Insert a None
-                    border_x.insert(i, None)
-                    border_y.insert(i, None)
-                    i += 1
+            # Remove any points out of bounds
+            in_range_x = np.logical_and(x_range[0] <= border_x,
+                                        border_x <= x_range[1])
+            in_range_y = np.logical_and(y_range[0] <= border_y,
+                                        border_y <= y_range[1])
+            in_range = np.logical_and(in_range_x, in_range_y)
 
-                i += 1
+            # Insert nans for points far apart
+            border = np.asarray(border).T[in_range].T
+            big_diff = np.argwhere(np.abs(np.diff(border[1])) > max_y_distance)
+            if big_diff.size != 0:
+                border = np.insert(border.T, big_diff.squeeze() + 1, np.nan,
+                                   axis=0).T
+
+            borders[i] = border
 
         return borders
 
@@ -228,25 +224,64 @@ class PolarView:
         self.warp_dict[det] = self.warp_image(img, panel)
         return self.warp_dict[det]
 
+    def func_project_on_detector(self, detector):
+        '''
+        helper function to decide which function to
+        use for mapping of g-vectors to detector
+        '''
+        if isinstance(detector, instrument.CylindricalDetector):
+            return _project_on_detector_cylinder
+        else:
+            return _project_on_detector_plane
+
+    def args_project_on_detector(self, detector):
+        """
+        prepare the arguments to be passed for
+        mapping to plane or cylinder
+        """
+        kwargs = {'beamVec': detector.bvec}
+        arg = (detector.rmat,
+               ct.identity_3x3,
+               self.chi,
+               detector.tvec,
+               tvec_c,
+               self.tvec_s,
+               detector.distortion)
+        if isinstance(detector, instrument.CylindricalDetector):
+            arg = (self.chi,
+                   detector.tvec,
+                   detector.caxis,
+                   detector.paxis,
+                   detector.radius,
+                   detector.physical_size,
+                   detector.angle_extent,
+                   detector.distortion)
+            kwargs = {'beamVec': detector.bvec,
+                      'tVec_s': self.tvec_s,
+                      'tVec_c': tvec_c,
+                      'rmat_s': ct.identity_3x3}
+
+        return arg, kwargs
+
     def warp_image(self, img, panel):
         # The first 3 arguments of this function get converted into
         # the first argument of `_project_on_detector_plane`, and then
         # the rest are just passed as *args and **kwargs.
-        xypts = project_on_detector_plane(
+        args, kwargs = self.args_project_on_detector(panel)
+        func_projection = self.func_project_on_detector(panel)
+
+        xypts = project_on_detector(
                     self.angular_grid,
                     self.ntth,
                     self.neta,
-                    panel.rmat, np.eye(3),
-                    self.chi,
-                    panel.tvec, tvec_c, self.tvec_s,
-                    panel.distortion,
-                    beamVec=panel.bvec)
+                    func_projection,
+                    *args,
+                    **kwargs)
 
         wimg = panel.interpolate_bilinear(
             xypts, img, pad_with_nans=True,
         ).reshape(self.shape)
         nan_mask = np.isnan(wimg)
-
         # Store as masked array
         return np.ma.masked_array(
             data=wimg, mask=nan_mask, fill_value=0.
@@ -442,8 +477,11 @@ class PolarView:
 # `_project_on_detector_plane()` is one of the functions that takes the
 # longest when generating the polar view.
 # Memoize this so we can regenerate the polar view faster
-@memoize(maxsize=16)
-def project_on_detector_plane(angular_grid, ntth, neta, *args, **kwargs):
+# @memoize(maxsize=16)
+def project_on_detector(angular_grid,
+                        ntth, neta,
+                        func_projection,
+                        *args, **kwargs):
     # This will take `angular_grid`, `ntth`, and `neta`, and make the
     # `gvec_angs` argument with them. Then, the `gvec_args` will be passed
     # first to `_project_on_detector_plane`, along with any extra args and
@@ -456,8 +494,9 @@ def project_on_detector_plane(angular_grid, ntth, neta, *args, **kwargs):
             dummy_ome]).T
 
     xypts = np.nan * np.ones((len(gvec_angs), 2))
-    valid_xys, rmats_s, on_plane = _project_on_detector_plane(
+    valid_xys, rmats_s, on_plane = func_projection(
         gvec_angs, *args, **kwargs)
     xypts[on_plane] = valid_xys
 
     return xypts
+

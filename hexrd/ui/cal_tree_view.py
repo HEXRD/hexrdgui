@@ -108,9 +108,20 @@ class CalTreeItemModel(BaseTreeItemModel):
         flags = super(CalTreeItemModel, self).flags(index)
 
         item = self.get_item(index)
-        if ((index.column() == VALUE_COL and item.child_count() == 0) or
-                index.column() == STATUS_COL):
-            # The second and third columns with no children are editable
+
+        non_editable_keys = (
+            'detector_type',
+        )
+
+        # The second and third columns with no children are editable
+        editable = (
+            index.column() == STATUS_COL or
+            (index.column() == VALUE_COL and
+             item.child_count() == 0 and
+             item.data(KEY_COL) not in non_editable_keys)
+        )
+
+        if editable:
             flags = flags | Qt.ItemIsEditable
 
         return flags

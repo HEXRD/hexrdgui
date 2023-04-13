@@ -314,6 +314,8 @@ class MainWindow(QObject):
             'action_apply_lorentz_correction': 'apply_lorentz_correction',
             'action_subtract_minimum': 'intensity_subtract_minimum',
             'action_show_live_updates': 'live_update',
+            'action_show_detector_borders': 'show_detector_borders',
+            'action_show_beam_marker': 'show_beam_marker',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
