@@ -249,7 +249,7 @@ class LaueCalibrator(object):
             reflInfoList = []
             img = raw_img_dict[det_key]
             native_area = det.pixel_area
-            num_patches = len(refl_patches)
+            num_patches = len(valid_angs)
             meas_xy = np.nan*np.ones((num_patches, 2))
             meas_angs = np.nan*np.ones((num_patches, 2))
             for iRefl, patch in enumerate(refl_patches):
