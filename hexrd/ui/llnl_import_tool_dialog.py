@@ -370,13 +370,15 @@ class LLNLImportToolDialog(QObject):
 
     def swap_bounds_for_cropped(self):
         self.it.clear()
+        line, width, color = self.it.shape_styles[-1].values()
         self.it.create_shape(
             module=hexrd_resources,
             file_name=f'TARDIS_IMAGE-PLATE-3_bnd_cropped.txt',
             det=self.detector,
             instr=self.instrument)
-        line, width, color = self.it.shape_styles[-1].values()
-        self.it.update_style(line, width, color)
+        self.update_bbox_width(1330)
+        self.update_bbox_height(238)
+        self.it.update_style('--', width, color)
 
     def crop_and_mask(self):
         self.save_boundary_position()
