@@ -12,8 +12,7 @@ from PySide2.QtCore import (
 )
 from PySide2.QtGui import QDesktopServices
 from PySide2.QtWidgets import (
-    QApplication, QDockWidget, QFileDialog, QInputDialog, QMainWindow,
-    QMessageBox
+    QApplication, QDockWidget, QFileDialog, QMainWindow, QMessageBox
 )
 
 from hexrd.ui.about_dialog import AboutDialog
@@ -28,6 +27,7 @@ from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrd.ui.image_stack_dialog import ImageStackDialog
 from hexrd.ui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrd.ui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
+from hexrd.ui.input_dialog import InputDialog
 from hexrd.ui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
@@ -625,9 +625,11 @@ class MainWindow(QObject):
         current = HexrdConfig().euler_angle_convention
         ind = corresponding_values.index(current)
 
-        name, ok = QInputDialog.getItem(self.ui, 'HEXRD',
-                                        'Select Euler Angle Convention',
-                                        allowed_conventions, ind, False)
+        help_url = 'configuration/instrument/#euler-angle-convention'
+        name, ok = InputDialog.getItem(self.ui, 'HEXRD',
+                                       'Select Euler Angle Convention',
+                                       allowed_conventions, ind, False,
+                                       help_url=help_url)
 
         if not ok:
             # User canceled...
