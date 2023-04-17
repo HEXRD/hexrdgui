@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>476</width>
-    <height>659</height>
+    <height>615</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -182,6 +182,50 @@
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
+        <widget class="QFrame" name="frame">
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="detector_label">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>Current Detector</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="detectors">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
         <widget class="QFrame" name="file_selection">
          <property name="enabled">
           <bool>true</bool>
@@ -237,7 +281,7 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QFrame" name="transform_img">
          <property name="enabled">
           <bool>false</bool>
@@ -261,6 +305,16 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="add_transform">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>Add Transform</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QLabel" name="transform_label">
             <property name="text">
@@ -310,56 +364,7 @@
             </item>
            </widget>
           </item>
-          <item row="0" column="2">
-           <widget class="QPushButton" name="add_transform">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>Add Transform</string>
-            </property>
-           </widget>
-          </item>
          </layout>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="association">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="title">
-       <string>Association</string>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_8">
-       <item>
-        <widget class="QLabel" name="detector_label">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Current Detector</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="detectors">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="add_template">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Add Detector Outline</string>
-         </property>
         </widget>
        </item>
       </layout>
@@ -410,15 +415,12 @@
         </widget>
        </item>
        <item row="1" column="1" alignment="Qt::AlignRight">
-        <widget class="QDialogButtonBox" name="button_box">
+        <widget class="QPushButton" name="accept_template">
          <property name="enabled">
           <bool>true</bool>
          </property>
-         <property name="standardButtons">
-          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-         </property>
-         <property name="centerButtons">
-          <bool>true</bool>
+         <property name="text">
+          <string>Save detector boundary</string>
          </property>
         </widget>
        </item>
@@ -474,7 +476,7 @@
           <item alignment="Qt::AlignRight">
            <widget class="QLabel" name="width_label">
             <property name="enabled">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="text">
              <string>Width</string>

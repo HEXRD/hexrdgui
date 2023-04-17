@@ -64,12 +64,10 @@ class LLNLImportToolDialog(QObject):
             self.instrument_selected)
         self.ui.load.clicked.connect(self.load_images)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
-        self.ui.add_template.clicked.connect(self.add_template)
         self.ui.trans.clicked.connect(self.setup_translate)
         self.ui.rotate.clicked.connect(self.setup_rotate)
         self.ui.add_transform.clicked.connect(self.add_transform)
-        self.ui.button_box.accepted.connect(self.crop_and_mask)
-        self.ui.button_box.rejected.connect(self.clear)
+        self.ui.accept_template.clicked.connect(self.crop_and_mask)
         self.ui.complete.clicked.connect(self.completed)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
@@ -123,6 +121,7 @@ class LLNLImportToolDialog(QObject):
         return True
 
     def set_detector_options(self):
+        self.detectors.clear()
         for det, vals in self.defaults['detectors'].items():
             self.detector_defaults[det] = vals['transform']
             self.detectors.append(det)
@@ -138,6 +137,11 @@ class LLNLImportToolDialog(QObject):
         self.config_file = selected_file if selected_file else None
         self.ui.config_file_label.setText(os.path.basename(self.config_file))
         self.ui.config_file_label.setToolTip(self.config_file)
+        if self.ui.instrument.isEnabled():
+            # Only set the instrument config once
+            success = self.get_instrument_defaults()
+            if not success:
+                return
 
     def instrument_selected(self, idx):
         if HexrdConfig().show_beam_marker:
@@ -177,6 +181,11 @@ class LLNLImportToolDialog(QObject):
         elif not self.ui.default_config.isChecked():
             self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
                                 enabled=True)
+        if self.ui.instrument.isEnabled():
+            # Only set the instrument config once
+            success = self.get_instrument_defaults()
+            if not success:
+                return
 
     def update_config_load(self, checked):
         self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
@@ -201,6 +210,7 @@ class LLNLImportToolDialog(QObject):
     def detector_selected(self, selected):
         self.ui.instrument.setDisabled(selected)
         self.detector = self.ui.detectors.currentText()
+        self.add_template()
 
     def update_bbox_height(self, val):
         y0, y1, *x = self.it.bounds
@@ -247,12 +257,6 @@ class LLNLImportToolDialog(QObject):
                 # Only reset the color map range for first detector processed
                 self.cmap.block_updates(True)
 
-            if self.ui.instrument.isEnabled():
-                # Only set the instrument config once
-                success = self.get_instrument_defaults()
-                if not success:
-                    return
-
             # The ImageLoadManager parent needs to be set to the main window
             # because when set to the ui (QDockWidget) the dock widget is
             # closed after accepting the image selection. We're not positive
@@ -264,9 +268,11 @@ class LLNLImportToolDialog(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
-            self.enable_widgets(self.ui.transform_img, self.ui.association,
-                                self.ui.finalize, enabled=True)
+            self.enable_widgets(self.ui.transform_img, self.ui.finalize,
+                                self.ui.detectors, self.ui.detector_label,
+                                enabled=True)
             self.enable_widgets(self.ui.data, enabled=False)
+            self.add_template()
 
     def add_transform(self):
         # Prevent color map reset on transform
@@ -305,6 +311,10 @@ class LLNLImportToolDialog(QObject):
         self.ui.bb_width.blockSignals(False)
 
     def add_template(self):
+        if self.it is None or self.instrument is None or self.detector is None:
+            return
+
+        self.it.clear()
         self.it.create_shape(
             module=hexrd_resources,
             file_name=f'{self.instrument}_{self.detector}_bnd.txt',
@@ -314,10 +324,8 @@ class LLNLImportToolDialog(QObject):
         self.update_template_style()
 
         self.display_bounds()
-        self.enable_widgets(self.ui.outline_position,
-                            self.ui.outline_appearance, enabled=True)
-        self.enable_widgets(self.ui.association, self.ui.file_selection,
-                            enabled=False)
+        self.enable_widgets(
+            self.ui.outline_position, self.ui.outline_appearance, enabled=True)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
         self.ui.trans.setChecked(True)
@@ -376,9 +384,8 @@ class LLNLImportToolDialog(QObject):
             self.swap_bounds_for_cropped()
         self.finalize()
         self.completed_detectors.append(self.detector)
-        self.enable_widgets(self.ui.association, self.ui.file_selection,
-                            self.ui.transform_img, self.ui.complete,
-                            enabled=True)
+        self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
+                            self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.outline_appearance,
                             self.ui.outline_position, enabled=False)
         self.ui.completed_dets.setText(
@@ -410,8 +417,8 @@ class LLNLImportToolDialog(QObject):
 
     def clear(self):
         self.clear_boundry()
-        self.enable_widgets(self.ui.association, self.ui.transform_img,
-                            self.ui.file_selection, enabled=True)
+        self.enable_widgets(
+            self.ui.transform_img, self.ui.file_selection, enabled=True)
         self.enable_widgets(self.ui.outline_position,
                             self.ui.outline_appearance, enabled=False)
 
@@ -433,12 +440,11 @@ class LLNLImportToolDialog(QObject):
         self.ui.files_label.setText('')
         self.ui.completed_dets.setText('')
         self.edited_images.clear()
-        self.enable_widgets(self.ui.association, self.ui.raw_image,
+        self.enable_widgets(self.ui.raw_image, self.ui.config,
                             self.ui.transform_img, self.ui.outline_appearance,
                             self.ui.outline_position, self.ui.finalize,
                             self.ui.default_config, self.ui.load_config,
-                            self.ui.config_file_label, self.ui.config,
-                            enabled=False)
+                            self.ui.config_file_label, enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
         select_config = self.ui.select_config.isChecked()
         self.ui.default_config.setEnabled(select_config)
