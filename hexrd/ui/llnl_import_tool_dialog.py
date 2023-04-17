@@ -21,7 +21,7 @@ from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import (
-    UI_TRANS_INDEX_ROTATE_90, UI_TRANS_INDEX_FLIP_HORIZONTALLY, YAML_EXTS)
+    UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform)
 import hexrd.ui.resources.calibration
 
 from hexrd.ui.utils import instr_to_internal_dict
@@ -224,10 +224,20 @@ class LLNLImportToolDialog(QObject):
         scale = 1 - ((w - val) / w)
         self.it.scale_template(sx=scale)
 
-    def load_images(self):
+    def _set_transform(self):
         if self.instrument == 'PXRDIP':
-            HexrdConfig().load_panel_state['trans'] = (
-                [UI_TRANS_INDEX_FLIP_HORIZONTALLY])
+            flip = LLNLTransform.PXRDIP
+        elif self.instrument == 'TARDIS':
+            if self.detector == 'IMAGE-PLATE-2':
+                flip = LLNLTransform.IP2
+            elif self.detector == 'IMAGE-PLATE-3':
+                flip = LLNLTransform.IP3
+            elif self.detector == 'IMAGE-PLATE-4':
+                flip = LLNLTransform.IP4
+        HexrdConfig().load_panel_state['trans'] = [flip]
+
+    def load_images(self):
+        self._set_transform()
 
         caption = HexrdConfig().images_dirtion = 'Select file(s)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
