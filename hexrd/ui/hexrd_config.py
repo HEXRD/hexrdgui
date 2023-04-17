@@ -2469,3 +2469,33 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # This is the same as the panel buffer, which is why we are
             # doing a `np.logical_and()`.
             panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
+
+    def clean_panel_buffers(self):
+        # Ensure that the panel buffer sizes match the pixel sizes.
+        # If not, clear the panel buffer and print a warning.
+        for name, det_info in self.detectors.items():
+            buffer = det_info['buffer']['value']
+            if buffer is None:
+                continue
+
+            buffer = np.asarray(buffer)
+            if buffer.ndim == 1:
+                continue
+
+            columns = det_info['pixels']['columns']['value']
+            rows = det_info['pixels']['rows']['value']
+            det_shape = (rows, columns)
+            if buffer.shape != det_shape:
+                # The user may have had some old config settings here
+                # with a different sized panel buffer than what we have now.
+                # Instead of allowing an error to occur, print out a warning
+                # and delete the panel buffer.
+                self.logger.warning(
+                    f'Warning: detector "{name}": panel buffer shape {buffer.shape} '
+                    f'does not match detector shape {det_shape}. '
+                    'Clearing panel buffer.'
+                )
+                det_info['buffer'] = {
+                    'status': 0,
+                    'value': [0., 0.],
+                }
