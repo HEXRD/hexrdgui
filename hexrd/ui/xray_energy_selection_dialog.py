@@ -39,6 +39,8 @@ class XRayEnergySelectionDialog(DictTreeViewDialog):
         tooltip = 'Select an energy, or multiple energies to average'
         self.tree_view.setToolTip(tooltip)
 
+        self.setWindowTitle('X-Ray Energy Selection')
+
         # Add the dialog buttons
         buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         button_box = QDialogButtonBox(buttons, self)
