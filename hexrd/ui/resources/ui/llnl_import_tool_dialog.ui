@@ -674,7 +674,7 @@
           <bool>true</bool>
          </property>
          <property name="text">
-          <string>Cancel</string>
+          <string>Cancel LLNL Import</string>
          </property>
         </widget>
        </item>
