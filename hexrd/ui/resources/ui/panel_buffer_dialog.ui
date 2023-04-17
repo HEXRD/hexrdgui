@@ -7,14 +7,78 @@
     <x>0</x>
     <y>0</y>
     <width>478</width>
-    <height>296</height>
+    <height>361</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Configure panel buffer</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="4" column="0">
+   <item row="5" column="1">
+    <widget class="QPushButton" name="clear_panel_buffer">
+     <property name="text">
+      <string>Clear Panel Buffer</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="modesLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>The panel buffer can be set in two ways. Either by provided the border in mm or through a NumPy array, interpretation is boolean with true marking valid pixels.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="config_mode_label">
+       <property name="text">
+        <string>Configuration Mode:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="config_mode">
+       <property name="currentText">
+        <string>Border</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Border</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>NumPy</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="4" column="0" colspan="2">
     <widget class="QTabWidget" name="tab_widget">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -30,17 +94,17 @@
        <string>Border</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="0">
-        <widget class="QLabel" name="border_x_label">
-         <property name="text">
-          <string>X Border (mm):</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="0">
         <widget class="QLabel" name="border_y_label">
          <property name="text">
           <string>Y Border (mm):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="border_x_label">
+         <property name="text">
+          <string>X Border (mm):</string>
          </property>
         </widget>
        </item>
@@ -57,8 +121,8 @@
          </property>
         </spacer>
        </item>
-       <item row="3" column="1">
-        <widget class="ScientificDoubleSpinBox" name="border_y_spinbox">
+       <item row="1" column="1">
+        <widget class="ScientificDoubleSpinBox" name="border_x_spinbox">
          <property name="decimals">
           <number>8</number>
          </property>
@@ -73,8 +137,8 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="ScientificDoubleSpinBox" name="border_x_spinbox">
+       <item row="3" column="1">
+        <widget class="ScientificDoubleSpinBox" name="border_y_spinbox">
          <property name="decimals">
           <number>8</number>
          </property>
@@ -120,60 +184,25 @@
      </widget>
     </widget>
    </item>
-   <item row="1" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QLabel" name="config_mode_label">
-       <property name="text">
-        <string>Configuration Mode:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="config_mode">
-       <property name="currentText">
-        <string>Border</string>
-       </property>
-       <item>
-        <property name="text">
-         <string>Border</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>NumPy</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
    <item row="5" column="0">
+    <spacer name="horizontalSpacer_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="7" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout_4">
-     <item>
-      <widget class="QPushButton" name="clear_panel_buffer">
-       <property name="text">
-        <string>Clear Panel Buffer</string>
-       </property>
-      </widget>
-     </item>
      <item>
       <widget class="QDialogButtonBox" name="button_box">
        <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
        </property>
        <property name="centerButtons">
         <bool>false</bool>
@@ -182,21 +211,21 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="modesLabel">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
+   <item row="6" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-     <property name="text">
-      <string>The panel buffer can be set in two ways. Either by provided the border in mm or through a NumPy array, interpretation is boolean with true marking valid pixels.</string>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
      </property>
-     <property name="wordWrap">
-      <bool>true</bool>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>30</height>
+      </size>
      </property>
-    </widget>
+    </spacer>
    </item>
   </layout>
  </widget>
@@ -215,7 +244,6 @@
   <tabstop>file_name</tabstop>
   <tabstop>select_file_button</tabstop>
   <tabstop>show_panel_buffer</tabstop>
-  <tabstop>clear_panel_buffer</tabstop>
  </tabstops>
  <resources/>
  <connections>
