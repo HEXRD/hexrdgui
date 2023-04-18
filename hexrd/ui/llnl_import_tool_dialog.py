@@ -25,6 +25,7 @@ from hexrd.ui.constants import (
 import hexrd.ui.resources.calibration
 
 from hexrd.ui.utils import instr_to_internal_dict
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class LLNLImportToolDialog(QObject):
@@ -43,6 +44,9 @@ class LLNLImportToolDialog(QObject):
         self.ui = loader.load_file('llnl_import_tool_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/images/#llnl-import-tool')
 
         self.it = None
         self.instrument = None
