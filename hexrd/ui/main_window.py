@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 import h5py
+from hexrd.ui.edit_colormap_list_dialog import EditColormapListDialog
 import numpy as np
 from skimage import measure
 
@@ -260,6 +261,8 @@ class MainWindow(QObject):
             self.on_action_image_stack_triggered)
         self.ui.action_show_all_colormaps.triggered.connect(
             self.on_action_show_all_colormaps_toggled)
+        self.ui.action_edit_defaults.triggered.connect(
+            self.on_action_edit_defaults_toggled)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -1249,3 +1252,7 @@ class MainWindow(QObject):
         else:
             self.color_map_editor.load_cmaps()
         HexrdConfig().show_all_colormaps = checked
+
+    def on_action_edit_defaults_toggled(self):
+        dialog = EditColormapListDialog(self.ui, self.color_map_editor)
+        dialog.show()
