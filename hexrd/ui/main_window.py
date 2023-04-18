@@ -143,6 +143,8 @@ class MainWindow(QObject):
 
         self.set_live_update(HexrdConfig().live_update)
 
+        self.on_action_show_all_colormaps_toggled(HexrdConfig().show_all_colormaps)
+
         ImageFileManager().load_dummy_images(True)
 
         # In order to avoid both a not very nice looking black window,
@@ -256,6 +258,8 @@ class MainWindow(QObject):
             self.on_action_llnl_import_tool_triggered)
         self.ui.action_image_stack.triggered.connect(
             self.on_action_image_stack_triggered)
+        self.ui.action_show_all_colormaps.triggered.connect(
+            self.on_action_show_all_colormaps_toggled)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -316,6 +320,7 @@ class MainWindow(QObject):
             'action_show_live_updates': 'live_update',
             'action_show_detector_borders': 'show_detector_borders',
             'action_show_beam_marker': 'show_beam_marker',
+            'action_show_all_colormaps': 'show_all_colormaps',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -1237,3 +1242,10 @@ class MainWindow(QObject):
 
     def on_action_documentation_triggered(self):
         QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
+
+    def on_action_show_all_colormaps_toggled(self, checked):
+        if checked:
+            self.color_map_editor.load_all_cmaps()
+        else:
+            self.color_map_editor.load_cmaps()
+        HexrdConfig().show_all_colormaps = checked
