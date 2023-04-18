@@ -35,6 +35,8 @@ class ColorMapEditor:
         self._bc_previous_show_overlays = None
 
         self.load_cmaps()
+        # Set the combobox to be the default
+        self.ui.color_map.setCurrentText(HexrdConfig().default_cmap)
         self.setup_scaling_options()
 
         self.setup_connections()
@@ -53,11 +55,26 @@ class ColorMapEditor:
             self.update_bc_editor()
 
     def load_cmaps(self):
-        cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
-        self.ui.color_map.addItems(cmaps)
+        if not (cmaps := HexrdConfig().limited_cmaps_list):
+            cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
 
-        # Set the combobox to be the default
-        self.ui.color_map.setCurrentText(hexrd.ui.constants.DEFAULT_CMAP)
+        with block_signals(self.ui.color_map):
+            old_selection = self.ui.color_map.currentText()
+            self.ui.color_map.clear()
+            self.ui.color_map.addItems(cmaps)
+
+        if old_selection in cmaps:
+            self.ui.color_map.setCurrentText(old_selection)
+        else:
+            self.ui.color_map.setCurrentText(HexrdConfig().default_cmap)
+        self.update_cmap()
+
+    def load_all_cmaps(self):
+        limited = HexrdConfig().default_cmap
+        cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
+        additional_cmaps = [c for c in cmaps if c not in limited]
+        self.ui.color_map.insertSeparator(len(limited))
+        self.ui.color_map.addItems(additional_cmaps)
 
     def setup_scaling_options(self):
         options = list(SCALING_OPTIONS.keys())
