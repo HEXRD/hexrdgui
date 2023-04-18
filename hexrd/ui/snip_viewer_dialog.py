@@ -9,7 +9,6 @@ from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QFileDialog, QSizePolicy
 
 from hexrd.ui.color_map_editor import ColorMapEditor
-from hexrd.ui.constants import DEFAULT_CMAP
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
@@ -22,7 +21,7 @@ class SnipViewerDialog:
         self.data = data
         self.extent = extent
 
-        self.cmap = DEFAULT_CMAP
+        self.cmap = HexrdConfig().default_cmap
         self.norm = None
         self.transform = lambda x: x
 

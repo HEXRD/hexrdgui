@@ -39,7 +39,7 @@ class ImageCanvas(FigureCanvas):
         self.overlay_artists = {}
         self.cached_detector_borders = []
         self.saturation_texts = []
-        self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.cmap = HexrdConfig().default_cmap
         self.norm = None
         self.iviewer = None
         self.azimuthal_integral_axis = None

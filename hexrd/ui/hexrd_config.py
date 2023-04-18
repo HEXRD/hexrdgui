@@ -250,6 +250,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.max_cpus = None
         self.azimuthal_overlays = []
         self.show_azimuthal_legend = True
+        self.show_all_colormaps = True
+        self.limited_cmaps_list = [constants.DEFAULT_CMAP]
+        self.default_cmap = constants.DEFAULT_CMAP
 
         self.setup_logging()
 
@@ -337,6 +340,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
             ('show_azimuthal_legend', True),
+            ('show_all_colormaps', False),
+            ('limited_cmaps_list', [])
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -417,6 +422,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.live_update = self.live_update == 'true'
         if not isinstance(self.show_azimuthal_legend, bool):
             self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
+        if not isinstance(self.show_all_colormaps, bool):
+            self.show_all_colormaps = self.show_all_colormaps == 'true'
 
         if self.azimuthal_overlays is None:
             self.azimuthal_overlays = []

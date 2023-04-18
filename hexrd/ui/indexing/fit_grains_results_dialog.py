@@ -55,7 +55,7 @@ class FitGrainsResultsDialog(QObject):
         self.async_runner = AsyncRunner(parent)
 
         self.ax = None
-        self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.cmap = HexrdConfig().default_cmap
         self.data = data
         self.data_model = GrainsTableModel(data)
         self.material = material
@@ -669,7 +669,7 @@ class FitGrainsResultsDialog(QObject):
         self.ui.color_maps.addItems(cmaps)
 
         # Set the combobox to be the default
-        self.ui.color_maps.setCurrentText(hexrd.ui.constants.DEFAULT_CMAP)
+        self.ui.color_maps.setCurrentText(HexrdConfig().default_cmap)
 
     def update_cmap(self):
         # Get the Colormap object from the name

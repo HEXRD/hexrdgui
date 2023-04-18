@@ -5,7 +5,6 @@ import matplotlib.colors
 
 import numpy as np
 
-import hexrd.ui.constants
 from hexrd.ui.brightness_contrast_editor import BrightnessContrastEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.scaling import SCALING_OPTIONS
