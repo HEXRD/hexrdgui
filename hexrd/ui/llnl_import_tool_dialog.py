@@ -168,6 +168,7 @@ class LLNLImportToolDialog(QObject):
             self.parent().action_show_toolbar.setChecked(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
+            self.update_config_selection(self.ui.select_config.isChecked())
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
@@ -322,6 +323,12 @@ class LLNLImportToolDialog(QObject):
 
     def add_template(self):
         if self.it is None or self.instrument is None or self.detector is None:
+            return
+
+        if self.it.complete and self.instrument == 'TARDIS':
+            # For the TARDIS use case only one template is applied per image
+            # Only add a new template if the detector has not been completed
+            # or this is a single image use-case (i.e. PXRDIP, BBXRD)
             return
 
         self.it.clear()
