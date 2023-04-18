@@ -67,14 +67,14 @@ class InteractiveTemplate:
         pos = HexrdConfig().boundary_position(instr, det)
         if pos is None:
             self.center = self.get_midpoint()
-            if instr == 'PXRDIP':
-                self.rotate_shape(angle=90)
         else:
             dx, dy = pos.get('translation', [0, 0])
             self.translation = [dx, dy]
             self.translate_template(dx, dy)
             self.total_rotation = pos['angle']
             self.rotate_template(self.shape.xy, pos['angle'])
+        if instr == 'PXRDIP':
+            self.rotate_shape(angle=90)
 
     @property
     def template(self):
