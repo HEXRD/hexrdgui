@@ -8,6 +8,7 @@ from PySide2.QtWidgets import QMessageBox
 
 from hexrd import imageseries
 
+from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.load_hdf5_dialog import LoadHDF5Dialog
 from hexrd.ui.singletons import Singleton
@@ -143,49 +144,15 @@ class ImageFileManager(metaclass=Singleton):
 
         return False
 
-    def guess_path(self, f):
-        h5 = h5py.File(f, 'r')
-        location = ''
-        dataname='DATA'
-        if 'ATTRIBUTES' in h5:
-            if ('PINHOLE_ORIENTED_IMAGE' in h5['ATTRIBUTES']) and ('TARGET_ORIENTED_IMAGE' in h5['ATTRIBUTES']):
-                h5.close()
-                try:
-                    imageseries.open(f, 'hdf5', path='ATTRIBUTES/TARGET_ORIENTED_IMAGE/DATA', dataname=dataname)
-                except:
-                    imageseries.open(f, 'hdf5', path='ATTRIBUTES/PINHOLE_ORIENTED_IMAGE/DATA', dataname=dataname)
-            elif 'PSL_FADE_CORR_IMAGE' in h5['ATTRIBUTES']:
-                print(f'PSL_FADE_CORR_IMAGE in ATTRIBUTES')
-                location = 'PSL_FADE_CORR_IMAGE'
-            elif 'HDR_IMAGE' in h5['ATTRIBUTES']:
-                location = 'HDR_IMAGE'
-            elif 'CORR_IMAGE' in h5['ATTRIBUTES']:
-                location = 'CORR_IMAGE'
-            elif 'TIME_ADJUSTED_IMAGE' in h5['ATTRIBUTES']:
-                location = 'TIME_ADJUSTED_IMAGE'
-            elif 'PSL_IMAGE' in h5['ATTRIBUTES']:
-                location = 'PSL_IMAGE'
-        elif 'DATA' in h5:
-            location = 'DATA'
-        h5.close()
-        path=f'ATTRIBUTES/{location}/DATA'
-        imageseries.open(f, 'hdf5', path=path, dataname=dataname)
-        return path, dataname
-
     def path_exists(self, f):
-        try:
-            path, dataname = HexrdConfig().hdf5_path
-            imageseries.open(f, 'hdf5', path=path, dataname=dataname)
-            self.path = HexrdConfig().hdf5_path
-            return True
-        except:
-            try:
-                path, dataname = self.guess_path(f)
-                HexrdConfig().hdf5_path = [path, dataname]
-                self.path = HexrdConfig().hdf5_path
-                return True
-            except:
-                return False
+        all_paths = [HexrdConfig().hdf5_path, *constants.KNOWN_HDF5_PATHS]
+        with h5py.File(f, 'r') as h5:
+            for path, dataname in all_paths:
+                if f'{path}/{dataname}' in h5:
+                    HexrdConfig().hdf5_path = [path, dataname]
+                    self.path = HexrdConfig().hdf5_path
+                    return True
+            return False
 
     def path_prompt(self, f):
         path_dialog = LoadHDF5Dialog(f)
