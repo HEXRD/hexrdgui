@@ -8,6 +8,7 @@ from PySide2.QtWidgets import QMessageBox
 
 from hexrd import imageseries
 
+from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.load_hdf5_dialog import LoadHDF5Dialog
 from hexrd.ui.singletons import Singleton
@@ -144,12 +145,13 @@ class ImageFileManager(metaclass=Singleton):
         return False
 
     def path_exists(self, f):
-        try:
-            path, dataname = HexrdConfig().hdf5_path
-            imageseries.open(f, 'hdf5', path=path, dataname=dataname)
-            self.path = HexrdConfig().hdf5_path
-            return True
-        except:
+        all_paths = [HexrdConfig().hdf5_path, *constants.KNOWN_HDF5_PATHS]
+        with h5py.File(f, 'r') as h5:
+            for path, dataname in all_paths:
+                if f'{path}/{dataname}' in h5:
+                    HexrdConfig().hdf5_path = [path, dataname]
+                    self.path = HexrdConfig().hdf5_path
+                    return True
             return False
 
     def path_prompt(self, f):
