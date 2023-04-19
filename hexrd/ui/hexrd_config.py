@@ -363,6 +363,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def _load_state_from_settings(self, settings):
         state = {}
         for name, default in self._attributes_to_persist():
+            if name == 'azimuthal_overlays':
+                # We need to keep this value in the settings so that it is
+                # saved to state files, but we want to forget selections
+                # between sessions.
+                continue
             state[name] = settings.value(
                 self._attribute_to_settings_key(name), default)
 
