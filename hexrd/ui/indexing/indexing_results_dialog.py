@@ -12,11 +12,10 @@ from hexrd.transforms import xfcapi
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.grains_viewer_dialog import GrainsViewerDialog
+from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
-
-import hexrd.ui.constants
 
 
 class IndexingResultsDialog(QObject):
@@ -32,7 +31,7 @@ class IndexingResultsDialog(QObject):
 
         self.ome_maps = ome_maps
         self.grains_table = grains_table
-        self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.cmap = HexrdConfig().default_cmap
         self.norm = None
         self.transform = lambda x: x
         self._plot_grains_mode = False

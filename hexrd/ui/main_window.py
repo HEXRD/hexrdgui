@@ -4,6 +4,7 @@ import shutil
 import tempfile
 
 import h5py
+from hexrd.ui.edit_colormap_list_dialog import EditColormapListDialog
 import numpy as np
 from skimage import measure
 
@@ -135,6 +136,9 @@ class MainWindow(QObject):
 
         self.mask_manager_dialog = MaskManagerDialog(self.ui)
 
+        self._edit_colormap_list_dialog = EditColormapListDialog(
+            self.ui, self.color_map_editor)
+
         self.setup_connections()
 
         self.update_config_gui()
@@ -142,6 +146,8 @@ class MainWindow(QObject):
         self.update_action_check_states()
 
         self.set_live_update(HexrdConfig().live_update)
+
+        self.on_action_show_all_colormaps_toggled(HexrdConfig().show_all_colormaps)
 
         ImageFileManager().load_dummy_images(True)
 
@@ -256,6 +262,10 @@ class MainWindow(QObject):
             self.on_action_llnl_import_tool_triggered)
         self.ui.action_image_stack.triggered.connect(
             self.on_action_image_stack_triggered)
+        self.ui.action_show_all_colormaps.triggered.connect(
+            self.on_action_show_all_colormaps_toggled)
+        self.ui.action_edit_defaults.triggered.connect(
+            self.on_action_edit_defaults_toggled)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -316,6 +326,7 @@ class MainWindow(QObject):
             'action_show_live_updates': 'live_update',
             'action_show_detector_borders': 'show_detector_borders',
             'action_show_beam_marker': 'show_beam_marker',
+            'action_show_all_colormaps': 'show_all_colormaps',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -1237,3 +1248,10 @@ class MainWindow(QObject):
 
     def on_action_documentation_triggered(self):
         QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
+
+    def on_action_show_all_colormaps_toggled(self, checked):
+        HexrdConfig().show_all_colormaps = checked
+        self.color_map_editor.load_cmaps()
+
+    def on_action_edit_defaults_toggled(self):
+        self._edit_colormap_list_dialog.show()

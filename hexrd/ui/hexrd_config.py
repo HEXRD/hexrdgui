@@ -250,6 +250,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.max_cpus = None
         self.azimuthal_overlays = []
         self.show_azimuthal_legend = True
+        self.show_all_colormaps = False
+        self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
+        self.default_cmap = constants.DEFAULT_CMAP
 
         self.setup_logging()
 
@@ -337,6 +340,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
             ('show_azimuthal_legend', True),
+            ('show_all_colormaps', False),
+            ('limited_cmaps_list', constants.DEFAULT_LIMITED_CMAPS),
+            ('default_cmap', constants.DEFAULT_CMAP)
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -390,12 +396,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         """
         Update HexrdConfig using a loaded state.
         """
-
-        # The "active_material_name" is a special case that will be set to
-        # "previous_active_material".
-        # We need to set euler_angle_convention and overlays in a special way
         skip = [
+            # The "active_material_name" is a special case that will be set to
+            # "previous_active_material".
             'active_material_name',
+            # We need to set euler_angle_convention and overlays in a special way
             'euler_angle_convention',
             'overlays_dictified',
         ]
@@ -403,6 +408,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if self.loading_state:
             # Do not load default materials if we are loading state
             skip.append('_imported_default_materials')
+            skip += [
+                # Skip colormap settings
+                'show_all_colormaps',
+                'limited_cmaps_list',
+                'default_cmap',
+            ]
 
         try:
             for name, value in state.items():
@@ -417,6 +428,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.live_update = self.live_update == 'true'
         if not isinstance(self.show_azimuthal_legend, bool):
             self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
+        if not isinstance(self.show_all_colormaps, bool):
+            self.show_all_colormaps = self.show_all_colormaps == 'true'
 
         if self.azimuthal_overlays is None:
             self.azimuthal_overlays = []

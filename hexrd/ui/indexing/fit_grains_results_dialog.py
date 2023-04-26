@@ -18,7 +18,7 @@ from PySide2.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.rotations import rotMatOfExpMap
 
-import hexrd.ui.constants
+from hexrd.ui import constants
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
@@ -55,7 +55,7 @@ class FitGrainsResultsDialog(QObject):
         self.async_runner = AsyncRunner(parent)
 
         self.ax = None
-        self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.cmap = HexrdConfig().default_cmap
         self.data = data
         self.data_model = GrainsTableModel(data)
         self.material = material
@@ -665,11 +665,11 @@ class FitGrainsResultsDialog(QObject):
             w2.setMinimum(w1.value())
 
     def load_cmaps(self):
-        cmaps = sorted(i[:-2] for i in dir(matplotlib.cm) if i.endswith('_r'))
+        cmaps = constants.ALL_CMAPS
         self.ui.color_maps.addItems(cmaps)
 
         # Set the combobox to be the default
-        self.ui.color_maps.setCurrentText(hexrd.ui.constants.DEFAULT_CMAP)
+        self.ui.color_maps.setCurrentText(HexrdConfig().default_cmap)
 
     def update_cmap(self):
         # Get the Colormap object from the name

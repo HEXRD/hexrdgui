@@ -47,7 +47,7 @@ class OmeMapsViewerDialog(QObject):
         self.ui = loader.load_file('ome_maps_viewer_dialog.ui', parent)
 
         self.data = data
-        self.cmap = hexrd.ui.constants.DEFAULT_CMAP
+        self.cmap = HexrdConfig().default_cmap
         self.norm = None
         self.transform = lambda x: x
         self.spots = None

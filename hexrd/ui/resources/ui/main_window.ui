@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -111,6 +111,13 @@
       <string>Loaded Images</string>
      </property>
     </widget>
+    <widget class="QMenu" name="colormaps_menu">
+     <property name="title">
+      <string>Colormaps</string>
+     </property>
+     <addaction name="action_show_all_colormaps"/>
+     <addaction name="action_edit_defaults"/>
+    </widget>
     <addaction name="view_dock_widgets"/>
     <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
@@ -120,6 +127,7 @@
     <addaction name="action_view_fit_grains_config"/>
     <addaction name="action_view_overlay_picks"/>
     <addaction name="view_recent_images"/>
+    <addaction name="colormaps_menu"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
@@ -249,7 +257,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>753</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">
@@ -261,8 +269,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>550</width>
-          <height>753</height>
+          <width>127</width>
+          <height>49</height>
          </rect>
         </property>
         <attribute name="label">
@@ -737,6 +745,22 @@
   <action name="action_edit_apply_pinhole_mask">
    <property name="text">
     <string>Apply Pinhole Mask</string>
+   </property>
+  </action>
+  <action name="action_show_all_colormaps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show all colormaps</string>
+   </property>
+  </action>
+  <action name="action_edit_defaults">
+   <property name="text">
+    <string>Edit defaults</string>
    </property>
   </action>
  </widget>

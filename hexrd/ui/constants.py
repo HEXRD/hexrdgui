@@ -2,6 +2,8 @@ from enum import Enum
 
 from hexrd import constants
 
+from matplotlib import cm
+
 # Wavelength to kilo electron volt conversion
 WAVELENGTH_TO_KEV = constants.keVToAngstrom(1.)
 KEV_TO_WAVELENGTH = constants.keVToAngstrom(1.)
@@ -82,3 +84,7 @@ KNOWN_HDF5_PATHS = [
     ['ATTRIBUTES/PSL_IMAGE/DATA', 'DATA'],
     ['DATA', 'DATA'],
 ]
+
+DEFAULT_LIMITED_CMAPS = [
+    'Greys', 'inferno', 'plasma', 'viridis', 'magma', 'Reds', 'Blues']
+ALL_CMAPS = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
