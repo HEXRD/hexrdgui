@@ -134,7 +134,8 @@ class InteractiveTemplate:
                     shape.set_closed(False)
                 self.raw_axes.add_patch(shape)
             if self.shape:
-                self.shape = self.raw_axes.patches.pop()
+                self.shape = self.raw_axes.patches[-1]
+                self.shape.remove()
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
                 self.raw_axes.add_patch(self.shape)
                 if self.translating:
