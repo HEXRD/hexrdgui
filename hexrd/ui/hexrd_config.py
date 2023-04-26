@@ -341,7 +341,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('azimuthal_overlays', []),
             ('show_azimuthal_legend', True),
             ('show_all_colormaps', False),
-            ('limited_cmaps_list', []),
+            ('limited_cmaps_list', constants.DEFAULT_LIMITED_CMAPS),
             ('default_cmap', constants.DEFAULT_CMAP)
         ]
 
@@ -396,12 +396,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         """
         Update HexrdConfig using a loaded state.
         """
-
-        # The "active_material_name" is a special case that will be set to
-        # "previous_active_material".
-        # We need to set euler_angle_convention and overlays in a special way
         skip = [
+            # The "active_material_name" is a special case that will be set to
+            # "previous_active_material".
             'active_material_name',
+            # We need to set euler_angle_convention and overlays in a special way
             'euler_angle_convention',
             'overlays_dictified',
         ]
@@ -409,6 +408,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if self.loading_state:
             # Do not load default materials if we are loading state
             skip.append('_imported_default_materials')
+            skip += [
+                # Skip colormap settings
+                'show_all_colormaps',
+                'limited_cmaps_list',
+                'default_cmap',
+            ]
 
         try:
             for name, value in state.items():

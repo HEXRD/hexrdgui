@@ -1251,10 +1251,7 @@ class MainWindow(QObject):
 
     def on_action_show_all_colormaps_toggled(self, checked):
         HexrdConfig().show_all_colormaps = checked
-        if checked:
-            self.color_map_editor.load_cmaps()
-        else:
-            self.color_map_editor.load_cmaps()
+        self.color_map_editor.load_cmaps()
 
     def on_action_edit_defaults_toggled(self):
         self._edit_colormap_list_dialog.show()

@@ -34,11 +34,13 @@ class EditColormapListDialog(QObject):
 
     def setup_gui(self):
         all_cmaps = constants.ALL_CMAPS
-        self.ui.unused_colormaps.addItems(all_cmaps)
-        if not (defaults := HexrdConfig().limited_cmaps_list):
-            defaults = [self.ui.unused_colormaps.findItems(
+        used_list = HexrdConfig().limited_cmaps_list
+        unused_list = [cmap for cmap in all_cmaps if cmap not in used_list]
+        self.ui.unused_colormaps.addItems(unused_list)
+        if not used_list:
+            used_list = [self.ui.unused_colormaps.findItems(
                 HexrdConfig().default_cmap, Qt.MatchExactly)[0].text()]
-        self.ui.user_colormaps.addItems(defaults)
+        self.ui.user_colormaps.addItems(used_list)
 
     def add_cmap(self):
         selected_rows = self.ui.unused_colormaps.selectedIndexes()
