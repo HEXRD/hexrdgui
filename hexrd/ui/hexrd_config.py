@@ -340,7 +340,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
             ('show_azimuthal_legend', True),
-            ('show_all_colormaps', False),
+            ('show_all_colormaps', True),
             ('limited_cmaps_list', []),
             ('default_cmap', constants.DEFAULT_CMAP)
         ]
