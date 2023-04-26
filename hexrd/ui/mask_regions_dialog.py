@@ -235,14 +235,9 @@ class MaskRegionsDialog(QObject):
 
     def apply_masks(self):
         self.disconnect()
-        self.patches.clear()
-        self.added_patches.clear()
-        if hasattr(self.canvas, 'axis'):
-            self.canvas.axis.patches.clear()
-        for canvas in self.parent.image_tab_widget.active_canvases:
-            for axes in canvas.raw_axes.values():
-                axes.patches.clear()
         self.create_masks()
+        while self.added_patches:
+            self.discard_patch()
         self.new_mask_added.emit(self.image_mode)
 
     def cancel(self):
