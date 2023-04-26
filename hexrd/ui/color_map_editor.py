@@ -68,6 +68,7 @@ class ColorMapEditor:
                 additional_cmaps = [c for c in cmaps if c not in limited]
                 self.ui.color_map.insertSeparator(len(limited))
                 self.ui.color_map.addItems(additional_cmaps)
+                self.ui.color_map.setCurrentText(old_selection)
             else:
                 if old_selection in limited:
                     self.ui.color_map.setCurrentText(old_selection)
