@@ -341,7 +341,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('azimuthal_overlays', []),
             ('show_azimuthal_legend', True),
             ('show_all_colormaps', False),
-            ('limited_cmaps_list', [])
+            ('limited_cmaps_list', []),
+            ('default_cmap', constants.DEFAULT_CMAP)
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
