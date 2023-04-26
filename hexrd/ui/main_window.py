@@ -194,7 +194,7 @@ class MainWindow(QObject):
         self.ui.action_edit_apply_polygon_mask.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
         self.ui.action_edit_apply_pinhole_mask.triggered.connect(
-            self.apply_pinhole_mask)
+            self.show_pinhole_mask_dialog)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
             self.on_action_edit_reset_instrument_config)
         self.ui.action_edit_refinements.triggered.connect(
@@ -743,15 +743,19 @@ class MainWindow(QObject):
         mrd.new_mask_added.connect(self.new_mask_added.emit)
         mrd.show()
 
-    def apply_pinhole_mask(self):
-        d = PinholeMaskDialog(self.ui)
-        if not d.exec_():
-            return
+    def show_pinhole_mask_dialog(self):
+        if not hasattr(self, '_pinhole_mask_dialog'):
+            self._pinhole_mask_dialog = PinholeMaskDialog(self.ui)
+            self._pinhole_mask_dialog.apply_clicked.connect(
+                self.apply_pinhole_mask)
 
+        self._pinhole_mask_dialog.show()
+
+    def apply_pinhole_mask(self, radius, thickness):
         kwargs = {
             'instr': create_hedm_instrument(),
-            'pinhole_radius': d.pinhole_radius,
-            'pinhole_thickness': d.pinhole_thickness,
+            'pinhole_radius': radius,
+            'pinhole_thickness': thickness,
         }
         ph_buffer = generate_pinhole_panel_buffer(**kwargs)
 
@@ -773,11 +777,11 @@ class MainWindow(QObject):
 
                 ph_masks.append((det_key, contour))
 
-        name = unique_name(HexrdConfig().raw_mask_coords,
-                           'pinhole_mask_0')
-
+        # Overwrite previous pinhole masks
+        name = 'pinhole_mask'
         HexrdConfig().raw_mask_coords[name] = ph_masks
-        HexrdConfig().visible_masks.append(name)
+        if name not in HexrdConfig().visible_masks:
+            HexrdConfig().visible_masks.append(name)
 
         HexrdConfig().raw_masks_changed.emit()
 
