@@ -1,7 +1,6 @@
 from PySide2.QtCore import QObject, Qt
 
-from matplotlib import cm
-
+from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 
@@ -34,7 +33,7 @@ class EditColormapListDialog(QObject):
         self.ui.button_box.accepted.connect(self.finalize)
 
     def setup_gui(self):
-        all_cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
+        all_cmaps = constants.ALL_CMAPS
         self.ui.unused_colormaps.addItems(all_cmaps)
         if not (defaults := HexrdConfig().limited_cmaps_list):
             defaults = [self.ui.unused_colormaps.findItems(

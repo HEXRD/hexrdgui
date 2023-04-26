@@ -5,6 +5,7 @@ import matplotlib.colors
 
 import numpy as np
 
+from hexrd.ui import constants
 from hexrd.ui.brightness_contrast_editor import BrightnessContrastEditor
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.scaling import SCALING_OPTIONS
@@ -56,7 +57,7 @@ class ColorMapEditor:
 
     def load_cmaps(self):
         if not (cmaps := HexrdConfig().limited_cmaps_list):
-            cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
+            cmaps = constants.ALL_CMAPS
 
         with block_signals(self.ui.color_map):
             old_selection = self.ui.color_map.currentText()
@@ -71,7 +72,7 @@ class ColorMapEditor:
 
     def load_all_cmaps(self):
         limited = HexrdConfig().default_cmap
-        cmaps = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
+        cmaps = constants.ALL_CMAPS
         additional_cmaps = [c for c in cmaps if c not in limited]
         self.ui.color_map.insertSeparator(len(limited))
         self.ui.color_map.addItems(additional_cmaps)
