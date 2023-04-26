@@ -250,7 +250,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.max_cpus = None
         self.azimuthal_overlays = []
         self.show_azimuthal_legend = True
-        self.show_all_colormaps = True
+        self.show_all_colormaps = False
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
         self.default_cmap = constants.DEFAULT_CMAP
 
@@ -340,7 +340,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
             ('show_azimuthal_legend', True),
-            ('show_all_colormaps', True),
+            ('show_all_colormaps', False),
             ('limited_cmaps_list', []),
             ('default_cmap', constants.DEFAULT_CMAP)
         ]

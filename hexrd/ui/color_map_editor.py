@@ -75,7 +75,9 @@ class ColorMapEditor:
                     # We're viewing the limited list but the color map that
                     # was selected is not in that list.
                     self.ui.color_map.setCurrentIndex(0)
-                self.update_cmap()
+
+                if self.ui.color_map.currentText():
+                    self.update_cmap()
 
     def setup_scaling_options(self):
         options = list(SCALING_OPTIONS.keys())
