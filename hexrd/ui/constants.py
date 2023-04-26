@@ -85,4 +85,6 @@ KNOWN_HDF5_PATHS = [
     ['DATA', 'DATA'],
 ]
 
+DEFAULT_LIMITED_CMAPS = [
+    'Greys', 'inferno', 'plasma', 'viridis', 'magma', 'Reds', 'Blues']
 ALL_CMAPS = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))

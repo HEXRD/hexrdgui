@@ -251,7 +251,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.azimuthal_overlays = []
         self.show_azimuthal_legend = True
         self.show_all_colormaps = True
-        self.limited_cmaps_list = [constants.DEFAULT_CMAP]
+        self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
         self.default_cmap = constants.DEFAULT_CMAP
 
         self.setup_logging()
