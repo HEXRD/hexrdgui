@@ -41,6 +41,7 @@ class EditColormapListDialog(QObject):
             used_list = [self.ui.unused_colormaps.findItems(
                 HexrdConfig().default_cmap, Qt.MatchExactly)[0].text()]
         self.ui.user_colormaps.addItems(used_list)
+        self.ui.default_colormap_text.setText(self.default)
 
     def add_cmap(self):
         selected_rows = self.ui.unused_colormaps.selectedIndexes()
