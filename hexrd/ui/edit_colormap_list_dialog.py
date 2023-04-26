@@ -8,8 +8,8 @@ from hexrd.ui.ui_loader import UiLoader
 
 class EditColormapListDialog(QObject):
 
-    def __init__(self, parent=None, cmap_editor=None):
-        super(EditColormapListDialog, self).__init__(parent)
+    def __init__(self, parent, cmap_editor):
+        super().__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file('edit_colormaps_dialog.ui', parent)
         flags = self.ui.windowFlags()

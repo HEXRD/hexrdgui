@@ -136,6 +136,9 @@ class MainWindow(QObject):
 
         self.mask_manager_dialog = MaskManagerDialog(self.ui)
 
+        self._edit_colormap_list_dialog = EditColormapListDialog(
+            self.ui, self.color_map_editor)
+
         self.setup_connections()
 
         self.update_config_gui()
@@ -1254,5 +1257,4 @@ class MainWindow(QObject):
         HexrdConfig().show_all_colormaps = checked
 
     def on_action_edit_defaults_toggled(self):
-        dialog = EditColormapListDialog(self.ui, self.color_map_editor)
-        dialog.show()
+        self._edit_colormap_list_dialog.show()
