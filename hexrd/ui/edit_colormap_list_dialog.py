@@ -91,6 +91,6 @@ class EditColormapListDialog(QObject):
         HexrdConfig().limited_cmaps_list = self.user_colormaps
         HexrdConfig().default_cmap = self.default
         if HexrdConfig().show_all_colormaps:
-            self.cmap_editor.load_all_cmaps()
+            self.cmap_editor.load_cmaps()
         else:
             self.cmap_editor.load_cmaps()

@@ -56,26 +56,26 @@ class ColorMapEditor:
             self.update_bc_editor()
 
     def load_cmaps(self):
-        if not (cmaps := HexrdConfig().limited_cmaps_list):
-            cmaps = constants.ALL_CMAPS
+        limited = HexrdConfig().limited_cmaps_list
 
         with block_signals(self.ui.color_map):
             old_selection = self.ui.color_map.currentText()
             self.ui.color_map.clear()
-            self.ui.color_map.addItems(cmaps)
+            self.ui.color_map.addItems(limited)
 
-        if old_selection in cmaps:
-            self.ui.color_map.setCurrentText(old_selection)
-        else:
-            self.ui.color_map.setCurrentText(HexrdConfig().default_cmap)
-        self.update_cmap()
-
-    def load_all_cmaps(self):
-        limited = HexrdConfig().default_cmap
-        cmaps = constants.ALL_CMAPS
-        additional_cmaps = [c for c in cmaps if c not in limited]
-        self.ui.color_map.insertSeparator(len(limited))
-        self.ui.color_map.addItems(additional_cmaps)
+            if HexrdConfig().show_all_colormaps:
+                cmaps = constants.ALL_CMAPS
+                additional_cmaps = [c for c in cmaps if c not in limited]
+                self.ui.color_map.insertSeparator(len(limited))
+                self.ui.color_map.addItems(additional_cmaps)
+            else:
+                if old_selection in limited:
+                    self.ui.color_map.setCurrentText(old_selection)
+                else:
+                    # We're viewing the limited list but the color map that
+                    # was selected is not in that list.
+                    self.ui.color_map.setCurrentIndex(0)
+                self.update_cmap()
 
     def setup_scaling_options(self):
         options = list(SCALING_OPTIONS.keys())

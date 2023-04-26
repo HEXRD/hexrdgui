@@ -1250,11 +1250,11 @@ class MainWindow(QObject):
         QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
 
     def on_action_show_all_colormaps_toggled(self, checked):
+        HexrdConfig().show_all_colormaps = checked
         if checked:
-            self.color_map_editor.load_all_cmaps()
+            self.color_map_editor.load_cmaps()
         else:
             self.color_map_editor.load_cmaps()
-        HexrdConfig().show_all_colormaps = checked
 
     def on_action_edit_defaults_toggled(self):
         self._edit_colormap_list_dialog.show()
