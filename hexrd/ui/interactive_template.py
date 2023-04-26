@@ -109,7 +109,7 @@ class InteractiveTemplate:
 
     def clear(self):
         if self.shape in self.raw_axes.patches:
-            self.raw_axes.patches.remove(self.shape)
+            self.shape.remove()
             self.redraw()
         self.total_rotation = 0.
 

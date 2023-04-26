@@ -133,21 +133,14 @@ class MaskRegionsDialog(QObject):
     def discard_patch(self):
         det = self.added_patches.pop()
         self.raw_mask_coords.pop()
-        return self.patches[det].pop(), det
+        self.patches[det].pop().remove()
 
     def undo_selection(self):
         if not self.added_patches:
             return
 
-        last_patch, det = self.discard_patch()
-        if det == ViewType.polar and hasattr(self.canvas, 'axis'):
-            self.canvas.axis.patches.remove(last_patch)
-        else:
-            for a in self.canvas.raw_axes.values():
-                if a.get_title() == det:
-                    a.patches.remove(last_patch)
+        self.discard_patch()
         self.canvas.draw_idle()
-
         self.update_undo_enable_state()
 
     def axes_entered(self, event):
@@ -255,13 +248,6 @@ class MaskRegionsDialog(QObject):
     def cancel(self):
         while self.added_patches:
             self.discard_patch()
-
-        if hasattr(self.canvas, 'axis'):
-            self.canvas.axis.patches.clear()
-        else:
-            for canvas in self.parent.image_tab_widget.active_canvases:
-                for axes in canvas.raw_axes.values():
-                    axes.patches.clear()
 
         self.disconnect()
         if self.canvas is not None:
