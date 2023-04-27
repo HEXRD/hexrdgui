@@ -2492,7 +2492,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # Ensure that the panel buffer sizes match the pixel sizes.
         # If not, clear the panel buffer and print a warning.
         for name, det_info in self.detectors.items():
-            buffer = det_info['buffer']['value']
+            buffer = det_info.get('buffer', {}).get('value')
             if buffer is None:
                 continue
 
