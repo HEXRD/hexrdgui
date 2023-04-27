@@ -43,7 +43,7 @@ class LLNLImportToolDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('llnl_import_tool_dialog.ui', parent)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.Tool | Qt.FramelessWindowHint)
 
         add_help_url(self.ui.button_box,
                      'configuration/images/#llnl-import-tool')
