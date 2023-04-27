@@ -26,6 +26,7 @@ class InteractiveTemplate:
         self.translating = True
         self.shape_styles = []
         self.translation = [0, 0]
+        self.complete = False
         self.parent.setFocusPolicy(Qt.ClickFocus)
 
     @property
@@ -41,6 +42,7 @@ class InteractiveTemplate:
         self.redraw()
 
     def create_shape(self, module, file_name, det, instr):
+        self.complete = False
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
         verts = self.panels['default'].cartToPixel(data)
@@ -161,6 +163,7 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
         self.total_rotation = 0.
+        self.complete = True
 
     def mask(self):
         col, row = self.cropped_shape.T

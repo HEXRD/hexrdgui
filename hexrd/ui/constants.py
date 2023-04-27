@@ -88,3 +88,10 @@ KNOWN_HDF5_PATHS = [
 DEFAULT_LIMITED_CMAPS = [
     'Greys', 'inferno', 'plasma', 'viridis', 'magma', 'Reds', 'Blues']
 ALL_CMAPS = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
+
+
+class LLNLTransform:
+    IP2 = UI_TRANS_INDEX_FLIP_HORIZONTALLY
+    IP3 = UI_TRANS_INDEX_FLIP_VERTICALLY
+    IP4 = UI_TRANS_INDEX_FLIP_VERTICALLY
+    PXRDIP = UI_TRANS_INDEX_FLIP_HORIZONTALLY

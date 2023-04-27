@@ -138,13 +138,24 @@ class ImageFileManager(metaclass=Singleton):
         return ims
 
     def is_hdf(self, extension):
-        hdf_extensions = ['.h4', '.hdf4', '.hdf', '.h5', '.hdf5', '.he5']
-        if extension in hdf_extensions:
-            return True
+        return self.is_hdf4(extension) or self.is_hdf5(extension)
 
+    def is_hdf4(self, extension):
+        return extension in self.HDF4_FILE_EXTS
+
+    def is_hdf5(self, extension):
+        return extension in self.HDF5_FILE_EXTS
+
+    def hdf_path_exists(self, f):
+        ext = os.path.splitext(f)[1] if isinstance(f, str) else None
+        if self.is_hdf5(ext):
+            return self.hdf5_path_exists(f)
+        elif self.is_hdf4(ext):
+            # FIXME: implement an hdf4 path check
+            pass
         return False
 
-    def path_exists(self, f):
+    def hdf5_path_exists(self, f):
         all_paths = []
         if HexrdConfig().hdf5_path is not None:
             all_paths.append(HexrdConfig().hdf5_path)
