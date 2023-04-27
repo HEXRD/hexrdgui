@@ -122,7 +122,6 @@ class LLNLImportToolDialog(QObject):
             self.defaults = yaml.load(text, Loader=yaml.FullLoader)
         self.detector_defaults['default_config'] = self.defaults
         self.set_detector_options()
-        return True
 
     def set_detector_options(self):
         self.detectors.clear()
@@ -142,10 +141,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_file_label.setText(os.path.basename(self.config_file))
         self.ui.config_file_label.setToolTip(self.config_file)
         if self.ui.instrument.isEnabled():
-            # Only set the instrument config once
-            success = self.get_instrument_defaults()
-            if not success:
-                return
+            self.get_instrument_defaults()
 
     def instrument_selected(self, idx):
         if HexrdConfig().show_beam_marker:
@@ -187,10 +183,7 @@ class LLNLImportToolDialog(QObject):
             self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
                                 enabled=True)
         if self.ui.instrument.isEnabled():
-            # Only set the instrument config once
-            success = self.get_instrument_defaults()
-            if not success:
-                return
+            self.get_instrument_defaults()
 
     def update_config_load(self, checked):
         self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
