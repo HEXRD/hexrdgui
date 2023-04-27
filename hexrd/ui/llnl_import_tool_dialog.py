@@ -252,7 +252,7 @@ class LLNLImportToolDialog(QObject):
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_file)[1]
             if (ImageFileManager().is_hdf(ext) and not
-                    ImageFileManager().path_exists(selected_file)):
+                    ImageFileManager().hdf_path_exists(selected_file)):
                 path_selected = ImageFileManager().path_prompt(selected_file)
                 if not path_selected:
                     return
