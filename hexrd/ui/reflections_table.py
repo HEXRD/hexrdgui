@@ -9,6 +9,7 @@ from PySide2.QtWidgets import QTableWidgetItem
 from hexrd.crystallography import hklToStr
 
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.reflections_selection_helper import ReflectionsSelectionHelper
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals, exclusions_off, tth_max_off
 from hexrd.ui.utils.dialog import add_help_url
@@ -35,10 +36,13 @@ class ReflectionsTable:
         add_help_url(self.ui.button_box,
                      'configuration/materials/#reflections-table')
 
-        self.setup_connections()
-
         self.title_prefix = title_prefix
         self._material = material
+        self.selection_helper = ReflectionsSelectionHelper(self.material,
+                                                           self.ui)
+
+        self.setup_connections()
+
         self.update_material_name()
         self.populate_relative_scale_options()
         self.update_table()
@@ -58,6 +62,12 @@ class ReflectionsTable:
 
         self.ui.relative_scale_material.currentIndexChanged.connect(
             self.on_relative_scale_material_changed)
+
+        self.ui.show_selection_helper.clicked.connect(
+            self.show_selection_helper)
+
+        self.selection_helper.apply_clicked.connect(
+            self.on_selection_helper_apply)
 
     def populate_relative_scale_options(self):
         old_setting = self.relative_scale_material_name
@@ -102,6 +112,7 @@ class ReflectionsTable:
         # Change the relative scale material name to match the
         # new material's name.
         self.relative_scale_material_name = self.material.name
+        self.update_selection_helper_material()
         self.update_table()
 
     @property
@@ -119,6 +130,10 @@ class ReflectionsTable:
     def show(self):
         self.ui.show()
 
+    def hide(self):
+        self.ui.hide()
+        self.hide_selection_helper()
+
     def on_materials_removed(self):
         # If our material isn't the active material, and it was removed,
         # hide it. If it is the active material, it will be changed elsewhere.
@@ -126,7 +141,7 @@ class ReflectionsTable:
             return
 
         if self.material.name not in HexrdConfig().materials:
-            self.ui.hide()
+            self.hide()
 
     def on_material_renamed(self, old_name, new_name):
         if self.relative_scale_material_name == old_name:
@@ -138,6 +153,7 @@ class ReflectionsTable:
 
     def update_material_name(self):
         self.ui.setWindowTitle(f'{self.title_prefix}{self.material.name}')
+        self.update_selection_helper_material_name()
 
     def update_selections(self):
         # This updates the exclusions based upon the selected rows
@@ -349,6 +365,37 @@ class ReflectionsTable:
         # Rescale the other structure factor to be between 0 and 100
         return ((sf - compare_sf.min()) /
                 (compare_sf.max() - compare_sf.min()) * 100)
+
+    def update_selection_helper_material(self):
+        self.selection_helper.material = self.material
+
+    def update_selection_helper_material_name(self):
+        self.selection_helper.update_material_name()
+
+    def show_selection_helper(self):
+        self.selection_helper.show()
+
+    def hide_selection_helper(self):
+        self.selection_helper.hide()
+
+    def on_selection_helper_apply(self):
+        d = self.selection_helper
+        min_sfac = d.min_sfac
+        max_sfac = d.max_sfac
+
+        exclusions = np.zeros_like(self.exclusions, dtype=bool)
+
+        if min_sfac is not None or max_sfac is not None:
+            sf = self.rescaled_structure_factor
+            if min_sfac:
+                exclusions[sf < min_sfac] = True
+            if max_sfac:
+                exclusions[sf > max_sfac] = True
+
+        self.exclusions = exclusions
+        # update_selected_rows() would be better here, but it doesn't always update
+        # unless we update the whole table.
+        self.update_table()
 
 
 class HklTableItem(QTableWidgetItem):
