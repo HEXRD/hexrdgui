@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>650</width>
-    <height>210</height>
+    <height>329</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -110,6 +110,13 @@
        <string>Multiplicity</string>
       </property>
      </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Help</set>
+     </property>
     </widget>
    </item>
   </layout>

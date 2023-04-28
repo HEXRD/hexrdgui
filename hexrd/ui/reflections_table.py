@@ -11,6 +11,7 @@ from hexrd.crystallography import hklToStr
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals, exclusions_off, tth_max_off
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class COLUMNS:
@@ -31,6 +32,9 @@ class ReflectionsTable:
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
         self.setup_connections()
+
+        add_help_url(self.ui.button_box,
+                     'configuration/materials/#reflections-table')
 
         self.title_prefix = title_prefix
         self._material = material
