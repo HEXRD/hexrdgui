@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -249,7 +249,7 @@
      <item>
       <widget class="QToolBox" name="config_tool_box">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="materials_page">
         <property name="geometry">
@@ -257,7 +257,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>753</height>
          </rect>
         </property>
         <attribute name="label">
@@ -269,8 +269,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>127</width>
-          <height>49</height>
+          <width>550</width>
+          <height>753</height>
          </rect>
         </property>
         <attribute name="label">
@@ -307,6 +307,21 @@
              <string>Tree View</string>
             </attribute>
            </widget>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDialogButtonBox" name="config_button_box">
+           <property name="geometry">
+            <rect>
+             <x>180</x>
+             <y>630</y>
+             <width>175</width>
+             <height>28</height>
+            </rect>
+           </property>
+           <property name="standardButtons">
+            <set>QDialogButtonBox::Help</set>
+           </property>
           </widget>
          </item>
         </layout>
