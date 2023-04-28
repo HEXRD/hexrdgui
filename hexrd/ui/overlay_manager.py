@@ -10,6 +10,7 @@ from hexrd.ui.overlay_editor import OverlayEditor
 from hexrd.ui.overlay_style_picker import OverlayStylePicker
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 
 COLUMNS = {
@@ -30,6 +31,8 @@ class OverlayManager:
         self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box, 'configuration/overlays/')
 
         self.material_combos = []
         self.type_combos = []
