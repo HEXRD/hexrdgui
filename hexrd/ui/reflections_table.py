@@ -47,6 +47,7 @@ class ReflectionsTable:
         self.ui.table.selectionModel().selectionChanged.connect(
             self.update_selections)
 
+        HexrdConfig().materials_removed.connect(self.on_materials_removed)
         HexrdConfig().material_renamed.connect(self.on_material_renamed)
         HexrdConfig().materials_dict_modified.connect(
             self.on_materials_dict_modified)
@@ -117,6 +118,15 @@ class ReflectionsTable:
 
     def show(self):
         self.ui.show()
+
+    def on_materials_removed(self):
+        # If our material isn't the active material, and it was removed,
+        # hide it. If it is the active material, it will be changed elsewhere.
+        if HexrdConfig().active_material is self.material:
+            return
+
+        if self.material.name not in HexrdConfig().materials:
+            self.ui.hide()
 
     def on_material_renamed(self, old_name, new_name):
         if self.relative_scale_material_name == old_name:
