@@ -49,7 +49,7 @@ class OverlayManager:
         self.ui.edit_style_button.pressed.connect(self.edit_style)
         HexrdConfig().update_overlay_editor.connect(self.update_overlay_editor)
         HexrdConfig().materials_added.connect(self.update_table)
-        HexrdConfig().material_renamed.connect(self.update_table)
+        HexrdConfig().material_renamed.connect(self.on_material_renamed)
         HexrdConfig().materials_removed.connect(self.update_table)
 
         HexrdConfig().state_loaded.connect(self.update_table)
@@ -87,6 +87,9 @@ class OverlayManager:
         cb.currentIndexChanged.connect(self.update_config_materials)
         self.material_combos.append(cb)
         return self.create_table_widget(cb)
+
+    def on_material_renamed(self, old_name, new_name):
+        self.update_table()
 
     def create_type_combo(self, v):
         types = list(OverlayType)

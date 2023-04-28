@@ -50,7 +50,7 @@ class AzimuthalOverlayManager:
         self.ui.save_plot.clicked.connect(
             HexrdConfig().azimuthal_plot_save_requested.emit)
         HexrdConfig().materials_added.connect(self.update_table)
-        HexrdConfig().material_renamed.connect(self.update_table)
+        HexrdConfig().material_renamed.connect(self.on_material_renamed)
         HexrdConfig().materials_removed.connect(self.update_table)
 
         HexrdConfig().state_loaded.connect(self.update_table)
@@ -59,6 +59,9 @@ class AzimuthalOverlayManager:
     def show(self):
         self.update_table()
         self.ui.show()
+
+    def on_material_renamed(self, old_name, new_name):
+        self.update_table()
 
     def create_materials_combo(self, v):
         materials = list(HexrdConfig().materials.keys())
