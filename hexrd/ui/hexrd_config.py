@@ -133,8 +133,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the materials dict is modified in any way"""
     materials_dict_modified = Signal()
 
-    """Emitted when a material is renamed"""
-    material_renamed = Signal()
+    """Emitted when a material is renamed
+
+    First argument is the old name, and second argument is the new name
+    """
+    material_renamed = Signal(str, str)
 
     """Emitted when materials were added"""
     materials_added = Signal()
@@ -309,7 +312,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         ]
 
         for signal in materials_dict_modified_signals:
-            signal.connect(self.materials_dict_modified.emit)
+            # Ignore all arguments when emitting that the materials dict was
+            # modified.
+            signal.connect(lambda *args: self.materials_dict_modified.emit())
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
         self.material_modified.connect(self.check_active_material_changed)
@@ -1551,7 +1556,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # if we did self.active_material = new_name
             self.config['materials']['active_material'] = new_name
 
-        self.material_renamed.emit()
+        self.material_renamed.emit(old_name, new_name)
 
     def modify_material(self, name, material):
         if name not in self.materials:

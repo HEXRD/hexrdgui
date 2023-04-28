@@ -10,10 +10,7 @@
     <height>329</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_7">
-   <property name="spacing">
-    <number>0</number>
-   </property>
+  <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -26,7 +23,31 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item>
+   <item row="2" column="0">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Help</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="relative_scale_material_label">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale the structure factor relative to the selected material (by default, the same material). The structure factor is then rescaled to be between 0 and 100.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Scale |F|² relative to:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QComboBox" name="relative_scale_material">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale the structure factor relative to the selected material (by default, the same material). The structure factor is then rescaled to be between 0 and 100.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="3">
     <widget class="QTableWidget" name="table">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;left click a row to activate the hkl&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -110,13 +131,6 @@
        <string>Multiplicity</string>
       </property>
      </column>
-    </widget>
-   </item>
-   <item>
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Help</set>
-     </property>
     </widget>
    </item>
   </layout>

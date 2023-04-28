@@ -31,25 +31,62 @@ class ReflectionsTable:
         self.ui = loader.load_file('reflections_table.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
-        self.setup_connections()
 
         add_help_url(self.ui.button_box,
                      'configuration/materials/#reflections-table')
 
+        self.setup_connections()
+
         self.title_prefix = title_prefix
         self._material = material
         self.update_material_name()
+        self.populate_relative_scale_options()
         self.update_table()
 
     def setup_connections(self):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.update_selections)
 
+        HexrdConfig().materials_removed.connect(self.on_materials_removed)
+        HexrdConfig().material_renamed.connect(self.on_material_renamed)
+        HexrdConfig().materials_dict_modified.connect(
+            self.on_materials_dict_modified)
         HexrdConfig().active_material_modified.connect(
             self.active_material_modified)
-        HexrdConfig().material_renamed.connect(self.update_material_name)
         HexrdConfig().update_reflections_tables.connect(
             self.update_table_if_name_matches)
+
+        self.ui.relative_scale_material.currentIndexChanged.connect(
+            self.on_relative_scale_material_changed)
+
+    def populate_relative_scale_options(self):
+        old_setting = self.relative_scale_material_name
+        if not old_setting:
+            old_setting = self.material.name
+
+        old_setting_found = False
+
+        w = self.ui.relative_scale_material
+        with block_signals(w):
+            w.clear()
+            names = list(HexrdConfig().materials)
+            w.addItems(names)
+
+            if old_setting in names:
+                w.setCurrentText(old_setting)
+                old_setting_found = True
+
+        if not old_setting_found:
+            # Default to the current material and trigger an update
+            w.setCurrentText(self.material.name)
+
+    def on_relative_scale_material_changed(self):
+        # For now, just update the whole table
+        self.update_table()
+
+    def on_materials_dict_modified(self):
+        # Re-populate the relative scale settings
+        self.populate_relative_scale_options()
 
     @property
     def material(self):
@@ -62,10 +99,42 @@ class ReflectionsTable:
 
         self._material = m
         self.update_material_name()
+        # Change the relative scale material name to match the
+        # new material's name.
+        self.relative_scale_material_name = self.material.name
         self.update_table()
+
+    @property
+    def relative_scale_material(self):
+        return HexrdConfig().material(self.relative_scale_material_name)
+
+    @property
+    def relative_scale_material_name(self):
+        return self.ui.relative_scale_material.currentText()
+
+    @relative_scale_material_name.setter
+    def relative_scale_material_name(self, v):
+        self.ui.relative_scale_material.setCurrentText(v)
 
     def show(self):
         self.ui.show()
+
+    def on_materials_removed(self):
+        # If our material isn't the active material, and it was removed,
+        # hide it. If it is the active material, it will be changed elsewhere.
+        if HexrdConfig().active_material is self.material:
+            return
+
+        if self.material.name not in HexrdConfig().materials:
+            self.ui.hide()
+
+    def on_material_renamed(self, old_name, new_name):
+        if self.relative_scale_material_name == old_name:
+            # Need to update the combo box text
+            cb = self.ui.relative_scale_material
+            cb.setItemText(cb.currentIndex(), new_name)
+
+        self.update_material_name()
 
     def update_material_name(self):
         self.ui.setWindowTitle(f'{self.title_prefix}{self.material.name}')
@@ -125,6 +194,8 @@ class ReflectionsTable:
 
     def update_table_if_name_matches(self, name):
         if self.material.name == name:
+            # In case the relative material was deleted, update this
+            self.populate_relative_scale_options()
             self.update_table()
 
     def update_table(self):
@@ -147,9 +218,12 @@ class ReflectionsTable:
                     hkls = plane_data.getHKLs(asStr=True)
                     d_spacings = plane_data.getPlaneSpacings()
                     tth = plane_data.getTTh()
-                    sf = plane_data.structFact
                     powder_intensity = plane_data.powder_intensity
                     multiplicity = plane_data.getMultiplicity()
+
+                    # Since structure factors use arbitrary scaling, re-scale
+                    # them to a range that's easier on the eyes.
+                    sf = self.rescaled_structure_factor
 
             # Grab the hkl ids
             hkl_ids = [-1] * len(hkls)
@@ -160,10 +234,6 @@ class ReflectionsTable:
                     continue
                 else:
                     hkl_ids[idx] = hkl_data['hklID']
-
-            # Since structure factors use arbitrary scaling, re-scale them
-            # to a range that's easier on the eyes.
-            rescale_structure_factors(sf)
 
             self.update_hkl_index_maps(hkls)
 
@@ -253,6 +323,33 @@ class ReflectionsTable:
 
             item.setFlags(flags)
 
+    @property
+    def rescaled_structure_factor(self):
+        # Rescale structure factors according to the current relative
+        # material.
+
+        def get_sfact(pd):
+            # pd is a PlaneData object
+            with exclusions_off(pd):
+                with tth_max_off(pd):
+                    return pd.structFact
+
+        this_pd = self.material.planeData
+        compare_pd = self.relative_scale_material.planeData
+
+        sf = get_sfact(this_pd)
+        if len(sf) == 0:
+            return sf
+
+        if this_pd is compare_pd:
+            compare_sf = sf
+        else:
+            compare_sf = get_sfact(compare_pd)
+
+        # Rescale the other structure factor to be between 0 and 100
+        return ((sf - compare_sf.min()) /
+                (compare_sf.max() - compare_sf.min()) * 100)
+
 
 class HklTableItem(QTableWidgetItem):
     """Subclass so we can sort by HKLs instead of strings"""
@@ -310,11 +407,3 @@ def sorting_disabled(table):
         yield
     finally:
         table.setSortingEnabled(prev)
-
-
-def rescale_structure_factors(sf):
-    if len(sf) == 0:
-        return
-
-    # Rescale the structure factors to be between 0 and 100
-    sf[:] = np.interp(sf, (sf.min(), sf.max()), (0, 100))
