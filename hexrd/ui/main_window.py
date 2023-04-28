@@ -67,6 +67,7 @@ from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
 from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals, unique_name
+from hexrd.ui.utils.dialog import add_help_url
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrd.ui import state
 
@@ -133,6 +134,9 @@ class MainWindow(QObject):
             self.instrument_form_view_widget.ui, tab_texts[1])
         self.ui.calibration_tab_widget.addTab(
             self.calibration_slider_widget.ui, tab_texts[2])
+
+        url = 'configuration/instrument/'
+        add_help_url(self.ui.config_button_box, url)
 
         self.mask_manager_dialog = MaskManagerDialog(self.ui)
 

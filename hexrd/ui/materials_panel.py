@@ -15,6 +15,7 @@ from hexrd.ui.material_structure_editor import MaterialStructureEditor
 from hexrd.ui.overlay_manager import OverlayManager
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class MaterialsPanel(QObject):
@@ -42,6 +43,9 @@ class MaterialsPanel(QObject):
 
         # Turn off autocomplete for the QComboBox
         self.ui.materials_combo.setCompleter(None)
+
+        url = 'configuration/materials/'
+        add_help_url(self.ui.button_box, url)
 
         self.setup_connections()
 
