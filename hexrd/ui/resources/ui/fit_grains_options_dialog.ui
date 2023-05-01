@@ -40,10 +40,119 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="2">
+     <item row="0" column="3" colspan="2">
       <widget class="QComboBox" name="material"/>
      </item>
-     <item row="2" column="2">
+     <item row="4" column="3">
+      <widget class="ScientificDoubleSpinBox" name="threshold">
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>25.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1" colspan="2">
+      <widget class="QLabel" name="num_hkls_selected">
+       <property name="text">
+        <string>Number of hkls selected:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="3">
+      <widget class="ScientificDoubleSpinBox" name="refit_pixel_scale">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>2.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="3">
+      <widget class="ScientificDoubleSpinBox" name="refit_ome_step_scale">
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="3">
+      <widget class="QPushButton" name="set_spots_directory">
+       <property name="text">
+        <string>Select Directory</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="4">
+      <widget class="QPushButton" name="apply_min_sfac">
+       <property name="text">
+        <string>Apply</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3" colspan="2">
+      <widget class="QPushButton" name="choose_hkls">
+       <property name="text">
+        <string>Choose HKLs</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" colspan="2">
+      <widget class="QLabel" name="material_label">
+       <property name="text">
+        <string>Selected Material:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="3">
+      <widget class="ScientificDoubleSpinBox" name="tth_max_value">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>20.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="ScientificDoubleSpinBox" name="min_sfac_value">
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>100.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>5.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
       <widget class="QSpinBox" name="npdiv">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -65,137 +174,65 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="material_label">
+     <item row="2" column="5">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>0</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="2" column="1" colspan="2">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>Selected Material:</string>
+        <string>Select HKLs by min |F|² ?</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
-      <widget class="ScientificDoubleSpinBox" name="refit_pixel_scale">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>2.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="num_hkls_selected">
-       <property name="text">
-        <string>Number of hkls selected:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="1">
-      <widget class="QCheckBox" name="write_out_spots">
-       <property name="text">
-        <string>Write out spots files</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="1">
-      <widget class="QCheckBox" name="tth_max_enable">
-       <property name="text">
-        <string>tth max</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLabel" name="threshold_label">
-       <property name="text">
-        <string>Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="2">
-      <widget class="ScientificDoubleSpinBox" name="tth_max_value">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>20.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QRadioButton" name="tth_max_specify">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">padding-left: 20px;</string>
-       </property>
-       <property name="text">
-        <string>Specify</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="2">
-      <widget class="ScientificDoubleSpinBox" name="refit_ome_step_scale">
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>1.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="2">
-      <widget class="QPushButton" name="set_spots_directory">
-       <property name="text">
-        <string>Select Directory</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="choose_hkls">
-       <property name="text">
-        <string>Choose HKLs</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="ScientificDoubleSpinBox" name="threshold">
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>25.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
+     <item row="3" column="1" colspan="2">
       <widget class="QLabel" name="npdiv_label">
        <property name="text">
         <string>Number of polar subdivisions</string>
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
+     <item row="4" column="1" colspan="2">
+      <widget class="QLabel" name="threshold_label">
+       <property name="text">
+        <string>Threshold</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1" colspan="2">
+      <widget class="QLabel" name="refit_pixel_labe">
+       <property name="text">
+        <string>Refit pixel scale</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1" colspan="2">
+      <widget class="QLabel" name="refit_ome_label">
+       <property name="text">
+        <string>Refit ome step scale</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1" colspan="2">
+      <widget class="QCheckBox" name="tth_max_enable">
+       <property name="text">
+        <string>tth max</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1" colspan="2">
       <widget class="QRadioButton" name="tth_max_instrument">
        <property name="enabled">
         <bool>false</bool>
@@ -212,17 +249,23 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QLabel" name="refit_pixel_labe">
+     <item row="9" column="1" colspan="2">
+      <widget class="QRadioButton" name="tth_max_specify">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">padding-left: 20px;</string>
+       </property>
        <property name="text">
-        <string>Refit pixel scale</string>
+        <string>Specify</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
-      <widget class="QLabel" name="refit_ome_label">
+     <item row="10" column="1" colspan="2">
+      <widget class="QCheckBox" name="write_out_spots">
        <property name="text">
-        <string>Refit ome step scale</string>
+        <string>Write out spots files</string>
        </property>
       </widget>
      </item>
@@ -367,6 +410,8 @@
   <tabstop>plot_grains</tabstop>
   <tabstop>material</tabstop>
   <tabstop>choose_hkls</tabstop>
+  <tabstop>min_sfac_value</tabstop>
+  <tabstop>apply_min_sfac</tabstop>
   <tabstop>npdiv</tabstop>
   <tabstop>threshold</tabstop>
   <tabstop>refit_pixel_scale</tabstop>
