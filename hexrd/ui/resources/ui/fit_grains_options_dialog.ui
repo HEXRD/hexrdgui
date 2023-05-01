@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>479</width>
+    <width>553</width>
     <height>834</height>
    </rect>
   </property>
@@ -40,65 +40,10 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="3" colspan="2">
-      <widget class="QComboBox" name="material"/>
-     </item>
-     <item row="4" column="3">
-      <widget class="ScientificDoubleSpinBox" name="threshold">
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>25.000000000000000</double>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="1" colspan="2">
       <widget class="QLabel" name="num_hkls_selected">
        <property name="text">
         <string>Number of hkls selected:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="3">
-      <widget class="ScientificDoubleSpinBox" name="refit_pixel_scale">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>2.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="3">
-      <widget class="ScientificDoubleSpinBox" name="refit_ome_step_scale">
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>1.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="3">
-      <widget class="QPushButton" name="set_spots_directory">
-       <property name="text">
-        <string>Select Directory</string>
        </property>
       </widget>
      </item>
@@ -109,33 +54,10 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="3" colspan="2">
-      <widget class="QPushButton" name="choose_hkls">
-       <property name="text">
-        <string>Choose HKLs</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="1" colspan="2">
       <widget class="QLabel" name="material_label">
        <property name="text">
         <string>Selected Material:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="3">
-      <widget class="ScientificDoubleSpinBox" name="tth_max_value">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>1000000.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>20.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -149,28 +71,6 @@
        </property>
        <property name="value">
         <double>5.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="3">
-      <widget class="QSpinBox" name="npdiv">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="value">
-        <number>2</number>
        </property>
       </widget>
      </item>
@@ -227,8 +127,11 @@
      </item>
      <item row="7" column="1" colspan="2">
       <widget class="QCheckBox" name="tth_max_enable">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enabling this will cause the HKLs to be modified again during fit-grains so that no HKLs above this tth max will be enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
-        <string>tth max</string>
+        <string>override tth max</string>
        </property>
       </widget>
      </item>
@@ -266,6 +169,106 @@
       <widget class="QCheckBox" name="write_out_spots">
        <property name="text">
         <string>Write out spots files</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3" colspan="3">
+      <widget class="QSpinBox" name="npdiv">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="value">
+        <number>2</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3" colspan="3">
+      <widget class="QComboBox" name="material"/>
+     </item>
+     <item row="1" column="3" colspan="3">
+      <widget class="QPushButton" name="choose_hkls">
+       <property name="text">
+        <string>Choose HKLs</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="3" colspan="3">
+      <widget class="ScientificDoubleSpinBox" name="threshold">
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>25.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="3" colspan="3">
+      <widget class="ScientificDoubleSpinBox" name="refit_pixel_scale">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>2.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="3" colspan="3">
+      <widget class="ScientificDoubleSpinBox" name="refit_ome_step_scale">
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="3" colspan="3">
+      <widget class="ScientificDoubleSpinBox" name="tth_max_value">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>20.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="3" colspan="3">
+      <widget class="QPushButton" name="set_spots_directory">
+       <property name="text">
+        <string>Select Directory</string>
        </property>
       </widget>
      </item>
