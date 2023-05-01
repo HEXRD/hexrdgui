@@ -703,11 +703,6 @@ class FitGrainsResultsDialog(QObject):
         HexrdConfig().save_materials(full_path('materials.h5'))
         HexrdConfig().save_instrument_config(full_path('instrument.hexrd'))
 
-        # Use the find-orientations threshold
-        threshold = HexrdConfig().indexing_config.get('find_orientations', {}).get('threshold')
-        if threshold is None or threshold < 0:
-            threshold = 0
-
         ims_dict = HexrdConfig().unagg_images
         for det in HexrdConfig().detector_names:
             path = full_path(f'{det}.npz')
@@ -717,7 +712,7 @@ class FitGrainsResultsDialog(QObject):
                 'write_file': path,
                 'selected_format': 'frame-cache',
                 'cache_file': path,
-                'threshold': threshold,
+                'threshold': 0,
             }
             HexrdConfig().save_imageseries(**kwargs)
 
