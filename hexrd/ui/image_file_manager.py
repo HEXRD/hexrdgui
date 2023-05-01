@@ -158,9 +158,10 @@ class ImageFileManager(metaclass=Singleton):
     def hdf5_path_exists(self, f):
         all_paths = []
         if HexrdConfig().hdf5_path is not None:
-            all_paths.append(HexrdConfig().hdf5_path)
+            # added by SS 05/01/23 to check against empty list
+            if HexrdConfig().hdf5_path:
+                all_paths.append(HexrdConfig().hdf5_path)
         all_paths += constants.KNOWN_HDF5_PATHS
-
         with h5py.File(f, 'r') as h5:
             for path, dataname in all_paths:
                 if f'{path}/{dataname}' in h5:
