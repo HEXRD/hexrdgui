@@ -199,7 +199,7 @@ class SimpleImageSeriesDialog(QObject):
     def select_dark_img(self, selected_file=False):
         if not selected_file:
             # This takes one image to use for dark subtraction.
-            caption = HexrdConfig().images_dirtion = 'Select image file'
+            caption = 'Select image file'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
                 self.ui, caption, dir=self.parent_dir)
 
@@ -229,7 +229,7 @@ class SimpleImageSeriesDialog(QObject):
 
     def select_images(self):
         # This takes one or more images for a single detector.
-        caption = HexrdConfig().images_dirtion = 'Select image file(s)'
+        caption = 'Select image file(s)'
         selected_files, _ = QFileDialog.getOpenFileNames(
             self.ui, caption, dir=self.parent_dir)
 

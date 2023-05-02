@@ -34,7 +34,7 @@ class SaveImagesDialog:
         self.ui.change_directory.clicked.connect(self.change_directory)
 
     def change_directory(self):
-        caption = HexrdConfig().images_dirtion = 'Select directory for images'
+        caption = 'Select directory for images'
         new_dir = QFileDialog.getExistingDirectory(
             self.ui, caption, dir=self.parent_dir)
 
