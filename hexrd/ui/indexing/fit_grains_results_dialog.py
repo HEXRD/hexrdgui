@@ -701,16 +701,18 @@ class FitGrainsResultsDialog(QObject):
 
         HexrdConfig().save_indexing_config(full_path('workflow.yml'))
         HexrdConfig().save_materials(full_path('materials.h5'))
-        HexrdConfig().save_instrument_config(full_path('instrument.yml'))
+        HexrdConfig().save_instrument_config(full_path('instrument.hexrd'))
 
         ims_dict = HexrdConfig().unagg_images
         for det in HexrdConfig().detector_names:
+            path = full_path(f'{det}.npz')
             kwargs = {
                 'ims': ims_dict.get(det),
                 'name': det,
-                'write_file': full_path(f'{det}.h5'),
-                'selected_format': 'hdf5',
-                'path': 'imageseries',
+                'write_file': path,
+                'selected_format': 'frame-cache',
+                'cache_file': path,
+                'threshold': 0,
             }
             HexrdConfig().save_imageseries(**kwargs)
 
@@ -726,8 +728,8 @@ class FitGrainsResultsDialog(QObject):
         write_files = [
             'workflow.yml',
             'materials.h5',
-            'instrument.yml',
-        ] + [f'{det}.h5' for det in HexrdConfig().detector_names]
+            'instrument.hexrd',
+        ] + [f'{det}.npz' for det in HexrdConfig().detector_names]
 
         overwrite_files = []
         for f in write_files:

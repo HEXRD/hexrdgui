@@ -999,13 +999,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         data = []
         for det in self.detector_names:
             data.append({
-                'file': f'{det}.h5',
+                'file': f'{det}.npz',
                 'args': {'path': 'imageseries'},
                 'panel': det
             })
 
         image_series = {
-            'format': 'hdf5',
+            'format': 'frame-cache',
             'data': data
         }
 
@@ -1047,9 +1047,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             omaps['file'] = None
 
         cfg['material'] = material
-        cfg['instrument'] = 'instrument.yml'
+        cfg['instrument'] = 'instrument.hexrd'
         cfg['image_series'] = image_series
-        cfg['working_dir'] = str(Path(output_file).parent)
+        cfg['working_dir'] = '.'
 
         with open(output_file, 'w') as f:
             yaml.dump(cfg, f)
