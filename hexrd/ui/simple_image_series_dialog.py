@@ -88,7 +88,6 @@ class SimpleImageSeriesDialog(QObject):
         HexrdConfig().detectors_changed.connect(self.config_changed)
         HexrdConfig().load_panel_state_reset.connect(self.config_changed)
 
-        self.ui.image_folder.clicked.connect(self.select_folder)
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.select_dark.clicked.connect(self.select_dark_img)
         self.ui.read.clicked.connect(self.read_data)
@@ -197,24 +196,10 @@ class SimpleImageSeriesDialog(QObject):
             self.select_dark_img(self.dark_files[self.idx])
         self.enable_read()
 
-    def select_folder(self, new_dir=None):
-        # This expects to define the root image folder.
-        if not new_dir:
-            caption = HexrdConfig().images_dirtion = 'Select directory for images'
-            new_dir = QFileDialog.getExistingDirectory(
-                self.ui, caption, dir=self.parent_dir)
-
-        # Only update if a new directory is selected
-        if new_dir and new_dir != HexrdConfig().images_dir:
-            self.ui.image_files.setEnabled(True)
-            HexrdConfig().set_images_dir(new_dir)
-            self.parent_dir = new_dir
-            self.dir_changed()
-
     def select_dark_img(self, selected_file=False):
         if not selected_file:
             # This takes one image to use for dark subtraction.
-            caption = HexrdConfig().images_dirtion = 'Select image file'
+            caption = 'Select image file'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
                 self.ui, caption, dir=self.parent_dir)
 
@@ -244,7 +229,7 @@ class SimpleImageSeriesDialog(QObject):
 
     def select_images(self):
         # This takes one or more images for a single detector.
-        caption = HexrdConfig().images_dirtion = 'Select image file(s)'
+        caption = 'Select image file(s)'
         selected_files, _ = QFileDialog.getOpenFileNames(
             self.ui, caption, dir=self.parent_dir)
 

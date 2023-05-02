@@ -237,7 +237,7 @@ class LLNLImportToolDialog(QObject):
     def load_images(self):
         self._set_transform()
 
-        caption = HexrdConfig().images_dirtion = 'Select file(s)'
+        caption = 'Select file(s)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, caption, dir=HexrdConfig().images_dir)
         if selected_file:
