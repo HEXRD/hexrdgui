@@ -1,8 +1,12 @@
+from pathlib import Path
+
 from PySide2.QtCore import (
     QItemSelectionModel, QModelIndex, QObject, Qt, Signal)
 from PySide2.QtWidgets import (
     QDialogButtonBox, QFileDialog, QHeaderView, QMessageBox
 )
+
+import numpy as np
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
@@ -14,8 +18,6 @@ from hexrd.ui.utils import block_signals
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
 from hexrd.ui.indexing.utils import hkls_missing_in_list
-
-from pathlib import Path
 
 
 class FitGrainsOptionsDialog(QObject):
@@ -82,6 +84,8 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.material.currentIndexChanged.connect(
             self.selected_material_changed)
         self.ui.choose_hkls.pressed.connect(self.choose_hkls)
+
+        self.ui.apply_min_sfac.clicked.connect(self.apply_min_sfac_to_hkls)
 
         self.ui.set_spots_directory.clicked.connect(self.set_working_dir)
 
@@ -352,14 +356,21 @@ class FitGrainsOptionsDialog(QObject):
     def material(self):
         return HexrdConfig().material(self.selected_material)
 
-    def choose_hkls(self):
+    @property
+    def reflections_table(self):
+        if hasattr(self, '_table'):
+            return self._table
+
         kwargs = {
             'material': self.material,
             'title_prefix': 'Select hkls for grain fitting: ',
             'parent': self.ui,
         }
         self._table = ReflectionsTable(**kwargs)
-        self._table.show()
+        return self._table
+
+    def choose_hkls(self):
+        self.reflections_table.show()
 
     def update_num_hkls(self):
         if self.material is None:
@@ -369,6 +380,22 @@ class FitGrainsOptionsDialog(QObject):
 
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
+
+    def apply_min_sfac_to_hkls(self):
+        min_sfac = self.ui.min_sfac_value.value()
+        table = self.reflections_table
+
+        # Get the rescaled structure factor from the table, in case the user
+        # modified the structure factor scaling.
+        sf = table.rescaled_structure_factor
+
+        exclusions = np.zeros_like(table.exclusions, dtype=bool)
+        exclusions[sf < min_sfac] = True
+        table.exclusions = exclusions
+        # Update the number of hkls first so it is fast
+        # (might take longer to update the table)
+        self.update_num_hkls()
+        table.update_table()
 
     def set_working_dir(self):
         caption = 'Select directory to write spots files to'
