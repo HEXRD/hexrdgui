@@ -1044,6 +1044,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         cfg['material'] = material
         cfg['instrument'] = 'instrument.hexrd'
         cfg['image_series'] = image_series
+        cfg['working_dir'] = '.'
 
         with open(output_file, 'w') as f:
             yaml.dump(cfg, f)
