@@ -351,7 +351,14 @@ class ReflectionsTable:
                     return pd.structFact
 
         this_pd = self.material.planeData
-        compare_pd = self.relative_scale_material.planeData
+        compare_material = self.relative_scale_material
+        if compare_material is None:
+            # This shouldn't happen, but in case it does, reset the relative
+            # scale material to the current material.
+            self.relative_scale_material_name = self.material.name
+            compare_material = self.material
+
+        compare_pd = compare_material.planeData
 
         sf = get_sfact(this_pd)
         if len(sf) == 0:
