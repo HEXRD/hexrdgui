@@ -54,6 +54,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when overlay configuration has changed"""
     overlay_config_changed = Signal()
 
+    """Emitted when the beam energy was modified"""
+    beam_energy_modified = Signal()
+
     """Emitted when beam vector has changed"""
     beam_vector_changed = Signal()
 
@@ -159,6 +162,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Emitted when a new polar mask has been created"""
     polar_masks_changed = Signal()
+
+    """Emitted when the polar x-axis type changes"""
+    polar_x_axis_type_changed = Signal()
 
     """Emitted when reflections tables for a given material should update
 
@@ -318,6 +324,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
         self.material_modified.connect(self.check_active_material_changed)
+        self.beam_energy_modified.connect(
+            self.update_visible_material_energies)
 
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration
@@ -1330,7 +1338,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # If the beam energy was modified, update the visible materials
         if path == ['beam', 'energy', 'value']:
-            self.update_visible_material_energies()
+            self.beam_energy_modified.emit()
             return
 
         if path[:2] == ['beam', 'vector']:
@@ -1982,6 +1990,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._polar_tth_distortion_overlay_name = name
             self.flag_overlay_updates_for_all_materials()
             self.rerender_needed.emit()
+
+    @property
+    def polar_x_axis_type(self):
+        return self.config['image']['polar']['x_axis_type']
+
+    @polar_x_axis_type.setter
+    def polar_x_axis_type(self, v):
+        if v == self.polar_x_axis_type:
+            return
+
+        self.config['image']['polar']['x_axis_type'] = v
+        self.polar_x_axis_type_changed.emit()
 
     def on_overlay_renamed(self, old_name, new_name):
         if self._polar_tth_distortion_overlay_name == old_name:

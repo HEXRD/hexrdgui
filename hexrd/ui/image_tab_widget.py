@@ -8,7 +8,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
 from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
 from hexrd.ui.navigation_toolbar import NavigationToolbar
-from hexrd.ui.utils.conversions import stereo_to_angles
+from hexrd.ui.utils.conversions import stereo_to_angles, tth_to_q
 from hexrd.ui import utils
 
 
@@ -369,6 +369,15 @@ class ImageTabWidget(QTabWidget):
             info['eta'] = np.degrees(eta)
             info['dsp'] = dsp
             info['hkl'] = hkl
+            info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
+        elif mode == ViewType.polar:
+            # No intensities in the polar view implies we are in the azimuthal
+            # integral plot. Compute Q.
+            info['is_lineout'] = True
+            info['tth'] = info['x_data']
+
+            iviewer = self.image_canvases[0].iviewer
+            info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
 
         self.new_mouse_position.emit(info)
 
