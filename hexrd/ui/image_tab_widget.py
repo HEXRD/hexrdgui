@@ -370,6 +370,14 @@ class ImageTabWidget(QTabWidget):
             info['dsp'] = dsp
             info['hkl'] = hkl
             info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
+        elif mode == ViewType.polar:
+            # No intensities in the polar view implies we are in the azimuthal
+            # integral plot. Compute Q.
+            info['is_lineout'] = True
+            info['tth'] = info['x_data']
+
+            iviewer = self.image_canvases[0].iviewer
+            info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
 
         self.new_mouse_position.emit(info)
 

@@ -1034,10 +1034,20 @@ class MainWindow(QObject):
         dialog.ui.finished.connect(on_finished)
 
     def new_mouse_position(self, info):
+        if self.image_mode == ViewType.polar:
+            # Use a special function for polar
+            labels = self.polar_mouse_info_labels(info)
+        else:
+            labels = self.default_mouse_info_labels(info)
+
+        delimiter = ',  '
+        msg = delimiter.join(labels)
+        self.ui.status_bar.showMessage(msg)
+
+    def default_mouse_info_labels(self, info):
         labels = []
         labels.append(f'x = {info["x_data"]:8.3f}')
         labels.append(f'y = {info["y_data"]:8.3f}')
-        delimiter = ',  '
 
         intensity = info['intensity']
         if intensity is not None:
@@ -1048,8 +1058,27 @@ class MainWindow(QObject):
             labels.append(f'Q = {info["Q"]:8.3f}')
             labels.append(f'hkl = {info["hkl"]}')
 
-        msg = delimiter.join(labels)
-        self.ui.status_bar.showMessage(msg)
+        return labels
+
+    def polar_mouse_info_labels(self, info):
+        labels = []
+        # Assume x is tth in the polar view
+        labels.append(f'tth = {info["x_data"]:8.3f}')
+
+        if info.get('is_lineout'):
+            # We are in the azimuthal integration plot
+            labels.append(f'intensity = {info["y_data"]:8.3f}')
+            # Q should have still be calculated.
+            labels.append(f'Q = {info["Q"]:8.3f}')
+        else:
+            # We are in the main polar canvas
+            labels.append(f'eta = {info["y_data"]:8.3f}')
+            labels.append(f'value = {info["intensity"]:8.3f}')
+            labels.append(f'dsp = {info["dsp"]:8.3f}')
+            labels.append(f'Q = {info["Q"]:8.3f}')
+            labels.append(f'hkl = {info["hkl"]}')
+
+        return labels
 
     def on_action_transform_detectors_triggered(self):
         mask_state = HexrdConfig().threshold_mask_status
