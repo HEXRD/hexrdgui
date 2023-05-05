@@ -54,6 +54,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when overlay configuration has changed"""
     overlay_config_changed = Signal()
 
+    """Emitted when the beam energy was modified"""
+    beam_energy_modified = Signal()
+
     """Emitted when beam vector has changed"""
     beam_vector_changed = Signal()
 
@@ -321,6 +324,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
         self.material_modified.connect(self.check_active_material_changed)
+        self.beam_energy_modified.connect(
+            self.update_visible_material_energies)
 
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration
@@ -1333,7 +1338,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # If the beam energy was modified, update the visible materials
         if path == ['beam', 'energy', 'value']:
-            self.update_visible_material_energies()
+            self.beam_energy_modified.emit()
             return
 
         if path[:2] == ['beam', 'vector']:

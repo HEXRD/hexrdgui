@@ -94,6 +94,8 @@ class ImageCanvas(FigureCanvas):
             self.save_azimuthal_plot)
         HexrdConfig().polar_x_axis_type_changed.connect(
             self.on_polar_x_axis_type_changed)
+        HexrdConfig().beam_energy_modified.connect(
+            self.on_beam_energy_modified)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -942,6 +944,15 @@ class ImageCanvas(FigureCanvas):
 
         msg = 'Stereo view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    def on_beam_energy_modified(self):
+        # Update the beam energy on our instrument if we have one
+        if not self.iviewer:
+            # No need to do anything
+            return
+
+        # Update the beam energy on the instrument
+        self.iviewer.instr.beam_energy = HexrdConfig().beam_energy
 
     @property
     def polar_x_axis_type(self):
