@@ -967,7 +967,7 @@ class ImageCanvas(FigureCanvas):
             return formatter.default_formatter(x, pos)
         elif x_axis_type == PolarXAxisType.q:
             q = tth_to_q(x, self.iviewer.instr.beam_energy)
-            return f'{q:0.1g}'
+            return f'{q:0.4g}'
 
         raise NotImplementedError(x_axis_type)
 
