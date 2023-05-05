@@ -9,6 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle
+from matplotlib.ticker import AutoLocator, FuncFormatter
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -18,14 +19,13 @@ from hexrd.ui.calibration.cartesian_plot import cartesian_viewer
 from hexrd.ui.calibration.polar_plot import polar_viewer
 from hexrd.ui.calibration.raw_iviewer import raw_iviewer
 from hexrd.ui.calibration.stereo_plot import stereo_viewer
-from hexrd.ui.constants import OverlayType, ViewType
+from hexrd.ui.constants import OverlayType, PolarXAxisType, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.snip_viewer_dialog import SnipViewerDialog
 from hexrd.ui import utils
 from hexrd.ui.utils.conversions import (
-    angles_to_stereo, cart_to_angles, cart_to_pixels,
+    angles_to_stereo, cart_to_angles, cart_to_pixels, q_to_tth, tth_to_q,
 )
-import hexrd.ui.constants
 
 
 class ImageCanvas(FigureCanvas):
@@ -92,6 +92,8 @@ class ImageCanvas(FigureCanvas):
             self.update_azimuthal_integral_plot)
         HexrdConfig().azimuthal_plot_save_requested.connect(
             self.save_azimuthal_plot)
+        HexrdConfig().polar_x_axis_type_changed.connect(
+            self.on_polar_x_axis_type_changed)
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -831,6 +833,16 @@ class ImageCanvas(FigureCanvas):
                 axis.set_ylabel(r'Azimuthal Integration')
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
+
+                # Set up formatting for the x-axis
+                default_formatter = axis.xaxis.get_major_formatter()
+                f = self.format_polar_x_major_ticks
+                formatter = PolarXAxisFormatter(default_formatter, f)
+                axis.xaxis.set_major_formatter(formatter)
+
+                # Set our custom tick locators as well
+                self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+                axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
@@ -932,22 +944,87 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().emit_update_status_bar(msg)
 
     @property
-    def polar_xlabel(self):
+    def polar_x_axis_type(self):
+        return HexrdConfig().polar_x_axis_type
+
+    def on_polar_x_axis_type_changed(self):
+        # Update the x-label
+        self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel)
+
+        # Still need to draw if the x-label was modified
+        self.draw_idle()
+
+    def format_polar_x_major_ticks(self, x, pos=None):
+        if self.mode != ViewType.polar or not self.iviewer:
+            # No need to do anything
+            return ''
+
+        xaxis = self.azimuthal_integral_axis.xaxis
+        x_axis_type = self.polar_x_axis_type
+        if x_axis_type == PolarXAxisType.tth:
+            # Use the default formatter.
+            formatter = xaxis.get_major_formatter()
+            return formatter.default_formatter(x, pos)
+        elif x_axis_type == PolarXAxisType.q:
+            q = tth_to_q(x, self.iviewer.instr.beam_energy)
+            return f'{q:0.1g}'
+
+        raise NotImplementedError(x_axis_type)
+
+    def polar_tth_to_x_type(self, array):
+        x_axis_type = self.polar_x_axis_type
+        if x_axis_type == PolarXAxisType.tth:
+            # Nothing to do
+            return array
+        elif x_axis_type == PolarXAxisType.q:
+            return tth_to_q(array, self.iviewer.instr.beam_energy)
+
+        raise NotImplementedError(x_axis_type)
+
+    def polar_x_type_to_tth(self, array):
+        x_axis_type = self.polar_x_axis_type
+        if x_axis_type == PolarXAxisType.tth:
+            # Nothing to do
+            return array
+        elif x_axis_type == PolarXAxisType.q:
+            return q_to_tth(array, self.iviewer.instr.beam_energy)
+
+        raise NotImplementedError(x_axis_type)
+
+    @property
+    def polar_xlabel_subscript(self):
         overlay = HexrdConfig().polar_tth_distortion_overlay
         if overlay is None:
-            return r'2$\theta_{nom}$ [deg]'
+            return 'nom'
 
         if overlay.tth_distortion_type == 'SampleLayerDistortion':
-            xlabel = r'2$\theta_{sam}$'
-            standoff = overlay.tth_distortion_kwargs.get('layer_standoff', None)
-            if standoff is not None:
-                xlabel += f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
+            return 'sam'
         else:
-            xlabel = r'2$\theta_{pin}$'
+            return 'pin'
 
-        xlabel += ' [deg]'
+    @property
+    def polar_xlabel_suffix(self):
+        overlay = HexrdConfig().polar_tth_distortion_overlay
+        if overlay and overlay.tth_distortion_type == 'SampleLayerDistortion':
+            standoff = overlay.tth_distortion_kwargs.get('layer_standoff',
+                                                         None)
+            if standoff is not None:
+                return f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
 
-        return xlabel
+        return ''
+
+    @property
+    def polar_xlabel(self):
+        subscript = self.polar_xlabel_subscript
+        suffix = self.polar_xlabel_suffix
+
+        x_axis_type = self.polar_x_axis_type
+        if x_axis_type == PolarXAxisType.tth:
+            return rf'2$\theta_{{{subscript}}}${suffix} [deg]'
+        elif x_axis_type == PolarXAxisType.q:
+            return rf'$Q_{{{subscript}}}${suffix} [$\AA^{{-1}}$]'
+
+        raise NotImplementedError(x_axis_type)
 
     @property
     def is_stereo_from_polar(self):
@@ -1279,6 +1356,44 @@ class ImageCanvas(FigureCanvas):
 
         self._snip_viewer_dialog = SnipViewerDialog(background, extent)
         self._snip_viewer_dialog.show()
+
+
+class PolarXAxisTickLocator(AutoLocator):
+    """Subclass the tick locator so we can modify its behavior
+
+    We will modify any value ranges provided so that the current x-axis type
+    provides nice looking ticks.
+
+    For instance, for Q, we want to see `1, 2, 3, 4, ...`.
+    """
+    def __init__(self, canvas, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._hexrdgui_canvas = canvas
+
+    def tick_values(self, vmin, vmax):
+        canvas = self._hexrdgui_canvas
+        # Convert to our current x type
+        vmin, vmax = canvas.polar_tth_to_x_type([vmin, vmax])
+        # Get the tick values for our x type range
+        values = super().tick_values(vmin, vmax)
+        # Convert back to tth
+        return canvas.polar_x_type_to_tth(values)
+
+
+class PolarXAxisFormatter(FuncFormatter):
+    """Subclass the func formatter so we can keep the default formatter in sync
+
+    If any settings are modified on the func formatter, modify the settings on
+    the default formatter as well.
+    """
+    def __init__(self, default_formatter, func):
+        super().__init__(func)
+        self.default_formatter = default_formatter
+
+    def set_locs(self, *args, **kwargs):
+        # Make sure the default formatter is updated as well
+        self.default_formatter.set_locs(*args, **kwargs)
+        super().set_locs(*args, **kwargs)
 
 
 def transform_from_plain_cartesian_func(mode):

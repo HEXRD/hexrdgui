@@ -1045,6 +1045,7 @@ class MainWindow(QObject):
             labels.append(f'tth = {info["tth"]:8.3f}')
             labels.append(f'eta = {info["eta"]:8.3f}')
             labels.append(f'dsp = {info["dsp"]:8.3f}')
+            labels.append(f'Q = {info["Q"]:8.3f}')
             labels.append(f'hkl = {info["hkl"]}')
 
         msg = delimiter.join(labels)

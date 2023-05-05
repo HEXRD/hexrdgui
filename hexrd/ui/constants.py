@@ -51,6 +51,13 @@ class OverlayType(Enum):
     rotation_series = 'rotation_series'
 
 
+class PolarXAxisType:
+    # Two theta
+    tth = 'tth'
+    # Q scattering vector
+    q = 'q'
+
+
 DEFAULT_EULER_ANGLE_CONVENTION = {
     'axes_order': 'xyz',
     'extrinsic': True

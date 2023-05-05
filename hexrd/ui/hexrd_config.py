@@ -160,6 +160,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when a new polar mask has been created"""
     polar_masks_changed = Signal()
 
+    """Emitted when the polar x-axis type changes"""
+    polar_x_axis_type_changed = Signal()
+
     """Emitted when reflections tables for a given material should update
 
     The string argument is the material name.
@@ -1982,6 +1985,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._polar_tth_distortion_overlay_name = name
             self.flag_overlay_updates_for_all_materials()
             self.rerender_needed.emit()
+
+    @property
+    def polar_x_axis_type(self):
+        return self.config['image']['polar']['x_axis_type']
+
+    @polar_x_axis_type.setter
+    def polar_x_axis_type(self, v):
+        if v == self.polar_x_axis_type:
+            return
+
+        self.config['image']['polar']['x_axis_type'] = v
+        self.polar_x_axis_type_changed.emit()
 
     def on_overlay_renamed(self, old_name, new_name):
         if self._polar_tth_distortion_overlay_name == old_name:

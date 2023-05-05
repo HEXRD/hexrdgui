@@ -5,7 +5,7 @@ import numpy as np
 from PySide2.QtCore import QObject, QTimer, Signal
 
 from hexrd.ui.azimuthal_overlay_manager import AzimuthalOverlayManager
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import PolarXAxisType, ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -90,6 +90,8 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_snip1d_numiter)
         self.ui.polar_apply_erosion.toggled.connect(
             HexrdConfig().set_polar_apply_erosion)
+        self.ui.polar_x_axis_type.currentTextChanged.connect(
+            self.on_polar_x_axis_type_changed)
         HexrdConfig().instrument_config_loaded.connect(
             self.auto_generate_cartesian_params)
         HexrdConfig().instrument_config_loaded.connect(
@@ -160,6 +162,7 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_erosion,
             self.ui.polar_apply_tth_distortion,
             self.ui.polar_tth_distortion_overlay,
+            self.ui.polar_x_axis_type,
             self.ui.stereo_size,
             self.ui.stereo_show_border,
             self.ui.stereo_project_from_polar,
@@ -205,6 +208,7 @@ class ImageModeWidget(QObject):
                 HexrdConfig().polar_snip1d_numiter)
             self.ui.polar_apply_erosion.setChecked(
                 HexrdConfig().polar_apply_erosion)
+            self.polar_x_axis_type = HexrdConfig().polar_x_axis_type
             self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
             self.ui.stereo_show_border.setChecked(
                 HexrdConfig().stereo_show_border)
@@ -418,6 +422,19 @@ class ImageModeWidget(QObject):
                 HexrdConfig().set_polar_res_eta_min(min_value, rerender=False)
         HexrdConfig().polar_res_eta_max = max_value
 
+    @property
+    def polar_x_axis_type(self):
+        label = self.ui.polar_x_axis_type.currentText()
+        return POLAR_X_AXIS_LABELS_TO_VALUES[label]
+
+    @polar_x_axis_type.setter
+    def polar_x_axis_type(self, value):
+        label = POLAR_X_AXIS_VALUES_TO_LABELS[value]
+        self.ui.polar_x_axis_type.setCurrentText(label)
+
+    def on_polar_x_axis_type_changed(self):
+        HexrdConfig().polar_x_axis_type = self.polar_x_axis_type
+
     def show_polar_overlay_manager(self):
         if hasattr(self, '_polar_overlay_manager'):
             self._polar_overlay_manager.ui.reject()
@@ -426,6 +443,14 @@ class ImageModeWidget(QObject):
         self._polar_overlay_manager = AzimuthalOverlayManager(self.ui)
         self._polar_overlay_manager.show()
 
+
+POLAR_X_AXIS_LABELS_TO_VALUES = {
+    '2θ': PolarXAxisType.tth,
+    'Q': PolarXAxisType.q,
+}
+POLAR_X_AXIS_VALUES_TO_LABELS = {
+    v: k for k, v in POLAR_X_AXIS_LABELS_TO_VALUES.items()
+}
 
 def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     # Other than panel, all arguments are lists for appending results

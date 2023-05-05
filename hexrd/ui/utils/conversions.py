@@ -1,6 +1,10 @@
+from typing import Union
+
 import numpy as np
 
 from hexrd.transforms.xfcapi import mapAngle
+
+from hexrd.ui.constants import KEV_TO_WAVELENGTH
 
 from .stereo2angle import ij2ang as stereo_ij2ang, ang2ij as ang2stereo_ij
 
@@ -63,3 +67,20 @@ def angles_to_stereo(angs, instr, stereo_size):
         stereo_size=stereo_size,
         bvec=instr.beam_vector,
     )
+
+
+def tth_to_q(tth: Union[np.ndarray, float], beam_energy: float):
+    # Convert tth values in degrees to q-space in Angstrom^-1
+    # The formula is Q = 4 * pi * sin(theta)/lambda.
+    # lambda is the wavelength in Angstrom, and
+    # theta = current x-axis value/2 in radians.
+
+    tth = np.radians(tth)
+    # The input tth is in degrees, and the beam_energy is in keV
+    return 4 * np.pi * np.sin(tth / 2) * beam_energy / KEV_TO_WAVELENGTH
+
+
+def q_to_tth(q: Union[np.ndarray, float], beam_energy: float):
+    # Convert the q-space values (Angstrom^-1) to tth in degrees
+    tth = np.arcsin(q / 4 / np.pi * KEV_TO_WAVELENGTH / beam_energy) * 2
+    return np.degrees(tth)
