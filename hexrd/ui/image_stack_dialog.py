@@ -288,14 +288,14 @@ class ImageStackDialog(QObject):
 
     def search_directories(self):
         pattern = self.ui.detector_search.text()
-        if Path(pattern).is_dir():
-            p = pattern
+        directory = Path(pattern).resolve()
+        if directory.is_dir():
             for det in self.detectors:
-                if Path(f'{pattern}/{det}').exists():
-                    p = f'{pattern}/{det}'
-                self.state[det]['directory'] = p
+                if (directory / det).resolve().exists():
+                    directory = directory / det
+                self.state[det]['directory'] = str(directory)
                 if det == self.ui.detectors.currentText():
-                    self.ui.current_directory.setText(p)
+                    self.ui.current_directory.setText(str(directory))
         else:
             msg = (f'Could not find directory:\n{pattern}')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
