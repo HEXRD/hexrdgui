@@ -41,6 +41,11 @@ class ReflectionsTable:
         self.selection_helper = ReflectionsSelectionHelper(self.material,
                                                            self.ui)
 
+        # If we are modifying the exclusions, skip updating the table, because
+        # if we update the table during selection, it messes up something with
+        # the selection on Qt's side.
+        self._modifying_exclusions = False
+
         self.setup_connections()
 
         self.update_material_name()
@@ -174,7 +179,13 @@ class ReflectionsTable:
 
         self.material.planeData.exclusions = exclusions
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
-        HexrdConfig().overlay_config_changed.emit()
+
+        # Indicate that we are modifying exclusions so the table will not update
+        self._modifying_exclusions = True
+        try:
+            HexrdConfig().overlay_config_changed.emit()
+        finally:
+            self._modifying_exclusions = False
 
     @property
     def selections(self):
@@ -215,6 +226,10 @@ class ReflectionsTable:
             self.update_table()
 
     def update_table(self):
+        if self._modifying_exclusions:
+            # Don't update the table if we are modifying the exclusions
+            return
+
         material = self.material
         table = self.ui.table
 
