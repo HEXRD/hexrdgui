@@ -99,6 +99,8 @@ class ImageModeWidget(QObject):
 
         HexrdConfig().enable_image_mode_widget.connect(
             self.enable_image_mode_widget)
+        HexrdConfig().set_image_mode_widget_tab.connect(
+            self.set_image_mode_widget_tab)
 
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
@@ -133,7 +135,10 @@ class ImageModeWidget(QObject):
     def enable_image_mode_widget(self, b):
         self.ui.tab_widget.setEnabled(b)
 
-    def currentChanged(self, index):
+    def set_image_mode_widget_tab(self, idx):
+        self.ui.tab_widget.setCurrentIndex(idx)
+
+    def currentChanged(self, index = None):
         modes = {
             0: ViewType.raw,
             1: ViewType.cartesian,

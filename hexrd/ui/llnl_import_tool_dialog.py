@@ -20,7 +20,7 @@ from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import (
-    UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform)
+    UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
 import hexrd.ui.resources.calibration
 
 from hexrd.ui.utils import instr_to_internal_dict
@@ -33,8 +33,6 @@ class LLNLImportToolDialog(QObject):
     new_config_loaded = Signal()
 
     cancel_workflow = Signal()
-
-    enforce_raw_mode = Signal(bool)
 
     def __init__(self, cmap=None, parent=None):
         super().__init__(parent)
@@ -153,17 +151,19 @@ class LLNLImportToolDialog(QObject):
 
         if self.instrument is None:
             self.import_in_progress = False
-            self.enforce_raw_mode.emit(False)
+            HexrdConfig().enable_image_mode_widget.emit(True)
             self.ui.detectors.setCurrentIndex(0)
             self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                                 enabled=False)
             self.parent().action_show_toolbar.setChecked(True)
         else:
             self.import_in_progress = True
-            self.enforce_raw_mode.emit(True)
+            HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
+            HexrdConfig().enable_image_mode_widget.emit(False)
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
-                                self.ui.file_selection, enabled=True)
+                                self.ui.file_selection, self.ui.finalize,
+                                enabled=True)
             self.parent().action_show_toolbar.setChecked(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
@@ -445,7 +445,7 @@ class LLNLImportToolDialog(QObject):
             self.crop_and_mask()
 
     def reset_panel(self):
-        self.enforce_raw_mode.emit(False)
+        HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
         self.ui.instruments.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)

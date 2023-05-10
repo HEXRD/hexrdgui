@@ -223,6 +223,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when image mode widget should be enabled/disabled"""
     enable_image_mode_widget = Signal(bool)
 
+    """Emitted when image mode widget needs to be in a certain mode"""
+    set_image_mode_widget_tab = Signal(int)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
