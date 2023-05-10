@@ -76,7 +76,7 @@ class WppfOptionsDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.method.currentIndexChanged.connect(self.update_params)
+        self.ui.method.currentIndexChanged.connect(self.on_method_changed)
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
         self.ui.background_method.currentIndexChanged.connect(
@@ -96,6 +96,10 @@ class WppfOptionsDialog(QObject):
         self.ui.preview_spectrum.pressed.connect(self.preview_spectrum)
         self.ui.run_button.pressed.connect(self.begin_run)
         self.ui.finished.connect(self.finish)
+
+    def on_method_changed(self):
+        self.update_params()
+        self.update_enable_states()
 
     def update_enable_states(self):
         has_object = self._wppf_object is not None
@@ -131,6 +135,9 @@ class WppfOptionsDialog(QObject):
         ]
         for name in widget_names:
             getattr(self.ui, name).setEnabled(enable_tth_limits)
+
+        enable_refinement_steps = self.method != 'Rietveld'
+        self.ui.refinement_steps.setEnabled(enable_refinement_steps)
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
@@ -443,6 +450,7 @@ class WppfOptionsDialog(QObject):
 
         # Add/remove params depending on what are allowed
         self.update_params()
+        self.update_enable_states()
 
     def save_settings(self):
         settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
@@ -512,7 +520,7 @@ class WppfOptionsDialog(QObject):
     def create_vary_checkbox(self, b):
         cb = QCheckBox(self.ui.table)
         cb.setChecked(b)
-        cb.toggled.connect(self.update_config)
+        cb.toggled.connect(self.on_checkbox_toggled)
 
         self.vary_checkboxes.append(cb)
         return self.create_table_widget(cb)
@@ -587,9 +595,11 @@ class WppfOptionsDialog(QObject):
                 table.setCellWidget(i, COLUMNS['value'], w)
 
                 w = self.create_minimum_spinbox(self.convert(name, param.lb))
+                w.setEnabled(param.vary)
                 table.setCellWidget(i, COLUMNS['minimum'], w)
 
                 w = self.create_maximum_spinbox(self.convert(name, param.ub))
+                w.setEnabled(param.vary)
                 table.setCellWidget(i, COLUMNS['maximum'], w)
 
                 w = self.create_vary_checkbox(param.vary)
@@ -604,6 +614,16 @@ class WppfOptionsDialog(QObject):
         # the UI still scrolls back one and then to the maximum. So it
         # doesn't look that great. FIXME: figure out how to fix this.
         QTimer.singleShot(0, lambda: scrollbar.setValue(scroll_value))
+
+    def on_checkbox_toggled(self):
+        self.update_min_max_enable_states()
+        self.update_config()
+
+    def update_min_max_enable_states(self):
+        for i in range(len(self.params.param_dict)):
+            enable = self.vary_checkboxes[i].isChecked()
+            self.minimum_spinboxes[i].setEnabled(enable)
+            self.maximum_spinboxes[i].setEnabled(enable)
 
     def update_config(self):
         for i, (name, param) in enumerate(self.params.param_dict.items()):
