@@ -208,6 +208,9 @@ class LLNLImportToolDialog(QObject):
         self.ui.instrument.setDisabled(selected)
         self.detector = self.ui.detectors.currentText()
         self.add_template()
+        if self.instrument == 'TARDIS':
+            self.cancel_workflow.emit()
+
 
     def update_bbox_height(self, val):
         y0, y1, *x = self.it.bounds
