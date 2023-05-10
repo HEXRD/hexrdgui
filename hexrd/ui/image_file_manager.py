@@ -1,3 +1,4 @@
+import glob
 import os
 import numpy as np
 import tempfile
@@ -93,7 +94,7 @@ class ImageFileManager(metaclass=Singleton):
                 'image-files': {}
             }
             input_dict['image-files']['directory'] = os.path.dirname(f)
-            input_dict['image-files']['files'] = os.path.basename(f)
+            input_dict['image-files']['files'] = glob.escape(os.path.basename(f))
             input_dict['options'] = {} if options is None else options
             input_dict['meta'] = {}
             temp = tempfile.NamedTemporaryFile(delete=False)
