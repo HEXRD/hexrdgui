@@ -17,7 +17,6 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.interactive_template import InteractiveTemplate
-from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import (
@@ -245,9 +244,6 @@ class LLNLImportToolDialog(QObject):
             HexrdConfig().set_images_dir(selected_file)
 
             files, manual = ImageLoadManager().load_images([selected_file])
-            dialog = LoadImagesDialog(files, manual, self.ui.parent())
-            if not dialog.exec_():
-                return
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_file)[1]
