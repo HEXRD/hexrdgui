@@ -566,7 +566,7 @@ class MainWindow(QObject):
         print('Calibration finished')
         print('Updating the GUI')
         self.update_config_gui()
-        self.update_all()
+        self.deep_rerender()
 
     def run_hedm_calibration(self):
         cached_async_runner_name = '_hedm_calibration_runner_async_runner'
@@ -587,7 +587,7 @@ class MainWindow(QObject):
 
     def on_hedm_calibration_finished(self):
         self.update_config_gui()
-        self.update_all()
+        self.deep_rerender()
 
     def on_action_run_indexing_triggered(self):
         self.ui.action_rerun_clustering.setEnabled(False)
@@ -820,7 +820,7 @@ class MainWindow(QObject):
 
         update_canvas = w.iconfig_values_modified or w.material_values_modified
         if update_canvas:
-            self.update_all(clear_canvases=True)
+            self.deep_rerender()
 
     def change_image_mode(self, mode):
         self.image_mode = mode
@@ -866,7 +866,7 @@ class MainWindow(QObject):
 
     def finish_powder_calibration(self):
         self.update_config_gui()
-        self.update_all()
+        self.deep_rerender()
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
