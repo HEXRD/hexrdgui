@@ -79,7 +79,7 @@ BUFFER_KEY = 'buffer'
 ZOOM = 'zoom rect'
 PAN = 'pan/zoom'
 
-DOCUMENTATION_URL = 'https://hexrd-canonical.readthedocs.io/'
+DOCUMENTATION_URL = 'https://hexrdgui.readthedocs.io/'
 
 KNOWN_HDF5_PATHS = [
     ['ATTRIBUTES/TARGET_ORIENTED_IMAGE/DATA', 'DATA'],
