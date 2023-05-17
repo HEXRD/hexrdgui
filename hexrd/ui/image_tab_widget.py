@@ -61,6 +61,11 @@ class ImageTabWidget(QTabWidget):
             canvas.mpl_disconnect(cid)
             canvas.deleteLater()
 
+        # Hide all toolbars
+        for tb in self.toolbars:
+            tb['tb'].setVisible(False)
+            tb['sb'].set_visible(False)
+
         del self.image_canvases[1:]
         del self.toolbars[1:]
         del self.mpl_connections[1:]
