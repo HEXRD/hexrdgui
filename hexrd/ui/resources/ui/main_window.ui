@@ -48,9 +48,15 @@
     <property name="title">
      <string>File</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <widget class="QMenu" name="menu_open">
      <property name="title">
       <string>&amp;Open</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_open_images"/>
      <addaction name="action_open_state"/>
@@ -63,9 +69,15 @@
      <property name="title">
       <string>&amp;Save</string>
      </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
+     </property>
      <widget class="QMenu" name="menu_save_config">
       <property name="title">
        <string>&amp;Configuration</string>
+      </property>
+      <property name="toolTipsVisible">
+       <bool>true</bool>
       </property>
       <addaction name="action_save_config_hexrd"/>
       <addaction name="action_save_config_yaml"/>
@@ -79,12 +91,18 @@
      <property name="title">
       <string>Export</string>
      </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
+     </property>
      <addaction name="action_export_current_plot"/>
      <addaction name="action_export_to_maud"/>
     </widget>
     <widget class="QMenu" name="menu_import">
      <property name="title">
       <string>Import</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_hedm_import_tool"/>
      <addaction name="action_image_stack"/>
@@ -101,6 +119,9 @@
     <property name="title">
      <string>View</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <widget class="QMenu" name="view_dock_widgets">
      <property name="title">
       <string>Dock Widgets</string>
@@ -114,6 +135,9 @@
     <widget class="QMenu" name="colormaps_menu">
      <property name="title">
       <string>Colormaps</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_show_all_colormaps"/>
      <addaction name="action_edit_defaults"/>
@@ -133,9 +157,15 @@
     <property name="title">
      <string>E&amp;dit</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <widget class="QMenu" name="menu_masks">
      <property name="title">
       <string>Masks</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_edit_apply_hand_drawn_mask"/>
      <addaction name="action_edit_apply_laue_mask_to_polar"/>
@@ -147,6 +177,9 @@
     <widget class="QMenu" name="menu_intensity_corrections">
      <property name="title">
       <string>Intensity Corrections</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_apply_pixel_solid_angle_correction"/>
      <addaction name="action_apply_lorentz_correction"/>
@@ -165,9 +198,15 @@
     <property name="title">
      <string>R&amp;un</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <widget class="QMenu" name="menu_hedm">
      <property name="title">
       <string>HEDM</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_run_indexing"/>
      <addaction name="action_rerun_clustering"/>
@@ -176,6 +215,9 @@
     <widget class="QMenu" name="menu_calibration">
      <property name="title">
       <string>Calibration</string>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
      <addaction name="action_run_fast_powder_calibration"/>
      <addaction name="action_run_laue_and_powder_calibration"/>
@@ -189,6 +231,9 @@
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>H&amp;elp</string>
+    </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
     </property>
     <addaction name="action_documentation"/>
     <addaction name="action_about"/>
@@ -311,14 +356,6 @@
          </item>
          <item>
           <widget class="QDialogButtonBox" name="config_button_box">
-           <property name="geometry">
-            <rect>
-             <x>180</x>
-             <y>630</y>
-             <width>175</width>
-             <height>28</height>
-            </rect>
-           </property>
            <property name="standardButtons">
             <set>QDialogButtonBox::Help</set>
            </property>

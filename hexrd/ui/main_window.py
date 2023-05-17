@@ -155,6 +155,8 @@ class MainWindow(QObject):
 
         ImageFileManager().load_dummy_images(True)
 
+        self.update_all_menu_item_tooltips()
+
         # In order to avoid both a not very nice looking black window,
         # and a bug with the tabbed view
         # (see https://github.com/HEXRD/hexrdgui/issues/261),
@@ -317,6 +319,11 @@ class MainWindow(QObject):
         self.ui.action_about.triggered.connect(self.on_action_about_triggered)
         self.ui.action_documentation.triggered.connect(
             self.on_action_documentation_triggered)
+
+        # Update menu item tooltips when their enable state changes
+        for widget_name in self._menu_item_tooltips:
+            w = getattr(self.ui, widget_name)
+            w.changed.connect(self._update_menu_item_tooltip_for_sender)
 
     def on_state_loaded(self):
         self.update_action_check_states()
@@ -1117,8 +1124,8 @@ class MainWindow(QObject):
         has_images = HexrdConfig().has_images
         num_images = HexrdConfig().imageseries_length
 
-        self.ui.action_image_calculator.setEnabled(
-            has_images and num_images == 1)
+        enable_image_calculator = has_images and num_images == 1
+        self.ui.action_image_calculator.setEnabled(enable_image_calculator)
 
         # Update the HEDM enable states
         self.update_hedm_enable_states()
@@ -1140,6 +1147,87 @@ class MainWindow(QObject):
         # If we made it here, they should be enabled.
         for action in actions:
             action.setEnabled(True)
+
+    @property
+    def _menu_item_tooltips(self):
+        # The keys here are QAction names. The value is a dict where the keys
+        # are the enable state, and the values are the tooltips for that
+        # enable state.
+        return {
+            'action_edit_apply_hand_drawn_mask': {
+                True: '',
+                False: 'Polar/raw view must be active with image data loaded',
+            },
+            'action_edit_apply_laue_mask_to_polar': {
+                True: '',
+                False: 'Polar view must be active',
+            },
+            'action_edit_apply_powder_mask_to_polar': {
+                True: '',
+                False: 'Polar view must be active',
+            },
+            'action_export_current_plot': {
+                True: '',
+                False: ('Cartesian/polar/stereo view must be active '
+                        'with image data loaded'),
+            },
+            'action_export_to_maud': {
+                True: '',
+                False: 'Polar view must be active with image data loaded',
+            },
+            'action_image_calculator': {
+                True: '',
+                False: ('Image data must be loaded (and must not be an image '
+                        'stack)'),
+            },
+            'action_run_laue_and_powder_calibration': {
+                True: '',
+                False: 'Polar view must be active with image data loaded',
+            },
+            'action_rerun_clustering': {
+                True: '',
+                False: 'Indexing must have been ran to re-run clustering',
+            },
+            'action_run_fit_grains': {
+                True: '',
+                False: 'An image stack with omega values is required',
+            },
+            'action_run_indexing': {
+                True: '',
+                False: 'An image stack with omega values is required',
+            },
+            'action_run_wppf': {
+                True: '',
+                False: 'The polar view must be active with image data loaded',
+            },
+            'action_transform_detectors': {
+                True: '',
+                False: 'Image data must be loaded',
+            },
+        }
+
+    def _update_menu_item_tooltip_for_sender(self):
+        # This function should be called automatically when the sending
+        # QAction is modified.
+        # The modification may have been its enable state.
+
+        w = self.sender()
+        enabled = w.isEnabled()
+        name = w.objectName()
+
+        tooltips = self._menu_item_tooltips
+        if name not in tooltips:
+            return
+
+        w.setToolTip(tooltips[name][enabled])
+
+    def update_all_menu_item_tooltips(self):
+        tooltips = self._menu_item_tooltips
+
+        for widget_name, tooltip_options in tooltips.items():
+            w = getattr(self.ui, widget_name)
+            enabled = w.isEnabled()
+            w.setToolTip(tooltip_options[enabled])
 
     def on_action_open_mask_manager_triggered(self):
         self.mask_manager_dialog.show()
