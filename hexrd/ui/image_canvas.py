@@ -1280,6 +1280,19 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.axes_images[0].set_data(self.scaled_images[0])
+        if self.mode == ViewType.cartesian:
+            old_extent = self.axes_images[0].get_extent()
+            new_extent = self.iviewer.extent
+            # If the extents have changed, that means the detector was
+            # interactively moved out of bounds, and we need to relimit.
+            if not np.allclose(old_extent, new_extent):
+                self.axes_images[0].set_extent(new_extent)
+                self.axis.set_xlim(new_extent[:2])
+                self.axis.set_ylim(new_extent[2:])
+                # Need to update overlays as well. They wouldn't have been
+                # drawn in the expanded region yet.
+                HexrdConfig().flag_overlay_updates_for_all_materials()
+                self.update_overlays()
 
         # This will only run if we are in polar mode
         self.update_azimuthal_integral_plot()
