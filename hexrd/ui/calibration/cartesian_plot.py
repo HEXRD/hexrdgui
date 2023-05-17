@@ -47,6 +47,7 @@ class InstrumentViewer:
         dplane_tilt = np.radians(np.array(([rotate_x, rotate_y, 0.])))
 
         self.dplane = DisplayPlane(tvec=dplane_tvec, tilt=dplane_tilt)
+        self.update_panel_sizes()
         self.make_dpanel()
 
         # Check that the image size won't be too big...
@@ -98,8 +99,10 @@ class InstrumentViewer:
             msg += f'Memory required: {format_memory_int(mem_usage)}'
             raise Exception(msg)
 
-    def make_dpanel(self):
+    def update_panel_sizes(self):
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
+
+    def make_dpanel(self):
         self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
                                                 self.pixel_size,
                                                 self.instr.beam_vector)
@@ -313,8 +316,25 @@ class InstrumentViewer:
         self.instr.detectors[det].tvec = t_conf['translation']
         self.instr.detectors[det].tilt = t_conf['tilt']
 
-        # Update the individual detector image
-        self.create_warped_image(det)
+        # If the panel size has increased, re-create the display panel.
+        # This is so that interactively moving detectors outside of the
+        # image will trigger a resize.
+        new_panel_size = self.dplane.panel_size(self.instr)
+        if (self.dpanel_sizes[0] < new_panel_size[0] or
+                self.dpanel_sizes[1] < new_panel_size[1]):
+            # The panel size has increased. Let's re-create the display panel
+            # We will only increase the panel size in this function.
+            # Also bump up the sizes by 5% as well for better interaction.
+            self.dpanel_sizes = (
+                int(max(self.dpanel_sizes[0], new_panel_size[0]) * 1.05),
+                int(max(self.dpanel_sizes[1], new_panel_size[1]) * 1.05),
+            )
+            self.make_dpanel()
+            # Re-create all images
+            self.plot_dplane()
+        else:
+            # Update the individual detector image
+            self.create_warped_image(det)
 
         # Generate the final image
         self.generate_image()
