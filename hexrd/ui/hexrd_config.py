@@ -1332,6 +1332,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             for val in path[:-1]:
                 cur_val = cur_val[val]
 
+            old_val = cur_val[path[-1]]
             cur_val[path[-1]] = value
         except KeyError:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
@@ -1340,6 +1341,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if 'status' in path[-2:]:
             # If we are just modifying a status, we are done
+            return
+
+        if old_val == value:
+            # If we didn't modify anything, just return
             return
 
         # If the beam energy was modified, update the visible materials
