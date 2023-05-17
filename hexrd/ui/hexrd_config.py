@@ -101,6 +101,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
+    """Emitted when a detector's shape changes
+
+    The argument is the name of the detector whose shape changed.
+    """
+    detector_shape_changed = Signal(str)
+
     """Emitted when an instrument config has been loaded
 
     Warning: this will cause cartesian and polar parameters to be
@@ -1326,6 +1332,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             for val in path[:-1]:
                 cur_val = cur_val[val]
 
+            old_val = cur_val[path[-1]]
             cur_val[path[-1]] = value
         except KeyError:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
@@ -1334,6 +1341,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if 'status' in path[-2:]:
             # If we are just modifying a status, we are done
+            return
+
+        if old_val == value:
+            # If we didn't modify anything, just return
             return
 
         # If the beam energy was modified, update the visible materials
@@ -1351,6 +1362,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # indicating so
             det = path[1]
             self.detector_transform_modified.emit(det)
+            return
+
+        if (path[0] == 'detectors' and path[2] == 'pixels'
+                and path[3] in ('columns', 'rows')):
+            # If the detector shape changes, we need to indicate so.
+            # Whatever images that were previously loaded need to be removed,
+            # since the shapes will no longer match, and new dummy
+            # images loaded with the correct pixel sizes.
+            det = path[1]
+            self.detector_shape_changed.emit(det)
+            self.rerender_needed.emit()
             return
 
         if path[0] == 'oscillation_stage':

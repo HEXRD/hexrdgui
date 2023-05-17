@@ -280,6 +280,8 @@ class MainWindow(QObject):
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
             self.on_detectors_changed)
+        HexrdConfig().detector_shape_changed.connect(
+            self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().raw_masks_changed.connect(self.update_all)
         HexrdConfig().recent_images_changed.connect(
@@ -411,6 +413,12 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.switch_toolbar(0)
         self.simple_image_series_dialog.config_changed()
         self.update_view_recent_images_list()
+
+    def on_detector_shape_changed(self, det_key):
+        # We need to load/reset the dummy images if a detector's shape changes.
+        # Otherwise, the HexrdConfig().images_dict object will not have images
+        # with the correct shape.
+        self.load_dummy_images()
 
     def load_dummy_images(self):
         if HexrdConfig().loading_state:
