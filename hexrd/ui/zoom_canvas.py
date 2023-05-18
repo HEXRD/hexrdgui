@@ -227,8 +227,8 @@ class ZoomCanvas(FigureCanvas):
         a3_y = np.degrees(pv.angular_grid[0][i_row[1]:i_row[2], 0])
         if self.display_sums_in_subplots:
             roi = rsimg[i_row[1]:i_row[2], j_col[0]:j_col[1]]
-            a2_y = np.sum(roi, axis=0)
-            a3_x = np.sum(roi, axis=1)
+            a2_y = np.nansum(roi, axis=0)
+            a3_x = np.nansum(roi, axis=1)
         else:
             if self.in_zoom_axis and self.vhlines:
                 x = self.vhlines[0].get_xdata()
