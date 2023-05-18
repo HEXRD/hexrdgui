@@ -220,6 +220,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when material parameters are modified"""
     material_modified = Signal(str)
 
+    """Emitted when image mode widget should be enabled/disabled"""
+    enable_image_mode_widget = Signal(bool)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)

@@ -97,6 +97,9 @@ class ImageModeWidget(QObject):
         HexrdConfig().instrument_config_loaded.connect(
             self.auto_generate_polar_params)
 
+        HexrdConfig().enable_image_mode_widget.connect(
+            self.enable_image_mode_widget)
+
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
@@ -126,6 +129,9 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_stereo_show_border)
         self.ui.stereo_project_from_polar.toggled.connect(
             HexrdConfig().set_stereo_project_from_polar)
+
+    def enable_image_mode_widget(self, b):
+        self.ui.tab_widget.setEnabled(b)
 
     def currentChanged(self, index):
         modes = {
