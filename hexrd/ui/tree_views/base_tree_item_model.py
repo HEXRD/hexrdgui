@@ -67,9 +67,16 @@ class BaseTreeItemModel(QAbstractItemModel):
     def clear(self):
         # Remove all of the root item children. That clears it.
         root = self.root_item
-        self.beginRemoveRows(QModelIndex(), KEY_COL, root.child_count() - 1)
+
+        # We need to do begin/endResetModel() rather than begin/endRemoveRows()
+        # because it was buggy when we were using the row version before.
+        # I think the issue was that some parts of the item model were not
+        # being notified that the data was modified (maybe a dataChanged() was
+        # needed). However, since we are deleting everything, it is simpler
+        # to just do a full ResetModel().
+        self.beginResetModel()
         root.clear_children()
-        self.endRemoveRows()
+        self.endResetModel()
 
     def add_tree_item(self, data, parent):
         return TreeItem(data, parent)
