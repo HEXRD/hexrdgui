@@ -9,6 +9,7 @@ from PySide2.QtWidgets import QMenu
 from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
+from hexrd.ui.markers import igor_marker
 from hexrd.ui.overlays import Overlay
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
@@ -16,7 +17,6 @@ from hexrd.ui.tree_views.base_dict_tree_item_model import (
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
 from hexrd.ui.utils import hkl_str_to_array
-
 
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
@@ -261,25 +261,22 @@ class PicksTreeView(BaseDictTreeView):
         if not self.canvas:
             return
 
-        if not self.all_picks_line:
-            kwargs = {
-                'color': 'b',
-                'marker': '.',
-                'linestyle': 'None',
-            }
+        plot_kwargs = {
+            'color': 'b',
+            'marker': igor_marker,
+            'markeredgecolor': 'black',
+            'markersize': 16,
+            'linestyle': 'None',
+        }
 
+        if not self.all_picks_line:
             # empty line
-            self.all_picks_line, = self.canvas.axis.plot([], [], **kwargs)
+            self.all_picks_line, = self.canvas.axis.plot([], [], **plot_kwargs)
 
         if not self.selected_picks_line:
-            kwargs = {
-                'color': 'b',
-                'marker': '.',
-                'linestyle': 'None',
-            }
-
             # empty line
-            self.selected_picks_line, = self.canvas.axis.plot([], [], **kwargs)
+            self.selected_picks_line, = self.canvas.axis.plot([], [],
+                                                              **plot_kwargs)
 
         self.update_line_colors()
 
