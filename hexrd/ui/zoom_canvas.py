@@ -252,12 +252,15 @@ class ZoomCanvas(FigureCanvas):
                 x, y = np.mean(xlims), np.mean(ylims)
 
             # Convert to pixels
-            x_pixel = pv.tth_to_pixel(np.radians(x)).item()
-            y_pixel = pv.eta_to_pixel(np.radians(y)).item()
+            x_pixel = round(pv.tth_to_pixel(np.radians(x)).item())
+            y_pixel = round(pv.eta_to_pixel(np.radians(y)).item())
 
             # Extract the points from the main image
-            a2_y[valid_a2] = rsimg[round(y_pixel), a2_low:a2_high]
-            a3_x[valid_a3] = rsimg[a3_low:a3_high, round(x_pixel)]
+            if y_pixel < rsimg.shape[0]:
+                a2_y[valid_a2] = rsimg[y_pixel, a2_low:a2_high]
+
+            if x_pixel < rsimg.shape[1]:
+                a3_x[valid_a3] = rsimg[a3_low:a3_high, x_pixel]
 
         a2_data = (a2_x, a2_y)
         a3_data = (a3_x, a3_y)
