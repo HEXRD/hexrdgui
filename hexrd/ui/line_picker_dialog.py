@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hexrd.ui.constants import ViewType
+from hexrd.ui.markers import igor_marker
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.zoom_canvas import ZoomCanvas
 
@@ -68,6 +69,13 @@ class LinePickerDialog(QObject):
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
 
         self.move_dialog_to_left()
+
+        self.line_settings = {
+            'marker': igor_marker,
+            'markeredgecolor': 'black',
+            'markersize': 16,
+            'linestyle': 'None',
+        }
 
         self.setup_connections()
 
@@ -178,12 +186,9 @@ class LinePickerDialog(QObject):
     def add_line(self):
         ax = self.canvas.axis
         color = next(self.color_cycler)
-        marker = '.'
-        linestyle = 'None'
 
         # empty line
-        line, = ax.plot([], [], color=color, marker=marker,
-                        linestyle=linestyle)
+        line, = ax.plot([], [], color=color, **self.line_settings)
         self.linebuilder = LineBuilder(line)
 
         self.linebuilder.point_picked.connect(self.point_picked.emit)
