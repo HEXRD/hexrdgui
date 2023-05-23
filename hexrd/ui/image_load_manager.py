@@ -290,12 +290,12 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                 frames = frames[::-1]
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
                 ims_dict[key], ops, frame_list=frames)
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'pixels', 'columns', 'value'],
-                ims_dict[key].shape[1])
-            HexrdConfig().set_instrument_config_val(
-                ['detectors', key, 'pixels', 'rows', 'value'],
-                ims_dict[key].shape[0])
+
+            # Set these directly so no signals get emitted
+            det_conf = HexrdConfig().config['instrument']['detectors'][key]
+            det_conf['pixels']['columns']['value'] = ims_dict[key].shape[1]
+            det_conf['pixels']['rows']['value'] = ims_dict[key].shape[0]
+
         self.images_transformed.emit()
 
     def display_aggregation(self, ims_dict):
