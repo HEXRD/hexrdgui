@@ -223,12 +223,24 @@ class ZoomCanvas(FigureCanvas):
         i_row, j_col = self.i_row, self.j_col
         roi_deg = self.roi_deg
 
-        a2_x = np.degrees(pv.angular_grid[1][0, j_col[0]:j_col[1]])
-        a3_y = np.degrees(pv.angular_grid[0][i_row[1]:i_row[2], 0])
+        # In case the bounding box is out of bounds, we need to clip
+        # the line and insert nans.
+        a2_max = pv.angular_grid[1].shape[1]
+        a2_x, valid_a2, a2_low, a2_high = _clip_range(j_col[0], j_col[1],
+                                                      0, a2_max)
+        a2_y = a2_x.copy()
+
+        a3_max = pv.angular_grid[0].shape[0]
+        a3_x, valid_a3, a3_low, a3_high = _clip_range(i_row[1], i_row[2],
+                                                      0, a3_max)
+        a3_y = a3_x.copy()
+
+        a2_x[valid_a2] = np.degrees(pv.angular_grid[1][0, a2_low:a2_high])
+        a3_y[valid_a3] = np.degrees(pv.angular_grid[0][a3_low:a3_high, 0])
         if self.display_sums_in_subplots:
-            roi = rsimg[i_row[1]:i_row[2], j_col[0]:j_col[1]]
-            a2_y = np.nansum(roi, axis=0)
-            a3_x = np.nansum(roi, axis=1)
+            roi = rsimg[a3_low:a3_high, a2_low:a2_high]
+            a2_y[valid_a2] = np.nansum(roi, axis=0)
+            a3_x[valid_a3] = np.nansum(roi, axis=1)
         else:
             if self.in_zoom_axis and self.vhlines:
                 x = self.vhlines[0].get_xdata()
@@ -240,12 +252,15 @@ class ZoomCanvas(FigureCanvas):
                 x, y = np.mean(xlims), np.mean(ylims)
 
             # Convert to pixels
-            x_pixel = pv.tth_to_pixel(np.radians(x)).item()
-            y_pixel = pv.eta_to_pixel(np.radians(y)).item()
+            x_pixel = round(pv.tth_to_pixel(np.radians(x)).item())
+            y_pixel = round(pv.eta_to_pixel(np.radians(y)).item())
 
             # Extract the points from the main image
-            a2_y = rsimg[round(y_pixel), j_col[0]:j_col[1]]
-            a3_x = rsimg[i_row[1]:i_row[2], round(x_pixel)]
+            if y_pixel < rsimg.shape[0]:
+                a2_y[valid_a2] = rsimg[y_pixel, a2_low:a2_high]
+
+            if x_pixel < rsimg.shape[1]:
+                a3_x[valid_a3] = rsimg[a3_low:a3_high, x_pixel]
 
         a2_data = (a2_x, a2_y)
         a3_data = (a3_x, a3_y)
@@ -272,12 +287,6 @@ class ZoomCanvas(FigureCanvas):
         roi_diff = (np.tile([self.tth_tol, self.eta_tol], (4, 1)) * 0.5 *
                     np.vstack([[-1, -1], [1, -1], [1, 1], [-1, 1]]))
         roi_deg = np.tile(point, (4, 1)) + roi_diff
-
-        # Clip the values into the required boundaries
-        roi_deg[:, 0] = np.clip(roi_deg[:, 0],
-                                *np.degrees((pv.tth_min, pv.tth_max)))
-        roi_deg[:, 1] = np.clip(roi_deg[:, 1],
-                                *np.degrees((pv.eta_min, pv.eta_max)))
 
         self.roi_deg = roi_deg
 
@@ -395,3 +404,17 @@ class MainCanvasCursor(Cursor):
 
     def blit(self):
         self.canvas.blit(self.ax.bbox)
+
+
+def _clip_range(low, high, min_low, max_high):
+    full_array = np.zeros(high - low)
+    indices = np.arange(low, high)
+    full_array[indices < min_low] = np.nan
+    full_array[indices >= max_high] = np.nan
+
+    valid = ~np.isnan(full_array)
+
+    new_low = max(low, min_low)
+    new_high = min(high, max_high)
+
+    return full_array, valid, new_low, new_high
