@@ -995,6 +995,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         recursive_key_check(self.indexing_config, cfg)
 
+        # Make sure the exclusions do not get reset in fit-grains
+        cfg['fit_grains']['reset_exclusions'] = False
+
         current_material = self.indexing_config['_selected_material']
         selected_material = self.material(current_material)
         plane_data = selected_material.planeData
@@ -1010,7 +1013,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'active': current_material,
             'dmin': selected_material.dmin.getVal('angstrom'),
             'tth_width': tth_width,
-            'min_sfac_ratio': None
+            'reset_exclusions': False,
         }
 
         data = []

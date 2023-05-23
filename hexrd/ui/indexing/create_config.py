@@ -34,9 +34,14 @@ def create_indexing_config():
         # Set the max number of CPUs
         indexing_config['multiprocessing'] = HexrdConfig().max_cpus
 
+    # Make sure exclusions are not reset
+    fit_grains_config = indexing_config.setdefault('fit_grains', {})
+    disable_exclusions_reset(fit_grains_config)
+
     # Set the active material on the config
-    tmp = indexing_config.setdefault('material', {})
-    tmp['active'] = material.name
+    material_config = indexing_config.setdefault('material', {})
+    material_config['active'] = material.name
+    disable_exclusions_reset(material_config)
 
     # Create the root config from the indexing config dict
     config = RootConfig(indexing_config)
@@ -84,3 +89,24 @@ def validate_config(config):
 
 class OmegasNotFoundError(Exception):
     pass
+
+
+def disable_exclusions_reset(config):
+    # Disable exclusions reset for the provided config
+    config['reset_exclusions'] = False
+
+    # Set these to None so we don't get a warning message
+    set_to_none = [
+        'min_sfac_ratio',
+        'dmin',
+        'dmax',
+        'tthmin',
+        'tthmax',
+        'sfacmin',
+        'sfacmax',
+        'pintmin',
+        'pintmax',
+    ]
+
+    for key in set_to_none:
+        config[key] = None
