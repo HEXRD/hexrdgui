@@ -49,16 +49,15 @@ jobs:
 
     - name: Get version using git describe
       working-directory: hexrdgui
-      id: hexrdgui_describe
-      run: echo "::set-output name=version::$(git describe --tag)"
+      run: echo "HEXRDGUI_GIT_DESCRIBE=$(git describe --tag)" >> $GITHUB_ENV
 
     - name: Set version environment variables used by CPack
       working-directory: hexrdgui
       run: |
-          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} full
-          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} major
-          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} minor
-          python packaging/github_action_version.py ${{ steps.hexrdgui_describe.outputs.version }} patch
+          python packaging/github_action_version.py ${{ env.HEXRDGUI_GIT_DESCRIBE }} full
+          python packaging/github_action_version.py ${{ env.HEXRDGUI_GIT_DESCRIBE }} major
+          python packaging/github_action_version.py ${{ env.HEXRDGUI_GIT_DESCRIBE }} minor
+          python packaging/github_action_version.py ${{ env.HEXRDGUI_GIT_DESCRIBE }} patch
 
     - name: Set channel for HEXRD ( hexrd or hexrd-prerelease )
       run: |
@@ -115,7 +114,7 @@ jobs:
       if: github.ref != 'refs/heads/master'
       uses: actions/upload-artifact@v2-preview
       with:
-        name: HEXRDGUI-${{ matrix.config.name }}-${{ steps.hexrdgui_describe.outputs.version }}.tar.bz2
+        name: HEXRDGUI-${{ matrix.config.name }}-${{ env.HEXRDGUI_GIT_DESCRIBE }}.tar.bz2
         path: ${{ github.workspace }}/hexrdgui/packaging/output/**/*.tar.bz2
 
     - name: Set label ( main or hexrdgui-prerelease )
