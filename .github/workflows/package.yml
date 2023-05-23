@@ -127,7 +127,9 @@ jobs:
       working-directory: hexrdgui/packaging
       run: |
           conda activate hexrdgui-package
-          conda install --override-channels -c conda-forge anaconda-client
+          # FIXME: downgrade urllib3 until this issue is fixed:
+          # https://github.com/Anaconda-Platform/anaconda-client/issues/654
+          conda install --override-channels -c conda-forge anaconda-client 'urllib3<2.0.0'
           anaconda --token ${{ secrets.ANACONDA_TOKEN }} upload --force --user HEXRD --label ${HEXRDGUI_PACKAGE_LABEL} output/**/*.tar.bz2
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
       # command works.
