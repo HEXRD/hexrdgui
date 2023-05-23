@@ -272,6 +272,15 @@ class LinePickerDialog(QObject):
         self.ui.show()
 
     @property
+    def line_data(self):
+        # Get the line data as a list of transposed numpy arrays
+        output = []
+        for line in self.lines:
+            output.append(np.array(line.get_data()).T)
+
+        return output
+
+    @property
     def zoom_frozen(self):
         return self.zoom_canvas.frozen
 
