@@ -36,6 +36,7 @@ from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
 from hexrd.ui.calibration.hkl_picks_tree_view_dialog import (
     HKLPicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
 )
+from hexrd.ui.calibration.structureless import StructurelessCalibrationRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import (
     create_polar_mask_from_raw, rebuild_polar_masks
@@ -239,6 +240,8 @@ class MainWindow(QObject):
             self.on_action_run_laue_and_powder_calibration_triggered)
         self.ui.action_run_laue_and_powder_calibration.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_run_structureless_calibration.triggered.connect(
+            self.run_structureless_calibration)
         self.ui.action_run_hedm_calibration.triggered.connect(
             self.run_hedm_calibration)
         self.ui.action_run_indexing.triggered.connect(
@@ -577,6 +580,30 @@ class MainWindow(QObject):
         self.update_config_gui()
         self.deep_rerender()
 
+    def run_structureless_calibration(self):
+        cached_async_runner_name = '_structureless_calibration_async_runner'
+        if not hasattr(self, cached_async_runner_name):
+            # Initialize this only once and keep it around, so we don't
+            # run into issues connecting/disconnecting the messages.
+            setattr(self, cached_async_runner_name, AsyncRunner(self.ui))
+
+        async_runner = getattr(self, cached_async_runner_name)
+
+        canvas = self.ui.image_tab_widget.image_canvases[0]
+        runner = StructurelessCalibrationRunner(canvas, async_runner, self.ui)
+        runner.instrument_updated.connect(
+            self.structureless_calibration_updated)
+
+        try:
+            runner.run()
+        except Exception as e:
+            QMessageBox.critical(self.ui, 'HEXRD', str(e))
+            raise
+
+    def structureless_calibration_updated(self):
+        self.update_config_gui()
+        self.update_all()
+
     def run_hedm_calibration(self):
         cached_async_runner_name = '_hedm_calibration_runner_async_runner'
         if not hasattr(self, cached_async_runner_name):
@@ -862,6 +889,8 @@ class MainWindow(QObject):
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian or is_stereo) and has_images)
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
+            is_polar and has_images)
+        self.ui.action_run_structureless_calibration.setEnabled(
             is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
             (is_polar or is_raw) and has_images)
@@ -1189,6 +1218,10 @@ class MainWindow(QObject):
                         'stack)'),
             },
             'action_run_laue_and_powder_calibration': {
+                True: '',
+                False: 'Polar view must be active with image data loaded',
+            },
+            'action_run_structureless_calibration': {
                 True: '',
                 False: 'Polar view must be active with image data loaded',
             },

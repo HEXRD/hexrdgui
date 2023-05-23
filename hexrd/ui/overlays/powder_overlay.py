@@ -7,7 +7,7 @@ from hexrd import unitcell
 
 from hexrd.transforms import xfcapi
 from hexrd.xrdutil.phutil import (
-    polar_tth_corr_map_rygg_pinhole, PinholeDistortion, RyggPinholeDistortion,
+    polar_tth_corr_map_rygg_pinhole, JHEPinholeDistortion, RyggPinholeDistortion,
     SampleLayerDistortion, tth_corr_map_pinhole, tth_corr_map_rygg_pinhole,
     tth_corr_map_sample_layer,
 )
@@ -443,7 +443,7 @@ class PowderOverlay(Overlay):
                 'detector': panel,
                 **self.tth_distortion_kwargs,
             }
-            return PinholeDistortion(**kwargs)
+            return JHEPinholeDistortion(**kwargs)
 
         def tth_rygg_pinhole_distortion(panel):
             kwargs = {

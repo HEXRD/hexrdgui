@@ -396,6 +396,8 @@ class GenericPicksTreeViewDialog(QDialog):
                  parent=None):
         super().__init__(parent)
 
+        self.setWindowTitle('Edit Picks')
+
         self.setLayout(QVBoxLayout(self))
 
         self.tree_view = GenericPicksTreeView(dictionary, coords_type, canvas,

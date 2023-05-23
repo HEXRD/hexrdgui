@@ -233,6 +233,7 @@
      </property>
      <addaction name="action_run_fast_powder_calibration"/>
      <addaction name="action_run_laue_and_powder_calibration"/>
+     <addaction name="action_run_structureless_calibration"/>
      <addaction name="action_run_hedm_calibration"/>
     </widget>
     <addaction name="menu_calibration"/>
@@ -825,6 +826,11 @@
   <action name="action_edit_defaults">
    <property name="text">
     <string>Edit defaults</string>
+   </property>
+  </action>
+  <action name="action_run_structureless_calibration">
+   <property name="text">
+    <string>Structureless</string>
    </property>
   </action>
  </widget>
