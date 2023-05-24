@@ -165,6 +165,10 @@ class LLNLImportToolDialog(QObject):
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
             self.update_config_selection(self.ui.config_selection.currentIndex())
+            self.ui.bbox.setToolTip('')
+            if self.instrument == 'TARDIS':
+                self.ui.bbox.setToolTip('The bounding box editors are not ' +
+                                        'available for the TARDIS instrument')
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}

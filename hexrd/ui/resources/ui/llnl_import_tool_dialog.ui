@@ -453,7 +453,7 @@
           <item alignment="Qt::AlignRight">
            <widget class="QLabel" name="width_label">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="text">
              <string>Width</string>
