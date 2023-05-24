@@ -97,26 +97,11 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QGridLayout" name="gridLayout_6">
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item row="1" column="1" colspan="2" alignment="Qt::AlignHCenter">
-           <widget class="QLabel" name="config_file_label">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string extracomment="Defaults to currently loaded configuration"/>
-            </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
             <property name="text">
-             <string>No File Selected</string>
+             <string>Select Configuration</string>
             </property>
            </widget>
           </item>
@@ -152,39 +137,13 @@
           <item row="1" column="1" colspan="2">
            <widget class="QLabel" name="config_file_label">
             <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>Current Configuration</string>
-            </property>
-            <property name="checked">
              <bool>false</bool>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QRadioButton" name="select_config">
-            <property name="enabled">
-             <bool>true</bool>
+            <property name="toolTip">
+             <string extracomment="Defaults to currently loaded configuration"/>
             </property>
             <property name="text">
-             <string>Load Configuration</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QCheckBox" name="default_config">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Default</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
+             <string>No File Selected</string>
             </property>
            </widget>
           </item>

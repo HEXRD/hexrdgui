@@ -75,9 +75,9 @@ class LLNLImportToolDialog(QObject):
         self.ui.line_color.clicked.connect(self.pick_line_color)
         self.ui.line_size.valueChanged.connect(self.update_template_style)
         self.ui.cancel.clicked.connect(self.on_canceled)
-        self.ui.select_config.toggled.connect(self.update_config_selection)
-        self.ui.default_config.toggled.connect(self.update_config_load)
         self.ui.load_config.clicked.connect(self.load_config)
+        self.ui.config_selection.currentIndexChanged.connect(
+            self.update_config_selection)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -91,8 +91,7 @@ class LLNLImportToolDialog(QObject):
 
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
-        not_default = (self.ui.current_config.isChecked()
-                       or not self.ui.default_config.isChecked())
+        not_default = self.ui.config_selection.currentIndex() != 0
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
                 with open(self.config_file, 'r') as f:
@@ -165,26 +164,19 @@ class LLNLImportToolDialog(QObject):
             self.parent().action_show_toolbar.setChecked(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
-            self.update_config_selection(self.ui.select_config.isChecked())
+            self.update_config_selection(self.ui.config_selection.currentIndex())
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
         HexrdConfig().set_euler_angle_convention(new_conv)
 
-    def update_config_selection(self, checked):
-        self.ui.default_config.setEnabled(checked)
-        if not checked:
-            self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                                enabled=False)
-        elif not self.ui.default_config.isChecked():
-            self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                                enabled=True)
+    def update_config_selection(self, idx):
+        enable_load = (idx == 2) # Load configuration from file selected
+        self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
+                            enabled=enable_load)
+
         if self.ui.instrument.isEnabled():
             self.get_instrument_defaults()
-
-    def update_config_load(self, checked):
-        self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                            enabled=not checked)
 
     def load_instrument_config(self):
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
@@ -453,9 +445,7 @@ class LLNLImportToolDialog(QObject):
                             self.ui.config_file_label,
                             self.ui.template_instructions, enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
-        select_config = self.ui.select_config.isChecked()
-        self.ui.default_config.setEnabled(select_config)
-        not_default = select_config and not self.ui.default_config.isChecked()
+        not_default = self.ui.config_selection.currentIndex() != 0
         self.ui.load_config.setEnabled(not_default)
         self.ui.config_file_label.setEnabled(not_default)
         self.ui.config_file_label.setText('No File Selected')
