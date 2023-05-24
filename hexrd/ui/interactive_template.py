@@ -23,10 +23,10 @@ class InteractiveTemplate:
         self.shape = None
         self.press = None
         self.total_rotation = 0.
-        self.translating = True
         self.shape_styles = []
         self.translation = [0, 0]
         self.complete = False
+        self.event_key = None
         self.parent.setFocusPolicy(Qt.ClickFocus)
 
     @property
@@ -54,7 +54,7 @@ class InteractiveTemplate:
             self.shape.set_closed(False)
         self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
         self.update_position(instr, det)
-        self.connect_translate()
+        self.connect_translate_rotate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
@@ -140,10 +140,7 @@ class InteractiveTemplate:
                 self.shape.remove()
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
                 self.raw_axes.add_patch(self.shape)
-                if self.translating:
-                    self.connect_translate()
-                else:
-                    self.connect_rotate()
+                self.connect_translate_rotate()
             self.redraw()
         else:
             if self.shape:
@@ -152,10 +149,11 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect(self):
-        if self.translating:
-            self.disconnect_translate()
-        else:
-            self.disconnect_rotate()
+        self.parent.mpl_disconnect(self.button_press_cid)
+        self.parent.mpl_disconnect(self.button_release_cid)
+        self.parent.mpl_disconnect(self.motion_cid)
+        self.parent.mpl_disconnect(self.key_press_cid)
+        self.parent.mpl_disconnect(self.button_drag_cid)
 
     def completed(self):
         self.disconnect()
@@ -215,17 +213,37 @@ class InteractiveTemplate:
         self.shape.set_xy(new_xy)
         self.redraw()
 
-    def connect_translate(self):
+    def on_press(self, event):
+        self.event_key = event.key
+        if event.key is None:
+            self.on_press_translate(event)
+        elif event.key == 'shift':
+            self.on_press_rotate(event)
+
+    def on_release(self, event):
+        if self.event_key is None:
+            self.on_translate_release(event)
+        elif self.event_key == 'shift':
+            self.on_rotate_release(event)
+
+    def on_key(self, event):
+        if 'shift' in event.key:
+            self.on_key_rotate(event)
+        else:
+            self.on_key_translate(event)
+
+    def connect_translate_rotate(self):
         self.button_press_cid = self.parent.mpl_connect(
-            'button_press_event', self.on_press_translate)
+            'button_press_event', self.on_press)
         self.button_release_cid = self.parent.mpl_connect(
             'button_release_event', self.on_release)
         self.motion_cid = self.parent.mpl_connect(
             'motion_notify_event', self.on_translate)
         self.key_press_cid = self.parent.mpl_connect(
-            'key_press_event', self.on_key_translate)
+            'key_press_event', self.on_key)
+        self.button_drag_cid = self.parent.mpl_connect(
+            'motion_notify_event', self.on_rotate)
         self.parent.setFocus()
-        self.translating = True
 
     def translate_template(self, dx, dy):
         self.shape.set_xy(self.shape.xy + np.array([dx, dy]))
@@ -271,7 +289,7 @@ class InteractiveTemplate:
         self.shape.set_xy(xy + np.array([dx, dy]))
         self.redraw()
 
-    def on_release(self, event):
+    def on_translate_release(self, event):
         if self.press is None:
             return
 
@@ -283,24 +301,6 @@ class InteractiveTemplate:
         self.shape.set_xy(xy + np.array([dx1, dy1]))
         self.press = None
         self.redraw()
-
-    def disconnect_translate(self):
-        self.parent.mpl_disconnect(self.button_press_cid)
-        self.parent.mpl_disconnect(self.button_release_cid)
-        self.parent.mpl_disconnect(self.motion_cid)
-        self.parent.mpl_disconnect(self.key_press_cid)
-
-    def connect_rotate(self):
-        self.button_press_cid = self.parent.mpl_connect(
-            'button_press_event', self.on_press_rotate)
-        self.button_drag_cid = self.parent.mpl_connect(
-            'motion_notify_event', self.on_rotate)
-        self.button_release_cid = self.parent.mpl_connect(
-            'button_release_event', self.on_rotate_release)
-        self.key_press_cid = self.parent.mpl_connect(
-            'key_press_event', self.on_key_rotate)
-        self.parent.setFocus()
-        self.translating = False
 
     def on_press_rotate(self, event):
         if event.inaxes != self.shape.axes:
@@ -323,7 +323,7 @@ class InteractiveTemplate:
         self.shape.set_xy(verts)
 
     def on_rotate(self, event):
-        if self.press is None or event.inaxes != self.shape.axes:
+        if self.press is None or event.inaxes != self.shape.axes or event.key != 'shift':
             return
 
         x, y = self.center
@@ -335,9 +335,9 @@ class InteractiveTemplate:
     def on_key_rotate(self, event):
         angle = 0.00175
         # !!! only catch arrow keys
-        if event.key == 'left' or event.key == 'up':
+        if event.key == 'shift+left' or event.key == 'shift+up':
             angle *= -1.
-        elif event.key != 'right' and event.key != 'down':
+        elif event.key == 'shift+right' and event.key == 'shift+down':
             angle *= 1.
         self.total_rotation += angle
         self.rotate_template(self.shape.xy, angle)
@@ -384,11 +384,3 @@ class InteractiveTemplate:
         self.press = None
         self.rotate_template(xy, angle)
         self.redraw()
-        # DEBUG
-        # print(f'In rotate release {angle}, {self.total_rotation}')
-
-    def disconnect_rotate(self):
-        self.parent.mpl_disconnect(self.button_press_cid)
-        self.parent.mpl_disconnect(self.button_drag_cid)
-        self.parent.mpl_disconnect(self.button_release_cid)
-        self.parent.mpl_disconnect(self.key_press_cid)

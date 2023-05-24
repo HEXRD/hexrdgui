@@ -65,8 +65,6 @@ class LLNLImportToolDialog(QObject):
             self.instrument_selected)
         self.ui.load.clicked.connect(self.load_images)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
-        self.ui.trans.clicked.connect(self.setup_translate)
-        self.ui.rotate.clicked.connect(self.setup_rotate)
         self.ui.add_transform.clicked.connect(self.add_transform)
         self.ui.accept_template.clicked.connect(self.crop_and_mask)
         self.ui.complete.clicked.connect(self.completed)
@@ -337,11 +335,10 @@ class LLNLImportToolDialog(QObject):
         self.update_template_style()
 
         self.display_bounds()
-        self.enable_widgets(
-            self.ui.outline_position, self.ui.outline_appearance, enabled=True)
+        self.enable_widgets(self.ui.outline_appearance,
+                            self.ui.template_instructions, enabled=True)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
-        self.ui.trans.setChecked(True)
 
     def update_template_style(self):
         ls = self.ui.line_style.currentText()
@@ -360,15 +357,10 @@ class LLNLImportToolDialog(QObject):
             self.outline_color = dialog.selectedColor().name()
             self.update_template_style()
 
-    def setup_translate(self):
+    def setup_translate_rotate(self):
         if self.it.shape is not None:
             self.it.disconnect()
-            self.it.connect_translate()
-
-    def setup_rotate(self):
-        if self.it.shape is not None:
-            self.it.disconnect()
-            self.it.connect_rotate()
+            self.it.connect_translate_rotate()
 
     def clear_boundry(self):
         if self.it and self.it.shape is not None:
@@ -402,7 +394,7 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.outline_appearance,
-                            self.ui.outline_position, enabled=False)
+                            self.ui.template_instructions, enabled=False)
         self.ui.completed_dets.setText(
             ', '.join(set(self.completed_detectors)))
 
@@ -434,8 +426,8 @@ class LLNLImportToolDialog(QObject):
         self.clear_boundry()
         self.enable_widgets(
             self.ui.transform_img, self.ui.file_selection, enabled=True)
-        self.enable_widgets(self.ui.outline_position,
-                            self.ui.outline_appearance, enabled=False)
+        self.enable_widgets(self.ui.outline_appearance,
+                            self.ui.template_instructions, enabled=False)
 
     def check_for_unsaved_changes(self):
         if self.it.shape is None and self.detector in self.completed_detectors:
@@ -457,9 +449,9 @@ class LLNLImportToolDialog(QObject):
         self.edited_images.clear()
         self.enable_widgets(self.ui.raw_image, self.ui.config,
                             self.ui.transform_img, self.ui.outline_appearance,
-                            self.ui.outline_position, self.ui.finalize,
-                            self.ui.default_config, self.ui.load_config,
-                            self.ui.config_file_label, enabled=False)
+                            self.ui.finalize, self.ui.load_config,
+                            self.ui.config_file_label,
+                            self.ui.template_instructions, enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
         select_config = self.ui.select_config.isChecked()
         self.ui.default_config.setEnabled(select_config)
