@@ -143,13 +143,13 @@ class ImageModeWidget(QObject):
     def enable_image_mode_widget(self, b):
         self.ui.tab_widget.setEnabled(b)
 
-    def set_image_mode_widget_tab(self, idx):
-        tab = VIEW_MODE_TO_TAB_INDEX[idx]
+    def set_image_mode_widget_tab(self, view_mode):
+        tab = VIEW_MODE_TO_TAB_INDEX[view_mode]
         self.ui.tab_widget.setCurrentIndex(tab)
 
     def currentChanged(self, index):
-        ind = TAB_INDEX_TO_VIEW_MODE[index]
-        self.tab_changed.emit(ind)
+        view_mode = TAB_INDEX_TO_VIEW_MODE[index]
+        self.tab_changed.emit(view_mode)
 
     def all_widgets(self):
         widgets = [
