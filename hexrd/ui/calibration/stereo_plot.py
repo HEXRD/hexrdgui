@@ -2,8 +2,9 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-
+import copy
 from hexrd import constants as ct
+from hexrd.rotations import mapAngle
 from hexrd.transforms.xfcapi import detectorXYToGvec
 
 from hexrd.ui.constants import ViewType
@@ -24,9 +25,15 @@ class InstrumentViewer:
 
     def __init__(self):
         self.type = ViewType.stereo
+
+        # This instrument is used to generate the overlays and other things
         self.instr = create_hedm_instrument()
 
+        # This instrument has a VISAR view and is used to generate the image
+        self.instr_pv = copy.deepcopy(self.instr)
+        self.instr_pv.beam_vector = ct.beam_vec
         self.pv = None
+        self.img = None
 
         self.draw_stereo()
 
@@ -47,7 +54,7 @@ class InstrumentViewer:
         return HexrdConfig().stereo_project_from_polar
 
     def detector_borders(self, det):
-        panel = self.instr.detectors[det]
+        panel = self.instr_pv.detectors[det]
 
         # First, create the polar view version of the borders
         # (this skips some things like trimming based upon tth/eta min/max)
@@ -75,7 +82,7 @@ class InstrumentViewer:
             angles[:, [0, 1]] = angles[:, [1, 0]]
 
             # Need to transpose angles before and after
-            borders[i] = angles_to_stereo(angles.T, self.instr,
+            borders[i] = angles_to_stereo(angles.T, self.instr_pv,
                                           self.stereo_size).T
 
         return borders
@@ -83,7 +90,7 @@ class InstrumentViewer:
     @property
     def all_detector_borders(self):
         borders = {}
-        for key in self.instr.detectors:
+        for key in self.instr_pv.detectors:
             borders[key] = self.detector_borders(key)
 
         return borders
@@ -94,12 +101,38 @@ class InstrumentViewer:
         else:
             self.draw_stereo_from_raw()
 
+        self.fill_image_with_nans()
+
     def draw_stereo_from_raw(self):
         self.img = stereo_project(**{
-            'instr': self.instr,
+            'instr': self.instr_pv,
             'raw': self.raw_img_dict,
             'stereo_size': self.stereo_size,
         })
+
+    def prep_eta_grid(self, eta_grid):
+        """
+        this function formats the eta grid in a
+        range such that
+        """
+        eta_grid = mapAngle(eta_grid, (0, 360.0), units='degrees')
+        idx = np.argsort(eta_grid)
+        eta_grid = eta_grid[idx]
+
+        mask = np.zeros(eta_grid.shape, dtype=bool)
+        eta_grid, iduq = np.unique(eta_grid, return_index=True)
+        mask[iduq] = True
+        return eta_grid, idx, mask
+
+    def pad_etas_pvarray(self, eta_grid, polar_img):
+        start = np.array([eta_grid[-1] - 360])
+        end   = np.array([360 + eta_grid[0]])
+        eta_grid = np.concatenate((start, eta_grid, end))
+
+        pstart = np.atleast_2d(polar_img[-1,:])
+        pstop  = np.atleast_2d(polar_img[0,:])
+        polar_img = np.vstack((pstart, polar_img, pstop))
+        return eta_grid, polar_img
 
     def draw_stereo_from_polar(self):
         # We need to make sure `self.pv` is always updated when it needs
@@ -117,30 +150,29 @@ class InstrumentViewer:
         tth_grid = np.linspace(*tth_range, polar_img.shape[1])
         eta_grid = np.linspace(*eta_range, polar_img.shape[0])
 
-        # This is the old way of making the grids, but this would
-        # result in a small gap at eta == 360 for full coverage.
-        # tth_grid = np.degrees(self.pv.angular_grid[1][0, :])
-        # eta_grid = np.degrees(self.pv.angular_grid[0][:, 0])
+        eta_grid, idx, mask = self.prep_eta_grid(eta_grid)
 
-        # Make eta between 0 and 360
-        # The small extra tolerance at the end is to avoid a gap for full
-        # coverage.
-        eta_grid = np.mod(eta_grid, 360 + 1e-6)
-        idx = np.argsort(eta_grid)
-        eta_grid = eta_grid[idx]
         polar_img = polar_img[idx, :]
+        polar_img = polar_img[mask,:]
+
+        eta_grid, polar_img = self.pad_etas_pvarray(eta_grid, polar_img)
 
         self.img = stereo_projection_of_polar_view(**{
             'pvarray': polar_img,
             'tth_grid': tth_grid,
             'eta_grid': eta_grid,
-            'instr': self.instr,
+            'instr': self.instr_pv,
             'stereo_size': self.stereo_size,
         })
 
     def draw_polar(self):
-        self.pv = PolarView(self.instr)
+        self.pv = PolarView(self.instr_pv)
         self.pv.warp_all_images()
+
+    def fill_image_with_nans(self):
+        # If the image is a masked array, fill it with nans
+        if isinstance(self.img, np.ma.masked_array):
+            self.img = self.img.filled(np.nan)
 
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
