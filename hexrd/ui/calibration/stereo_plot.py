@@ -125,7 +125,7 @@ class InstrumentViewer:
         pstart = np.atleast_2d(polar_img[-1,:])
         pstop  = np.atleast_2d(polar_img[0,:])
         polar_img = np.vstack((pstart, polar_img, pstop))
-        return
+        return eta_grid, polar_img
 
     def draw_stereo_from_polar(self):
         # We need to make sure `self.pv` is always updated when it needs
@@ -148,7 +148,7 @@ class InstrumentViewer:
         polar_img = polar_img[idx, :]
         polar_img = polar_img[mask,:]
 
-        self.pad_etas_pvarray(eta_grid, polar_img)
+        eta_grid, polar_img = self.pad_etas_pvarray(eta_grid, polar_img)
 
         self.img = stereo_projection_of_polar_view(**{
             'pvarray': polar_img,
