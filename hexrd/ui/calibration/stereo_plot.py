@@ -25,7 +25,11 @@ class InstrumentViewer:
 
     def __init__(self):
         self.type = ViewType.stereo
+
+        # This instrument is used to generate the overlays and other things
         self.instr = create_hedm_instrument()
+
+        # This instrument has a VISAR view and is used to generate the image
         self.instr_pv = copy.deepcopy(self.instr)
         self.instr_pv.beam_vector = ct.beam_vec
         self.pv = None
@@ -105,7 +109,7 @@ class InstrumentViewer:
 
     def prep_eta_grid(self, eta_grid):
         """
-        this function formats the eta grid in a 
+        this function formats the eta grid in a
         range such that
         """
         eta_grid = mapAngle(eta_grid, (0, 360.0), units='degrees')
