@@ -138,6 +138,7 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults()
 
     def instrument_selected(self, idx):
+        self.reset_panel()
         if HexrdConfig().show_beam_marker:
             HexrdConfig().show_beam_marker = False
 
@@ -147,11 +148,7 @@ class LLNLImportToolDialog(QObject):
         self.instrument = instruments.get(idx, None)
 
         if self.instrument is None:
-            self.import_in_progress = False
-            HexrdConfig().enable_image_mode_widget.emit(True)
-            self.ui.detectors.setCurrentIndex(0)
-            self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
-                                self.ui.complete, enabled=False)
+            self.cancel_workflow.emit()
             self.parent().action_show_toolbar.setChecked(True)
         else:
             self.import_in_progress = True
@@ -439,7 +436,6 @@ class LLNLImportToolDialog(QObject):
     def reset_panel(self):
         HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
-        self.ui.instruments.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
         self.ui.files_label.setText('')
         self.ui.completed_dets.setText('')
@@ -534,5 +530,6 @@ class LLNLImportToolDialog(QObject):
             self.ui.close()
 
     def on_canceled(self):
+        self.ui.instruments.setCurrentIndex(0)
         self.close_widget()
         self.cancel_workflow.emit()
