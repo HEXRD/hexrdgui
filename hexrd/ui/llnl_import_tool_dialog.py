@@ -151,7 +151,7 @@ class LLNLImportToolDialog(QObject):
             HexrdConfig().enable_image_mode_widget.emit(True)
             self.ui.detectors.setCurrentIndex(0)
             self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
-                                enabled=False)
+                                self.ui.complete, enabled=False)
             self.parent().action_show_toolbar.setChecked(True)
         else:
             self.import_in_progress = True
@@ -204,6 +204,7 @@ class LLNLImportToolDialog(QObject):
         self.add_template()
         if self.instrument == 'TARDIS':
             self.cancel_workflow.emit()
+            self.enable_widgets(self.ui.accept_template, enabled=False)
 
 
     def update_bbox_height(self, val):
@@ -271,7 +272,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.files_label.setText(', '.join(file_names))
             self.enable_widgets(self.ui.transform_img, self.ui.finalize,
                                 self.ui.detectors, self.ui.detector_label,
-                                enabled=True)
+                                self.ui.accept_template, enabled=True)
             self.enable_widgets(self.ui.data, enabled=False)
             self.add_template()
 
@@ -312,7 +313,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.bb_width.blockSignals(False)
 
     def add_template(self):
-        if self.it is None or self.instrument is None or self.detector is None:
+        if self.it is None or self.instrument is None or not self.detector:
             return
 
         if self.it.complete and self.instrument == 'TARDIS':
