@@ -33,6 +33,7 @@ class InstrumentViewer:
         self.instr_pv = copy.deepcopy(self.instr)
         self.instr_pv.beam_vector = ct.beam_vec
         self.pv = None
+        self.img = None
 
         self.draw_stereo()
 
@@ -100,6 +101,8 @@ class InstrumentViewer:
         else:
             self.draw_stereo_from_raw()
 
+        self.fill_image_with_nans()
+
     def draw_stereo_from_raw(self):
         self.img = stereo_project(**{
             'instr': self.instr_pv,
@@ -165,6 +168,11 @@ class InstrumentViewer:
     def draw_polar(self):
         self.pv = PolarView(self.instr_pv)
         self.pv.warp_all_images()
+
+    def fill_image_with_nans(self):
+        # If the image is a masked array, fill it with nans
+        if isinstance(self.img, np.ma.masked_array):
+            self.img = self.img.filled(np.nan)
 
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
