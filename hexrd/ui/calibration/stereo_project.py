@@ -4,7 +4,7 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
 from hexrd import constants
-
+from hexrd.rotations import mapAngle
 
 def stereo_projection_of_polar_view(pvarray, tth_grid, eta_grid,
                                     instr, stereo_size):
@@ -26,7 +26,8 @@ def stereo_projection_of_polar_view(pvarray, tth_grid, eta_grid,
 def project_intensity_detector(det,
                                interp_obj):
     tth, eta = np.degrees(det.pixel_angles())
-    eta = np.mod(eta, 360)
+    eta = mapAngle(eta, (0, 360.0), units='degrees')
+    #np.mod(eta, 360)
     xi = (eta, tth)
     return interp_obj(xi)
 
@@ -63,7 +64,8 @@ def stereo_project(instr, raw, stereo_size):
     vz = (1.0 - X**2 - Y**2) / den
 
     tth = np.arccos(vz)
-    eta = np.mod(np.arctan2(vy, vx), 2 * np.pi)
+    eta = mapAngle(np.arctan2(vy, vx), (0, 2*np.pi), units='radians')
+    #np.mod(np.arctan2(vy, vx), 2 * np.pi)
     angs = np.vstack((tth.flatten(),
                       eta.flatten())).T
     mask = ~np.isnan(angs)
@@ -92,7 +94,8 @@ def prep_polar_data(fid):
     tth_1dgrid = np.array(fid['tth_coordinates'])[0, :]
     eta_1dgrid = np.array(fid['eta_coordinates'])[:, 0]
 
-    eta_1dgrid = np.mod(eta_1dgrid, 360)
+    eta_1dgrid = mapAngle(eta, (0, 360.0), units='degrees')
+    #np.mod(eta_1dgrid, 360)
     idx = np.argsort(eta_1dgrid)
     eta_1dgrid = eta_1dgrid[idx]
     pvarray = pvarray[idx, :]
