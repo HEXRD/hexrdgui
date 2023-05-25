@@ -459,6 +459,7 @@ class LLNLImportToolDialog(QObject):
         self.config_file = None
         self.import_in_progress = False
         self.loaded_images.clear()
+        HexrdConfig().restore_instrument_config_backup()
 
     def completed(self):
         self.import_in_progress = False

@@ -923,8 +923,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.create_internal_config(self.config['instrument'])
 
-        # Create a backup
-        self.backup_instrument_config()
+        if not import_raw:
+            # Create a backup
+            self.backup_instrument_config()
 
         # Temporarily turn off overlays. They will be updated later.
         self.clear_overlay_data()
