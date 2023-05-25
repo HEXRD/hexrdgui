@@ -388,7 +388,9 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.outline_appearance,
-                            self.ui.template_instructions, enabled=False)
+                            self.ui.template_instructions,
+                            self.ui.accept_template, self.ui.transform_img,
+                            enabled=False)
         self.ui.completed_dets.setText(
             ', '.join(set(self.completed_detectors)))
 
