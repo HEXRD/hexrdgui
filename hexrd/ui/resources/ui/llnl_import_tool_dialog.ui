@@ -380,7 +380,7 @@
        <item row="0" column="1">
         <widget class="QLabel" name="translate_instructions_label">
          <property name="text">
-          <string>left-click or up/down/left arrow/right arrow</string>
+          <string>left-click and drag or arrow keys</string>
          </property>
         </widget>
        </item>
@@ -394,7 +394,7 @@
        <item row="1" column="1">
         <widget class="QLabel" name="rotate_instructions_label">
          <property name="text">
-          <string>shift+left-click or shift+up/down/left/right arrow</string>
+          <string>shift + left-click and drag or shift + arrow keys</string>
          </property>
          <property name="wordWrap">
           <bool>false</bool>
