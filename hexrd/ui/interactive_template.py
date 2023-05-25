@@ -270,7 +270,7 @@ class InteractiveTemplate:
         self.redraw()
 
     def on_press_translate(self, event):
-        if event.inaxes != self.shape.axes:
+        if event.inaxes != self.shape.axes or self.event_key == 'shift':
             return
 
         contains, info = self.shape.contains(event)
@@ -279,7 +279,9 @@ class InteractiveTemplate:
         self.press = self.shape.xy, event.xdata, event.ydata
 
     def on_translate(self, event):
-        if self.press is None or event.inaxes != self.shape.axes:
+        if (self.press is None or
+                event.inaxes != self.shape.axes or
+                self.event_key == 'shift'):
             return
 
         xy, xpress, ypress = self.press
@@ -290,7 +292,7 @@ class InteractiveTemplate:
         self.redraw()
 
     def on_translate_release(self, event):
-        if self.press is None:
+        if self.press is None or self.event_key == 'shift':
             return
 
         xy, xpress, ypress = self.press
@@ -303,7 +305,7 @@ class InteractiveTemplate:
         self.redraw()
 
     def on_press_rotate(self, event):
-        if event.inaxes != self.shape.axes:
+        if event.inaxes != self.shape.axes or self.event_key != 'shift':
             return
 
         contains, info = self.shape.contains(event)
@@ -323,7 +325,9 @@ class InteractiveTemplate:
         self.shape.set_xy(verts)
 
     def on_rotate(self, event):
-        if self.press is None or event.inaxes != self.shape.axes or event.key != 'shift':
+        if (self.press is None or
+                event.inaxes != self.shape.axes or
+                self.event_key != 'shift'):
             return
 
         x, y = self.center
@@ -375,7 +379,7 @@ class InteractiveTemplate:
         return angle
 
     def on_rotate_release(self, event):
-        if self.press is None:
+        if self.press is None or self.event_key != 'shift':
             return
         angle = self.get_angle(event)
         self.total_rotation += angle
