@@ -138,17 +138,17 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults()
 
     def instrument_selected(self, idx):
-        self.reset_panel()
-        if HexrdConfig().show_beam_marker:
-            HexrdConfig().show_beam_marker = False
-
-        self.detectors.clear()
-        self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
         self.instrument = instruments.get(idx, None)
 
+        if HexrdConfig().show_beam_marker:
+            HexrdConfig().show_beam_marker = False
+
+        self.reset_panel()
+        self.detectors.clear()
+        self.detector_defaults.clear()
+
         if self.instrument is None:
-            self.cancel_workflow.emit()
             self.parent().action_show_toolbar.setChecked(True)
         else:
             self.import_in_progress = True
@@ -528,11 +528,11 @@ class LLNLImportToolDialog(QObject):
         self.ui.show()
 
     def close_widget(self):
+        self.ui.instruments.setCurrentIndex(0)
         self.reset_panel()
         if self.ui.isFloating():
             self.ui.close()
 
     def on_canceled(self):
-        self.ui.instruments.setCurrentIndex(0)
         self.close_widget()
         self.cancel_workflow.emit()
