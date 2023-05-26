@@ -14,21 +14,21 @@ from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.tree_views.picks_tree_view import PicksTreeView
+from hexrd.ui.tree_views.hkl_picks_tree_view import HKLPicksTreeView
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
 from hexrd.ui.utils.dicts import ensure_all_keys_match, ndarrays_to_lists
 
 
-class PicksTreeViewDialog:
+class HKLPicksTreeViewDialog:
 
     def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
                  parent=None):
-        self.ui = UiLoader().load_file('picks_tree_view_dialog.ui', parent)
+        self.ui = UiLoader().load_file('hkl_picks_tree_view_dialog.ui', parent)
 
         self.dictionary = dictionary
-        self.tree_view = PicksTreeView(dictionary, coords_type, canvas,
-                                       self.ui)
+        self.tree_view = HKLPicksTreeView(dictionary, coords_type, canvas,
+                                          self.ui)
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
         # Default to a hidden button box

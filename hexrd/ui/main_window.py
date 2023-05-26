@@ -33,8 +33,8 @@ from hexrd.ui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
-from hexrd.ui.calibration.picks_tree_view_dialog import (
-    PicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
+from hexrd.ui.calibration.hkl_picks_tree_view_dialog import (
+    HKLPicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
 )
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import (
@@ -1030,7 +1030,7 @@ class MainWindow(QObject):
             'canvas': canvas,
             'parent': canvas,
         }
-        dialog = PicksTreeViewDialog(**kwargs)
+        dialog = HKLPicksTreeViewDialog(**kwargs)
         dialog.button_box_visible = True
         dialog.ui.show()
 

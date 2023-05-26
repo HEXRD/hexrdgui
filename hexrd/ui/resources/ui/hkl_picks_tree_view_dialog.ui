@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>picks_tree_view_dialog</class>
- <widget class="QDialog" name="picks_tree_view_dialog">
+ <class>hkl_picks_tree_view_dialog</class>
+ <widget class="QDialog" name="hkl_picks_tree_view_dialog">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -85,7 +85,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>picks_tree_view_dialog</receiver>
+   <receiver>hkl_picks_tree_view_dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -101,7 +101,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>picks_tree_view_dialog</receiver>
+   <receiver>hkl_picks_tree_view_dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

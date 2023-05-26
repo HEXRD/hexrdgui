@@ -21,8 +21,8 @@ from hexrd.ui.calibration.pick_based_calibration import (
     LaueCalibrator,
     run_calibration,
 )
-from hexrd.ui.calibration.picks_tree_view_dialog import (
-    generate_picks_results, overlays_to_tree_format, PicksTreeViewDialog,
+from hexrd.ui.calibration.hkl_picks_tree_view_dialog import (
+    generate_picks_results, overlays_to_tree_format, HKLPicksTreeViewDialog,
     picks_cartesian_to_angles, tree_format_to_picks,
 )
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
@@ -268,7 +268,7 @@ class CalibrationRunner(QObject):
             'canvas': self.canvas,
             'parent': self.canvas,
         }
-        dialog = PicksTreeViewDialog(**kwargs)
+        dialog = HKLPicksTreeViewDialog(**kwargs)
         dialog.ui.show()
 
         kwargs = {

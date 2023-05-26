@@ -1,22 +1,19 @@
 from functools import partial
 
-import numpy as np
-
-from PySide2.QtCore import Qt
+from PySide2.QtCore import Qt, Signal
 from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import QMenu
+from PySide2.QtWidgets import (
+    QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
+)
 
 from hexrd.ui.constants import ViewType
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.markers import igor_marker
-from hexrd.ui.overlays import Overlay
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
 )
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
-from hexrd.ui.utils import hkl_str_to_array
 
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
@@ -24,7 +21,7 @@ X_COL = KEY_COL + 1
 Y_COL = X_COL + 1
 
 
-class PicksTreeItemModel(BaseDictTreeItemModel):
+class GenericPicksTreeItemModel(BaseDictTreeItemModel):
 
     def __init__(self, dictionary, coords_type=ViewType.polar, parent=None):
         super().__init__(dictionary, parent)
@@ -95,10 +92,13 @@ class PicksTreeItemModel(BaseDictTreeItemModel):
         return self.path_to_item(tree_item) + [column - 1]
 
 
-class PicksTreeView(BaseDictTreeView):
+class GenericPicksTreeView(BaseDictTreeView):
+
+    dict_modified = Signal()
 
     def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
-                 parent=None):
+                 parent=None, model_class=GenericPicksTreeItemModel,
+                 model_class_kwargs=None):
         super().__init__(parent)
 
         self.canvas = canvas
@@ -108,7 +108,11 @@ class PicksTreeView(BaseDictTreeView):
         self.is_deleting_picks = False
         self._show_all_picks = False
 
-        self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
+        if model_class_kwargs is None:
+            model_class_kwargs = {}
+
+        self.setModel(model_class(dictionary, coords_type, self,
+                                  **model_class_kwargs))
 
         value_cols = [X_COL, Y_COL]
         all_cols = [KEY_COL] + value_cols
@@ -135,30 +139,16 @@ class PicksTreeView(BaseDictTreeView):
             # Don't re-highlight and re-draw for every pick that is deleted
             return
 
-        self.highlight_selected_hkls()
+        self.highlight_selected_lines()
         self.draw_picks()
+
+    def highlight_selected_lines(self):
+        # Do nothing by default
+        pass
 
     def data_was_modified(self):
         self.draw_picks()
-
-    def clear_highlights(self):
-        for overlay in HexrdConfig().overlays:
-            overlay.clear_highlights()
-
-    def highlight_selected_hkls(self):
-        self.clear_highlights()
-
-        model = self.model()
-        for item in self.selected_items:
-            path = model.path_to_value(item, 0)
-            # Example: ['diamond powder', 'IMAGE-PLATE-2', '1 1 1', 1, -1]
-            overlay_name, detector_name, hkl_str, *others = path
-            overlay = Overlay.from_name(overlay_name)
-            hkl = hkl_str_to_array(hkl_str)
-            overlay.highlight_hkl(detector_name, hkl)
-
-        HexrdConfig().flag_overlay_updates_for_all_materials()
-        HexrdConfig().overlay_config_changed.emit()
+        self.dict_modified.emit()
 
     def delete_selected_picks(self):
         self.is_deleting_picks = True
@@ -173,20 +163,6 @@ class PicksTreeView(BaseDictTreeView):
         model = self.model()
         items_to_remove = []
         for item in self.selected_items:
-            path = model.path_to_item(item)
-            if len(path) == 3:
-                # It is a laue point. Just set it to nans.
-                left = model.createIndex(item.row(), 1, item)
-                right = model.createIndex(item.row(), 2, item)
-                model.setData(left, np.nan)
-                model.setData(right, np.nan)
-
-                # Flag it as changed
-                model.dataChanged.emit(left, right)
-                continue
-            elif len(path) != 4:
-                raise NotImplementedError(path)
-
             # These rows will actually be removed
             items_to_remove.append(item)
 
@@ -206,6 +182,9 @@ class PicksTreeView(BaseDictTreeView):
         self._show_all_picks = b
         self.update_line_colors()
         self.draw_picks()
+
+    def set_show_all_picks(self, b):
+        self.show_all_picks = b
 
     def draw_picks(self):
         self.clear_artists()
@@ -300,11 +279,9 @@ class PicksTreeView(BaseDictTreeView):
         model = self.model()
         item = model.get_item(index)
         path = model.path_to_item(item)
-        powder_clicked = 'powder' in path[0]
-        hkl_clicked = len(path) == 3
-        powder_pick_clicked = len(path) == 4
-        hkl_str = path[2] if hkl_clicked or powder_pick_clicked else ''
-        laue_pick_clicked = hkl_clicked and not powder_clicked
+        line_name_clicked = len(path) == 1
+        point_clicked = len(path) == 2
+        line_name = str(path[0])
         selected_items = self.selected_items
         num_selected = len(selected_items)
         is_hand_pickable = self.is_hand_pickable
@@ -322,10 +299,10 @@ class PicksTreeView(BaseDictTreeView):
 
         # Context menu methods
         def insert_item():
-            if hkl_clicked:
+            if line_name_clicked:
                 position = 0
                 parent_item = item
-            elif powder_pick_clicked:
+            elif point_clicked:
                 position = path[-1]
                 parent_item = item.parent_item
             else:
@@ -340,16 +317,15 @@ class PicksTreeView(BaseDictTreeView):
 
             if is_hand_pickable:
                 # Go ahead and get the user to hand pick the point...
-                self.hand_pick_point(new_item, hkl_str)
+                self.hand_pick_point(new_item, line_name)
 
         def hand_pick_item():
-            self.hand_pick_point(item, hkl_str)
+            self.hand_pick_point(item, line_name)
 
         # Action logic
-        if powder_clicked and (hkl_clicked or powder_pick_clicked):
-            add_actions({'Insert': insert_item})
+        add_actions({'Insert': insert_item})
 
-        if is_hand_pickable and (powder_pick_clicked or laue_pick_clicked):
+        if is_hand_pickable and point_clicked:
             add_actions({'Hand pick': hand_pick_item})
 
         if num_selected > 0:
@@ -377,7 +353,7 @@ class PicksTreeView(BaseDictTreeView):
     def is_hand_pickable(self):
         return self.allow_hand_picking and self.has_canvas
 
-    def hand_pick_point(self, item, hkl_str=''):
+    def hand_pick_point(self, item, pick_label=''):
         kwargs = {
             'canvas': self.canvas,
             'parent': self,
@@ -385,10 +361,8 @@ class PicksTreeView(BaseDictTreeView):
         }
 
         picker = LinePickerDialog(**kwargs)
-        picker.current_hkl_label = f'Current hkl:  {hkl_str}'
-
-        title = f'Pick point for:  {hkl_str}'
-        picker.ui.setWindowTitle(title)
+        picker.current_pick_label = pick_label
+        picker.ui.setWindowTitle(pick_label)
         picker.start()
 
         finished_func = partial(self.point_picked, item=item)
@@ -412,3 +386,42 @@ class PicksTreeView(BaseDictTreeView):
     @coords_type.setter
     def coords_type(self, v):
         self.model().coords_type = v
+
+
+class GenericPicksTreeViewDialog(QDialog):
+
+    dict_modified = Signal()
+
+    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
+                 parent=None):
+        super().__init__(parent)
+
+        self.setLayout(QVBoxLayout(self))
+
+        self.tree_view = GenericPicksTreeView(dictionary, coords_type, canvas,
+                                              self)
+        self.layout().addWidget(self.tree_view)
+
+        # Add a checkbox for showing all
+        cb = QCheckBox('Show all picks', self)
+        cb.setChecked(self.tree_view.show_all_picks)
+        cb.toggled.connect(self.tree_view.set_show_all_picks)
+        self.layout().addWidget(cb)
+
+        # Add a button box for accept/cancel
+        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.button_box = QDialogButtonBox(buttons, self)
+        self.layout().addWidget(self.button_box)
+
+        self.resize(500, 500)
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.tree_view.dict_modified.connect(self.dict_modified.emit)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        self.finished.connect(self.on_finished)
+
+    def on_finished(self):
+        self.tree_view.clear_artists()
