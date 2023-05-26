@@ -202,7 +202,8 @@ class LLNLImportToolDialog(QObject):
         if self.instrument == 'TARDIS':
             self.cancel_workflow.emit()
             self.enable_widgets(self.ui.accept_template, enabled=False)
-
+        else:
+            self.enable_widgets(self.ui.accept_template, enabled=True)
 
     def update_bbox_height(self, val):
         y0, y1, *x = self.it.bounds
