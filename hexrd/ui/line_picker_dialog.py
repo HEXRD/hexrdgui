@@ -289,12 +289,12 @@ class LinePickerDialog(QObject):
         self.zoom_canvas.frozen = v
 
     @property
-    def current_hkl_label(self):
-        return self.ui.current_hkl_label.text()
+    def current_pick_label(self):
+        return self.ui.current_pick_label.text()
 
-    @current_hkl_label.setter
-    def current_hkl_label(self, text):
-        self.ui.current_hkl_label.setText(text)
+    @current_pick_label.setter
+    def current_pick_label(self, text):
+        self.ui.current_pick_label.setText(text)
 
     @property
     def disabled(self):

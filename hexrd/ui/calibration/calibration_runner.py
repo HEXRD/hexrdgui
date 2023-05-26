@@ -658,7 +658,7 @@ class CalibrationRunner(QObject):
                 if not any(np.isnan(x) for x in data_entry):
                     label += '  (overwriting)'
 
-        self.line_picker.current_hkl_label = label
+        self.line_picker.current_pick_label = label
 
     def update_lines_from_picks(self):
         if not self.line_picker:
