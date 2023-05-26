@@ -95,9 +95,11 @@ class LLNLImportToolDialog(QObject):
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
                 with open(self.config_file, 'r') as f:
-                    instr = HEDMInstrument(f)
-                    self.defaults = instr_to_internal_dict(
-                        instr, convert_tilts=False)
+                    instr_config = yaml.safe_load(f)
+
+                instr = HEDMInstrument(instr_config)
+                self.defaults = instr_to_internal_dict(
+                    instr, convert_tilts=False)
             else:
                 try:
                     with h5py.File(self.config_file, 'r') as f:
@@ -113,7 +115,7 @@ class LLNLImportToolDialog(QObject):
         else:
             fname = f'{self.instrument.lower()}_reference_config.yml'
             text = resource_loader.load_resource(hexrd_resources, fname)
-            self.defaults = yaml.load(text, Loader=yaml.FullLoader)
+            self.defaults = yaml.safe_load(text)
         self.detector_defaults['default_config'] = self.defaults
         self.set_detector_options()
 
