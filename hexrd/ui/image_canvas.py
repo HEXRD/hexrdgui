@@ -722,6 +722,10 @@ class ImageCanvas(FigureCanvas):
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_cartesian(self, iviewer):
+        if self.mode != ViewType.cartesian:
+            # Image mode was switched during generation. Ignore this.
+            return
+
         self.iviewer = iviewer
         img, = self.scaled_images
 
@@ -785,6 +789,10 @@ class ImageCanvas(FigureCanvas):
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_polar(self, iviewer):
+        if self.mode != ViewType.polar:
+            # Image mode was switched during generation. Ignore this.
+            return
+
         self.iviewer = iviewer
         img, = self.scaled_images
         extent = self.iviewer._extent
@@ -910,6 +918,10 @@ class ImageCanvas(FigureCanvas):
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_stereo(self, iviewer):
+        if self.mode != ViewType.stereo:
+            # Image mode was switched during generation. Ignore this.
+            return
+
         self.iviewer = iviewer
         img, = self.scaled_images
 

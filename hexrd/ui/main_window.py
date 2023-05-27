@@ -309,9 +309,6 @@ class MainWindow(QObject):
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
 
-        self.llnl_import_tool_dialog.enforce_raw_mode.connect(
-            self.enforce_view_mode)
-
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
@@ -1329,10 +1326,6 @@ class MainWindow(QObject):
         titles = [w.windowTitle() for w in dock_widgets]
         for title, w in sorted(zip(titles, dock_widgets)):
             self.ui.view_dock_widgets.addAction(w.toggleViewAction())
-
-    def enforce_view_mode(self, raw_only):
-        if raw_only:
-            self.image_mode_widget.ui.tab_widget.setCurrentIndex(0)
 
     def apply_polarization_correction_toggled(self, b):
         if not b:

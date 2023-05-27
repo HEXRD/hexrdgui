@@ -223,6 +223,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when image mode widget should be enabled/disabled"""
     enable_image_mode_widget = Signal(bool)
 
+    """Emitted when image mode widget needs to be in a certain mode"""
+    set_image_mode_widget_tab = Signal(str)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)
@@ -920,8 +923,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.create_internal_config(self.config['instrument'])
 
-        # Create a backup
-        self.backup_instrument_config()
+        if not import_raw:
+            # Create a backup
+            self.backup_instrument_config()
 
         # Temporarily turn off overlays. They will be updated later.
         self.clear_overlay_data()

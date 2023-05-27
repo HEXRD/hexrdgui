@@ -17,11 +17,10 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.interactive_template import InteractiveTemplate
-from hexrd.ui.load_images_dialog import LoadImagesDialog
 from hexrd.ui import resource_loader
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import (
-    UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform)
+    UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
 import hexrd.ui.resources.calibration
 
 from hexrd.ui.utils import instr_to_internal_dict
@@ -34,8 +33,6 @@ class LLNLImportToolDialog(QObject):
     new_config_loaded = Signal()
 
     cancel_workflow = Signal()
-
-    enforce_raw_mode = Signal(bool)
 
     def __init__(self, cmap=None, parent=None):
         super().__init__(parent)
@@ -68,8 +65,6 @@ class LLNLImportToolDialog(QObject):
             self.instrument_selected)
         self.ui.load.clicked.connect(self.load_images)
         self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
-        self.ui.trans.clicked.connect(self.setup_translate)
-        self.ui.rotate.clicked.connect(self.setup_rotate)
         self.ui.add_transform.clicked.connect(self.add_transform)
         self.ui.accept_template.clicked.connect(self.crop_and_mask)
         self.ui.complete.clicked.connect(self.completed)
@@ -80,9 +75,9 @@ class LLNLImportToolDialog(QObject):
         self.ui.line_color.clicked.connect(self.pick_line_color)
         self.ui.line_size.valueChanged.connect(self.update_template_style)
         self.ui.cancel.clicked.connect(self.on_canceled)
-        self.ui.select_config.toggled.connect(self.update_config_selection)
-        self.ui.default_config.toggled.connect(self.update_config_load)
         self.ui.load_config.clicked.connect(self.load_config)
+        self.ui.config_selection.currentIndexChanged.connect(
+            self.update_config_selection)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -96,14 +91,15 @@ class LLNLImportToolDialog(QObject):
 
     def get_instrument_defaults(self):
         self.detector_defaults.clear()
-        not_default = (self.ui.current_config.isChecked()
-                       or not self.ui.default_config.isChecked())
+        not_default = self.ui.config_selection.currentIndex() != 0
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
                 with open(self.config_file, 'r') as f:
-                    instr = HEDMInstrument(f)
-                    self.defaults = instr_to_internal_dict(
-                        instr, convert_tilts=False)
+                    instr_config = yaml.safe_load(f)
+
+                instr = HEDMInstrument(instr_config)
+                self.defaults = instr_to_internal_dict(
+                    instr, convert_tilts=False)
             else:
                 try:
                     with h5py.File(self.config_file, 'r') as f:
@@ -119,7 +115,7 @@ class LLNLImportToolDialog(QObject):
         else:
             fname = f'{self.instrument.lower()}_reference_config.yml'
             text = resource_loader.load_resource(hexrd_resources, fname)
-            self.defaults = yaml.load(text, Loader=yaml.FullLoader)
+            self.defaults = yaml.safe_load(text)
         self.detector_defaults['default_config'] = self.defaults
         self.set_detector_options()
 
@@ -144,50 +140,46 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults()
 
     def instrument_selected(self, idx):
-        if HexrdConfig().show_beam_marker:
-            HexrdConfig().show_beam_marker = False
-
-        self.detectors.clear()
-        self.detector_defaults.clear()
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
         self.instrument = instruments.get(idx, None)
 
+        if HexrdConfig().show_beam_marker:
+            HexrdConfig().show_beam_marker = False
+
+        self.reset_panel()
+        self.detectors.clear()
+        self.detector_defaults.clear()
+
         if self.instrument is None:
-            self.import_in_progress = False
-            self.enforce_raw_mode.emit(False)
-            self.ui.detectors.setCurrentIndex(0)
-            self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
-                                enabled=False)
             self.parent().action_show_toolbar.setChecked(True)
         else:
             self.import_in_progress = True
-            self.enforce_raw_mode.emit(True)
+            HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
+            HexrdConfig().enable_image_mode_widget.emit(False)
             self.load_instrument_config()
             self.enable_widgets(self.ui.raw_image, self.ui.config,
-                                self.ui.file_selection, enabled=True)
+                                self.ui.file_selection, self.ui.finalize,
+                                enabled=True)
             self.parent().action_show_toolbar.setChecked(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
-            self.update_config_selection(self.ui.select_config.isChecked())
+            self.update_config_selection(self.ui.config_selection.currentIndex())
+            self.ui.bbox.setToolTip('')
+            if self.instrument == 'TARDIS':
+                self.ui.bbox.setToolTip('The bounding box editors are not ' +
+                                        'available for the TARDIS instrument')
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
         HexrdConfig().set_euler_angle_convention(new_conv)
 
-    def update_config_selection(self, checked):
-        self.ui.default_config.setEnabled(checked)
-        if not checked:
-            self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                                enabled=False)
-        elif not self.ui.default_config.isChecked():
-            self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                                enabled=True)
+    def update_config_selection(self, idx):
+        enable_load = (idx == 2) # Load configuration from file selected
+        self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
+                            enabled=enable_load)
+
         if self.ui.instrument.isEnabled():
             self.get_instrument_defaults()
-
-    def update_config_load(self, checked):
-        self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                            enabled=not checked)
 
     def load_instrument_config(self):
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
@@ -209,6 +201,11 @@ class LLNLImportToolDialog(QObject):
         self.ui.instrument.setDisabled(selected)
         self.detector = self.ui.detectors.currentText()
         self.add_template()
+        if self.instrument == 'TARDIS':
+            self.cancel_workflow.emit()
+            self.enable_widgets(self.ui.accept_template, enabled=False)
+        else:
+            self.enable_widgets(self.ui.accept_template, enabled=True)
 
     def update_bbox_height(self, val):
         y0, y1, *x = self.it.bounds
@@ -245,9 +242,6 @@ class LLNLImportToolDialog(QObject):
             HexrdConfig().set_images_dir(selected_file)
 
             files, manual = ImageLoadManager().load_images([selected_file])
-            dialog = LoadImagesDialog(files, manual, self.ui.parent())
-            if not dialog.exec_():
-                return
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_file)[1]
@@ -278,7 +272,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.files_label.setText(', '.join(file_names))
             self.enable_widgets(self.ui.transform_img, self.ui.finalize,
                                 self.ui.detectors, self.ui.detector_label,
-                                enabled=True)
+                                self.ui.accept_template, enabled=True)
             self.enable_widgets(self.ui.data, enabled=False)
             self.add_template()
 
@@ -319,7 +313,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.bb_width.blockSignals(False)
 
     def add_template(self):
-        if self.it is None or self.instrument is None or self.detector is None:
+        if self.it is None or self.instrument is None or not self.detector:
             return
 
         if self.it.complete and self.instrument == 'TARDIS':
@@ -338,11 +332,10 @@ class LLNLImportToolDialog(QObject):
         self.update_template_style()
 
         self.display_bounds()
-        self.enable_widgets(
-            self.ui.outline_position, self.ui.outline_appearance, enabled=True)
+        self.enable_widgets(self.ui.outline_appearance,
+                            self.ui.template_instructions, enabled=True)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
-        self.ui.trans.setChecked(True)
 
     def update_template_style(self):
         ls = self.ui.line_style.currentText()
@@ -361,15 +354,10 @@ class LLNLImportToolDialog(QObject):
             self.outline_color = dialog.selectedColor().name()
             self.update_template_style()
 
-    def setup_translate(self):
+    def setup_translate_rotate(self):
         if self.it.shape is not None:
             self.it.disconnect()
-            self.it.connect_translate()
-
-    def setup_rotate(self):
-        if self.it.shape is not None:
-            self.it.disconnect()
-            self.it.connect_rotate()
+            self.it.connect_translate_rotate()
 
     def clear_boundry(self):
         if self.it and self.it.shape is not None:
@@ -403,7 +391,9 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(self.ui.file_selection, self.ui.transform_img,
                             self.ui.complete, enabled=True)
         self.enable_widgets(self.ui.outline_appearance,
-                            self.ui.outline_position, enabled=False)
+                            self.ui.template_instructions,
+                            self.ui.accept_template, self.ui.transform_img,
+                            enabled=False)
         self.ui.completed_dets.setText(
             ', '.join(set(self.completed_detectors)))
 
@@ -435,8 +425,8 @@ class LLNLImportToolDialog(QObject):
         self.clear_boundry()
         self.enable_widgets(
             self.ui.transform_img, self.ui.file_selection, enabled=True)
-        self.enable_widgets(self.ui.outline_position,
-                            self.ui.outline_appearance, enabled=False)
+        self.enable_widgets(self.ui.outline_appearance,
+                            self.ui.template_instructions, enabled=False)
 
     def check_for_unsaved_changes(self):
         if self.it.shape is None and self.detector in self.completed_detectors:
@@ -449,22 +439,19 @@ class LLNLImportToolDialog(QObject):
             self.crop_and_mask()
 
     def reset_panel(self):
-        self.enforce_raw_mode.emit(False)
+        HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
-        self.ui.instruments.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
         self.ui.files_label.setText('')
         self.ui.completed_dets.setText('')
         self.edited_images.clear()
         self.enable_widgets(self.ui.raw_image, self.ui.config,
                             self.ui.transform_img, self.ui.outline_appearance,
-                            self.ui.outline_position, self.ui.finalize,
-                            self.ui.default_config, self.ui.load_config,
-                            self.ui.config_file_label, enabled=False)
+                            self.ui.finalize, self.ui.load_config,
+                            self.ui.config_file_label,
+                            self.ui.template_instructions, enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
-        select_config = self.ui.select_config.isChecked()
-        self.ui.default_config.setEnabled(select_config)
-        not_default = select_config and not self.ui.default_config.isChecked()
+        not_default = self.ui.config_selection.currentIndex() != 0
         self.ui.load_config.setEnabled(not_default)
         self.ui.config_file_label.setEnabled(not_default)
         self.ui.config_file_label.setText('No File Selected')
@@ -475,6 +462,7 @@ class LLNLImportToolDialog(QObject):
         self.config_file = None
         self.import_in_progress = False
         self.loaded_images.clear()
+        HexrdConfig().restore_instrument_config_backup()
 
     def completed(self):
         self.import_in_progress = False
@@ -543,6 +531,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.show()
 
     def close_widget(self):
+        self.ui.instruments.setCurrentIndex(0)
         self.reset_panel()
         if self.ui.isFloating():
             self.ui.close()

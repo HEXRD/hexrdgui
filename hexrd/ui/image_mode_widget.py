@@ -13,6 +13,14 @@ from hexrd.ui.overlays import Overlay
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
+TAB_INDEX_TO_VIEW_MODE = {
+    0: ViewType.raw,
+    1: ViewType.cartesian,
+    2: ViewType.polar,
+    3: ViewType.stereo,
+}
+VIEW_MODE_TO_TAB_INDEX = {v: k for k, v in TAB_INDEX_TO_VIEW_MODE.items()}
+
 
 class ImageModeWidget(QObject):
 
@@ -99,6 +107,8 @@ class ImageModeWidget(QObject):
 
         HexrdConfig().enable_image_mode_widget.connect(
             self.enable_image_mode_widget)
+        HexrdConfig().set_image_mode_widget_tab.connect(
+            self.set_image_mode_widget_tab)
 
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
@@ -133,15 +143,13 @@ class ImageModeWidget(QObject):
     def enable_image_mode_widget(self, b):
         self.ui.tab_widget.setEnabled(b)
 
+    def set_image_mode_widget_tab(self, view_mode):
+        tab = VIEW_MODE_TO_TAB_INDEX[view_mode]
+        self.ui.tab_widget.setCurrentIndex(tab)
+
     def currentChanged(self, index):
-        modes = {
-            0: ViewType.raw,
-            1: ViewType.cartesian,
-            2: ViewType.polar,
-            3: ViewType.stereo,
-        }
-        ind = self.ui.tab_widget.currentIndex()
-        self.tab_changed.emit(modes[ind])
+        view_mode = TAB_INDEX_TO_VIEW_MODE[index]
+        self.tab_changed.emit(view_mode)
 
     def all_widgets(self):
         widgets = [
