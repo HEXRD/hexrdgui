@@ -63,6 +63,9 @@
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="1">
        <widget class="QCheckBox" name="draw_picks">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Draw the picks on the main canvas. These pick positions are stored in detector Cartesian coordinates, and their positions will be updated automatically as detector parameters get modified.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Draw picks?</string>
         </property>
@@ -80,7 +83,7 @@
       <item row="0" column="2">
        <widget class="QPushButton" name="load_picks_button">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save/load picks to an HDF5 file.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Load Picks</string>
@@ -90,7 +93,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="save_picks_button">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save/load picks to an HDF5 file.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Save Picks</string>
@@ -99,6 +102,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QPushButton" name="edit_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the picks editor to edit the picks. Picks may be added, deleted, or edited (either by hand picking a new point or manually entering coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Edit Picks</string>
         </property>
@@ -115,6 +121,9 @@
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="1">
        <widget class="QComboBox" name="engineering_constraints">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <item>
          <property name="text">
           <string>None</string>
@@ -129,6 +138,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="engineering_constraints_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Add engineering constraints for:</string>
         </property>
@@ -143,6 +155,9 @@
       <widget class="QPushButton" name="undo_run_button">
        <property name="enabled">
         <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Undo the last &amp;quot;Run&amp;quot; performed. This revert both the instrument settings and parameter settings to what they were right before &amp;quot;Run&amp;quot; was clicked.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This button may be clicked multiple times if multiple runs were performed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Undo Run</string>
@@ -173,6 +188,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the calibration using the selected parameters and options.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Results will be printed to the messages dialog, and the canvas will update automatically with the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;A run may be undone by clicking &amp;quot;Undo Run&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Run</string>

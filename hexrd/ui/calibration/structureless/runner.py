@@ -380,6 +380,7 @@ class StructurelessCalibrationRunner(QObject):
         self.async_runner.run(self._run_calibration)
 
     def _on_dialog_undo_run_clicked(self):
+        print('Undo changes')
         self.pop_undo_stack()
 
     def _run_calibration(self):
