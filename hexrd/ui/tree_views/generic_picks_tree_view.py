@@ -1,4 +1,7 @@
 from functools import partial
+from itertools import cycle
+
+import matplotlib.pyplot as plt
 
 from PySide2.QtCore import Qt, Signal
 from PySide2.QtGui import QCursor
@@ -103,10 +106,10 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self.canvas = canvas
         self.allow_hand_picking = True
-        self.all_picks_line = None
-        self.selected_picks_line = None
+        self.all_picks_line_artists = []
+        self.selected_picks_line_artists = []
         self.is_deleting_picks = False
-        self._show_all_picks = False
+        self._show_all_picks = True
 
         if model_class_kwargs is None:
             model_class_kwargs = {}
@@ -127,8 +130,9 @@ class GenericPicksTreeView(BaseDictTreeView):
         self.set_extended_selection_mode()
         self.expand_rows()
 
-        self.setup_lines()
         self.setup_connections()
+
+        self.draw_picks()
 
     def setup_connections(self):
         self.selection_changed.connect(self.selection_was_changed)
@@ -180,7 +184,6 @@ class GenericPicksTreeView(BaseDictTreeView):
             return
 
         self._show_all_picks = b
-        self.update_line_colors()
         self.draw_picks()
 
     def set_show_all_picks(self, b):
@@ -196,76 +199,120 @@ class GenericPicksTreeView(BaseDictTreeView):
 
     @property
     def all_pick_items(self):
+        # Take self.all_pick_items_grouped and flatten them out
+        items = []
+        for group in self.all_pick_items_grouped.values():
+            items.extend(group)
+        return items
+
+    @property
+    def all_pick_items_grouped(self):
         # Recurse through all items and pull out all pick items
         # We assume an item is a pick item if it is not the root, and
         # it doesn't contain any None values.
-        items = []
+        # These items will be grouped by parent.
+        items = {}
 
         def recurse(parent):
+            group = []
             for child in parent.child_items:
                 if not any(x is None for x in child.data_list):
-                    items.append(child)
+                    group.append(child)
 
                 recurse(child)
+
+            if group:
+                items[parent] = group
 
         recurse(self.model().root_item)
         return items
 
-    def draw_all_picks(self):
-        if not self.show_all_picks:
-            return
+    @property
+    def selected_items_grouped(self):
+        selected_items = self.selected_items
+        if not selected_items:
+            # Return early
+            return {}
 
-        xys = [item.data_list[1:] for item in self.all_pick_items]
-        self.all_picks_line.set_data(list(zip(*xys)))
-        self.canvas.draw_idle()
+        # Use all the same keys as all_pick_items_grouped so that the colors
+        # from the cycler match up.
+        selected_grouped = {key: [] for key in self.all_pick_items_grouped}
+        for item in selected_items:
+            selected_grouped[item.parent_item].append(item)
 
-    def draw_selected_picks(self):
-        if not self.selected_items:
-            return
+        return selected_grouped
 
-        xys = [item.data_list[1:] for item in self.selected_items]
-        self.selected_picks_line.set_data(list(zip(*xys)))
-        self.canvas.draw_idle()
-
-    def clear_artists(self):
-        if self.all_picks_line:
-            self.all_picks_line.set_data([], [])
-
-        if self.selected_picks_line:
-            self.selected_picks_line.set_data([], [])
-
-        self.canvas.draw_idle()
-
-    def setup_lines(self):
-        if not self.canvas:
-            return
-
-        plot_kwargs = {
-            'color': 'b',
+    @property
+    def default_line_settings(self):
+        return {
             'marker': igor_marker,
             'markeredgecolor': 'black',
             'markersize': 16,
             'linestyle': 'None',
         }
 
-        if not self.all_picks_line:
-            # empty line
-            self.all_picks_line, = self.canvas.axis.plot([], [], **plot_kwargs)
+    @property
+    def highlighted_line_settings(self):
+        return {
+            'marker': igor_marker,
+            'markeredgecolor': 'yellow',
+            'markersize': 16,
+            'linestyle': 'None',
+        }
 
-        if not self.selected_picks_line:
-            # empty line
-            self.selected_picks_line, = self.canvas.axis.plot([], [],
-                                                              **plot_kwargs)
+    def create_color_cycler(self):
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        return cycle(prop_cycle.by_key()['color'])
 
-        self.update_line_colors()
+    def draw_all_picks(self):
+        if not self.show_all_picks:
+            return
 
-    def update_line_colors(self):
-        selected_picks_line_color = 'b'
+        line_settings = self.default_line_settings
+        color_cycler = self.create_color_cycler()
+
+        for group in self.all_pick_items_grouped.values():
+            line_settings['color'] = next(color_cycler)
+
+            xys = [item.data_list[1:] for item in group]
+            artist, = self.canvas.axis.plot(*list(zip(*xys)), **line_settings)
+            self.all_picks_line_artists.append(artist)
+
+        self.canvas.draw_idle()
+
+    def draw_selected_picks(self):
+        if not self.selected_items:
+            return
+
+        line_settings = self.default_line_settings
         if self.show_all_picks:
-            # Make the selected lines bright green instead
-            selected_picks_line_color = '#00ff13'
+            # Use highlighted line settings instead
+            line_settings = self.highlighted_line_settings
 
-        self.selected_picks_line.set_color(selected_picks_line_color)
+        color_cycler = self.create_color_cycler()
+
+        for group in self.selected_items_grouped.values():
+            # Always cycle to the next color, even if the group is empty,
+            # so that the colors will match up with all_pick_items_grouped
+            line_settings['color'] = next(color_cycler)
+
+            if not group:
+                continue
+
+            xys = [item.data_list[1:] for item in group]
+            artist, = self.canvas.axis.plot(*list(zip(*xys)), **line_settings)
+            self.selected_picks_line_artists.append(artist)
+
+        self.canvas.draw_idle()
+
+    def clear_artists(self):
+        while self.all_picks_line_artists:
+            self.all_picks_line_artists.pop(0).remove()
+
+        while self.selected_picks_line_artists:
+            self.selected_picks_line_artists.pop(0).remove()
+
+        self.canvas.draw_idle()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
