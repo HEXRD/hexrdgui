@@ -293,6 +293,26 @@ class StructurelessCalibrationRunner(QObject):
     def _on_engineering_constraints_changed(self, new_constraint):
         self.calibrator.engineering_constraints = new_constraint
         dialog = self._calibration_dialog
+
+        # Keep old settings in the dialog if they are present in the new params
+        # Remember everything except the name (should be the same) and
+        # the expression (which might be modified from the engineering
+        # constraints).
+        to_remember = [
+            'value',
+            'vary',
+            'min',
+            'max',
+            'brute_step',
+            'user_data',
+        ]
+
+        for param_key, param in dialog.params_dict.items():
+            if param_key in self.calibrator.params:
+                current = self.calibrator.params[param_key]
+                for attr in to_remember:
+                    setattr(current, attr, getattr(param, attr))
+
         dialog.params_dict = self.calibrator.params
 
     def _validate_picks(self, picks):
