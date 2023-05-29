@@ -376,7 +376,7 @@ class StructurelessCalibrationRunner(QObject):
 
     def _on_dialog_run_clicked(self):
         self.async_runner.progress_title = 'Running calibration...'
-        self.async_runner.success_callback = self.update_instrument
+        self.async_runner.success_callback = self.update_config_from_instrument
         self.async_runner.run(self._run_calibration)
 
     def _on_dialog_undo_run_clicked(self):
@@ -404,7 +404,7 @@ class StructurelessCalibrationRunner(QObject):
 
         self.results_message = results_message
 
-    def update_instrument(self):
+    def update_config_from_instrument(self):
         output_dict = instr_to_internal_dict(self.instr)
 
         # Save the previous iconfig to restore the statuses
@@ -437,18 +437,28 @@ class StructurelessCalibrationRunner(QObject):
         dialog.params_dict = self.calibrator.params
 
     def push_undo_stack(self):
-        self.undo_stack.append(copy.deepcopy(self.calibrator.params))
+        calibrator = self.calibrator
+        stack_item = {
+            'engineering_constraints': calibrator.engineering_constraints,
+            'tth_distortion': copy.deepcopy(calibrator.tth_distortion),
+            # Put this last so it will get set last later
+            'params': copy.deepcopy(calibrator.params),
+        }
+        self.undo_stack.append(stack_item)
         self.update_undo_enable_state()
 
     def pop_undo_stack(self):
-        old_params = self.undo_stack.pop(-1)
+        stack_item = self.undo_stack.pop(-1)
 
-        self.calibrator.params = old_params
-        self.instr.update_from_lmfit_parameter_list(old_params)
-        self.update_instrument()
+        # Params should get set last
+        calibrator = self.calibrator
+        for k, v in stack_item.items():
+            setattr(calibrator, k, v)
 
-        dialog = self._calibration_dialog
-        dialog.params_dict = old_params
+        self.instr.update_from_lmfit_parameter_list(calibrator.params)
+        self.update_config_from_instrument()
+
+        self._calibration_dialog.update_from_calibrator(calibrator)
 
         self.update_undo_enable_state()
 

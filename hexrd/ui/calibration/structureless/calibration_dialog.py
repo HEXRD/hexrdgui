@@ -249,6 +249,10 @@ class StructurelessCalibrationDialog(QObject):
     def on_engineering_constraints_changed(self):
         self.engineering_constraints_changed.emit(self.engineering_constraints)
 
+    def update_from_calibrator(self, calibrator):
+        self.engineering_constraints = calibrator.engineering_constraints
+        self.params_dict = calibrator.params
+
 
 COLUMNS = {
     'name': 0,
