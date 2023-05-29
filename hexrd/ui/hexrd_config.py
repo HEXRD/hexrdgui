@@ -226,6 +226,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when image mode widget needs to be in a certain mode"""
     set_image_mode_widget_tab = Signal(str)
 
+    """Emitted when canvas focus mode should be started/stopped
+
+    In canvas focus mode, the following widgets in the main window are
+    disabled:
+
+    1. The image mode widget
+    2. The config toolbox (material config and instrument config)
+    3. The main window menu bar
+    """
+    enable_canvas_focus_mode = Signal(bool)
+
     def __init__(self):
         # Should this have a parent?
         super(HexrdConfig, self).__init__(None)

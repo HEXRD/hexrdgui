@@ -323,6 +323,9 @@ class MainWindow(QObject):
             w = getattr(self.ui, widget_name)
             w.changed.connect(self._update_menu_item_tooltip_for_sender)
 
+        HexrdConfig().enable_canvas_focus_mode.connect(
+            self.enable_canvas_focus_mode)
+
     def on_state_loaded(self):
         self.update_action_check_states()
 
@@ -367,6 +370,16 @@ class MainWindow(QObject):
         self.ui.config_tool_box.insertItem(materials_panel_index,
                                            self.materials_panel.ui,
                                            'Materials')
+
+    def enable_canvas_focus_mode(self, b):
+        # Disable these widgets when focus mode is set
+        disable_widgets = [
+            self.image_mode_widget.ui,
+            self.ui.config_tool_box,
+            self.ui.menu_bar,
+        ]
+        for w in disable_widgets:
+            w.setEnabled(not b)
 
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(

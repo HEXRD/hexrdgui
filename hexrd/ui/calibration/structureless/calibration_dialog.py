@@ -122,11 +122,11 @@ class StructurelessCalibrationDialog(QObject):
         self.update_table()
 
         column_widths = {
-            'name': 225,
+            'name': 235,
             'value': 175,
             'minimum': 175,
             'maximum': 175,
-            'vary': 100,
+            'vary': 50,
         }
         for name, value in column_widths.items():
             self.ui.table.setColumnWidth(COLUMNS[name], value)

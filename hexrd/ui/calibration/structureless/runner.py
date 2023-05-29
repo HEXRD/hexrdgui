@@ -69,7 +69,11 @@ class StructurelessCalibrationRunner(QObject):
 
     def set_focus_mode(self, b):
         # This will disable some widgets in the GUI during focus mode
-        HexrdConfig().enable_image_mode_widget.emit(not b)
+        # Be very careful to make sure focus mode won't be set permanently
+        # if an exception occurs, or else this will ruin the user's session.
+        # Therefore, this should only be turned on during important moments,
+        # such as when a dialog is showing, and turned off during processing.
+        HexrdConfig().enable_canvas_focus_mode.emit(b)
 
     def choose_pick_method(self):
         title = 'Pick Method for Structureless Calibration'
@@ -120,6 +124,7 @@ class StructurelessCalibrationRunner(QObject):
         picker.finished.connect(self._hand_picking_finished)
         picker.accepted.connect(self._hand_picking_accepted)
 
+        # This will be turned off automatically when the picker finishes
         self.set_focus_mode(True)
 
     def load_pick_points(self):
