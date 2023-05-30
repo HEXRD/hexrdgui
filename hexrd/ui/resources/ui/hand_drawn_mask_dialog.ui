@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>247</width>
-    <height>181</height>
+    <width>361</width>
+    <height>232</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,14 +17,21 @@
    <item alignment="Qt::AlignHCenter">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Add a point with left-click.</string>
+      <string>Add points around a region to mask with left-click. </string>
      </property>
     </widget>
    </item>
    <item alignment="Qt::AlignHCenter">
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>Start a new line with right-click.</string>
+      <string>Start a new masked region with a single right-click.</string>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Repeat steps to mask multiple regions.</string>
      </property>
     </widget>
    </item>
