@@ -134,6 +134,9 @@ class HandDrawnMaskDialog(QObject):
         self.add_line()
 
     def button_pressed(self, event):
+        if event.dblclick:
+            self.accepted()
+            self.ui.close()
         if event.button == 1:
             self.drawing = True
         if event.button == 3:
