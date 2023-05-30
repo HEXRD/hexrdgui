@@ -168,7 +168,7 @@ class PanelBufferDialog(QObject):
 
                 if buffer.size in (1, 2):
                     self.mode = CONFIG_MODE_BORDER
-                    if buffer == None:
+                    if np.array_equal(buffer, None):
                         buffer = np.asarray([0])
 
                     if buffer.size == 1:
