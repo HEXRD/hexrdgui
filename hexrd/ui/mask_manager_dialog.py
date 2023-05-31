@@ -85,6 +85,7 @@ class MaskManagerDialog(QObject):
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
         self.ui.view_masks.clicked.connect(self.show_masks)
+        self.ui.hide_masks.toggled.connect(self.hide_masks)
 
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
@@ -136,6 +137,22 @@ class MaskManagerDialog(QObject):
         if self.threshold_cb is not None:
             self.threshold_cb.setChecked(status)
 
+    def masks_changed(self):
+        if self.image_mode == ViewType.polar or self.image_mode == ViewType.stereo:
+            HexrdConfig().polar_masks_changed.emit()
+        elif self.image_mode == ViewType.raw:
+            HexrdConfig().raw_masks_changed.emit()
+
+    def update_export_options(self):
+        hidden = self.ui.hide_masks.isChecked()
+        visible = len(HexrdConfig().visible_masks)
+        enabled = (not hidden) and visible
+        self.ui.export_masks.setEnabled(enabled)
+        self.ui.panel_buffer.setEnabled(enabled)
+        tip = '' if enabled else 'Masks hidden. Only visible masks are used.'
+        self.ui.export_masks.setToolTip(tip)
+        self.ui.panel_buffer.setToolTip(tip)
+
     def toggle_visibility(self, checked, name):
         if checked and name not in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.append(name)
@@ -145,10 +162,8 @@ class MaskManagerDialog(QObject):
         if name == self.threshold:
             HexrdConfig().set_threshold_mask_status(checked, set_by_mgr=True)
 
-        if self.image_mode == ViewType.polar:
-            HexrdConfig().polar_masks_changed.emit()
-        elif self.image_mode == ViewType.raw:
-            HexrdConfig().raw_masks_changed.emit()
+        self.masks_changed()
+        self.update_export_options()
 
     def reset_threshold(self):
         self.threshold = None
@@ -174,10 +189,7 @@ class MaskManagerDialog(QObject):
         self.ui.masks_table.removeRow(row)
         self.setup_table()
 
-        if self.image_mode == ViewType.polar:
-            HexrdConfig().polar_masks_changed.emit()
-        elif self.image_mode == ViewType.raw:
-            HexrdConfig().raw_masks_changed.emit()
+        self.masks_changed()
 
     def get_old_name(self, row, column):
         if column != 0:
@@ -320,10 +332,10 @@ class MaskManagerDialog(QObject):
     def rebuild_masks(self):
         if self.image_mode == ViewType.raw:
             rebuild_raw_masks()
-            HexrdConfig().raw_masks_changed.emit()
         elif self.image_mode in (ViewType.polar, ViewType.stereo):
             rebuild_polar_masks()
-            HexrdConfig().polar_masks_changed.emit()
+
+        self.masks_changed()
 
         self.update_masks_list('raw')
 
@@ -388,3 +400,12 @@ class MaskManagerDialog(QObject):
             axis.imshow(HexrdConfig().raw_masks_dict[det])
         fig.canvas.draw_idle()
         fig.show()
+
+    def hide_masks(self, checked):
+        if checked:
+            HexrdConfig().visible_masks.clear()
+        else:
+            HexrdConfig().visible_masks = list(self.masks.keys())
+
+        self.update_export_options()
+        self.masks_changed()
