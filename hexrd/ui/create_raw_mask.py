@@ -45,7 +45,13 @@ def convert_polar_to_raw(line_data):
             raw = angles_to_pixels(line, panel)
             if all([np.isnan(x) for x in raw.flatten()]):
                 continue
+
+            # Go ahead and get rid of nan coordinates. They cause trouble
+            # with scikit image's polygon.
+            raw = raw[~np.isnan(raw.min(axis=1))]
+
             raw_line_data.append((key, raw))
+
     return raw_line_data
 
 
