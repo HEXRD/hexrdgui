@@ -17,8 +17,10 @@ def pixels_to_cart(ij, panel):
     return panel.pixelToCart(ij[:, [1, 0]])
 
 
-def cart_to_angles(xys, panel, eta_period, tvec_s=None, tvec_c=None,
+def cart_to_angles(xys, panel, eta_period=None, tvec_s=None, tvec_c=None,
                    apply_distortion=True):
+    # If the eta period is specified, the eta angles will be mapped to be
+    # within this period.
     kwargs = {
         'tvec_s': tvec_s,
         'tvec_c': tvec_c,
@@ -26,7 +28,10 @@ def cart_to_angles(xys, panel, eta_period, tvec_s=None, tvec_c=None,
     }
     ang_crds, _ = panel.cart_to_angles(xys, **kwargs)
     ang_crds = np.degrees(ang_crds)
-    ang_crds[:, 1] = mapAngle(ang_crds[:, 1], eta_period, units='degrees')
+
+    if eta_period is not None:
+        ang_crds[:, 1] = mapAngle(ang_crds[:, 1], eta_period, units='degrees')
+
     return ang_crds
 
 
@@ -40,7 +45,7 @@ def angles_to_pixels(angles, panel):
     return cart_to_pixels(xys, panel)
 
 
-def pixels_to_angles(ij, panel, eta_period, tvec_s=None, tvec_c=None):
+def pixels_to_angles(ij, panel, eta_period=None, tvec_s=None, tvec_c=None):
     xys = pixels_to_cart(ij, panel)
 
     kwargs = {

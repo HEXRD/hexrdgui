@@ -184,8 +184,8 @@ class MaskRegionsDialog(QObject):
             self.patch.get_path().vertices[:-1])
 
         # So that this gets converted between raw and polar correctly,
-        # make sure there are at least 50 points.
-        data_coords = add_sample_points(data_coords, 50)
+        # make sure there are at least 300 points.
+        data_coords = add_sample_points(data_coords, 300)
 
         if self.image_mode == ViewType.raw:
             self.raw_mask_coords.append((self.det, data_coords))

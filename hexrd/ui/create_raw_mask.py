@@ -38,14 +38,20 @@ def create_threshold_mask(img):
 def convert_polar_to_raw(line_data):
     raw_line_data = []
     for line in line_data:
-        # Make sure there are at least 50 sample points
+        # Make sure there are at least 300 sample points
         # so that the conversion will appear correct.
-        line = add_sample_points(line, 50)
+        line = add_sample_points(line, 300)
         for key, panel in create_hedm_instrument().detectors.items():
             raw = angles_to_pixels(line, panel)
             if all([np.isnan(x) for x in raw.flatten()]):
                 continue
+
+            # Go ahead and get rid of nan coordinates. They cause trouble
+            # with scikit image's polygon.
+            raw = raw[~np.isnan(raw.min(axis=1))]
+
             raw_line_data.append((key, raw))
+
     return raw_line_data
 
 
