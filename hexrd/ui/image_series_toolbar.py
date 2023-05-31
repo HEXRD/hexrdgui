@@ -1,6 +1,10 @@
+from pathlib import Path
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
+from PySide2.QtGui import QPixmap
+from hexrd.ui import resource_loader
 
+import hexrd.ui.resources.icons
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
@@ -29,6 +33,9 @@ class ImageSeriesToolbar(QWidget):
         self.frame.valueChanged.connect(
             self.slider.setSliderPosition)
 
+        HexrdConfig().recent_images_changed.connect(
+            self.update_file_tooltip)
+
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
         self.frame = QSpinBox(self.parent())
@@ -37,16 +44,29 @@ class ImageSeriesToolbar(QWidget):
         self.omega_label = QLabel(self.parent())
         self.omega_label.setVisible(False)
 
+        data = resource_loader.load_resource(hexrd.ui.resources.icons,
+                                        'file.svg', binary=True)
+        pixmap = QPixmap()
+        pixmap.loadFromData(data, 'svg')
+        self.file_label = QLabel(self.parent())
+        self.file_label.setPixmap(pixmap)
+        self.update_file_tooltip()
+
         self.layout = QGridLayout(self.widget)
-        self.layout.addWidget(self.slider, 0, 0, 1, 9)
-        self.layout.addWidget(self.frame, 0, 9, 1, 1)
-        self.layout.addWidget(self.omega_label, 0, 10, 1, 1)
+        self.layout.addWidget(self.slider, 0, 0, 1, 8)
+        self.layout.addWidget(self.frame, 0, 8, 1, 1)
+        self.layout.addWidget(self.omega_label, 0, 9, 1, 1)
+        self.layout.addWidget(self.file_label, 0, 10, 1, 1)
 
         self.widget.setLayout(self.layout)
 
         if self.ims and len(self.ims) > 1:
             self.show = True
-        self.widget.setVisible(self.show)
+        self.toggle_widget_visibility(self.show)
+
+    def toggle_widget_visibility(self, visible):
+        self.slider.setVisible(visible)
+        self.frame.setVisible(visible)
 
     def set_range(self, current_tab=False):
         if self.ims:
@@ -55,7 +75,7 @@ class ImageSeriesToolbar(QWidget):
                 self.show = False
             elif size and not self.show and current_tab:
                 self.show = True
-            self.widget.setVisible(self.show)
+            self.toggle_widget_visibility(self.show)
             if not self.slider.minimumWidth():
                 self.slider.setMinimumWidth(self.parent().width()//2)
             if not size == self.slider.maximum():
@@ -65,7 +85,7 @@ class ImageSeriesToolbar(QWidget):
                 self.frame.setValue(self.slider.value())
         else:
             self.show = False
-            self.widget.setVisible(self.show)
+            self.toggle_widget_visibility(self.show)
 
         self.update_omega_label_text()
 
@@ -81,7 +101,7 @@ class ImageSeriesToolbar(QWidget):
             self.name = name
 
     def set_visible(self, b=False):
-        self.widget.setVisible(b and len(self.ims)>1)
+        self.toggle_widget_visibility(b and len(self.ims)>1)
         self.update_omega_label_text()
 
     def val_changed(self, pos):
@@ -93,9 +113,18 @@ class ImageSeriesToolbar(QWidget):
         ome_range = HexrdConfig().omega_ranges
 
         enable = not is_aggregated and ome_range is not None
-        self.omega_label.setVisible(enable)
+        self.toggle_widget_visibility(enable)
         if not enable:
             return
 
         ome_min, ome_max = ome_range
         self.omega_label.setText(f'  Omega range: [{ome_min}°, {ome_max}°]')
+
+    def update_file_tooltip(self):
+        tips = []
+        for det, images in HexrdConfig().recent_images.items():
+            fnames = [Path(img).name for img in images]
+            tips.append(
+                f'{det}: {(", ").join(fnames)}'
+            )
+        self.file_label.setToolTip(('\n').join(tips))
