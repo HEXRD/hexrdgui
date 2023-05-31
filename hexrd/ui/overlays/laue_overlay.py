@@ -239,11 +239,12 @@ class LaueOverlay(Overlay):
                 angles_corr[:, 1], np.radians(self.eta_period), units='radians'
             )
             """
-
-            if display_mode == ViewType.polar:
+            if display_mode in (ViewType.polar, ViewType.stereo):
                 # If the polar view is being distorted, apply this tth
                 # distortion to the angles as well.
                 angles = apply_tth_distortion_if_needed(angles)
+
+            if display_mode == ViewType.polar:
                 # Save the Laue spots as a list instead of a numpy array,
                 # so that we can predictably get the id() of spots inside.
                 # Numpy arrays do fancy optimizations that break this.

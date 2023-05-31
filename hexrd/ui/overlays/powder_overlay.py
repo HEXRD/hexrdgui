@@ -256,7 +256,7 @@ class PowderOverlay(Overlay):
         # 2. We are not distorting the polar image with the current overlay
         distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
         polar_distortion_with_self = (
-            display_mode == ViewType.polar and
+            display_mode in (ViewType.polar, ViewType.stereo) and
             distortion_overlay is self
         )
         apply_distortion = (
@@ -272,7 +272,7 @@ class PowderOverlay(Overlay):
             polar_angular_grid = HexrdConfig().polar_angular_grid
 
             offset_distortion = (
-                display_mode == ViewType.polar and
+                display_mode in (ViewType.polar, ViewType.stereo) and
                 distortion_overlay is not None and
                 polar_corr_field is not None and
                 polar_angular_grid is not None
