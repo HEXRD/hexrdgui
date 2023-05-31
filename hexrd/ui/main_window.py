@@ -37,7 +37,9 @@ from hexrd.ui.calibration.picks_tree_view_dialog import (
     PicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
 )
 from hexrd.ui.calibration.wppf_runner import WppfRunner
-from hexrd.ui.create_polar_mask import create_polar_mask, rebuild_polar_masks
+from hexrd.ui.create_polar_mask import (
+    create_polar_mask_from_raw, rebuild_polar_masks
+)
 from hexrd.ui.create_raw_mask import (
     convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
 from hexrd.ui.constants import ViewType, DOCUMENTATION_URL
@@ -680,7 +682,7 @@ class MainWindow(QObject):
                 raw_line = convert_polar_to_raw([line])
                 HexrdConfig().raw_mask_coords[name] = raw_line
                 HexrdConfig().visible_masks.append(name)
-                create_polar_mask(name, [line])
+                create_polar_mask_from_raw(name, raw_line)
             HexrdConfig().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
@@ -717,9 +719,9 @@ class MainWindow(QObject):
             return
 
         name = unique_name(HexrdConfig().raw_mask_coords, 'laue_mask')
-        create_polar_mask(name, data)
         raw_data = convert_polar_to_raw(data)
         HexrdConfig().raw_mask_coords[name] = raw_data
+        create_polar_mask_from_raw(name, raw_data)
         HexrdConfig().visible_masks.append(name)
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
@@ -753,9 +755,9 @@ class MainWindow(QObject):
             return
 
         name = unique_name(HexrdConfig().raw_mask_coords, 'powder_mask')
-        create_polar_mask(name, data)
         raw_data = convert_polar_to_raw(data)
         HexrdConfig().raw_mask_coords[name] = raw_data
+        create_polar_mask_from_raw(name, raw_data)
         HexrdConfig().visible_masks.append(name)
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()

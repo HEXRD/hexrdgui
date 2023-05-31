@@ -128,10 +128,14 @@ def _interpolate_split_coords_1d(coords1, coords2):
     return coords1, coords2
 
 
+def create_polar_mask_from_raw(name, value):
+    line_data = []
+    for det, data in value:
+        line_data.extend(convert_raw_to_polar(det, data))
+    create_polar_mask(name, line_data)
+
+
 def rebuild_polar_masks():
     HexrdConfig().masks.clear()
     for name, value in HexrdConfig().raw_mask_coords.items():
-        line_data = []
-        for det, data in value:
-            line_data.extend(convert_raw_to_polar(det, data))
-        create_polar_mask(name, line_data)
+        create_polar_mask_from_raw(name, value)
