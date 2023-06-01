@@ -45,7 +45,7 @@ class ImageSeriesToolbar(QWidget):
         self.omega_label.setVisible(False)
 
         data = resource_loader.load_resource(hexrd.ui.resources.icons,
-                                        'file.svg', binary=True)
+                                             'file.svg', binary=True)
         pixmap = QPixmap()
         pixmap.loadFromData(data, 'svg')
         self.file_label = QLabel(self.parent())
@@ -113,7 +113,7 @@ class ImageSeriesToolbar(QWidget):
         ome_range = HexrdConfig().omega_ranges
 
         enable = not is_aggregated and ome_range is not None
-        self.toggle_widget_visibility(enable)
+        self.omega_label.setVisible(enable)
         if not enable:
             return
 
@@ -125,6 +125,6 @@ class ImageSeriesToolbar(QWidget):
         for det, images in HexrdConfig().recent_images.items():
             fnames = [Path(img).name for img in images]
             tips.append(
-                f'{det}: {(", ").join(fnames)}'
+                f'{det}: {", ".join(fnames)}'
             )
-        self.file_label.setToolTip(('\n').join(tips))
+        self.file_label.setToolTip('\n'.join(tips))
