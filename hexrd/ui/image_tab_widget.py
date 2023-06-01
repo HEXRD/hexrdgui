@@ -365,7 +365,8 @@ class ImageTabWidget(QTabWidget):
                 eta = np.radians(info['y_data'])
 
             # We will only display the active material's hkls
-            plane_data = HexrdConfig().active_material.planeData
+            material = HexrdConfig().active_material
+            plane_data = material.planeData
             dsp = 0.5 * plane_data.wavelength / np.sin(0.5 * tth)
             hkl = str(plane_data.getHKLs(asStr=True, allHKLs=True,
                                          thisTTh=tth))
@@ -374,6 +375,7 @@ class ImageTabWidget(QTabWidget):
             info['eta'] = np.degrees(eta)
             info['dsp'] = dsp
             info['hkl'] = hkl
+            info['material_name'] = material.name
             info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
         elif mode == ViewType.polar:
             # No intensities in the polar view implies we are in the azimuthal
