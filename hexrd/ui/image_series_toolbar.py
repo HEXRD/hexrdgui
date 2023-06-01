@@ -39,6 +39,7 @@ class ImageSeriesToolbar(QWidget):
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
         self.frame = QSpinBox(self.parent())
+        self.frame.setKeyboardTracking(False)
 
         self.widget = QWidget(self.parent())
         self.omega_label = QLabel(self.parent())
@@ -81,6 +82,8 @@ class ImageSeriesToolbar(QWidget):
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setMaximum(size)
+                self.frame.setToolTip(f'Max: {size}')
+                self.slider.setToolTip(f'Max: {size}')
                 self.slider.setValue(0)
                 self.frame.setValue(self.slider.value())
         else:
@@ -118,7 +121,11 @@ class ImageSeriesToolbar(QWidget):
             return
 
         ome_min, ome_max = ome_range
-        self.omega_label.setText(f'  Omega range: [{ome_min}°, {ome_max}°]')
+        # We will display 6 digits at most, because omegas go up to 360
+        # degrees (so up to 3 digits before the decimal place), and we
+        # will always show at least 3 digits after the decimal place.
+        text = f'  Omega range: [{ome_min:.6g}°, {ome_max:.6g}°]'
+        self.omega_label.setText(text)
 
     def update_file_tooltip(self):
         tips = []
