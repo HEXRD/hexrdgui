@@ -286,8 +286,6 @@ class MainWindow(QObject):
             self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().raw_masks_changed.connect(self.update_all)
-        HexrdConfig().recent_images_changed.connect(
-            self.update_view_recent_images_list)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -416,7 +414,7 @@ class MainWindow(QObject):
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
         self.simple_image_series_dialog.config_changed()
-        self.update_view_recent_images_list()
+        HexrdConfig().recent_images_changed.emit()
 
     def on_detector_shape_changed(self, det_key):
         # We need to load/reset the dummy images if a detector's shape changes.
@@ -1369,13 +1367,6 @@ class MainWindow(QObject):
     def on_action_about_triggered(self):
         dialog = AboutDialog(self.ui)
         dialog.ui.exec_()
-
-    def update_view_recent_images_list(self):
-        self.ui.view_recent_images.clear()
-        for det, images in HexrdConfig().recent_images.items():
-            self.ui.view_recent_images.addSection(det)
-            for image in images:
-                self.ui.view_recent_images.addAction(image)
 
     def on_action_documentation_triggered(self):
         QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
