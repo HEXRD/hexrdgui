@@ -143,16 +143,6 @@ class MaskManagerDialog(QObject):
         elif self.image_mode == ViewType.raw:
             HexrdConfig().raw_masks_changed.emit()
 
-    def update_export_options(self):
-        hidden = self.ui.hide_masks.isChecked()
-        visible = len(HexrdConfig().visible_masks)
-        enabled = (not hidden) and visible
-        self.ui.export_masks.setEnabled(enabled)
-        self.ui.panel_buffer.setEnabled(enabled)
-        tip = '' if enabled else 'Masks hidden. Only visible masks are used.'
-        self.ui.export_masks.setToolTip(tip)
-        self.ui.panel_buffer.setToolTip(tip)
-
     def toggle_visibility(self, checked, name):
         if checked and name not in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.append(name)
@@ -163,7 +153,6 @@ class MaskManagerDialog(QObject):
             HexrdConfig().set_threshold_mask_status(checked, set_by_mgr=True)
 
         self.masks_changed()
-        self.update_export_options()
 
     def reset_threshold(self):
         self.threshold = None
@@ -407,5 +396,4 @@ class MaskManagerDialog(QObject):
         else:
             HexrdConfig().visible_masks = list(self.masks.keys())
 
-        self.update_export_options()
         self.masks_changed()
