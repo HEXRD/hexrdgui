@@ -138,7 +138,7 @@ class MaskManagerDialog(QObject):
             self.threshold_cb.setChecked(status)
 
     def masks_changed(self):
-        if self.image_mode == ViewType.polar or self.image_mode == ViewType.stereo:
+        if self.image_mode in (ViewType.polar, ViewType.stereo):
             HexrdConfig().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             HexrdConfig().raw_masks_changed.emit()
