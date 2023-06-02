@@ -1063,12 +1063,14 @@ class MainWindow(QObject):
 
         intensity = info['intensity']
         if intensity is not None:
+            material_name = info.get("material_name", "")
+
             labels.append(f'value = {info["intensity"]:8.3f}')
             labels.append(f'tth = {info["tth"]:8.3f}')
             labels.append(f'eta = {info["eta"]:8.3f}')
             labels.append(f'dsp = {info["dsp"]:8.3f}')
             labels.append(f'Q = {info["Q"]:8.3f}')
-            labels.append(f'hkl = {info["hkl"]}')
+            labels.append(f'hkl ({material_name}) = {info["hkl"]}')
 
         return labels
 
@@ -1084,11 +1086,13 @@ class MainWindow(QObject):
             labels.append(f'Q = {info["Q"]:8.3f}')
         else:
             # We are in the main polar canvas
+            material_name = info.get("material_name", "")
+
             labels.append(f'eta = {info["y_data"]:8.3f}')
             labels.append(f'value = {info["intensity"]:8.3f}')
             labels.append(f'dsp = {info["dsp"]:8.3f}')
             labels.append(f'Q = {info["Q"]:8.3f}')
-            labels.append(f'hkl = {info["hkl"]}')
+            labels.append(f'hkl ({material_name}) = {info["hkl"]}')
 
         return labels
 
