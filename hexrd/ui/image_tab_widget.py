@@ -6,7 +6,7 @@ import numpy as np
 from hexrd.ui.constants import PAN, ViewType, ZOOM
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_canvas import ImageCanvas
-from hexrd.ui.image_series_toolbar import ImageSeriesToolbar
+from hexrd.ui.image_series_toolbar import ImageSeriesToolbar, ImageSeriesInfoToolbar
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.utils.conversions import stereo_to_angles, tth_to_q
 from hexrd.ui import utils
@@ -65,6 +65,7 @@ class ImageTabWidget(QTabWidget):
         for tb in self.toolbars:
             tb['tb'].setVisible(False)
             tb['sb'].set_visible(False)
+            tb['ib'].setVisible(False)
 
         del self.image_canvases[1:]
         del self.toolbars[1:]
@@ -155,6 +156,7 @@ class ImageTabWidget(QTabWidget):
 
         self.toolbars[self.current_index]['tb'].setVisible(b)
         self.toolbars[self.current_index]['sb'].set_visible(b)
+        self.toolbars[self.current_index]['ib'].set_visible(b)
 
     def allocate_toolbars(self):
         parent = self.parent()
@@ -165,14 +167,16 @@ class ImageTabWidget(QTabWidget):
             # Current detector
             name = self.image_names[idx]
             sb = ImageSeriesToolbar(name, self)
+            ib = ImageSeriesInfoToolbar(self)
 
             # This will put it at the bottom of the central widget
             toolbar = QHBoxLayout()
+            toolbar.addWidget(ib.widget)
             toolbar.addWidget(tb)
             toolbar.addWidget(sb.widget)
             parent.layout().addLayout(toolbar)
             parent.layout().setAlignment(toolbar, Qt.AlignCenter)
-            self.toolbars.append({'tb': tb, 'sb': sb})
+            self.toolbars.append({'tb': tb, 'sb': sb, 'ib': ib})
 
     def switch_toolbar(self, idx):
         if idx < 0:
@@ -185,6 +189,7 @@ class ImageTabWidget(QTabWidget):
             status = self.toolbar_visible if idx == i else False
             toolbar['tb'].setVisible(status)
             toolbar['sb'].set_visible(status)
+            toolbar['ib'].set_visible(status)
         self.update_ims_toolbar()
 
     def update_ims_toolbar(self):
