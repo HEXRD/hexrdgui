@@ -132,7 +132,7 @@ class InstrumentViewer:
             if name not in HexrdConfig().visible_masks:
                 continue
 
-                data[f'mask_{name}'] = mask
+            data[f'mask_{name}'] = mask
 
         # Delete the file if it already exists
         if filename.exists():
