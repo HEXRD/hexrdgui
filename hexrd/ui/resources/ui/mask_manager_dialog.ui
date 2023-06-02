@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>494</width>
+    <width>507</width>
     <height>254</height>
    </rect>
   </property>
@@ -14,7 +14,14 @@
    <string>Mask Management</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" rowspan="5">
+   <item row="1" column="1">
+    <widget class="QPushButton" name="export_masks">
+     <property name="text">
+      <string>Export Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" rowspan="6">
     <widget class="QTableWidget" name="masks_table">
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
@@ -61,10 +68,17 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QPushButton" name="export_masks">
+   <item row="3" column="1">
+    <widget class="QPushButton" name="view_masks">
      <property name="text">
-      <string>Export Masks</string>
+      <string>View Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QPushButton" name="show_all_masks">
+     <property name="text">
+      <string>Show All Masks</string>
      </property>
     </widget>
    </item>
@@ -75,17 +89,10 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="1">
-    <widget class="QPushButton" name="view_masks">
-     <property name="text">
-      <string>View Masks</string>
-     </property>
-    </widget>
-   </item>
    <item row="4" column="1">
-    <widget class="QCheckBox" name="hide_masks">
+    <widget class="QPushButton" name="hide_all_masks">
      <property name="text">
-      <string>Hide all masks</string>
+      <string>Hide All Masks</string>
      </property>
     </widget>
    </item>

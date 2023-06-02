@@ -85,7 +85,8 @@ class MaskManagerDialog(QObject):
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
         self.ui.view_masks.clicked.connect(self.show_masks)
-        self.ui.hide_masks.toggled.connect(self.hide_masks)
+        self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
+        self.ui.show_all_masks.clicked.connect(self.show_all_masks)
 
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
@@ -390,10 +391,18 @@ class MaskManagerDialog(QObject):
         fig.canvas.draw_idle()
         fig.show()
 
-    def hide_masks(self, checked):
-        if checked:
-            HexrdConfig().visible_masks.clear()
-        else:
-            HexrdConfig().visible_masks = list(self.masks.keys())
-
+    def toggle_all_masks(self):
+        with block_signals(self.ui.masks_table):
+            for i, key in enumerate(self.masks.keys()):
+                cb = self.ui.masks_table.cellWidget(i, 1)
+                status = key in HexrdConfig().visible_masks
+                cb.setChecked(status)
         self.masks_changed()
+
+    def hide_all_masks(self):
+        HexrdConfig().visible_masks.clear()
+        self.toggle_all_masks()
+
+    def show_all_masks(self):
+        HexrdConfig().visible_masks = list(self.masks.keys())
+        self.toggle_all_masks()
