@@ -95,8 +95,10 @@ class HandDrawnMaskDialog(QObject):
 
     def axes_exited(self, event):
         if not self.drawing:
-            self.linebuilder.disconnect()
-            self.lines.pop()
+            if self.linebuilder:
+                self.linebuilder.disconnect()
+            if self.lines:
+                self.lines.pop()
 
     def add_line(self):
         if self.drawing:
