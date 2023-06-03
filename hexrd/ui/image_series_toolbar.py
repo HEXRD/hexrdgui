@@ -17,8 +17,6 @@ class ImageSeriesInfoToolbar(QWidget):
         self.widget = None
         self.file_label = None
 
-        self.show = False
-
         self.create_widget()
 
         self.setup_connections()
