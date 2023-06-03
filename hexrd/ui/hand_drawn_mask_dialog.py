@@ -126,9 +126,9 @@ class HandDrawnMaskDialog(QObject):
 
         linebuilder.disconnect()
 
-        # Make sure there are at least 50 points, so that conversions
+        # Make sure there are at least 300 points, so that conversions
         # between raw/polar views come out okay.
-        ring_data = add_sample_points(ring_data, 50)
+        ring_data = add_sample_points(ring_data, 300)
 
         self.ring_data.append(ring_data)
         self.dets.append(self.ax.get_title())
