@@ -3,6 +3,9 @@ from PySide2.QtWidgets import (
     QCheckBox, QHBoxLayout, QSizePolicy, QTableWidgetItem, QWidget
 )
 
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+
+from hexrd.ui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
@@ -29,6 +32,11 @@ class StructurelessCalibrationDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('structureless_calibration_dialog.ui',
                                    parent)
+
+        self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
+        self.ui.pinhole_distortion_layout.addWidget(
+            self.pinhole_correction_editor.ui)
+        self.pinhole_correction_editor.apply_panel_buffer_visible = False
 
         self._params_dict = params_dict
         self.engineering_constraints = engineering_constraints
@@ -246,11 +254,27 @@ class StructurelessCalibrationDialog(QObject):
     def on_load_picks_clicked(self):
         self.load_picks_clicked.emit()
 
+    @property
+    def tth_distortion(self):
+        instr = create_hedm_instrument()
+        return self.pinhole_correction_editor.create_object_dict(instr)
+
+    @tth_distortion.setter
+    def tth_distortion(self, v):
+        if v is None:
+            self.pinhole_correction_editor.correction_type = None
+            return
+
+        # They should all have identical settings. Just take the first one.
+        first = next(iter(v.values()))
+        self.pinhole_correction_editor.update_from_object(first)
+
     def on_engineering_constraints_changed(self):
         self.engineering_constraints_changed.emit(self.engineering_constraints)
 
     def update_from_calibrator(self, calibrator):
         self.engineering_constraints = calibrator.engineering_constraints
+        self.tth_distortion = calibrator.tth_distortion
         self.params_dict = calibrator.params
 
 

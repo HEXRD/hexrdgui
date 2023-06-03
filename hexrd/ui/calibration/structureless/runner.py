@@ -194,7 +194,10 @@ class StructurelessCalibrationRunner(QObject):
         }
         dialog = StructurelessCalibrationDialog(**kwargs)
 
+        self.draw_picks(True)
+
         # Connect interactions to functions
+        dialog.ui.draw_picks.setChecked(self.drawing_picks)
         dialog.draw_picks_toggled.connect(self.draw_picks)
         dialog.value_modified.connect(self._on_dialog_value_modified)
         dialog.edit_picks_clicked.connect(self._on_edit_picks_clicked)
@@ -383,7 +386,17 @@ class StructurelessCalibrationRunner(QObject):
         print('Undo changes')
         self.pop_undo_stack()
 
+    def update_calibrator_tth_distortion(self):
+        dialog = self._calibration_dialog
+        if not dialog:
+            return
+
+        self.calibrator.tth_distortion = dialog.tth_distortion
+
     def _run_calibration(self):
+        # Update the tth distortion on the calibrator from the dialog
+        self.update_calibrator_tth_distortion()
+
         # Add the current parameters to the undo stack
         self.push_undo_stack()
 

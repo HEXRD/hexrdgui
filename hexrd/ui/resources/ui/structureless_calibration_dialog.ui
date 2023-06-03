@@ -74,7 +74,7 @@
      </layout>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
+   <item row="8" column="0" colspan="2">
     <widget class="QGroupBox" name="picks_group">
      <property name="title">
       <string>Picks</string>
@@ -149,7 +149,7 @@
      </layout>
     </widget>
    </item>
-   <item row="8" column="0" colspan="2">
+   <item row="9" column="0" colspan="2">
     <layout class="QHBoxLayout" name="button_layout">
      <item>
       <widget class="QPushButton" name="undo_run_button">
@@ -202,6 +202,14 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QGroupBox" name="pinhole_distortion_group">
+     <property name="title">
+      <string>Pinhole Distortion</string>
+     </property>
+     <layout class="QVBoxLayout" name="pinhole_distortion_layout"/>
+    </widget>
    </item>
   </layout>
  </widget>

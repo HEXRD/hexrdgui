@@ -448,7 +448,7 @@ class PowderOverlay(Overlay):
         def tth_rygg_pinhole_distortion(panel):
             kwargs = {
                 'detector': panel,
-                'material': self.material,
+                'absorption_length': self.material.absorption_length,
                 **self.tth_distortion_kwargs,
             }
             return RyggPinholeDistortion(**kwargs)
@@ -456,7 +456,6 @@ class PowderOverlay(Overlay):
         def tth_sample_layer_distortion(panel):
             kwargs = {
                 'detector': panel,
-                'source_distance': self.instrument.source_distance,
                 **self.tth_distortion_kwargs,
             }
             return SampleLayerDistortion(**kwargs)
@@ -507,8 +506,8 @@ class PowderOverlay(Overlay):
         }
 
         if self.tth_distortion_type == 'RyggPinholeDistortion':
-            # Need the material as well for this one
-            kwargs['material'] = self.material
+            # Need the absorption length as well for this one
+            kwargs['absorption_length'] = self.material.absorption_length
 
         return f(**kwargs)
 
@@ -543,7 +542,7 @@ class PowderOverlay(Overlay):
         """
         if self.tth_distortion_type == 'RyggPinholeDistortion':
             return polar_tth_corr_map_rygg_pinhole(
-                tth, eta, self.instrument, self.material,
+                tth, eta, self.instrument, self.material.absorption_length,
                 **self.tth_distortion_kwargs,
             )
 
