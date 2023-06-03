@@ -804,6 +804,14 @@ class MainWindow(QObject):
 
                 ph_masks.append((det_key, contour))
 
+        if not ph_masks:
+            msg = (
+                'Failed to find contours to generate the pinhole mask. '
+                'Please ensure the input is reasonable.'
+            )
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
+
         # Overwrite previous pinhole masks
         name = 'pinhole_mask'
         HexrdConfig().raw_mask_coords[name] = ph_masks
