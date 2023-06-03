@@ -102,17 +102,23 @@ class PinholeCorrectionEditor(QObject):
                 'pinhole_thickness': self.ui.jhe_thickness.value() * 1e-3,
             }
         elif dtype == 'RyggPinholeDistortion':
-            return {
+            output = {
                 'pinhole_radius': self.ui.rygg_radius.value() * 1e-3,
                 'pinhole_thickness': self.ui.rygg_thickness.value() * 1e-3,
                 'num_phi_elements': self.ui.rygg_num_phi_elements.value(),
-                'absorption_length': self.rygg_absorption_length,
             }
+            if self.rygg_absorption_length_visible:
+                # Only return an absorption length if it is visible
+                output['absorption_length'] = self.rygg_absorption_length
+            return output
 
         raise Exception(f'Not implemented for: {dtype}')
 
     @correction_kwargs.setter
     def correction_kwargs(self, v):
+        if v is None:
+            return
+
         # Values are (key, default)
         values = {
             'sample_layer_standoff': ('layer_standoff', 0.15),
@@ -249,7 +255,7 @@ class PinholeCorrectionEditor(QObject):
     def apply_panel_buffers(self):
         instr = create_hedm_instrument()
 
-        config = self.distortion_kwargs_config
+        config = self.correction_kwargs
         required_keys = ('pinhole_radius', 'pinhole_thickness')
         if config is None or any(x not in config for x in required_keys):
             raise Exception(f'Failed to create panel buffer with {config=}')
@@ -342,6 +348,14 @@ class PinholeCorrectionEditor(QObject):
         # self.rygg_absorption_length should be updated
         self.ui.rygg_absorption_length_value.setValue(
             self.rygg_absorption_length)
+
+    @property
+    def none_option_visible(self):
+        return not self.ui.correction_type.view().isRowHidden(0)
+
+    @none_option_visible.setter
+    def none_option_visible(self, b):
+        self.ui.correction_type.view().setRowHidden(0, not b)
 
     @property
     def rygg_absorption_length_visible(self):
