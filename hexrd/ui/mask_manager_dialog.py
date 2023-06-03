@@ -391,7 +391,7 @@ class MaskManagerDialog(QObject):
         fig.canvas.draw_idle()
         fig.show()
 
-    def toggle_all_masks(self):
+    def update_visibility_checkboxes(self):
         with block_signals(self.ui.masks_table):
             for i, key in enumerate(self.masks.keys()):
                 cb = self.ui.masks_table.cellWidget(i, 1)
@@ -401,8 +401,8 @@ class MaskManagerDialog(QObject):
 
     def hide_all_masks(self):
         HexrdConfig().visible_masks.clear()
-        self.toggle_all_masks()
+        self.update_visibility_checkboxes()
 
     def show_all_masks(self):
         HexrdConfig().visible_masks = list(self.masks.keys())
-        self.toggle_all_masks()
+        self.update_visibility_checkboxes()
