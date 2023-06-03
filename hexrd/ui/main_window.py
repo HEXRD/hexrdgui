@@ -414,7 +414,6 @@ class MainWindow(QObject):
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
         self.simple_image_series_dialog.config_changed()
-        HexrdConfig().recent_images_changed.emit()
 
     def on_detector_shape_changed(self, det_key):
         # We need to load/reset the dummy images if a detector's shape changes.

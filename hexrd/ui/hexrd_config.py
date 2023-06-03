@@ -392,13 +392,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     # Load the state from QSettings
     def _load_state_from_settings(self, settings):
+        # Skip these when loading the QSettings.
+        # These need to be saved in state files, but we do not want them
+        # to persist in between regular sessions.
+        skip = [
+            'azimuthal_overlays',
+            '_recent_images',
+        ]
+
         state = {}
         for name, default in self._attributes_to_persist():
-            if name == 'azimuthal_overlays':
-                # We need to keep this value in the settings so that it is
-                # saved to state files, but we want to forget selections
-                # between sessions.
+            if name in skip:
                 continue
+
             state[name] = settings.value(
                 self._attribute_to_settings_key(name), default)
 
@@ -412,8 +418,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         state = {}
         for name, _ in self._attributes_to_persist():
             state[self._attribute_to_settings_key(name)] = getattr(self, name)
-
-        state['euler_angle_convention'] = self.euler_angle_convention
 
         return state
 
@@ -871,7 +875,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def clear_images(self, initial_load=False):
         self.reset_unagg_imgs()
         self.imageseries_dict.clear()
-        self._recent_images.clear()
+        # Set this instead of clearing so the signal gets emitted
+        self.recent_images = {}
         if self.load_panel_state is not None and not initial_load:
             self.load_panel_state.clear()
             self.load_panel_state_reset.emit()
