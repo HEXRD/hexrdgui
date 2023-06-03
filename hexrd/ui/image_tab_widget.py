@@ -65,7 +65,7 @@ class ImageTabWidget(QTabWidget):
         for tb in self.toolbars:
             tb['tb'].setVisible(False)
             tb['sb'].set_visible(False)
-            tb['ib'].setVisible(False)
+            tb['ib'].set_visible(False)
 
         del self.image_canvases[1:]
         del self.toolbars[1:]
