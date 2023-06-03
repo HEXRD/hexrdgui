@@ -288,6 +288,7 @@ class MainWindow(QObject):
         HexrdConfig().detector_shape_changed.connect(
             self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
+        HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
         HexrdConfig().raw_masks_changed.connect(self.update_all)
 
         ImageLoadManager().update_needed.connect(self.update_all)
@@ -1007,21 +1008,16 @@ class MainWindow(QObject):
         self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
     def set_live_update(self, enabled):
-        previous = HexrdConfig().live_update
-        HexrdConfig().set_live_update(enabled)
+        HexrdConfig().live_update = enabled
 
         if enabled:
-            # When a state file is loaded, this function gets called again, and
-            # a repeated connection is getting made to perform this update.
-            # As such, let's set `Qt.UniqueConnection` to prevent this from
-            # being connected repeatedly.
-            HexrdConfig().rerender_needed.connect(self.update_all, Qt.UniqueConnection)
             # Go ahead and trigger an update as well
             self.update_all()
-        elif previous:
-            # Only disconnect if we were previously enabled. i.e. the signal was
-            # connected
-            HexrdConfig().rerender_needed.disconnect(self.update_all)
+
+    def on_rerender_needed(self):
+        # Only perform an update if we have live updates enabled
+        if HexrdConfig().live_update:
+            self.update_all()
 
     def show_beam_marker_toggled(self, b):
         HexrdConfig().show_beam_marker = b

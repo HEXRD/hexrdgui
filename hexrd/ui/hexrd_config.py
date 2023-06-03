@@ -1094,9 +1094,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         with open(output_file, 'w') as f:
             yaml.dump(cfg, f)
 
-    def set_live_update(self, status):
-        self.live_update = status
-
     def create_internal_config(self, cur_config):
         if not self.has_status(cur_config):
             self.add_status(cur_config)
