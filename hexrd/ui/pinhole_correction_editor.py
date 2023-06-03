@@ -202,12 +202,12 @@ class PinholeCorrectionEditor(QObject):
 
     @property
     def all_widgets(self):
+        # Except for the correction type
         return [
             *self.sample_layer_widgets,
             *self.jhe_widgets,
             *self.rygg_widgets,
             *self.apply_panel_buffer_buttons,
-            self.ui.correction_type,
         ]
 
     def correction_type_changed(self):

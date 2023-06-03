@@ -130,8 +130,7 @@ class PowderOverlayEditor:
     def update_config(self):
         self.tth_width_config = self.tth_width_gui
         self.offset_config = self.offset_gui
-        self.distortion_type_config = self.distortion_type_gui
-        self.distortion_kwargs_config = self.distortion_kwargs_gui
+        self.distortion_config = self.distortion_gui
         self.clip_with_panel_buffer_config = self.clip_with_panel_buffer_gui
 
         self.overlay.update_needed = True
@@ -267,6 +266,33 @@ class PowderOverlayEditor:
     @distortion_kwargs_gui.setter
     def distortion_kwargs_gui(self, v):
         self.pinhole_correction_editor.correction_kwargs = v
+
+    @property
+    def distortion_config(self):
+        return self.distortion_type_config, self.distortion_kwargs_config
+
+    @distortion_config.setter
+    def distortion_config(self, v):
+        if self.overlay is None:
+            return
+
+        dtype, dconfig = v
+        if (self.overlay.tth_distortion_type == dtype and
+                self.overlay.tth_distortion_kwargs == dconfig):
+            return
+
+        self.overlay.tth_distortion_type = dtype
+        self.overlay.tth_distortion_kwargs = dconfig
+        HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
+
+    @property
+    def distortion_gui(self):
+        return self.distortion_type_gui, self.distortion_kwargs_gui
+
+    @distortion_gui.setter
+    def distortion_gui(self, v):
+        self.distortion_type_gui = v[0]
+        self.distortion_type_kwargs = v[1]
 
     @property
     def offset_widgets(self):
