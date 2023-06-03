@@ -30,6 +30,7 @@ class MaskRegionsDialog(QObject):
         self.canvas = None
         self.image_mode = None
         self.raw_mask_coords = []
+        self.drawing_axes = None
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -144,9 +145,14 @@ class MaskRegionsDialog(QObject):
         self.update_undo_enable_state()
 
     def axes_entered(self, event):
-        self.axes = event.inaxes
         self.canvas = event.canvas
         self.image_mode = self.canvas.mode
+
+        if event.inaxes is self.canvas.azimuthal_integral_axis:
+            # Ignore the azimuthal integral axis in the polar view
+            return
+
+        self.axes = event.inaxes
 
     def axes_exited(self, event):
         self.axes = None
@@ -168,8 +174,14 @@ class MaskRegionsDialog(QObject):
         # For animating the patch
         self.bg_cache = self.canvas.copy_from_bbox(self.axes.bbox)
 
+        self.drawing_axes = self.axes
+
     def drag_motion(self, event):
-        if not self.axes or not self.press:
+        if (
+            not self.axes or
+            not self.press or
+            self.axes is not self.drawing_axes
+        ):
             return
 
         self.update_patch(event)
@@ -215,20 +227,15 @@ class MaskRegionsDialog(QObject):
         if not self.press:
             return
 
-        if self.axes:
-            # Save it
-            self.end = [event.xdata, event.ydata]
-            self.save_line_data()
-            self.end.clear()
+        # Save it
+        self.save_line_data()
 
-            # Turn off animation so the patch will stay
-            self.patch.set_animated(False)
-        else:
-            det = self.added_patches.pop()
-            self.patches[det].pop()
+        # Turn off animation so the patch will stay
+        self.patch.set_animated(False)
 
         self.press.clear()
         self.det = None
+        self.drawing_axes = None
         self.canvas.draw_idle()
 
         self.update_undo_enable_state()
