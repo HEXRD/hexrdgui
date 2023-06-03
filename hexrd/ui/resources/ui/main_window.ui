@@ -167,12 +167,30 @@
      <property name="toolTipsVisible">
       <bool>true</bool>
      </property>
-     <addaction name="action_edit_apply_hand_drawn_mask"/>
-     <addaction name="action_edit_apply_laue_mask_to_polar"/>
-     <addaction name="action_edit_apply_polygon_mask"/>
-     <addaction name="action_edit_apply_powder_mask_to_polar"/>
-     <addaction name="action_edit_apply_pinhole_mask"/>
+     <widget class="QMenu" name="menu_draw_mask">
+      <property name="title">
+       <string>Draw</string>
+      </property>
+      <property name="toolTipsVisible">
+       <bool>true</bool>
+      </property>
+      <addaction name="action_edit_apply_region_mask"/>
+      <addaction name="action_edit_apply_hand_drawn_mask"/>
+     </widget>
+     <widget class="QMenu" name="menu_apply_mask">
+      <property name="title">
+       <string>Apply</string>
+      </property>
+      <property name="toolTipsVisible">
+       <bool>true</bool>
+      </property>
+      <addaction name="action_edit_apply_powder_mask_to_polar"/>
+      <addaction name="action_edit_apply_laue_mask_to_polar"/>
+      <addaction name="action_edit_apply_pinhole_mask"/>
+     </widget>
      <addaction name="action_open_mask_manager"/>
+     <addaction name="menu_draw_mask"/>
+     <addaction name="menu_apply_mask"/>
     </widget>
     <widget class="QMenu" name="menu_intensity_corrections">
      <property name="title">
@@ -597,7 +615,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Apply Hand Drawn Mask</string>
+    <string>Polygon</string>
    </property>
   </action>
   <action name="action_edit_apply_laue_mask_to_polar">
@@ -605,7 +623,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Apply Laue Mask to Polar</string>
+    <string>Laue</string>
    </property>
   </action>
   <action name="action_open_config_file">
@@ -628,9 +646,9 @@
     <string>Manage Masks</string>
    </property>
   </action>
-  <action name="action_edit_apply_polygon_mask">
+  <action name="action_edit_apply_region_mask">
    <property name="text">
-    <string>Apply Ellipse/Rectangle Mask</string>
+    <string>Ellipse/Rectangle</string>
    </property>
   </action>
   <action name="action_run_wppf">
@@ -719,7 +737,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Apply Powder Rings Mask to Polar</string>
+    <string>Powder</string>
    </property>
   </action>
   <action name="action_save_state">
@@ -796,7 +814,7 @@
   </action>
   <action name="action_edit_apply_pinhole_mask">
    <property name="text">
-    <string>Apply Pinhole Mask</string>
+    <string>Pinhole</string>
    </property>
   </action>
   <action name="action_show_all_colormaps">
