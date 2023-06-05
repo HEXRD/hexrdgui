@@ -201,10 +201,8 @@ class MainWindow(QObject):
             self.on_action_edit_apply_laue_mask_to_polar_triggered)
         self.ui.action_edit_apply_powder_mask_to_polar.triggered.connect(
             self.action_edit_apply_powder_mask_to_polar)
-        self.ui.action_edit_apply_polygon_mask.triggered.connect(
-            self.on_action_edit_apply_polygon_mask_triggered)
-        self.ui.action_edit_apply_polygon_mask.triggered.connect(
-            self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_edit_apply_region_mask.triggered.connect(
+            self.on_action_edit_apply_region_mask_triggered)
         self.ui.action_edit_apply_pinhole_mask.triggered.connect(
             self.show_pinhole_mask_dialog)
         self.ui.action_edit_reset_instrument_config.triggered.connect(
@@ -762,10 +760,12 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
 
-    def on_action_edit_apply_polygon_mask_triggered(self):
+    def on_action_edit_apply_region_mask_triggered(self):
         mrd = MaskRegionsDialog(self.ui)
         mrd.new_mask_added.connect(self.new_mask_added.emit)
         mrd.show()
+
+        self.ui.image_tab_widget.toggle_off_toolbar()
 
     def show_pinhole_mask_dialog(self):
         if not hasattr(self, '_pinhole_mask_dialog'):
@@ -800,6 +800,14 @@ class MainWindow(QObject):
                 contour[:, [1, 0]] = contour[:, [0, 1]]
 
                 ph_masks.append((det_key, contour))
+
+        if not ph_masks:
+            msg = (
+                'Failed to find contours to generate the pinhole mask. '
+                'Please ensure the input is reasonable.'
+            )
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
 
         # Overwrite previous pinhole masks
         name = 'pinhole_mask'

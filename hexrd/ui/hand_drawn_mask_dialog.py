@@ -95,8 +95,10 @@ class HandDrawnMaskDialog(QObject):
 
     def axes_exited(self, event):
         if not self.drawing:
-            self.linebuilder.disconnect()
-            self.lines.pop()
+            if self.linebuilder:
+                self.linebuilder.disconnect()
+            if self.lines:
+                self.lines.pop()
 
     def add_line(self):
         if self.drawing:
@@ -135,6 +137,10 @@ class HandDrawnMaskDialog(QObject):
 
     def button_pressed(self, event):
         if event.button == 1:
+            if event.dblclick:
+                self.accepted()
+                self.ui.close()
+                return
             self.drawing = True
         if event.button == 3:
             self.line_finished()

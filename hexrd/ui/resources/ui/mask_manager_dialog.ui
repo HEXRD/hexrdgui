@@ -6,15 +6,22 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>401</width>
-    <height>300</height>
+    <width>649</width>
+    <height>254</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Mask Management</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="1">
+    <widget class="QPushButton" name="export_masks">
+     <property name="text">
+      <string>Export Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" rowspan="6">
     <widget class="QTableWidget" name="masks_table">
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
@@ -54,61 +61,38 @@
      </column>
     </widget>
    </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPushButton" name="panel_buffer">
-       <property name="text">
-        <string>Masks to Panel Buffer</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="import_masks">
-       <property name="text">
-        <string>Import Masks</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="export_masks">
-       <property name="text">
-        <string>Export Masks</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="import_masks">
+     <property name="text">
+      <string>Import Masks</string>
+     </property>
+    </widget>
    </item>
-   <item>
+   <item row="3" column="1">
     <widget class="QPushButton" name="view_masks">
      <property name="text">
       <string>View Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QPushButton" name="show_all_masks">
+     <property name="text">
+      <string>Show All Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QPushButton" name="panel_buffer">
+     <property name="text">
+      <string>Masks to Panel Buffer</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QPushButton" name="hide_all_masks">
+     <property name="text">
+      <string>Hide All Masks</string>
      </property>
     </widget>
    </item>
