@@ -15,6 +15,7 @@ from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils import block_signals
 
 from hexrd.ui import resource_loader
 import hexrd.ui.resources.materials
@@ -59,6 +60,12 @@ class PinholeCorrectionEditor(QObject):
 
         self.ui.rygg_absorption_length_selector.currentIndexChanged.connect(
             self.on_rygg_absorption_length_selector_changed)
+
+        HexrdConfig().material_modified.connect(self.on_material_modified)
+        HexrdConfig().beam_energy_modified.connect(
+            self.on_beam_energy_modified)
+        HexrdConfig().materials_dict_modified.connect(
+            self.on_materials_dict_modified)
 
     def on_settings_modified(self):
         self.settings_modified.emit()
@@ -345,6 +352,26 @@ class PinholeCorrectionEditor(QObject):
                                            kev=energy)
 
         self.pinhole_materials = materials
+
+    def on_material_modified(self, name):
+        # Just make sure the value is up-to-date
+        self.on_rygg_absorption_length_selector_changed()
+
+    def on_beam_energy_modified(self):
+        # Just make sure the value is up-to-date
+        self.on_rygg_absorption_length_selector_changed()
+
+    def on_materials_dict_modified(self):
+        # This gets called if materials get added/removed/deleted/renamed
+        # The absorption length value should not be modified.
+        prev_value = self.ui.rygg_absorption_length_value.value()
+        with block_signals(self, self.ui.rygg_absorption_length_selector):
+            self.populate_rygg_absorption_length_options()
+
+            # Auto-select the material that has the absorption length that matches
+            # This should work, unless the material was deleted (in which case
+            # it will be "Enter Manually")
+            self.rygg_absorption_length = prev_value
 
     def populate_rygg_absorption_length_options(self):
         self.ui.rygg_absorption_length_selector.clear()
