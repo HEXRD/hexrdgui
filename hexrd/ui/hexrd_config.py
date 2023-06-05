@@ -199,6 +199,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     overlay_distortions_modified = Signal(str)
 
+    """Emitted when the tth distortion overlay is changed"""
+    polar_tth_distortion_overlay_changed = Signal()
+
     """Emitted when an overlay's name has been changed
 
     The arguments are the old_name and the new_name
@@ -2035,6 +2038,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._polar_tth_distortion_overlay_name = name
             self.flag_overlay_updates_for_all_materials()
             self.rerender_needed.emit()
+            self.polar_tth_distortion_overlay_changed.emit()
 
     @property
     def polar_x_axis_type(self):

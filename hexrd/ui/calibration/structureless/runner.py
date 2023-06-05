@@ -63,6 +63,16 @@ class StructurelessCalibrationRunner(QObject):
             QMessageBox.information(self.parent, 'HEXRD', msg)
             HexrdConfig().show_overlays = False
 
+        distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
+        if distortion_overlay is not None:
+            msg = (
+                'WARNING: tth distortion to the polar view is not yet '
+                'supported.\n\nThis will be disabled. It may be turned '
+                'back on afterwards.'
+            )
+            QMessageBox.information(self.parent, 'HEXRD', msg)
+            HexrdConfig().polar_tth_distortion_overlay = None
+
     def finished(self):
         self.draw_picks(False)
         self.set_focus_mode(False)

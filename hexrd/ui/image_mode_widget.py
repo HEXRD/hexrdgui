@@ -128,6 +128,8 @@ class ImageModeWidget(QObject):
             self.update_polar_tth_distortion_overlay_options)
         HexrdConfig().overlay_list_modified.connect(
             self.update_polar_tth_distortion_overlay_options)
+        HexrdConfig().polar_tth_distortion_overlay_changed.connect(
+            self.on_polar_tth_distortion_overlay_changed)
 
         self.ui.polar_apply_tth_distortion.toggled.connect(
             self.polar_tth_distortion_overlay_changed)
@@ -358,6 +360,9 @@ class ImageModeWidget(QObject):
         self.polar_apply_tth_distortion = enabled
         if enabled:
             w.setCurrentText(name)
+
+    def on_polar_tth_distortion_overlay_changed(self):
+        self.polar_tth_distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
 
     def overlay_distortions_modified(self, name):
         if name == self.polar_tth_distortion_overlay:
