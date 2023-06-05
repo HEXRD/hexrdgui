@@ -1,7 +1,57 @@
+from pathlib import Path
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
+from PySide2.QtGui import QPixmap
+from hexrd.ui import resource_loader
 
+import hexrd.ui.resources.icons
 from hexrd.ui.hexrd_config import HexrdConfig
+
+
+class ImageSeriesInfoToolbar(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.layout = None
+        self.widget = None
+        self.file_label = None
+
+        self.create_widget()
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        HexrdConfig().recent_images_changed.connect(
+            self.update_file_tooltip)
+
+    def create_widget(self):
+        self.widget = QWidget(self.parent())
+
+        data = resource_loader.load_resource(hexrd.ui.resources.icons,
+                                             'file.svg', binary=True)
+        pixmap = QPixmap()
+        pixmap.loadFromData(data, 'svg')
+        self.file_label = QLabel(self.parent())
+        self.file_label.setPixmap(pixmap)
+        self.update_file_tooltip()
+
+        self.layout = QGridLayout(self.widget)
+        self.layout.addWidget(self.file_label, 0, 0, 1, 1)
+
+        self.widget.setLayout(self.layout)
+
+    def set_visible(self, b=False):
+        self.widget.setVisible(b)
+
+    def update_file_tooltip(self):
+        tips = []
+        for det, images in HexrdConfig().recent_images.items():
+            fnames = [Path(img).name for img in images]
+            tips.append(
+                f'{det}: {", ".join(fnames)}'
+            )
+        self.file_label.setToolTip('\n'.join(tips))
 
 
 class ImageSeriesToolbar(QWidget):
@@ -32,6 +82,7 @@ class ImageSeriesToolbar(QWidget):
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
         self.frame = QSpinBox(self.parent())
+        self.frame.setKeyboardTracking(False)
 
         self.widget = QWidget(self.parent())
         self.omega_label = QLabel(self.parent())
@@ -61,6 +112,8 @@ class ImageSeriesToolbar(QWidget):
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setMaximum(size)
+                self.frame.setToolTip(f'Max: {size}')
+                self.slider.setToolTip(f'Max: {size}')
                 self.slider.setValue(0)
                 self.frame.setValue(self.slider.value())
         else:
@@ -98,4 +151,8 @@ class ImageSeriesToolbar(QWidget):
             return
 
         ome_min, ome_max = ome_range
-        self.omega_label.setText(f'  Omega range: [{ome_min}°, {ome_max}°]')
+        # We will display 6 digits at most, because omegas go up to 360
+        # degrees (so up to 3 digits before the decimal place), and we
+        # will always show at least 3 digits after the decimal place.
+        text = f'  Omega range: [{ome_min:.6g}°, {ome_max:.6g}°]'
+        self.omega_label.setText(text)

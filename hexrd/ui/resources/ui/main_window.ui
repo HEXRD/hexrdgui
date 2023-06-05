@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -127,11 +127,6 @@
       <string>Dock Widgets</string>
      </property>
     </widget>
-    <widget class="QMenu" name="view_recent_images">
-     <property name="title">
-      <string>Loaded Images</string>
-     </property>
-    </widget>
     <widget class="QMenu" name="colormaps_menu">
      <property name="title">
       <string>Colormaps</string>
@@ -150,7 +145,6 @@
     <addaction name="action_view_indexing_config"/>
     <addaction name="action_view_fit_grains_config"/>
     <addaction name="action_view_overlay_picks"/>
-    <addaction name="view_recent_images"/>
     <addaction name="colormaps_menu"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
@@ -302,7 +296,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>753</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">
@@ -315,7 +309,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>753</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">
