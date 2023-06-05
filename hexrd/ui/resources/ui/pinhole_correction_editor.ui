@@ -309,18 +309,31 @@
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="rygg_absorption_length_label">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Rygg pinhole correction requires the pinhole's absorption length. Select it from one of several methods:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. &amp;quot;Enter Manually&amp;quot; - type in the absorption length manually&lt;/p&gt;&lt;p&gt;2. Select a default pinhole material. These are after the first separator in the combo box. The beam energy in the current instrument settings will be used to compute an absorption length, and it will be displayed in the disabled spinbox on the right.&lt;/p&gt;&lt;p&gt;3. Select a material from your materials list. These are after the second separator in the combo box. The absorption length will be displayed in the disabled spinbox on the right. If you add materials via the materials panel in the application, they will show up here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="text">
           <string>Absorption Length:</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QComboBox" name="rygg_absorption_length_selector"/>
+        <widget class="QComboBox" name="rygg_absorption_length_selector">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Rygg pinhole correction requires the pinhole's absorption length. Select it from one of several methods:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. &amp;quot;Enter Manually&amp;quot; - type in the absorption length manually&lt;/p&gt;&lt;p&gt;2. Select a default pinhole material. These are after the first separator in the combo box. The beam energy in the current instrument settings will be used to compute an absorption length, and it will be displayed in the disabled spinbox on the right.&lt;/p&gt;&lt;p&gt;3. Select a material from your materials list. These are after the second separator in the combo box. The absorption length will be displayed in the disabled spinbox on the right. If you add materials via the materials panel in the application, they will show up here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
        </item>
        <item row="2" column="2">
         <widget class="ScientificDoubleSpinBox" name="rygg_absorption_length_value">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Rygg pinhole correction requires the pinhole's absorption length. Select it from one of several methods:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. &amp;quot;Enter Manually&amp;quot; - type in the absorption length manually&lt;/p&gt;&lt;p&gt;2. Select a default pinhole material. These are after the first separator in the combo box. The beam energy in the current instrument settings will be used to compute an absorption length, and it will be displayed in the disabled spinbox on the right.&lt;/p&gt;&lt;p&gt;3. Select a material from your materials list. These are after the second separator in the combo box. The absorption length will be displayed in the disabled spinbox on the right. If you add materials via the materials panel in the application, they will show up here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="suffix">
+          <string> μm</string>
          </property>
          <property name="decimals">
           <number>8</number>

@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 
 from PySide2.QtCore import QObject, Signal
@@ -5,6 +6,7 @@ from PySide2.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 )
 
+from hexrd.material import _angstroms, _kev, Material
 from hexrd.xrdutil.phutil import (
     JHEPinholeDistortion, RyggPinholeDistortion, SampleLayerDistortion
 )
@@ -13,6 +15,9 @@ from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrd.ui.ui_loader import UiLoader
+
+from hexrd.ui import resource_loader
+import hexrd.ui.resources.materials
 
 
 class PinholeCorrectionEditor(QObject):
@@ -25,11 +30,14 @@ class PinholeCorrectionEditor(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('pinhole_correction_editor.ui', parent)
 
+        self.pinhole_materials = {}
+
         # Default to "None" tab
         self.ui.correction_type.setCurrentIndex(0)
         self.ui.tab_widget.setCurrentIndex(0)
         self.update_tab_widget_visibility()
 
+        self.load_pinhole_materials()
         self.populate_rygg_absorption_length_options()
         self.on_rygg_absorption_length_selector_changed()
         self.setup_connections()
@@ -298,44 +306,75 @@ class PinholeCorrectionEditor(QObject):
 
     @property
     def rygg_absorption_length(self):
-        name = self.ui.rygg_absorption_length_selector.currentText()
-        return self.get_rygg_absorption_length(name)
+        i = self.ui.rygg_absorption_length_selector.currentIndex()
+        return self.get_rygg_absorption_length(i)
 
-    def get_rygg_absorption_length(self, name):
-        if name == 'Enter Manually':
+    def get_rygg_absorption_length(self, idx):
+        name = self.ui.rygg_absorption_length_selector.itemText(idx)
+        if idx == self.enter_manually_idx:
             return self.ui.rygg_absorption_length_value.value()
-        elif name in self._rygg_absorption_material_names:
+        elif idx >= self.user_material_names_start_idx:
             mat = HexrdConfig().materials[name]
-            return mat.absorption_length
         else:
-            return self._rygg_absorption_preset_values[name]
+            mat = self.pinhole_materials[name]
+
+            # Make sure this beam energy is updated
+            mat.beamEnergy = HexrdConfig().beam_energy
+
+        return mat.absorption_length
 
     @rygg_absorption_length.setter
     def rygg_absorption_length(self, v):
         self.ui.rygg_absorption_length_value.setValue(v)
         self.auto_select_rygg_absorption_length()
 
+    def load_pinhole_materials(self):
+        module = hexrd.ui.resources.materials
+
+        # Use a high dmin since we do not care about the HKLs here.
+        # We only care about the absorption length.
+        dmin = _angstroms(2)
+        energy = _kev(HexrdConfig().beam_energy)
+        materials = {}
+        with resource_loader.path(module, 'pinhole_materials.h5') as file_path:
+            with h5py.File(file_path) as f:
+                mat_names = list(f.keys())
+
+            for name in mat_names:
+                materials[name] = Material(name, file_path, dmin=dmin,
+                                           kev=energy)
+
+        self.pinhole_materials = materials
+
     def populate_rygg_absorption_length_options(self):
         self.ui.rygg_absorption_length_selector.clear()
 
+        pinhole_names = list(self.pinhole_materials)
         mat_names = list(HexrdConfig().materials.keys())
-        self._rygg_absorption_material_names = mat_names
-
-        presets = {
-            'Name': 3.57,
-        }
-        presets = {f'{k} ({v})': v for k, v in presets.items()}
-        self._rygg_absorption_preset_values = presets
 
         options = [
             'Enter Manually',
+            *pinhole_names,
             *mat_names,
-            *list(presets),
         ]
         self.ui.rygg_absorption_length_selector.addItems(options)
         self.ui.rygg_absorption_length_selector.insertSeparator(1)
         self.ui.rygg_absorption_length_selector.insertSeparator(
-            2 + len(mat_names))
+            2 + len(pinhole_names))
+
+    @property
+    def user_material_names_start_idx(self):
+        # 0 is "Enter Manually" and there are 2 separators.
+        return 3 + len(self.pinhole_materials)
+
+    @property
+    def pinhole_material_names_start_idx(self):
+        # 0 is "Enter Manually", 1 is a separator, and 2 is the start
+        return 2
+
+    @property
+    def enter_manually_idx(self):
+        return 0
 
     def on_rygg_absorption_length_selector_changed(self):
         text = self.ui.rygg_absorption_length_selector.currentText()
@@ -381,13 +420,13 @@ class PinholeCorrectionEditor(QObject):
 
         # Check if there is an absorption length that matches other than
         # "Enter Manually", and auto set it if there is.
-        names = [w.itemText(i) for i in range(1, w.count())]
-        for name in names:
+        for i in range(1, w.count()):
+            name = w.itemText(i)
             if not name:
                 # It's a separator
                 continue
 
-            absorption_length = self.get_rygg_absorption_length(name)
+            absorption_length = self.get_rygg_absorption_length(i)
             if np.isclose(value, absorption_length):
                 w.setCurrentText(name)
                 return
