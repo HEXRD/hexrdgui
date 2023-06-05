@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 
 from skimage.draw import polygon
@@ -8,6 +7,7 @@ from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import add_sample_points
 from hexrd.ui.utils.conversions import angles_to_pixels
+from hexrd.ui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 # TODO: Rename to something like update_threshold_mask
@@ -35,12 +35,22 @@ def create_threshold_mask(img):
     return mask
 
 
-def convert_polar_to_raw(line_data):
-    raw_line_data = []
-    for line in line_data:
+def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
+    for i, line in enumerate(line_data):
         # Make sure there are at least 300 sample points
         # so that the conversion will appear correct.
         line = add_sample_points(line, 300)
+
+        if reverse_tth_distortion:
+            # If we are applying tth distortion in the polar view, we need to
+            # convert back to polar coordinates without tth distortion applied
+            line = apply_tth_distortion_if_needed(line, in_degrees=True,
+                                                  reverse=True)
+
+        line_data[i] = line
+
+    raw_line_data = []
+    for line in line_data:
         for key, panel in create_hedm_instrument().detectors.items():
             raw = angles_to_pixels(line, panel)
             if all([np.isnan(x) for x in raw.flatten()]):

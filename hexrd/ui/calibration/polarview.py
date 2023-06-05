@@ -287,7 +287,13 @@ class PolarView:
             data=wimg, mask=nan_mask, fill_value=0.
         )
 
-    def apply_tth_distortion(self, overlay, pimg):
+    def apply_tth_distortion(self, pimg):
+        if not HexrdConfig().polar_tth_distortion:
+            # We are not applying tth distortion. Return the same image.
+            return pimg
+
+        overlay = HexrdConfig().polar_tth_distortion_overlay
+
         if overlay.has_polar_tth_displacement_field:
             # Compute the polar tth displacement field directly
             eta, tth = self.angular_grid
@@ -356,11 +362,11 @@ class PolarView:
         # cache this step so we can just re-apply masks if needed
         self.snipped_img = img
 
-        if HexrdConfig().polar_tth_distortion:
-            overlay = HexrdConfig().polar_tth_distortion_overlay
-            img = self.apply_tth_distortion(overlay, img)
-
+        # Apply the masks before the polar_tth_distortion, because the
+        # masks should also be distorted as well.
         img = self.apply_masks(img)
+
+        img = self.apply_tth_distortion(img)
 
         self.processed_img = img
 
@@ -425,11 +431,17 @@ class PolarView:
         return img
 
     def reapply_masks(self):
-        # This will only re-run the final step of applying masks...
+        # This will only re-run the final steps of the processing...
         if self.snipped_img is None:
             return
 
-        self.processed_img = self.apply_masks(self.snipped_img)
+        # Apply the masks before the polar_tth_distortion, because the
+        # masks should also be distorted as well.
+        img = self.apply_masks(self.snipped_img)
+
+        img = self.apply_tth_distortion(img)
+
+        self.processed_img = img
 
     @property
     def img(self):

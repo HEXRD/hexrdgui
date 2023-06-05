@@ -16,6 +16,7 @@ from hexrd.ui.overlays.overlay import Overlay
 from hexrd.ui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
+from hexrd.ui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class LaueOverlay(Overlay):
@@ -238,6 +239,10 @@ class LaueOverlay(Overlay):
                 angles_corr[:, 1], np.radians(self.eta_period), units='radians'
             )
             """
+            if display_mode in (ViewType.polar, ViewType.stereo):
+                # If the polar view is being distorted, apply this tth
+                # distortion to the angles as well.
+                angles = apply_tth_distortion_if_needed(angles)
 
             if display_mode == ViewType.polar:
                 # Save the Laue spots as a list instead of a numpy array,
