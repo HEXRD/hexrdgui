@@ -405,8 +405,10 @@ class StructurelessCalibrationRunner(QObject):
         # Add the current parameters to the undo stack
         self.push_undo_stack()
 
+        odict = self._calibration_dialog.advanced_options
+
         x0 = self.calibrator.params.valuesdict()
-        result = self.calibrator.run_calibration()
+        result = self.calibrator.run_calibration(odict=odict)
         x1 = result.params.valuesdict()
 
         results_message = 'Calibration Results:\n'
@@ -443,24 +445,25 @@ class StructurelessCalibrationRunner(QObject):
 
         self.instrument_updated.emit()
 
-        # Update the table in the GUI with the new refinements
-        self.update_refinements_table()
+        # Update the tree_view in the GUI with the new refinements
+        self.update_refinements_tree_view()
 
         if self.drawing_picks:
             # Update the drawn picks with their new locations
             self.draw_picks()
 
-    def update_refinements_table(self):
+    def update_refinements_tree_view(self):
         dialog = self._calibration_dialog
         dialog.params_dict = self.calibrator.params
 
     def push_undo_stack(self):
+        dialog = self._calibration_dialog
         calibrator = self.calibrator
         stack_item = {
             'engineering_constraints': calibrator.engineering_constraints,
             'tth_distortion': copy.deepcopy(calibrator.tth_distortion),
-            # Put this last so it will get set last later
             'params': copy.deepcopy(calibrator.params),
+            'advanced_options': dialog.advanced_options,
         }
         self.undo_stack.append(stack_item)
         self.update_undo_enable_state()
@@ -468,15 +471,25 @@ class StructurelessCalibrationRunner(QObject):
     def pop_undo_stack(self):
         stack_item = self.undo_stack.pop(-1)
 
+        calibrator_items = [
+            'engineering_constraints',
+            'tth_distortion',
+            # Put this last so it will get set last
+            'params',
+        ]
+
         # Params should get set last
         calibrator = self.calibrator
-        for k, v in stack_item.items():
+        for k in calibrator_items:
+            v = stack_item[k]
             setattr(calibrator, k, v)
 
         self.instr.update_from_lmfit_parameter_list(calibrator.params)
         self.update_config_from_instrument()
 
-        self._calibration_dialog.update_from_calibrator(calibrator)
+        dialog = self._calibration_dialog
+        dialog.update_from_calibrator(calibrator)
+        dialog.advanced_options = stack_item['advanced_options']
 
         self.update_undo_enable_state()
 

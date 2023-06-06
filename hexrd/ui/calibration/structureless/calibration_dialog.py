@@ -2,6 +2,7 @@ import copy
 import yaml
 
 from PySide2.QtCore import QObject, Qt, Signal
+from PySide2.QtWidgets import QComboBox, QDoubleSpinBox, QSpinBox
 
 from hexrd.ui import resource_loader
 from hexrd.ui.tree_views.multi_column_dict_tree_view import (
@@ -45,6 +46,8 @@ class StructurelessCalibrationDialog(QObject):
         self._params_dict = params_dict
         self.engineering_constraints = engineering_constraints
 
+        self.initialize_advanced_options()
+
         self.load_tree_view_mapping()
         self.initialize_tree_view()
 
@@ -71,6 +74,58 @@ class StructurelessCalibrationDialog(QObject):
 
     def load_settings(self):
         pass
+
+    def initialize_advanced_options(self):
+        self.ui.advanced_options_group.setVisible(
+            self.ui.show_advanced_options.isChecked())
+
+        self.advanced_options = self.default_advanced_options
+
+    @property
+    def default_advanced_options(self):
+        return {
+            "ftol": 1e-8,
+            "xtol": 1e-8,
+            "gtol": 1e-8,
+            "verbose": 2,
+            "max_nfev": 1000,
+            # Skip x_scale until we find a way to present it in the GUI
+            # "x_scale": "jac",
+            "method": "trf",
+            "jac": "3-point",
+        }
+
+    @property
+    def advanced_options(self):
+        options = {}
+        for key in self.default_advanced_options:
+            # Widget name is the same name as the key
+            w = getattr(self.ui, key)
+            if isinstance(w, (QSpinBox, QDoubleSpinBox)):
+                v = w.value()
+            elif isinstance(w, QComboBox):
+                v = w.currentText()
+            else:
+                raise NotImplementedError(w)
+
+            options[key] = v
+
+        return options
+
+    @advanced_options.setter
+    def advanced_options(self, odict):
+        for key in self.default_advanced_options:
+            if key not in odict:
+                continue
+
+            v = odict[key]
+            w = getattr(self.ui, key)
+            if isinstance(w, (QSpinBox, QDoubleSpinBox)):
+                w.setValue(v)
+            elif isinstance(w, QComboBox):
+                w.setCurrentText(v)
+            else:
+                raise NotImplementedError(w)
 
     def on_draw_picks_toggled(self, b):
         self.draw_picks_toggled.emit(b)
