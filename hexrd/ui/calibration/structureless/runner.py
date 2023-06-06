@@ -539,6 +539,8 @@ def polar_lines_to_cart(data, instr):
         panel_found = np.zeros(line.shape[0], dtype=bool)
         for det_key, panel in instr.detectors.items():
             points = angles_to_cart(line, panel)
+            _, on_panel = panel.clip_to_panel(points)
+            points[~on_panel] = np.nan
             valid_points = ~np.any(np.isnan(points), axis=1)
             panel_found[valid_points] = True
             calibrator_line[det_key] = points[valid_points]
