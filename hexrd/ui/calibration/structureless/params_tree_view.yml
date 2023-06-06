@@ -13,9 +13,9 @@ detectors:
   '{det}':
     transform:
       tilt:
-        "𝑍": '{det}_euler_z'
-        "𝑋′": '{det}_euler_xp'
-        "𝑍′′": '{det}_euler_zpp'
+        𝑍: '{det}_euler_z'
+        𝑋′: '{det}_euler_xp'
+        𝑍′′: '{det}_euler_zpp'
       translation:
         𝑋: '{det}_tvec_x'
         𝑌: '{det}_tvec_y'
