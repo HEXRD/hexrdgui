@@ -297,6 +297,14 @@ class LinePickerDialog(QObject):
         self.ui.current_pick_label.setText(text)
 
     @property
+    def start_new_line_label(self):
+        return self.ui.start_new_line_label.text()
+
+    @start_new_line_label.setter
+    def start_new_line_label(self, text):
+        self.ui.start_new_line_label.setText(text)
+
+    @property
     def disabled(self):
         return self.zoom_canvas.disabled if self.zoom_canvas else True
 

@@ -126,9 +126,19 @@ class StructurelessCalibrationRunner(QObject):
 
         # We don't support viewing these yet, so hide it
         picker.ui.view_picks.setVisible(False)
+        picker.start_new_line_label = (
+            'Right-click to move on to the next ring.'
+        )
 
-        # Should we make a label here?
-        picker.current_pick_label = ''
+        ring_idx = 0
+
+        def increment_pick_label():
+            nonlocal ring_idx
+            ring_idx += 1
+            picker.current_pick_label = f'Picking DS ring: {ring_idx}'
+
+        increment_pick_label()
+        picker.line_completed.connect(increment_pick_label)
 
         picker.start()
         picker.finished.connect(self._hand_picking_finished)
