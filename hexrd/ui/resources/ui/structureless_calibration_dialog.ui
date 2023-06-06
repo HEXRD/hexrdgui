@@ -7,54 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>1020</width>
-    <height>703</height>
+    <height>940</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Structureless Calibration Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="5" column="0" colspan="2">
-    <widget class="QTableWidget" name="table">
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>50</number>
-     </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>175</number>
-     </attribute>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Value</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Minimum</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Maximum</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Vary</string>
-      </property>
-     </column>
-    </widget>
-   </item>
    <item row="2" column="0">
     <widget class="QGroupBox" name="canvas_settings_group">
      <property name="title">
@@ -68,45 +27,6 @@
         </property>
         <property name="text">
          <string>Draw picks?</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QGroupBox" name="picks_group">
-     <property name="title">
-      <string>Picks</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="2">
-       <widget class="QPushButton" name="load_picks_button">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Load Picks</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="save_picks_button">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Save Picks</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="edit_picks_button">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the picks editor to edit the picks. Picks may be added, deleted, or edited (either by hand picking a new point or manually entering coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Edit Picks</string>
         </property>
        </widget>
       </item>
@@ -149,7 +69,7 @@
      </layout>
     </widget>
    </item>
-   <item row="9" column="0" colspan="2">
+   <item row="8" column="0" colspan="2">
     <layout class="QHBoxLayout" name="button_layout">
      <item>
       <widget class="QPushButton" name="undo_run_button">
@@ -204,6 +124,45 @@
     </layout>
    </item>
    <item row="7" column="0" colspan="2">
+    <widget class="QGroupBox" name="picks_group">
+     <property name="title">
+      <string>Picks</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="2">
+       <widget class="QPushButton" name="load_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Load Picks</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="save_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Save Picks</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="edit_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the picks editor to edit the picks. Picks may be added, deleted, or edited (either by hand picking a new point or manually entering coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Edit Picks</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
     <widget class="QGroupBox" name="pinhole_distortion_group">
      <property name="title">
       <string>Pinhole Distortion</string>
@@ -211,11 +170,13 @@
      <layout class="QVBoxLayout" name="pinhole_distortion_layout"/>
     </widget>
    </item>
+   <item row="3" column="0" colspan="2">
+    <layout class="QVBoxLayout" name="tree_view_layout"/>
+   </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>draw_picks</tabstop>
-  <tabstop>table</tabstop>
   <tabstop>edit_picks_button</tabstop>
   <tabstop>save_picks_button</tabstop>
   <tabstop>load_picks_button</tabstop>

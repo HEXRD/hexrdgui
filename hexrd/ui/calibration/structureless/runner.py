@@ -198,6 +198,7 @@ class StructurelessCalibrationRunner(QObject):
 
         # Now show the calibration dialog
         kwargs = {
+            'instr': self.instr,
             'params_dict': self.calibrator.params,
             'parent': self.parent,
             'engineering_constraints': engineering_constraints,
@@ -209,7 +210,6 @@ class StructurelessCalibrationRunner(QObject):
         # Connect interactions to functions
         dialog.ui.draw_picks.setChecked(self.drawing_picks)
         dialog.draw_picks_toggled.connect(self.draw_picks)
-        dialog.value_modified.connect(self._on_dialog_value_modified)
         dialog.edit_picks_clicked.connect(self._on_edit_picks_clicked)
         dialog.save_picks_clicked.connect(self._on_save_picks_clicked)
         dialog.load_picks_clicked.connect(self._on_load_picks_clicked)
@@ -381,11 +381,6 @@ class StructurelessCalibrationRunner(QObject):
             self.draw_picks_lines.append(artist)
 
         self.canvas.draw_idle()
-
-    def _on_dialog_value_modified(self):
-        # This is called if any values are modified by the user
-        # print('Value modified!')
-        pass
 
     def _on_dialog_run_clicked(self):
         self.async_runner.progress_title = 'Running calibration...'

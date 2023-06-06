@@ -1,20 +1,21 @@
-from PySide2.QtCore import Qt, QObject, QTimer, Signal
-from PySide2.QtWidgets import (
-    QCheckBox, QHBoxLayout, QSizePolicy, QTableWidgetItem, QWidget
+import copy
+import yaml
+
+from PySide2.QtCore import QObject, Signal
+
+from hexrd.ui import resource_loader
+from hexrd.ui.tree_views.multi_column_dict_tree_view import (
+    MultiColumnDictTreeItemModel, MultiColumnDictTreeView
 )
-
-from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-
 from hexrd.ui.pinhole_correction_editor import PinholeCorrectionEditor
-from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.ui_loader import UiLoader
-from hexrd.ui.utils import block_signals
+
+import hexrd.ui.calibration.structureless
 
 
 class StructurelessCalibrationDialog(QObject):
 
     draw_picks_toggled = Signal(bool)
-    value_modified = Signal()
 
     edit_picks_clicked = Signal()
     save_picks_clicked = Signal()
@@ -25,7 +26,7 @@ class StructurelessCalibrationDialog(QObject):
     undo_run = Signal()
     finished = Signal()
 
-    def __init__(self, params_dict, parent=None,
+    def __init__(self, instr, params_dict, parent=None,
                  engineering_constraints=None):
         super().__init__(parent)
 
@@ -38,17 +39,14 @@ class StructurelessCalibrationDialog(QObject):
             self.pinhole_correction_editor.ui)
         self.pinhole_correction_editor.apply_panel_buffer_visible = False
 
+        self.instr = instr
         self._params_dict = params_dict
         self.engineering_constraints = engineering_constraints
 
-        self.value_spinboxes = []
-        self.minimum_spinboxes = []
-        self.maximum_spinboxes = []
-        self.vary_checkboxes = []
+        self.load_tree_view_mapping()
+        self.initialize_tree_view()
 
         self.load_settings()
-
-        self.reset_gui()
         self.setup_connections()
 
     def setup_connections(self):
@@ -72,136 +70,6 @@ class StructurelessCalibrationDialog(QObject):
     def load_settings(self):
         pass
 
-    def clear_table(self):
-        self.value_spinboxes.clear()
-        self.minimum_spinboxes.clear()
-        self.maximum_spinboxes.clear()
-        self.vary_checkboxes.clear()
-        self.ui.table.clearContents()
-
-    def create_label(self, v):
-        w = QTableWidgetItem(v)
-        w.setTextAlignment(Qt.AlignCenter)
-        return w
-
-    def create_spinbox(self, v):
-        sb = ScientificDoubleSpinBox(self.ui.table)
-        sb.setKeyboardTracking(False)
-        sb.setValue(float(v))
-        sb.valueChanged.connect(self.update_config)
-
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sb.setSizePolicy(size_policy)
-        return sb
-
-    def create_value_spinbox(self, v):
-        sb = self.create_spinbox(v)
-        self.value_spinboxes.append(sb)
-        return sb
-
-    def create_minimum_spinbox(self, v):
-        sb = self.create_spinbox(v)
-        self.minimum_spinboxes.append(sb)
-        return sb
-
-    def create_maximum_spinbox(self, v):
-        sb = self.create_spinbox(v)
-        self.maximum_spinboxes.append(sb)
-        return sb
-
-    def create_vary_checkbox(self, b):
-        cb = QCheckBox(self.ui.table)
-        cb.setChecked(b)
-        cb.toggled.connect(self.on_checkbox_toggled)
-
-        self.vary_checkboxes.append(cb)
-        return self.create_table_widget(cb)
-
-    def create_table_widget(self, w):
-        # These are required to center the widget...
-        tw = QWidget(self.ui.table)
-        layout = QHBoxLayout(tw)
-        layout.addWidget(w)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(0, 0, 0, 0)
-        return tw
-
-    def reset_gui(self):
-        self.update_table()
-
-        column_widths = {
-            'name': 235,
-            'value': 175,
-            'minimum': 175,
-            'maximum': 175,
-            'vary': 50,
-        }
-        for name, value in column_widths.items():
-            self.ui.table.setColumnWidth(COLUMNS[name], value)
-
-    def update_table(self):
-        table = self.ui.table
-
-        # Keep the same scroll position
-        scrollbar = table.verticalScrollBar()
-        scroll_value = scrollbar.value()
-
-        with block_signals(table):
-            self.clear_table()
-            self.ui.table.setRowCount(len(self.params_dict))
-            for i, (key, param) in enumerate(self.params_dict.items()):
-                w = self.create_label(param.name)
-                table.setItem(i, COLUMNS['name'], w)
-
-                w = self.create_value_spinbox(param.value)
-                table.setCellWidget(i, COLUMNS['value'], w)
-
-                w = self.create_minimum_spinbox(param.min)
-                w.setEnabled(param.vary)
-                table.setCellWidget(i, COLUMNS['minimum'], w)
-
-                w = self.create_maximum_spinbox(param.max)
-                w.setEnabled(param.vary)
-                table.setCellWidget(i, COLUMNS['maximum'], w)
-
-                w = self.create_vary_checkbox(param.vary)
-                table.setCellWidget(i, COLUMNS['vary'], w)
-
-        # During event processing, it looks like the scrollbar gets resized
-        # so its maximum is one less than one it actually is. Thus, if we
-        # set the value to the maximum right now, it will end up being one
-        # less than the actual maximum.
-        # Thus, we need to post an event to the event loop to set the
-        # scroll value after the other event processing. This works, but
-        # the UI still scrolls back one and then to the maximum. So it
-        # doesn't look that great. FIXME: figure out how to fix this.
-        QTimer.singleShot(0, lambda: scrollbar.setValue(scroll_value))
-
-    def on_checkbox_toggled(self):
-        self.update_min_max_enable_states()
-        self.update_config()
-
-    def update_min_max_enable_states(self):
-        for i in range(len(self.params_dict)):
-            enable = self.vary_checkboxes[i].isChecked()
-            self.minimum_spinboxes[i].setEnabled(enable)
-            self.maximum_spinboxes[i].setEnabled(enable)
-
-    def update_config(self):
-        # If a value changes, emit a signal to indicate so
-        value_changed = False
-        for i, (name, param) in enumerate(self.params_dict.items()):
-            if param.value != self.value_spinboxes[i].value():
-                param.value = self.value_spinboxes[i].value()
-                value_changed = True
-
-            param.min = self.minimum_spinboxes[i].value()
-            param.max = self.maximum_spinboxes[i].value()
-            param.vary = self.vary_checkboxes[i].isChecked()
-
-        if value_changed:
-            self.value_modified.emit()
-
     def on_draw_picks_toggled(self, b):
         self.draw_picks_toggled.emit(b)
 
@@ -221,7 +89,7 @@ class StructurelessCalibrationDialog(QObject):
     @params_dict.setter
     def params_dict(self, v):
         self._params_dict = v
-        self.update_table()
+        self.update_tree_view()
 
     @property
     def undo_enabled(self):
@@ -256,8 +124,7 @@ class StructurelessCalibrationDialog(QObject):
 
     @property
     def tth_distortion(self):
-        instr = create_hedm_instrument()
-        return self.pinhole_correction_editor.create_object_dict(instr)
+        return self.pinhole_correction_editor.create_object_dict(self.instr)
 
     @tth_distortion.setter
     def tth_distortion(self, v):
@@ -277,11 +144,164 @@ class StructurelessCalibrationDialog(QObject):
         self.tth_distortion = calibrator.tth_distortion
         self.params_dict = calibrator.params
 
+    def load_tree_view_mapping(self):
+        module = hexrd.ui.calibration.structureless
+        text = resource_loader.load_resource(module, 'params_tree_view.yml')
+        self.yaml_tree_view = yaml.safe_load(text)
 
-COLUMNS = {
-    'name': 0,
-    'value': 1,
-    'minimum': 2,
-    'maximum': 3,
-    'vary': 4
-}
+    @property
+    def tree_view_dict_of_params(self):
+        params_dict = self.params_dict
+
+        tree_dict = {}
+        template_dict = copy.deepcopy(self.yaml_tree_view)
+
+        # Keep track of which params have been used.
+        used_params = []
+
+        def create_param_item(param):
+            used_params.append(param.name)
+            return {
+                '_param': param,
+                '_value': param.value,
+                '_vary': bool(param.vary),
+                '_min': param.min,
+                '_max': param.max,
+            }
+
+        # Treat these root keys specially
+        special_cases = [
+            'detectors',
+            'Debye-Scherrer ring means',
+        ]
+
+        def recursively_set_items(this_config, this_template):
+            param_set = False
+            for k, v in this_template.items():
+                if k in special_cases:
+                    # Skip over it
+                    continue
+
+                if isinstance(v, dict):
+                    this_config.setdefault(k, {})
+                    if recursively_set_items(this_config[k], v):
+                        param_set = True
+                    else:
+                        # Pop this key if no param was set
+                        this_config.pop(k)
+                else:
+                    # Assume it is a string. Grab it if in the params dict.
+                    if v in params_dict:
+                        this_config[k] = create_param_item(params_dict[v])
+                        param_set = True
+
+            return param_set
+
+        # First, recursively set items (except special cases)
+        recursively_set_items(tree_dict, template_dict)
+
+        # Now generate the detectors
+        detector_template = template_dict['detectors'].pop('{det}')
+
+        def recursively_format_det(det, this_config, this_template):
+            for k, v in this_template.items():
+                if isinstance(v, dict):
+                    this_config.setdefault(k, {})
+                    recursively_format_det(det, this_config[k], v)
+                elif k == 'distortion parameters':
+                    # Special case. Generate distortion parameters if needed.
+                    template = '{det}_distortion_param_{i}'
+                    i = 0
+                    current = template.format(det=det, i=i)
+                    while current in params_dict:
+                        param = params_dict[current]
+                        # Wait to create this dict until now
+                        # (when we know that we have at least one parameter)
+                        this_dict = this_config.setdefault(k, {})
+                        this_dict[i + 1] = create_param_item(param)
+                        i += 1
+                        current = template.format(det=det, i=i)
+                else:
+                    # Should be a string. Replace {det} with det if needed
+                    if '{det}' in v:
+                        v = v.format(det=det)
+
+                    if v in params_dict:
+                        this_config[k] = create_param_item(params_dict[v])
+
+        det_dict = tree_dict.setdefault('detectors', {})
+        for det_key in self.instr.detectors:
+            this_config = det_dict.setdefault(det_key, {})
+            this_template = copy.deepcopy(detector_template)
+
+            # For the parameters, we need to convert dashes to underscores
+            det = det_key.replace('-', '_')
+            recursively_format_det(det, this_config, this_template)
+
+        # Now make the debye scherrer ring means
+        key = 'Debye-Scherrer ring means'
+        template = 'DS_ring_{i}'
+        i = 0
+        current = template.format(i=i)
+        while current in params_dict:
+            param = params_dict[current]
+            # Wait to create this dict until now
+            # (when we know that we have at least one parameter)
+            this_dict = tree_dict.setdefault(key, {})
+            this_dict[i + 1] = create_param_item(param)
+            i += 1
+            current = template.format(i=i)
+
+        # Now all keys should have been used. Verify this is true.
+        if sorted(used_params) != sorted(list(params_dict)):
+            used = ', '.join(sorted(used_params))
+            params = ', '.join(sorted(params_dict))
+            msg = (
+                f'Internal error: used_params ({used}) did not match '
+                f'params_dict! ({params})'
+            )
+            raise Exception(msg)
+
+        return tree_dict
+
+    def initialize_tree_view(self):
+        if hasattr(self, 'tree_view'):
+            # It has already been initialized
+            return
+
+        columns = {
+            'Value': '_value',
+            'Vary': '_vary',
+            'Minimum': '_min',
+            'Maximum': '_max',
+        }
+        tree_dict = self.tree_view_dict_of_params
+        self.tree_view = MultiColumnDictTreeView(tree_dict, columns,
+                                                 parent=self.parent(),
+                                                 model_class=TreeItemModel)
+        self.tree_view.check_selection_index = 2
+        self.ui.tree_view_layout.addWidget(self.tree_view)
+
+        # Make the key section a little larger
+        self.tree_view.header().resizeSection(0, 300)
+
+    def update_tree_view(self):
+        tree_dict = self.tree_view_dict_of_params
+        self.tree_view.model().config = tree_dict
+        self.tree_view.reset_gui()
+
+
+class TreeItemModel(MultiColumnDictTreeItemModel):
+    """Subclass the tree item model so we can customize some behavior"""
+    def set_config_val(self, path, value):
+        super().set_config_val(path, value)
+        # Now set the parameter too
+        param_path = path[:-1] + ['_param']
+        try:
+            param = self.config_val(param_path)
+        except KeyError:
+            raise Exception('Failed to set parameter!', param_path)
+
+        # Now set the attribute on the param
+        attribute = path[-1].removeprefix('_')
+        setattr(param, attribute, value)

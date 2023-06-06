@@ -23,7 +23,8 @@ class RefinementsEditor:
             'Value': '_value',
             'Refinable': '_refinable',
         }
-        self.tree_view = MultiColumnDictTreeView(self.dict, columns, parent)
+        self.tree_view = MultiColumnDictTreeView(self.dict, columns,
+                                                 parent=parent)
         self.tree_view.check_selection_index = 2
 
         self.ui.tree_view_layout.addWidget(self.tree_view)
@@ -56,10 +57,7 @@ class RefinementsEditor:
         if not hasattr(self, 'tree_view'):
             return
 
-        sb = self.tree_view.verticalScrollBar()
-        prev_pos = sb.value()
         self.tree_view.reset_gui()
-        sb.setValue(prev_pos)
 
     def create_instrument_dict(self):
         iconfig = HexrdConfig().config['instrument']
