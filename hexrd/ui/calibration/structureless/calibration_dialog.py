@@ -1,7 +1,7 @@
 import copy
 import yaml
 
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Qt, Signal
 
 from hexrd.ui import resource_loader
 from hexrd.ui.tree_views.multi_column_dict_tree_view import (
@@ -33,6 +33,8 @@ class StructurelessCalibrationDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('structureless_calibration_dialog.ui',
                                    parent)
+
+        self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         self.ui.pinhole_distortion_layout.addWidget(
