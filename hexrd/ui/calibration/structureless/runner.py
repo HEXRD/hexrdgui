@@ -118,6 +118,7 @@ class StructurelessCalibrationRunner(QObject):
         kwargs = {
             'canvas': self.canvas,
             'parent': self.canvas,
+            'cycle_cursor_colors': True,
         }
         picker = LinePickerDialog(**kwargs)
 

@@ -36,7 +36,7 @@ class LinePickerDialog(QObject):
     view_picks = Signal()
 
     def __init__(self, canvas, parent, single_line_mode=False,
-                 single_pick_mode=False):
+                 single_pick_mode=False, cycle_cursor_colors=False):
         super().__init__(parent)
 
         self.canvas = canvas
@@ -50,6 +50,7 @@ class LinePickerDialog(QObject):
 
         self.single_line_mode = single_line_mode
         self.single_pick_mode = single_pick_mode
+        self.cycle_cursor_colors = cycle_cursor_colors
         self.update_visible_states()
 
         flags = self.ui.windowFlags()
@@ -199,6 +200,9 @@ class LinePickerDialog(QObject):
         self.canvas.draw_idle()
 
         self.line_added.emit()
+
+        if self.cycle_cursor_colors:
+            self.zoom_canvas.cursor_color = color
 
     def hide_artists(self):
         self.show_artists(False)
