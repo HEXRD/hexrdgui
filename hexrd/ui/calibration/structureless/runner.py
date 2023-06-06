@@ -136,7 +136,8 @@ class StructurelessCalibrationRunner(QObject):
         def increment_pick_label():
             nonlocal ring_idx
             ring_idx += 1
-            picker.current_pick_label = f'Picking DS ring: {ring_idx}'
+            text = f'Picking Debye-Scherrer ring: {ring_idx}'
+            picker.current_pick_label = text
 
         increment_pick_label()
         picker.line_completed.connect(increment_pick_label)
@@ -254,7 +255,7 @@ class StructurelessCalibrationRunner(QObject):
         # Now convert to a dictionary for the line labels
         dictionary = {}
         for i, v in enumerate(data):
-            name = f'DS_ring_{i + 1}'
+            name = f'DS ring {i + 1}'
             dictionary[name] = data[i]
 
         dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
