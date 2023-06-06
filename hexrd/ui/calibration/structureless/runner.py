@@ -206,6 +206,9 @@ class StructurelessCalibrationRunner(QObject):
         }
         self.calibrator = StructureLessCalibrator(**kwargs)
 
+        # Round the calibrator numbers to 3 decimal places
+        self.round_param_numbers(3)
+
         # Now show the calibration dialog
         kwargs = {
             'instr': self.instr,
@@ -419,6 +422,10 @@ class StructurelessCalibrationRunner(QObject):
 
         x0 = self.calibrator.params.valuesdict()
         result = self.calibrator.run_calibration(odict=odict)
+
+        # Round the calibrator numbers to 3 decimal places
+        self.round_param_numbers(3)
+
         x1 = result.params.valuesdict()
 
         results_message = 'Calibration Results:\n'
@@ -527,6 +534,18 @@ class StructurelessCalibrationRunner(QObject):
         # Otherwise, just use our parent.
         dialog = self._calibration_dialog
         return dialog.ui if dialog else self.canvas
+
+    def round_param_numbers(self, decimals=3):
+        params_dict = self.calibrator.params
+
+        attrs = [
+            'value',
+            'min',
+            'max',
+        ]
+        for param in params_dict.values():
+            for attr in attrs:
+                setattr(param, attr, round(getattr(param, attr), 3))
 
     @property
     def guess_engineering_constraints(self):
