@@ -18,6 +18,7 @@ from hexrd.ui.select_item_dialog import SelectItemDialog
 from hexrd.ui.tree_views import GenericPicksTreeViewDialog
 from hexrd.ui.utils import instr_to_internal_dict
 from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
+from hexrd.ui.utils.guess_instrument_type import guess_instrument_type
 from hexrd.ui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 from .calibration_dialog import StructurelessCalibrationDialog
@@ -565,24 +566,11 @@ class StructurelessCalibrationRunner(QObject):
 
     @property
     def guess_engineering_constraints(self):
-        instr_type = guess_instrument_type(self.instr)
+        instr_type = guess_instrument_type(self.instr.detectors)
         if instr_type == 'TARDIS':
             return 'TARDIS'
 
         return None
-
-
-def guess_instrument_type(instr):
-    tardis_detectors = [
-        'IMAGE-PLATE-2',
-        'IMAGE-PLATE-3',
-        'IMAGE-PLATE-4',
-    ]
-
-    if any(x in instr.detectors for x in tardis_detectors):
-        return 'TARDIS'
-
-    return 'Unknown'
 
 
 def polar_lines_to_cart(data, instr):
