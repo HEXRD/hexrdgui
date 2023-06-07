@@ -290,11 +290,11 @@ class PolarView:
     def create_corr_field_polar(self):
         obj = HexrdConfig().polar_tth_distortion_object
 
-        if obj.has_polar_tth_displacement_field:
+        if obj.has_polar_pinhole_displacement_field:
             # Compute the polar tth displacement field directly
             eta, tth = self.angular_grid
-            corr_field_polar = obj.create_polar_tth_displacement_field(
-                tth, eta
+            corr_field_polar = obj.create_polar_pinhole_displacement_field(
+                self.instr, tth, eta
             )
 
             # Mask out nan values
@@ -303,7 +303,7 @@ class PolarView:
         else:
             # Get the tth displacement field for each detector, and then warp
             # them to the polar view.
-            corr_field = obj.tth_displacement_field
+            corr_field = obj.pinhole_displacement_field(self.instr)
 
             corr_field_polar_dict = {}
             for key in corr_field:

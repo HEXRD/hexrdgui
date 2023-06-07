@@ -71,14 +71,18 @@ class StructurelessCalibrationRunner(QObject):
             HexrdConfig().show_overlays = False
 
         distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
-        if distortion_overlay is not None:
+        distortion_object = HexrdConfig().polar_tth_distortion_object
+        if (
+                distortion_overlay is not None and
+                distortion_object is distortion_overlay
+           ):
             msg = (
-                'WARNING: tth distortion to the polar view is not yet '
-                'supported.\n\nThis will be disabled. It may be turned '
-                'back on afterwards.'
+                'tth distortion to the polar view from an overlay '
+                'is not supported during structureless calibration.\n\n'
+                'This will be disabled, but may be turned back on afterwards.'
             )
             QMessageBox.information(self.parent, 'HEXRD', msg)
-            HexrdConfig().polar_tth_distortion_overlay = None
+            HexrdConfig().polar_tth_distortion_object = None
 
     def finished(self):
         self.draw_picks(False)
@@ -533,12 +537,12 @@ class StructurelessCalibrationRunner(QObject):
 
     @property
     def previous_picks_data(self):
-        name = '_previous_calibration_picks_data'
+        name = '_previous_structureless_calibration_picks_data'
         return getattr(HexrdConfig(), name, None)
 
     @previous_picks_data.setter
     def previous_picks_data(self, v):
-        name = '_previous_calibration_picks_data'
+        name = '_previous_structureless_calibration_picks_data'
         setattr(HexrdConfig(), name, v)
 
     @property
@@ -580,6 +584,9 @@ def polar_lines_to_cart(data, instr):
         line = np.asarray(line)
         if line.size == 0:
             continue
+
+        line = apply_tth_distortion_if_needed(line, in_degrees=True,
+                                              reverse=True)
 
         calibrator_line = {}
         panel_found = np.zeros(line.shape[0], dtype=bool)

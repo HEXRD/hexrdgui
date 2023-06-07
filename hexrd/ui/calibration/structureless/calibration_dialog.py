@@ -40,10 +40,11 @@ class StructurelessCalibrationDialog(QObject):
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
-        self.ui.pinhole_distortion_layout.addWidget(
-            self.pinhole_correction_editor.ui)
-        self.pinhole_correction_editor.apply_panel_buffer_visible = False
-        self.pinhole_correction_editor.settings_modified.connect(
+        editor = self.pinhole_correction_editor
+        editor.update_gui_from_polar_distortion_object()
+        self.ui.pinhole_distortion_layout.addWidget(editor.ui)
+        editor.apply_panel_buffer_visible = False
+        editor.settings_modified.connect(
             self.on_pinhole_correction_settings_modified)
 
         self.instr = instr
@@ -135,15 +136,12 @@ class StructurelessCalibrationDialog(QObject):
         self.draw_picks_toggled.emit(b)
 
     def on_run_button_clicked(self):
-        self.clear_polar_view_tth_correction()
         self.run.emit()
 
     def on_undo_run_button_clicked(self):
-        self.clear_polar_view_tth_correction()
         self.undo_run.emit()
 
     def finish(self):
-        self.clear_polar_view_tth_correction(False)
         self.finished.emit()
 
     @property
@@ -178,7 +176,6 @@ class StructurelessCalibrationDialog(QObject):
         w.setCurrentText(v)
 
     def on_edit_picks_clicked(self):
-        self.clear_polar_view_tth_correction()
         self.edit_picks_clicked.emit()
 
     def on_save_picks_clicked(self):

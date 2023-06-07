@@ -1020,7 +1020,7 @@ class ImageCanvas(FigureCanvas):
         if obj is None:
             return 'nom'
 
-        if obj.tth_distortion_type == 'SampleLayerDistortion':
+        if obj.pinhole_distortion_type == 'SampleLayerDistortion':
             return 'sam'
         else:
             return 'pin'
@@ -1028,8 +1028,9 @@ class ImageCanvas(FigureCanvas):
     @property
     def polar_xlabel_suffix(self):
         obj = HexrdConfig().polar_tth_distortion_object
-        if obj and obj.tth_distortion_type == 'SampleLayerDistortion':
-            standoff = obj.tth_distortion_kwargs.get('layer_standoff', None)
+        if obj and obj.pinhole_distortion_type == 'SampleLayerDistortion':
+            standoff = obj.pinhole_distortion_kwargs.get('layer_standoff',
+                                                         None)
             if standoff is not None:
                 return f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
 

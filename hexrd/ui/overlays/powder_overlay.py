@@ -6,20 +6,16 @@ from hexrd import constants
 from hexrd import unitcell
 
 from hexrd.transforms import xfcapi
-from hexrd.xrdutil.phutil import (
-    polar_tth_corr_map_rygg_pinhole, JHEPinholeDistortion, RyggPinholeDistortion,
-    SampleLayerDistortion, tth_corr_map_pinhole, tth_corr_map_rygg_pinhole,
-    tth_corr_map_sample_layer,
-)
 
 from hexrd.ui.constants import OverlayType, ViewType
 from hexrd.ui.overlays.overlay import Overlay
+from hexrd.ui.polar_distortion_object import PolarDistortionObject
 from hexrd.ui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
 
 
-class PowderOverlay(Overlay):
+class PowderOverlay(Overlay, PolarDistortionObject):
 
     type = OverlayType.powder
     hkl_data_key = 'rings'
@@ -27,7 +23,7 @@ class PowderOverlay(Overlay):
     def __init__(self, material_name, tvec=None, eta_steps=360,
                  tth_distortion_type=None, tth_distortion_kwargs=None,
                  clip_with_panel_buffer=False, **overlay_kwargs):
-        super().__init__(material_name, **overlay_kwargs)
+        Overlay.__init__(self, material_name, **overlay_kwargs)
 
         if tvec is None:
             tvec = constants.zeros_3.copy()
@@ -429,127 +425,38 @@ class PowderOverlay(Overlay):
 
         return ring_pts, skipped_tth
 
+    # START PolarDistortionObject mixin reroutes
     @property
     def has_tth_distortion(self):
-        return self.tth_distortion_type is not None
+        return self.has_pinhole_distortion
 
     @property
     def tth_distortion_dict(self):
-        if not self.has_tth_distortion or self.instrument is None:
-            return None
-
-        def tth_jhe_pinhole_distortion(panel):
-            kwargs = {
-                **self.tth_distortion_kwargs,
-                'panel': panel,
-            }
-            return JHEPinholeDistortion(**kwargs)
-
-        def tth_rygg_pinhole_distortion(panel):
-            kwargs = {
-                **self.tth_distortion_kwargs,
-                'panel': panel,
-                # Put this last so it overrides tth_distortion_kwargs
-                'absorption_length': self.material.absorption_length,
-            }
-            return RyggPinholeDistortion(**kwargs)
-
-        def tth_sample_layer_distortion(panel):
-            kwargs = {
-                **self.tth_distortion_kwargs,
-                'panel': panel,
-            }
-            return SampleLayerDistortion(**kwargs)
-
-        known_types = {
-            'JHEPinholeDistortion': tth_jhe_pinhole_distortion,
-            'RyggPinholeDistortion': tth_rygg_pinhole_distortion,
-            'SampleLayerDistortion': tth_sample_layer_distortion,
-        }
-
-        if self.tth_distortion_type not in known_types:
-            msg = f'Unhandled distortion type: {self.tth_distortion_type}'
-            raise Exception(msg)
-
-        f = known_types[self.tth_distortion_type]
-
-        ret = {}
-        for det_key, panel in self.instrument.detectors.items():
-            ret[det_key] = f(panel)
-
-        return ret
-
-    @property
-    def tth_displacement_field(self):
-        """
-        This returns a dictionary of panel names where the values
-        are the displacement fields for the panels.
-        The displacement field will be the same size as the panel in pixels.
-        This can be taken and warped into the polar view.
-        Or, if there is a polar_tth_displacement_field available for this
-        distortion type, that can be used to directly generate the polar
-        tth displacement field.
-        """
-        funcs = {
-            'JHEPinholeDistortion': tth_corr_map_pinhole,
-            'RyggPinholeDistortion': tth_corr_map_rygg_pinhole,
-            'SampleLayerDistortion': tth_corr_map_sample_layer,
-        }
-
-        if self.tth_distortion_type not in funcs:
-            raise NotImplementedError(self.tth_distortion_type)
-
-        f = funcs[self.tth_distortion_type]
-
-        kwargs = {
-            'instrument': self.instrument,
-            **self.tth_distortion_kwargs,
-        }
-
-        if self.tth_distortion_type == 'RyggPinholeDistortion':
-            # Need the absorption length as well for this one
-            kwargs['absorption_length'] = self.material.absorption_length
-
-        return f(**kwargs)
+        return self.pinhole_distortion_dict(self.instrument)
 
     @property
     def has_polar_tth_displacement_field(self):
-        """
-        Whether or not we can directly generate the polar tth displacement
-        field by calling the `create_polar_tth_displacement_field()` function.
+        return self.has_polar_pinhole_displacement_field
 
-        If we can't, then we must perform self.tth_displacement_field first,
-        and then warp the images to the polar view.
-        """
-        rets = {
-            'JHEPinholeDistortion': False,
-            'RyggPinholeDistortion': True,
-            'SampleLayerDistortion': False,
-        }
+    @property
+    def tth_displacement_field(self):
+        return self.pinhole_displacement_field(self.instrument)
 
-        if self.tth_distortion_type not in rets:
-            raise NotImplementedError(self.tth_distortion_type)
+    def create_polar_tth_displacement_field(self):
+        return self.create_polar_pinhole_displacement_field(self.instrument)
 
-        return rets[self.tth_distortion_type]
+    @property
+    def pinhole_distortion_type(self):
+        return self.tth_distortion_type
 
-    def create_polar_tth_displacement_field(self, tth, eta):
-        """Directly create the polar tth displacement field.
-
-        If we are trying to create a polar tth displacement field, this
-        is more direct and more efficient than first obtaining the
-        `self.tth_displacement_field` and then warping it to the polar view.
-
-        For the Rygg pinhole distortion, this is significantly more efficient.
-        """
-        if self.tth_distortion_type == 'RyggPinholeDistortion':
-            kwargs = {
-                **self.tth_distortion_kwargs,
-                'instrument': self.instrument,
-                'absorption_length': self.material.absorption_length,
-            }
-            return polar_tth_corr_map_rygg_pinhole(tth, eta, **kwargs)
-
-        raise NotImplementedError(self.tth_distortion_type)
+    @property
+    def pinhole_distortion_kwargs(self):
+        kwargs = self.tth_distortion_kwargs.copy()
+        if self.pinhole_distortion_type == 'RyggPinholeDistortion':
+            # Add our absorption length
+            kwargs['absorption_length'] = self.material.absorption_length
+        return kwargs
+    # END PolarDistortionObject mixin reroutes
 
     @property
     def default_style(self):
