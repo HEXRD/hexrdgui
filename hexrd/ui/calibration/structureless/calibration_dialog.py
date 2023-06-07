@@ -2,7 +2,7 @@ import copy
 import yaml
 
 from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtWidgets import QComboBox, QDoubleSpinBox, QSpinBox
+from PySide2.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
 from hexrd.ui import resource_loader
 from hexrd.ui.tree_views.multi_column_dict_tree_view import (
@@ -23,6 +23,8 @@ class StructurelessCalibrationDialog(QObject):
     load_picks_clicked = Signal()
     engineering_constraints_changed = Signal(str)
 
+    pinhole_correction_settings_modified = Signal()
+
     run = Signal()
     undo_run = Signal()
     finished = Signal()
@@ -41,6 +43,8 @@ class StructurelessCalibrationDialog(QObject):
         self.ui.pinhole_distortion_layout.addWidget(
             self.pinhole_correction_editor.ui)
         self.pinhole_correction_editor.apply_panel_buffer_visible = False
+        self.pinhole_correction_editor.settings_modified.connect(
+            self.on_pinhole_correction_settings_modified)
 
         self.instr = instr
         self._params_dict = params_dict
@@ -131,12 +135,15 @@ class StructurelessCalibrationDialog(QObject):
         self.draw_picks_toggled.emit(b)
 
     def on_run_button_clicked(self):
+        self.clear_polar_view_tth_correction()
         self.run.emit()
 
     def on_undo_run_button_clicked(self):
+        self.clear_polar_view_tth_correction()
         self.undo_run.emit()
 
     def finish(self):
+        self.clear_polar_view_tth_correction(False)
         self.finished.emit()
 
     @property
@@ -171,6 +178,7 @@ class StructurelessCalibrationDialog(QObject):
         w.setCurrentText(v)
 
     def on_edit_picks_clicked(self):
+        self.clear_polar_view_tth_correction()
         self.edit_picks_clicked.emit()
 
     def on_save_picks_clicked(self):
@@ -346,6 +354,19 @@ class StructurelessCalibrationDialog(QObject):
         tree_dict = self.tree_view_dict_of_params
         self.tree_view.model().config = tree_dict
         self.tree_view.reset_gui()
+
+    def on_pinhole_correction_settings_modified(self):
+        self.pinhole_correction_settings_modified.emit()
+
+    def clear_polar_view_tth_correction(self, show_warning=True):
+        editor = self.pinhole_correction_editor
+        if editor.apply_to_polar_view:
+            if show_warning:
+                msg = (
+                    'Polar view correction will be disabled for this operation'
+                )
+                QMessageBox.information(self.parent(), 'HEXRD', msg)
+            editor.apply_to_polar_view = False
 
 
 class TreeItemModel(MultiColumnDictTreeItemModel):

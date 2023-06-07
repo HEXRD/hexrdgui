@@ -279,6 +279,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.fit_grains_grains_table = None
         self.hedm_calibration_output_grains_table = None
         self._polar_tth_distortion_overlay_name = None
+        self._custom_polar_tth_distortion_object = None
         self.polar_corr_field_polar = None
         self.polar_angular_grid = None
         self._recent_images = {}
@@ -2011,7 +2012,30 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def polar_tth_distortion(self):
-        return self.polar_tth_distortion_overlay is not None
+        return self.polar_tth_distortion_object is not None
+
+    @property
+    def polar_tth_distortion_object(self):
+        # If a custom object has been set, use it (this overrides an overlay)
+        if self.custom_polar_tth_distortion_object:
+            return self.custom_polar_tth_distortion_object
+
+        # Otherwise, try using the distortion overlay.
+        return self.polar_tth_distortion_overlay
+
+    @property
+    def custom_polar_tth_distortion_object(self):
+        return self._custom_polar_tth_distortion_object
+
+    @custom_polar_tth_distortion_object.setter
+    def custom_polar_tth_distortion_object(self, v):
+        if v is self._custom_polar_tth_distortion_object:
+            return
+
+        self._custom_polar_tth_distortion_object = v
+        self.flag_overlay_updates_for_all_materials()
+        self.rerender_needed.emit()
+        self.polar_tth_distortion_overlay_changed.emit()
 
     @property
     def polar_tth_distortion_overlay(self):

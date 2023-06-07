@@ -12,12 +12,12 @@ def apply_tth_distortion_if_needed(ang_crds, in_degrees=False, reverse=False):
 
     # First, check if we are actually applying tth distortion.
     # If we are not, just skip and return.
-    distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
+    distortion_object = HexrdConfig().polar_tth_distortion_object
     polar_corr_field = HexrdConfig().polar_corr_field_polar
     polar_angular_grid = HexrdConfig().polar_angular_grid
 
     skip = (
-        distortion_overlay is None or
+        distortion_object is None or
         polar_corr_field is None or
         polar_angular_grid is None
     )

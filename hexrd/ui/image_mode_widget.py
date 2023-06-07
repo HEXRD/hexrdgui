@@ -240,6 +240,24 @@ class ImageModeWidget(QObject):
         self.ui.polar_snip1d_numiter.setEnabled(apply_snip1d)
         self.ui.polar_apply_erosion.setEnabled(apply_snip1d)
 
+        # If we are applying a custom overlay for distortion, disable
+        # the selectors and leave a tooltip message.
+        widgets = [
+            self.ui.polar_apply_tth_distortion,
+            self.ui.polar_tth_distortion_overlay,
+        ]
+        custom_distortion = HexrdConfig().custom_polar_tth_distortion_object
+        if custom_distortion:
+            msg = 'Custom tth distortion is being applied'
+            for w in widgets:
+                w.setEnabled(False)
+                w.original_tooltip = w.toolTip()
+                w.setToolTip(msg)
+        else:
+            for w in widgets:
+                if hasattr(w, 'original_tooltip'):
+                    w.setToolTip(w.original_tooltip)
+
     def auto_generate_cartesian_params(self):
         if HexrdConfig().loading_state:
             # Don't modify the parameters if a state file is being
@@ -363,6 +381,7 @@ class ImageModeWidget(QObject):
 
     def on_polar_tth_distortion_overlay_changed(self):
         self.polar_tth_distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
+        self.update_enable_states()
 
     def overlay_distortions_modified(self, name):
         if name == self.polar_tth_distortion_overlay:

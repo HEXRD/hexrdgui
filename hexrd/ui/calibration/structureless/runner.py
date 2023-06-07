@@ -18,6 +18,7 @@ from hexrd.ui.select_item_dialog import SelectItemDialog
 from hexrd.ui.tree_views import GenericPicksTreeViewDialog
 from hexrd.ui.utils import instr_to_internal_dict
 from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
+from hexrd.ui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 from .calibration_dialog import StructurelessCalibrationDialog
 from .picks_io import load_picks_from_file, save_picks_to_file
@@ -40,6 +41,11 @@ class StructurelessCalibrationRunner(QObject):
 
         self.undo_stack = []
         self.draw_picks_lines = []
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
 
     def clear(self):
         pass
@@ -280,7 +286,7 @@ class StructurelessCalibrationRunner(QObject):
     def _on_edit_picks_finished(self):
         # Show this again
         self._calibration_dialog.show()
-        self.draw_picks(self.drawing_picks)
+        self.redraw_picks()
 
     def _on_save_picks_clicked(self):
         title = 'Save Picks for Structureless Calibration'
@@ -321,7 +327,7 @@ class StructurelessCalibrationRunner(QObject):
         else:
             self.show_calibration_dialog(picks)
 
-        self.draw_picks(self.drawing_picks)
+        self.redraw_picks()
 
     def _on_engineering_constraints_changed(self, new_constraint):
         self.calibrator.engineering_constraints = new_constraint
@@ -365,11 +371,20 @@ class StructurelessCalibrationRunner(QObject):
         # Call any cleanup code.
         self.finished()
 
+
+    def on_image_view_loaded(self, img_dict):
+        # If the image view is modified, it may have been because of
+        # edits to tth distortion, so we should redraw the picks.
+        self.redraw_picks()
+
     def clear_drawn_picks(self):
         while self.draw_picks_lines:
             self.draw_picks_lines.pop(0).remove()
 
         self.canvas.draw_idle()
+
+    def redraw_picks(self):
+        self.draw_picks(self.drawing_picks)
 
     def draw_picks(self, b=True):
         self.drawing_picks = b
@@ -467,9 +482,8 @@ class StructurelessCalibrationRunner(QObject):
         # Update the tree_view in the GUI with the new refinements
         self.update_refinements_tree_view()
 
-        if self.drawing_picks:
-            # Update the drawn picks with their new locations
-            self.draw_picks()
+        # Update the drawn picks with their new locations
+        self.redraw_picks()
 
     def update_refinements_tree_view(self):
         dialog = self._calibration_dialog
@@ -620,6 +634,7 @@ def cart_to_polar_lines(calibrator_lines, instr):
             polar_points.append(cart_to_angles(points, **kwargs))
 
         points = np.vstack(polar_points)
+        points = apply_tth_distortion_if_needed(points, in_degrees=True)
         output.append(points)
 
     return output

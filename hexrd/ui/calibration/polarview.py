@@ -287,17 +287,13 @@ class PolarView:
             data=wimg, mask=nan_mask, fill_value=0.
         )
 
-    def apply_tth_distortion(self, pimg):
-        if not HexrdConfig().polar_tth_distortion:
-            # We are not applying tth distortion. Return the same image.
-            return pimg
+    def create_corr_field_polar(self):
+        obj = HexrdConfig().polar_tth_distortion_object
 
-        overlay = HexrdConfig().polar_tth_distortion_overlay
-
-        if overlay.has_polar_tth_displacement_field:
+        if obj.has_polar_tth_displacement_field:
             # Compute the polar tth displacement field directly
             eta, tth = self.angular_grid
-            corr_field_polar = overlay.create_polar_tth_displacement_field(
+            corr_field_polar = obj.create_polar_tth_displacement_field(
                 tth, eta
             )
 
@@ -307,7 +303,7 @@ class PolarView:
         else:
             # Get the tth displacement field for each detector, and then warp
             # them to the polar view.
-            corr_field = overlay.tth_displacement_field
+            corr_field = obj.tth_displacement_field
 
             corr_field_polar_dict = {}
             for key in corr_field:
@@ -317,6 +313,15 @@ class PolarView:
 
             corr_field_polar = np.ma.sum(np.ma.stack(
                 corr_field_polar_dict.values()), axis=0)
+
+        return corr_field_polar
+
+    def apply_tth_distortion(self, pimg):
+        if not HexrdConfig().polar_tth_distortion:
+            # We are not applying tth distortion. Return the same image.
+            return pimg
+
+        corr_field_polar = self.create_corr_field_polar()
 
         # Save these so that the overlay generator may use them
         HexrdConfig().polar_corr_field_polar = corr_field_polar
