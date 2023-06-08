@@ -157,7 +157,7 @@ class LoadImagesDialog:
             except Exception:
                 det = table.item(row, 0).text()
             for i in range(table.rowCount()):
-                if i != row and table.cellWidget(i, 0).currentText() == det:
+                if i != row and table.item(i, 0).text() == det:
                     table.cellWidget(i, 1).setCurrentText(val)
 
 
