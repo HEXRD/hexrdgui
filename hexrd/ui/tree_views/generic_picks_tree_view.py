@@ -110,6 +110,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         self.selected_picks_line_artists = []
         self.is_deleting_picks = False
         self._show_all_picks = True
+        self.new_line_name_generator = None
 
         if model_class_kwargs is None:
             model_class_kwargs = {}
@@ -370,6 +371,9 @@ class GenericPicksTreeView(BaseDictTreeView):
             self.hand_pick_point(item, line_name)
 
         # Action logic
+        if line_name_clicked and self.can_add_lines:
+            add_actions({'Append new line': self.append_new_line})
+
         add_actions({'Insert': insert_item})
 
         if is_hand_pickable and point_clicked:
@@ -400,6 +404,10 @@ class GenericPicksTreeView(BaseDictTreeView):
     def is_hand_pickable(self):
         return self.allow_hand_picking and self.has_canvas
 
+    @property
+    def can_add_lines(self):
+        return self.new_line_name_generator and self.has_canvas
+
     def hand_pick_point(self, item, pick_label=''):
         kwargs = {
             'canvas': self.canvas,
@@ -425,6 +433,42 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         # Flag it as changed
         model.dataChanged.emit(left, right)
+
+    def append_new_line(self):
+        name = self.new_line_name_generator()
+        config = self.model().config
+
+        if name in config:
+            msg = f'name {name} already exists in config! {list(config)}'
+            raise Exception(msg)
+
+        pick_label = f'Picking points for: {name}'
+        kwargs = {
+            'canvas': self.canvas,
+            'parent': self,
+        }
+
+        picker = LinePickerDialog(**kwargs)
+        picker.current_pick_label = pick_label
+        picker.ui.setWindowTitle(pick_label)
+        picker.ui.view_picks.setVisible(False)
+        picker.start()
+
+        def on_line_completed():
+            # Just accept it
+            picker.ui.accept()
+
+        accepted_func = partial(self.finished_appending_new_line,
+                                name=name, picker=picker)
+        picker.accepted.connect(accepted_func)
+        picker.line_completed.connect(on_line_completed)
+
+    def finished_appending_new_line(self, name, picker):
+        new_line = picker.line_data[0]
+        self.model().config[name] = new_line.tolist()
+        self.model().rebuild_tree()
+        self.draw_picks()
+        self.expand_rows()
 
     @property
     def coords_type(self):

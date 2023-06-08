@@ -265,12 +265,18 @@ class StructurelessCalibrationRunner(QObject):
 
         # Now convert to a dictionary for the line labels
         dictionary = {}
-        for i, v in enumerate(data):
-            name = f'DS ring {i + 1}'
-            dictionary[name] = data[i]
+        for ring_idx, v in enumerate(data):
+            name = f'DS ring {ring_idx + 1}'
+            dictionary[name] = data[ring_idx]
+
+        def new_line_name_generator():
+            nonlocal ring_idx
+            ring_idx += 1
+            return f'DS ring {ring_idx + 1}'
 
         dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
                                             parent=self.canvas)
+        dialog.tree_view.new_line_name_generator = new_line_name_generator
         dialog.accepted.connect(self._on_edit_picks_accepted)
         dialog.finished.connect(self._on_edit_picks_finished)
         dialog.show()
