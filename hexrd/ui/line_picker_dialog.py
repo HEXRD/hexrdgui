@@ -36,7 +36,7 @@ class LinePickerDialog(QObject):
     view_picks = Signal()
 
     def __init__(self, canvas, parent, single_line_mode=False,
-                 single_pick_mode=False):
+                 single_pick_mode=False, cycle_cursor_colors=False):
         super().__init__(parent)
 
         self.canvas = canvas
@@ -50,6 +50,7 @@ class LinePickerDialog(QObject):
 
         self.single_line_mode = single_line_mode
         self.single_pick_mode = single_pick_mode
+        self.cycle_cursor_colors = cycle_cursor_colors
         self.update_visible_states()
 
         flags = self.ui.windowFlags()
@@ -200,6 +201,9 @@ class LinePickerDialog(QObject):
 
         self.line_added.emit()
 
+        if self.cycle_cursor_colors:
+            self.zoom_canvas.cursor_color = color
+
     def hide_artists(self):
         self.show_artists(False)
 
@@ -272,6 +276,15 @@ class LinePickerDialog(QObject):
         self.ui.show()
 
     @property
+    def line_data(self):
+        # Get the line data as a list of transposed numpy arrays
+        output = []
+        for line in self.lines:
+            output.append(np.array(line.get_data()).T)
+
+        return output
+
+    @property
     def zoom_frozen(self):
         return self.zoom_canvas.frozen
 
@@ -280,12 +293,20 @@ class LinePickerDialog(QObject):
         self.zoom_canvas.frozen = v
 
     @property
-    def current_hkl_label(self):
-        return self.ui.current_hkl_label.text()
+    def current_pick_label(self):
+        return self.ui.current_pick_label.text()
 
-    @current_hkl_label.setter
-    def current_hkl_label(self, text):
-        self.ui.current_hkl_label.setText(text)
+    @current_pick_label.setter
+    def current_pick_label(self, text):
+        self.ui.current_pick_label.setText(text)
+
+    @property
+    def start_new_line_label(self):
+        return self.ui.start_new_line_label.text()
+
+    @start_new_line_label.setter
+    def start_new_line_label(self, text):
+        self.ui.start_new_line_label.setText(text)
 
     @property
     def disabled(self):

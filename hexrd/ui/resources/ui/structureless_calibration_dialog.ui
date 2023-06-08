@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>structureless_calibration_dialog</class>
+ <widget class="QDialog" name="structureless_calibration_dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1020</width>
+    <height>940</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Structureless Calibration Dialog</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="canvas_settings_group">
+     <property name="title">
+      <string>Canvas Settings</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="draw_picks">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Draw the picks on the main canvas. These pick positions are stored in detector Cartesian coordinates, and their positions will be updated automatically as detector parameters get modified.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Draw picks?</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Constraints</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="engineering_constraints">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>None</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>TARDIS</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="engineering_constraints_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Add engineering constraints for:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QGroupBox" name="pinhole_distortion_group">
+     <property name="title">
+      <string>Pinhole Distortion</string>
+     </property>
+     <layout class="QVBoxLayout" name="pinhole_distortion_layout"/>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="2">
+    <widget class="QGroupBox" name="advanced_options_group">
+     <property name="title">
+      <string>Advanced Options</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="0">
+       <widget class="QLabel" name="xtol_label">
+        <property name="toolTip">
+         <string>Tolerance for termination by the change of the independent variables.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="text">
+         <string>xtol:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="verbose_label">
+        <property name="toolTip">
+         <string>Level of algorithm’s verbosity.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="text">
+         <string>verbose:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="ScientificDoubleSpinBox" name="ftol">
+        <property name="toolTip">
+         <string>Tolerance for termination by the change of the cost function.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="decimals">
+         <number>10</number>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000001000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="ScientificDoubleSpinBox" name="gtol">
+        <property name="toolTip">
+         <string>Tolerance for termination by the norm of the gradient.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="decimals">
+         <number>10</number>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000001000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QComboBox" name="jac">
+        <property name="toolTip">
+         <string>Method of computing the Jacobian matrix (an m-by-n matrix, where element (i, j) is the partial derivative of f[i] with respect to x[j]). The keywords select a finite difference scheme for numerical estimation.
+
+See scipy.optimize.least_squares for more info.</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>2-point</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3-point</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>cs</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="ftol_label">
+        <property name="toolTip">
+         <string>Tolerance for termination by the change of the cost function.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="text">
+         <string>ftol:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="ScientificDoubleSpinBox" name="xtol">
+        <property name="toolTip">
+         <string>Tolerance for termination by the change of the independent variables.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="decimals">
+         <number>10</number>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000001000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="max_nfev_label">
+        <property name="toolTip">
+         <string>Maximum number of function evaluations before the termination.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="text">
+         <string>max_nfev:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="gtol_label">
+        <property name="toolTip">
+         <string>Tolerance for termination by the norm of the gradient.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="text">
+         <string>gtol:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="max_nfev">
+        <property name="toolTip">
+         <string>Maximum number of function evaluations before the termination.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="maximum">
+         <number>100000000</number>
+        </property>
+        <property name="value">
+         <number>1000</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QSpinBox" name="verbose">
+        <property name="toolTip">
+         <string>Level of algorithm’s verbosity.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="maximum">
+         <number>2</number>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="jac_label">
+        <property name="toolTip">
+         <string>Method of computing the Jacobian matrix (an m-by-n matrix, where element (i, j) is the partial derivative of f[i] with respect to x[j]). The keywords select a finite difference scheme for numerical estimation.
+
+See scipy.optimize.least_squares for more info.</string>
+        </property>
+        <property name="text">
+         <string>jac:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="method_label">
+        <property name="toolTip">
+         <string>Algorithm to perform minimization.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <property name="text">
+         <string>method:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QComboBox" name="method">
+        <property name="toolTip">
+         <string>Algorithm to perform minimization.
+
+See scipy.optimize.least_squares for more details.</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>trf</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>dogbox</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <layout class="QVBoxLayout" name="tree_view_layout"/>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QGroupBox" name="picks_group">
+     <property name="title">
+      <string>Picks</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="2">
+       <widget class="QPushButton" name="load_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Load Picks</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="save_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Save Picks</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="edit_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the picks editor to edit the picks. Picks may be added, deleted, or edited (either by hand picking a new point or manually entering coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Edit Picks</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="button_layout">
+     <item>
+      <widget class="QPushButton" name="undo_run_button">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Undo the last &amp;quot;Run&amp;quot; performed. This revert both the instrument settings and parameter settings to what they were right before &amp;quot;Run&amp;quot; was clicked.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This button may be clicked multiple times if multiple runs were performed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Undo Run</string>
+       </property>
+       <property name="icon">
+        <iconset theme="reload">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="button_layout_spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="run_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the calibration using the selected parameters and options.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Results will be printed to the messages dialog, and the canvas will update automatically with the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;A run may be undone by clicking &amp;quot;Undo Run&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+       <property name="icon">
+        <iconset theme="dialog-ok">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="8" column="0">
+    <widget class="QCheckBox" name="show_advanced_options">
+     <property name="text">
+      <string>Show Advanced Options</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header location="global">scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>draw_picks</tabstop>
+  <tabstop>engineering_constraints</tabstop>
+  <tabstop>edit_picks_button</tabstop>
+  <tabstop>save_picks_button</tabstop>
+  <tabstop>load_picks_button</tabstop>
+  <tabstop>show_advanced_options</tabstop>
+  <tabstop>ftol</tabstop>
+  <tabstop>gtol</tabstop>
+  <tabstop>xtol</tabstop>
+  <tabstop>verbose</tabstop>
+  <tabstop>max_nfev</tabstop>
+  <tabstop>jac</tabstop>
+  <tabstop>method</tabstop>
+  <tabstop>undo_run_button</tabstop>
+  <tabstop>run_button</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>show_advanced_options</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advanced_options_group</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>258</x>
+     <y>618</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>509</x>
+     <y>709</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

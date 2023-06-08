@@ -8,6 +8,7 @@ from PySide2.QtWidgets import (
 
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
+from hexrd.ui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrd.ui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.select_items_widget import SelectItemsWidget
@@ -22,6 +23,13 @@ class PowderOverlayEditor:
         self.ui = loader.load_file('powder_overlay_editor.ui', parent)
 
         self._overlay = None
+
+        self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
+        pinhole_editor = self.pinhole_correction_editor
+        self.ui.distortion_pinhole_correction_layout.addWidget(
+            pinhole_editor.ui)
+        pinhole_editor.rygg_absorption_length_visible = False
+        pinhole_editor.none_option_visible = False
 
         self.refinements_selector = SelectItemsWidget([], self.ui)
         self.ui.refinements_selector_layout.addWidget(
@@ -38,6 +46,9 @@ class PowderOverlayEditor:
             elif isinstance(w, QComboBox):
                 w.currentIndexChanged.connect(self.update_config)
 
+        self.pinhole_correction_editor.settings_modified.connect(
+            self.update_config)
+
         self.ui.enable_width.toggled.connect(self.update_enable_states)
         self.refinements_selector.selection_changed.connect(
             self.update_refinements)
@@ -49,13 +60,6 @@ class PowderOverlayEditor:
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed)
-        self.ui.pinhole_correction_type.currentIndexChanged.connect(
-            self.pinhole_correction_type_changed)
-
-        self.ui.jph_apply_panel_buffers.clicked.connect(
-            self.ph_apply_panel_buffers)
-        self.ui.rph_apply_panel_buffers.clicked.connect(
-            self.ph_apply_panel_buffers)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -126,8 +130,7 @@ class PowderOverlayEditor:
     def update_config(self):
         self.tth_width_config = self.tth_width_gui
         self.offset_config = self.offset_gui
-        self.distortion_type_config = self.distortion_type_gui
-        self.distortion_kwargs_config = self.distortion_kwargs_gui
+        self.distortion_config = self.distortion_gui
         self.clip_with_panel_buffer_config = self.clip_with_panel_buffer_gui
 
         self.overlay.update_needed = True
@@ -216,21 +219,11 @@ class PowderOverlayEditor:
         if self.ui.distortion_type.currentText() == 'Offset':
             return None
 
-        v = self.ui.pinhole_correction_type.currentText()
-
-        conversions = {
-            'Pinhole (JHE)': 'JHEPinholeDistortion',
-            'Pinhole (Rygg)': 'RyggPinholeDistortion',
-            'Sample Layer': 'SampleLayerDistortion',
-        }
-        if v in conversions:
-            v = conversions[v]
-
-        return v
+        return self.pinhole_correction_editor.correction_type
 
     @distortion_type_gui.setter
     def distortion_type_gui(self, v):
-        widgets = [self.ui.distortion_type, self.ui.pinhole_correction_type]
+        widgets = [self.ui.distortion_type, self.pinhole_correction_editor]
         with block_signals(*widgets):
             if v is None:
                 self.ui.distortion_type.setCurrentText('Offset')
@@ -242,17 +235,7 @@ class PowderOverlayEditor:
             idx = self.ui.distortion_type.currentIndex()
             self.ui.distortion_tab_widget.setCurrentIndex(idx)
 
-            conversions = {
-                'JHEPinholeDistortion': 'Pinhole (JHE)',
-                'RyggPinholeDistortion': 'Pinhole (Rygg)',
-                'SampleLayerDistortion': 'Sample Layer',
-            }
-            if v in conversions:
-                v = conversions[v]
-
-            self.ui.pinhole_correction_type.setCurrentText(v)
-            idx = self.ui.pinhole_correction_type.currentIndex()
-            self.ui.pinhole_correction_type_tab_widget.setCurrentIndex(idx)
+            self.pinhole_correction_editor.correction_type = v
 
     @property
     def distortion_kwargs_config(self):
@@ -277,102 +260,49 @@ class PowderOverlayEditor:
         dtype = self.distortion_type_gui
         if dtype is None:
             return None
-        elif dtype == 'SampleLayerDistortion':
-            return {
-                'layer_standoff': self.ui.sl_layer_standoff.value() * 1e-3,
-                'layer_thickness': self.ui.sl_layer_thickness.value() * 1e-3,
-                'pinhole_thickness': (
-                    self.ui.sl_pinhole_thickness.value() * 1e-3),
-            }
-        elif dtype == 'JHEPinholeDistortion':
-            return {
-                'pinhole_radius': self.ui.jph_radius.value() * 1e-3,
-                'pinhole_thickness': self.ui.jph_thickness.value() * 1e-3,
-            }
-        elif dtype == 'RyggPinholeDistortion':
-            return {
-                'pinhole_radius': self.ui.rph_radius.value() * 1e-3,
-                'pinhole_thickness': self.ui.rph_thickness.value() * 1e-3,
-                'num_phi_elements': self.ui.rph_num_phi_elements.value(),
-            }
 
-        raise Exception(f'Not implemented for: {dtype}')
+        return self.pinhole_correction_editor.correction_kwargs
 
     @distortion_kwargs_gui.setter
     def distortion_kwargs_gui(self, v):
-        # Values are (key, default)
-        values = {
-            'sl_layer_standoff': ('layer_standoff', 0.15),
-            'sl_layer_thickness': ('layer_thickness', 0.005),
-            'sl_pinhole_thickness': ('pinhole_thickness', 0.1),
-            'rph_radius': ('pinhole_radius', 0.2),
-            'rph_thickness': ('pinhole_thickness', 0.1),
-            'rph_num_phi_elements': ('num_phi_elements', 60),
-            'jph_radius': ('pinhole_radius', 0.2),
-            'jph_thickness': ('pinhole_thickness', 0.1),
-        }
+        self.pinhole_correction_editor.correction_kwargs = v
 
-        dtype = self.distortion_type_gui
-        if dtype == 'SampleLayerDistortion':
-            widget_prefix = 'sl_'
-        elif dtype == 'RyggPinholeDistortion':
-            widget_prefix = 'rph_'
-        elif dtype == 'JHEPinholeDistortion':
-            widget_prefix = 'jph_'
-        elif dtype is None:
-            widget_prefix = '_'
-        else:
-            raise Exception(f'Not implemented for: {dtype}')
+    @property
+    def distortion_config(self):
+        return self.distortion_type_config, self.distortion_kwargs_config
 
-        for w_name, (key, value) in values.items():
-            if w_name.startswith(widget_prefix):
-                # Extract the value from the dict
-                value = v.get(key, value)
+    @distortion_config.setter
+    def distortion_config(self, v):
+        if self.overlay is None:
+            return
 
-            if key == 'num_phi_elements':
-                multiplier = 1
-            else:
-                multiplier = 1e3
+        dtype, dconfig = v
+        if (self.overlay.tth_distortion_type == dtype and
+                self.overlay.tth_distortion_kwargs == dconfig):
+            return
 
-            w = getattr(self.ui, w_name)
-            w.setValue(value * multiplier)
+        self.overlay.tth_distortion_type = dtype
+        self.overlay.tth_distortion_kwargs = dconfig
+        HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
+
+    @property
+    def distortion_gui(self):
+        return self.distortion_type_gui, self.distortion_kwargs_gui
+
+    @distortion_gui.setter
+    def distortion_gui(self, v):
+        self.distortion_type_gui = v[0]
+        self.distortion_type_kwargs = v[1]
 
     @property
     def offset_widgets(self):
         return [getattr(self.ui, f'offset_{i}') for i in range(3)]
 
     @property
-    def sample_layer_widgets(self):
-        widgets = [
-            'sl_layer_standoff',
-            'sl_layer_thickness',
-            'sl_pinhole_thickness',
-        ]
-        return [getattr(self.ui, w) for w in widgets]
-
-    @property
-    def jhe_pinhole_widgets(self):
-        return [
-            self.ui.jph_radius,
-            self.ui.jph_thickness,
-        ]
-
-    @property
-    def rygg_pinhole_widgets(self):
-        return [
-            self.ui.rph_radius,
-            self.ui.rph_thickness,
-            self.ui.rph_num_phi_elements,
-        ]
-
-    @property
     def widgets(self):
         distortion_widgets = (
             self.offset_widgets +
-            self.sample_layer_widgets +
-            self.jhe_pinhole_widgets +
-            self.rygg_pinhole_widgets +
-            [self.ui.distortion_type, self.ui.pinhole_correction_type]
+            [self.ui.distortion_type, self.pinhole_correction_editor]
         )
         return [
             self.ui.enable_width,
@@ -412,91 +342,19 @@ class PowderOverlayEditor:
 
     @property
     def pinhole_correction_type(self):
-        return self.ui.pinhole_correction_type.currentText()
+        return self.pinhole_correction_editor.correction_type
 
     @pinhole_correction_type.setter
     def pinhole_correction_type(self, v):
-        self.ui.pinhole_correction_type.setCurrentText(v)
+        self.pinhole_correction_editor.correction_type = v
 
     def distortion_type_changed(self):
-        self.validate_distortion_type()
-        self.update_config()
-
-    def pinhole_correction_type_changed(self):
-        self.validate_distortion_type()
-        self.update_config()
-
-    def validate_distortion_type(self):
         if self.distortion_type == 'Pinhole Camera Correction':
-            # Warn the user if there is a non-zero oscillation stage vector
-            stage = HexrdConfig().instrument_config['oscillation_stage']
-            if not np.all(np.isclose(stage['translation'], 0)):
-                msg = (
-                    'WARNING: a non-zero oscillation stage vector is being '
-                    'used with the Pinhole Camera Correction.'
-                )
-                QMessageBox.critical(self.ui, 'HEXRD', msg)
+            if self.pinhole_correction_type is None:
+                # Since we hide None, let's switch to sample layer offset
+                self.pinhole_correction_type = 'SampleLayerDistortion'
 
-            if self.distortion_type_gui == 'SampleLayerDistortion':
-                beam = HexrdConfig().instrument_config['beam']
-                source_distance = beam.get('source_distance', np.inf)
-                if source_distance is None or source_distance == np.inf:
-                    msg = (
-                        'WARNING: the source distance is infinite.\n\nThe '
-                        'Sample Layer Distortion will have no effect '
-                        'unless the source distance is finite.\n\nThe source '
-                        'distance may be edited in the Instrument "Form View"'
-                    )
-                    QMessageBox.critical(self.ui, 'HEXRD', msg)
-
-    def ph_apply_panel_buffers(self):
-        instr = create_hedm_instrument()
-
-        config = self.distortion_kwargs_config
-        required_keys = ('pinhole_radius', 'pinhole_thickness')
-        if config is None or any(x not in config for x in required_keys):
-            raise Exception(f'Failed to create panel buffer with {config=}')
-
-        kwargs = {
-            'instr': instr,
-            'pinhole_radius': config['pinhole_radius'],
-            'pinhole_thickness': config['pinhole_thickness'],
-        }
-        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
-
-        # merge with any existing panel buffer
-        for det_key, det in instr.detectors.items():
-            pb = det.panel_buffer
-            if pb is not None:
-                if pb.ndim == 2:
-                    new_buff = np.logical_and(pb, ph_buffer[det_key])
-                elif pb.ndim == 1:
-                    # have edge buffer
-                    ebuff = np.ones(det.shape, dtype=bool)
-                    npix_row = int(np.ceil(pb[0]/det.pixel_size_row))
-                    npix_col = int(np.ceil(pb[1]/det.pixel_size_col))
-                    ebuff[:npix_row, :] = False
-                    ebuff[-npix_row:, :] = False
-                    ebuff[:, :npix_col] = False
-                    ebuff[:, -npix_col:] = False
-                    new_buff = np.logical_and(ebuff, ph_buffer[det_key])
-                det.panel_buffer = new_buff
-            else:
-                det.panel_buffer = ph_buffer[det_key]
-
-        # Now set them in the hexrdgui config
-        iconfig = HexrdConfig().config['instrument']
-        for det_key, det in instr.detectors.items():
-            det_config = iconfig['detectors'][det_key]
-            det_config['buffer']['value'] = det.panel_buffer
-
-        msg = 'Pinhole dimensions were applied to the panel buffers'
-        QMessageBox.information(self.ui, 'HEXRD', msg)
-
-        # This probably doesn't need to be done every time, but we'll do it
-        # anyways since they won't be pressing the button very often.
-        HexrdConfig().flag_overlay_updates_for_all_materials()
-        HexrdConfig().rerender_needed.emit()
+        self.update_config()
 
     @property
     def clip_with_panel_buffer_config(self):

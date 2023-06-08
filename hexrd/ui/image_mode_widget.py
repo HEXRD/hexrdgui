@@ -9,7 +9,6 @@ from hexrd.ui.constants import PolarXAxisType, ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.create_raw_mask import apply_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.overlays import Overlay
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
 
@@ -128,6 +127,8 @@ class ImageModeWidget(QObject):
             self.update_polar_tth_distortion_overlay_options)
         HexrdConfig().overlay_list_modified.connect(
             self.update_polar_tth_distortion_overlay_options)
+        HexrdConfig().polar_tth_distortion_overlay_changed.connect(
+            self.on_polar_tth_distortion_overlay_changed)
 
         self.ui.polar_apply_tth_distortion.toggled.connect(
             self.polar_tth_distortion_overlay_changed)
@@ -348,7 +349,7 @@ class ImageModeWidget(QObject):
 
     @polar_tth_distortion_overlay.setter
     def polar_tth_distortion_overlay(self, name):
-        if isinstance(name, Overlay):
+        if name and not isinstance(name, str):
             # Grab the name.
             name = name.name
 
@@ -358,6 +359,11 @@ class ImageModeWidget(QObject):
         self.polar_apply_tth_distortion = enabled
         if enabled:
             w.setCurrentText(name)
+
+    def on_polar_tth_distortion_overlay_changed(self):
+        self.polar_tth_distortion_overlay = (
+            HexrdConfig().polar_tth_distortion_object
+        )
 
     def overlay_distortions_modified(self, name):
         if name == self.polar_tth_distortion_overlay:
@@ -379,17 +385,22 @@ class ImageModeWidget(QObject):
                 if overlay.is_powder and overlay.has_tth_distortion:
                     names.append(overlay.name)
 
+            if obj := HexrdConfig().saved_custom_polar_tth_distortion_object:
+                names.append(obj.name)
+
             w.addItems(names)
 
-            current = HexrdConfig().polar_tth_distortion_overlay
+            current = HexrdConfig().polar_tth_distortion_object
             if current and current.name in names:
                 w.setCurrentText(current.name)
                 self.polar_apply_tth_distortion = True
-            elif prev_text in names:
-                # Keep the previous one saved, even if there is no
-                # distortion. This is so that we can toggle on/off and
-                # keep the same one selected.
-                w.setCurrentText(prev_text)
+            else:
+                self.polar_apply_tth_distortion = current is not None
+                if prev_text in names:
+                    # Keep the previous one saved, even if there is no
+                    # distortion. This is so that we can toggle on/off and
+                    # keep the same one selected.
+                    w.setCurrentText(prev_text)
 
             if self.polar_apply_tth_distortion:
                 # Make sure any changes get saved to the config
@@ -397,12 +408,13 @@ class ImageModeWidget(QObject):
 
         enable = w.count() != 0
         self.ui.polar_apply_tth_distortion.setEnabled(enable)
-        if not enable:
-            self.polar_apply_tth_distortion = False
 
     def polar_tth_distortion_overlay_changed(self):
-        HexrdConfig().polar_tth_distortion_overlay = (
-            self.polar_tth_distortion_overlay)
+        obj = self.polar_tth_distortion_overlay
+        if obj == '[Custom]':
+            obj = HexrdConfig().saved_custom_polar_tth_distortion_object
+
+        HexrdConfig().polar_tth_distortion_object = obj
 
     def on_eta_min_changed(self, min_value):
         """Sync max when min is changed."""

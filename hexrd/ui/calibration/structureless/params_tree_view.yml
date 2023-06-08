@@ -1,0 +1,27 @@
+beam:
+  energy: beam_energy
+  vector:
+    azimuth: beam_azimuth
+    polar angle: beam_polar
+oscillation stage:
+  chi: instr_chi
+  translation:
+    𝑋: instr_tvec_x
+    𝑌: instr_tvec_y
+    𝑍: instr_tvec_z
+detectors:
+  '{det}':
+    transform:
+      tilt:
+        𝑍: '{det}_euler_z'
+        𝑋′: '{det}_euler_xp'
+        𝑍′′: '{det}_euler_zpp'
+      translation:
+        𝑋: '{det}_tvec_x'
+        𝑌: '{det}_tvec_y'
+        𝑍: '{det}_tvec_z'
+    radius: '{det}_radius'
+  distortion parameters:
+Debye-Scherrer ring means:
+engineering constraints:
+  distance between plates: tardis_distance_between_plates

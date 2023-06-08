@@ -33,9 +33,10 @@ from hexrd.ui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrd.ui.calibration.calibration_runner import CalibrationRunner
 from hexrd.ui.calibration.auto.powder_runner import PowderRunner
 from hexrd.ui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
-from hexrd.ui.calibration.picks_tree_view_dialog import (
-    PicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
+from hexrd.ui.calibration.hkl_picks_tree_view_dialog import (
+    HKLPicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
 )
+from hexrd.ui.calibration.structureless import StructurelessCalibrationRunner
 from hexrd.ui.calibration.wppf_runner import WppfRunner
 from hexrd.ui.create_polar_mask import (
     create_polar_mask_from_raw, rebuild_polar_masks
@@ -239,6 +240,8 @@ class MainWindow(QObject):
             self.on_action_run_laue_and_powder_calibration_triggered)
         self.ui.action_run_laue_and_powder_calibration.triggered.connect(
             self.ui.image_tab_widget.toggle_off_toolbar)
+        self.ui.action_run_structureless_calibration.triggered.connect(
+            self.run_structureless_calibration)
         self.ui.action_run_hedm_calibration.triggered.connect(
             self.run_hedm_calibration)
         self.ui.action_run_indexing.triggered.connect(
@@ -285,6 +288,7 @@ class MainWindow(QObject):
         HexrdConfig().detector_shape_changed.connect(
             self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
+        HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
         HexrdConfig().raw_masks_changed.connect(self.update_all)
 
         ImageLoadManager().update_needed.connect(self.update_all)
@@ -319,6 +323,9 @@ class MainWindow(QObject):
         for widget_name in self._menu_item_tooltips:
             w = getattr(self.ui, widget_name)
             w.changed.connect(self._update_menu_item_tooltip_for_sender)
+
+        HexrdConfig().enable_canvas_focus_mode.connect(
+            self.enable_canvas_focus_mode)
 
     def on_state_loaded(self):
         self.update_action_check_states()
@@ -364,6 +371,16 @@ class MainWindow(QObject):
         self.ui.config_tool_box.insertItem(materials_panel_index,
                                            self.materials_panel.ui,
                                            'Materials')
+
+    def enable_canvas_focus_mode(self, b):
+        # Disable these widgets when focus mode is set
+        disable_widgets = [
+            self.image_mode_widget.ui,
+            self.ui.config_tool_box,
+            self.ui.menu_bar,
+        ]
+        for w in disable_widgets:
+            w.setEnabled(not b)
 
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -576,6 +593,30 @@ class MainWindow(QObject):
         print('Updating the GUI')
         self.update_config_gui()
         self.deep_rerender()
+
+    def run_structureless_calibration(self):
+        cached_async_runner_name = '_structureless_calibration_async_runner'
+        if not hasattr(self, cached_async_runner_name):
+            # Initialize this only once and keep it around, so we don't
+            # run into issues connecting/disconnecting the messages.
+            setattr(self, cached_async_runner_name, AsyncRunner(self.ui))
+
+        async_runner = getattr(self, cached_async_runner_name)
+
+        canvas = self.ui.image_tab_widget.image_canvases[0]
+        runner = StructurelessCalibrationRunner(canvas, async_runner, self.ui)
+        runner.instrument_updated.connect(
+            self.structureless_calibration_updated)
+
+        try:
+            runner.run()
+        except Exception as e:
+            QMessageBox.critical(self.ui, 'HEXRD', str(e))
+            raise
+
+    def structureless_calibration_updated(self):
+        self.update_config_gui()
+        self.update_all()
 
     def run_hedm_calibration(self):
         cached_async_runner_name = '_hedm_calibration_runner_async_runner'
@@ -863,6 +904,8 @@ class MainWindow(QObject):
             (is_polar or is_cartesian or is_stereo) and has_images)
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
             is_polar and has_images)
+        self.ui.action_run_structureless_calibration.setEnabled(
+            is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
             (is_polar or is_raw) and has_images)
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
@@ -965,21 +1008,16 @@ class MainWindow(QObject):
         self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
     def set_live_update(self, enabled):
-        previous = HexrdConfig().live_update
-        HexrdConfig().set_live_update(enabled)
+        HexrdConfig().live_update = enabled
 
         if enabled:
-            # When a state file is loaded, this function gets called again, and
-            # a repeated connection is getting made to perform this update.
-            # As such, let's set `Qt.UniqueConnection` to prevent this from
-            # being connected repeatedly.
-            HexrdConfig().rerender_needed.connect(self.update_all, Qt.UniqueConnection)
             # Go ahead and trigger an update as well
             self.update_all()
-        elif previous:
-            # Only disconnect if we were previously enabled. i.e. the signal was
-            # connected
-            HexrdConfig().rerender_needed.disconnect(self.update_all)
+
+    def on_rerender_needed(self):
+        # Only perform an update if we have live updates enabled
+        if HexrdConfig().live_update:
+            self.update_all()
 
     def show_beam_marker_toggled(self, b):
         HexrdConfig().show_beam_marker = b
@@ -1030,7 +1068,7 @@ class MainWindow(QObject):
             'canvas': canvas,
             'parent': canvas,
         }
-        dialog = PicksTreeViewDialog(**kwargs)
+        dialog = HKLPicksTreeViewDialog(**kwargs)
         dialog.button_box_visible = True
         dialog.ui.show()
 
@@ -1189,6 +1227,10 @@ class MainWindow(QObject):
                         'stack)'),
             },
             'action_run_laue_and_powder_calibration': {
+                True: '',
+                False: 'Polar view must be active with image data loaded',
+            },
+            'action_run_structureless_calibration': {
                 True: '',
                 False: 'Polar view must be active with image data loaded',
             },

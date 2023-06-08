@@ -199,6 +199,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     overlay_distortions_modified = Signal(str)
 
+    """Emitted when the tth distortion overlay is changed"""
+    polar_tth_distortion_overlay_changed = Signal()
+
     """Emitted when an overlay's name has been changed
 
     The arguments are the old_name and the new_name
@@ -225,6 +228,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Emitted when image mode widget needs to be in a certain mode"""
     set_image_mode_widget_tab = Signal(str)
+
+    """Emitted when canvas focus mode should be started/stopped
+
+    In canvas focus mode, the following widgets in the main window are
+    disabled:
+
+    1. The image mode widget
+    2. The config toolbox (material config and instrument config)
+    3. The main window menu bar
+    """
+    enable_canvas_focus_mode = Signal(bool)
 
     def __init__(self):
         # Should this have a parent?
@@ -265,6 +279,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.fit_grains_grains_table = None
         self.hedm_calibration_output_grains_table = None
         self._polar_tth_distortion_overlay_name = None
+        self._custom_polar_tth_distortion_object = None
+        self.saved_custom_polar_tth_distortion_object = None
         self.polar_corr_field_polar = None
         self.polar_angular_grid = None
         self._recent_images = {}
@@ -274,6 +290,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.show_all_colormaps = False
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
         self.default_cmap = constants.DEFAULT_CMAP
+        self._previous_structureless_calibration_picks_data = None
 
         self.setup_logging()
 
@@ -367,7 +384,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('show_azimuthal_legend', True),
             ('show_all_colormaps', False),
             ('limited_cmaps_list', constants.DEFAULT_LIMITED_CMAPS),
-            ('default_cmap', constants.DEFAULT_CMAP)
+            ('default_cmap', constants.DEFAULT_CMAP),
+            ('custom_polar_tth_distortion_object_serialized', None),
+            ('_previous_structureless_calibration_picks_data', None),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -1082,9 +1101,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         with open(output_file, 'w') as f:
             yaml.dump(cfg, f)
-
-    def set_live_update(self, status):
-        self.live_update = status
 
     def create_internal_config(self, cur_config):
         if not self.has_status(cur_config):
@@ -2000,7 +2016,76 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def polar_tth_distortion(self):
-        return self.polar_tth_distortion_overlay is not None
+        return self.polar_tth_distortion_object is not None
+
+    @property
+    def polar_tth_distortion_object(self):
+        # If a custom object has been set, use it (this overrides an overlay)
+        if self.custom_polar_tth_distortion_object:
+            return self.custom_polar_tth_distortion_object
+
+        # Otherwise, try using the distortion overlay.
+        return self.polar_tth_distortion_overlay
+
+    @polar_tth_distortion_object.setter
+    def polar_tth_distortion_object(self, v):
+        if isinstance(v, (str, overlays.Overlay)):
+            # It's an overlay or the name of an overlay
+            self.custom_polar_tth_distortion_object = None
+            self.polar_tth_distortion_overlay = v
+            return
+        elif v is None:
+            # Set both to None
+            self.polar_tth_distortion_overlay = None
+            self.custom_polar_tth_distortion_object = None
+            return
+
+        # Must be a custom distortion object
+        self.custom_polar_tth_distortion_object = v
+
+    @property
+    def custom_polar_tth_distortion_object(self):
+        return self._custom_polar_tth_distortion_object
+
+    @custom_polar_tth_distortion_object.setter
+    def custom_polar_tth_distortion_object(self, v):
+        if v is self._custom_polar_tth_distortion_object:
+            return
+
+        name = v.name if v else None
+
+        self._custom_polar_tth_distortion_object = v
+        if v is not None:
+            self.saved_custom_polar_tth_distortion_object = v
+
+        self.overlay_distortions_modified.emit(name)
+        self.flag_overlay_updates_for_all_materials()
+        self.rerender_needed.emit()
+        self.polar_tth_distortion_overlay_changed.emit()
+
+    @property
+    def custom_polar_tth_distortion_object_serialized(self):
+        obj = self.saved_custom_polar_tth_distortion_object
+        if obj is None:
+            return None
+
+        return {
+            'active': self.polar_tth_distortion_object is obj,
+            'serialized': obj.serialize(),
+        }
+
+    @custom_polar_tth_distortion_object_serialized.setter
+    def custom_polar_tth_distortion_object_serialized(self, v):
+        obj = None
+        if v is not None:
+            from hexrd.ui.polar_distortion_object import PolarDistortionObject
+            active = v['active']
+            obj = PolarDistortionObject.deserialize(v['serialized'])
+
+        if obj and active:
+            self.polar_tth_distortion_object = obj
+        else:
+            self.saved_custom_polar_tth_distortion_object = obj
 
     @property
     def polar_tth_distortion_overlay(self):
@@ -2027,6 +2112,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._polar_tth_distortion_overlay_name = name
             self.flag_overlay_updates_for_all_materials()
             self.rerender_needed.emit()
+            self.polar_tth_distortion_overlay_changed.emit()
 
     @property
     def polar_x_axis_type(self):

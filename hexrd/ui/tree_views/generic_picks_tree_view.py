@@ -1,22 +1,22 @@
 from functools import partial
+from itertools import cycle
 
-import numpy as np
+import matplotlib.pyplot as plt
 
-from PySide2.QtCore import Qt
+from PySide2.QtCore import Qt, Signal
 from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import QMenu
+from PySide2.QtWidgets import (
+    QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
+)
 
 from hexrd.ui.constants import ViewType
-from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.line_picker_dialog import LinePickerDialog
 from hexrd.ui.markers import igor_marker
-from hexrd.ui.overlays import Overlay
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
 )
 from hexrd.ui.tree_views.tree_item import TreeItem
 from hexrd.ui.tree_views.value_column_delegate import ValueColumnDelegate
-from hexrd.ui.utils import hkl_str_to_array
 
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
@@ -24,7 +24,7 @@ X_COL = KEY_COL + 1
 Y_COL = X_COL + 1
 
 
-class PicksTreeItemModel(BaseDictTreeItemModel):
+class GenericPicksTreeItemModel(BaseDictTreeItemModel):
 
     def __init__(self, dictionary, coords_type=ViewType.polar, parent=None):
         super().__init__(dictionary, parent)
@@ -95,20 +95,28 @@ class PicksTreeItemModel(BaseDictTreeItemModel):
         return self.path_to_item(tree_item) + [column - 1]
 
 
-class PicksTreeView(BaseDictTreeView):
+class GenericPicksTreeView(BaseDictTreeView):
+
+    dict_modified = Signal()
 
     def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
-                 parent=None):
+                 parent=None, model_class=GenericPicksTreeItemModel,
+                 model_class_kwargs=None):
         super().__init__(parent)
 
         self.canvas = canvas
         self.allow_hand_picking = True
-        self.all_picks_line = None
-        self.selected_picks_line = None
+        self.all_picks_line_artists = []
+        self.selected_picks_line_artists = []
         self.is_deleting_picks = False
-        self._show_all_picks = False
+        self._show_all_picks = True
+        self.new_line_name_generator = None
 
-        self.setModel(PicksTreeItemModel(dictionary, coords_type, self))
+        if model_class_kwargs is None:
+            model_class_kwargs = {}
+
+        self.setModel(model_class(dictionary, coords_type, self,
+                                  **model_class_kwargs))
 
         value_cols = [X_COL, Y_COL]
         all_cols = [KEY_COL] + value_cols
@@ -123,8 +131,9 @@ class PicksTreeView(BaseDictTreeView):
         self.set_extended_selection_mode()
         self.expand_rows()
 
-        self.setup_lines()
         self.setup_connections()
+
+        self.draw_picks()
 
     def setup_connections(self):
         self.selection_changed.connect(self.selection_was_changed)
@@ -135,30 +144,16 @@ class PicksTreeView(BaseDictTreeView):
             # Don't re-highlight and re-draw for every pick that is deleted
             return
 
-        self.highlight_selected_hkls()
+        self.highlight_selected_lines()
         self.draw_picks()
+
+    def highlight_selected_lines(self):
+        # Do nothing by default
+        pass
 
     def data_was_modified(self):
         self.draw_picks()
-
-    def clear_highlights(self):
-        for overlay in HexrdConfig().overlays:
-            overlay.clear_highlights()
-
-    def highlight_selected_hkls(self):
-        self.clear_highlights()
-
-        model = self.model()
-        for item in self.selected_items:
-            path = model.path_to_value(item, 0)
-            # Example: ['diamond powder', 'IMAGE-PLATE-2', '1 1 1', 1, -1]
-            overlay_name, detector_name, hkl_str, *others = path
-            overlay = Overlay.from_name(overlay_name)
-            hkl = hkl_str_to_array(hkl_str)
-            overlay.highlight_hkl(detector_name, hkl)
-
-        HexrdConfig().flag_overlay_updates_for_all_materials()
-        HexrdConfig().overlay_config_changed.emit()
+        self.dict_modified.emit()
 
     def delete_selected_picks(self):
         self.is_deleting_picks = True
@@ -173,20 +168,6 @@ class PicksTreeView(BaseDictTreeView):
         model = self.model()
         items_to_remove = []
         for item in self.selected_items:
-            path = model.path_to_item(item)
-            if len(path) == 3:
-                # It is a laue point. Just set it to nans.
-                left = model.createIndex(item.row(), 1, item)
-                right = model.createIndex(item.row(), 2, item)
-                model.setData(left, np.nan)
-                model.setData(right, np.nan)
-
-                # Flag it as changed
-                model.dataChanged.emit(left, right)
-                continue
-            elif len(path) != 4:
-                raise NotImplementedError(path)
-
             # These rows will actually be removed
             items_to_remove.append(item)
 
@@ -204,8 +185,10 @@ class PicksTreeView(BaseDictTreeView):
             return
 
         self._show_all_picks = b
-        self.update_line_colors()
         self.draw_picks()
+
+    def set_show_all_picks(self, b):
+        self.show_all_picks = b
 
     def draw_picks(self):
         self.clear_artists()
@@ -217,76 +200,120 @@ class PicksTreeView(BaseDictTreeView):
 
     @property
     def all_pick_items(self):
+        # Take self.all_pick_items_grouped and flatten them out
+        items = []
+        for group in self.all_pick_items_grouped.values():
+            items.extend(group)
+        return items
+
+    @property
+    def all_pick_items_grouped(self):
         # Recurse through all items and pull out all pick items
         # We assume an item is a pick item if it is not the root, and
         # it doesn't contain any None values.
-        items = []
+        # These items will be grouped by parent.
+        items = {}
 
         def recurse(parent):
+            group = []
             for child in parent.child_items:
                 if not any(x is None for x in child.data_list):
-                    items.append(child)
+                    group.append(child)
 
                 recurse(child)
+
+            if group:
+                items[parent] = group
 
         recurse(self.model().root_item)
         return items
 
-    def draw_all_picks(self):
-        if not self.show_all_picks:
-            return
+    @property
+    def selected_items_grouped(self):
+        selected_items = self.selected_items
+        if not selected_items:
+            # Return early
+            return {}
 
-        xys = [item.data_list[1:] for item in self.all_pick_items]
-        self.all_picks_line.set_data(list(zip(*xys)))
-        self.canvas.draw_idle()
+        # Use all the same keys as all_pick_items_grouped so that the colors
+        # from the cycler match up.
+        selected_grouped = {key: [] for key in self.all_pick_items_grouped}
+        for item in selected_items:
+            selected_grouped[item.parent_item].append(item)
 
-    def draw_selected_picks(self):
-        if not self.selected_items:
-            return
+        return selected_grouped
 
-        xys = [item.data_list[1:] for item in self.selected_items]
-        self.selected_picks_line.set_data(list(zip(*xys)))
-        self.canvas.draw_idle()
-
-    def clear_artists(self):
-        if self.all_picks_line:
-            self.all_picks_line.set_data([], [])
-
-        if self.selected_picks_line:
-            self.selected_picks_line.set_data([], [])
-
-        self.canvas.draw_idle()
-
-    def setup_lines(self):
-        if not self.canvas:
-            return
-
-        plot_kwargs = {
-            'color': 'b',
+    @property
+    def default_line_settings(self):
+        return {
             'marker': igor_marker,
             'markeredgecolor': 'black',
             'markersize': 16,
             'linestyle': 'None',
         }
 
-        if not self.all_picks_line:
-            # empty line
-            self.all_picks_line, = self.canvas.axis.plot([], [], **plot_kwargs)
+    @property
+    def highlighted_line_settings(self):
+        return {
+            'marker': igor_marker,
+            'markeredgecolor': 'yellow',
+            'markersize': 16,
+            'linestyle': 'None',
+        }
 
-        if not self.selected_picks_line:
-            # empty line
-            self.selected_picks_line, = self.canvas.axis.plot([], [],
-                                                              **plot_kwargs)
+    def create_color_cycler(self):
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        return cycle(prop_cycle.by_key()['color'])
 
-        self.update_line_colors()
+    def draw_all_picks(self):
+        if not self.show_all_picks:
+            return
 
-    def update_line_colors(self):
-        selected_picks_line_color = 'b'
+        line_settings = self.default_line_settings
+        color_cycler = self.create_color_cycler()
+
+        for group in self.all_pick_items_grouped.values():
+            line_settings['color'] = next(color_cycler)
+
+            xys = [item.data_list[1:] for item in group]
+            artist, = self.canvas.axis.plot(*list(zip(*xys)), **line_settings)
+            self.all_picks_line_artists.append(artist)
+
+        self.canvas.draw_idle()
+
+    def draw_selected_picks(self):
+        if not self.selected_items:
+            return
+
+        line_settings = self.default_line_settings
         if self.show_all_picks:
-            # Make the selected lines bright green instead
-            selected_picks_line_color = '#00ff13'
+            # Use highlighted line settings instead
+            line_settings = self.highlighted_line_settings
 
-        self.selected_picks_line.set_color(selected_picks_line_color)
+        color_cycler = self.create_color_cycler()
+
+        for group in self.selected_items_grouped.values():
+            # Always cycle to the next color, even if the group is empty,
+            # so that the colors will match up with all_pick_items_grouped
+            line_settings['color'] = next(color_cycler)
+
+            if not group:
+                continue
+
+            xys = [item.data_list[1:] for item in group]
+            artist, = self.canvas.axis.plot(*list(zip(*xys)), **line_settings)
+            self.selected_picks_line_artists.append(artist)
+
+        self.canvas.draw_idle()
+
+    def clear_artists(self):
+        while self.all_picks_line_artists:
+            self.all_picks_line_artists.pop(0).remove()
+
+        while self.selected_picks_line_artists:
+            self.selected_picks_line_artists.pop(0).remove()
+
+        self.canvas.draw_idle()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
@@ -300,11 +327,9 @@ class PicksTreeView(BaseDictTreeView):
         model = self.model()
         item = model.get_item(index)
         path = model.path_to_item(item)
-        powder_clicked = 'powder' in path[0]
-        hkl_clicked = len(path) == 3
-        powder_pick_clicked = len(path) == 4
-        hkl_str = path[2] if hkl_clicked or powder_pick_clicked else ''
-        laue_pick_clicked = hkl_clicked and not powder_clicked
+        line_name_clicked = len(path) == 1
+        point_clicked = len(path) == 2
+        line_name = str(path[0])
         selected_items = self.selected_items
         num_selected = len(selected_items)
         is_hand_pickable = self.is_hand_pickable
@@ -322,10 +347,10 @@ class PicksTreeView(BaseDictTreeView):
 
         # Context menu methods
         def insert_item():
-            if hkl_clicked:
+            if line_name_clicked:
                 position = 0
                 parent_item = item
-            elif powder_pick_clicked:
+            elif point_clicked:
                 position = path[-1]
                 parent_item = item.parent_item
             else:
@@ -340,16 +365,18 @@ class PicksTreeView(BaseDictTreeView):
 
             if is_hand_pickable:
                 # Go ahead and get the user to hand pick the point...
-                self.hand_pick_point(new_item, hkl_str)
+                self.hand_pick_point(new_item, line_name)
 
         def hand_pick_item():
-            self.hand_pick_point(item, hkl_str)
+            self.hand_pick_point(item, line_name)
 
         # Action logic
-        if powder_clicked and (hkl_clicked or powder_pick_clicked):
-            add_actions({'Insert': insert_item})
+        if line_name_clicked and self.can_add_lines:
+            add_actions({'Append new line': self.append_new_line})
 
-        if is_hand_pickable and (powder_pick_clicked or laue_pick_clicked):
+        add_actions({'Insert': insert_item})
+
+        if is_hand_pickable and point_clicked:
             add_actions({'Hand pick': hand_pick_item})
 
         if num_selected > 0:
@@ -377,7 +404,11 @@ class PicksTreeView(BaseDictTreeView):
     def is_hand_pickable(self):
         return self.allow_hand_picking and self.has_canvas
 
-    def hand_pick_point(self, item, hkl_str=''):
+    @property
+    def can_add_lines(self):
+        return self.new_line_name_generator and self.has_canvas
+
+    def hand_pick_point(self, item, pick_label=''):
         kwargs = {
             'canvas': self.canvas,
             'parent': self,
@@ -385,10 +416,8 @@ class PicksTreeView(BaseDictTreeView):
         }
 
         picker = LinePickerDialog(**kwargs)
-        picker.current_hkl_label = f'Current hkl:  {hkl_str}'
-
-        title = f'Pick point for:  {hkl_str}'
-        picker.ui.setWindowTitle(title)
+        picker.current_pick_label = pick_label
+        picker.ui.setWindowTitle(pick_label)
         picker.start()
 
         finished_func = partial(self.point_picked, item=item)
@@ -405,6 +434,42 @@ class PicksTreeView(BaseDictTreeView):
         # Flag it as changed
         model.dataChanged.emit(left, right)
 
+    def append_new_line(self):
+        name = self.new_line_name_generator()
+        config = self.model().config
+
+        if name in config:
+            msg = f'name {name} already exists in config! {list(config)}'
+            raise Exception(msg)
+
+        pick_label = f'Picking points for: {name}'
+        kwargs = {
+            'canvas': self.canvas,
+            'parent': self,
+        }
+
+        picker = LinePickerDialog(**kwargs)
+        picker.current_pick_label = pick_label
+        picker.ui.setWindowTitle(pick_label)
+        picker.ui.view_picks.setVisible(False)
+        picker.start()
+
+        def on_line_completed():
+            # Just accept it
+            picker.ui.accept()
+
+        accepted_func = partial(self.finished_appending_new_line,
+                                name=name, picker=picker)
+        picker.accepted.connect(accepted_func)
+        picker.line_completed.connect(on_line_completed)
+
+    def finished_appending_new_line(self, name, picker):
+        new_line = picker.line_data[0]
+        self.model().config[name] = new_line.tolist()
+        self.model().rebuild_tree()
+        self.draw_picks()
+        self.expand_rows()
+
     @property
     def coords_type(self):
         return self.model().coords_type
@@ -412,3 +477,44 @@ class PicksTreeView(BaseDictTreeView):
     @coords_type.setter
     def coords_type(self, v):
         self.model().coords_type = v
+
+
+class GenericPicksTreeViewDialog(QDialog):
+
+    dict_modified = Signal()
+
+    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
+                 parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('Edit Picks')
+
+        self.setLayout(QVBoxLayout(self))
+
+        self.tree_view = GenericPicksTreeView(dictionary, coords_type, canvas,
+                                              self)
+        self.layout().addWidget(self.tree_view)
+
+        # Add a checkbox for showing all
+        cb = QCheckBox('Show all picks', self)
+        cb.setChecked(self.tree_view.show_all_picks)
+        cb.toggled.connect(self.tree_view.set_show_all_picks)
+        self.layout().addWidget(cb)
+
+        # Add a button box for accept/cancel
+        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.button_box = QDialogButtonBox(buttons, self)
+        self.layout().addWidget(self.button_box)
+
+        self.resize(500, 500)
+
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.tree_view.dict_modified.connect(self.dict_modified.emit)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        self.finished.connect(self.on_finished)
+
+    def on_finished(self):
+        self.tree_view.clear_artists()

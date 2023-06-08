@@ -24,16 +24,6 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="1">
-    <widget class="QCheckBox" name="enable_width">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Enable Width</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1" colspan="4">
     <widget class="QPushButton" name="reflections_table">
      <property name="focusPolicy">
@@ -42,6 +32,28 @@
      <property name="text">
       <string>Reflections Table</string>
      </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QCheckBox" name="clip_with_panel_buffer">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clip any points that are in the panel buffer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Clip with panel buffer?</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1" colspan="4">
+    <widget class="QGroupBox" name="refinements_group">
+     <property name="title">
+      <string>Refinements</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QVBoxLayout" name="refinements_selector_layout"/>
+      </item>
+     </layout>
     </widget>
    </item>
    <item row="1" column="2" colspan="3">
@@ -81,17 +93,18 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1" colspan="4">
-    <widget class="QGroupBox" name="refinements_group">
-     <property name="title">
-      <string>Refinements</string>
+   <item row="6" column="1" colspan="4">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <layout class="QVBoxLayout" name="refinements_selector_layout"/>
-      </item>
-     </layout>
-    </widget>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="2" column="1" colspan="4">
     <widget class="QGroupBox" name="distortion_group">
@@ -255,429 +268,20 @@
          <attribute name="title">
           <string>Pinhole Camera Correction</string>
          </attribute>
-         <layout class="QGridLayout" name="gridLayout_3">
-          <item row="0" column="0">
-           <widget class="QLabel" name="pinhole_correction_type_label">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Correction Type:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="pinhole_correction_type">
-            <item>
-             <property name="text">
-              <string>Sample Layer</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Pinhole (Rygg)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Pinhole (JHE)</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="1" column="0" colspan="2">
-           <widget class="HiddenBarTabWidget" name="pinhole_correction_type_tab_widget">
-            <property name="currentIndex">
-             <number>1</number>
-            </property>
-            <widget class="QWidget" name="sample_layer_tab">
-             <attribute name="title">
-              <string>Sample Layer</string>
-             </attribute>
-             <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="0">
-               <widget class="QLabel" name="sl_layer_standoff_label">
-                <property name="text">
-                 <string>Layer Standoff</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="ScientificDoubleSpinBox" name="sl_layer_standoff">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="minimum">
-                 <double>0.100000000000000</double>
-                </property>
-                <property name="maximum">
-                 <double>10000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>150.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="sl_layer_thickness_label">
-                <property name="text">
-                 <string>Layer Thickness</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="ScientificDoubleSpinBox" name="sl_layer_thickness">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="minimum">
-                 <double>0.100000000000000</double>
-                </property>
-                <property name="maximum">
-                 <double>10000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>5.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="sl_pinhole_thickness_label">
-                <property name="text">
-                 <string>Pinhole Thickness</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="ScientificDoubleSpinBox" name="sl_pinhole_thickness">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="minimum">
-                 <double>0.100000000000000</double>
-                </property>
-                <property name="maximum">
-                 <double>10000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>100.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <spacer name="verticalSpacer_3">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>1</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-            </widget>
-            <widget class="QWidget" name="rygg_pinhole_correction_tab">
-             <attribute name="title">
-              <string>Pinhole (Rygg)</string>
-             </attribute>
-             <layout class="QGridLayout" name="gridLayout_5">
-              <item row="1" column="1">
-               <widget class="ScientificDoubleSpinBox" name="rph_thickness">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="maximum">
-                 <double>100000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>100.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1">
-               <spacer name="verticalSpacer_4">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>10</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="rph_thickness_label">
-                <property name="text">
-                 <string>Pinhole Thickness</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="rph_radius_label">
-                <property name="text">
-                 <string>Pinhole Radius</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="ScientificDoubleSpinBox" name="rph_radius">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="maximum">
-                 <double>100000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>200.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="rph_num_phi_elements_label">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of φ elements to use for integration.&lt;/p&gt;&lt;p&gt;Larger is more accurate, but also takes longer to compute.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of φ Elements&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0" colspan="3">
-               <widget class="QPushButton" name="rph_apply_panel_buffers">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Apply Panel Buffers from Pinhole Dimensions</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="QSpinBox" name="rph_num_phi_elements">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of φ elements to use for integration.&lt;/p&gt;&lt;p&gt;Larger is more accurate, but also takes longer to compute.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="minimum">
-                 <number>1</number>
-                </property>
-                <property name="maximum">
-                 <number>10000</number>
-                </property>
-                <property name="value">
-                 <number>60</number>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-            <widget class="QWidget" name="jhe_pinhole_correction_tab">
-             <attribute name="title">
-              <string>Pinhole (JHE)</string>
-             </attribute>
-             <layout class="QGridLayout" name="gridLayout_7">
-              <item row="0" column="0">
-               <widget class="QLabel" name="jph_radius_label">
-                <property name="text">
-                 <string>Pinhole Radius</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="jph_thickness_label">
-                <property name="text">
-                 <string>Pinhole Thickness</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="ScientificDoubleSpinBox" name="jph_radius">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="maximum">
-                 <double>100000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>200.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="ScientificDoubleSpinBox" name="jph_thickness">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>30</height>
-                 </size>
-                </property>
-                <property name="keyboardTracking">
-                 <bool>false</bool>
-                </property>
-                <property name="suffix">
-                 <string> μm</string>
-                </property>
-                <property name="decimals">
-                 <number>8</number>
-                </property>
-                <property name="maximum">
-                 <double>100000000.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>0.010000000000000</double>
-                </property>
-                <property name="value">
-                 <double>100.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0" colspan="2">
-               <widget class="QPushButton" name="jph_apply_panel_buffers">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Apply Panel Buffers from Pinhole Dimensions</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </widget>
-          </item>
-         </layout>
+         <layout class="QVBoxLayout" name="distortion_pinhole_correction_layout"/>
         </widget>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
-   <item row="6" column="1" colspan="4">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="3" column="1">
-    <widget class="QCheckBox" name="clip_with_panel_buffer">
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="enable_width">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clip any points that are in the panel buffer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enable 2θ width for the overlay's material.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Clip with panel buffer?</string>
+      <string>Enable Width</string>
      </property>
     </widget>
    </item>
@@ -704,18 +308,6 @@
   <tabstop>offset_0</tabstop>
   <tabstop>offset_1</tabstop>
   <tabstop>offset_2</tabstop>
-  <tabstop>pinhole_correction_type</tabstop>
-  <tabstop>pinhole_correction_type_tab_widget</tabstop>
-  <tabstop>sl_layer_standoff</tabstop>
-  <tabstop>sl_layer_thickness</tabstop>
-  <tabstop>sl_pinhole_thickness</tabstop>
-  <tabstop>rph_radius</tabstop>
-  <tabstop>rph_thickness</tabstop>
-  <tabstop>rph_num_phi_elements</tabstop>
-  <tabstop>rph_apply_panel_buffers</tabstop>
-  <tabstop>jph_radius</tabstop>
-  <tabstop>jph_thickness</tabstop>
-  <tabstop>jph_apply_panel_buffers</tabstop>
   <tabstop>clip_with_panel_buffer</tabstop>
  </tabstops>
  <resources/>
@@ -733,22 +325,6 @@
     <hint type="destinationlabel">
      <x>405</x>
      <y>241</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pinhole_correction_type</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>pinhole_correction_type_tab_widget</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>476</x>
-     <y>192</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>405</x>
-     <y>276</y>
     </hint>
    </hints>
   </connection>

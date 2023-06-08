@@ -38,6 +38,7 @@ class ZoomCanvas(FigureCanvas):
             'linewidth': 1,
         }
         self.main_cursor = MainCanvasCursor(self.main_axis, **kwargs)
+        self.cursor = None
 
         self.draw_crosshairs = draw_crosshairs
 
@@ -50,7 +51,7 @@ class ZoomCanvas(FigureCanvas):
         ax = self.main_canvas.axis
         self.box_overlay_line, = ax.plot([], [], 'm-', animated=True)
         self.crosshairs = None
-        self.vhlines = None
+        self.vhlines = []
         self.disabled = False
 
         # user-specified ROI in degrees (from interactors)
@@ -161,6 +162,31 @@ class ZoomCanvas(FigureCanvas):
         self.ydata = event.ydata
 
         self.render()
+
+    @property
+    def cursor_color(self):
+        return self.main_cursor_color
+
+    @property
+    def main_cursor_color(self):
+        return self.main_cursor.linev.get_color()
+
+    @cursor_color.setter
+    def cursor_color(self, color):
+        to_set = [
+            self.main_cursor.linev,
+            self.main_cursor.lineh,
+            self.crosshairs,
+            *self.vhlines,
+        ]
+        if self.cursor:
+            to_set += [self.cursor.linev, self.cursor.lineh]
+
+        for artist in to_set:
+            if artist is None:
+                continue
+
+            artist.set_color(color)
 
     @property
     def display_sums_in_subplots(self):
@@ -317,7 +343,8 @@ class ZoomCanvas(FigureCanvas):
             a1.label_outer()
             a3.label_outer()
             a3.tick_params(labelbottom=True)  # Label bottom anyways for a3
-            self.cursor = Cursor(a1, useblit=True, color='red', linewidth=1)
+            self.cursor = Cursor(a1, useblit=True, color=self.cursor_color,
+                                 linewidth=1)
             im2, = a2.plot([], [])
             im3, = a3.plot([], [])
             self.figure.suptitle(r"ROI zoom")
@@ -325,14 +352,15 @@ class ZoomCanvas(FigureCanvas):
             a2.set_ylabel(r"intensity")
             a1.set_ylabel(r"$\eta$ [deg]")
             a3.set_xlabel(r"intensity")
-            self.crosshairs = a1.plot([], [], 'r-')[0]
+            self.crosshairs = a1.plot([], [], self.cursor_color,
+                                      linestyle='-')[0]
             self.axes = [a1, a2, a3]
             self.axes_images = [im1, im2, im3]
             self.grid = grid
 
             # These are vertical and horizontal lines on the integral axes
-            vline = a2.axvline(0, color='red', linewidth=1)
-            hline = a3.axhline(0, color='red', linewidth=1)
+            vline = a2.axvline(0, color=self.cursor_color, linewidth=1)
+            hline = a3.axhline(0, color=self.cursor_color, linewidth=1)
             self.vhlines = [vline, hline]
 
             self.update_subplots()

@@ -95,15 +95,15 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
     dict_modified = Signal()
 
-    def __init__(self, dictionary, columns, parent=None):
+    def __init__(self, dictionary, columns, parent=None,
+                 model_class=MultiColumnDictTreeItemModel):
         super().__init__(parent)
 
         # Set this to the needed check/uncheck index to allow for context
         # menu actions "Check All" and "Uncheck All"
         self.check_selection_index = None
 
-        self.setModel(MultiColumnDictTreeItemModel(dictionary, columns,
-                                                   parent=self))
+        self.setModel(model_class(dictionary, columns, parent=self))
 
         self.resizeColumnToContents(0)
         self.header().resizeSection(0, 200)
@@ -228,9 +228,17 @@ class MultiColumnDictTreeView(BaseDictTreeView):
         self.model().dict_modified.connect(self.dict_modified.emit)
 
     def reset_gui(self):
+        # Save the vertical scroll bar position if we can
+        sb = self.verticalScrollBar()
+        prev_pos = sb.value()
+
+        # Reset the gui now
         self.rebuild_tree()
         self.open_persistent_editors()
         self.expand_rows()
+
+        # Restore the vertical scroll bar position
+        sb.setValue(prev_pos)
 
 
 class MultiColumnDictTreeViewDialog(QDialog):
@@ -242,7 +250,8 @@ class MultiColumnDictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.tree_view = MultiColumnDictTreeView(dictionary, columns, self)
+        self.tree_view = MultiColumnDictTreeView(dictionary, columns,
+                                                 parent=self)
         self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)
