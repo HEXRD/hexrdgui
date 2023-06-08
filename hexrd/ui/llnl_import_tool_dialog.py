@@ -523,6 +523,7 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().recent_images = self.loaded_images
 
         self.close_widget()
+        self.ui.instrument.setDisabled(False)
         self.parent().action_show_toolbar.setEnabled(True)
         self.parent().action_show_toolbar.setChecked(True)
         self.cmap.block_updates(False)
