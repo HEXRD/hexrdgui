@@ -23,7 +23,7 @@ from hexrd.ui.constants import (
     UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
 import hexrd.ui.resources.calibration
 
-from hexrd.ui.utils import instr_to_internal_dict
+from hexrd.ui.utils import instr_to_internal_dict, block_signals
 from hexrd.ui.utils.dialog import add_help_url
 
 
@@ -147,6 +147,7 @@ class LLNLImportToolDialog(QObject):
             HexrdConfig().show_beam_marker = False
 
         self.reset_panel()
+        HexrdConfig().restore_instrument_config_backup()
         self.detectors.clear()
         self.detector_defaults.clear()
 
@@ -462,7 +463,6 @@ class LLNLImportToolDialog(QObject):
         self.config_file = None
         self.import_in_progress = False
         self.loaded_images.clear()
-        HexrdConfig().restore_instrument_config_backup()
 
     def completed(self):
         self.import_in_progress = False
@@ -523,6 +523,7 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().recent_images = self.loaded_images
 
         self.close_widget()
+        self.ui.instrument.setDisabled(False)
         self.parent().action_show_toolbar.setEnabled(True)
         self.parent().action_show_toolbar.setChecked(True)
         self.cmap.block_updates(False)
@@ -531,8 +532,13 @@ class LLNLImportToolDialog(QObject):
         self.ui.show()
 
     def close_widget(self):
-        self.ui.instruments.setCurrentIndex(0)
-        self.reset_panel()
+        block_list = [
+            self.ui.instruments,
+            self.ui.detectors
+        ]
+        with block_signals(*block_list):
+            self.ui.instruments.setCurrentIndex(0)
+            self.reset_panel()
         if self.ui.isFloating():
             self.ui.close()
 
