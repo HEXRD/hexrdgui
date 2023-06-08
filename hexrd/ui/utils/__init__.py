@@ -486,7 +486,7 @@ def convert_panel_buffer_to_2d_array(panel):
     # Take whatever the panel buffer is and convert it to a 2D array
     if panel.panel_buffer is None:
         # Just make a panel buffer with all True values
-        panel.panel_buffer = np.ones(panel.shape, dtype=np.bool)
+        panel.panel_buffer = np.ones(panel.shape, dtype=bool)
     elif panel.panel_buffer.shape == (2,):
         # The two floats are specifying the borders in mm for x and y.
         # Convert to pixel borders. Swap x and y so we have i, j in pixels.
@@ -496,7 +496,7 @@ def convert_panel_buffer_to_2d_array(panel):
         ]).astype(int)
 
         # Convert to array
-        panel_buffer = np.zeros(panel.shape, dtype=np.bool)
+        panel_buffer = np.zeros(panel.shape, dtype=bool)
 
         # We can't do `-borders[i]` since that doesn't work for 0,
         # so we must do `panel.shape[i] - borders[i]` instead.
