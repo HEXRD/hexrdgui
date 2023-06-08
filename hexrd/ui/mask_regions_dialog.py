@@ -155,7 +155,45 @@ class MaskRegionsDialog(QObject):
         self.axes = event.inaxes
 
     def axes_exited(self, event):
+        # If we are drawing a rectangle and we are close to the canvas edges,
+        # snap it into place.
+        self.snap_rectangle_to_edges(event)
         self.axes = None
+
+    def snap_rectangle_to_edges(self, event):
+        if not self.drawing_axes or self.selection != 'Rectangle':
+            # We are either not still drawing or it is not a rectangle
+            return
+
+        # Snap the rectangle to the borders
+        tth_min = HexrdConfig().polar_res_tth_min
+        tth_max = HexrdConfig().polar_res_tth_max
+        eta_min = HexrdConfig().polar_res_eta_min
+        eta_max = HexrdConfig().polar_res_eta_max
+
+        tth_range = tth_max - tth_min
+        eta_range = eta_max - eta_min
+
+        # If the mouse pointer is closer than 1% to any edges,
+        # snap the coordinates over and update the patch.
+        any_changes = False
+        tol = 0.01
+        if abs(event.xdata - tth_min) / tth_range < tol:
+            event.xdata = tth_min
+            any_changes = True
+        elif abs(event.xdata - tth_max) / tth_range < tol:
+            event.xdata = tth_max
+            any_changes = True
+        if abs(event.ydata - eta_min) / eta_range < tol:
+            event.ydata = eta_min
+            any_changes = True
+        elif abs(event.ydata - eta_max) / eta_range < tol:
+            event.ydata = eta_max
+            any_changes = True
+
+        if any_changes:
+            # Trigger another drag motion event where we move the borders
+            self.drag_motion(event)
 
     def button_pressed(self, event):
         if self.image_mode not in (ViewType.raw, ViewType.polar):
