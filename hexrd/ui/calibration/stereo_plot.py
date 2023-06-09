@@ -170,8 +170,11 @@ class InstrumentViewer:
         self.pv.warp_all_images()
 
     def reapply_masks(self):
-        if self.pv:
-            return self.pv.reapply_masks()
+        if not self.pv or not self.project_from_polar:
+            return
+
+        self.pv.reapply_masks()
+        self.draw_stereo_from_polar()
 
     def fill_image_with_nans(self):
         # If the image is a masked array, fill it with nans
