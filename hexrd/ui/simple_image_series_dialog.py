@@ -158,8 +158,6 @@ class SimpleImageSeriesDialog(QObject):
 
     def agg_changed(self):
         self.state['agg'] = self.ui.aggregation.currentIndex()
-        if self.ui.aggregation.currentIndex() == UI_AGG_INDEX_NONE:
-            HexrdConfig().reset_unagg_imgs()
         self.enable_read()
 
     def trans_changed(self):
