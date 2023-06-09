@@ -144,6 +144,7 @@ class PowderRunner(QObject):
         buttons = standard_buttons.Yes | standard_buttons.No
         box = QMessageBox(QMessageBox.Question, 'HEXRD', msg, buttons,
                           self.parent)
+        box.setWindowFlags(box.windowFlags() | Qt.Tool)
         box.setWindowModality(Qt.NonModal)
 
         # Add a checkbox
