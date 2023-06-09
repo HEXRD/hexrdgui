@@ -197,6 +197,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             self.add_omega_metadata(HexrdConfig().imageseries_dict)
             if 'agg' in self.state and self.state['agg']:
                 self.display_aggregation(HexrdConfig().imageseries_dict)
+            else:
+                HexrdConfig().reset_unagg_imgs()
 
         self.update_progress(100)
 
