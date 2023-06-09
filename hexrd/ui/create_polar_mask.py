@@ -2,7 +2,7 @@ import numpy as np
 
 from skimage.draw import polygon
 
-from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+from hexrd.ui.create_hedm_instrument import create_view_hedm_instrument
 from hexrd.ui.calibration.polarview import PolarView
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import add_sample_points
@@ -14,7 +14,7 @@ def convert_raw_to_polar(det, line):
     # looks correct.
     line = add_sample_points(line, 300)
 
-    instr = create_hedm_instrument()
+    instr = create_view_hedm_instrument()
     kwargs = {
         'ij': line,
         'panel': instr.detectors[det],

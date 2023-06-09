@@ -2,13 +2,14 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-import copy
 from hexrd import constants as ct
 from hexrd.rotations import mapAngle
 from hexrd.transforms.xfcapi import detectorXYToGvec
 
 from hexrd.ui.constants import ViewType
-from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+from hexrd.ui.create_hedm_instrument import (
+    create_hedm_instrument, create_view_hedm_instrument
+)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import update_overlay_data
 from hexrd.ui.utils.conversions import angles_to_stereo
@@ -30,8 +31,7 @@ class InstrumentViewer:
         self.instr = create_hedm_instrument()
 
         # This instrument has a VISAR view and is used to generate the image
-        self.instr_pv = copy.deepcopy(self.instr)
-        self.instr_pv.beam_vector = ct.beam_vec
+        self.instr_pv = create_view_hedm_instrument()
         self.pv = None
         self.img = None
 
