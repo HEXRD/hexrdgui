@@ -347,10 +347,16 @@ class FitGrainsOptionsDialog(QObject):
 
     @selected_material.setter
     def selected_material(self, name):
-        if name is None or name not in self.material_options:
+        if (
+            name is None or
+            name not in self.material_options or
+            name == self.selected_material
+        ):
             return
 
         self.ui.material.setCurrentText(name)
+        # Make sure these things get updated
+        self.selected_material_changed()
 
     @property
     def material(self):
