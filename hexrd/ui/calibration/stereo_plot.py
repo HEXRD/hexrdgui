@@ -169,6 +169,10 @@ class InstrumentViewer:
         self.pv = PolarView(self.instr_pv)
         self.pv.warp_all_images()
 
+    def reapply_masks(self):
+        if self.pv:
+            return self.pv.reapply_masks()
+
     def fill_image_with_nans(self):
         # If the image is a masked array, fill it with nans
         if isinstance(self.img, np.ma.masked_array):
