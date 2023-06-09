@@ -27,7 +27,6 @@ def project_intensity_detector(det,
                                interp_obj):
     tth, eta = np.degrees(det.pixel_angles())
     eta = mapAngle(eta, (0, 360.0), units='degrees')
-    #np.mod(eta, 360)
     xi = (eta, tth)
     return interp_obj(xi)
 
