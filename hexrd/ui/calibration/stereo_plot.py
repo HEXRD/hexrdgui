@@ -38,7 +38,7 @@ class InstrumentViewer:
 
     @property
     def extent(self):
-        return [0, self.stereo_size, self.stereo_size, 0]
+        return [0, self.stereo_size, 0, self.stereo_size]
 
     @property
     def raw_img_dict(self):
