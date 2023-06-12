@@ -112,7 +112,6 @@ class MainWindow(QObject):
         self.ui.color_map_dock_widgets.layout().addWidget(
             self.color_map_editor.ui)
 
-        self.image_mode = ViewType.raw
         self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
         self.ui.image_mode_dock_widgets.layout().addWidget(
             self.image_mode_widget.ui)
@@ -1193,6 +1192,14 @@ class MainWindow(QObject):
         # If we made it here, they should be enabled.
         for action in actions:
             action.setEnabled(True)
+
+    @property
+    def image_mode(self):
+        return HexrdConfig().image_mode
+
+    @image_mode.setter
+    def image_mode(self, b):
+        HexrdConfig().image_mode = b
 
     @property
     def _menu_item_tooltips(self):

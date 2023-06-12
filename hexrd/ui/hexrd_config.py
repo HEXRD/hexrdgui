@@ -291,6 +291,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
         self.default_cmap = constants.DEFAULT_CMAP
         self._previous_structureless_calibration_picks_data = None
+        self.image_mode = constants.ViewType.raw
 
         self.setup_logging()
 

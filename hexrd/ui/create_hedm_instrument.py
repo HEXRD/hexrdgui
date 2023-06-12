@@ -1,5 +1,7 @@
+from hexrd import constants as ct
 from hexrd.instrument import HEDMInstrument
 
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 
 
@@ -24,3 +26,14 @@ def create_hedm_instrument():
         kwargs['max_workers'] = HexrdConfig().max_cpus
 
     return HEDMInstrument(**kwargs)
+
+
+def create_view_hedm_instrument():
+    # Some views use a modified version of the HEDM instrument.
+    # This ensures the correct instrument for the view is used.
+    instr = create_hedm_instrument()
+    if HexrdConfig().image_mode == ViewType.stereo:
+        # Set the beam vector for the VISAR view
+        instr.beam_vector = ct.beam_vec
+
+    return instr
