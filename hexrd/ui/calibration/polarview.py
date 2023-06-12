@@ -5,18 +5,19 @@ from skimage.filters.edges import binary_erosion
 from skimage.morphology import rectangle
 from skimage.transform import warp
 
-from hexrd.transforms.xfcapi import detectorXYToGvec, mapAngle
-from hexrd.utils.decorators import memoize
+from hexrd.transforms.xfcapi import mapAngle
 
 from hexrd import constants as ct
-from hexrd.xrdutil import _project_on_detector_plane, \
-_project_on_detector_cylinder
+from hexrd.xrdutil import (
+    _project_on_detector_plane, _project_on_detector_cylinder
+)
 from hexrd import instrument
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
 tvec_c = ct.zeros_3
+
 
 def sqrt_scale_img(img):
     fimg = np.array(img, dtype=float)
@@ -516,4 +517,3 @@ def project_on_detector(angular_grid,
     xypts[on_plane] = valid_xys
 
     return xypts
-

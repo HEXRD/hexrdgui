@@ -4,7 +4,6 @@ import h5py
 import numpy as np
 from hexrd import constants as ct
 from hexrd.rotations import mapAngle
-from hexrd.transforms.xfcapi import detectorXYToGvec
 
 from hexrd.ui.constants import ViewType
 from hexrd.ui.create_hedm_instrument import (
@@ -12,7 +11,7 @@ from hexrd.ui.create_hedm_instrument import (
 )
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import update_overlay_data
-from hexrd.ui.utils.conversions import angles_to_stereo
+from hexrd.ui.utils.conversions import angles_to_stereo, cart_to_angles
 
 from .polarview import PolarView
 from .stereo_project import stereo_project, stereo_projection_of_polar_view
@@ -50,6 +49,10 @@ class InstrumentViewer:
         return HexrdConfig().stereo_size
 
     @property
+    def eta_period(self):
+        return HexrdConfig().polar_res_eta_period
+
+    @property
     def project_from_polar(self):
         return HexrdConfig().stereo_project_from_polar
 
@@ -72,17 +75,8 @@ class InstrumentViewer:
 
         # Convert each border to angles, then stereo
         for i, border in enumerate(borders):
-            angles, _ = detectorXYToGvec(
-                border, panel.rmat, ct.identity_3x3,
-                panel.tvec, ct.zeros_3, ct.zeros_3,
-                beamVec=panel.bvec, etaVec=panel.evec)
-            angles = np.asarray(angles)
-
-            # Swap positions of tth and eta
-            angles[:, [0, 1]] = angles[:, [1, 0]]
-
-            # Need to transpose angles before and after
-            borders[i] = angles_to_stereo(angles.T, self.instr_pv,
+            angles = np.radians(cart_to_angles(border, panel, self.eta_period))
+            borders[i] = angles_to_stereo(angles, self.instr_pv,
                                           self.stereo_size).T
 
         return borders
@@ -126,11 +120,11 @@ class InstrumentViewer:
 
     def pad_etas_pvarray(self, eta_grid, polar_img):
         start = np.array([eta_grid[-1] - 360])
-        end   = np.array([360 + eta_grid[0]])
+        end = np.array([360 + eta_grid[0]])
         eta_grid = np.concatenate((start, eta_grid, end))
 
-        pstart = np.atleast_2d(polar_img[-1,:])
-        pstop  = np.atleast_2d(polar_img[0,:])
+        pstart = np.atleast_2d(polar_img[-1, :])
+        pstop = np.atleast_2d(polar_img[0, :])
         polar_img = np.vstack((pstart, polar_img, pstop))
         return eta_grid, polar_img
 
@@ -153,7 +147,7 @@ class InstrumentViewer:
         eta_grid, idx, mask = self.prep_eta_grid(eta_grid)
 
         polar_img = polar_img[idx, :]
-        polar_img = polar_img[mask,:]
+        polar_img = polar_img[mask, :]
 
         eta_grid, polar_img = self.pad_etas_pvarray(eta_grid, polar_img)
 
