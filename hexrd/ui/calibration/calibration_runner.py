@@ -84,6 +84,10 @@ class CalibrationRunner(QObject):
         if np.count_nonzero(flags) == 0:
             raise Exception('There are no refinable parameters')
 
+    def enable_focus_mode(self, b):
+        HexrdConfig().enable_canvas_focus_mode.emit(b)
+        HexrdConfig().enable_canvas_toolbar.emit(not b)
+
     def clear_all_overlay_picks(self):
         for overlay in self.active_overlays:
             overlay.reset_calibration_picks()
@@ -185,6 +189,9 @@ class CalibrationRunner(QObject):
         picker.view_picks.connect(self.on_view_picks_clicked)
         picker.accepted.connect(self.finish_line)
 
+        # Enable focus mode during line picking
+        self.enable_focus_mode(True)
+
     def load_pick_points(self):
         overlay = self.active_overlay
 
@@ -279,10 +286,16 @@ class CalibrationRunner(QObject):
         finished_func = partial(self.finished_viewing_picks, **kwargs)
         dialog.ui.finished.connect(finished_func)
 
+        # Make sure focus mode is enabled while viewing the picks
+        self.enable_focus_mode(True)
+
         return dialog
 
     def finished_viewing_picks(self, result, dialog, highlighting,
                                prev_visibilities):
+        # Turn off focus mode (which may be turned back on if the line picker
+        # will reappear)
+        self.enable_focus_mode(False)
         # Update all of the picks with the modified data
         updated_picks = tree_format_to_picks(dialog.dictionary)
         for i, new_picks in enumerate(updated_picks):
@@ -425,6 +438,7 @@ class CalibrationRunner(QObject):
         self.restore_state()
 
     def restore_state(self):
+        self.enable_focus_mode(False)
         self.restore_overlay_visibilities()
         self.remove_all_highlighting()
 
@@ -634,6 +648,8 @@ class CalibrationRunner(QObject):
         if self.line_picker:
             self.line_picker.disabled = b
             self.line_picker.ui.setVisible(not b)
+            # Make sure focus mode is enabled while the line picker is visible
+            self.enable_focus_mode(True)
 
     def enable_line_picker(self):
         self.disable_line_picker(False)

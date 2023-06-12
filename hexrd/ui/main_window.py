@@ -1023,6 +1023,11 @@ class MainWindow(QObject):
     def on_enable_canvas_toolbar(self, b):
         prev_state_name = '_previous_action_show_toolbar_state'
         w = self.ui.action_show_toolbar
+
+        if b == w.isEnabled():
+            # It already matches, just ignore
+            return
+
         w.setEnabled(b)
         if not b:
             setattr(self, prev_state_name, w.isChecked())
