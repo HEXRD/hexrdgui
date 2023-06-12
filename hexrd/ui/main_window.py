@@ -289,6 +289,8 @@ class MainWindow(QObject):
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
         HexrdConfig().raw_masks_changed.connect(self.update_all)
+        HexrdConfig().enable_canvas_toolbar.connect(
+            self.on_enable_canvas_toolbar)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -1017,6 +1019,17 @@ class MainWindow(QObject):
         # Only perform an update if we have live updates enabled
         if HexrdConfig().live_update:
             self.update_all()
+
+    def on_enable_canvas_toolbar(self, b):
+        prev_state_name = '_previous_action_show_toolbar_state'
+        w = self.ui.action_show_toolbar
+        w.setEnabled(b)
+        if not b:
+            setattr(self, prev_state_name, w.isChecked())
+            w.setChecked(False)
+        else:
+            checked = getattr(self, prev_state_name, True)
+            w.setChecked(checked)
 
     def show_beam_marker_toggled(self, b):
         HexrdConfig().show_beam_marker = b
