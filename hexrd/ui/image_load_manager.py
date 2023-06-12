@@ -305,6 +305,9 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         # Remember unaggregated images
         HexrdConfig().set_unagg_images()
 
+        # Make sure this is reset to 0
+        HexrdConfig().current_imageseries_idx = 0
+
         if self.state['agg'] == UI_AGG_INDEX_MAXIMUM:
             agg_func = imageseries.stats.max_iter
         elif self.state['agg'] == UI_AGG_INDEX_MEDIAN:
