@@ -226,6 +226,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when image mode widget should be enabled/disabled"""
     enable_image_mode_widget = Signal(bool)
 
+    """Emitted with the navigation toolbar should be enabled/disabled"""
+    enable_canvas_toolbar = Signal(bool)
+
     """Emitted when image mode widget needs to be in a certain mode"""
     set_image_mode_widget_tab = Signal(str)
 

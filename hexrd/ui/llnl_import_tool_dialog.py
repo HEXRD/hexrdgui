@@ -152,7 +152,7 @@ class LLNLImportToolDialog(QObject):
         self.detector_defaults.clear()
 
         if self.instrument is None:
-            self.parent().action_show_toolbar.setChecked(True)
+            HexrdConfig().enable_canvas_toolbar.emit(True)
         else:
             self.import_in_progress = True
             HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
@@ -161,7 +161,7 @@ class LLNLImportToolDialog(QObject):
             self.enable_widgets(self.ui.raw_image, self.ui.config,
                                 self.ui.file_selection, self.ui.finalize,
                                 enabled=True)
-            self.parent().action_show_toolbar.setChecked(False)
+            HexrdConfig().enable_canvas_toolbar.emit(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
             self.update_config_selection(self.ui.config_selection.currentIndex())
@@ -524,8 +524,7 @@ class LLNLImportToolDialog(QObject):
 
         self.close_widget()
         self.ui.instrument.setDisabled(False)
-        self.parent().action_show_toolbar.setEnabled(True)
-        self.parent().action_show_toolbar.setChecked(True)
+        HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
 
     def show(self):
