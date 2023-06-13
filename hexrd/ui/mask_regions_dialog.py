@@ -174,25 +174,28 @@ class MaskRegionsDialog(QObject):
         tth_range = tth_max - tth_min
         eta_range = eta_max - eta_min
 
+        eta_pixel_size = HexrdConfig().polar_pixel_size_eta
+        tth_pixel_size = HexrdConfig().polar_pixel_size_tth
+
         # If the mouse pointer is closer than 1% to any edges,
         # snap the coordinates over and update the patch.
         any_changes = False
         tol = 0.01
         if abs(event.xdata - tth_min) / tth_range < tol:
             # Add a small buffer so it isn't out of bounds by accident
-            event.xdata = tth_min + 1e-15
+            event.xdata = tth_min + tth_pixel_size / 2
             any_changes = True
         elif abs(event.xdata - tth_max) / tth_range < tol:
             # Subtract a small buffer so it isn't out of bounds by accident
-            event.xdata = tth_max - 1e-15
+            event.xdata = tth_max - tth_pixel_size / 2
             any_changes = True
         if abs(event.ydata - eta_min) / eta_range < tol:
             # Add a small buffer so it doesn't wrap around by accident
-            event.ydata = eta_min + 1e-7
+            event.ydata = eta_min + eta_pixel_size / 2
             any_changes = True
         elif abs(event.ydata - eta_max) / eta_range < tol:
             # Subtract a small buffer so it doesn't wrap around by accident
-            event.ydata = eta_max - 1e-7
+            event.ydata = eta_max - eta_pixel_size / 2
             any_changes = True
 
         if any_changes:
