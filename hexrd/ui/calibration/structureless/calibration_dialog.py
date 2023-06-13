@@ -10,6 +10,7 @@ from hexrd.ui.tree_views.multi_column_dict_tree_view import (
 )
 from hexrd.ui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.utils.dialog import add_help_url
 
 import hexrd.ui.resources.calibration
 
@@ -38,6 +39,7 @@ class StructurelessCalibrationDialog(QObject):
                                    parent)
 
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
+        add_help_url(self.ui.button_box, 'calibration/structureless/')
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         editor = self.pinhole_correction_editor

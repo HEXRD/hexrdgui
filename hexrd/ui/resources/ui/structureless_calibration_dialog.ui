@@ -14,25 +14,6 @@
    <string>Structureless Calibration Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="2" column="0">
-    <widget class="QGroupBox" name="canvas_settings_group">
-     <property name="title">
-      <string>Canvas Settings</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="draw_picks">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Draw the picks on the main canvas. These pick positions are stored in detector Cartesian coordinates, and their positions will be updated automatically as detector parameters get modified.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Draw picks?</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="2" column="1">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
@@ -69,12 +50,132 @@
      </layout>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QGroupBox" name="pinhole_distortion_group">
+   <item row="10" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="button_layout">
+     <item>
+      <widget class="QDialogButtonBox" name="button_box">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Help</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="undo_run_button">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Undo the last &amp;quot;Run&amp;quot; performed. This revert both the instrument settings and parameter settings to what they were right before &amp;quot;Run&amp;quot; was clicked.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This button may be clicked multiple times if multiple runs were performed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Undo Run</string>
+       </property>
+       <property name="icon">
+        <iconset theme="reload">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="button_layout_spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="run_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the calibration using the selected parameters and options.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Results will be printed to the messages dialog, and the canvas will update automatically with the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;A run may be undone by clicking &amp;quot;Undo Run&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+       <property name="icon">
+        <iconset theme="dialog-ok">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="canvas_settings_group">
      <property name="title">
-      <string>Pinhole Distortion</string>
+      <string>Canvas Settings</string>
      </property>
-     <layout class="QVBoxLayout" name="pinhole_distortion_layout"/>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="draw_picks">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Draw the picks on the main canvas. These pick positions are stored in detector Cartesian coordinates, and their positions will be updated automatically as detector parameters get modified.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Draw picks?</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <layout class="QVBoxLayout" name="tree_view_layout"/>
+   </item>
+   <item row="7" column="0" colspan="2">
+    <widget class="QGroupBox" name="picks_group">
+     <property name="title">
+      <string>Picks</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="2">
+       <widget class="QPushButton" name="load_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Load Picks</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="save_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Save Picks</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="edit_picks_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the picks editor to edit the picks. Picks may be added, deleted, or edited (either by hand picking a new point or manually entering coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Edit Picks</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item row="9" column="0" colspan="2">
@@ -303,107 +404,19 @@ See scipy.optimize.least_squares for more details.</string>
      </layout>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
-    <layout class="QVBoxLayout" name="tree_view_layout"/>
-   </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QGroupBox" name="picks_group">
-     <property name="title">
-      <string>Picks</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <item row="0" column="2">
-       <widget class="QPushButton" name="load_picks_button">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Load Picks</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="save_picks_button">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Save Picks</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="edit_picks_button">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the picks editor to edit the picks. Picks may be added, deleted, or edited (either by hand picking a new point or manually entering coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Edit Picks</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="10" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="button_layout">
-     <item>
-      <widget class="QPushButton" name="undo_run_button">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Undo the last &amp;quot;Run&amp;quot; performed. This revert both the instrument settings and parameter settings to what they were right before &amp;quot;Run&amp;quot; was clicked.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This button may be clicked multiple times if multiple runs were performed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Undo Run</string>
-       </property>
-       <property name="icon">
-        <iconset theme="reload">
-         <normaloff>.</normaloff>.</iconset>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="button_layout_spacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="run_button">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the calibration using the selected parameters and options.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Results will be printed to the messages dialog, and the canvas will update automatically with the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;A run may be undone by clicking &amp;quot;Undo Run&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Run</string>
-       </property>
-       <property name="icon">
-        <iconset theme="dialog-ok">
-         <normaloff>.</normaloff>.</iconset>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
    <item row="8" column="0">
     <widget class="QCheckBox" name="show_advanced_options">
      <property name="text">
       <string>Show Advanced Options</string>
      </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QGroupBox" name="pinhole_distortion_group">
+     <property name="title">
+      <string>Pinhole Distortion</string>
+     </property>
+     <layout class="QVBoxLayout" name="pinhole_distortion_layout"/>
     </widget>
    </item>
   </layout>
@@ -429,7 +442,6 @@ See scipy.optimize.least_squares for more details.</string>
   <tabstop>max_nfev</tabstop>
   <tabstop>jac</tabstop>
   <tabstop>method</tabstop>
-  <tabstop>undo_run_button</tabstop>
   <tabstop>run_button</tabstop>
  </tabstops>
  <resources/>
