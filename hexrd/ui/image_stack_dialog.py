@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 
 from PySide2.QtCore import QObject, Signal, Qt
-from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
+from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -82,6 +82,7 @@ class ImageStackDialog(QObject):
         self.ui.add_omega.setChecked(self.state['add_omega_data'])
         self.ui.total_frames.setText(
             str(self.state['total_frames'] * file_count))
+        self.update_files_tree()
         self.set_ranges(
             self.state['total_frames'],
             int(self.state[self.detector]['file_count']))
@@ -162,6 +163,7 @@ class ImageStackDialog(QObject):
             if files := list(Path(directory).glob(search)):
                 files = [f for f in files if f.is_file()]
                 self.state[det]['files'] = sorted([str(f) for f in files])
+                self.update_files_tree()
                 self.state[det]['file_count'] = len(files)
                 ims = ImageFileManager().open_file(str(files[0]))
                 frames = len(ims) if len(ims) else 1
@@ -184,8 +186,6 @@ class ImageStackDialog(QObject):
         self.ui.single_detector.setChecked(not checked)
         self.ui.search_directories.setEnabled(checked)
         self.ui.detector_search.setEnabled(checked)
-        search_files = self.ui.files_by_search.isChecked()
-        self.ui.detectors.setDisabled(checked and search_files)
         self.ui.select_directory.setDisabled(checked)
 
     def select_omega_file(self):
@@ -219,6 +219,7 @@ class ImageStackDialog(QObject):
             return
         self.detector = det
         self.setup_gui()
+        self.ui.current_directory.setText(self.state[det]['directory'])
         if self.state['apply_to_all']:
             self.state[det]['search'] = self.ui.search_text.text()
 
@@ -230,11 +231,10 @@ class ImageStackDialog(QObject):
     def file_selection_changed(self, checked):
         self.state['manual_file'] = checked
         self.ui.select_files.setEnabled(checked)
-        single_detector = self.ui.single_detector.isChecked()
-        self.ui.detectors.setEnabled(checked or single_detector)
         self.ui.search_text.setDisabled(checked)
         self.ui.search.setDisabled(checked)
         self.ui.apply_to_all.setDisabled(checked)
+        self.update_files_tree()
 
     def select_files_manually(self, files):
         if not files:
@@ -250,6 +250,7 @@ class ImageStackDialog(QObject):
             self.set_ranges(frames, len(files))
             self.state['total_frames'] = frames
             self.total_frames()
+        self.update_files_tree()
 
     def find_previous_images(self, files):
         try:
@@ -265,7 +266,7 @@ class ImageStackDialog(QObject):
                 f'directory path is correct and that images still exist.')
             QMessageBox.warning(self.parent(), 'HEXRD', msg)
             for det in self.detectors:
-                self.state[det]['files'] = ''
+                self.state[det]['files'] = []
                 self.state[det]['file_count'] = 0
 
     def add_wedge(self):
@@ -291,11 +292,11 @@ class ImageStackDialog(QObject):
         directory = Path(pattern).resolve()
         if directory.is_dir():
             for det in self.detectors:
-                if (directory / det).resolve().exists():
-                    directory = directory / det
                 self.state[det]['directory'] = str(directory)
+                if (directory / det).resolve().exists():
+                    self.state[det]['directory'] = str(directory / det)
                 if det == self.ui.detectors.currentText():
-                    self.ui.current_directory.setText(str(directory))
+                    self.ui.current_directory.setText(self.state[det]['directory'])
         else:
             msg = (f'Could not find directory:\n{pattern}')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
@@ -309,9 +310,10 @@ class ImageStackDialog(QObject):
 
     def clear_selected_files(self):
         for det in self.detectors:
-            self.state[det]['files'].clear()
+            self.state[det]['files'] = []
             self.state[det]['file_count'] = 0
         self.ui.file_count.setText('0')
+        self.update_files_tree()
         self.clear_images.emit()
 
     def add_omega_toggled(self, checked):
@@ -486,3 +488,14 @@ class ImageStackDialog(QObject):
         self.ui.detectors.clear()
         self.ui.detectors.addItems(self.detectors)
         self.setup_gui()
+
+    def update_files_tree(self):
+        self.ui.files_found.clear()
+        for det in self.state['dets']:
+            parent = QTreeWidgetItem(self.ui.files_found)
+            parent.setText(0, det)
+            for f in self.state[det]['files']:
+                child = QTreeWidgetItem(parent)
+                child.setText(0, Path(f).name)
+                parent.addChild(child)
+            self.ui.files_found.expandItem(parent)
