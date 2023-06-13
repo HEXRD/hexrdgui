@@ -39,8 +39,10 @@ def create_polar_mask(name, line_data):
     # Generate masks from line data
     final_mask = np.ones(shape, dtype=bool)
     for line in line_data:
-        tth = np.asarray([point[0] for point in line])
-        eta = np.asarray([point[1] for point in line])
+        # Remove any nans
+        line = line[~np.isnan(line.min(axis=1))]
+        tth = line[:, 0]
+        eta = line[:, 1]
 
         j_col = np.floor((tth - np.degrees(pv.tth_min)) / pv.tth_pixel_size)
         i_row = np.floor((eta - np.degrees(pv.eta_min)) / pv.eta_pixel_size)
