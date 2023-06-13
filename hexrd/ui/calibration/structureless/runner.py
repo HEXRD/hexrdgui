@@ -18,6 +18,7 @@ from hexrd.ui.select_item_dialog import SelectItemDialog
 from hexrd.ui.tree_views import GenericPicksTreeViewDialog
 from hexrd.ui.utils import instr_to_internal_dict
 from hexrd.ui.utils.conversions import angles_to_cart, cart_to_angles
+from hexrd.ui.utils.dialog import add_help_url
 from hexrd.ui.utils.guess_instrument_type import guess_instrument_type
 from hexrd.ui.utils.tth_distortion import apply_tth_distortion_if_needed
 
@@ -135,6 +136,9 @@ class StructurelessCalibrationRunner(QObject):
 
         self.line_picker = picker
         picker.ui.setWindowTitle('Structureless Calibration')
+
+        # Add the help url
+        add_help_url(picker.ui.button_box, 'calibration/structureless/')
 
         # We don't support viewing these yet, so hide it
         picker.ui.view_picks.setVisible(False)
