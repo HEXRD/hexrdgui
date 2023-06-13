@@ -6,20 +6,20 @@ beam:
 oscillation stage:
   chi: instr_chi
   translation:
-    𝑋: instr_tvec_x
-    𝑌: instr_tvec_y
-    𝑍: instr_tvec_z
+    X: instr_tvec_x
+    Y: instr_tvec_y
+    Z: instr_tvec_z
 detectors:
   '{det}':
     transform:
       tilt:
-        𝑍: '{det}_euler_z'
-        𝑋′: '{det}_euler_xp'
-        𝑍′′: '{det}_euler_zpp'
+        Z: '{det}_euler_z'
+        "X'": '{det}_euler_xp'
+        "Z''": '{det}_euler_zpp'
       translation:
-        𝑋: '{det}_tvec_x'
-        𝑌: '{det}_tvec_y'
-        𝑍: '{det}_tvec_z'
+        X: '{det}_tvec_x'
+        Y: '{det}_tvec_y'
+        Z: '{det}_tvec_z'
     radius: '{det}_radius'
   distortion parameters:
 Debye-Scherrer ring means:
