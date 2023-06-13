@@ -1,4 +1,4 @@
-![platforms](https://anaconda.org/hexrd/hexrdgui/badges/platforms.svg) ![current version](https://anaconda.org/hexrd/hexrdgui/badges/version.svg) ![last updated](https://anaconda.org/hexrd/hexrdgui/badges/latest_release_relative_date.svg) ![downloads](https://anaconda.org/hexrd/hexrdgui/badges/downloads.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8034774.svg)](https://doi.org/10.5281/zenodo.8034774) ![platforms](https://anaconda.org/hexrd/hexrdgui/badges/platforms.svg) ![current version](https://anaconda.org/hexrd/hexrdgui/badges/version.svg) ![last updated](https://anaconda.org/hexrd/hexrdgui/badges/latest_release_relative_date.svg) ![downloads](https://anaconda.org/hexrd/hexrdgui/badges/downloads.svg)
 
 ![image](https://user-images.githubusercontent.com/1154130/199154866-f46c7847-9e7f-456f-9c14-962144f8958c.png)
 
