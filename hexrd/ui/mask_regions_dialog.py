@@ -179,16 +179,20 @@ class MaskRegionsDialog(QObject):
         any_changes = False
         tol = 0.01
         if abs(event.xdata - tth_min) / tth_range < tol:
-            event.xdata = tth_min
+            # Add a small buffer so it isn't out of bounds by accident
+            event.xdata = tth_min + 1e-15
             any_changes = True
         elif abs(event.xdata - tth_max) / tth_range < tol:
-            event.xdata = tth_max
+            # Subtract a small buffer so it isn't out of bounds by accident
+            event.xdata = tth_max - 1e-15
             any_changes = True
         if abs(event.ydata - eta_min) / eta_range < tol:
-            event.ydata = eta_min
+            # Add a small buffer so it doesn't wrap around by accident
+            event.ydata = eta_min + 1e-7
             any_changes = True
         elif abs(event.ydata - eta_max) / eta_range < tol:
-            event.ydata = eta_max
+            # Subtract a small buffer so it doesn't wrap around by accident
+            event.ydata = eta_max - 1e-7
             any_changes = True
 
         if any_changes:
