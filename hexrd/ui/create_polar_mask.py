@@ -34,7 +34,7 @@ def create_polar_mask(name, line_data):
     # If any consecutive pixel coordinates for the mask are greater than this
     # distance apart (in eta), then that means the mask is being split
     # above/below the image, and we need to split the mask up.
-    eta_max_pix_diff = num_pix_eta / 2
+    eta_max_pix_diff = num_pix_eta * 0.95
 
     # Generate masks from line data
     final_mask = np.ones(shape, dtype=bool)
@@ -46,10 +46,14 @@ def create_polar_mask(name, line_data):
         i_row = np.floor((eta - np.degrees(pv.eta_min)) / pv.eta_pixel_size)
 
         gaps, = np.nonzero(np.abs(np.diff(i_row)) > eta_max_pix_diff)
-        if gaps.size == 0:
-            # Just one mask
-            masks = [_pixel_perimeter_to_mask(i_row, j_col, shape)]
-        else:
+
+        if gaps.size == 1:
+            # Add an extra gap at the second biggest gap
+            idx = eta.shape[0] - 3
+            second_biggest_gap, = np.where(np.argsort(np.diff(eta)) == idx)
+            gaps = np.sort(np.hstack((gaps, second_biggest_gap)))
+
+        if gaps.size == 2:
             # This mask is split between the top and bottom of the image.
             # We need to split it up into two polygons.
 
@@ -68,6 +72,9 @@ def create_polar_mask(name, line_data):
                 _pixel_perimeter_to_mask(i_row1, j_col1, shape),
                 _pixel_perimeter_to_mask(i_row2, j_col2, shape),
             ]
+        else:
+            # Just one mask
+            masks = [_pixel_perimeter_to_mask(i_row, j_col, shape)]
 
         for mask in masks:
             final_mask = np.logical_and(final_mask, mask)
