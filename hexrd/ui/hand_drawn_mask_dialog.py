@@ -18,7 +18,7 @@ class HandDrawnMaskDialog(QObject):
     finished = Signal(list, list)
 
     def __init__(self, canvas, parent):
-        super(HandDrawnMaskDialog, self).__init__(parent)
+        super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('hand_drawn_mask_dialog.ui', parent)

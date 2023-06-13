@@ -59,7 +59,6 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
             # Go ahead and get rid of nan coordinates. They cause trouble
             # with scikit image's polygon.
             raw = raw[~np.isnan(raw.min(axis=1))]
-
             raw_line_data.append((key, raw))
 
     return raw_line_data
