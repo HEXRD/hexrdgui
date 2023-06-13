@@ -144,6 +144,7 @@ class ImageStackDialog(QObject):
         self.ui.current_directory.setToolTip(d)
         if not self.state['manual_file'] and self.state['apply_to_all']:
             self.search_directory(self.detector)
+        self.update_frames()
 
     def search(self):
         if self.ui.apply_to_all.isChecked() and self.ui.files_by_search.isChecked():
@@ -151,6 +152,7 @@ class ImageStackDialog(QObject):
                 self.search_directory(det)
         else:
             self.search_directory(self.detector)
+        self.update_frames()
 
     def search_directory(self, det):
         self.state[det]['search'] = self.ui.search_text.text()
@@ -165,13 +167,16 @@ class ImageStackDialog(QObject):
                 self.state[det]['files'] = sorted([str(f) for f in files])
                 self.update_files_tree()
                 self.state[det]['file_count'] = len(files)
-                ims = ImageFileManager().open_file(str(files[0]))
-                frames = len(ims) if len(ims) else 1
-                self.ui.total_frames.setText(str(frames))
                 self.ui.file_count.setText(str(len(files)))
-                self.set_ranges(frames, len(files))
-                self.state['total_frames'] = frames
-                self.total_frames()
+
+    def update_frames(self):
+        files = self.state[self.detector]['files']
+        ims = ImageFileManager().open_file(str(files[0]))
+        frames = len(ims) if len(ims) else 1
+        self.ui.total_frames.setText(str(frames))
+        self.set_ranges(frames, len(files))
+        self.state['total_frames'] = frames
+        self.total_frames()
 
     def load_omega_from_file(self, checked):
         self.state['omega_from_file'] = checked
