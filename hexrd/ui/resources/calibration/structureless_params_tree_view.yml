@@ -21,7 +21,7 @@ detectors:
         Y: '{det}_tvec_y'
         Z: '{det}_tvec_z'
     radius: '{det}_radius'
-  distortion parameters:
+    distortion parameters:
 Debye-Scherrer ring means:
 engineering constraints:
   distance between plates: tardis_distance_between_plates
