@@ -241,11 +241,11 @@ class ImageStackDialog(QObject):
         self.ui.apply_to_all.setDisabled(checked)
         self.update_files_tree()
 
-    def select_files_manually(self, files):
-        if not files:
-            files, selected_filter = QFileDialog.getOpenFileNames(
-                self.ui, 'Select file(s)',
-                dir=self.state[self.detector]['directory'])
+    def select_files_manually(self):
+        files, selected_filter = QFileDialog.getOpenFileNames(
+            self.ui, 'Select file(s)',
+            dir=self.state[self.detector]['directory'])
+        if files:
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
             ims = ImageFileManager().open_file(str(files[0]))
