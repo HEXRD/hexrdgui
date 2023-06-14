@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 
 from PySide2.QtCore import QObject, Signal, Qt
-from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem
+from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem, QAbstractItemView
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -180,11 +180,15 @@ class ImageStackDialog(QObject):
 
     def load_omega_from_file(self, checked):
         self.state['omega_from_file'] = checked
-        self.ui.omega_wedges.setDisabled(checked)
+        self.ui.omega_wedges.setDisabled(False)
         self.ui.add_wedge.setDisabled(checked)
         self.ui.clear_wedges.setDisabled(checked)
         self.ui.load_omega_file.setEnabled(checked)
         self.ui.omega_file.setEnabled(checked)
+        if checked:
+            self.ui.omega_wedges.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        else:
+            self.ui.omega_wedges.setEditTriggers(QAbstractItemView.AllEditTriggers)
 
     def detector_selection(self, checked):
         self.state['all_detectors'] = checked
@@ -199,6 +203,9 @@ class ImageStackDialog(QObject):
             HexrdConfig().images_dir, 'NPY files (*.npy)')
         self.ui.omega_file.setText(omega_file)
         self.state['omega'] = omega_file
+        wedges = np.load(omega_file, allow_pickle=False)
+        for wedge in wedges:
+            self.add_wedge(wedge=wedge)
 
     def set_empty_frames(self, value):
         self.state['empty_frames'] = value
@@ -274,18 +281,27 @@ class ImageStackDialog(QObject):
                 self.state[det]['files'] = []
                 self.state[det]['file_count'] = 0
 
-    def add_wedge(self):
+    def add_wedge(self, checked=False, wedge=None):
         row = self.ui.omega_wedges.rowCount()
         self.ui.omega_wedges.insertRow(row)
-        self.ui.omega_wedges.setFocus()
-        self.ui.omega_wedges.setCurrentCell(row, 0)
-        self.state['wedges'].append([0, 0, 0])
+        if wedge is None:
+            self.ui.omega_wedges.setFocus()
+            self.ui.omega_wedges.setCurrentCell(row, 0)
+            self.state['wedges'].append([0, 0, 0])
+        else:
+            for idx, val in enumerate(wedge):
+                self.ui.omega_wedges.setItem(row, idx, QTableWidgetItem(f'{val}'))
 
     def clear_wedges(self):
         self.ui.omega_wedges.setRowCount(0)
         self.state['wedges'].clear()
 
     def update_wedges(self, row, column):
+        if self.state['omega_from_file'] and self.state['omega']:
+            # User loaded values from file. We are just populating the
+            # table for inspection, no need to duplicate values in state.
+            return
+
         if value := self.ui.omega_wedges.item(row, column).text():
             data = float(value)
             self.state['wedges'][row][column] = data
@@ -324,6 +340,7 @@ class ImageStackDialog(QObject):
     def add_omega_toggled(self, checked):
         self.state['add_omega_data'] = checked
         self.ui.omega_from_file.setEnabled(checked)
+        self.ui.omega_wedges.setEnabled(checked)
         if checked:
             self.load_omega_from_file(self.ui.omega_from_file.isChecked())
         else:
