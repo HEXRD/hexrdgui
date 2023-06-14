@@ -6,6 +6,17 @@
 
 See [the installing documentation](https://hexrdgui.readthedocs.io/en/latest/installing/).
 
+# Citing
+
+We are very glad you found our software helpful for your research! In order
+for us to keep track of the impact our software is having, can you please
+cite us in your papers?
+
+See [Citing HEXRDGUI](https://hexrdgui.readthedocs.io/en/latest/citing/#hexrdgui)
+for more information.
+
+# Conda Packaging
+
 ## PRs
 
 PRs are built using the [`hexrd-prerelease`](https://anaconda.org/hexrd/repo/files?type=any&label=hexrd-prerelease) label on the [HEXRD](https://anaconda.org/hexrd) conda channel
