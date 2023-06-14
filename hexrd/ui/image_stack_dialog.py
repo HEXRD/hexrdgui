@@ -4,12 +4,13 @@ import numpy as np
 from pathlib import Path
 
 from PySide2.QtCore import QObject, Signal, Qt
-from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
+from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem, QAbstractItemView
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.image_file_manager import ImageFileManager
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class ImageStackDialog(QObject):
@@ -23,6 +24,9 @@ class ImageStackDialog(QObject):
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/images/#image-stack')
 
         self.simple_image_series_dialog = simple_image_series_dialog
         self.detectors = HexrdConfig().detector_names
@@ -82,6 +86,7 @@ class ImageStackDialog(QObject):
         self.ui.add_omega.setChecked(self.state['add_omega_data'])
         self.ui.total_frames.setText(
             str(self.state['total_frames'] * file_count))
+        self.update_files_tree()
         self.set_ranges(
             self.state['total_frames'],
             int(self.state[self.detector]['file_count']))
@@ -143,6 +148,7 @@ class ImageStackDialog(QObject):
         self.ui.current_directory.setToolTip(d)
         if not self.state['manual_file'] and self.state['apply_to_all']:
             self.search_directory(self.detector)
+        self.update_frames()
 
     def search(self):
         if self.ui.apply_to_all.isChecked() and self.ui.files_by_search.isChecked():
@@ -150,6 +156,8 @@ class ImageStackDialog(QObject):
                 self.search_directory(det)
         else:
             self.search_directory(self.detector)
+        self.update_frames()
+        self.update_files_tree()
 
     def search_directory(self, det):
         self.state[det]['search'] = self.ui.search_text.text()
@@ -163,29 +171,36 @@ class ImageStackDialog(QObject):
                 files = [f for f in files if f.is_file()]
                 self.state[det]['files'] = sorted([str(f) for f in files])
                 self.state[det]['file_count'] = len(files)
-                ims = ImageFileManager().open_file(str(files[0]))
-                frames = len(ims) if len(ims) else 1
-                self.ui.total_frames.setText(str(frames))
                 self.ui.file_count.setText(str(len(files)))
-                self.set_ranges(frames, len(files))
-                self.state['total_frames'] = frames
-                self.total_frames()
+
+    def update_frames(self):
+        files = self.state[self.detector]['files']
+        frames = 0
+        if files:
+            ims = ImageFileManager().open_file(str(files[0]))
+            frames = len(ims) if len(ims) else 1
+        self.ui.total_frames.setText(str(frames))
+        self.set_ranges(frames, len(files))
+        self.state['total_frames'] = frames
+        self.total_frames()
 
     def load_omega_from_file(self, checked):
         self.state['omega_from_file'] = checked
-        self.ui.omega_wedges.setDisabled(checked)
+        self.ui.omega_wedges.setDisabled(False)
         self.ui.add_wedge.setDisabled(checked)
         self.ui.clear_wedges.setDisabled(checked)
         self.ui.load_omega_file.setEnabled(checked)
         self.ui.omega_file.setEnabled(checked)
+        if checked:
+            self.ui.omega_wedges.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        else:
+            self.ui.omega_wedges.setEditTriggers(QAbstractItemView.AllEditTriggers)
 
     def detector_selection(self, checked):
         self.state['all_detectors'] = checked
         self.ui.single_detector.setChecked(not checked)
         self.ui.search_directories.setEnabled(checked)
         self.ui.detector_search.setEnabled(checked)
-        search_files = self.ui.files_by_search.isChecked()
-        self.ui.detectors.setDisabled(checked and search_files)
         self.ui.select_directory.setDisabled(checked)
 
     def select_omega_file(self):
@@ -194,6 +209,9 @@ class ImageStackDialog(QObject):
             HexrdConfig().images_dir, 'NPY files (*.npy)')
         self.ui.omega_file.setText(omega_file)
         self.state['omega'] = omega_file
+        wedges = np.load(omega_file)
+        for wedge in wedges:
+            self.add_wedge(wedge=wedge)
 
     def set_empty_frames(self, value):
         self.state['empty_frames'] = value
@@ -219,28 +237,28 @@ class ImageStackDialog(QObject):
             return
         self.detector = det
         self.setup_gui()
+        self.ui.current_directory.setText(self.state[det]['directory'])
         if self.state['apply_to_all']:
             self.state[det]['search'] = self.ui.search_text.text()
 
     def set_ranges(self, frames, num_files):
-        self.ui.empty_frames.setMaximum(frames - 1)
+        self.ui.empty_frames.setMaximum(max(frames - 1, 0))
         self.ui.max_file_frames.setMaximum(frames)
         self.ui.max_total_frames.setMaximum(frames * num_files)
 
     def file_selection_changed(self, checked):
         self.state['manual_file'] = checked
         self.ui.select_files.setEnabled(checked)
-        single_detector = self.ui.single_detector.isChecked()
-        self.ui.detectors.setEnabled(checked or single_detector)
         self.ui.search_text.setDisabled(checked)
         self.ui.search.setDisabled(checked)
         self.ui.apply_to_all.setDisabled(checked)
+        self.update_files_tree()
 
-    def select_files_manually(self, files):
-        if not files:
-            files, selected_filter = QFileDialog.getOpenFileNames(
-                self.ui, 'Select file(s)',
-                dir=self.state[self.detector]['directory'])
+    def select_files_manually(self):
+        files, selected_filter = QFileDialog.getOpenFileNames(
+            self.ui, 'Select file(s)',
+            dir=self.state[self.detector]['directory'])
+        if files:
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
             ims = ImageFileManager().open_file(str(files[0]))
@@ -250,6 +268,7 @@ class ImageStackDialog(QObject):
             self.set_ranges(frames, len(files))
             self.state['total_frames'] = frames
             self.total_frames()
+        self.update_files_tree()
 
     def find_previous_images(self, files):
         try:
@@ -265,21 +284,30 @@ class ImageStackDialog(QObject):
                 f'directory path is correct and that images still exist.')
             QMessageBox.warning(self.parent(), 'HEXRD', msg)
             for det in self.detectors:
-                self.state[det]['files'] = ''
+                self.state[det]['files'] = []
                 self.state[det]['file_count'] = 0
 
-    def add_wedge(self):
+    def add_wedge(self, checked=False, wedge=None):
         row = self.ui.omega_wedges.rowCount()
         self.ui.omega_wedges.insertRow(row)
-        self.ui.omega_wedges.setFocus()
-        self.ui.omega_wedges.setCurrentCell(row, 0)
-        self.state['wedges'].append([0, 0, 0])
+        if wedge is None:
+            self.ui.omega_wedges.setFocus()
+            self.ui.omega_wedges.setCurrentCell(row, 0)
+            self.state['wedges'].append([0, 0, 0])
+        else:
+            for idx, val in enumerate(wedge):
+                self.ui.omega_wedges.setItem(row, idx, QTableWidgetItem(f'{val}'))
 
     def clear_wedges(self):
         self.ui.omega_wedges.setRowCount(0)
         self.state['wedges'].clear()
 
     def update_wedges(self, row, column):
+        if self.state['omega_from_file'] and self.state['omega']:
+            # User loaded values from file. We are just populating the
+            # table for inspection, no need to duplicate values in state.
+            return
+
         if value := self.ui.omega_wedges.item(row, column).text():
             data = float(value)
             self.state['wedges'][row][column] = data
@@ -288,14 +316,14 @@ class ImageStackDialog(QObject):
 
     def search_directories(self):
         pattern = self.ui.detector_search.text()
-        if Path(pattern).is_dir():
-            p = pattern
+        directory = Path(pattern).resolve()
+        if directory.is_dir():
             for det in self.detectors:
-                if Path(f'{pattern}/{det}').exists():
-                    p = f'{pattern}/{det}'
-                self.state[det]['directory'] = p
+                self.state[det]['directory'] = str(directory)
+                if (directory / det).resolve().exists():
+                    self.state[det]['directory'] = str(directory / det)
                 if det == self.ui.detectors.currentText():
-                    self.ui.current_directory.setText(p)
+                    self.ui.current_directory.setText(self.state[det]['directory'])
         else:
             msg = (f'Could not find directory:\n{pattern}')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
@@ -303,20 +331,22 @@ class ImageStackDialog(QObject):
     def get_files(self):
         imgs = []
         for det in self.detectors:
-            imgs.append(self.state[det]['files'])
+            imgs.append(sorted(self.state[det]['files']))
         num_files = len(imgs[0])
         return imgs, num_files
 
     def clear_selected_files(self):
         for det in self.detectors:
-            self.state[det]['files'].clear()
+            self.state[det]['files'] = []
             self.state[det]['file_count'] = 0
         self.ui.file_count.setText('0')
+        self.update_files_tree()
         self.clear_images.emit()
 
     def add_omega_toggled(self, checked):
         self.state['add_omega_data'] = checked
         self.ui.omega_from_file.setEnabled(checked)
+        self.ui.omega_wedges.setEnabled(checked)
         if checked:
             self.load_omega_from_file(self.ui.omega_from_file.isChecked())
         else:
@@ -415,55 +445,63 @@ class ImageStackDialog(QObject):
         self.simple_image_series_dialog.show()
 
     def check_steps(self):
-        if self.ui.omega_from_file.isChecked():
-            return (-1, -1) if self.state['omega'] else (0, 0)
+        # Make sure that the wedges are correct
+        err = None
         steps = 0
-        for i in range(self.ui.omega_wedges.rowCount()):
-            for j in range(self.ui.omega_wedges.columnCount()):
-                if not self.ui.omega_wedges.item(i, j).text():
-                    return -1
-            steps += int(float(self.ui.omega_wedges.item(i, 2).text()))
-        file_count = int(self.ui.file_count.text())
-        empty_frames = self.ui.empty_frames.value() * file_count
-        total_frames = int(self.ui.total_frames.text()) - empty_frames
-        if self.ui.max_total_frames.value() != 0:
-            total_frames = min(total_frames, self.ui.max_total_frames.value())
-        if self.ui.max_file_frames.value() != 0:
-            total_frames = min(
-                total_frames, self.ui.max_file_frames.value() * file_count)
-        return (steps, total_frames) if total_frames != steps else (-1, -1)
+        if self.ui.no_omega.isChecked():
+            # We will compute the omega data, assume
+            # the steps and total frames are correct
+            steps = int(self.ui.total_frames.text())
+        else:
+            if self.ui.omega_from_file.isChecked():
+                try:
+                    wedges = np.load(self.state['omega'])
+                    steps = sum(wedges[:, 2:3].flatten())
+                except FileNotFoundError:
+                    err = 'Invalid omega file selected.'
+            else:
+                for row in range(self.ui.omega_wedges.rowCount()):
+                    try:
+                        self.ui.omega_wedges.item(row, 0).text()
+                        self.ui.omega_wedges.item(row, 1).text()
+                        steps_str = self.ui.omega_wedges.item(row, 2).text()
+                        steps += int(float(steps_str))
+                    except (AttributeError, ValueError):
+                        err = 'Empty or invalid entry in omega wedges table.'
+        return steps, err
 
     def check_data(self):
-        f, d = [], []
-        steps, total_frames = self.check_steps()
+        steps, err = self.check_steps()
+        total_frames = int(self.ui.total_frames.text())
+        if err:
+            QMessageBox.warning(None, 'HEXRD', err)
+            return
+
+        counts = []
+        directories = []
         for det in self.detectors:
-            f.append(self.state[det]['file_count'])
-            d.append(self.state[det]['directory'])
-        if dets := [det for det in d if not det]:
+            counts.append(self.state[det]['file_count'])
+            directories.append(self.state[det]['directory'])
+        if dets := [det for det in directories if not det]:
             msg = (
-                f'The directory have not been set for '
+                f'The directory has not been set for '
                 f'the following detector(s):\n{" ".join(dets)}.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
-        elif idx := [i for i, n in enumerate(f) if f[0] == 0]:
-            msg = (f'No files have been selected for the detectors.')
+        elif any([c == 0 for c in counts]):
+            msg = (f'Files have not been selected for all detectors.')
             QMessageBox.warning(None, 'HEXRD', msg)
             return
-        elif idx := [i for i, n in enumerate(f) if f[0] != n]:
-            dets = [self.state['dets'][i] for i in idx]
-            msg = (
-                f'The number of files for each detector must match. '
-                f'The following detector(s) do not:\n{" ".join(dets)}')
+        elif any([c for c in counts if counts[0] != c]):
+            msg = (f'The number of files for each detector must match.')
             QMessageBox.warning(None, 'HEXRD', msg)
             return
-        elif steps >= 0 and self.state['add_omega_data']:
-            if steps > 0:
-                msg = (
-                    f'The total number of steps must be equal to the '
-                    f'total number of frames: {steps} total steps, '
-                    f'{total_frames} total frames.')
-            else:
-                msg = f'The omega wedges are incomplete.'
+        elif steps != total_frames:
+            msg = (f'''
+                   The total number of steps must be equal to the total
+                   number of frames:
+                   {steps} total steps, {total_frames} total frames.
+                   ''')
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         self.build_data()
@@ -486,3 +524,15 @@ class ImageStackDialog(QObject):
         self.ui.detectors.clear()
         self.ui.detectors.addItems(self.detectors)
         self.setup_gui()
+
+    def update_files_tree(self):
+        self.ui.files_found.clear()
+        for det in self.state['dets']:
+            parent = QTreeWidgetItem(self.ui.files_found)
+            files = self.state[det]['files']
+            parent.setText(0, f'{det} ({len(files)} files)')
+            for f in files:
+                child = QTreeWidgetItem(parent)
+                child.setText(0, Path(f).name)
+                child.setText(1, f'{self.frames_per_image}')
+            self.ui.files_found.expandItem(parent)
