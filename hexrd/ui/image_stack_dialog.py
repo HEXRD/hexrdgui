@@ -10,6 +10,7 @@ from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.image_file_manager import ImageFileManager
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class ImageStackDialog(QObject):
@@ -23,6 +24,9 @@ class ImageStackDialog(QObject):
         self.ui = loader.load_file('image_stack_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/images/#image-stack')
 
         self.simple_image_series_dialog = simple_image_series_dialog
         self.detectors = HexrdConfig().detector_names
