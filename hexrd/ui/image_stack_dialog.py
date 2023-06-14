@@ -153,6 +153,7 @@ class ImageStackDialog(QObject):
         else:
             self.search_directory(self.detector)
         self.update_frames()
+        self.update_files_tree()
 
     def search_directory(self, det):
         self.state[det]['search'] = self.ui.search_text.text()
@@ -165,7 +166,6 @@ class ImageStackDialog(QObject):
             if files := list(Path(directory).glob(search)):
                 files = [f for f in files if f.is_file()]
                 self.state[det]['files'] = sorted([str(f) for f in files])
-                self.update_files_tree()
                 self.state[det]['file_count'] = len(files)
                 self.ui.file_count.setText(str(len(files)))
 
@@ -439,23 +439,30 @@ class ImageStackDialog(QObject):
         self.simple_image_series_dialog.show()
 
     def check_steps(self):
-        if self.ui.omega_from_file.isChecked():
-            return (-1, -1) if self.state['omega'] else (0, 0)
+        # Make sure that the wedges are correct
+        err = None
         steps = 0
-        for i in range(self.ui.omega_wedges.rowCount()):
-            for j in range(self.ui.omega_wedges.columnCount()):
-                if not self.ui.omega_wedges.item(i, j).text():
-                    return -1
-            steps += int(float(self.ui.omega_wedges.item(i, 2).text()))
-        file_count = int(self.ui.file_count.text())
-        empty_frames = self.ui.empty_frames.value() * file_count
-        total_frames = int(self.ui.total_frames.text()) - empty_frames
-        if self.ui.max_total_frames.value() != 0:
-            total_frames = min(total_frames, self.ui.max_total_frames.value())
-        if self.ui.max_file_frames.value() != 0:
-            total_frames = min(
-                total_frames, self.ui.max_file_frames.value() * file_count)
-        return (steps, total_frames) if total_frames != steps else (-1, -1)
+        if self.ui.no_omega.isChecked():
+            # We will compute the omega data, assume
+            # the steps and total frames are correct
+            steps = int(self.ui.total_frames.text())
+        else:
+            if self.ui.omega_from_file.isChecked():
+                try:
+                    wedges = np.load(self.state['omega'])
+                    steps = sum(wedges[:, 2:3].flatten())
+                except FileNotFoundError:
+                    err = 'Invalid omega file selected.'
+            else:
+                for row in range(self.ui.omega_wedges.rowCount()):
+                    try:
+                        self.ui.omega_wedges.item(row, 0).text()
+                        self.ui.omega_wedges.item(row, 1).text()
+                        steps_str = self.ui.omega_wedges.item(row, 2).text()
+                        steps += int(float(steps_str))
+                    except (AttributeError, ValueError):
+                        err = 'Empty or invalid entry in omega wedges table.'
+        return steps, err
 
     def check_data(self):
         f, d = [], []
@@ -515,10 +522,10 @@ class ImageStackDialog(QObject):
         self.ui.files_found.clear()
         for det in self.state['dets']:
             parent = QTreeWidgetItem(self.ui.files_found)
-            parent.setText(0, det)
-            for f in self.state[det]['files']:
+            files = self.state[det]['files']
+            parent.setText(0, f'{det} ({len(files)} files)')
+            for f in files:
                 child = QTreeWidgetItem(parent)
                 child.setText(0, Path(f).name)
-                child.setText(1, self.frames_per_image)
-                parent.addChild(child)
+                child.setText(1, f'{self.frames_per_image}')
             self.ui.files_found.expandItem(parent)

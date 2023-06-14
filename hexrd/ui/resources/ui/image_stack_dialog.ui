@@ -201,9 +201,26 @@
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">
          <widget class="QTreeWidget" name="files_found">
+          <property name="sortingEnabled">
+           <bool>false</bool>
+          </property>
+          <attribute name="headerVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="headerMinimumSectionSize">
+           <number>125</number>
+          </attribute>
+          <attribute name="headerDefaultSectionSize">
+           <number>250</number>
+          </attribute>
           <column>
            <property name="text">
-            <string>All Files Found</string>
+            <string>Files Per Detector</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Frames Per File</string>
            </property>
           </column>
          </widget>
@@ -376,7 +393,7 @@
        <item row="2" column="0" colspan="6">
         <widget class="QTableWidget" name="omega_wedges">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -386,6 +403,9 @@
          </property>
          <property name="sizeAdjustPolicy">
           <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
