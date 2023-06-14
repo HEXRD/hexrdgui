@@ -519,5 +519,6 @@ class ImageStackDialog(QObject):
             for f in self.state[det]['files']:
                 child = QTreeWidgetItem(parent)
                 child.setText(0, Path(f).name)
+                child.setText(1, self.frames_per_image)
                 parent.addChild(child)
             self.ui.files_found.expandItem(parent)
