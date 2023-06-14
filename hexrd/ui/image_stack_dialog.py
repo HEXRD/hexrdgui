@@ -327,7 +327,7 @@ class ImageStackDialog(QObject):
     def get_files(self):
         imgs = []
         for det in self.detectors:
-            imgs.append(self.state[det]['files'])
+            imgs.append(sorted(self.state[det]['files']))
         num_files = len(imgs[0])
         return imgs, num_files
 
