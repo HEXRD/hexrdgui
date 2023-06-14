@@ -465,36 +465,37 @@ class ImageStackDialog(QObject):
         return steps, err
 
     def check_data(self):
-        f, d = [], []
-        steps, total_frames = self.check_steps()
+        steps, err = self.check_steps()
+        total_frames = int(self.ui.total_frames.text())
+        if err:
+            QMessageBox.warning(None, 'HEXRD', err)
+            return
+
+        counts = []
+        directories = []
         for det in self.detectors:
-            f.append(self.state[det]['file_count'])
-            d.append(self.state[det]['directory'])
-        if dets := [det for det in d if not det]:
+            counts.append(self.state[det]['file_count'])
+            directories.append(self.state[det]['directory'])
+        if dets := [det for det in directories if not det]:
             msg = (
-                f'The directory have not been set for '
+                f'The directory has not been set for '
                 f'the following detector(s):\n{" ".join(dets)}.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
-        elif idx := [i for i, n in enumerate(f) if f[0] == 0]:
-            msg = (f'No files have been selected for the detectors.')
+        elif any([c == 0 for c in counts]):
+            msg = (f'Files have not been selected for all detectors.')
             QMessageBox.warning(None, 'HEXRD', msg)
             return
-        elif idx := [i for i, n in enumerate(f) if f[0] != n]:
-            dets = [self.state['dets'][i] for i in idx]
-            msg = (
-                f'The number of files for each detector must match. '
-                f'The following detector(s) do not:\n{" ".join(dets)}')
+        elif any([c for c in counts if counts[0] != c]):
+            msg = (f'The number of files for each detector must match.')
             QMessageBox.warning(None, 'HEXRD', msg)
             return
-        elif steps >= 0 and self.state['add_omega_data']:
-            if steps > 0:
-                msg = (
-                    f'The total number of steps must be equal to the '
-                    f'total number of frames: {steps} total steps, '
-                    f'{total_frames} total frames.')
-            else:
-                msg = f'The omega wedges are incomplete.'
+        elif steps != total_frames:
+            msg = (f'''
+                   The total number of steps must be equal to the total
+                   number of frames:
+                   {steps} total steps, {total_frames} total frames.
+                   ''')
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         self.build_data()
