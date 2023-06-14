@@ -209,7 +209,7 @@ class ImageStackDialog(QObject):
             HexrdConfig().images_dir, 'NPY files (*.npy)')
         self.ui.omega_file.setText(omega_file)
         self.state['omega'] = omega_file
-        wedges = np.load(omega_file, allow_pickle=False)
+        wedges = np.load(omega_file)
         for wedge in wedges:
             self.add_wedge(wedge=wedge)
 
