@@ -171,8 +171,10 @@ class ImageStackDialog(QObject):
 
     def update_frames(self):
         files = self.state[self.detector]['files']
-        ims = ImageFileManager().open_file(str(files[0]))
-        frames = len(ims) if len(ims) else 1
+        frames = 0
+        if files:
+            ims = ImageFileManager().open_file(str(files[0]))
+            frames = len(ims) if len(ims) else 1
         self.ui.total_frames.setText(str(frames))
         self.set_ranges(frames, len(files))
         self.state['total_frames'] = frames
@@ -236,7 +238,7 @@ class ImageStackDialog(QObject):
             self.state[det]['search'] = self.ui.search_text.text()
 
     def set_ranges(self, frames, num_files):
-        self.ui.empty_frames.setMaximum(frames - 1)
+        self.ui.empty_frames.setMaximum(max(frames - 1, 0))
         self.ui.max_file_frames.setMaximum(frames)
         self.ui.max_total_frames.setMaximum(frames * num_files)
 
