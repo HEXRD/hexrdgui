@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import yaml
 import tempfile
 import h5py
@@ -18,6 +19,7 @@ from hexrd.ui.image_file_manager import ImageFileManager
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui import resource_loader
+from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.constants import (
     UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
@@ -273,7 +275,9 @@ class LLNLImportToolDialog(QObject):
             # the QProgressDialog.
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
-            self.it = InteractiveTemplate(self.parent())
+            self.it = InteractiveTemplate(self.parent(), self.detector, self.instrument)
+            # We should be able to immediately interact with the template
+            self.it.static_mode = False
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.files_label.setText(', '.join(file_names))
@@ -319,6 +323,14 @@ class LLNLImportToolDialog(QObject):
         self.ui.bb_height.blockSignals(False)
         self.ui.bb_width.blockSignals(False)
 
+    def read_in_template_bounds(self, module, file_name):
+        with resource_loader.resource_path(module, file_name) as f:
+            data = np.loadtxt(f)
+        panels = create_hedm_instrument().detectors
+        verts = panels['default'].cartToPixel(data)
+        verts[:, [0, 1]] = verts[:, [1, 0]]
+        return verts
+
     def add_template(self):
         if self.it is None or self.instrument is None or not self.detector:
             return
@@ -330,11 +342,12 @@ class LLNLImportToolDialog(QObject):
             return
 
         self.it.clear()
-        self.it.create_shape(
+        verts = self.read_in_template_bounds(
             module=hexrd_resources,
-            file_name=f'{self.instrument}_{self.detector}_bnd.txt',
-            det=self.detector,
-            instr=self.instrument)
+            file_name=f'{self.instrument}_{self.detector}_bnd.txt'
+        )
+        kwargs = {'fill': False, 'lw': 1, 'linestyle': '-'}
+        self.it.create_polygon(verts, **kwargs)
         self.it.update_image(HexrdConfig().image('default', 0))
         self.update_template_style()
 
@@ -380,14 +393,14 @@ class LLNLImportToolDialog(QObject):
     def swap_bounds_for_cropped(self):
         self.it.clear()
         line, width, color = self.it.shape_styles[-1].values()
-        self.it.create_shape(
+        verts = self.read_in_template_bounds(
             module=hexrd_resources,
-            file_name=f'TARDIS_IMAGE-PLATE-3_bnd_cropped.txt',
-            det=self.detector,
-            instr=self.instrument)
+            file_name=f'TARDIS_IMAGE-PLATE-3_bnd_cropped.txt'
+        )
+        kwargs = {'fill': False, 'lw': width, 'color': color, 'linestyle': '--'}
+        self.it.create_polygon(verts, **kwargs)
         self.update_bbox_width(1330)
         self.update_bbox_height(238)
-        self.it.update_style('--', width, color)
 
     def crop_and_mask(self):
         self.save_boundary_position()

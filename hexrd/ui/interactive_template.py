@@ -8,17 +8,13 @@ from matplotlib.transforms import Affine2D
 
 from skimage.draw import polygon
 
-from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui import resource_loader
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import has_nan
 
 
 class InteractiveTemplate:
-    def __init__(self, parent=None):
-        self.parent = parent.image_tab_widget.image_canvases[0]
-        self.ax = self.parent.axes_images[0]
-        self.panels = create_hedm_instrument().detectors
+    def __init__(self, parent, detector, instrument=None):
+        self.image_tab_widget = parent.image_tab_widget
         self.img = None
         self.shape = None
         self.press = None
@@ -27,11 +23,48 @@ class InteractiveTemplate:
         self.translation = [0, 0]
         self.complete = False
         self.event_key = None
-        self.parent.setFocusPolicy(Qt.ClickFocus)
+        self.detector = detector
+        self.instrument = instrument
+        self._static = True
+
+        for canvas in self.image_tab_widget.active_canvases:
+            canvas.setFocusPolicy(Qt.ClickFocus)
+
+    @property
+    def current_canvas(self):
+        idx = self.image_tab_widget.current_index
+        return self.image_tab_widget.active_canvases[idx]
+
+    @property
+    def ax(self):
+        idx = HexrdConfig().current_imageseries_idx
+        return self.current_canvas.axes_images[idx]
 
     @property
     def raw_axes(self):
-        return list(self.parent.raw_axes.values())[0]
+        if not self.current_canvas.raw_axes:
+            return self.current_canvas.axis
+
+        for axes in self.current_canvas.raw_axes.values():
+            if axes.get_title() == self.detector:
+                return axes
+
+        return list(self.current_canvas.raw_axes.values())[0]
+
+    @property
+    def static_mode(self):
+        return self._static
+
+    @static_mode.setter
+    def static_mode(self, mode):
+        if mode == self._static:
+            return
+
+        if mode:
+            self.disconnect()
+        else:
+            self.connect_translate_rotate()
+        self._static = mode
 
     def update_image(self, img):
         self.img = img
@@ -41,20 +74,17 @@ class InteractiveTemplate:
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
-    def create_shape(self, module, file_name, det, instr):
+    def create_polygon(self, verts, **kwargs):
         self.complete = False
-        with resource_loader.resource_path(module, file_name) as f:
-            data = np.loadtxt(f)
-        verts = self.panels['default'].cartToPixel(data)
-        verts[:, [0, 1]] = verts[:, [1, 0]]
-        self.shape = patches.Polygon(verts, fill=False, lw=1, color='cyan')
+        self.shape = patches.Polygon(verts, **kwargs)
         if has_nan(verts):
             # This template contains more than one polygon and the last point
             # should not be connected to the first. See Tardis IP for example.
             self.shape.set_closed(False)
-        self.shape_styles.append({'line': '-', 'width': 1, 'color': 'cyan'})
-        self.update_position(instr, det)
-        self.connect_translate_rotate()
+        self.shape_styles.append(kwargs)
+        self.update_position()
+        if not self.static_mode:
+            self.connect_translate_rotate()
         self.raw_axes.add_patch(self.shape)
         self.redraw()
 
@@ -63,10 +93,13 @@ class InteractiveTemplate:
         self.shape.set_linestyle(style)
         self.shape.set_linewidth(width)
         self.shape.set_edgecolor(color)
+        self.shape.set_fill(False)
         self.redraw()
 
-    def update_position(self, instr, det):
-        pos = HexrdConfig().boundary_position(instr, det)
+    def update_position(self):
+        pos = None
+        if self.instrument is not None:
+            pos = HexrdConfig().boundary_position(self.instrument, self.detector)
         if pos is None:
             self.center = self.get_midpoint()
         else:
@@ -75,7 +108,7 @@ class InteractiveTemplate:
             self.translate_template(dx, dy)
             self.total_rotation = pos['angle']
             self.rotate_template(self.shape.xy, pos['angle'])
-        if instr == 'PXRDIP':
+        if self.instrument == 'PXRDIP':
             self.rotate_shape(angle=90)
 
     @property
@@ -140,7 +173,8 @@ class InteractiveTemplate:
                 self.shape.remove()
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
                 self.raw_axes.add_patch(self.shape)
-                self.connect_translate_rotate()
+                if not self.static_mode:
+                    self.connect_translate_rotate()
             self.redraw()
         else:
             if self.shape:
@@ -149,11 +183,11 @@ class InteractiveTemplate:
         self.redraw()
 
     def disconnect(self):
-        self.parent.mpl_disconnect(self.button_press_cid)
-        self.parent.mpl_disconnect(self.button_release_cid)
-        self.parent.mpl_disconnect(self.motion_cid)
-        self.parent.mpl_disconnect(self.key_press_cid)
-        self.parent.mpl_disconnect(self.button_drag_cid)
+        self.current_canvas.mpl_disconnect(self.button_press_cid)
+        self.current_canvas.mpl_disconnect(self.button_release_cid)
+        self.current_canvas.mpl_disconnect(self.motion_cid)
+        self.current_canvas.mpl_disconnect(self.key_press_cid)
+        self.current_canvas.mpl_disconnect(self.button_drag_cid)
 
     def completed(self):
         self.disconnect()
@@ -199,7 +233,7 @@ class InteractiveTemplate:
         return all_paths
 
     def redraw(self):
-        self.parent.draw_idle()
+        self.current_canvas.draw_idle()
 
     def scale_template(self, sx=1, sy=1):
         xy = self.shape.xy
@@ -233,17 +267,17 @@ class InteractiveTemplate:
             self.on_key_translate(event)
 
     def connect_translate_rotate(self):
-        self.button_press_cid = self.parent.mpl_connect(
+        self.button_press_cid = self.current_canvas.mpl_connect(
             'button_press_event', self.on_press)
-        self.button_release_cid = self.parent.mpl_connect(
+        self.button_release_cid = self.current_canvas.mpl_connect(
             'button_release_event', self.on_release)
-        self.motion_cid = self.parent.mpl_connect(
+        self.motion_cid = self.current_canvas.mpl_connect(
             'motion_notify_event', self.on_translate)
-        self.key_press_cid = self.parent.mpl_connect(
+        self.key_press_cid = self.current_canvas.mpl_connect(
             'key_press_event', self.on_key)
-        self.button_drag_cid = self.parent.mpl_connect(
+        self.button_drag_cid = self.current_canvas.mpl_connect(
             'motion_notify_event', self.on_rotate)
-        self.parent.setFocus()
+        self.current_canvas.setFocus()
 
     def translate_template(self, dx, dy):
         self.shape.set_xy(self.shape.xy + np.array([dx, dy]))
