@@ -511,6 +511,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # Thus, set the overlays later.
             QTimer.singleShot(0, set_overlays)
 
+        if '_recent_images' not in state:
+            self._recent_images.clear()
+
         self.recent_images_changed.emit()
 
     @property
