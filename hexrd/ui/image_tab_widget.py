@@ -255,6 +255,10 @@ class ImageTabWidget(QTabWidget):
         self.switch_toolbar(self.currentIndex())
 
     @property
+    def active_canvas(self):
+        return self.image_canvases[self.current_index]
+
+    @property
     def active_canvases(self):
         """Get the canvases that are actively being used"""
         if not HexrdConfig().tab_images:

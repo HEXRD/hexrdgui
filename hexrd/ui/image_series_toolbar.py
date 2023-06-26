@@ -137,6 +137,9 @@ class ImageSeriesToolbar(QWidget):
         self.widget.setVisible(b and len(self.ims)>1)
         self.update_omega_label_text()
 
+    def setEnabled(self, b):
+        self.widget.setEnabled(b)
+
     def val_changed(self, pos):
         self.parent().change_ims_image(pos)
         self.update_omega_label_text()
