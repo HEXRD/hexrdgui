@@ -138,6 +138,14 @@ class StructurelessCalibrationDialog(QObject):
         self.draw_picks_toggled.emit(b)
 
     def on_run_button_clicked(self):
+        try:
+            self.validate_parameters()
+        except Exception as e:
+            msg = 'Parameter settings are invalid!\n\n' + str(e)
+            print(msg)
+            QMessageBox.critical(self.parent(), 'Invalid Parameters', msg)
+            return
+
         self.run.emit()
 
     def on_undo_run_button_clicked(self):
@@ -145,6 +153,30 @@ class StructurelessCalibrationDialog(QObject):
 
     def finish(self):
         self.finished.emit()
+
+    def validate_parameters(self):
+        # Recursively look through the tree dict, and add on errors
+        config = self.tree_view.model().config
+        errors = []
+        path = []
+
+        def recurse(cur):
+            for k, v in cur.items():
+                path.append(k)
+                if '_param' in v:
+                    param = v['_param']
+                    if param.min > param.max:
+                        full_path = '->'.join(path)
+                        msg = f'{full_path}: min is greater than max'
+                        errors.append(msg)
+                elif isinstance(v, dict):
+                    recurse(v)
+                path.pop(-1)
+
+        recurse(config)
+        if errors:
+            error_str = '\n\n'.join(errors)
+            raise Exception(error_str)
 
     @property
     def params_dict(self):
