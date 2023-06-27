@@ -1,4 +1,4 @@
-from PySide2.QtCore import QThreadPool
+from PySide2.QtCore import QThreadPool, QTimer
 from PySide2.QtWidgets import QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
@@ -22,19 +22,33 @@ class AsyncRunner:
 
     def run(self, f, *args, **kwargs):
         worker = AsyncWorker(f, *args, **kwargs)
-        self.thread_pool.start(worker)
 
         if self.success_callback:
             worker.signals.result.connect(self.success_callback)
 
         if self.error_callback:
-            worker.signals.error.connect(self.error_callback)
+            error_callback = self.error_callback
         else:
-            worker.signals.error.connect(self.on_async_error)
+            error_callback = self.on_async_error
 
-        worker.signals.finished.connect(self.reset_callbacks)
-        worker.signals.finished.connect(self.progress_dialog.accept)
+        worker.signals.error.connect(error_callback)
+        worker.signals.finished.connect(self.on_worker_finished)
+
+        # We must start the worker after creating all connections because
+        # sometimes the worker will very quickly encounter an error, and
+        # since the worker is running in another thread, if it encounters
+        # an error and exits before the connections are made, Qt will
+        # have a segmentation fault.
+        self.thread_pool.start(worker)
+
         self.progress_dialog.exec_()
+
+    def on_worker_finished(self):
+        self.reset_callbacks()
+        # Sometimes the progress dialog seems to hang around for no apparent
+        # reason, unless we close it in the next iteration of the event loop.
+        # So don't close it yet, but close it soon.
+        QTimer.singleShot(0, self.progress_dialog.accept)
 
     def reset_callbacks(self):
         self.success_callback = None
