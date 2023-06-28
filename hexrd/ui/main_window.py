@@ -1134,6 +1134,9 @@ class MainWindow(QObject):
             labels.append(f'Q = {info["Q"]:8.3f}')
             labels.append(f'hkl ({material_name}) = {info["hkl"]}')
 
+        if 'detectors_str' in info:
+            labels.append(info['detectors_str'])
+
         return labels
 
     def polar_mouse_info_labels(self, info):
@@ -1155,6 +1158,9 @@ class MainWindow(QObject):
             labels.append(f'dsp = {info["dsp"]:8.3f}')
             labels.append(f'Q = {info["Q"]:8.3f}')
             labels.append(f'hkl ({material_name}) = {info["hkl"]}')
+
+        if 'detectors_str' in info:
+            labels.append(info['detectors_str'])
 
         return labels
 

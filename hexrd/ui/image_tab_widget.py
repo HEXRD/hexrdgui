@@ -391,6 +391,32 @@ class ImageTabWidget(QTabWidget):
             iviewer = self.image_canvases[0].iviewer
             info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
 
+        if mode != ViewType.raw and len(iviewer.instr.detectors) > 1:
+            # If we are not in the raw view and there is more than one
+            # detector, then let's also display the detector we are
+            # hovering over (if any)
+            det_dict = iviewer.instr.detectors
+
+            ang_crd = np.radians([[info['tth'], info['eta']]])
+            detector_matches = []
+            for name, panel in det_dict.items():
+                cart = panel.angles_to_cart(ang_crd)
+                xys, valid = panel.clip_to_panel(cart, buffer_edges=False)
+                if valid[0]:
+                    detector_matches.append(name)
+
+            if detector_matches:
+                plural = len(detector_matches) > 1
+                det_str = ', '.join(detector_matches)
+                if plural:
+                    label = f'detectors = ({det_str})'
+                else:
+                    label = f'detector = {det_str}'
+
+                info['detectors_str'] = label
+            else:
+                info['detectors_str'] = 'detector = None'
+
         self.new_mouse_position.emit(info)
 
     def export_current_plot(self, filename):
