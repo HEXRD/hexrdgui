@@ -50,7 +50,8 @@
                         Name="HEXRDGUI"
                         Description="HEXRDGUI"
                         Target="[#CM_FP_Scripts.hexrdgui.exe]"
-                        WorkingDirectory="CM_DP_Library.bin"/>
+                        WorkingDirectory="CM_DP_Library.bin"
+                        Icon="ProductIcon.ico" />
                     <RegistryValue Root="HKCU" Key="Software\Kitware\hexrdgui" Name="HEXRDGUI_installed" Type="integer" Value="1" KeyPath="yes"/>
                 </Component>
             </Directory>
@@ -58,7 +59,12 @@
 
         <DirectoryRef Id="ProgramMenuFolder">
 	        <Component Id="CM_SHORTCUT_HEXRDGUI" Guid="$(var.CPACK_WIX_PRODUCT_GUID)">
-                <Shortcut Id="HexrdGuiShortcut" Name="HEXRDGUI" Target="[#CM_FP_Scripts.hexrdgui.exe]" WorkingDirectory="CM_DP_Library.bin" Show='minimized'/>
+                <Shortcut Id="HexrdGuiShortcut"
+                    Name="HEXRDGUI"
+                    Target="[#CM_FP_Scripts.hexrdgui.exe]"
+                    WorkingDirectory="CM_DP_Library.bin"
+                    Show='minimized'
+                    Icon="ProductIcon.ico" />
                 <RegistryValue Root="HKCU" Key="Software\Kitware\hexrdgui" Name="HEXRDGUI_installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
 	    </DirectoryRef>
