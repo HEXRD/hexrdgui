@@ -391,7 +391,12 @@ class ImageTabWidget(QTabWidget):
             iviewer = self.image_canvases[0].iviewer
             info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
 
-        if mode != ViewType.raw and len(iviewer.instr.detectors) > 1:
+        display_detector = (
+            intensity is not None and
+            mode != ViewType.raw and
+            len(iviewer.instr.detectors) > 1
+        )
+        if display_detector:
             # If we are not in the raw view and there is more than one
             # detector, then let's also display the detector we are
             # hovering over (if any)
