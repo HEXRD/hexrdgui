@@ -62,8 +62,8 @@ class LinePickerDialog(QObject):
         self.two_click_mode = self.ui.two_click_mode.isChecked()
 
         self.zoom_canvas = ZoomCanvas(canvas)
-        self.zoom_canvas.tth_tol = self.ui.zoom_tth_width.value()
-        self.zoom_canvas.eta_tol = self.ui.zoom_eta_width.value()
+        self.zoom_canvas.zoom_width = self.ui.zoom_tth_width.value()
+        self.zoom_canvas.zoom_height = self.ui.zoom_eta_width.value()
         self.ui.zoom_canvas_layout.addWidget(self.zoom_canvas)
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -142,8 +142,8 @@ class LinePickerDialog(QObject):
 
     def zoom_width_changed(self):
         canvas = self.zoom_canvas
-        canvas.tth_tol = self.ui.zoom_tth_width.value()
-        canvas.eta_tol = self.ui.zoom_eta_width.value()
+        canvas.zoom_width = self.ui.zoom_tth_width.value()
+        canvas.zoom_height = self.ui.zoom_eta_width.value()
         if all(x is not None for x in (canvas.xdata, canvas.ydata)):
             canvas.render()
 

@@ -1,7 +1,7 @@
 import copy
 import math
 
-from PySide2.QtCore import QThreadPool, QTimer
+from PySide2.QtCore import QThreadPool, QTimer, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -29,6 +29,10 @@ from hexrd.ui.utils.conversions import (
 
 
 class ImageCanvas(FigureCanvas):
+
+    cmap_modified = Signal()
+    norm_modified = Signal()
+    transform_modified = Signal()
 
     def __init__(self, parent=None, image_names=None):
         self.figure = Figure(tight_layout=True)
@@ -1090,18 +1094,21 @@ class ImageCanvas(FigureCanvas):
 
         self.update_azimuthal_integral_plot()
         self.draw_idle()
+        self.transform_modified.emit()
 
     def set_cmap(self, cmap):
         self.cmap = cmap
         for axes_image in self.axes_images:
             axes_image.set_cmap(cmap)
         self.draw_idle()
+        self.cmap_modified.emit()
 
     def set_norm(self, norm):
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
         self.draw_idle()
+        self.norm_modified.emit()
 
     def compute_azimuthal_integral_sum(self, scaled=True):
         # grab the polar image

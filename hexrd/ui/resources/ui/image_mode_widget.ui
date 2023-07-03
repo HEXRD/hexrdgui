@@ -59,39 +59,8 @@
       <attribute name="title">
        <string>Raw</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <widget class="QCheckBox" name="raw_tabbed_view">
-           <property name="text">
-            <string>Tabbed View</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="raw_show_saturation">
-           <property name="text">
-            <string>Show Saturation</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="verticalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="1">
         <layout class="QFormLayout" name="formLayout">
          <item row="0" column="0" colspan="2">
           <widget class="QCheckBox" name="raw_threshold_mask">
@@ -142,6 +111,44 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QCheckBox" name="raw_tabbed_view">
+           <property name="text">
+            <string>Tabbed View</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="raw_show_saturation">
+           <property name="text">
+            <string>Show Saturation</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QPushButton" name="raw_show_zoom_dialog">
+         <property name="text">
+          <string>Show Zoom Dialog</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -994,14 +1001,15 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>tab_widget</tabstop>
   <tabstop>raw_tabbed_view</tabstop>
-  <tabstop>raw_show_saturation</tabstop>
   <tabstop>raw_threshold_mask</tabstop>
+  <tabstop>raw_show_saturation</tabstop>
   <tabstop>raw_threshold_comparison</tabstop>
   <tabstop>raw_threshold_value</tabstop>
   <tabstop>cartesian_pixel_size</tabstop>
-  <tabstop>cartesian_virtual_plane_distance</tabstop>
   <tabstop>cartesian_plane_normal_rotate_x</tabstop>
+  <tabstop>cartesian_virtual_plane_distance</tabstop>
   <tabstop>cartesian_plane_normal_rotate_y</tabstop>
   <tabstop>polar_pixel_size_tth</tabstop>
   <tabstop>polar_pixel_size_eta</tabstop>
@@ -1015,6 +1023,13 @@
   <tabstop>polar_snip1d_algorithm</tabstop>
   <tabstop>polar_show_snip1d</tabstop>
   <tabstop>polar_apply_erosion</tabstop>
+  <tabstop>polar_apply_tth_distortion</tabstop>
+  <tabstop>polar_tth_distortion_overlay</tabstop>
+  <tabstop>polar_azimuthal_overlays</tabstop>
+  <tabstop>polar_x_axis_type</tabstop>
+  <tabstop>stereo_size</tabstop>
+  <tabstop>stereo_show_border</tabstop>
+  <tabstop>stereo_project_from_polar</tabstop>
  </tabstops>
  <resources/>
  <connections>

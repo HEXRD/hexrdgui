@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>zoom_canvas_dialog</class>
+ <widget class="QDialog" name="zoom_canvas_dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>635</width>
+    <height>689</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Zoom Canvas</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Left-click the main canvas to toggle freezing the zoom box</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="grid_layout">
+     <item row="3" column="0">
+      <widget class="QLabel" name="zoom_width_label">
+       <property name="text">
+        <string>Zoom Width:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="ScientificDoubleSpinBox" name="zoom_height">
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string/>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="minimum">
+        <double>0.000001000000000</double>
+       </property>
+       <property name="maximum">
+        <double>10000.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.200000000000000</double>
+       </property>
+       <property name="value">
+        <double>60.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="zoom_height_label">
+       <property name="text">
+        <string>Zoom Height:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="ScientificDoubleSpinBox" name="zoom_width">
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string/>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="minimum">
+        <double>0.000001000000000</double>
+       </property>
+       <property name="maximum">
+        <double>10000.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.200000000000000</double>
+       </property>
+       <property name="value">
+        <double>15.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="2">
+      <layout class="QVBoxLayout" name="zoom_canvas_layout"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QCheckBox" name="display_sums_in_subplots">
+       <property name="toolTip">
+        <string>If checked, display sums in the subplots. If unchecked, display cursor pixel values instead.</string>
+       </property>
+       <property name="text">
+        <string>Display sums in subplots</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>zoom_width</tabstop>
+  <tabstop>zoom_height</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

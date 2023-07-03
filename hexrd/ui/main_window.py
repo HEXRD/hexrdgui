@@ -71,6 +71,7 @@ from hexrd.ui.image_mode_widget import ImageModeWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals, unique_name
 from hexrd.ui.utils.dialog import add_help_url
+from hexrd.ui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrd.ui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrd.ui import state
 
@@ -277,6 +278,8 @@ class MainWindow(QObject):
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
+        self.image_mode_widget.raw_show_zoom_dialog.connect(
+            self.on_show_raw_zoom_dialog)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)
@@ -379,7 +382,12 @@ class MainWindow(QObject):
             self.image_mode_widget.ui,
             self.ui.config_tool_box,
             self.ui.menu_bar,
+            self.ui.image_tab_widget.tabBar(),
         ]
+        # Add image series toolbar widgets
+        for tb_dict in self.ui.image_tab_widget.toolbars:
+            disable_widgets.append(tb_dict['sb'])
+
         for w in disable_widgets:
             w.setEnabled(not b)
 
@@ -882,6 +890,17 @@ class MainWindow(QObject):
         update_canvas = w.iconfig_values_modified or w.material_values_modified
         if update_canvas:
             self.deep_rerender()
+
+    def on_show_raw_zoom_dialog(self):
+        canvas = self.ui.image_tab_widget.active_canvas
+        dialog = ZoomCanvasDialog(canvas, parent=self.ui)
+        self._zoom_dialog = dialog
+        dialog.show()
+
+        # By default, update the zoom width and height to be 1/5 of shape
+        img = dialog.zoom_canvas.rsimg
+        dialog.zoom_width = int(img.shape[1] / 5)
+        dialog.zoom_height = int(img.shape[0] / 5)
 
     def change_image_mode(self, mode):
         self.image_mode = mode

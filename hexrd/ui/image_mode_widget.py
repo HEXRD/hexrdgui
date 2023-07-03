@@ -33,6 +33,8 @@ class ImageModeWidget(QObject):
     # Mask has been applied
     mask_applied = Signal()
 
+    raw_show_zoom_dialog = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -66,6 +68,8 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_threshold_value)
         self.ui.raw_threshold_value.valueChanged.connect(
             self.update_mask)
+        self.ui.raw_show_zoom_dialog.clicked.connect(
+            self.raw_show_zoom_dialog)
         self.ui.cartesian_pixel_size.valueChanged.connect(
             HexrdConfig()._set_cartesian_pixel_size)
         self.ui.cartesian_virtual_plane_distance.valueChanged.connect(
@@ -159,6 +163,7 @@ class ImageModeWidget(QObject):
             self.ui.raw_threshold_mask,
             self.ui.raw_threshold_comparison,
             self.ui.raw_threshold_value,
+            self.ui.raw_show_zoom_dialog,
             self.ui.cartesian_pixel_size,
             self.ui.cartesian_virtual_plane_distance,
             self.ui.cartesian_plane_normal_rotate_x,
