@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>88</height>
+    <height>124</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -49,7 +49,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="4" column="0">
     <layout class="QVBoxLayout" name="messages_widget_layout">
      <item>
       <spacer name="verticalSpacer">
@@ -68,6 +68,16 @@
       </spacer>
      </item>
     </layout>
+   </item>
+   <item row="5" column="0">
+    <widget class="QDialogButtonBox" name="cancel_button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel</set>
+     </property>
+     <property name="centerButtons">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

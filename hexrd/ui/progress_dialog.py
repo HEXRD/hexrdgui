@@ -1,12 +1,16 @@
-from PySide2.QtCore import QEvent, QObject, QTimer, Qt
+from PySide2.QtCore import QEvent, QObject, QTimer, Qt, Signal
 
 from hexrd.ui.messages_widget import MessagesWidget
 from hexrd.ui.ui_loader import UiLoader
 
 
-class ProgressDialog:
+class ProgressDialog(QObject):
+
+    cancel_clicked = Signal()
 
     def __init__(self, parent=None):
+        super().__init__(parent)
+
         loader = UiLoader()
         self.ui = loader.load_file('progress_dialog.ui', parent)
 
@@ -15,6 +19,9 @@ class ProgressDialog:
         self.messages_widget.allow_copy = False
         self.messages_widget.allow_clear = False
         self.ui.messages_widget_layout.addWidget(self.messages_widget.ui)
+
+        # By default, make the cancel button invisible
+        self.cancel_visible = False
 
         # Some default window title and text
         self.setWindowTitle('Hexrd')
@@ -33,6 +40,11 @@ class ProgressDialog:
     def setup_connections(self):
         # Show the messages widget if a message is received
         self.messages_widget.message_written.connect(self.show_messages_widget)
+        self.ui.cancel_button_box.rejected.connect(self.on_cancel_clicked)
+
+    def on_cancel_clicked(self):
+        self.reject()
+        self.cancel_clicked.emit()
 
     def show_messages_widget(self):
         self.messages_widget.ui.show()
@@ -63,6 +75,9 @@ class ProgressDialog:
     def accept(self):
         self.ui.accept()
 
+    def reject(self):
+        self.ui.reject()
+
     def reset_messages(self):
         self.clear_messages()
         # Hide the messages widget until a message is received
@@ -77,6 +92,14 @@ class ProgressDialog:
 
     def exec_later(self):
         QTimer.singleShot(0, lambda: self.exec_())
+
+    @property
+    def cancel_visible(self):
+        return self.ui.cancel_button_box.isVisible()
+
+    @cancel_visible.setter
+    def cancel_visible(self, b):
+        self.ui.cancel_button_box.setVisible(b)
 
 
 class BlockEscapeKeyFilter(QObject):
