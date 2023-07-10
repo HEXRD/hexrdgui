@@ -199,14 +199,20 @@ class LLNLImportToolDialog(QObject):
         self.load_instrument_config()
 
     def detector_selected(self, selected):
-        self.ui.instrument.setDisabled(selected)
-        self.detector = self.ui.detectors.currentText()
-        self.add_template()
-        if self.instrument == 'TARDIS':
-            self.cancel_workflow.emit()
-            self.enable_widgets(self.ui.accept_template, enabled=False)
-        else:
-            self.enable_widgets(self.ui.accept_template, enabled=True)
+        # Don't allow the color map range to change while we are changing
+        # detectors. Otherwise, it gets reset to something like "1 - 6".
+        self.cmap.block_updates(True)
+        try:
+            self.ui.instrument.setDisabled(selected)
+            self.detector = self.ui.detectors.currentText()
+            self.add_template()
+            if self.instrument == 'TARDIS':
+                self.cancel_workflow.emit()
+                self.enable_widgets(self.ui.accept_template, enabled=False)
+            else:
+                self.enable_widgets(self.ui.accept_template, enabled=True)
+        finally:
+            self.cmap.block_updates(False)
 
     def update_bbox_height(self, val):
         y0, y1, *x = self.it.bounds
