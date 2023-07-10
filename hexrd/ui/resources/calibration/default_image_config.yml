@@ -10,6 +10,7 @@ polar:
   snip1d_width: 2.0
   snip1d_numiter: 1
   apply_erosion: false
+  apply_scaling_to_lineout: false
   x_axis_type: 'tth'
 cartesian:
   pixel_size: 0.5

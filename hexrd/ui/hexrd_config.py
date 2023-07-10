@@ -2122,6 +2122,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.polar_tth_distortion_overlay_changed.emit()
 
     @property
+    def polar_apply_scaling_to_lineout(self):
+        return self.config['image']['polar']['apply_scaling_to_lineout']
+
+    @polar_apply_scaling_to_lineout.setter
+    def polar_apply_scaling_to_lineout(self, b):
+        if b == self.polar_apply_scaling_to_lineout:
+            return
+
+        self.config['image']['polar']['apply_scaling_to_lineout'] = b
+        self.rerender_needed.emit()
+
+    def set_polar_apply_scaling_to_lineout(self, b):
+        self.polar_apply_scaling_to_lineout = b
+
+    @property
     def polar_x_axis_type(self):
         return self.config['image']['polar']['x_axis_type']
 

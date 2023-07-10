@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <property name="iconSize">
       <size>
@@ -865,6 +865,16 @@
                 </property>
                </widget>
               </item>
+              <item row="15" column="0" colspan="2">
+               <widget class="QCheckBox" name="polar_apply_scaling_to_lineout">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the scaling from the color map will also be applied to the lineout.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the scaling is applied to the lineout, note that the lineout is generated as follows: &lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;mean(sum(scale(img - min(img)), axis=0))&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The minimum of the image is subtracted before scaling. The sum is performed after scaling. And the mean is performed at the end so that masked values are not treated as zero.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Apply scaling to lineout?</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
            </layout>
@@ -1026,10 +1036,12 @@
   <tabstop>polar_apply_tth_distortion</tabstop>
   <tabstop>polar_tth_distortion_overlay</tabstop>
   <tabstop>polar_azimuthal_overlays</tabstop>
+  <tabstop>polar_apply_scaling_to_lineout</tabstop>
   <tabstop>polar_x_axis_type</tabstop>
   <tabstop>stereo_size</tabstop>
   <tabstop>stereo_show_border</tabstop>
   <tabstop>stereo_project_from_polar</tabstop>
+  <tabstop>raw_show_zoom_dialog</tabstop>
  </tabstops>
  <resources/>
  <connections>
