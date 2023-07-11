@@ -96,6 +96,7 @@ class ZoomCanvas(FigureCanvas):
         self.remove_all_cursors()
         self.remove_overlay_lines()
         self.main_canvas.draw_idle()
+        self.deleteLater()
 
     def disconnect(self):
         mc_disconnect = [
