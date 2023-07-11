@@ -15,6 +15,10 @@ cite us in your papers?
 See [Citing HEXRDGUI](https://hexrdgui.readthedocs.io/en/latest/citing/#hexrdgui)
 for more information.
 
+# Issues
+
+Please see [here](https://hexrdgui.readthedocs.io/en/latest/issues/)
+
 # Conda Packaging
 
 ## PRs
