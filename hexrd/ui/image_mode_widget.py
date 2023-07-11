@@ -101,6 +101,8 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_snip1d_numiter)
         self.ui.polar_apply_erosion.toggled.connect(
             HexrdConfig().set_polar_apply_erosion)
+        self.ui.polar_apply_scaling_to_lineout.toggled.connect(
+            HexrdConfig().set_polar_apply_scaling_to_lineout)
         self.ui.polar_x_axis_type.currentTextChanged.connect(
             self.on_polar_x_axis_type_changed)
         HexrdConfig().instrument_config_loaded.connect(
@@ -182,6 +184,7 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_erosion,
             self.ui.polar_apply_tth_distortion,
             self.ui.polar_tth_distortion_overlay,
+            self.ui.polar_apply_scaling_to_lineout,
             self.ui.polar_x_axis_type,
             self.ui.stereo_size,
             self.ui.stereo_show_border,
@@ -228,6 +231,8 @@ class ImageModeWidget(QObject):
                 HexrdConfig().polar_snip1d_numiter)
             self.ui.polar_apply_erosion.setChecked(
                 HexrdConfig().polar_apply_erosion)
+            self.ui.polar_apply_scaling_to_lineout.setChecked(
+                HexrdConfig().polar_apply_scaling_to_lineout)
             self.polar_x_axis_type = HexrdConfig().polar_x_axis_type
             self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
             self.ui.stereo_show_border.setChecked(

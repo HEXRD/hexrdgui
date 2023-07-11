@@ -1113,7 +1113,7 @@ class ImageCanvas(FigureCanvas):
     def compute_azimuthal_integral_sum(self, scaled=True):
         # grab the polar image
         # !!! NOTE: currently not a masked image; just nans
-        if scaled:
+        if scaled and HexrdConfig().polar_apply_scaling_to_lineout:
             pimg = self.scaled_images[0]
         else:
             pimg = self.unscaled_images[0]
