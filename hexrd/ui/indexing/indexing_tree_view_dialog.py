@@ -1,3 +1,5 @@
+from PySide2.QtWidgets import QFileDialog, QPushButton
+
 import yaml
 
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -25,6 +27,10 @@ class IndexingTreeViewDialog(DictTreeViewDialog):
         # needed.
         self.tree_view.blacklisted_paths = [('omega', 'period')]
 
+        save_button = QPushButton('Save')
+        save_button.clicked.connect(self.on_save_indexing_config_clicked)
+        self.layout().addWidget(save_button)
+
         self.expand_rows()
 
     @lazy_property
@@ -32,3 +38,18 @@ class IndexingTreeViewDialog(DictTreeViewDialog):
         file_name = 'seed_search_method_defaults.yml'
         text = load_resource(indexing_resources, file_name)
         return yaml.full_load(text)
+
+    def on_save_indexing_config_clicked(self):
+        selected_file, _ = QFileDialog.getSaveFileName(
+            self, 'Save Indexing Config', HexrdConfig().working_dir,
+            'YAML files (*.yaml *.yml)')
+
+        if not selected_file:
+            return
+
+        self.write_config(selected_file)
+
+    def write_config(self, file):
+        config = self.tree_view.model().config
+        with open(file, 'w') as rf:
+            yaml.dump({'find_orientations': config}, rf)
