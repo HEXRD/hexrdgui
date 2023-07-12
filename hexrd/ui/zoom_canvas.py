@@ -55,6 +55,8 @@ class ZoomCanvas(FigureCanvas):
         self.vhlines = []
         self.disabled = False
 
+        self.was_disconnected = False
+
         # user-specified ROI (from interactors)
         self.zoom_width = 15
         self.zoom_height = 60
@@ -92,11 +94,16 @@ class ZoomCanvas(FigureCanvas):
         self.cleanup()
 
     def cleanup(self):
+        if self.was_disconnected:
+            # It was already cleaned up
+            return
+
         self.disconnect()
         self.remove_all_cursors()
         self.remove_overlay_lines()
         self.main_canvas.draw_idle()
         self.deleteLater()
+        self.was_disconnected = True
 
     def disconnect(self):
         mc_disconnect = [
