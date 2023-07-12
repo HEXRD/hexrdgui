@@ -160,7 +160,7 @@ class InstrumentViewer:
         })
 
     def draw_polar(self):
-        self.pv = PolarView(self.instr_pv)
+        self.pv = PolarView(self.instr_pv, distortion_instrument=self.instr)
         self.pv.warp_all_images()
 
     def reapply_masks(self):

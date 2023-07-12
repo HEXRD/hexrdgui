@@ -33,11 +33,19 @@ def log_scale_img(img):
 
 class PolarView:
     """Create (two-theta, eta) plot of detectors
+
+    The distortion instrument is the instrument to use for tth distortion.
+    It defaults to the instrument.
     """
 
-    def __init__(self, instrument):
+    def __init__(self, instrument, distortion_instrument=None):
 
         self.instr = instrument
+
+        if distortion_instrument is None:
+            distortion_instrument = instrument
+
+        self.distortion_instr = distortion_instrument
 
         self.images_dict = HexrdConfig().images_dict
 
@@ -295,7 +303,7 @@ class PolarView:
             # Compute the polar tth displacement field directly
             eta, tth = self.angular_grid
             corr_field_polar = obj.create_polar_pinhole_displacement_field(
-                self.instr, tth, eta
+                self.distortion_instr, tth, eta
             )
 
             # Mask out nan values
@@ -304,7 +312,7 @@ class PolarView:
         else:
             # Get the tth displacement field for each detector, and then warp
             # them to the polar view.
-            corr_field = obj.pinhole_displacement_field(self.instr)
+            corr_field = obj.pinhole_displacement_field(self.distortion_instr)
 
             corr_field_polar_dict = {}
             for key in corr_field:
