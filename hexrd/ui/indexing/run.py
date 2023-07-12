@@ -42,6 +42,7 @@ class Runner(QObject):
 
         self.thread_pool = QThreadPool(self.parent)
         self.progress_dialog = ProgressDialog(self.parent)
+        self.clear_cancel_tracker()
 
         self.setup_connections()
 
@@ -55,6 +56,9 @@ class Runner(QObject):
     def accept_progress(self):
         self.accept_progress_signal.emit()
 
+        # Hide the cancel button again
+        self.progress_dialog.cancel_visible = False
+
     def on_async_error(self, t):
         # In case the progress dialog is open...
         self.accept_progress()
@@ -64,6 +68,19 @@ class Runner(QObject):
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
         msg_box.setDetailedText(traceback)
         msg_box.exec_()
+
+    def reset_cancel_tracker(self):
+        self.cancel_tracker = CancelTracker()
+
+    def clear_cancel_tracker(self):
+        self.cancel_tracker = None
+
+    def on_cancel_clicked(self):
+        self.cancel_tracker.need_to_cancel = True
+
+    @property
+    def operation_canceled(self):
+        return self.cancel_tracker and self.cancel_tracker.need_to_cancel
 
 
 class IndexingRunner(Runner):
@@ -476,12 +493,18 @@ class FitGrainsRunner(Runner):
         self.progress_dialog.setWindowTitle('Running Fit Grains')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
+        # Reset the local cancel tracker (used to track if we have canceled)
+        self.reset_cancel_tracker()
+
         worker = AsyncWorker(self.run_fit_grains)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.view_fit_grains_results)
+        worker.signals.result.connect(self.fit_grains_finished)
         worker.signals.error.connect(self.on_async_error)
         worker.signals.finished.connect(self.accept_progress)
+
+        self.progress_dialog.cancel_visible = True
+        self.progress_dialog.cancel_clicked.connect(self.on_cancel_clicked)
         self.progress_dialog.exec_()
 
     def run_fit_grains(self):
@@ -495,7 +518,16 @@ class FitGrainsRunner(Runner):
             'grains_table': self.grains_table,
             'write_spots_files': write_spots,
         }
+        if self.cancel_tracker:
+            kwargs['check_if_canceled_func'] = (
+                self.cancel_tracker.get_need_to_cancel
+            )
+
         self.fit_grains_results = fit_grains(**kwargs)
+        if self.operation_canceled:
+            # Operation was canceled
+            return
+
         self.result_grains_table = create_grains_table(self.fit_grains_results)
         print('Fit Grains Complete')
         HexrdConfig().fit_grains_grains_table = copy.deepcopy(
@@ -505,7 +537,12 @@ class FitGrainsRunner(Runner):
         if write_spots:
             write_fit_grains_results(self.fit_grains_results, cfg)
 
-    def view_fit_grains_results(self):
+    def fit_grains_finished(self):
+        if self.operation_canceled:
+            # Operation was canceled.
+            self.view_fit_grains_options()
+            return
+
         if self.fit_grains_results is None:
             msg = 'Grain fitting failed'
             QMessageBox.information(self.parent, msg, msg)
@@ -514,6 +551,9 @@ class FitGrainsRunner(Runner):
         for result in self.fit_grains_results:
             print(result)
 
+        self.view_fit_grains_results()
+
+    def view_fit_grains_results(self):
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         quaternion_method = find_orientations.get('_quaternion_method')
         allow_export_workflow = (
@@ -529,6 +569,19 @@ class FitGrainsRunner(Runner):
         dialog = create_fit_grains_results_dialog(**kwargs)
         self.fit_grains_results_dialog = dialog
         dialog.show_later()
+
+
+class CancelTracker:
+    """This class is used to set/get whether a cancel is needed
+
+    This will definitely be accessed by multiple threads, and a lock
+    might be necessary in the future if it becomes more complex.
+    """
+    def __init__(self):
+        self.need_to_cancel = False
+
+    def get_need_to_cancel(self):
+        return self.need_to_cancel
 
 
 def create_grains_table(fit_grains_results):
