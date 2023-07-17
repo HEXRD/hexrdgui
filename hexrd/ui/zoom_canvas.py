@@ -61,6 +61,9 @@ class ZoomCanvas(FigureCanvas):
         self.zoom_width = 15
         self.zoom_height = 60
 
+        # Keep track of whether we should skip a render (due to point picking)
+        self.skip_next_render = False
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -172,6 +175,10 @@ class ZoomCanvas(FigureCanvas):
             # Don't do anything if it isn't a left click
             return
 
+        # The zoom canvas doesn't need to be rerendered after point picking,
+        # but it will be asked to rerender anyways (due to the main canvas
+        # being redrawn). Skip this zoom canvas rerender.
+        self.skip_next_render = True
         self.point_picked.emit(event)
 
     def mouse_moved(self, event):
@@ -331,7 +338,7 @@ class ZoomCanvas(FigureCanvas):
 
         self.main_cursor.show(self.main_artists_visible)
 
-        # Render...
+        # Update the zoom window (in case it is needed)...
         QTimer.singleShot(0, self.render)
 
     def update_subplots(self):
@@ -414,6 +421,10 @@ class ZoomCanvas(FigureCanvas):
 
     def render(self):
         if self.disabled:
+            return
+
+        if self.skip_next_render:
+            self.skip_next_render = False
             return
 
         self.clear_crosshairs()
