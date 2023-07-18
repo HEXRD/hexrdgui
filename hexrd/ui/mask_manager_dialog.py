@@ -227,6 +227,7 @@ class MaskManagerDialog(QObject):
 
     def load_state(self, h5py_group):
         self.clear_masks()
+        self.reset_threshold()
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
 
@@ -236,6 +237,8 @@ class MaskManagerDialog(QObject):
             for i, (det, mask) in enumerate(data):
                 parent = d.setdefault(det, {})
                 parent.setdefault(name, {})[str(i)] = mask
+        if self.threshold:
+            d['threshold'] = HexrdConfig()._threshold_data
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
         else:
@@ -286,6 +289,14 @@ class MaskManagerDialog(QObject):
             if key == '_visible':
                 # Convert strings into actual python strings
                 HexrdConfig().visible_masks = list(h5py_read_string(data))
+            elif key == 'threshold':
+                HexrdConfig().threshold_comparisons = (
+                    data['comparisons'][()].tolist())
+                HexrdConfig().threshold_values = data['values'][()].tolist()
+                threshold_masks = {}
+                for det, mask in data['masks'].items():
+                    threshold_masks[det] = mask[()]
+                HexrdConfig().threshold_masks = threshold_masks
             else:
                 if key not in HexrdConfig().detector_names:
                     msg = (
@@ -314,6 +325,7 @@ class MaskManagerDialog(QObject):
         self.masks_changed()
 
         self.update_masks_list('raw')
+        self.update_masks_list('threshold')
 
     def masks_to_panel_buffer(self):
         show_dialog = False
