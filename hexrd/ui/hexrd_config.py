@@ -876,7 +876,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                         final_mask = np.logical_and(final_mask, mask)
             if self.threshold_mask_status:
                 idx = self.current_imageseries_idx
-                thresh_mask = self.threshold_mask[name][idx]
+                thresh_mask = self.threshold_masks[name][idx]
                 final_mask = np.logical_and(final_mask, thresh_mask)
             masks_dict[name] = final_mask
 
@@ -2403,52 +2403,37 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         raise Exception('Unknown distortion function: ' + func_name)
 
-    def threshold_comparison(self):
-        if 'comparison' not in self._threshold_data:
-            self._threshold_data['comparison'] = 0
-        return self._threshold_data['comparison']
+    @property
+    def threshold_comparisons(self):
+        return self._threshold_data.setdefault('comparisons', [])
 
-    def threshold_value(self):
-        if 'value' not in self._threshold_data:
-            self._threshold_data['value'] = 0.0
-        return self._threshold_data['value']
+    @threshold_comparisons.setter
+    def threshold_comparisons(self, v):
+        self._threshold_data['comparisons'] = v
 
+    @property
+    def threshold_values(self):
+        return self._threshold_data.setdefault('values', [])
+
+    @threshold_values.setter
+    def threshold_values(self, v):
+        self._threshold_data['values'] = v
+
+    @property
     def threshold_mask_status(self):
-        if 'mask_status' not in self._threshold_data:
-            self._threshold_data['mask_status'] = False
-        return self._threshold_data['mask_status']
+        mask_vals = HexrdConfig().threshold_masks.values()
+        if len(mask_vals) > 0:
+            return all([v is not None for v in mask_vals])
+        return False
 
-    def threshold_mask(self):
-        if 'mask' not in self._threshold_data:
-            self._threshold_data['mask'] = None
-        return self._threshold_data['mask']
+    @property
+    def threshold_masks(self):
+        return self._threshold_data.setdefault('masks', {})
 
-    def set_threshold_comparison(self, v):
-        self._threshold_data['comparison'] = v
-
-    def set_threshold_value(self, v):
-        self._threshold_data['value'] = v
-
-    def set_threshold_mask_status(self, v, set_by_mgr=False):
-        if set_by_mgr and self._threshold_data['mask_status'] != v:
-            self.mgr_threshold_mask_changed.emit(v)
-            self._threshold_data['mask_status'] = v
-        elif not set_by_mgr and self._threshold_data['mask_status'] != v:
-            self.mode_threshold_mask_changed.emit(v)
-            self._threshold_data['mask_status'] = v
-
-    def set_threshold_mask(self, det, m):
-        masks = self._threshold_data.setdefault('mask', {})
-        masks[det] = m
-
-    threshold_comparison = property(threshold_comparison,
-                                    set_threshold_comparison)
-    threshold_value = property(threshold_value,
-                               set_threshold_value)
-    threshold_mask_status = property(threshold_mask_status,
-                                     set_threshold_mask_status)
-    threshold_mask = property(threshold_mask,
-                              set_threshold_mask)
+    @threshold_masks.setter
+    def threshold_masks(self, masks):
+        self.mgr_threshold_mask_changed.emit()
+        self._threshold_data['masks'] = masks
 
     @property
     def unagg_images(self):

@@ -56,7 +56,7 @@ class MaskManagerDialog(QObject):
         if HexrdConfig().threshold_mask_status:
             self.threshold = 'threshold'
             self.masks['threshold'] = (
-                'threshold', HexrdConfig().threshold_mask)
+                'threshold', HexrdConfig().threshold_masks)
         HexrdConfig().visible_masks = list(self.masks.keys())
 
     def update_masks_list(self, mask_type):
@@ -71,7 +71,7 @@ class MaskManagerDialog(QObject):
                 self.masks[name] = (det, val)
         elif self.threshold is None:
             name = unique_name(self.masks, 'threshold')
-            self.masks[name] = ('threshold', HexrdConfig().threshold_mask)
+            self.masks[name] = ('threshold', HexrdConfig().threshold_masks)
             HexrdConfig().visible_masks.append(name)
             self.threshold = name
         self.setup_table()
@@ -136,11 +136,11 @@ class MaskManagerDialog(QObject):
 
     def reset_threshold(self):
         self.threshold = None
-        HexrdConfig().set_threshold_comparison(0)
-        HexrdConfig().set_threshold_value(0.0)
-        for det in HexrdConfig().detector_names:
-            HexrdConfig().set_threshold_mask(det, None)
-        HexrdConfig().set_threshold_mask_status(False, set_by_mgr=True)
+        HexrdConfig().threshold_comparisons = []
+        HexrdConfig().threshold_values = []
+        HexrdConfig().threshold_masks = {
+            d: None for d in HexrdConfig().detector_names }
+        HexrdConfig().mgr_threshold_mask_changed.emit()
 
     def remove_mask(self, row, name):
         mtype, _ = self.masks.get(name, (None, None))
