@@ -69,11 +69,18 @@ class MaskManagerDialog(QObject):
                 if any(np.array_equal(val, m) for _, m in vals):
                     continue
                 self.masks[name] = (det, val)
-        elif self.threshold is None:
-            name = unique_name(self.masks, 'threshold')
-            self.masks[name] = ('threshold', HexrdConfig().threshold_masks)
-            HexrdConfig().visible_masks.append(name)
-            self.threshold = name
+        elif mask_type == 'threshold':
+            if self.threshold is None and HexrdConfig().threshold_mask_status:
+                name = unique_name(self.masks, 'threshold')
+                self.masks[name] = ('threshold', HexrdConfig().threshold_masks)
+                HexrdConfig().visible_masks.append(name)
+                self.threshold = name
+                self.toggle_visibility(True, self.threshold)
+            elif self.threshold and not HexrdConfig().threshold_masks:
+                items = self.ui.masks_table.findItems(
+                    self.threshold, Qt.MatchExactly)
+                if items:
+                    self.remove_mask(items[0].row(), self.threshold)
         self.setup_table()
 
     def setup_connections(self):
@@ -88,7 +95,7 @@ class MaskManagerDialog(QObject):
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
 
-        HexrdConfig().mode_threshold_mask_changed.connect(
+        HexrdConfig().threshold_mask_changed.connect(
             self.update_masks_list)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
         HexrdConfig().save_state.connect(self.save_state)

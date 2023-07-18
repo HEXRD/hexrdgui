@@ -62,6 +62,7 @@ from hexrd.ui.materials_panel import MaterialsPanel
 from hexrd.ui.messages_widget import MessagesWidget
 from hexrd.ui.refinements_editor import RefinementsEditor
 from hexrd.ui.save_images_dialog import SaveImagesDialog
+from hexrd.ui.threshold_mask_dialog import ThresholdMaskDialog
 from hexrd.ui.transform_dialog import TransformDialog
 from hexrd.ui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
 from hexrd.ui.indexing.fit_grains_tree_view_dialog import (
@@ -145,6 +146,8 @@ class MainWindow(QObject):
 
         self._edit_colormap_list_dialog = EditColormapListDialog(
             self.ui, self.color_map_editor)
+
+        self.threshold_mask_dialog = ThresholdMaskDialog(self.ui)
 
         self.setup_connections()
 
@@ -233,7 +236,7 @@ class MainWindow(QObject):
         self.ui.calibration_tab_widget.currentChanged.connect(
             self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
-        self.image_mode_widget.mask_applied.connect(self.update_all)
+        self.threshold_mask_dialog.mask_applied.connect(self.update_all)
         self.ui.action_run_fast_powder_calibration.triggered.connect(
             self.start_fast_powder_calibration)
         self.ui.action_run_laue_and_powder_calibration.triggered.connect(
@@ -277,6 +280,8 @@ class MainWindow(QObject):
             self.on_action_edit_defaults_toggled)
         self.ui.image_tab_widget.new_active_canvas.connect(
             self.active_canvas_changed)
+        self.ui.action_edit_apply_threshold.triggered.connect(
+            self.on_action_edit_apply_threshold_triggered)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -1492,3 +1497,6 @@ class MainWindow(QObject):
 
     def on_action_edit_defaults_toggled(self):
         self._edit_colormap_list_dialog.show()
+
+    def on_action_edit_apply_threshold_triggered(self):
+        self.threshold_mask_dialog.show()

@@ -181,6 +181,7 @@
       <addaction name="action_edit_apply_powder_mask_to_polar"/>
       <addaction name="action_edit_apply_laue_mask_to_polar"/>
       <addaction name="action_edit_apply_pinhole_mask"/>
+      <addaction name="action_edit_apply_threshold"/>
      </widget>
      <addaction name="action_open_mask_manager"/>
      <addaction name="menu_draw_mask"/>
@@ -831,6 +832,11 @@
   <action name="action_run_structureless_calibration">
    <property name="text">
     <string>Structureless</string>
+   </property>
+  </action>
+  <action name="action_edit_apply_threshold">
+   <property name="text">
+    <string>Threshold</string>
    </property>
   </action>
  </widget>
