@@ -90,15 +90,12 @@ class MaskManagerDialog(QObject):
 
         HexrdConfig().mode_threshold_mask_changed.connect(
             self.update_masks_list)
-        HexrdConfig().mode_threshold_mask_changed.connect(
-            self.toggle_threshold_visibility)
         HexrdConfig().detectors_changed.connect(self.clear_masks)
         HexrdConfig().save_state.connect(self.save_state)
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
 
     def setup_table(self, status=True):
-        self.threshold_cb = None
         with block_signals(self.ui.masks_table):
             self.ui.masks_table.setRowCount(0)
             for i, key in enumerate(self.masks.keys()):
@@ -120,23 +117,8 @@ class MaskManagerDialog(QObject):
                 self.ui.masks_table.setCellWidget(i, 2, pb)
                 pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
 
-                # Connect manager to raw image mode tab settings
-                # for threshold mask
-                mtype, _ = self.masks[key]
-                if mtype == 'threshold':
-                    self.setup_threshold_connections(i, key)
-                    self.threshold_cb = cb
-
-    def setup_threshold_connections(self, row, name):
-        self.ui.masks_table.cellWidget(row, 2).clicked.connect(
-            lambda row=row, name=name: self.remove_mask(row, name))
-
     def image_mode_changed(self, mode):
         self.image_mode = mode
-
-    def toggle_threshold_visibility(self, status):
-        if self.threshold_cb is not None:
-            self.threshold_cb.setChecked(status)
 
     def masks_changed(self):
         if self.image_mode in (ViewType.polar, ViewType.stereo):
@@ -149,9 +131,6 @@ class MaskManagerDialog(QObject):
             HexrdConfig().visible_masks.append(name)
         elif not checked and name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
-
-        if name == self.threshold:
-            HexrdConfig().set_threshold_mask_status(checked, set_by_mgr=True)
 
         self.masks_changed()
 

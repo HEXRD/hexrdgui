@@ -523,7 +523,6 @@ class MainWindow(QObject):
         self.update_color_map_bounds()
         self.update_enable_states()
         self.color_map_editor.reset_range()
-        self.image_mode_widget.reset_masking()
         self.update_image_mode_enable_states()
 
     def on_action_open_materials_triggered(self):
@@ -1202,10 +1201,7 @@ class MainWindow(QObject):
         return labels
 
     def on_action_transform_detectors_triggered(self):
-        mask_state = HexrdConfig().threshold_mask_status
-        self.image_mode_widget.reset_masking()
         _ = TransformDialog(self.ui).exec_()
-        self.image_mode_widget.reset_masking(mask_state)
 
     def open_image_calculator(self):
         if dialog := getattr(self, '_image_calculator_dialog', None):

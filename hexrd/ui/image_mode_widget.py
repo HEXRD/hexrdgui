@@ -7,7 +7,6 @@ from PySide2.QtCore import QObject, QTimer, Signal
 from hexrd.ui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrd.ui.constants import PolarXAxisType, ViewType
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
-from hexrd.ui.create_raw_mask import apply_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
@@ -29,9 +28,6 @@ class ImageModeWidget(QObject):
 
     # Tell the image canvas to show the snip1d
     polar_show_snip1d = Signal()
-
-    # Mask has been applied
-    mask_applied = Signal()
 
     raw_show_zoom_dialog = Signal()
 
@@ -57,17 +53,6 @@ class ImageModeWidget(QObject):
         self.ui.raw_tabbed_view.toggled.connect(HexrdConfig().set_tab_images)
         self.ui.raw_show_saturation.toggled.connect(
             HexrdConfig().set_show_saturation_level)
-        self.ui.raw_threshold_mask.toggled.connect(self.raw_masking)
-        self.ui.raw_threshold_mask.toggled.connect(
-            HexrdConfig().set_threshold_mask_status)
-        self.ui.raw_threshold_comparison.currentIndexChanged.connect(
-            HexrdConfig().set_threshold_comparison)
-        self.ui.raw_threshold_comparison.currentIndexChanged.connect(
-            self.update_mask)
-        self.ui.raw_threshold_value.valueChanged.connect(
-            HexrdConfig().set_threshold_value)
-        self.ui.raw_threshold_value.valueChanged.connect(
-            self.update_mask)
         self.ui.raw_show_zoom_dialog.clicked.connect(
             self.raw_show_zoom_dialog)
         self.ui.cartesian_pixel_size.valueChanged.connect(
@@ -122,9 +107,6 @@ class ImageModeWidget(QObject):
         self.ui.polar_azimuthal_overlays.pressed.connect(
             self.show_polar_overlay_manager)
 
-        HexrdConfig().mgr_threshold_mask_changed.connect(
-            self.ui.raw_threshold_mask.setChecked)
-
         HexrdConfig().state_loaded.connect(self.update_gui_from_config)
 
         HexrdConfig().overlay_distortions_modified.connect(
@@ -162,9 +144,6 @@ class ImageModeWidget(QObject):
         widgets = [
             self.ui.raw_tabbed_view,
             self.ui.raw_show_saturation,
-            self.ui.raw_threshold_mask,
-            self.ui.raw_threshold_comparison,
-            self.ui.raw_threshold_value,
             self.ui.raw_show_zoom_dialog,
             self.ui.cartesian_pixel_size,
             self.ui.cartesian_virtual_plane_distance,
@@ -195,12 +174,6 @@ class ImageModeWidget(QObject):
 
     def update_gui_from_config(self):
         with block_signals(*self.all_widgets()):
-            self.ui.raw_threshold_comparison.setCurrentIndex(
-                HexrdConfig().threshold_comparison)
-            self.ui.raw_threshold_value.setValue(
-                HexrdConfig().threshold_value)
-            self.ui.raw_threshold_mask.setChecked(
-                HexrdConfig().threshold_mask_status)
             self.ui.cartesian_pixel_size.setValue(
                 HexrdConfig().cartesian_pixel_size)
             self.ui.cartesian_virtual_plane_distance.setValue(
@@ -319,26 +292,6 @@ class ImageModeWidget(QObject):
         # Get the GUI to update with the new values
         self.update_gui_from_config()
 
-    def raw_masking(self, checked):
-        # Toggle threshold masking on or off
-        # Creates a copy of the ImageSeries dict so that the images can
-        # easily be reverted to their original state if the mask is
-        # toggled off.
-        self.ui.raw_threshold_comparison.setEnabled(checked)
-        self.ui.raw_threshold_comparison.setCurrentIndex(
-            HexrdConfig().threshold_comparison)
-        self.ui.raw_threshold_value.setEnabled(checked)
-        self.ui.raw_threshold_value.setValue(HexrdConfig().threshold_value)
-        self.update_mask(checked)
-
-    def update_mask(self, masking):
-        # Add or remove the mask. This will cause a re-render
-        if not isinstance(masking, bool) or masking:
-            apply_threshold_mask()
-        self.mask_applied.emit()
-
-    def reset_masking(self, checked=False):
-        self.ui.raw_threshold_mask.setChecked(checked)
 
     @property
     def polar_apply_tth_distortion(self):
