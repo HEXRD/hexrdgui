@@ -717,9 +717,7 @@ class MainWindow(QObject):
 
     def on_action_edit_apply_hand_drawn_mask_triggered(self):
         # Make the dialog
-        canvas = self.ui.image_tab_widget.image_canvases[0]
-        self._apply_drawn_mask_line_picker = (
-            HandDrawnMaskDialog(canvas, self.ui))
+        self._apply_drawn_mask_line_picker = (HandDrawnMaskDialog(self.ui))
         self._apply_drawn_mask_line_picker.start()
         self._apply_drawn_mask_line_picker.finished.connect(
             self.run_apply_hand_drawn_mask)

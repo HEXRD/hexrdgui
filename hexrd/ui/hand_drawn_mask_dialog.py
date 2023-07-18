@@ -6,8 +6,8 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
+from hexrd.ui.hexrd_config import HexrdConfig
 
-from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import add_sample_points
 
@@ -17,7 +17,7 @@ class HandDrawnMaskDialog(QObject):
     # Emits the ring data that was selected
     finished = Signal(list, list)
 
-    def __init__(self, canvas, parent):
+    def __init__(self, parent):
         super().__init__(parent)
 
         loader = UiLoader()
@@ -25,12 +25,13 @@ class HandDrawnMaskDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.canvas = canvas
         self.ring_data = []
         self.linebuilder = None
         self.lines = []
         self.drawing = False
         self.dets = []
+        self.canvas_ids = []
+        self.det = None
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
@@ -42,12 +43,21 @@ class HandDrawnMaskDialog(QObject):
     def setup_connections(self):
         self.ui.accepted.connect(self.accepted)
         self.ui.rejected.connect(self.rejected)
-        self.bp_id = self.canvas.mpl_connect('button_press_event',
-                                             self.button_pressed)
-        self.enter_id = self.canvas.mpl_connect('axes_enter_event',
-                                                self.axes_entered)
-        self.exit_id = self.canvas.mpl_connect('axes_leave_event',
-                                               self.axes_exited)
+        for canvas in self.parent().image_tab_widget.active_canvases:
+            press = canvas.mpl_connect('button_press_event',
+                                                self.button_pressed)
+            enter = canvas.mpl_connect('axes_enter_event',
+                                                    self.axes_entered)
+            exit = canvas.mpl_connect('axes_leave_event',
+                                                self.axes_exited)
+            self.canvas_ids.append([press, enter, exit])
+        self.parent().image_tab_widget.tabBarClicked.connect(
+            self.tabbed_view_changed)
+        HexrdConfig().tab_images_changed.connect(self.tabbed_mode_changed)
+
+    @property
+    def canvas(self):
+        return self.parent().image_tab_widget.active_canvas
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
@@ -70,13 +80,13 @@ class HandDrawnMaskDialog(QObject):
         self.linebuilder = None
         self.cursor = None
 
-        self.canvas.mpl_disconnect(self.bp_id)
-        self.canvas.mpl_disconnect(self.enter_id)
-        self.canvas.mpl_disconnect(self.exit_id)
+        for idx, (press, enter, exit) in enumerate(self.canvas_ids):
+            canvas = self.parent().image_tab_widget.active_canvases[idx]
+            canvas.mpl_disconnect(press)
+            canvas.mpl_disconnect(enter)
+            canvas.mpl_disconnect(exit)
 
-        self.bp_id = None
-        self.enter_id = None
-        self.exit_id = None
+        self.canvas_ids.clear()
         self.canvas.draw()
 
     def start(self):
@@ -89,6 +99,7 @@ class HandDrawnMaskDialog(QObject):
             return
 
         self.ax = event.inaxes
+        self.det = self.ax.get_title()
         # fire up the cursor for this tool
         self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
         self.add_line()
@@ -131,7 +142,7 @@ class HandDrawnMaskDialog(QObject):
         ring_data = add_sample_points(ring_data, 300)
 
         self.ring_data.append(ring_data)
-        self.dets.append(self.ax.get_title())
+        self.dets.append(self.det)
         self.drawing = False
         self.add_line()
 
@@ -156,6 +167,13 @@ class HandDrawnMaskDialog(QObject):
 
     def show(self):
         self.ui.show()
+
+    def tabbed_view_changed(self):
+        if self.linebuilder:
+            self.line_finished()
+
+    def tabbed_mode_changed(self):
+        self.accepted()
 
 
 class LineBuilder(QObject):
