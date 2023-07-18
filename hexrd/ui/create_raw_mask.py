@@ -10,29 +10,33 @@ from hexrd.ui.utils.conversions import angles_to_pixels
 from hexrd.ui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
-# TODO: Rename to something like update_threshold_mask
 def apply_threshold_mask():
-    for det in HexrdConfig().detector_names:
-        ims = HexrdConfig().imageseries(det)
-        masks = [None for i in range(len(ims))]
-        for idx in range(len(ims)):
-            img = HexrdConfig().image(det, idx)
-            mask = create_threshold_mask(img)
-            masks[idx] = mask
-        HexrdConfig().set_threshold_mask(det, masks)
+    results = {}
+    if HexrdConfig().threshold_values:
+        for det in HexrdConfig().detector_names:
+            ims = HexrdConfig().imageseries(det)
+            masks = [None for i in range(len(ims))]
+            for idx in range(len(ims)):
+                img = HexrdConfig().image(det, idx)
+                mask = create_threshold_mask(img)
+                masks[idx] = mask
+            results[det] = masks
+    HexrdConfig().threshold_masks = results
 
 
 def create_threshold_mask(img):
-    comparison = HexrdConfig().threshold_comparison
-    value = HexrdConfig().threshold_value
-    mask = np.ones(img.shape, dtype=bool)
-    if comparison == constants.UI_THRESHOLD_LESS_THAN:
-        mask = (img > value)
-    elif comparison == constants.UI_THRESHOLD_GREATER_THAN:
-        mask = (img < value)
-    elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
-        mask = (img != value)
-    return mask
+    comparisons = HexrdConfig().threshold_comparisons
+    values = HexrdConfig().threshold_values
+    masks = []
+    for (comparison, value) in zip(comparisons, values):
+        if comparison == constants.UI_THRESHOLD_LESS_THAN:
+            masks.append(img < value)
+        elif comparison == constants.UI_THRESHOLD_GREATER_THAN:
+            masks.append(img > value)
+        elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
+            masks.append(img == value)
+    mask = np.logical_and.reduce(masks)
+    return ~mask
 
 
 def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
