@@ -116,14 +116,16 @@ class MessagesWidget(QObject):
         scrollbar.setValue(scrollbar.maximum() if autoscroll else current)
 
     def write_stdout(self, text):
-        with self.with_color(STDOUT_COLOR):
-            self.insert_text(text)
+        with self.with_cursor_at_end():
+            with self.with_color(STDOUT_COLOR):
+                self.insert_text(text)
 
         self.message_written.emit('stdout', text)
 
     def write_stderr(self, text):
-        with self.with_color(STDERR_COLOR):
-            self.insert_text(text)
+        with self.with_cursor_at_end():
+            with self.with_color(STDERR_COLOR):
+                self.insert_text(text)
 
         self.message_written.emit('stderr', text)
 
@@ -150,6 +152,22 @@ class MessagesWidget(QObject):
     def clear_text(self):
         self._holding_return = False
         self.ui.text.clear()
+
+    @contextmanager
+    def with_cursor_at_end(self):
+        # Ensure that the text cursor is moved to the end before writing.
+        # This fixes an issue where, if the user clicked on text in the
+        # messages box, that would move the cursor, so that new text is
+        # written out to the new cursor position rather than at the end.
+        text_edit = self.ui.text
+        prev_pos = text_edit.textCursor().position()
+        text_edit.moveCursor(QTextCursor.End)
+        position_changed = prev_pos != text_edit.textCursor().position()
+        try:
+            yield
+        finally:
+            if position_changed:
+                text_edit.textCursor().setPosition(prev_pos)
 
     @contextmanager
     def with_color(self, color):
