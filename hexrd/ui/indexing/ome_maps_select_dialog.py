@@ -110,10 +110,6 @@ class OmeMapsSelectDialog(QObject):
             self.ui.threshold.setValue(v)
 
     @property
-    def bin_frames(self):
-        return self.ui.bin_frames.value()
-
-    @property
     def material_options(self):
         w = self.ui.material
         return [w.itemText(i) for i in range(w.count())]
@@ -144,7 +140,6 @@ class OmeMapsSelectDialog(QObject):
         return [
             self.ui.file_name,
             self.ui.threshold,
-            self.ui.bin_frames
         ]
 
     def update_config(self):
@@ -154,7 +149,6 @@ class OmeMapsSelectDialog(QObject):
         maps_config['_select_method'] = self.method_name
         maps_config['file'] = self.file_name
         maps_config['threshold'] = self.threshold
-        maps_config['bin_frames'] = self.bin_frames
 
         indexing_config['_selected_material'] = self.selected_material
 
@@ -170,7 +164,6 @@ class OmeMapsSelectDialog(QObject):
 
             self.ui.file_name.setText(file_name)
             self.threshold = maps_config['threshold']
-            self.ui.bin_frames.setValue(maps_config['bin_frames'])
 
             self.selected_material = indexing_config.get('_selected_material')
 

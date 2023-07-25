@@ -51,13 +51,6 @@
        <string>Generate</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="5" column="0">
-        <widget class="QLabel" name="bin_frames_label">
-         <property name="text">
-          <string>Bin Frames:</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="0">
         <widget class="QCheckBox" name="apply_threshold">
          <property name="text">
@@ -78,16 +71,6 @@
          </property>
          <property name="value">
           <double>250.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QSpinBox" name="bin_frames">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>1000</number>
          </property>
         </widget>
        </item>
@@ -168,7 +151,6 @@
   <tabstop>choose_hkls</tabstop>
   <tabstop>apply_threshold</tabstop>
   <tabstop>threshold</tabstop>
-  <tabstop>bin_frames</tabstop>
  </tabstops>
  <resources/>
  <connections>
