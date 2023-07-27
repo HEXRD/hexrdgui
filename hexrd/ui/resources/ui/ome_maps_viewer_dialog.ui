@@ -11,7 +11,7 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="3" rowspan="8">
+   <item row="3" column="3" rowspan="7">
     <layout class="QVBoxLayout" name="canvas_layout"/>
    </item>
    <item row="3" column="4" rowspan="4">
@@ -169,6 +169,20 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QCheckBox" name="write_scored_orientations">
+          <property name="text">
+           <string>Write scored orientations?</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="QPushButton" name="select_working_dir">
+          <property name="text">
+           <string>Select Directory</string>
           </property>
          </widget>
         </item>
@@ -855,14 +869,7 @@
      </layout>
     </widget>
    </item>
-   <item row="11" column="1">
-    <widget class="QCheckBox" name="write_scored_orientations">
-     <property name="text">
-      <string>Write scored orientations?</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="3" colspan="2">
+   <item row="11" column="0" colspan="5">
     <widget class="QDialogButtonBox" name="button_box">
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
@@ -913,13 +920,6 @@
      </layout>
     </widget>
    </item>
-   <item row="11" column="2">
-    <widget class="QPushButton" name="select_working_dir">
-     <property name="text">
-      <string>Select Directory</string>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -955,14 +955,14 @@
   <tabstop>clustering_radius</tabstop>
   <tabstop>clustering_completeness</tabstop>
   <tabstop>clustering_algorithm</tabstop>
-  <tabstop>write_scored_orientations</tabstop>
-  <tabstop>select_working_dir</tabstop>
   <tabstop>apply_filtering</tabstop>
   <tabstop>filtering_apply_gaussian_laplace</tabstop>
   <tabstop>filtering_fwhm</tabstop>
   <tabstop>active_hkl</tabstop>
   <tabstop>label_spots</tabstop>
   <tabstop>export_button</tabstop>
+  <tabstop>write_scored_orientations</tabstop>
+  <tabstop>select_working_dir</tabstop>
  </tabstops>
  <resources/>
  <connections>

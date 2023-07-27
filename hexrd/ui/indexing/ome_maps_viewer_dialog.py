@@ -27,6 +27,7 @@ from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 import hexrd.ui.constants
 import hexrd.ui.resources.indexing
@@ -45,6 +46,9 @@ class OmeMapsViewerDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('ome_maps_viewer_dialog.ui', parent)
+
+        url = 'hedm/indexing/#find-orientations'
+        add_help_url(self.ui.button_box, url)
 
         self.data = data
         self.cmap = HexrdConfig().default_cmap

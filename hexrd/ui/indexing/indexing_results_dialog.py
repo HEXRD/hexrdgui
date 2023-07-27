@@ -16,6 +16,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class IndexingResultsDialog(QObject):
@@ -28,6 +29,8 @@ class IndexingResultsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('indexing_results_dialog.ui', parent)
+
+        add_help_url(self.ui.button_box, 'hedm/indexing/#results')
 
         self.ome_maps = ome_maps
         self.grains_table = grains_table
