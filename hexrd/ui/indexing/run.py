@@ -394,6 +394,9 @@ class IndexingRunner(Runner):
         # is complete. The user can cancel this if they don't want to do it.
         dialog.accepted.connect(self.start_fit_grains_runner)
 
+        # If the dialog is rejected, go back to the eta omega maps viewer
+        dialog.rejected.connect(self.view_ome_maps)
+
         # Show later so the dialog will move to the front on Mac
         dialog.show_later()
         self.indexing_results_dialog = dialog
