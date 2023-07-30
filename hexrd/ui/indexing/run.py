@@ -190,7 +190,10 @@ class IndexingRunner(Runner):
         # Now, show the Ome Map viewer
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
-        dialog.rejected.connect(self.clear)
+        # Don't clear if this is rejected because we might have just
+        # gone back after rejecting indexing results, and the user
+        # might want to rerun the clustering.
+
         # Show later so the dialog will move to the front on Mac
         dialog.show_later()
 
