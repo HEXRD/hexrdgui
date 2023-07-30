@@ -429,6 +429,9 @@
                    <property name="keyboardTracking">
                     <bool>false</bool>
                    </property>
+                   <property name="suffix">
+                    <string> FWHM</string>
+                   </property>
                    <property name="decimals">
                     <number>8</number>
                    </property>
