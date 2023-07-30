@@ -80,10 +80,13 @@ class RerunClusteringDialog(QDialog):
         self.save_input()
 
         runner = self.indexing_runner
+        runner.is_rerunning_clustering = True
         worker = AsyncWorker(runner.run_cluster)
         runner.thread_pool.start(worker)
         worker.signals.result.connect(
             runner.confirm_indexing_results, Qt.QueuedConnection)
+        runner.indexing_results_rejected.connect(
+            self.exec_, Qt.QueuedConnection)
         worker.signals.finished.connect(runner.accept_progress)
         worker.signals.error.connect(runner.on_async_error)
         runner.progress_dialog.exec_()
