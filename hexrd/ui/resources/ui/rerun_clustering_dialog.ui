@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>401</width>
-    <height>207</height>
+    <height>221</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -96,16 +96,6 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="1">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1">
     <widget class="ScientificDoubleSpinBox" name="radius" native="true">
      <property name="decimals" stdset="0">
@@ -123,6 +113,16 @@
     <widget class="QLabel" name="file_name">
      <property name="text">
       <string>No File Selected</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
     </widget>
    </item>
