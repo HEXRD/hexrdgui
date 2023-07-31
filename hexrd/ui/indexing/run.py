@@ -86,6 +86,7 @@ class Runner(QObject):
 class IndexingRunner(Runner):
 
     clustering_ran = Signal(bool)
+    indexing_results_rejected = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -97,6 +98,7 @@ class IndexingRunner(Runner):
         self.indexing_results_dialog = None
         self.ome_maps = None
         self.grains_table = None
+        self.is_rerunning_clustering = False
 
     def run(self):
         # We will go through these steps:
@@ -188,7 +190,10 @@ class IndexingRunner(Runner):
         # Now, show the Ome Map viewer
         dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
         dialog.accepted.connect(self.ome_maps_viewed)
-        dialog.rejected.connect(self.clear)
+        # Don't clear if this is rejected because we might have just
+        # gone back after rejecting indexing results, and the user
+        # might want to rerun the clustering.
+
         # Show later so the dialog will move to the front on Mac
         dialog.show_later()
 
@@ -393,6 +398,16 @@ class IndexingRunner(Runner):
         # We will automatically start fit grains after the indexing
         # is complete. The user can cancel this if they don't want to do it.
         dialog.accepted.connect(self.start_fit_grains_runner)
+
+        def on_rejected():
+            if not self.is_rerunning_clustering:
+                # If the dialog is rejected, go back to the
+                # eta-omega maps viewer
+                self.view_ome_maps()
+
+            self.indexing_results_rejected.emit()
+
+        dialog.rejected.connect(on_rejected)
 
         # Show later so the dialog will move to the front on Mac
         dialog.show_later()

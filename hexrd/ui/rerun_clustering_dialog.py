@@ -1,13 +1,13 @@
-import copy
 import numpy as np
 from pathlib import Path
+
+from PySide2.QtWidgets import QDialog, QFileDialog
+from PySide2.QtCore import Qt
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
-
-from PySide2.QtWidgets import QDialog, QFileDialog
-from PySide2.QtCore import Qt
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class RerunClusteringDialog(QDialog):
@@ -17,6 +17,9 @@ class RerunClusteringDialog(QDialog):
 
         loader = UiLoader()
         self.ui = loader.load_file('rerun_clustering_dialog.ui', parent)
+
+        add_help_url(self.ui.button_box, 'hedm/indexing/#rerun-clustering')
+
         self.indexing_runner = indexing_runner
         self.qfib = None
         self.completeness = None
@@ -77,10 +80,13 @@ class RerunClusteringDialog(QDialog):
         self.save_input()
 
         runner = self.indexing_runner
+        runner.is_rerunning_clustering = True
         worker = AsyncWorker(runner.run_cluster)
         runner.thread_pool.start(worker)
         worker.signals.result.connect(
             runner.confirm_indexing_results, Qt.QueuedConnection)
+        runner.indexing_results_rejected.connect(
+            self.exec_, Qt.QueuedConnection)
         worker.signals.finished.connect(runner.accept_progress)
         worker.signals.error.connect(runner.on_async_error)
         runner.progress_dialog.exec_()

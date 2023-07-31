@@ -11,7 +11,7 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="3" rowspan="8">
+   <item row="3" column="3" rowspan="7">
     <layout class="QVBoxLayout" name="canvas_layout"/>
    </item>
    <item row="3" column="4" rowspan="4">
@@ -172,6 +172,20 @@
           </property>
          </widget>
         </item>
+        <item row="2" column="2">
+         <widget class="QCheckBox" name="write_scored_orientations">
+          <property name="text">
+           <string>Write scored orientations?</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="QPushButton" name="select_working_dir">
+          <property name="text">
+           <string>Select Directory</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
      </layout>
@@ -179,6 +193,12 @@
    </item>
    <item row="8" column="1" colspan="2">
     <widget class="QGroupBox" name="eta_group_box">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>100</height>
+      </size>
+     </property>
      <property name="title">
       <string>Eta</string>
      </property>
@@ -246,6 +266,12 @@
    </item>
    <item row="9" column="1" colspan="2">
     <widget class="QGroupBox" name="clustering_group_box">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>125</height>
+      </size>
+     </property>
      <property name="title">
       <string>Clustering</string>
      </property>
@@ -402,6 +428,9 @@
                   <widget class="ScientificDoubleSpinBox" name="filter_radius">
                    <property name="keyboardTracking">
                     <bool>false</bool>
+                   </property>
+                   <property name="suffix">
+                    <string> FWHM</string>
                    </property>
                    <property name="decimals">
                     <number>8</number>
@@ -855,25 +884,14 @@
      </layout>
     </widget>
    </item>
-   <item row="11" column="1">
-    <widget class="QCheckBox" name="write_scored_orientations">
-     <property name="text">
-      <string>Write scored orientations?</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="3" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
    <item row="7" column="1" colspan="2">
     <widget class="QGroupBox" name="omega_group_box">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>75</height>
+      </size>
+     </property>
      <property name="title">
       <string>Omega</string>
      </property>
@@ -913,10 +931,13 @@
      </layout>
     </widget>
    </item>
-   <item row="11" column="2">
-    <widget class="QPushButton" name="select_working_dir">
-     <property name="text">
-      <string>Select Directory</string>
+   <item row="11" column="1" colspan="4">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+     <property name="centerButtons">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
@@ -955,14 +976,14 @@
   <tabstop>clustering_radius</tabstop>
   <tabstop>clustering_completeness</tabstop>
   <tabstop>clustering_algorithm</tabstop>
-  <tabstop>write_scored_orientations</tabstop>
-  <tabstop>select_working_dir</tabstop>
   <tabstop>apply_filtering</tabstop>
   <tabstop>filtering_apply_gaussian_laplace</tabstop>
   <tabstop>filtering_fwhm</tabstop>
   <tabstop>active_hkl</tabstop>
   <tabstop>label_spots</tabstop>
   <tabstop>export_button</tabstop>
+  <tabstop>write_scored_orientations</tabstop>
+  <tabstop>select_working_dir</tabstop>
  </tabstops>
  <resources/>
  <connections>
