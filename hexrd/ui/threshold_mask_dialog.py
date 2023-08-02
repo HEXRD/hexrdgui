@@ -51,7 +51,6 @@ class ThresholdMaskDialog(QObject):
         self.ui.second_value.setValue(val)
 
     def setup_connections(self):
-        self.ui.button_box.accepted.connect(self.accept)
         apply_button = self.ui.button_box.button(QDialogButtonBox.Apply)
         apply_button.clicked.connect(self.accept)
         reset_button = self.ui.button_box.button(QDialogButtonBox.RestoreDefaults)

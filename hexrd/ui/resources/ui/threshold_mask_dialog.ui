@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>425</width>
+    <width>247</width>
     <height>143</height>
    </rect>
   </property>
@@ -14,45 +14,21 @@
    <string>Threshold Masking</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="2">
-    <widget class="QLabel" name="value_label">
-     <property name="text">
-      <string>Value</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2">
-    <widget class="ScientificDoubleSpinBox" name="first_value">
-     <property name="toolTip">
-      <string>Values of inf/-inf will be ignored</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="2">
-    <widget class="ScientificDoubleSpinBox" name="second_value">
-     <property name="toolTip">
-      <string>Values of inf/-inf will be ignored</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::RestoreDefaults</set>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
+   <item row="0" column="0">
     <widget class="QLabel" name="comparison_label">
      <property name="text">
       <string>Comparison</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
+   <item row="0" column="1">
+    <widget class="QLabel" name="value_label">
+     <property name="text">
+      <string>Value</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
     <widget class="QComboBox" name="first_comparison">
      <item>
       <property name="text">
@@ -71,7 +47,14 @@
      </item>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
+   <item row="1" column="1">
+    <widget class="ScientificDoubleSpinBox" name="first_value">
+     <property name="toolTip">
+      <string>Values of inf/-inf will be ignored</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
     <widget class="QComboBox" name="second_comparison">
      <property name="currentIndex">
       <number>0</number>
@@ -93,6 +76,23 @@
      </item>
     </widget>
    </item>
+   <item row="2" column="1">
+    <widget class="ScientificDoubleSpinBox" name="second_value">
+     <property name="toolTip">
+      <string>Values of inf/-inf will be ignored</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Apply|QDialogButtonBox::RestoreDefaults</set>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -102,6 +102,12 @@
    <header>scientificspinbox.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>first_comparison</tabstop>
+  <tabstop>first_value</tabstop>
+  <tabstop>second_comparison</tabstop>
+  <tabstop>second_value</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
