@@ -1,5 +1,8 @@
 import functools
 import math
+
+import numpy as np
+
 from PySide2.QtCore import QObject, Qt, Signal
 from PySide2.QtWidgets import QDialogButtonBox
 from hexrd.ui.create_raw_mask import apply_threshold_mask
@@ -62,13 +65,13 @@ class ThresholdMaskDialog(QObject):
         self.values.clear()
 
         val = self.ui.first_value.value()
-        if val != math.inf and val != -math.inf:
+        if not np.isinf(val):
             idx = self.ui.first_comparison.currentIndex()
             self.values.append(val)
             self.comparisons.append(idx)
 
         val = self.ui.second_value.value()
-        if val != math.inf and val != -math.inf:
+        if not np.isinf(val):
             idx = self.ui.second_comparison.currentIndex()
             self.values.append(val)
             self.comparisons.append(idx)
