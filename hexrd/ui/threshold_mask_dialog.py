@@ -66,5 +66,4 @@ class ThresholdMaskDialog(QObject):
         self.gather_input()
         HexrdConfig().threshold_values = self.values
         apply_threshold_mask()
-        HexrdConfig().threshold_mask_changed.emit('threshold')
         self.mask_applied.emit()

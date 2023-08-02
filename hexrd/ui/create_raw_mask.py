@@ -22,6 +22,7 @@ def apply_threshold_mask():
                 masks[idx] = mask
             results[det] = masks
     HexrdConfig().threshold_masks = results
+    HexrdConfig().threshold_mask_changed.emit('threshold')
 
 
 def create_threshold_mask(img):
