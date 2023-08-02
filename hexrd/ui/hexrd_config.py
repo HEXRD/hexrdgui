@@ -2422,9 +2422,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def threshold_mask_status(self):
         mask_vals = HexrdConfig().threshold_masks.values()
-        if len(mask_vals) > 0:
+        if self._threshold_data.get('visible', True) and len(mask_vals) > 0:
             return all([v is not None for v in mask_vals])
         return False
+
+    @threshold_mask_status.setter
+    def threshold_mask_status(self, v):
+        self._threshold_data['visible'] = v
 
     @property
     def threshold_masks(self):

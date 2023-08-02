@@ -139,6 +139,9 @@ class MaskManagerDialog(QObject):
         elif not checked and name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
 
+        if name == self.threshold:
+            HexrdConfig().threshold_mask_status = checked
+
         self.masks_changed()
 
     def reset_threshold(self):
