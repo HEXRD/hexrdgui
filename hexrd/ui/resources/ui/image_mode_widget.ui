@@ -61,18 +61,18 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QCheckBox" name="raw_show_saturation">
-           <property name="text">
-            <string>Show Saturation</string>
-           </property>
-          </widget>
-         </item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <widget class="QCheckBox" name="raw_tabbed_view">
            <property name="text">
             <string>Tabbed View</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="raw_show_saturation">
+           <property name="text">
+            <string>Show Saturation</string>
            </property>
           </widget>
          </item>
