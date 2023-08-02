@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>247</width>
-    <height>143</height>
+    <height>98</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,69 +17,14 @@
    <item row="0" column="0">
     <widget class="QLabel" name="comparison_label">
      <property name="text">
-      <string>Comparison</string>
+      <string>Range</string>
      </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLabel" name="value_label">
-     <property name="text">
-      <string>Value</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QComboBox" name="first_comparison">
-     <item>
-      <property name="text">
-       <string>Less than</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Greater than</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Equal to</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="ScientificDoubleSpinBox" name="first_value">
-     <property name="toolTip">
-      <string>Values of inf/-inf will be ignored</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QComboBox" name="second_comparison">
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <item>
-      <property name="text">
-       <string>Less than</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Greater than</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Equal to</string>
-      </property>
-     </item>
     </widget>
    </item>
    <item row="2" column="1">
     <widget class="ScientificDoubleSpinBox" name="second_value">
      <property name="toolTip">
-      <string>Values of inf/-inf will be ignored</string>
+      <string>Defines the range of values that will *not* be masked.</string>
      </property>
     </widget>
    </item>
@@ -93,6 +38,13 @@
      </property>
     </widget>
    </item>
+   <item row="2" column="0">
+    <widget class="ScientificDoubleSpinBox" name="first_value">
+     <property name="toolTip">
+      <string>Defines the range of values that will *not* be masked.</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -103,9 +55,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>first_comparison</tabstop>
   <tabstop>first_value</tabstop>
-  <tabstop>second_comparison</tabstop>
   <tabstop>second_value</tabstop>
  </tabstops>
  <resources/>

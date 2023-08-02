@@ -2404,14 +2404,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         raise Exception('Unknown distortion function: ' + func_name)
 
     @property
-    def threshold_comparisons(self):
-        return self._threshold_data.setdefault('comparisons', [])
-
-    @threshold_comparisons.setter
-    def threshold_comparisons(self, v):
-        self._threshold_data['comparisons'] = v
-
-    @property
     def threshold_values(self):
         return self._threshold_data.setdefault('values', [])
 

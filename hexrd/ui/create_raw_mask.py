@@ -25,18 +25,11 @@ def apply_threshold_mask():
 
 
 def create_threshold_mask(img):
-    comparisons = HexrdConfig().threshold_comparisons
-    values = HexrdConfig().threshold_values
-    masks = []
-    for (comparison, value) in zip(comparisons, values):
-        if comparison == constants.UI_THRESHOLD_LESS_THAN:
-            masks.append(img < value)
-        elif comparison == constants.UI_THRESHOLD_GREATER_THAN:
-            masks.append(img > value)
-        elif comparison == constants.UI_THRESHOLD_EQUAL_TO:
-            masks.append(img == value)
-    mask = np.logical_and.reduce(masks)
-    return ~mask
+    lt_val, gt_val = HexrdConfig().threshold_values
+    lt_mask = img < lt_val
+    gt_mask = img > gt_val
+
+    return ~np.logical_or(lt_mask, gt_mask)
 
 
 def convert_polar_to_raw(line_data, reverse_tth_distortion=True):

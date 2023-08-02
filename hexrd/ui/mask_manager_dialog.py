@@ -146,7 +146,6 @@ class MaskManagerDialog(QObject):
 
     def reset_threshold(self):
         self.threshold = None
-        HexrdConfig().threshold_comparisons = []
         HexrdConfig().threshold_values = []
         HexrdConfig().threshold_masks = {
             d: None for d in HexrdConfig().detector_names }
@@ -293,8 +292,6 @@ class MaskManagerDialog(QObject):
                 # Convert strings into actual python strings
                 HexrdConfig().visible_masks = list(h5py_read_string(data))
             elif key == 'threshold':
-                HexrdConfig().threshold_comparisons = (
-                    data['comparisons'][()].tolist())
                 HexrdConfig().threshold_values = data['values'][()].tolist()
                 threshold_masks = {}
                 for det, mask in data['masks'].items():
