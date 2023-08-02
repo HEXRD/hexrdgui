@@ -99,6 +99,10 @@ class HandDrawnMaskDialog(QObject):
             return
 
         self.ax = event.inaxes
+        # Get the detector name on mask creation since completion may have been
+        # triggered by the canvas being changed. No title is returned unless
+        # we're in the raw view but that is the only time it is needed. See:
+        # https://github.com/HEXRD/hexrdgui/blob/master/hexrd/ui/main_window.py#L727-L745
         self.det = self.ax.get_title()
         # fire up the cursor for this tool
         self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
