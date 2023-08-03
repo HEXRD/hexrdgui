@@ -1391,7 +1391,7 @@ class ImageCanvas(FigureCanvas):
             background = self.iviewer.snip_background
         else:
             # We have to run it ourselves...
-            img = self.iviewer.raw_rescaled_img
+            img = self.iviewer.raw_img.data
 
             no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:

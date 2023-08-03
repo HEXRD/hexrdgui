@@ -1,6 +1,5 @@
 import numpy as np
 
-from skimage.exposure import rescale_intensity
 from skimage.filters.edges import binary_erosion
 from skimage.morphology import rectangle
 from skimage.transform import warp
@@ -347,7 +346,6 @@ class PolarView:
         # mask_warp = warp(pimg.mask, displ_field, mode='edge')
         image1_warp = warp(pimg, displ_field, mode='edge')
 
-        # image1_warp = rescale_intensity(image1_warp, out_range=np.uint32)
         return np.ma.array(image1_warp)  # , mask=mask_warp)
 
     def generate_image(self):
@@ -363,15 +361,11 @@ class PolarView:
         self.apply_image_processing()
 
     @property
-    def raw_rescaled_img(self):
-        return self.apply_rescale(self.raw_img.data)
-
-    @property
     def raw_mask(self):
         return self.raw_img.mask
 
     def apply_image_processing(self):
-        img = self.raw_rescaled_img
+        img = self.raw_img.data
         img = self.apply_snip(img)
         # cache this step so we can just re-apply masks if needed
         self.snipped_img = img
@@ -383,15 +377,6 @@ class PolarView:
         img = self.apply_tth_distortion(img)
 
         self.processed_img = img
-
-    def apply_rescale(self, img):
-        # Rescale the data to match the scale of the original dataset
-        kwargs = {
-            'image': img,
-            'in_range': (np.nanmin(img), np.nanmax(img)),
-            'out_range': (self.min, self.max),
-        }
-        return rescale_intensity(**kwargs)
 
     def apply_snip(self, img):
         # do SNIP if requested
