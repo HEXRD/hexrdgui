@@ -2,7 +2,6 @@ import numpy as np
 
 from skimage.draw import polygon
 
-from hexrd.ui import constants
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import add_sample_points
