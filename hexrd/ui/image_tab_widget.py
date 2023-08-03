@@ -25,6 +25,9 @@ class ImageTabWidget(QTabWidget):
     # Arguments are: x, y, xdata, ydata, intensity
     new_mouse_position = Signal(dict)
 
+    # Tell the main window that the active canvas has changed
+    new_active_canvas = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.image_canvases = [ImageCanvas(self)]
@@ -54,7 +57,6 @@ class ImageTabWidget(QTabWidget):
 
     def clear(self):
         # This calls super().clear()
-
         # Hide all toolbars
         for tb in self.toolbars:
             tb['tb'].setVisible(False)
@@ -172,7 +174,9 @@ class ImageTabWidget(QTabWidget):
         if idx < 0:
             return
 
-        self.current_index = idx
+        if self.current_index != idx:
+            self.current_index = idx
+            self.new_active_canvas.emit()
 
         # None should be visible except the current one
         for i, toolbar in enumerate(self.toolbars):

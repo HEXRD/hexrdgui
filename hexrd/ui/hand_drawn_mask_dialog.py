@@ -11,13 +11,14 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import add_sample_points
 
+# TODO: How to handle image mode? Mode has changed byt the time the signal has been emitted.
 
 class HandDrawnMaskDialog(QObject):
 
     # Emits the ring data that was selected
     finished = Signal(list, list)
 
-    def __init__(self, parent):
+    def __init__(self, canvas, parent):
         super().__init__(parent)
 
         loader = UiLoader()
@@ -25,12 +26,12 @@ class HandDrawnMaskDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
+        self.canvas = canvas
         self.ring_data = []
         self.linebuilder = None
         self.lines = []
         self.drawing = False
         self.dets = []
-        self.canvas_ids = []
         self.det = None
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -39,25 +40,19 @@ class HandDrawnMaskDialog(QObject):
         self.move_dialog_to_left()
 
         self.setup_connections()
+        self.setup_canvas_connections()
 
     def setup_connections(self):
         self.ui.accepted.connect(self.accepted)
         self.ui.rejected.connect(self.rejected)
-        for canvas in self.parent().image_tab_widget.active_canvases:
-            press = canvas.mpl_connect('button_press_event',
-                                                self.button_pressed)
-            enter = canvas.mpl_connect('axes_enter_event',
-                                                    self.axes_entered)
-            exit = canvas.mpl_connect('axes_leave_event',
-                                                self.axes_exited)
-            self.canvas_ids.append([press, enter, exit])
-        self.parent().image_tab_widget.tabBarClicked.connect(
-            self.tabbed_view_changed)
-        HexrdConfig().tab_images_changed.connect(self.tabbed_mode_changed)
 
-    @property
-    def canvas(self):
-        return self.parent().image_tab_widget.active_canvas
+    def setup_canvas_connections(self):
+        self.bp_id = self.canvas.mpl_connect('button_press_event',
+                                            self.button_pressed)
+        self.enter_id = self.canvas.mpl_connect('axes_enter_event',
+                                                self.axes_entered)
+        self.exit_id = self.canvas.mpl_connect('axes_leave_event',
+                                            self.axes_exited)
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
@@ -80,13 +75,14 @@ class HandDrawnMaskDialog(QObject):
         self.linebuilder = None
         self.cursor = None
 
-        for idx, (press, enter, exit) in enumerate(self.canvas_ids):
-            canvas = self.parent().image_tab_widget.active_canvases[idx]
-            canvas.mpl_disconnect(press)
-            canvas.mpl_disconnect(enter)
-            canvas.mpl_disconnect(exit)
+        self.canvas.mpl_disconnect(self.bp_id)
+        self.canvas.mpl_disconnect(self.enter_id)
+        self.canvas.mpl_disconnect(self.exit_id)
 
-        self.canvas_ids.clear()
+        self.bp_id = None
+        self.enter_id = None
+        self.exit_id = None
+        self.dets.clear()
         self.canvas.draw()
 
     def start(self):
@@ -131,6 +127,9 @@ class HandDrawnMaskDialog(QObject):
         self.canvas.draw_idle()
 
     def line_finished(self):
+        if not self.linebuilder:
+            return
+
         # append to ring_data
         linebuilder = self.linebuilder
         ring_data = np.vstack([linebuilder.xs, linebuilder.ys]).T
@@ -172,12 +171,10 @@ class HandDrawnMaskDialog(QObject):
     def show(self):
         self.ui.show()
 
-    def tabbed_view_changed(self):
-        if self.linebuilder:
-            self.line_finished()
-
-    def tabbed_mode_changed(self):
+    def canvas_changed(self, canvas):
         self.accepted()
+        self.canvas = canvas
+        self.setup_canvas_connections()
 
 
 class LineBuilder(QObject):
