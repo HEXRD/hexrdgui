@@ -53,23 +53,13 @@ class ImageTabWidget(QTabWidget):
         HexrdConfig().detectors_changed.connect(self.reset_index)
 
     def clear(self):
-        # This removes all canvases except the first one,
-        # and it calls super().clear()
-
-        for canvas, cid in zip(self.image_canvases[1:],
-                               self.mpl_connections[1:]):
-            canvas.mpl_disconnect(cid)
-            canvas.deleteLater()
+        # This calls super().clear()
 
         # Hide all toolbars
         for tb in self.toolbars:
             tb['tb'].setVisible(False)
             tb['sb'].set_visible(False)
             tb['ib'].set_visible(False)
-
-        del self.image_canvases[1:]
-        del self.toolbars[1:]
-        del self.mpl_connections[1:]
 
         super().clear()
 
