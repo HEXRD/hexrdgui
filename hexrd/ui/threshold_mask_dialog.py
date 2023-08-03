@@ -55,12 +55,8 @@ class ThresholdMaskDialog(QObject):
 
     def gather_input(self):
         self.values.clear()
-
-        if not np.isinf(val := self.ui.first_value.value()):
-            self.values.append(val)
-
-        if not np.isinf(val := self.ui.second_value.value()):
-            self.values.append(val)
+        self.values.append(self.ui.first_value.value())
+        self.values.append(self.ui.second_value.value())
 
     def accept(self):
         self.gather_input()
