@@ -333,6 +333,7 @@ class MainWindow(QObject):
 
     def on_state_loaded(self):
         self.update_action_check_states()
+        self.materials_panel.update_gui_from_config()
 
     def update_action_check_states(self):
         checkbox_to_hexrd_config_mappings = {
