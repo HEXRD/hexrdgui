@@ -33,10 +33,6 @@ class InstrumentViewer:
         return self.pv.angular_grid
 
     @property
-    def raw_rescaled_img(self):
-        return self.pv.raw_rescaled_img
-
-    @property
     def raw_img(self):
         return self.pv.raw_img
 
@@ -111,7 +107,7 @@ class InstrumentViewer:
             np.savetxt(filename, azimuthal_integration, delimiter=delimiter)
             return
 
-        intensities = self.raw_rescaled_img
+        intensities = self.raw_img.data
         intensities[self.raw_mask] = np.nan
 
         # Prepare the data to write out
