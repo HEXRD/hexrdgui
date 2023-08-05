@@ -410,6 +410,11 @@ class CalibrationRunner(QObject):
         # In case any overlays changed
         HexrdConfig().overlay_config_changed.emit()
         HexrdConfig().update_overlay_editor.emit()
+
+        # Focus mode should definitely not be enabled at this point,
+        # but let's be extra careful and make sure it is disabled.
+        self.enable_focus_mode(False)
+
         self.finished.emit()
 
     def write_instrument_to_hexrd_config(self, instr):
@@ -648,8 +653,9 @@ class CalibrationRunner(QObject):
         if self.line_picker:
             self.line_picker.disabled = b
             self.line_picker.ui.setVisible(not b)
+
             # Make sure focus mode is enabled while the line picker is visible
-            self.enable_focus_mode(True)
+            self.enable_focus_mode(not b)
 
     def enable_line_picker(self):
         self.disable_line_picker(False)
