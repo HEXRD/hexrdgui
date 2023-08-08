@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <property name="iconSize">
       <size>
@@ -60,58 +60,6 @@
        <string>Raw</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="1">
-        <layout class="QFormLayout" name="formLayout">
-         <item row="0" column="0" colspan="2">
-          <widget class="QCheckBox" name="raw_threshold_mask">
-           <property name="text">
-            <string>Set Threshold Mask</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QComboBox" name="raw_threshold_comparison">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <item>
-            <property name="text">
-             <string>less than</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>greater than</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>equal to</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="ScientificDoubleSpinBox" name="raw_threshold_value">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="decimals">
-            <number>8</number>
-           </property>
-           <property name="minimum">
-            <double>-100000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
@@ -1013,10 +961,7 @@
  <tabstops>
   <tabstop>tab_widget</tabstop>
   <tabstop>raw_tabbed_view</tabstop>
-  <tabstop>raw_threshold_mask</tabstop>
   <tabstop>raw_show_saturation</tabstop>
-  <tabstop>raw_threshold_comparison</tabstop>
-  <tabstop>raw_threshold_value</tabstop>
   <tabstop>cartesian_pixel_size</tabstop>
   <tabstop>cartesian_plane_normal_rotate_x</tabstop>
   <tabstop>cartesian_virtual_plane_distance</tabstop>
