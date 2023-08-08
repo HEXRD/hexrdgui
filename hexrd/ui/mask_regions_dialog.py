@@ -2,6 +2,7 @@ from PySide2.QtCore import QObject, Signal, Qt
 
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
 from hexrd.ui.create_polar_mask import create_polar_mask_from_raw
+from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui.utils import unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.constants import ViewType
@@ -31,6 +32,7 @@ class MaskRegionsDialog(QObject):
         self.image_mode = None
         self.raw_mask_coords = []
         self.drawing_axes = None
+        self.templates = {}
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -86,11 +88,8 @@ class MaskRegionsDialog(QObject):
             'fill': False,
             'animated': True,
         }
-        if self.selection == 'Rectangle':
-            self.patch = patches.Rectangle((0, 0), 0, 0, **kwargs)
-        elif self.selection == 'Ellipse':
-            self.patch = patches.Ellipse((0, 0), 0, 0, **kwargs)
-        self.axes.add_patch(self.patch)
+        self.patch = InteractiveTemplate(self.parent, self.det)
+        self.patch.create_polygon([[0,0]], **kwargs)
         self.patches.setdefault(self.det, []).append(self.patch)
         self.added_patches.append(self.det)
 
@@ -99,14 +98,15 @@ class MaskRegionsDialog(QObject):
         height = event.ydata - y0
         width = event.xdata - x0
         if self.selection == 'Rectangle':
-            self.patch.set_xy(self.press)
-            self.patch.set_height(height)
-            self.patch.set_width(width)
+            shape = patches.Rectangle(self.press, width, height)
         if self.selection == 'Ellipse':
             center = [(width / 2 + x0), (height / 2 + y0)]
-            self.patch.set_center(center)
-            self.patch.height = height
-            self.patch.width = width
+            shape = patches.Ellipse(center, width, height)
+        verts = shape.get_patch_transform().transform(
+            shape.get_path().vertices[:-1])
+        verts = add_sample_points(verts, 300)
+        self.patch.template.set_xy(verts)
+        self.patch.center = self.patch.get_midpoint()
 
     def tabbed_view_changed(self):
         self.disconnect()
@@ -133,8 +133,10 @@ class MaskRegionsDialog(QObject):
 
     def discard_patch(self):
         det = self.added_patches.pop()
-        self.raw_mask_coords.pop()
-        self.patches[det].pop().remove()
+        # If not static mode then the raw coords haven't been saved yet
+        if self.patch.static_mode:
+            self.raw_mask_coords.pop()
+        self.patches[det].pop().template.remove()
 
     def undo_selection(self):
         if not self.added_patches:
@@ -143,6 +145,7 @@ class MaskRegionsDialog(QObject):
         self.discard_patch()
         self.canvas.draw_idle()
         self.update_undo_enable_state()
+        self.patch.static_mode = True
 
     def axes_entered(self, event):
         self.canvas = event.canvas
@@ -207,19 +210,26 @@ class MaskRegionsDialog(QObject):
             print('Masking must be done in raw or polar view')
             return
 
+        if event.button == 3 and self.patch:
+            self.patch.static_mode = True
+
         if not self.axes:
             return
 
-        self.press = [event.xdata, event.ydata]
-        self.det = self.axes.get_title()
-        if not self.det:
-            self.det = self.image_mode
-        self.create_patch()
+        if event.button == 1:
+            if self.patch and not self.patch.static_mode:
+                return
 
-        # For animating the patch
-        self.bg_cache = self.canvas.copy_from_bbox(self.axes.bbox)
+            self.press = [event.xdata, event.ydata]
+            self.det = self.axes.get_title()
+            if not self.det:
+                self.det = self.image_mode
+            self.create_patch()
 
-        self.drawing_axes = self.axes
+            # For animating the patch
+            self.bg_cache = self.canvas.copy_from_bbox(self.axes.bbox)
+
+            self.drawing_axes = self.axes
 
     def drag_motion(self, event):
         if (
@@ -229,25 +239,30 @@ class MaskRegionsDialog(QObject):
         ):
             return
 
+        if not self.patch.static_mode:
+            return
+
         self.update_patch(event)
 
         # Update animation of patch
         self.canvas.restore_region(self.bg_cache)
-        self.axes.draw_artist(self.patch)
+        self.axes.draw_artist(self.patch.template)
         self.canvas.blit(self.axes.bbox)
 
     def save_line_data(self):
-        data_coords = self.patch.get_patch_transform().transform(
-            self.patch.get_path().vertices[:-1])
+        for det, templates in self.templates.items():
+            for template in templates:
+                data_coords = template.get_patch_transform().transform(
+                    template.get_path().vertices[:-1])
 
-        # So that this gets converted between raw and polar correctly,
-        # make sure there are at least 300 points.
-        data_coords = add_sample_points(data_coords, 300)
+                # So that this gets converted between raw and polar correctly,
+                # make sure there are at least 300 points.
+                data_coords = add_sample_points(data_coords, 300)
 
-        if self.image_mode == ViewType.raw:
-            self.raw_mask_coords.append((self.det, data_coords))
-        elif self.image_mode == ViewType.polar:
-            self.raw_mask_coords.append([data_coords])
+                if self.image_mode == ViewType.raw:
+                    self.raw_mask_coords.append((det, data_coords))
+                elif self.image_mode == ViewType.polar:
+                    self.raw_mask_coords.append([data_coords])
 
     def create_masks(self):
         for data in self.raw_mask_coords:
@@ -269,14 +284,15 @@ class MaskRegionsDialog(QObject):
         masks_changed_signal[self.image_mode].emit()
 
     def button_released(self, event):
-        if not self.press:
+        if not self.press or not self.patch.static_mode:
             return
 
         # Save it
-        self.save_line_data()
+        self.templates.setdefault(self.det, []).append(self.patch.template)
+        self.patch.static_mode = False
 
         # Turn off animation so the patch will stay
-        self.patch.set_animated(False)
+        self.patch.template.set_animated(False)
 
         self.press.clear()
         self.det = None
@@ -286,6 +302,7 @@ class MaskRegionsDialog(QObject):
         self.update_undo_enable_state()
 
     def apply_masks(self):
+        self.save_line_data()
         self.disconnect()
         self.create_masks()
         while self.added_patches:
