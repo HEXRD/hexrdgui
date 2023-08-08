@@ -275,6 +275,8 @@ class MainWindow(QObject):
             self.on_action_show_all_colormaps_toggled)
         self.ui.action_edit_defaults.triggered.connect(
             self.on_action_edit_defaults_toggled)
+        self.ui.image_tab_widget.new_active_canvas.connect(
+            self.active_canvas_changed)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -294,6 +296,8 @@ class MainWindow(QObject):
         HexrdConfig().raw_masks_changed.connect(self.update_all)
         HexrdConfig().enable_canvas_toolbar.connect(
             self.on_enable_canvas_toolbar)
+        HexrdConfig().tab_images_changed.connect(
+            self.update_drawn_mask_line_picker_canvas)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -716,9 +720,18 @@ class MainWindow(QObject):
         self.update_all()
         self.update_config_gui()
 
+    def active_canvas_changed(self):
+        self.update_drawn_mask_line_picker_canvas()
+
+    def update_drawn_mask_line_picker_canvas(self):
+        if hasattr(self, '_apply_drawn_mask_line_picker'):
+            self._apply_drawn_mask_line_picker.canvas_changed(
+                self.ui.image_tab_widget.active_canvas
+            )
+
     def on_action_edit_apply_hand_drawn_mask_triggered(self):
         # Make the dialog
-        canvas = self.ui.image_tab_widget.image_canvases[0]
+        canvas = self.ui.image_tab_widget.active_canvas
         self._apply_drawn_mask_line_picker = (
             HandDrawnMaskDialog(canvas, self.ui))
         self._apply_drawn_mask_line_picker.start()
@@ -904,6 +917,10 @@ class MainWindow(QObject):
         dialog.zoom_height = int(img.shape[0] / 5)
 
     def change_image_mode(self, mode):
+        # The line picker canvas change needs to be triggered *before* the image
+        # mode is changed. This makes sure that in-progress masks are completed
+        # and associated with the correct image mode.
+        self.update_drawn_mask_line_picker_canvas()
         self.image_mode = mode
         self.update_image_mode_enable_states()
 

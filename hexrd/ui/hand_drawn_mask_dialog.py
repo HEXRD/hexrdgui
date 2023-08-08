@@ -6,11 +6,12 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
+from hexrd.ui.hexrd_config import HexrdConfig
 
-from hexrd.ui.constants import ViewType
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import add_sample_points
 
+# TODO: How to handle image mode? Mode has changed byt the time the signal has been emitted.
 
 class HandDrawnMaskDialog(QObject):
 
@@ -31,6 +32,7 @@ class HandDrawnMaskDialog(QObject):
         self.lines = []
         self.drawing = False
         self.dets = []
+        self.det = None
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
@@ -38,16 +40,19 @@ class HandDrawnMaskDialog(QObject):
         self.move_dialog_to_left()
 
         self.setup_connections()
+        self.setup_canvas_connections()
 
     def setup_connections(self):
         self.ui.accepted.connect(self.accepted)
         self.ui.rejected.connect(self.rejected)
+
+    def setup_canvas_connections(self):
         self.bp_id = self.canvas.mpl_connect('button_press_event',
-                                             self.button_pressed)
+                                            self.button_pressed)
         self.enter_id = self.canvas.mpl_connect('axes_enter_event',
                                                 self.axes_entered)
         self.exit_id = self.canvas.mpl_connect('axes_leave_event',
-                                               self.axes_exited)
+                                            self.axes_exited)
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
@@ -77,6 +82,7 @@ class HandDrawnMaskDialog(QObject):
         self.bp_id = None
         self.enter_id = None
         self.exit_id = None
+        self.dets.clear()
         self.canvas.draw()
 
     def start(self):
@@ -89,6 +95,11 @@ class HandDrawnMaskDialog(QObject):
             return
 
         self.ax = event.inaxes
+        # Get the detector name on mask creation since completion may have been
+        # triggered by the canvas being changed. No title is returned unless
+        # we're in the raw view but that is the only time it is needed. See:
+        # https://github.com/HEXRD/hexrdgui/blob/master/hexrd/ui/main_window.py#L727-L745
+        self.det = self.ax.get_title()
         # fire up the cursor for this tool
         self.cursor = Cursor(self.ax, useblit=True, color='red', linewidth=1)
         self.add_line()
@@ -116,6 +127,9 @@ class HandDrawnMaskDialog(QObject):
         self.canvas.draw_idle()
 
     def line_finished(self):
+        if not self.linebuilder:
+            return
+
         # append to ring_data
         linebuilder = self.linebuilder
         ring_data = np.vstack([linebuilder.xs, linebuilder.ys]).T
@@ -131,7 +145,7 @@ class HandDrawnMaskDialog(QObject):
         ring_data = add_sample_points(ring_data, 300)
 
         self.ring_data.append(ring_data)
-        self.dets.append(self.ax.get_title())
+        self.dets.append(self.det)
         self.drawing = False
         self.add_line()
 
@@ -156,6 +170,11 @@ class HandDrawnMaskDialog(QObject):
 
     def show(self):
         self.ui.show()
+
+    def canvas_changed(self, canvas):
+        self.accepted()
+        self.canvas = canvas
+        self.setup_canvas_connections()
 
 
 class LineBuilder(QObject):
