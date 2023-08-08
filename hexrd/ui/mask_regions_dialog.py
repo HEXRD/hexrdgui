@@ -109,27 +109,9 @@ class MaskRegionsDialog(QObject):
         self.patch.center = self.patch.get_midpoint()
 
     def tabbed_view_changed(self):
-        self.disconnect()
+        self.apply_masks()
         if self.ui.isVisible():
             self.setup_canvas_connections()
-        for canvas in self.parent.image_tab_widget.active_canvases:
-            for axes in canvas.raw_axes.values():
-                for p in self.patches.get(axes.get_title(), []):
-                    # Artists cannot be reused or simply copied, instead
-                    # a new artist must be created
-                    obj, *attrs = p.__str__().split('(')
-                    patch = getattr(patches, obj)((0, 0), 0, 0, fill=False)
-                    for attr in ['xy', 'center', 'width', 'height']:
-                        try:
-                            getattr(patch, 'set_' + attr)(
-                                getattr(p, 'get_' + attr)())
-                        except Exception:
-                            try:
-                                setattr(patch, attr, getattr(p, attr))
-                            except Exception:
-                                continue
-                    axes.add_patch(patch)
-                self.patches[axes.get_title()] = axes.patches
 
     def discard_patch(self):
         det = self.added_patches.pop()
