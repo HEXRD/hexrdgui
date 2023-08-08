@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QLabel" name="comparison_label">
      <property name="text">
-      <string>Range</string>
+      <string>Unmasked Range</string>
      </property>
     </widget>
    </item>
