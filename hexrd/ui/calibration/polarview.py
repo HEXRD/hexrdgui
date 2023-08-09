@@ -418,13 +418,10 @@ class PolarView:
             mask = HexrdConfig().masks[name]
             total_mask = np.logical_or(total_mask, ~mask)
         if HexrdConfig().threshold_mask_status:
-            idx = HexrdConfig().current_imageseries_idx
-            thresh_masks = HexrdConfig().threshold_masks
-            for det in self.images_dict.keys():
-                mask = thresh_masks[det][idx]
-                panel = self.detectors[det]
-                warped_mask = self.warp_image(mask, panel).astype(bool)
-                total_mask = np.logical_or(total_mask, ~warped_mask)
+            lt_val, gt_val = HexrdConfig().threshold_values
+            lt_mask = img < lt_val
+            gt_mask = img > gt_val
+            total_mask = np.logical_or(lt_mask, gt_mask)
         img[total_mask] = np.nan
 
         return img
