@@ -252,6 +252,7 @@ class WppfOptionsDialog(QObject):
             'method': self.method,
             'materials': self.materials,
             'peak_shape': self.peak_shape_index,
+            'bkgmethod': self.background_method_dict
         }
         return generate_params(**kwargs)
 
@@ -839,7 +840,7 @@ class WppfOptionsDialog(QObject):
             raise Exception(msg)
 
 
-def generate_params(method, materials, peak_shape):
+def generate_params(method, materials, peak_shape, bkgmethod):
     func_dict = {
         'LeBail': _generate_default_parameters_LeBail,
         'Rietveld': _generate_default_parameters_Rietveld,
@@ -847,7 +848,7 @@ def generate_params(method, materials, peak_shape):
     if method not in func_dict:
         raise Exception(f'Unknown method: {method}')
 
-    return func_dict[method](materials, peak_shape)
+    return func_dict[method](materials, peak_shape, bkgmethod)
 
 
 def param_to_dict(param):
