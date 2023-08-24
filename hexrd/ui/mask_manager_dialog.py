@@ -1,3 +1,4 @@
+import copy
 import math
 from hexrd.ui.create_polar_mask import rebuild_polar_masks
 from hexrd.ui.create_raw_mask import rebuild_raw_masks
@@ -240,7 +241,7 @@ class MaskManagerDialog(QObject):
                 parent = d.setdefault(det, {})
                 parent.setdefault(name, {})[str(i)] = mask
         if self.threshold:
-            d['threshold'] = HexrdConfig()._threshold_data
+            d['threshold'] = copy.deepcopy(HexrdConfig()._threshold_data)
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
         else:
