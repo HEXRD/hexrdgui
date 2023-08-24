@@ -421,7 +421,8 @@ class PolarView:
             lt_val, gt_val = HexrdConfig().threshold_values
             lt_mask = img < lt_val
             gt_mask = img > gt_val
-            total_mask = np.logical_or(lt_mask, gt_mask)
+            mask = np.logical_or(lt_mask, gt_mask)
+            total_mask = np.logical_or(total_mask, mask)
         img[total_mask] = np.nan
 
         return img
