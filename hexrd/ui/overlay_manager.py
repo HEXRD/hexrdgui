@@ -27,7 +27,7 @@ class OverlayManager:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_manager.ui', parent)
 
-        self.overlay_editor = OverlayEditor(self.ui)
+        self.overlay_editor = OverlayEditor(self.ui.overlay_manager_widget)
         self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
