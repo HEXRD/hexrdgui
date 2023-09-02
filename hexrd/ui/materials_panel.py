@@ -273,10 +273,10 @@ class MaterialsPanel(QObject):
 
     def show_overlay_manager(self):
         if hasattr(self, '_overlay_manager'):
-            self._overlay_manager.ui.reject()
+            self._overlay_manager.ui.close()
             del self._overlay_manager
 
-        self._overlay_manager = OverlayManager(self.ui)
+        self._overlay_manager = OverlayManager(self.parent())
         self._overlay_manager.show()
 
     def update_table(self):
