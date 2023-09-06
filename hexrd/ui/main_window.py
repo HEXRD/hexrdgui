@@ -303,6 +303,8 @@ class MainWindow(QObject):
             self.on_enable_canvas_toolbar)
         HexrdConfig().tab_images_changed.connect(
             self.update_drawn_mask_line_picker_canvas)
+        HexrdConfig().tab_images_changed.connect(
+            self.update_mask_region_canvas)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -726,6 +728,7 @@ class MainWindow(QObject):
 
     def active_canvas_changed(self):
         self.update_drawn_mask_line_picker_canvas()
+        self.update_mask_region_canvas()
 
     def update_drawn_mask_line_picker_canvas(self):
         if hasattr(self, '_apply_drawn_mask_line_picker'):
@@ -830,10 +833,17 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         HexrdConfig().polar_masks_changed.emit()
 
+    def update_mask_region_canvas(self):
+        if hasattr(self, '_masks_regions_dialog'):
+            self._masks_regions_dialog.canvas_changed(
+                self.ui.image_tab_widget.active_canvas
+            )
+
     def on_action_edit_apply_region_mask_triggered(self):
-        mrd = MaskRegionsDialog(self.ui)
-        mrd.new_mask_added.connect(self.new_mask_added.emit)
-        mrd.show()
+        self._masks_regions_dialog = MaskRegionsDialog(self.ui)
+        self._masks_regions_dialog.new_mask_added.connect(
+            self.new_mask_added.emit)
+        self._masks_regions_dialog.show()
 
         self.ui.image_tab_widget.toggle_off_toolbar()
 
@@ -921,10 +931,11 @@ class MainWindow(QObject):
         dialog.zoom_height = int(img.shape[0] / 5)
 
     def change_image_mode(self, mode):
-        # The line picker canvas change needs to be triggered *before* the image
+        # The masking canvas change needs to be triggered *before* the image
         # mode is changed. This makes sure that in-progress masks are completed
         # and associated with the correct image mode.
         self.update_drawn_mask_line_picker_canvas()
+        self.update_mask_region_canvas()
         self.image_mode = mode
         self.update_image_mode_enable_states()
 

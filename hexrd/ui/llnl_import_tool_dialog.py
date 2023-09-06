@@ -58,6 +58,7 @@ class LLNLImportToolDialog(QObject):
         self.defaults = {}
         self.import_in_progress = False
         self.loaded_images = []
+        self.canvas = parent.image_tab_widget.active_canvas
 
         self.set_default_color()
         self.setup_connections()
@@ -275,7 +276,7 @@ class LLNLImportToolDialog(QObject):
             # the QProgressDialog.
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
-            self.it = InteractiveTemplate(self.parent(), self.detector, self.instrument)
+            self.it = InteractiveTemplate(self.canvas, self.detector, self.instrument)
             # We should be able to immediately interact with the template
             self.it.static_mode = False
 

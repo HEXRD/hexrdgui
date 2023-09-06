@@ -13,8 +13,8 @@ from hexrd.ui.utils import has_nan
 
 
 class InteractiveTemplate:
-    def __init__(self, parent, detector, instrument=None):
-        self.image_tab_widget = parent.image_tab_widget
+    def __init__(self, canvas, detector, instrument=None):
+        self.current_canvas = canvas
         self.img = None
         self.shape = None
         self.press = None
@@ -27,13 +27,7 @@ class InteractiveTemplate:
         self.instrument = instrument
         self._static = True
 
-        for canvas in self.image_tab_widget.active_canvases:
-            canvas.setFocusPolicy(Qt.ClickFocus)
-
-    @property
-    def current_canvas(self):
-        idx = self.image_tab_widget.current_index
-        return self.image_tab_widget.active_canvases[idx]
+        self.current_canvas.setFocusPolicy(Qt.ClickFocus)
 
     @property
     def ax(self):
@@ -422,3 +416,8 @@ class InteractiveTemplate:
         self.press = None
         self.rotate_template(xy, angle)
         self.redraw()
+
+    def canvas_changed(self, canvas):
+        self.static_mode = True
+        self.current_canvas = canvas
+        self.connect_translate_rotate()

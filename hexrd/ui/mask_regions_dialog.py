@@ -28,7 +28,7 @@ class MaskRegionsDialog(QObject):
         self.press = []
         self.added_patches = []
         self.patches = {}
-        self.canvas = None
+        self.canvas = parent.image_tab_widget.active_canvas
         self.image_mode = None
         self.raw_mask_coords = []
         self.drawing_axes = None
@@ -47,25 +47,23 @@ class MaskRegionsDialog(QObject):
         self.ui.show()
 
     def disconnect(self):
-        for ids, img in zip(self.canvas_ids, self.images):
-            [img.mpl_disconnect(id) for id in ids]
+        for id in self.canvas_ids:
+            self.canvas.mpl_disconnect(id)
         self.canvas_ids.clear()
         self.images.clear()
 
     def setup_canvas_connections(self):
-        for canvas in self.parent.image_tab_widget.active_canvases:
-            press = canvas.mpl_connect(
-                'button_press_event', self.button_pressed)
-            drag = canvas.mpl_connect(
-                'motion_notify_event', self.drag_motion)
-            release = canvas.mpl_connect(
-                'button_release_event', self.button_released)
-            enter = canvas.mpl_connect(
-                'axes_enter_event', self.axes_entered)
-            exit = canvas.mpl_connect(
-                'axes_leave_event', self.axes_exited)
-            self.canvas_ids.append([press, drag, release, enter, exit])
-            self.images.append(canvas)
+        self.canvas_ids.append(self.canvas.mpl_connect(
+            'button_press_event', self.button_pressed))
+        self.canvas_ids.append(self.canvas.mpl_connect(
+            'motion_notify_event', self.drag_motion))
+        self.canvas_ids.append(self.canvas.mpl_connect(
+            'button_release_event', self.button_released))
+        self.canvas_ids.append(self.canvas.mpl_connect(
+            'axes_enter_event', self.axes_entered))
+        self.canvas_ids.append(self.canvas.mpl_connect(
+            'axes_leave_event', self.axes_exited))
+        self.images.append(self.canvas) # TODO: Is self.images needed?
 
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
@@ -73,7 +71,6 @@ class MaskRegionsDialog(QObject):
         self.ui.rejected.connect(self.cancel)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
         self.ui.undo.clicked.connect(self.undo_selection)
-        HexrdConfig().tab_images_changed.connect(self.tabbed_view_changed)
 
     def update_undo_enable_state(self):
         enabled = bool(self.added_patches)
@@ -88,7 +85,7 @@ class MaskRegionsDialog(QObject):
             'fill': False,
             'animated': True,
         }
-        self.patch = InteractiveTemplate(self.parent, self.det)
+        self.patch = InteractiveTemplate(self.canvas, self.det)
         self.patch.create_polygon([[0,0]], **kwargs)
         self.patches.setdefault(self.det, []).append(self.patch)
         self.added_patches.append(self.det)
@@ -108,11 +105,6 @@ class MaskRegionsDialog(QObject):
         self.patch.template.set_xy(verts)
         self.patch.center = self.patch.get_midpoint()
 
-    def tabbed_view_changed(self):
-        self.apply_masks()
-        if self.ui.isVisible():
-            self.setup_canvas_connections()
-
     def discard_patch(self):
         det = self.added_patches.pop()
         # If not static mode then the raw coords haven't been saved yet
@@ -130,7 +122,6 @@ class MaskRegionsDialog(QObject):
         self.patch.static_mode = True
 
     def axes_entered(self, event):
-        self.canvas = event.canvas
         self.image_mode = self.canvas.mode
 
         if event.inaxes is self.canvas.azimuthal_integral_axis:
@@ -245,6 +236,7 @@ class MaskRegionsDialog(QObject):
                     self.raw_mask_coords.append((det, data_coords))
                 elif self.image_mode == ViewType.polar:
                     self.raw_mask_coords.append([data_coords])
+        self.templates.clear()
 
     def create_masks(self):
         for data in self.raw_mask_coords:
@@ -284,6 +276,9 @@ class MaskRegionsDialog(QObject):
         self.update_undo_enable_state()
 
     def apply_masks(self):
+        if not self.templates:
+            return
+
         self.save_line_data()
         self.disconnect()
         self.create_masks()
@@ -298,3 +293,19 @@ class MaskRegionsDialog(QObject):
         self.disconnect()
         if self.canvas is not None:
             self.canvas.draw_idle()
+
+    def canvas_changed(self, canvas):
+        self.apply_masks()
+        self.canvas = canvas
+        if self.patch:
+            self.patch.canvas_changed(canvas)
+        if self.ui.isVisible():
+            self.setup_canvas_connections()
+        self.reset_all()
+
+    def reset_all(self):
+        self.press.clear()
+        self.added_templates.clear()
+        self.interactive_templates.clear()
+        self.raw_mask_coords.clear()
+        self.templates.clear()
