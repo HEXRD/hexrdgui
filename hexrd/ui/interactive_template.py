@@ -26,6 +26,12 @@ class InteractiveTemplate:
         self._static = True
         self.axis_image = axes.get_images()[0] if axes else canvas.axes_images[0]
 
+        self.button_press_cid = None
+        self.button_release_cid = None
+        self.motion_cid = None
+        self.key_press_cid = None
+        self.button_drag_cid = None
+
     @property
     def axis(self):
         if not self.current_canvas.raw_axes:
@@ -46,11 +52,9 @@ class InteractiveTemplate:
         if mode == self._static:
             return
 
-        if mode:
-            self.disconnect()
-        else:
-            self.connect_translate_rotate()
         self._static = mode
+        if not mode:
+            self.connect_translate_rotate()
 
     def update_image(self, img):
         self.img = img
@@ -69,8 +73,7 @@ class InteractiveTemplate:
             self.shape.set_closed(False)
         self.shape_styles.append(polygon_kwargs)
         self.update_position()
-        if not self.static_mode:
-            self.connect_translate_rotate()
+        self.connect_translate_rotate()
         self.axis.add_patch(self.shape)
         self.redraw()
 
@@ -159,8 +162,7 @@ class InteractiveTemplate:
                 self.shape.remove()
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
                 self.axis.add_patch(self.shape)
-                if not self.static_mode:
-                    self.connect_translate_rotate()
+                self.connect_translate_rotate()
             self.redraw()
         else:
             if self.shape:
@@ -253,6 +255,11 @@ class InteractiveTemplate:
             self.on_key_translate(event)
 
     def connect_translate_rotate(self):
+        if self.static_mode:
+            return
+
+        self.disconnect()
+
         self.button_press_cid = self.current_canvas.mpl_connect(
             'button_press_event', self.on_press)
         self.button_release_cid = self.current_canvas.mpl_connect(
