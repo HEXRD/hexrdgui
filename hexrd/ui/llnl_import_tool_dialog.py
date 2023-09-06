@@ -276,7 +276,8 @@ class LLNLImportToolDialog(QObject):
             # the QProgressDialog.
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
-            self.it = InteractiveTemplate(self.canvas, self.detector, self.instrument)
+            self.it = InteractiveTemplate(
+                self.canvas, self.detector, instrument=self.instrument)
             # We should be able to immediately interact with the template
             self.it.static_mode = False
 

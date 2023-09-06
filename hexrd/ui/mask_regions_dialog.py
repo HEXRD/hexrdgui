@@ -82,7 +82,8 @@ class MaskRegionsDialog(QObject):
             'fill': False,
             'animated': True,
         }
-        self.interactive_template = InteractiveTemplate(self.canvas, self.det)
+        self.interactive_template = InteractiveTemplate(
+            self.canvas, self.det, axes=self.axes)
         self.interactive_template.create_polygon([[0,0]], **kwargs)
         self.interactive_templates.setdefault(self.det, []).append(
             self.interactive_template)

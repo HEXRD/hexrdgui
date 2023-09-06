@@ -11,7 +11,7 @@ from hexrd.ui.utils import has_nan
 
 
 class InteractiveTemplate:
-    def __init__(self, canvas, detector, instrument=None):
+    def __init__(self, canvas, detector, axes=None, instrument=None):
         self.current_canvas = canvas
         self.img = None
         self.shape = None
@@ -24,11 +24,7 @@ class InteractiveTemplate:
         self.detector = detector
         self.instrument = instrument
         self._static = True
-
-    @property
-    def ax(self):
-        idx = HexrdConfig().current_imageseries_idx
-        return self.current_canvas.axes_images[idx]
+        self.axis_image = axes.get_images()[0] if axes else canvas.axes_images[0]
 
     @property
     def axis(self):
@@ -112,7 +108,7 @@ class InteractiveTemplate:
 
     @property
     def bounds(self):
-        l, r, b, t = self.ax.get_extent()
+        l, r, b, t = self.axis_image.get_extent()
         x0, y0 = np.nanmin(self.shape.xy, axis=0)
         x1, y1 = np.nanmax(self.shape.xy, axis=0)
         return np.array([max(np.floor(y0), t),
@@ -339,7 +335,7 @@ class InteractiveTemplate:
         # need to set the press value twice
         self.press = self.shape.xy, event.xdata, event.ydata
         self.center = self.get_midpoint()
-        self.shape.set_transform(self.ax.axes.transData)
+        self.shape.set_transform(self.axis_image.axes.transData)
         self.press = self.shape.xy, event.xdata, event.ydata
 
     def rotate_template(self, points, angle):
@@ -377,7 +373,7 @@ class InteractiveTemplate:
         return [(x1 + x0)/2, (y1 + y0)/2]
 
     def mouse_position(self, e):
-        xmin, xmax, ymin, ymax = self.ax.get_extent()
+        xmin, xmax, ymin, ymax = self.axis_image.get_extent()
         x, y = self.get_midpoint()
         xdata = e.xdata
         ydata = e.ydata
