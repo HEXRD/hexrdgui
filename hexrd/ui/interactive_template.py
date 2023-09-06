@@ -1,7 +1,5 @@
 import numpy as np
 
-from PySide2.QtCore import Qt
-
 from matplotlib import patches
 from matplotlib.path import Path
 from matplotlib.transforms import Affine2D
@@ -26,8 +24,6 @@ class InteractiveTemplate:
         self.detector = detector
         self.instrument = instrument
         self._static = True
-
-        self.current_canvas.setFocusPolicy(Qt.ClickFocus)
 
     @property
     def ax(self):
