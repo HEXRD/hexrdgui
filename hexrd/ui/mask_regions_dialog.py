@@ -21,7 +21,6 @@ class MaskRegionsDialog(QObject):
         super().__init__(parent)
 
         self.parent = parent
-        self.images = []
         self.canvas_ids = []
         self.axes = None
         self.bg_cache = None
@@ -50,7 +49,6 @@ class MaskRegionsDialog(QObject):
         for id in self.canvas_ids:
             self.canvas.mpl_disconnect(id)
         self.canvas_ids.clear()
-        self.images.clear()
 
     def setup_canvas_connections(self):
         self.canvas_ids.append(self.canvas.mpl_connect(
@@ -63,7 +61,6 @@ class MaskRegionsDialog(QObject):
             'axes_enter_event', self.axes_entered))
         self.canvas_ids.append(self.canvas.mpl_connect(
             'axes_leave_event', self.axes_exited))
-        self.images.append(self.canvas) # TODO: Is self.images needed?
 
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
