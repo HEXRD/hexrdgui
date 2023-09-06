@@ -35,7 +35,7 @@ class InteractiveTemplate:
         return self.current_canvas.axes_images[idx]
 
     @property
-    def raw_axes(self):
+    def axis(self):
         if not self.current_canvas.raw_axes:
             return self.current_canvas.axis
 
@@ -68,18 +68,18 @@ class InteractiveTemplate:
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
-    def create_polygon(self, verts, **kwargs):
+    def create_polygon(self, verts, **polygon_kwargs):
         self.complete = False
-        self.shape = patches.Polygon(verts, **kwargs)
+        self.shape = patches.Polygon(verts, **polygon_kwargs)
         if has_nan(verts):
             # This template contains more than one polygon and the last point
             # should not be connected to the first. See Tardis IP for example.
             self.shape.set_closed(False)
-        self.shape_styles.append(kwargs)
+        self.shape_styles.append(polygon_kwargs)
         self.update_position()
         if not self.static_mode:
             self.connect_translate_rotate()
-        self.raw_axes.add_patch(self.shape)
+        self.axis.add_patch(self.shape)
         self.redraw()
 
     def update_style(self, style, width, color):
@@ -137,13 +137,13 @@ class InteractiveTemplate:
         return self.total_rotation
 
     def clear(self):
-        if self.shape in self.raw_axes.patches:
+        if self.shape in self.axis.patches:
             self.shape.remove()
             self.redraw()
         self.total_rotation = 0.
 
     def save_boundary(self, color):
-        if self.shape in self.raw_axes.patches:
+        if self.shape in self.axis.patches:
             self.shape.set_linestyle('--')
             self.redraw()
 
@@ -161,19 +161,19 @@ class InteractiveTemplate:
                     # This template contains more than one polygon and the last point
                     # should not be connected to the first. See Tardis IP for example.
                     shape.set_closed(False)
-                self.raw_axes.add_patch(shape)
+                self.axis.add_patch(shape)
             if self.shape:
-                self.shape = self.raw_axes.patches[-1]
+                self.shape = self.axis.patches[-1]
                 self.shape.remove()
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
-                self.raw_axes.add_patch(self.shape)
+                self.axis.add_patch(self.shape)
                 if not self.static_mode:
                     self.connect_translate_rotate()
             self.redraw()
         else:
             if self.shape:
                 self.disconnect()
-            self.patches = [p for p in self.raw_axes.patches]
+            self.patches = [p for p in self.axis.patches]
         self.redraw()
 
     def disconnect(self):

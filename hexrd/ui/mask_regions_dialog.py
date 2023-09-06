@@ -25,8 +25,8 @@ class MaskRegionsDialog(QObject):
         self.axes = None
         self.bg_cache = None
         self.press = []
-        self.added_patches = []
-        self.patches = {}
+        self.added_templates = []
+        self.interactive_templates = {}
         self.canvas = parent.image_tab_widget.active_canvas
         self.image_mode = None
         self.raw_mask_coords = []
@@ -70,24 +70,25 @@ class MaskRegionsDialog(QObject):
         self.ui.undo.clicked.connect(self.undo_selection)
 
     def update_undo_enable_state(self):
-        enabled = bool(self.added_patches)
+        enabled = bool(self.added_templates)
         self.ui.undo.setEnabled(enabled)
 
     def select_shape(self):
         self.selection = self.ui.shape.currentText()
-        self.patch = None
+        self.interactive_template = None
 
-    def create_patch(self):
+    def create_interactive_template(self):
         kwargs = {
             'fill': False,
             'animated': True,
         }
-        self.patch = InteractiveTemplate(self.canvas, self.det)
-        self.patch.create_polygon([[0,0]], **kwargs)
-        self.patches.setdefault(self.det, []).append(self.patch)
-        self.added_patches.append(self.det)
+        self.interactive_template = InteractiveTemplate(self.canvas, self.det)
+        self.interactive_template.create_polygon([[0,0]], **kwargs)
+        self.interactive_templates.setdefault(self.det, []).append(
+            self.interactive_template)
+        self.added_templates.append(self.det)
 
-    def update_patch(self, event):
+    def update_interactive_template(self, event):
         x0, y0 = self.press
         height = event.ydata - y0
         width = event.xdata - x0
@@ -99,24 +100,25 @@ class MaskRegionsDialog(QObject):
         verts = shape.get_patch_transform().transform(
             shape.get_path().vertices[:-1])
         verts = add_sample_points(verts, 300)
-        self.patch.template.set_xy(verts)
-        self.patch.center = self.patch.get_midpoint()
+        self.interactive_template.template.set_xy(verts)
+        self.interactive_template.center = (
+            self.interactive_template.get_midpoint())
 
-    def discard_patch(self):
-        det = self.added_patches.pop()
+    def discard_interactive_template(self):
+        det = self.added_templates.pop()
         # If not static mode then the raw coords haven't been saved yet
-        if self.patch.static_mode:
+        if self.interactive_template.static_mode:
             self.raw_mask_coords.pop()
-        self.patches[det].pop().template.remove()
+        self.interactive_templates[det].pop().template.remove()
 
     def undo_selection(self):
-        if not self.added_patches:
+        if not self.added_templates:
             return
 
-        self.discard_patch()
+        self.discard_interactive_template()
         self.canvas.draw_idle()
         self.update_undo_enable_state()
-        self.patch.static_mode = True
+        self.interactive_template.static_mode = True
 
     def axes_entered(self, event):
         self.image_mode = self.canvas.mode
@@ -180,21 +182,22 @@ class MaskRegionsDialog(QObject):
             print('Masking must be done in raw or polar view')
             return
 
-        if event.button == 3 and self.patch:
-            self.patch.static_mode = True
+        if event.button == 3 and self.interactive_template:
+            self.interactive_template.static_mode = True
 
         if not self.axes:
             return
 
         if event.button == 1:
-            if self.patch and not self.patch.static_mode:
+            if (self.interactive_template and
+                    not self.interactive_template.static_mode):
                 return
 
             self.press = [event.xdata, event.ydata]
             self.det = self.axes.get_title()
             if not self.det:
                 self.det = self.image_mode
-            self.create_patch()
+            self.create_interactive_template()
 
             # For animating the patch
             self.bg_cache = self.canvas.copy_from_bbox(self.axes.bbox)
@@ -209,14 +212,14 @@ class MaskRegionsDialog(QObject):
         ):
             return
 
-        if not self.patch.static_mode:
+        if not self.interactive_template.static_mode:
             return
 
-        self.update_patch(event)
+        self.update_interactive_template(event)
 
         # Update animation of patch
         self.canvas.restore_region(self.bg_cache)
-        self.axes.draw_artist(self.patch.template)
+        self.axes.draw_artist(self.interactive_template.template)
         self.canvas.blit(self.axes.bbox)
 
     def save_line_data(self):
@@ -255,15 +258,16 @@ class MaskRegionsDialog(QObject):
         masks_changed_signal[self.image_mode].emit()
 
     def button_released(self, event):
-        if not self.press or not self.patch.static_mode:
+        if not self.press or not self.interactive_template.static_mode:
             return
 
         # Save it
-        self.templates.setdefault(self.det, []).append(self.patch.template)
-        self.patch.static_mode = False
+        self.templates.setdefault(self.det, []).append(
+            self.interactive_template.template)
+        self.interactive_template.static_mode = False
 
         # Turn off animation so the patch will stay
-        self.patch.template.set_animated(False)
+        self.interactive_template.template.set_animated(False)
 
         self.press.clear()
         self.det = None
@@ -279,13 +283,13 @@ class MaskRegionsDialog(QObject):
         self.save_line_data()
         self.disconnect()
         self.create_masks()
-        while self.added_patches:
-            self.discard_patch()
+        while self.added_templates:
+            self.discard_interactive_template()
         self.new_mask_added.emit(self.image_mode)
 
     def cancel(self):
-        while self.added_patches:
-            self.discard_patch()
+        while self.added_templates:
+            self.discard_interactive_template()
 
         self.disconnect()
         if self.canvas is not None:
@@ -294,8 +298,8 @@ class MaskRegionsDialog(QObject):
     def canvas_changed(self, canvas):
         self.apply_masks()
         self.canvas = canvas
-        if self.patch:
-            self.patch.canvas_changed(canvas)
+        if self.interactive_template:
+            self.interactive_template.canvas_changed(canvas)
         if self.ui.isVisible():
             self.setup_canvas_connections()
         self.reset_all()
