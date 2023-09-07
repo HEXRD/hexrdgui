@@ -415,8 +415,3 @@ class InteractiveTemplate:
         self.press = None
         self.rotate_template(xy, angle)
         self.redraw()
-
-    def canvas_changed(self, canvas):
-        self.static_mode = True
-        self.current_canvas = canvas
-        self.connect_translate_rotate()

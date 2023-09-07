@@ -51,6 +51,8 @@ class MaskRegionsDialog(QObject):
         self.canvas_ids.clear()
 
     def setup_canvas_connections(self):
+        self.disconnect()
+
         self.canvas_ids.append(self.canvas.mpl_connect(
             'button_press_event', self.button_pressed))
         self.canvas_ids.append(self.canvas.mpl_connect(
@@ -107,10 +109,9 @@ class MaskRegionsDialog(QObject):
 
     def discard_interactive_template(self):
         det = self.added_templates.pop()
-        # If not static mode then the raw coords haven't been saved yet
-        if self.interactive_template.static_mode:
-            self.raw_mask_coords.pop()
-        self.interactive_templates[det].pop().template.remove()
+        it = self.interactive_templates[det].pop()
+        it.disconnect()
+        it.template.remove()
 
     def undo_selection(self):
         if not self.added_templates:
@@ -287,6 +288,8 @@ class MaskRegionsDialog(QObject):
         while self.added_templates:
             self.discard_interactive_template()
         self.new_mask_added.emit(self.image_mode)
+        self.disconnect()
+        self.reset_all()
 
     def cancel(self):
         while self.added_templates:
@@ -299,15 +302,15 @@ class MaskRegionsDialog(QObject):
     def canvas_changed(self, canvas):
         self.apply_masks()
         self.canvas = canvas
-        if self.interactive_template:
-            self.interactive_template.canvas_changed(canvas)
         if self.ui.isVisible():
             self.setup_canvas_connections()
-        self.reset_all()
 
     def reset_all(self):
         self.press.clear()
         self.added_templates.clear()
+        for key in self.interactive_templates.keys():
+            interactive_templates = self.interactive_templates[key]
+            [it.disconnect() for it in interactive_templates]
         self.interactive_templates.clear()
         self.raw_mask_coords.clear()
         self.templates.clear()
