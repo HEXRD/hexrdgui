@@ -118,6 +118,7 @@ class MaskRegionsDialog(QObject):
         self.discard_interactive_template()
         self.canvas.draw_idle()
         self.update_undo_enable_state()
+        self.interactive_template = None
 
     def axes_entered(self, event):
         self.image_mode = self.canvas.mode
