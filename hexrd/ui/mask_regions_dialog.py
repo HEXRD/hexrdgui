@@ -31,7 +31,6 @@ class MaskRegionsDialog(QObject):
         self.image_mode = None
         self.raw_mask_coords = []
         self.drawing_axes = None
-        self.templates = {}
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
@@ -87,8 +86,6 @@ class MaskRegionsDialog(QObject):
         self.interactive_template = InteractiveTemplate(
             self.canvas, self.det, axes=self.axes)
         self.interactive_template.create_polygon([[0,0]], **kwargs)
-        self.interactive_templates.setdefault(self.det, []).append(
-            self.interactive_template)
         self.added_templates.append(self.det)
 
     def update_interactive_template(self, event):
@@ -236,10 +233,10 @@ class MaskRegionsDialog(QObject):
         self.canvas.blit(self.axes.bbox)
 
     def save_line_data(self):
-        for det, templates in self.templates.items():
-            for template in templates:
-                data_coords = template.get_patch_transform().transform(
-                    template.get_path().vertices[:-1])
+        for det, its in self.interactive_templates.items():
+            for it in its:
+                data_coords = it.template.get_patch_transform().transform(
+                    it.template.get_path().vertices[:-1])
 
                 # So that this gets converted between raw and polar correctly,
                 # make sure there are at least 300 points.
@@ -249,7 +246,6 @@ class MaskRegionsDialog(QObject):
                     self.raw_mask_coords.append((det, data_coords))
                 elif self.image_mode == ViewType.polar:
                     self.raw_mask_coords.append([data_coords])
-        self.templates.clear()
 
     def create_masks(self):
         for data in self.raw_mask_coords:
@@ -275,8 +271,8 @@ class MaskRegionsDialog(QObject):
             return
 
         # Save it
-        self.templates.setdefault(self.det, []).append(
-            self.interactive_template.template)
+        self.interactive_templates.setdefault(self.det, []).append(
+            self.interactive_template)
 
         # Turn off animation so the patch will stay
         self.interactive_template.template.set_animated(False)
@@ -289,7 +285,7 @@ class MaskRegionsDialog(QObject):
         self.update_undo_enable_state()
 
     def apply_masks(self):
-        if not self.templates:
+        if not self.interactive_templates:
             return
 
         self.save_line_data()
@@ -323,4 +319,3 @@ class MaskRegionsDialog(QObject):
             [it.disconnect() for it in interactive_templates]
         self.interactive_templates.clear()
         self.raw_mask_coords.clear()
-        self.templates.clear()
