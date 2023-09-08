@@ -72,7 +72,7 @@ class MaskRegionsDialog(QObject):
         self.ui.undo.clicked.connect(self.undo_selection)
 
     def update_undo_enable_state(self):
-        enabled = bool(self.added_templates)
+        enabled = bool(len(self.added_templates))
         self.ui.undo.setEnabled(enabled)
 
     def select_shape(self):
@@ -120,7 +120,6 @@ class MaskRegionsDialog(QObject):
         self.discard_interactive_template()
         self.canvas.draw_idle()
         self.update_undo_enable_state()
-        self.interactive_template.static_mode = True
 
     def axes_entered(self, event):
         self.image_mode = self.canvas.mode
@@ -179,18 +178,30 @@ class MaskRegionsDialog(QObject):
             # Trigger another drag motion event where we move the borders
             self.drag_motion(event)
 
+    def check_pick(self, event):
+        for templates in self.interactive_templates.values():
+            for it in templates:
+                it.static_mode = True
+                transformed_click = it.template.get_transform().transform(
+                    (event.xdata, event.ydata))
+                if it.template.contains_point(transformed_click):
+                    if self.interactive_template:
+                        self.interactive_template.disconnect()
+                    self.interactive_template = it
+                    self.interactive_template.static_mode = False
+
     def button_pressed(self, event):
         if self.image_mode not in (ViewType.raw, ViewType.polar):
             print('Masking must be done in raw or polar view')
             return
 
-        if event.button == 3 and self.interactive_template:
-            self.interactive_template.static_mode = True
-
         if not self.axes:
             return
 
         if event.button == 1:
+            # Determine if selecting an existing template or drawing a new one
+            self.check_pick(event)
+
             if (self.interactive_template and
                     not self.interactive_template.static_mode):
                 return
@@ -266,7 +277,6 @@ class MaskRegionsDialog(QObject):
         # Save it
         self.templates.setdefault(self.det, []).append(
             self.interactive_template.template)
-        self.interactive_template.static_mode = False
 
         # Turn off animation so the patch will stay
         self.interactive_template.template.set_animated(False)
