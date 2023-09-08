@@ -53,8 +53,10 @@ class InteractiveTemplate:
             return
 
         self._static = mode
+        self.update_style(color='black')
         if not mode:
             self.connect_translate_rotate()
+            self.update_style(color='red')
 
     def update_image(self, img):
         self.img = img
@@ -77,11 +79,21 @@ class InteractiveTemplate:
         self.axis.add_patch(self.shape)
         self.redraw()
 
-    def update_style(self, style, width, color):
-        self.shape_styles[-1] = {'line': style, 'width': width, 'color': color}
-        self.shape.set_linestyle(style)
-        self.shape.set_linewidth(width)
-        self.shape.set_edgecolor(color)
+    def update_style(self, style=None, width=None, color=None):
+        if not self.shape:
+            return
+
+        if style:
+            self.shape.set_linestyle(style)
+        if width:
+            self.shape.set_linewidth(width)
+        if color:
+            self.shape.set_edgecolor(color)
+        self.shape_styles[-1] = {
+            'line': self.shape.get_linestyle(),
+            'width': self.shape.get_linewidth(),
+            'color': self.shape.get_edgecolor()
+        }
         self.shape.set_fill(False)
         self.redraw()
 
