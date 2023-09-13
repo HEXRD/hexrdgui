@@ -9,7 +9,9 @@ from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.crystallography import hklToStr
-from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
+from hexrd.fitting.calibration import (
+    InstrumentCalibrator, LaueCalibrator, PowderCalibrator
+)
 from hexrd.instrument import unwrap_h5_to_dict
 
 from hexrd.ui.calibration.auto import (
@@ -17,10 +19,7 @@ from hexrd.ui.calibration.auto import (
     save_picks_to_overlay,
 )
 from hexrd.ui.calibration.laue_auto_picker_dialog import LaueAutoPickerDialog
-from hexrd.ui.calibration.pick_based_calibration import (
-    LaueCalibrator,
-    run_calibration,
-)
+from hexrd.ui.calibration.pick_based_calibration import run_calibration
 from hexrd.ui.calibration.hkl_picks_tree_view_dialog import (
     generate_picks_results, overlays_to_tree_format, HKLPicksTreeViewDialog,
     picks_cartesian_to_angles, tree_format_to_picks,
