@@ -61,7 +61,9 @@ class LinePickerDialog(QObject):
 
         self.two_click_mode = self.ui.two_click_mode.isChecked()
 
-        self.zoom_canvas = ZoomCanvas(canvas)
+        display_sums_in_subplots = self.ui.display_sums_in_subplots.isChecked()
+
+        self.zoom_canvas = ZoomCanvas(canvas, True, display_sums_in_subplots)
         self.zoom_canvas.zoom_width = self.ui.zoom_tth_width.value()
         self.zoom_canvas.zoom_height = self.ui.zoom_eta_width.value()
         self.ui.zoom_canvas_layout.addWidget(self.zoom_canvas)
