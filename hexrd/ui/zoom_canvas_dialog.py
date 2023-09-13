@@ -8,7 +8,10 @@ class ZoomCanvasDialog:
         loader = UiLoader()
         self.ui = loader.load_file('zoom_canvas_dialog.ui', parent)
 
-        self.zoom_canvas = ZoomCanvas(main_canvas, draw_crosshairs)
+        display_sums_in_subplots = self.ui.display_sums_in_subplots.isChecked()
+
+        self.zoom_canvas = ZoomCanvas(main_canvas, draw_crosshairs,
+                                      display_sums_in_subplots)
         self.ui.zoom_canvas_layout.addWidget(self.zoom_canvas)
         self.zoom_dimensions_changed(rerender=False)
 

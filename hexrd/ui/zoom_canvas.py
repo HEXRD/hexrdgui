@@ -15,7 +15,8 @@ class ZoomCanvas(FigureCanvas):
 
     point_picked = Signal(object)
 
-    def __init__(self, main_canvas, draw_crosshairs=True):
+    def __init__(self, main_canvas, draw_crosshairs=True,
+                 display_sums_in_subplots=False):
         self.figure = Figure()
         super().__init__(self.figure)
 
@@ -24,7 +25,7 @@ class ZoomCanvas(FigureCanvas):
         self.xdata = None
         self.ydata = None
         self.main_artists_visible = True
-        self._display_sums_in_subplots = True
+        self._display_sums_in_subplots = display_sums_in_subplots
 
         self.i_row = None
         self.j_col = None
