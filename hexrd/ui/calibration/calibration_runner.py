@@ -185,6 +185,7 @@ class CalibrationRunner(QObject):
         picker.point_picked.connect(self.point_picked)
         picker.line_completed.connect(self.line_completed)
         picker.last_point_removed.connect(self.last_point_removed)
+        picker.last_line_restored.connect(self.last_line_restored)
         picker.finished.connect(self.calibration_line_picker_finished)
         picker.view_picks.connect(self.on_view_picks_clicked)
         picker.accepted.connect(self.finish_line)
@@ -642,12 +643,21 @@ class CalibrationRunner(QObject):
                 # Still nothing to do
                 return
             # Remove the last point of data
-            self.current_data_list.pop(-1)
+            self.current_data_list.pop()
         elif self.active_overlay.is_laue:
             self.decrement_overlay_data_index()
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
                 self.current_data_list[ind] = (np.nan, np.nan)
+
+    def last_line_restored(self):
+        # This should only be called for powder overlays, because
+        # Laue overlays are single-line
+        while self.current_data_list:
+            self.current_data_list.pop()
+
+        # Go back one line
+        self.decrement_overlay_data_index()
 
     def disable_line_picker(self, b=True):
         if self.line_picker:
