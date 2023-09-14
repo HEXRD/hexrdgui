@@ -627,8 +627,8 @@ class CalibrationRunner(QObject):
             self.current_data_list[ind] = data
             self.increment_overlay_data_index()
 
-            # In case a point was over-written, force an update of
-            # the line artists.
+            # The line builder doesn't accurately update the lines
+            # during Laue picking, so we force it here.
             self.update_lines_from_picks()
 
     def line_completed(self):
@@ -649,6 +649,10 @@ class CalibrationRunner(QObject):
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
                 self.current_data_list[ind] = (np.nan, np.nan)
+
+            # The line builder doesn't accurately update the lines
+            # during Laue picking, so we force it here.
+            self.update_lines_from_picks()
 
     def last_line_restored(self):
         # This should only be called for powder overlays, because
