@@ -35,9 +35,15 @@ def cart_to_angles(xys, panel, eta_period=None, tvec_s=None, tvec_c=None,
     return ang_crds
 
 
-def angles_to_cart(angles, panel, apply_distortion=True):
-    angles = np.radians(angles)
-    return panel.angles_to_cart(angles, apply_distortion=apply_distortion)
+def angles_to_cart(angles, panel, tvec_s=None, tvec_c=None,
+                   apply_distortion=True):
+    kwargs = {
+        'tth_eta': np.radians(angles),
+        'tvec_s': tvec_s,
+        'tvec_c': tvec_c,
+        'apply_distortion': apply_distortion,
+    }
+    return panel.angles_to_cart(**kwargs)
 
 
 def angles_to_pixels(angles, panel):
