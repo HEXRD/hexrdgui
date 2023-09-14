@@ -80,7 +80,7 @@ class WppfOptionsDialog(QObject):
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
         self.ui.background_method.currentIndexChanged.connect(
-            self.update_background_parameters)
+            self.on_background_method_changed)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file)
         self.ui.display_wppf_plot.toggled.connect(
@@ -540,6 +540,10 @@ class WppfOptionsDialog(QObject):
             self.display_wppf_plot = HexrdConfig().display_wppf_plot
             self.update_background_parameters()
             self.update_table()
+
+    def on_background_method_changed(self):
+        self.update_background_parameters()
+        self.update_params()
 
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
