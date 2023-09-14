@@ -32,6 +32,9 @@ class LinePickerDialog(QObject):
     # Emitted when the last point was removed
     last_point_removed = Signal()
 
+    # Emitted when the last line was restored
+    last_line_restored = Signal()
+
     # Emitted when "Picks Table" was clicked
     view_picks = Signal()
 
@@ -57,7 +60,9 @@ class LinePickerDialog(QObject):
         self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.linebuilder = None
+        self.previous_linebuilders = []
         self.lines = []
+        self.unused_colors = []
 
         self.two_click_mode = self.ui.two_click_mode.isChecked()
 
@@ -105,7 +110,10 @@ class LinePickerDialog(QObject):
         linebuilder = self.linebuilder
         enable_back_button = (
             linebuilder is not None and
-            all(z for z in [linebuilder.xs, linebuilder.ys])
+            (
+                all(z for z in [linebuilder.xs, linebuilder.ys]) or
+                bool(self.previous_linebuilders)
+            )
         )
         self.ui.back_button.setEnabled(enable_back_button)
 
@@ -134,6 +142,7 @@ class LinePickerDialog(QObject):
             self.lines.pop(0).remove()
 
         self.linebuilder = None
+        self.previous_linebuilders.clear()
 
         self.zoom_canvas.cleanup()
         self.zoom_canvas = None
@@ -164,12 +173,31 @@ class LinePickerDialog(QObject):
             return
 
         if not linebuilder.xs or not linebuilder.ys:
-            # Nothing to delete
+            # Go back a line instead
+            self.restore_last_line()
             return
 
         linebuilder.remove_last_point()
 
         self.last_point_removed.emit()
+
+    def restore_last_line(self):
+        if not self.previous_linebuilders:
+            # There are no previous linebuilders to restore
+            return
+
+        self.unused_colors.append(self.lines[-1]._color)
+
+        self.linebuilder = self.previous_linebuilders.pop()
+        self.lines.pop().remove()
+
+        self.canvas.draw_idle()
+
+        if self.cycle_cursor_colors and self.lines:
+            prev_color = self.lines[-1]._color
+            self.zoom_canvas.cursor_color = prev_color
+
+        self.last_line_restored.emit()
 
     def two_click_mode_changed(self, on):
         self.two_click_mode = on
@@ -188,7 +216,15 @@ class LinePickerDialog(QObject):
 
     def add_line(self):
         ax = self.canvas.axis
-        color = next(self.color_cycler)
+        if self.unused_colors:
+            # Use the unused colors first
+            color = self.unused_colors.pop()
+        else:
+            color = next(self.color_cycler)
+
+        if self.linebuilder:
+            # Save the old linebuilders as we add new ones
+            self.previous_linebuilders.append(self.linebuilder)
 
         # empty line
         line, = ax.plot([], [], color=color, **self.line_settings)

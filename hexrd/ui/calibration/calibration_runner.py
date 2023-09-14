@@ -1,5 +1,6 @@
 import copy
 from functools import partial
+import itertools
 from pathlib import Path
 
 import h5py
@@ -184,6 +185,7 @@ class CalibrationRunner(QObject):
         picker.point_picked.connect(self.point_picked)
         picker.line_completed.connect(self.line_completed)
         picker.last_point_removed.connect(self.last_point_removed)
+        picker.last_line_restored.connect(self.last_line_restored)
         picker.finished.connect(self.calibration_line_picker_finished)
         picker.view_picks.connect(self.on_view_picks_clicked)
         picker.accepted.connect(self.finish_line)
@@ -625,8 +627,8 @@ class CalibrationRunner(QObject):
             self.current_data_list[ind] = data
             self.increment_overlay_data_index()
 
-            # In case a point was over-written, force an update of
-            # the line artists.
+            # The line builder doesn't accurately update the lines
+            # during Laue picking, so we force it here.
             self.update_lines_from_picks()
 
     def line_completed(self):
@@ -641,12 +643,25 @@ class CalibrationRunner(QObject):
                 # Still nothing to do
                 return
             # Remove the last point of data
-            self.current_data_list.pop(-1)
+            self.current_data_list.pop()
         elif self.active_overlay.is_laue:
             self.decrement_overlay_data_index()
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
                 self.current_data_list[ind] = (np.nan, np.nan)
+
+            # The line builder doesn't accurately update the lines
+            # during Laue picking, so we force it here.
+            self.update_lines_from_picks()
+
+    def last_line_restored(self):
+        # This should only be called for powder overlays, because
+        # Laue overlays are single-line
+        while self.current_data_list:
+            self.current_data_list.pop()
+
+        # Go back one line
+        self.decrement_overlay_data_index()
 
     def disable_line_picker(self, b=True):
         if self.line_picker:
@@ -685,23 +700,29 @@ class CalibrationRunner(QObject):
         if not self.line_picker:
             return
 
-        # Save the previous index
-        prev_data_index = self.overlay_data_index
-
         picker = self.line_picker
-        for i, line in enumerate(picker.lines):
-            self.overlay_data_index = i
-            if not self.current_data_path:
-                break
+        if self.active_overlay.is_powder:
+            # Save the previous index
+            prev_data_index = self.overlay_data_index
+            for i, line in enumerate(picker.lines):
+                self.overlay_data_index = i
+                if not self.current_data_path:
+                    break
 
-            if self.current_data_list:
-                data = list(zip(*self.current_data_list))
-            else:
-                data = [(), ()]
+                if self.current_data_list:
+                    data = list(zip(*self.current_data_list))
+                else:
+                    data = [(), ()]
 
-            line.set_data(data)
+                line.set_data(data)
 
-        self.overlay_data_index = prev_data_index
+            self.overlay_data_index = prev_data_index
+        else:
+            # For Laue, there should be just one line that contains
+            # all of the points.
+            data = list(zip(*itertools.chain(*self.overlay_picks.values())))
+            picker.lines[0].set_data(data)
+
         picker.canvas.draw_idle()
 
     def auto_pick_points(self):
