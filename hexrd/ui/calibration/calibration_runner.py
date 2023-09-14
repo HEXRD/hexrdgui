@@ -1,5 +1,6 @@
 import copy
 from functools import partial
+import itertools
 from pathlib import Path
 
 import h5py
@@ -700,23 +701,29 @@ class CalibrationRunner(QObject):
         if not self.line_picker:
             return
 
-        # Save the previous index
-        prev_data_index = self.overlay_data_index
-
         picker = self.line_picker
-        for i, line in enumerate(picker.lines):
-            self.overlay_data_index = i
-            if not self.current_data_path:
-                break
+        if self.active_overlay.is_powder:
+            # Save the previous index
+            prev_data_index = self.overlay_data_index
+            for i, line in enumerate(picker.lines):
+                self.overlay_data_index = i
+                if not self.current_data_path:
+                    break
 
-            if self.current_data_list:
-                data = list(zip(*self.current_data_list))
-            else:
-                data = [(), ()]
+                if self.current_data_list:
+                    data = list(zip(*self.current_data_list))
+                else:
+                    data = [(), ()]
 
-            line.set_data(data)
+                line.set_data(data)
 
-        self.overlay_data_index = prev_data_index
+            self.overlay_data_index = prev_data_index
+        else:
+            # For Laue, there should be just one line that contains
+            # all of the points.
+            data = list(zip(*itertools.chain(*self.overlay_picks.values())))
+            picker.lines[0].set_data(data)
+
         picker.canvas.draw_idle()
 
     def auto_pick_points(self):
