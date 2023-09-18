@@ -80,7 +80,7 @@ class WppfOptionsDialog(QObject):
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
         self.ui.background_method.currentIndexChanged.connect(
-            self.on_background_method_changed)
+            self.update_background_parameters)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file)
         self.ui.display_wppf_plot.toggled.connect(
@@ -261,6 +261,10 @@ class WppfOptionsDialog(QObject):
         self.update_table()
 
     def update_params(self):
+        if not hasattr(self, 'params'):
+            # Params have not been created yet. Nothing to update.
+            return
+
         params = self.generate_params()
 
         # Remake the dict to use the ordering of `params`
@@ -359,13 +363,41 @@ class WppfOptionsDialog(QObject):
         method = self.background_method
         widgets = self.dynamic_background_widgets
         if not widgets:
-            value = None
-        elif len(widgets) == 1:
-            value = widgets[0].value()
+            # Make sure these are updated
+            self.update_background_parameters()
+            widgets = self.dynamic_background_widgets
+
+        if not widgets:
+            # This background method doesn't have any widgets
+            value = [None]
         else:
             value = [x.value() for x in widgets]
 
+        if len(value) == 1:
+            value = value[0]
+
         return {method: value}
+
+    @background_method_dict.setter
+    def background_method_dict(self, v):
+        method = list(v)[0]
+
+        self.background_method = method
+
+        # Make sure these get updated (it may have already been called, but
+        # calling it twice is not a problem)
+        self.update_background_parameters()
+        if v[method]:
+            widgets = self.dynamic_background_widgets
+            if len(widgets) == 1:
+                widgets[0].set_value(v[method])
+            else:
+                for w, value in zip(widgets, v[method]):
+                    w.set_value(value)
+
+        if method == 'chebyshev':
+            # We probably need to update the parameters as well
+            self.update_params()
 
     @property
     def limit_tth(self):
@@ -436,14 +468,27 @@ class WppfOptionsDialog(QObject):
         if not settings:
             return
 
+        # Apply these settings first, in order. The other settings
+        # can be disorded.
+        apply_first_keys = [
+            # background_method should no longer be in the settings, as it
+            # was replaced by background_method_dict, but just in case it is...
+            'background_method',
+            'background_method_dict',
+        ]
+
         with block_signals(*self.all_widgets):
+            for k in apply_first_keys:
+                if k in settings:
+                    setattr(self, k, settings[k])
+
             for k, v in settings.items():
                 if k == 'params' and isinstance(v, dict):
                     # The older WPPF dialog used a dict. Skip this
                     # as it is no longer compatible.
                     continue
 
-                if not hasattr(self, k):
+                if not hasattr(self, k) or k in apply_first_keys:
                     # Skip it...
                     continue
 
@@ -459,7 +504,7 @@ class WppfOptionsDialog(QObject):
             'method',
             'refinement_steps',
             'peak_shape',
-            'background_method',
+            'background_method_dict',
             'use_experiment_file',
             'experiment_file',
             'display_wppf_plot',
@@ -541,10 +586,6 @@ class WppfOptionsDialog(QObject):
             self.update_background_parameters()
             self.update_table()
 
-    def on_background_method_changed(self):
-        self.update_background_parameters()
-        self.update_params()
-
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
             # The method did not change. Just return.
@@ -558,13 +599,14 @@ class WppfOptionsDialog(QObject):
         descriptions = background_methods[self.background_method]
         if not descriptions:
             # Nothing more to do
+            self.update_params()
             return
 
         for d in descriptions:
             layout = QHBoxLayout()
             main_layout.addLayout(layout)
 
-            w = DynamicWidget(d)
+            w = DynamicWidget(d, self.ui)
             if w.label is not None:
                 # Add the label
                 layout.addWidget(w.label)
@@ -572,7 +614,16 @@ class WppfOptionsDialog(QObject):
             if w.widget is not None:
                 layout.addWidget(w.widget)
 
+            if self.background_method == 'chebyshev':
+                # We need to update parameters when the chebyshev options
+                # are modified.
+                w.value_changed.connect(self.update_params)
+
             self.dynamic_background_widgets.append(w)
+
+        # We may need to update the parameters as well, since some background
+        # methods have parameters.
+        self.update_params()
 
     def clear_table(self):
         self.value_spinboxes.clear()
