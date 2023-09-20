@@ -6,6 +6,7 @@ from matplotlib.transforms import Affine2D
 
 from skimage.draw import polygon
 
+from hexrd.ui.constants import ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import has_nan
 
@@ -358,9 +359,29 @@ class InteractiveTemplate:
         self.press = self.shape.xy, event.xdata, event.ydata
 
     def rotate_template(self, points, angle):
+        center = self.center
+        canvas = self.current_canvas
+        if canvas.mode == ViewType.polar:
+            # We need to correct for the extent ratio and the aspect ratio
+            # Make a copy to modify (we should *not* modify the original)
+            points = np.array(points)
+            extent = canvas.iviewer.pv.extent
+
+            canvas_aspect = compute_aspect_ratio(canvas.axis)
+            extent_aspect = (extent[1] - extent[0]) / (extent[2] - extent[3])
+
+            aspect_ratio = extent_aspect * canvas_aspect
+            points[:, 0] *= aspect_ratio
+            center = (center[0] * aspect_ratio, center[1])
+
         x = [np.cos(angle), np.sin(angle)]
         y = [-np.sin(angle), np.cos(angle)]
-        verts = np.dot(points - self.center, np.array([x, y])) + self.center
+        verts = np.dot(points - center, np.array([x, y])) + center
+
+        if canvas.mode == ViewType.polar:
+            # Reverse the aspect ratio correction
+            verts[:, 0] /= aspect_ratio
+
         self.shape.set_xy(verts)
 
     def on_rotate(self, event):
@@ -427,3 +448,10 @@ class InteractiveTemplate:
         self.press = None
         self.rotate_template(xy, angle)
         self.redraw()
+
+
+def compute_aspect_ratio(axis):
+    # Compute the aspect ratio of a matplotlib axis
+    ll, ur = axis.get_position() * axis.figure.get_size_inches()
+    width, height = ur - ll
+    return width / height
