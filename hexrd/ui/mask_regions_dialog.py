@@ -178,16 +178,22 @@ class MaskRegionsDialog(QObject):
             self.drag_motion(event)
 
     def check_pick(self, event):
+        pick_found = False
         for templates in self.interactive_templates.values():
             for it in templates:
                 it.static_mode = True
                 transformed_click = it.template.get_transform().transform(
                     (event.xdata, event.ydata))
-                if it.template.contains_point(transformed_click):
+                if (not pick_found and
+                        it.template.contains_point(transformed_click) and
+                        event.inaxes.get_title() == it.detector):
                     if self.interactive_template:
                         self.interactive_template.disconnect()
                     self.interactive_template = it
                     self.interactive_template.static_mode = False
+                    self.interactive_template.on_press(event)
+                    pick_found = True
+        return pick_found
 
     def button_pressed(self, event):
         if self.image_mode not in (ViewType.raw, ViewType.polar):
@@ -199,9 +205,10 @@ class MaskRegionsDialog(QObject):
 
         if event.button == 1:
             # Determine if selecting an existing template or drawing a new one
-            self.check_pick(event)
+            pick_found = self.check_pick(event)
 
-            if (self.interactive_template and
+            if (pick_found or
+                    self.interactive_template and
                     not self.interactive_template.static_mode):
                 return
 
