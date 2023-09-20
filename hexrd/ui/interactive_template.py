@@ -249,6 +249,9 @@ class InteractiveTemplate:
         self.redraw()
 
     def on_press(self, event):
+        if self.static_mode:
+            return
+
         self.event_key = event.key
         if event.key is None:
             self.on_press_translate(event)
@@ -262,6 +265,9 @@ class InteractiveTemplate:
             self.on_rotate_release(event)
 
     def on_key(self, event):
+        if self.static_mode:
+            return
+
         if 'shift' in event.key:
             self.on_key_rotate(event)
         else:
