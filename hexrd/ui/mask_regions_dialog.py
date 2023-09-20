@@ -5,7 +5,7 @@ from hexrd.ui.create_polar_mask import create_polar_mask_from_raw
 from hexrd.ui.interactive_template import InteractiveTemplate
 from hexrd.ui.utils import unique_name
 from hexrd.ui.hexrd_config import HexrdConfig
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import KEY_ROTATE_ANGLE_COARSE, ViewType
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import add_sample_points
 
@@ -87,6 +87,7 @@ class MaskRegionsDialog(QObject):
             self.canvas, self.det, axes=self.axes)
         self.interactive_template.create_polygon([[0,0]], **kwargs)
         self.interactive_template.update_style(color='red')
+        self.interactive_template.key_rotation_angle = KEY_ROTATE_ANGLE_COARSE
         self.added_templates.append(self.det)
 
     def update_interactive_template(self, event):

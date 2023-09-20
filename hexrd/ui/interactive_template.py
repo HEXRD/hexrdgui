@@ -6,7 +6,7 @@ from matplotlib.transforms import Affine2D
 
 from skimage.draw import polygon
 
-from hexrd.ui.constants import ViewType
+from hexrd.ui.constants import KEY_ROTATE_ANGLE_FINE, KEY_TRANSLATE_DELTA, ViewType
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import has_nan
 
@@ -26,6 +26,7 @@ class InteractiveTemplate:
         self.instrument = instrument
         self._static = True
         self.axis_image = axes.get_images()[0] if axes else canvas.axes_images[0]
+        self._key_angle = KEY_ROTATE_ANGLE_FINE
 
         self.button_press_cid = None
         self.button_release_cid = None
@@ -58,6 +59,16 @@ class InteractiveTemplate:
         if not mode:
             self.connect_translate_rotate()
             self.update_style(color='red')
+
+    @property
+    def key_rotation_angle(self):
+        return self._key_angle
+
+    @key_rotation_angle.setter
+    def key_rotation_angle(self, angle=None):
+        if angle is None:
+            angle = KEY_ROTATE_ANGLE
+        self._key_angle = angle
 
     def update_image(self, img):
         self.img = img
@@ -299,7 +310,7 @@ class InteractiveTemplate:
     def on_key_translate(self, event):
         dx0, dy0 = self.translation
         dx1, dy1 = 0, 0
-        delta = 0.5
+        delta = KEY_TRANSLATE_DELTA
         if event.key == 'right':
             dx1 = delta
         elif event.key == 'left':
@@ -403,7 +414,7 @@ class InteractiveTemplate:
         self.redraw()
 
     def on_key_rotate(self, event):
-        angle = 0.00175
+        angle = self.key_rotation_angle
         # !!! only catch arrow keys
         if event.key == 'shift+left' or event.key == 'shift+up':
             angle *= -1.
