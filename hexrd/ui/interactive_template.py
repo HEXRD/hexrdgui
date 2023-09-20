@@ -368,7 +368,7 @@ class InteractiveTemplate:
             extent = canvas.iviewer.pv.extent
 
             canvas_aspect = compute_aspect_ratio(canvas.axis)
-            extent_aspect = (extent[1] - extent[0]) / (extent[2] - extent[3])
+            extent_aspect = (extent[2] - extent[3]) / (extent[1] - extent[0])
 
             aspect_ratio = extent_aspect * canvas_aspect
             points[:, 0] *= aspect_ratio
