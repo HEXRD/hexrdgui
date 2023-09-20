@@ -98,8 +98,7 @@ class MaskRegionsDialog(QObject):
         if self.selection == 'Ellipse':
             center = [(width / 2 + x0), (height / 2 + y0)]
             shape = patches.Ellipse(center, width, height)
-        verts = shape.get_patch_transform().transform(
-            shape.get_path().vertices[:-1])
+        verts = shape.get_verts()
         verts = add_sample_points(verts, 300)
         self.interactive_template.template.set_xy(verts)
         self.interactive_template.center = (
