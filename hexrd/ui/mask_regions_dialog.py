@@ -185,7 +185,8 @@ class MaskRegionsDialog(QObject):
                     (event.xdata, event.ydata))
                 if (not pick_found and
                         it.template.contains_point(transformed_click) and
-                        event.inaxes.get_title() == it.detector):
+                        (self.image_mode == ViewType.polar or
+                         event.inaxes.get_title() == it.detector)):
                     if self.interactive_template:
                         self.interactive_template.disconnect()
                     self.interactive_template = it
