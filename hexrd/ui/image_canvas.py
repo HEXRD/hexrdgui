@@ -1,7 +1,7 @@
 import copy
 import math
 
-from PySide2.QtCore import QThreadPool, QTimer, Signal
+from PySide2.QtCore import QThreadPool, QTimer, Signal, Qt
 from PySide2.QtWidgets import QFileDialog, QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -70,6 +70,8 @@ class ImageCanvas(FigureCanvas):
 
         if image_names is not None:
             self.load_images(image_names)
+
+        self.setFocusPolicy(Qt.ClickFocus)
 
         self.setup_connections()
 

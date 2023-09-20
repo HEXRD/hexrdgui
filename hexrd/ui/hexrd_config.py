@@ -874,7 +874,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 for det, mask in data:
                     if det == name:
                         final_mask = np.logical_and(final_mask, mask)
-            if self.threshold_mask_status:
+            if (self.threshold_mask_status and
+                    self.threshold_masks.get(name) is not None):
                 idx = self.current_imageseries_idx
                 thresh_mask = self.threshold_masks[name][idx]
                 final_mask = np.logical_and(final_mask, thresh_mask)
