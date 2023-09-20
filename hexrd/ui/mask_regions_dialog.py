@@ -85,7 +85,7 @@ class MaskRegionsDialog(QObject):
         }
         self.interactive_template = InteractiveTemplate(
             self.canvas, self.det, axes=self.axes)
-        self.interactive_template.create_polygon([[0,0]], **kwargs)
+        self.interactive_template.create_polygon([[0, 0]], **kwargs)
         self.interactive_template.update_style(color='red')
         self.interactive_template.key_rotation_angle = KEY_ROTATE_ANGLE_COARSE
         self.added_templates.append(self.det)
@@ -220,7 +220,7 @@ class MaskRegionsDialog(QObject):
             self.create_interactive_template()
 
             # For animating the patch
-            self.canvas.draw() # Force canvas re-draw before caching
+            self.canvas.draw()  # Force canvas re-draw before caching
             self.bg_cache = self.canvas.copy_from_bbox(self.axes.bbox)
 
             self.drawing_axes = self.axes

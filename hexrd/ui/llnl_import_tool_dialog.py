@@ -399,7 +399,12 @@ class LLNLImportToolDialog(QObject):
             module=hexrd_resources,
             file_name=f'TARDIS_IMAGE-PLATE-3_bnd_cropped.txt'
         )
-        kwargs = {'fill': False, 'lw': width, 'color': color, 'linestyle': '--'}
+        kwargs = {
+            'fill': False,
+            'lw': width,
+            'color': color,
+            'linestyle': '--'
+        }
         self.it.create_polygon(verts, **kwargs)
         self.update_bbox_width(1330)
         self.update_bbox_height(238)

@@ -6,7 +6,9 @@ from matplotlib.transforms import Affine2D
 
 from skimage.draw import polygon
 
-from hexrd.ui.constants import KEY_ROTATE_ANGLE_FINE, KEY_TRANSLATE_DELTA, ViewType
+from hexrd.ui.constants import (
+    KEY_ROTATE_ANGLE_FINE, KEY_TRANSLATE_DELTA, ViewType
+)
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.utils import has_nan
 
@@ -25,7 +27,8 @@ class InteractiveTemplate:
         self.detector = detector
         self.instrument = instrument
         self._static = True
-        self.axis_image = axes.get_images()[0] if axes else canvas.axes_images[0]
+        self.axis_image = (
+            axes.get_images()[0] if axes else canvas.axes_images[0])
         self._key_angle = KEY_ROTATE_ANGLE_FINE
 
         self.button_press_cid = None
@@ -112,7 +115,8 @@ class InteractiveTemplate:
     def update_position(self):
         pos = None
         if self.instrument is not None:
-            pos = HexrdConfig().boundary_position(self.instrument, self.detector)
+            pos = HexrdConfig().boundary_position(
+                self.instrument, self.detector)
         if pos is None:
             self.center = self.get_midpoint()
         else:
