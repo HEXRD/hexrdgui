@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -206,6 +206,7 @@
     <addaction name="action_transform_detectors"/>
     <addaction name="action_edit_refinements"/>
     <addaction name="action_image_calculator"/>
+    <addaction name="action_edit_config"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -316,7 +317,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>753</height>
          </rect>
         </property>
         <attribute name="label">
@@ -329,7 +330,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>753</height>
          </rect>
         </property>
         <attribute name="label">
@@ -837,6 +838,11 @@
   <action name="action_edit_apply_threshold">
    <property name="text">
     <string>Threshold</string>
+   </property>
+  </action>
+  <action name="action_edit_config">
+   <property name="text">
+    <string>Configuration</string>
    </property>
   </action>
  </widget>
