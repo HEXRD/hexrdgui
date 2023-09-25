@@ -22,6 +22,7 @@ from hexrd.ui.beam_marker_style_editor import BeamMarkerStyleEditor
 from hexrd.ui.calibration_slider_widget import CalibrationSliderWidget
 from hexrd.ui.create_hedm_instrument import create_hedm_instrument
 from hexrd.ui.color_map_editor import ColorMapEditor
+from hexrd.ui.config_dialog import ConfigDialog
 from hexrd.ui.progress_dialog import ProgressDialog
 from hexrd.ui.cal_tree_view import CalTreeView
 from hexrd.ui.hand_drawn_mask_dialog import HandDrawnMaskDialog
@@ -219,6 +220,8 @@ class MainWindow(QObject):
             self.on_action_transform_detectors_triggered)
         self.ui.action_image_calculator.triggered.connect(
             self.open_image_calculator)
+        self.ui.action_edit_config.triggered.connect(
+            self.on_action_edit_config_triggered)
         self.ui.action_open_mask_manager.triggered.connect(
             self.on_action_open_mask_manager_triggered)
         self.ui.action_show_live_updates.toggled.connect(
@@ -1237,6 +1240,9 @@ class MainWindow(QObject):
             self.update_all()
 
         dialog.accepted.connect(on_accepted)
+
+    def on_action_edit_config_triggered(self):
+        ConfigDialog(self.ui).exec_()
 
     def update_enable_states(self):
         has_images = HexrdConfig().has_images
