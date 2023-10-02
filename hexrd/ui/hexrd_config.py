@@ -7,6 +7,7 @@ import sys
 from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
 
 import h5py
+import matplotlib
 import numpy as np
 import yaml
 
@@ -296,6 +297,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._previous_structureless_calibration_picks_data = None
         self.image_mode = constants.ViewType.raw
 
+        # Make sure that the matplotlib font size matches the application
+        self.font_size = self.font_size
+
         self.setup_logging()
 
         default_conv = constants.DEFAULT_EULER_ANGLE_CONVENTION
@@ -370,6 +374,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('config_calibration', None),
             ('config_indexing', None),
             ('config_image', None),
+            ('font_size', 11),
             ('images_dir', None),
             ('working_dir', None),
             ('hdf5_path', []),
@@ -2315,6 +2320,25 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.tab_images_changed.emit()
 
     tab_images = property(tab_images, set_tab_images)
+
+    @property
+    def font_size(self):
+        return QCoreApplication.instance().font().pointSize()
+
+    @font_size.setter
+    def font_size(self, v):
+        # Make sure this is an int
+        v = int(v)
+
+        app = QCoreApplication.instance()
+        font = app.font()
+        font.setPointSize(v)
+        app.setFont(font)
+
+        # Update the matplotlib font size too
+        if matplotlib.rcParams['font.size'] != v:
+            matplotlib.rcParams.update({'font.size': v})
+            self.deep_rerender_needed.emit()
 
     def set_euler_angle_convention(self, new_conv, convert_config=True):
 

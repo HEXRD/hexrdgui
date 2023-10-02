@@ -7,13 +7,30 @@
     <x>0</x>
     <y>0</y>
     <width>374</width>
-    <height>94</height>
+    <height>122</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>HEXRDGUI Configuration</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <item row="0" column="0">
+    <widget class="QCheckBox" name="limit_cpus">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the number of CPUs used for multiprocessing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Limit CPUs?</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="1">
     <widget class="QSpinBox" name="max_cpus">
      <property name="enabled">
@@ -27,17 +44,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QCheckBox" name="limit_cpus">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Limit the number of CPUs used for multiprocessing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Limit CPUs?</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
+   <item row="2" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -50,10 +57,26 @@
      </property>
     </spacer>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   <item row="1" column="0">
+    <widget class="QLabel" name="font_size_label">
+     <property name="text">
+      <string>Font Size:</string>
+     </property>
+     <property name="buddy">
+      <cstring>font_size</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QSpinBox" name="font_size">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000</number>
+     </property>
+     <property name="value">
+      <number>11</number>
      </property>
     </widget>
    </item>
@@ -62,6 +85,7 @@
  <tabstops>
   <tabstop>limit_cpus</tabstop>
   <tabstop>max_cpus</tabstop>
+  <tabstop>font_size</tabstop>
  </tabstops>
  <resources/>
  <connections>
