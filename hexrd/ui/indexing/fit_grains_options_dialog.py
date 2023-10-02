@@ -14,6 +14,7 @@ from hexrd.ui.plot_grains import plot_grains
 from hexrd.ui.reflections_table import ReflectionsTable
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 from hexrd.ui.indexing.fit_grains_tolerances_model import (
     FitGrainsToleranceModel)
@@ -40,6 +41,9 @@ class FitGrainsOptionsDialog(QObject):
         self.ui = loader.load_file('fit_grains_options_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        url = 'hedm/fit_grains/#fit-grains-options'
+        add_help_url(self.ui.button_box, url)
 
         self.update_materials()
 

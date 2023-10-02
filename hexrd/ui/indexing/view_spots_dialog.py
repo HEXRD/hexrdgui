@@ -13,12 +13,16 @@ from hexrd.ui.indexing.spot_montage import (
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 
 class ViewSpotsDialog:
     def __init__(self, spots, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('view_spots_dialog.ui', parent)
+
+        url = 'hedm/fit_grains/#visualize-spots'
+        add_help_url(self.ui.button_box, url)
 
         self.setup_canvas()
 
