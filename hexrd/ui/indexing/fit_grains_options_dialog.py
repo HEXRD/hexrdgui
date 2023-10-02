@@ -72,8 +72,6 @@ class FitGrainsOptionsDialog(QObject):
     def setup_connections(self):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.rejected)
-        self.ui.tth_max_enable.toggled.connect(self.on_tth_max_toggled)
-        self.ui.tth_max_specify.toggled.connect(self.on_tth_specify_toggled)
         self.ui.tolerances_view.selectionModel().selectionChanged.connect(
             self.on_tolerances_select)
         self.ui.add_row.clicked.connect(self.on_tolerances_add_row)
@@ -108,10 +106,6 @@ class FitGrainsOptionsDialog(QObject):
             self.ui.refit_pixel_scale,
             self.ui.tolerances_view,
             self.ui.threshold,
-            self.ui.tth_max_enable,
-            self.ui.tth_max_instrument,
-            self.ui.tth_max_specify,
-            self.ui.tth_max_value,
         ]
         return widgets
 
@@ -232,16 +226,6 @@ class FitGrainsOptionsDialog(QObject):
 
         self.ui.grains_table_view.tolerances = tolerances
 
-    def on_tth_max_toggled(self, checked):
-        enabled = checked
-        self.ui.tth_max_instrument.setEnabled(enabled)
-        self.ui.tth_max_specify.setEnabled(enabled)
-        specify = self.ui.tth_max_specify.isChecked()
-        self.ui.tth_max_value.setEnabled(enabled and specify)
-
-    def on_tth_specify_toggled(self, checked):
-        self.ui.tth_max_value.setEnabled(checked)
-
     def update_config(self):
         # Set the new config options on the internal config
         config = HexrdConfig().indexing_config['fit_grains']
@@ -249,12 +233,10 @@ class FitGrainsOptionsDialog(QObject):
         config['refit'][0] = self.ui.refit_pixel_scale.value()
         config['refit'][1] = self.ui.refit_ome_step_scale.value()
         config['threshold'] = self.ui.threshold.value()
-        if not self.ui.tth_max_enable.isChecked():
-            config['tth_max'] = False
-        elif self.ui.tth_max_instrument.isChecked():
-            config['tth_max'] = True
-        else:
-            config['tth_max'] = self.ui.tth_max_value.value()
+
+        # The user sets the HKLs manually. Make sure this is set to False to
+        # reflect that.
+        config['tth_max'] = False
 
         self.tolerances_model.copy_to_config(config)
 
@@ -270,27 +252,6 @@ class FitGrainsOptionsDialog(QObject):
             self.ui.refit_pixel_scale.setValue(config.get('refit')[0])
             self.ui.refit_ome_step_scale.setValue(config.get('refit')[1])
             self.ui.threshold.setValue(config.get('threshold'))
-
-            tth_max = config.get('tth_max')
-            if isinstance(tth_max, bool):
-                enabled = tth_max
-                instrument = tth_max
-                value = 0.0
-            else:
-                enabled = True
-                instrument = False
-                value = tth_max
-
-            self.ui.tth_max_enable.setChecked(enabled)
-
-            self.ui.tth_max_instrument.setEnabled(enabled)
-            self.ui.tth_max_instrument.setChecked(instrument)
-
-            self.ui.tth_max_specify.setEnabled(enabled)
-            self.ui.tth_max_specify.setChecked(not instrument)
-
-            self.ui.tth_max_value.setEnabled(enabled and (not instrument))
-            self.ui.tth_max_value.setValue(value)
 
             tolerances = config.get('tolerance')
             self.tolerances_model.update_from_config(tolerances)
