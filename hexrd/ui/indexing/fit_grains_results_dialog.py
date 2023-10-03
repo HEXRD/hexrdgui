@@ -25,6 +25,7 @@ from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals
+from hexrd.ui.utils.dialog import add_help_url
 
 
 COORDS_SLICE = slice(6, 9)
@@ -67,6 +68,9 @@ class FitGrainsResultsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_results_dialog.ui', parent)
+
+        url = 'hedm/fit_grains/#fit-grains-results'
+        add_help_url(self.ui.button_box, url)
 
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)

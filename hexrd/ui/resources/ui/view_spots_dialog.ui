@@ -23,8 +23,8 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="1">
-    <widget class="QComboBox" name="grain_id">
+   <item row="1" column="3">
+    <widget class="QComboBox" name="detector">
      <property name="styleSheet">
       <string notr="true">combobox-popup: 0;</string>
      </property>
@@ -33,50 +33,20 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="grain_id_label">
+   <item row="1" column="10">
+    <widget class="QLabel" name="tolerances_label">
      <property name="text">
-      <string>Grain ID:</string>
+      <string>Tolerances:</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="9">
-    <spacer name="horizontal_spacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="grain_id">
+     <property name="styleSheet">
+      <string notr="true">combobox-popup: 0;</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="1" column="2">
-    <widget class="QLabel" name="detector_label">
-     <property name="text">
-      <string>Detector:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="6">
-    <widget class="QLabel" name="peak_id_label">
-     <property name="text">
-      <string>Peak ID:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="4">
-    <widget class="QLabel" name="hkl_label">
-     <property name="text">
-      <string>HKL:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::AdjustToContents</enum>
      </property>
     </widget>
    </item>
@@ -90,10 +60,23 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="10">
-    <widget class="QLabel" name="tolerances_label">
+   <item row="3" column="0" colspan="13">
+    <layout class="QVBoxLayout" name="canvas_layout"/>
+   </item>
+   <item row="1" column="6">
+    <widget class="QLabel" name="peak_id_label">
      <property name="text">
-      <string>Tolerances:</string>
+      <string>Peak ID:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="grain_id_label">
+     <property name="text">
+      <string>Grain ID:</string>
      </property>
     </widget>
    </item>
@@ -114,16 +97,17 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="13">
-    <layout class="QVBoxLayout" name="canvas_layout"/>
-   </item>
-   <item row="1" column="3">
-    <widget class="QComboBox" name="detector">
-     <property name="styleSheet">
-      <string notr="true">combobox-popup: 0;</string>
+   <item row="2" column="5" colspan="3">
+    <widget class="QCheckBox" name="show_frame_indices">
+     <property name="text">
+      <string>Show Frame Indices</string>
      </property>
-     <property name="sizeAdjustPolicy">
-      <enum>QComboBox::AdjustToContents</enum>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QLabel" name="detector_label">
+     <property name="text">
+      <string>Detector:</string>
      </property>
     </widget>
    </item>
@@ -134,10 +118,33 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="5" colspan="3">
-    <widget class="QCheckBox" name="show_frame_indices">
+   <item row="1" column="9">
+    <spacer name="horizontal_spacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="4">
+    <widget class="QLabel" name="hkl_label">
      <property name="text">
-      <string>Show Frame Indices</string>
+      <string>HKL:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="12">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Help</set>
      </property>
     </widget>
    </item>
