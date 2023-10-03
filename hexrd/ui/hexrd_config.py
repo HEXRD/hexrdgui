@@ -470,6 +470,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 'show_all_colormaps',
                 'limited_cmaps_list',
                 'default_cmap',
+                # Ignore the font size when loading from state
+                'font_size',
             ]
 
         try:
