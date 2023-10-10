@@ -388,7 +388,7 @@ class CalibrationRunner(QObject):
         flags = HexrdConfig().get_statuses_instrument_format()
         instr.calibration_flags = flags
 
-        img_dict = HexrdConfig().create_masked_images_dict()
+        img_dict = HexrdConfig().masked_images_dict
 
         instr_calibrator = run_calibration(picks, instr, img_dict, materials)
         self.write_instrument_to_hexrd_config(instr)
@@ -753,7 +753,7 @@ class CalibrationRunner(QObject):
         options = HexrdConfig().config['calibration']['powder']
         self.instr = create_hedm_instrument()
 
-        img_dict = HexrdConfig().create_masked_images_dict()
+        img_dict = HexrdConfig().masked_images_dict
 
         statuses = HexrdConfig().get_statuses_instrument_format()
         self.instr.calibration_flags = statuses
@@ -835,7 +835,7 @@ class CalibrationRunner(QObject):
         self.async_runner.run(self.run_auto_laue_pick)
 
     def run_auto_laue_pick(self):
-        img_dict = HexrdConfig().create_masked_images_dict()
+        img_dict = HexrdConfig().masked_images_dict
 
         # These are the options the user chose earlier...
         options = HexrdConfig().config['calibration']['laue_auto_picker']

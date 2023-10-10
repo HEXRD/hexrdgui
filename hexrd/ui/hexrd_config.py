@@ -890,21 +890,25 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return masks_dict
 
+    @property
+    def masked_images_dict(self):
+        return self.create_masked_images_dict()
+
     def create_masked_images_dict(self, fill_value=0):
         """Get an images dict where masks have been applied"""
         images_dict = self.images_dict
-        have_masks = len(self.visible_masks)
+        if not self.visible_masks:
+            # Force a fill_value of 0 if there are no visible masks
+            fill_value = 0
+
         for det, mask in self.raw_masks_dict.items():
             for name, img in images_dict.items():
-                if (have_masks and
-                        np.issubdtype(type(fill_value), np.floating) and
+                if (np.issubdtype(type(fill_value), np.floating) and
                         not np.issubdtype(img.dtype, np.floating)):
                     img = img.astype(float)
+                    images_dict[name] = img
                 if det == name:
-                    # Masks always exist but may not be masking any regions out
-                    # Only use the fill value if any of the masks are actually
-                    # being applied (visible).
-                    img[~mask] = fill_value if have_masks else 0
+                    img[~mask] = fill_value
 
         return images_dict
 
