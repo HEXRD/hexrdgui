@@ -896,12 +896,25 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def create_masked_images_dict(self, fill_value=0):
         """Get an images dict where masks have been applied"""
+        from hexrd.ui.create_hedm_instrument import create_hedm_instrument
+
         images_dict = self.images_dict
-        if not self.visible_masks:
+        instr = create_hedm_instrument()
+
+        has_masks = bool(self.visible_masks)
+        has_panel_buffers = any(panel.panel_buffer is not None
+                                for panel in instr.detectors.values())
+
+        if not has_masks and not has_panel_buffers:
             # Force a fill_value of 0 if there are no visible masks
+            # and no panel buffers.
             fill_value = 0
 
         for det, mask in self.raw_masks_dict.items():
+            if has_panel_buffers:
+                panel = instr.detectors[det]
+                utils.convert_panel_buffer_to_2d_array(panel)
+
             for name, img in images_dict.items():
                 if (np.issubdtype(type(fill_value), np.floating) and
                         not np.issubdtype(img.dtype, np.floating)):
@@ -909,6 +922,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     images_dict[name] = img
                 if det == name:
                     img[~mask] = fill_value
+
+                    if has_panel_buffers:
+                        img[~panel.panel_buffer] = fill_value
 
         return images_dict
 
