@@ -70,6 +70,7 @@ class PanelBufferDialog(QObject):
 
         if self.update_config():
             self.accepted.emit()
+            HexrdConfig().rerender_needed.emit()
             self.finished.emit(self.ui.result())
 
     def on_rejected(self):
@@ -211,6 +212,7 @@ class PanelBufferDialog(QObject):
         # Clear the config options on the internal config
         self.detector_config['buffer'] = self.default_buffer
         self.update_enable_states()
+        HexrdConfig().rerender_needed.emit()
 
     @property
     def default_buffer(self):
