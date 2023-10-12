@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.grains_viewer_dialog import GrainsViewerDialog

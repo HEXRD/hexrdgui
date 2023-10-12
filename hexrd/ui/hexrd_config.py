@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 
-from PySide2.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
+from PySide6.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
 
 import h5py
 import matplotlib

@@ -2,8 +2,8 @@ import copy
 import numpy as np
 from numpy.linalg import LinAlgError
 
-from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QFileDialog
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QFileDialog
 
 from hexrd import instrument, matrixutil
 

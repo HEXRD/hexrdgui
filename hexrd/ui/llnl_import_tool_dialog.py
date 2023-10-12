@@ -5,9 +5,9 @@ import tempfile
 import h5py
 from pathlib import Path
 
-from PySide2.QtCore import QObject, Signal, Qt
-from PySide2.QtWidgets import QColorDialog, QFileDialog, QMessageBox
-from PySide2.QtGui import QColor
+from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox
+from PySide6.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
 from hexrd.instrument import HEDMInstrument

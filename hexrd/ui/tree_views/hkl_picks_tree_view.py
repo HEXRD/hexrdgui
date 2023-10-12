@@ -1,7 +1,7 @@
 import numpy as np
 
-from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import QMenu
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QMenu
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.overlays import Overlay

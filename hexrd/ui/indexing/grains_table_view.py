@@ -1,8 +1,8 @@
 import numpy as np
 
-from PySide2.QtCore import QSortFilterProxyModel, Qt, Signal
-from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import QMenu, QMessageBox, QTableView
+from PySide6.QtCore import QSortFilterProxyModel, Qt, Signal
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QMenu, QMessageBox, QTableView
 
 from hexrd.ui.async_runner import AsyncRunner
 from hexrd.ui.hexrd_config import HexrdConfig

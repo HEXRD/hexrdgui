@@ -3,8 +3,8 @@ import math
 import numpy as np
 from pathlib import Path
 
-from PySide2.QtCore import QObject, Signal, Qt
-from PySide2.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem, QAbstractItemView
+from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem, QAbstractItemView
 
 from hexrd.ui.constants import MAXIMUM_OMEGA_RANGE
 from hexrd.ui.hexrd_config import HexrdConfig

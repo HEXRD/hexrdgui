@@ -1,7 +1,7 @@
 import numpy as np
 
-from PySide2.QtCore import QItemSelectionModel, QObject, Qt, Signal
-from PySide2.QtWidgets import QTableWidgetItem
+from PySide6.QtCore import QItemSelectionModel, QObject, Qt, Signal
+from PySide6.QtWidgets import QTableWidgetItem
 
 from hexrd.rotations import quatOfExpMap
 

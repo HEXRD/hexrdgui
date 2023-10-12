@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal, Qt
+from PySide6.QtCore import QObject, Signal, Qt
 
 from hexrd.ui.create_raw_mask import convert_polar_to_raw, create_raw_mask
 from hexrd.ui.create_polar_mask import create_polar_mask_from_raw

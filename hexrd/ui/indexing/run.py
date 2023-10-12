@@ -2,8 +2,8 @@ import copy
 
 import numpy as np
 
-from PySide2.QtCore import QObject, QThreadPool, Qt, Signal
-from PySide2.QtWidgets import QMessageBox
+from PySide6.QtCore import QObject, QThreadPool, Qt, Signal
+from PySide6.QtWidgets import QMessageBox
 
 from hexrd import indexer, instrument
 from hexrd.cli.find_orientations import write_scored_orientations

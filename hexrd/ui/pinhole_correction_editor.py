@@ -1,8 +1,8 @@
 import h5py
 import numpy as np
 
-from PySide2.QtCore import QObject, QTimer, Signal
-from PySide2.QtWidgets import (
+from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 )
 

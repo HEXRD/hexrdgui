@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
 
 from hexrd.ui.select_items_widget import SelectItemsWidget
 from hexrd.ui.ui_loader import UiLoader
@@ -31,7 +31,7 @@ class SelectItemsDialog(QDialog):
 
 
 if __name__ == '__main__':
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication()
 

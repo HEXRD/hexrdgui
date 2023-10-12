@@ -1,6 +1,6 @@
-from PySide2.QtCore import QObject, Qt, QTimer, Signal
-from PySide2.QtGui import QFocusEvent, QKeyEvent
-from PySide2.QtWidgets import (
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtGui import QFocusEvent, QKeyEvent
+from PySide6.QtWidgets import (
     QComboBox, QLineEdit, QMessageBox, QPushButton
 )
 

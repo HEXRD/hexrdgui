@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide2.QtCore import Qt
+from PySide6.QtCore import Qt
 
 from hexrd.ui.hexrd_config import HexrdConfig
 

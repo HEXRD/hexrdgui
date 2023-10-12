@@ -1,10 +1,10 @@
 from importlib.metadata import version
 import sys
 
-from PySide2.QtCore import Qt, QObject, QSize
-from PySide2.QtSvg import QSvgWidget
-from PySide2.QtWidgets import QTreeWidgetItem, QLabel
-from PySide2.QtGui import QPixmap
+from PySide6.QtCore import Qt, QObject, QSize
+from PySide6.QtSvg import QSvgWidget
+from PySide6.QtWidgets import QTreeWidgetItem, QLabel
+from PySide6.QtGui import QPixmap
 
 import hexrd
 
@@ -78,7 +78,7 @@ class AboutDialog(QObject):
             "HEXRD",
             "NumPy",
             "SciPy",
-            "PySide2"
+            "PySide6"
         ]
 
         for package in packages:

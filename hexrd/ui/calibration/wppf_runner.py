@@ -1,6 +1,6 @@
 import copy
 
-from PySide2.QtCore import QCoreApplication
+from PySide6.QtCore import QCoreApplication
 
 from hexrd.wppf import Rietveld
 

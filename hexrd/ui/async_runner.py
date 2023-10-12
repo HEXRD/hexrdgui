@@ -1,5 +1,5 @@
-from PySide2.QtCore import QThreadPool, QTimer
-from PySide2.QtWidgets import QMessageBox
+from PySide6.QtCore import QThreadPool, QTimer
+from PySide6.QtWidgets import QMessageBox
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.progress_dialog import ProgressDialog

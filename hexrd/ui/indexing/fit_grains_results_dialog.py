@@ -12,8 +12,8 @@ import matplotlib.ticker as ticker
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide2.QtCore import QObject, QTimer, Qt, Signal
-from PySide2.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
+from PySide6.QtCore import QObject, QTimer, Qt, Signal
+from PySide6.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
 
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.rotations import rotMatOfExpMap
@@ -753,8 +753,8 @@ class FitGrainsResultsDialog(QObject):
         self.async_runner.run(self._save_workflow_files, selected_directory)
 
 if __name__ == '__main__':
-    from PySide2.QtCore import QCoreApplication
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtWidgets import QApplication
 
     # User specifies grains.out file
     if (len(sys.argv) < 2):

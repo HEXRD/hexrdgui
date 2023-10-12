@@ -1,5 +1,5 @@
-from PySide2.QtCore import Signal, Slot, Qt
-from PySide2.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
+from PySide6.QtCore import Signal, Slot, Qt
+from PySide6.QtWidgets import QMessageBox, QTabWidget, QHBoxLayout
 
 import numpy as np
 
@@ -434,7 +434,7 @@ class ImageTabWidget(QTabWidget):
 
 if __name__ == '__main__':
     import sys
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

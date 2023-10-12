@@ -5,8 +5,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QFileDialog, QSizePolicy
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFileDialog, QSizePolicy
 
 from hexrd.ui.color_map_editor import ColorMapEditor
 from hexrd.ui.hexrd_config import HexrdConfig

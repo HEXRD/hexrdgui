@@ -3,8 +3,8 @@ import re
 
 import numpy as np
 
-from PySide2.QtCore import Qt, QItemSelectionModel, QObject, Signal
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Qt, QItemSelectionModel, QObject, Signal
+from PySide6.QtWidgets import (
     QLineEdit, QItemEditorFactory, QStyledItemDelegate, QTableWidgetItem
 )
 

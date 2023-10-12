@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QInputDialog
+from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QInputDialog
 
 from hexrd.ui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrd.ui.hexrd_config import HexrdConfig

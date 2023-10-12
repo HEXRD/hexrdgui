@@ -1,5 +1,5 @@
-from PySide2.QtCore import Signal, QTimer
-from PySide2.QtWidgets import QSizePolicy
+from PySide6.QtCore import Signal, QTimer
+from PySide6.QtWidgets import QSizePolicy
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 

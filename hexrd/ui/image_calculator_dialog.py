@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from PySide2.QtCore import QCoreApplication, QObject, Signal
-from PySide2.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+from PySide6.QtCore import QCoreApplication, QObject, Signal
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from hexrd import imageseries
 

@@ -1,7 +1,7 @@
 from enum import IntEnum
 
-from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QProxyStyle, QStyle
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QProxyStyle, QStyle
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals

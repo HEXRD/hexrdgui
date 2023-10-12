@@ -1,4 +1,4 @@
-from PySide2.QtCore import QAbstractItemModel, QModelIndex, Qt
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from hexrd.ui.tree_views.tree_item import TreeItem
 

@@ -1,5 +1,5 @@
-from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtWidgets import QDialogButtonBox
+from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtWidgets import QDialogButtonBox
 
 from hexrd.ui.ui_loader import UiLoader
 

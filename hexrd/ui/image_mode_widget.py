@@ -2,7 +2,7 @@ from functools import partial
 import multiprocessing
 import numpy as np
 
-from PySide2.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, QTimer, Signal
 
 from hexrd.ui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrd.ui.constants import PolarXAxisType, ViewType

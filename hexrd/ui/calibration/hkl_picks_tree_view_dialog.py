@@ -6,8 +6,8 @@ import numpy as np
 
 from hexrd.crystallography import hklToStr
 
-from PySide2.QtCore import QTimer
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 

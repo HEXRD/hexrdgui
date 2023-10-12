@@ -1,5 +1,5 @@
-from PySide2.QtCore import QEvent, QObject, Qt
-from PySide2.QtWidgets import QDialog, QPushButton
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtWidgets import QDialog, QPushButton
 
 
 class EnterKeyFilter(QObject):

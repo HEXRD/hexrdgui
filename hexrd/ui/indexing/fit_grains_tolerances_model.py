@@ -1,4 +1,4 @@
-from PySide2.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
 
 
 class FitGrainsToleranceModel(QAbstractTableModel):

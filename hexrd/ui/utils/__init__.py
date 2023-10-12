@@ -10,8 +10,8 @@ import sys
 import matplotlib.transforms as mtransforms
 import numpy as np
 
-from PySide2.QtCore import QObject, QSignalBlocker
-from PySide2.QtWidgets import QLayout
+from PySide6.QtCore import QObject, QSignalBlocker
+from PySide6.QtWidgets import QLayout
 
 from hexrd import imageutil
 from hexrd.imageseries.omega import OmegaImageSeries

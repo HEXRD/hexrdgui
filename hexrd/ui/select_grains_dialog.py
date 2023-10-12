@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 
-from PySide2.QtCore import Signal, QItemSelectionModel, QObject
-from PySide2.QtWidgets import QDialogButtonBox, QFileDialog, QMessageBox
+from PySide6.QtCore import Signal, QItemSelectionModel, QObject
+from PySide6.QtWidgets import QDialogButtonBox, QFileDialog, QMessageBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel

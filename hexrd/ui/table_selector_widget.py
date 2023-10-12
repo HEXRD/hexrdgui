@@ -1,7 +1,7 @@
 import numpy as np
 
-from PySide2.QtCore import Signal, Qt
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QTableWidget, QTableWidgetItem, QVBoxLayout
 )
 
@@ -169,7 +169,7 @@ class TableSingleRowSelectorDialog(TableRowSelectorDialog):
 if __name__ == '__main__':
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

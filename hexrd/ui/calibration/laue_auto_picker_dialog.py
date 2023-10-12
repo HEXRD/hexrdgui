@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 import numpy as np
 

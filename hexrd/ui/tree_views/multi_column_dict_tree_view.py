@@ -1,6 +1,6 @@
-from PySide2.QtCore import Signal, QModelIndex, Qt
-from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Signal, QModelIndex, Qt
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import (
     QCheckBox, QDialog, QItemEditorFactory, QMenu, QStyledItemDelegate,
     QVBoxLayout
 )
@@ -281,7 +281,7 @@ class ColumnEditorFactory(QItemEditorFactory):
     def createEditor(self, user_type, parent):
         # Normally in Qt, we'd use QVariant (like QVariant::Double) to compare
         # with the user_type integer. However, QVariant is not available in
-        # PySide2, making us use roundabout methods to get the integer like
+        # PySide6, making us use roundabout methods to get the integer like
         # below.
         def utype(w):
             return w.staticMetaObject.userProperty().userType()
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     import json
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

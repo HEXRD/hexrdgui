@@ -3,9 +3,9 @@ from itertools import cycle
 
 import matplotlib.pyplot as plt
 
-from PySide2.QtCore import Qt, Signal
-from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import (
     QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
 )
 

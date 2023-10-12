@@ -7,8 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-from PySide2.QtCore import QObject, QThreadPool, Signal
-from PySide2.QtWidgets import QMessageBox
+from PySide6.QtCore import QObject, QThreadPool, Signal
+from PySide6.QtWidgets import QMessageBox
 
 from hexrd import imageseries
 from hexrd.imageseries.omega import OmegaImageSeries

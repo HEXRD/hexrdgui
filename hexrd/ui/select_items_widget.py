@@ -1,7 +1,7 @@
 import copy
 
-from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtWidgets import QCheckBox, QHBoxLayout, QTableWidgetItem, QWidget
+from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QTableWidgetItem, QWidget
 
 from hexrd.ui.ui_loader import UiLoader
 

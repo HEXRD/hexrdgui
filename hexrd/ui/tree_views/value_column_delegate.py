@@ -1,10 +1,10 @@
-from PySide2.QtWidgets import (
+from PySide6.QtWidgets import (
     QItemEditorFactory,
     QPushButton,
     QStyledItemDelegate,
 )
 
-from PySide2.QtCore import QEvent, Qt
+from PySide6.QtCore import QEvent, Qt
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.calibration.panel_buffer_dialog import PanelBufferDialog
@@ -78,7 +78,7 @@ class ValueColumnEditorFactory(QItemEditorFactory):
     def createEditor(self, user_type, parent):
         # Normally in Qt, we'd use QVariant (like QVariant::Double) to compare
         # with the user_type integer. However, QVariant is not available in
-        # PySide2, making us use roundabout methods to get the integer like
+        # PySide6, making us use roundabout methods to get the integer like
         # below.
         float_type = (
             ScientificDoubleSpinBox.staticMetaObject.userProperty().userType()

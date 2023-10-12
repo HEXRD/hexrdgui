@@ -3,8 +3,8 @@ import traceback
 
 import numpy as np
 
-from PySide2.QtCore import QObject, QTimer, Qt, Signal
-from PySide2.QtWidgets import QCheckBox, QMessageBox
+from PySide6.QtCore import QObject, QTimer, Qt, Signal
+from PySide6.QtWidgets import QCheckBox, QMessageBox
 
 from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 from hexrd.ui.async_runner import AsyncRunner

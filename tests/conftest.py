@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from PySide2.QtCore import QSettings
+from PySide6.QtCore import QSettings
 
 from hexrd.ui.main_window import MainWindow
 

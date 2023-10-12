@@ -1,8 +1,8 @@
 from functools import partial
 
-from PySide2.QtCore import QItemSelection, QModelIndex, Qt, Signal
-from PySide2.QtGui import QCursor
-from PySide2.QtWidgets import QMenu, QMessageBox, QTreeView
+from PySide6.QtCore import QItemSelection, QModelIndex, Qt, Signal
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QMenu, QMessageBox, QTreeView
 
 from hexrd.ui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrd.ui.tree_views.tree_item import TreeItem

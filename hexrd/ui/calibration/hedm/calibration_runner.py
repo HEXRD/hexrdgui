@@ -1,6 +1,6 @@
 import numpy as np
 
-from PySide2.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal
 
 from hexrd import constants as cnst, instrument
 from hexrd.fitting import calibration

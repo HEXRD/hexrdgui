@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import (
+from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QMessageBox, QPushButton, QVBoxLayout
 )
 
@@ -55,7 +55,7 @@ class PeriodicTableDialog(QDialog):
 
 
 if __name__ == '__main__':
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication()
 

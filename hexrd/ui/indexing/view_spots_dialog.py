@@ -1,5 +1,5 @@
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QSizePolicy
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QSizePolicy
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
@@ -322,7 +322,7 @@ if __name__ == '__main__':
     import pickle
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     if len(sys.argv) < 2:
         sys.exit('Usage: <script> <spots.pkl>')

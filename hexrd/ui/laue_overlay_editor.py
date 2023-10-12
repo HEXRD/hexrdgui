@@ -1,7 +1,7 @@
 import copy
 import numpy as np
 
-from PySide2.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
 
 from hexrd.rotations import angles_from_rmat_xyz, rotMatOfExpMap
 

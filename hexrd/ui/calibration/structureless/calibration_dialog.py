@@ -1,8 +1,8 @@
 import copy
 import yaml
 
-from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
+from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
 from hexrd.ui import resource_loader
 from hexrd.ui.tree_views.multi_column_dict_tree_view import (

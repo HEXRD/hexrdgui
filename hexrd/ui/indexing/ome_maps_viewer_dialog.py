@@ -6,8 +6,8 @@ from matplotlib.figure import Figure
 import numpy as np
 import yaml
 
-from PySide2.QtCore import Signal, QObject, QTimer, Qt
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Signal, QObject, QTimer, Qt
+from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QMessageBox,
     QSizePolicy, QSpinBox
 )

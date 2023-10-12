@@ -8,11 +8,11 @@ from hexrd.ui.edit_colormap_list_dialog import EditColormapListDialog
 import numpy as np
 from skimage import measure
 
-from PySide2.QtCore import (
+from PySide6.QtCore import (
     QEvent, QObject, Qt, QThreadPool, Signal, QTimer, QUrl
 )
-from PySide2.QtGui import QDesktopServices
-from PySide2.QtWidgets import (
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import (
     QApplication, QDockWidget, QFileDialog, QMainWindow, QMessageBox
 )
 

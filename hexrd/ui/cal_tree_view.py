@@ -1,8 +1,8 @@
-from PySide2.QtCore import QObject, QModelIndex, Qt
-from PySide2.QtWidgets import (
+from PySide6.QtCore import QObject, QModelIndex, Qt
+from PySide6.QtWidgets import (
     QCheckBox, QMenu, QMessageBox, QStyledItemDelegate, QTreeView
 )
-from PySide2.QtGui import QCursor
+from PySide6.QtGui import QCursor
 
 import numpy as np
 

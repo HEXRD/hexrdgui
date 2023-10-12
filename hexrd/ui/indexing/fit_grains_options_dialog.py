@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from PySide2.QtCore import (
+from PySide6.QtCore import (
     QItemSelectionModel, QModelIndex, QObject, Qt, Signal)
-from PySide2.QtWidgets import (
+from PySide6.QtWidgets import (
     QDialogButtonBox, QFileDialog, QHeaderView, QMessageBox
 )
 

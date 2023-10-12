@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QDialog, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QVBoxLayout
 
 from hexrd.ui.indexing.grains_table_model import GrainsTableModel
 from hexrd.ui.plot_grains import plot_grains

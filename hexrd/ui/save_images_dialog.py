@@ -1,5 +1,5 @@
-from PySide2.QtCore import QThreadPool
-from PySide2.QtWidgets import QFileDialog, QInputDialog
+from PySide6.QtCore import QThreadPool
+from PySide6.QtWidgets import QFileDialog, QInputDialog
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager

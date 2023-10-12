@@ -3,8 +3,8 @@ import math
 
 import numpy as np
 
-from PySide2.QtCore import Qt, QItemSelectionModel
-from PySide2.QtWidgets import QTableWidgetItem
+from PySide6.QtCore import Qt, QItemSelectionModel
+from PySide6.QtWidgets import QTableWidgetItem
 
 from hexrd.crystallography import hklToStr
 

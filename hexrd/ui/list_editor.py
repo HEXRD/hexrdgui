@@ -1,5 +1,5 @@
-from PySide2.QtCore import QItemSelectionModel, QObject, Signal
-from PySide2.QtWidgets import QDialog, QTableWidgetItem, QVBoxLayout
+from PySide6.QtCore import QItemSelectionModel, QObject, Signal
+from PySide6.QtWidgets import QDialog, QTableWidgetItem, QVBoxLayout
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import block_signals, unique_name
@@ -226,7 +226,7 @@ class ListEditorDialog(QDialog):
 if __name__ == '__main__':
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

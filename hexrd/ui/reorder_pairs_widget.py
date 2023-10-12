@@ -1,7 +1,7 @@
 import copy
 
-from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtWidgets import QComboBox, QHBoxLayout, QSizePolicy, QWidget
+from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QSizePolicy, QWidget
 
 from hexrd.ui.ui_loader import UiLoader
 
@@ -101,7 +101,7 @@ class ReorderPairsWidget(QObject):
 
 if __name__ == '__main__':
     # Make an example to test out
-    from PySide2.QtWidgets import QApplication, QDialog, QVBoxLayout
+    from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout
 
     app = QApplication()
 

@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal
 
 from hexrd.ui.ui_loader import UiLoader
 from hexrd.ui.utils import set_combobox_enabled_items

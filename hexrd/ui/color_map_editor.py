@@ -159,7 +159,7 @@ class ColorMapEditor:
             self.range_edited()
 
     def update_mins_and_maxes(self):
-        # We can't do this in PySide2 for some reason:
+        # We can't do this in PySide6 for some reason:
         # self.ui.maximum.valueChanged.connect(self.ui.minimum.setMaximum)
         # self.ui.minimum.valueChanged.connect(self.ui.maximum.setMinimum)
         self.ui.maximum.setMinimum(self.ui.minimum.value())

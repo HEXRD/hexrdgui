@@ -1,5 +1,5 @@
-from PySide2.QtCore import QTimer
-from PySide2.QtWidgets import QTabWidget
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QTabWidget
 
 
 class HiddenBarTabWidget(QTabWidget):

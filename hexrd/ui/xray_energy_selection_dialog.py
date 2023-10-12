@@ -5,7 +5,7 @@ import io
 import h5py
 import numpy as np
 
-from PySide2.QtWidgets import QDialogButtonBox, QMessageBox
+from PySide6.QtWidgets import QDialogButtonBox, QMessageBox
 
 from hexrd.instrument import unwrap_h5_to_dict
 import hexrd.resources
@@ -128,7 +128,7 @@ def _load_xray_dict():
 if __name__ == '__main__':
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

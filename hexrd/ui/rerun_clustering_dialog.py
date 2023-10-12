@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 
-from PySide2.QtWidgets import QDialog, QFileDialog
-from PySide2.QtCore import Qt
+from PySide6.QtWidgets import QDialog, QFileDialog
+from PySide6.QtCore import Qt
 
 from hexrd.ui.async_worker import AsyncWorker
 from hexrd.ui.hexrd_config import HexrdConfig

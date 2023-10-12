@@ -1,7 +1,7 @@
 import numpy as np
 
-from PySide2.QtCore import Signal
-from PySide2.QtWidgets import QGridLayout, QWidget
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QGridLayout, QWidget
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.utils import block_signals
@@ -211,7 +211,7 @@ class MatrixEditor(QWidget):
 if __name__ == '__main__':
     import sys
 
-    from PySide2.QtWidgets import QApplication, QDialog, QVBoxLayout
+    from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout
 
     if len(sys.argv) < 2:
         sys.exit('Usage: <script> <matrix_size>')

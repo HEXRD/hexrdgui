@@ -1,6 +1,6 @@
-from PySide2.QtCore import QObject
-from PySide2.QtGui import QColor
-from PySide2.QtWidgets import QColorDialog
+from PySide6.QtCore import QObject
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QColorDialog
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader

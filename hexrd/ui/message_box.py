@@ -1,4 +1,4 @@
-from PySide2.QtCore import Qt
+from PySide6.QtCore import Qt
 
 from hexrd.ui.ui_loader import UiLoader
 
@@ -59,7 +59,7 @@ class MessageBox:
 if __name__ == '__main__':
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 

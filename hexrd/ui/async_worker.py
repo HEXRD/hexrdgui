@@ -1,7 +1,7 @@
 # This class was modified from the following example online:
 # https://www.learnpyqt.com/courses/concurrent-execution/multithreading-pyqt-applications-qthreadpool/
 
-from PySide2.QtCore import QObject, QRunnable, Signal, Slot
+from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 
 import inspect
 import traceback

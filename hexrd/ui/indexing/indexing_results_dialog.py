@@ -4,8 +4,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from PySide2.QtCore import Signal, QObject, Qt, QTimer
-from PySide2.QtWidgets import QSizePolicy
+from PySide6.QtCore import Signal, QObject, Qt, QTimer
+from PySide6.QtWidgets import QSizePolicy
 
 from hexrd.transforms import xfcapi
 

@@ -1,6 +1,6 @@
-from PySide2.QtCore import QBuffer, QByteArray
-from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QDialog, QDialogButtonBox, QPushButton
+from PySide6.QtCore import QBuffer, QByteArray
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QPushButton
 
 from hexrd.ui import enter_key_filter, resource_loader
 

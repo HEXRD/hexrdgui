@@ -6,12 +6,12 @@ import os
 import numpy as np
 import h5py
 
-from PySide2.QtCore import QObject, Signal, Qt
-from PySide2.QtWidgets import (
+from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
     QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout
 )
-from PySide2.QtGui import QCursor
+from PySide6.QtGui import QCursor
 
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.utils.compatibility import h5py_read_string

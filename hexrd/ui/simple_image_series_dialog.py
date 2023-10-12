@@ -3,9 +3,9 @@ import yaml
 import numpy as np
 from pathlib import Path
 
-from PySide2.QtGui import QCursor
-from PySide2.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
-from PySide2.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
+from PySide6.QtGui import QCursor
+from PySide6.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
+from PySide6.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrd.ui.constants import (
     MAXIMUM_OMEGA_RANGE, UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE,

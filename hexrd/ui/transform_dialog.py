@@ -2,7 +2,7 @@ from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.image_load_manager import ImageLoadManager
 from hexrd.ui.ui_loader import UiLoader
 
-from PySide2.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpacerItem
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpacerItem
 
 class TransformDialog:
 

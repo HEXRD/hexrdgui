@@ -5,8 +5,8 @@ import traceback
 import matplotlib.pyplot as plt
 import numpy as np
 
-from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.fitting.calibration import StructureLessCalibrator
 

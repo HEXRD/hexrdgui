@@ -1,8 +1,8 @@
 import copy
 import math
 
-from PySide2.QtCore import QThreadPool, QTimer, Signal, Qt
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 

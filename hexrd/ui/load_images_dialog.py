@@ -2,7 +2,7 @@ from collections import Counter  # To compare two lists' contents
 import re
 import os
 
-from PySide2.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
+from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
 
 from hexrd.ui.hexrd_config import HexrdConfig
 from hexrd.ui.ui_loader import UiLoader

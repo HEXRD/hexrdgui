@@ -1,4 +1,4 @@
-from PySide2.QtCore import QEvent, QObject, QTimer, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QTimer, Qt, Signal
 
 from hexrd.ui.messages_widget import MessagesWidget
 from hexrd.ui.ui_loader import UiLoader

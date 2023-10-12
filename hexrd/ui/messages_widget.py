@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 import sys
 
-from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtGui import QColor, QTextCursor
-from PySide2.QtWidgets import QApplication
+from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtGui import QColor, QTextCursor
+from PySide6.QtWidgets import QApplication
 
 from hexrd.ui.fix_pdb import fix_pdb
 from hexrd.ui.hexrd_config import HexrdConfig

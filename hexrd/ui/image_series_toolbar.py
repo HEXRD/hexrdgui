@@ -1,7 +1,7 @@
 from pathlib import Path
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
-from PySide2.QtGui import QPixmap
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
+from PySide6.QtGui import QPixmap
 from hexrd.ui import resource_loader
 
 import hexrd.ui.resources.icons

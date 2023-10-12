@@ -1,8 +1,8 @@
 import copy
 import numpy as np
 
-from PySide2.QtCore import QItemSelectionModel, QObject, Signal
-from PySide2.QtWidgets import QSizePolicy
+from PySide6.QtCore import QItemSelectionModel, QObject, Signal
+from PySide6.QtWidgets import QSizePolicy
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 from hexrd.ui.ui_loader import UiLoader

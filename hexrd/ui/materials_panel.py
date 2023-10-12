@@ -1,8 +1,8 @@
 import math
 
-from PySide2.QtCore import QObject, Qt
-from PySide2.QtGui import QFocusEvent, QKeyEvent
-from PySide2.QtWidgets import QComboBox
+from PySide6.QtCore import QObject, Qt
+from PySide6.QtGui import QFocusEvent, QKeyEvent
+from PySide6.QtWidgets import QComboBox
 
 from hexrd.material import _angstroms
 

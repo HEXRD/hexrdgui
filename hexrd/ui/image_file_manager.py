@@ -5,7 +5,7 @@ import tempfile
 import yaml
 import h5py
 
-from PySide2.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 from hexrd import imageseries
 

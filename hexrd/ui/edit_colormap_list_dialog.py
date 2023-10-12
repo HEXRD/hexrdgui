@@ -1,4 +1,4 @@
-from PySide2.QtCore import QObject, Qt
+from PySide6.QtCore import QObject, Qt
 
 from hexrd.ui import constants
 from hexrd.ui.hexrd_config import HexrdConfig

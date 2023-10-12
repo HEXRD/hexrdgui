@@ -2,8 +2,8 @@ from functools import wraps
 import re
 import math
 
-from PySide2.QtGui import QValidator
-from PySide2.QtWidgets import QDoubleSpinBox
+from PySide6.QtGui import QValidator
+from PySide6.QtWidgets import QDoubleSpinBox
 #
 # Derived from https://gist.github.com/jdreaver/0be2e44981159d0854f5
 #

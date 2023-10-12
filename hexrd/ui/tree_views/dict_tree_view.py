@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QDialog, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QVBoxLayout
 
 from hexrd.ui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView

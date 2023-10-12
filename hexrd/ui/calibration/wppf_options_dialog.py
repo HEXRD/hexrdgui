@@ -4,8 +4,8 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
-from PySide2.QtCore import Qt, QObject, QTimer, Signal
-from PySide2.QtWidgets import (
+from PySide6.QtCore import Qt, QObject, QTimer, Signal
+from PySide6.QtWidgets import (
     QCheckBox, QFileDialog, QHBoxLayout, QMessageBox, QSizePolicy,
     QTableWidgetItem, QWidget
 )
@@ -921,7 +921,7 @@ def dict_to_param(d):
 
 
 if __name__ == '__main__':
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication()
 

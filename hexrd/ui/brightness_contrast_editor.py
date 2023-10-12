@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.interpolate import interp1d
 
-from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import (
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QMessageBox, QVBoxLayout
 )
 

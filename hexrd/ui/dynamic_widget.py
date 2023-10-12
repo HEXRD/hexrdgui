@@ -1,5 +1,5 @@
-from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QSpinBox
 
 from hexrd.ui.scientificspinbox import ScientificDoubleSpinBox
 

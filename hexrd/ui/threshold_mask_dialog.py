@@ -3,8 +3,8 @@ import math
 
 import numpy as np
 
-from PySide2.QtCore import QObject, Qt, Signal
-from PySide2.QtWidgets import QDialogButtonBox
+from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtWidgets import QDialogButtonBox
 from hexrd.ui.create_raw_mask import apply_threshold_mask
 from hexrd.ui.hexrd_config import HexrdConfig
 

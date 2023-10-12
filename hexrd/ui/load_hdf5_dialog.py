@@ -1,7 +1,7 @@
 import h5py
 import os
 
-from PySide2.QtWidgets import QDialog, QListWidgetItem, QMessageBox
+from PySide6.QtWidgets import QDialog, QListWidgetItem, QMessageBox
 
 from hexrd.ui.ui_loader import UiLoader
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide2.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from hexrd.material import Material
 
@@ -105,7 +105,7 @@ class MaterialListEditor:
 if __name__ == '__main__':
     import sys
 
-    from PySide2.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
 
