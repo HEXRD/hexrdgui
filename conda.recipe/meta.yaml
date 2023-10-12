@@ -35,4 +35,4 @@ about:
   home: https://github.com/HEXRD/hexrdgui
   license: BSD
   license_family: BSD
-  summary: "Qt5 PySide2 based HEXRD GUI"
+  summary: "Qt6 PySide6 based HEXRD GUI"

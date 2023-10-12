@@ -60,7 +60,7 @@ when more generic categories are needed.
 UI Files
 --------
 
-One nice feature of PySide2 is that UI files can be loaded at runtime.
+One nice feature of PySide6 is that UI files can be loaded at runtime.
 However, this comes with a few complications. Namely, there is no
 `setupUi()` function that can be called. This means that the object
 that owns the widget does not need to be the type of the widget.
@@ -88,7 +88,7 @@ If your class needs to emit signals, two things must be done:
 
 A UI class that emits signals needs to be set up like the following:
 ```
-from PySide2.QtCore import Signal, QObject
+from PySide6.QtCore import Signal, QObject
 
 from hexrd.ui.ui_loader import UiLoader
 

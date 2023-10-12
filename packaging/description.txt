@@ -1,1 +1,1 @@
-Qt5 PySide2 based HEXRD GUI
+Qt6 PySide6 based HEXRD GUI
