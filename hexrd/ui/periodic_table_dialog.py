@@ -2,7 +2,8 @@ from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QMessageBox, QPushButton, QVBoxLayout
 )
 
-from silx.gui.widgets.PeriodicTable import PeriodicTable
+# FIXME: we need silx to use pyside6 or we need to get rid of it
+# from silx.gui.widgets.PeriodicTable import PeriodicTable
 
 from hexrd.ui.ui_loader import UiLoader
 
