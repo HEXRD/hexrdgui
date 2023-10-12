@@ -3,21 +3,14 @@ import os
 from setuptools import setup, find_packages, Extension
 
 install_reqs = [
-    'Pillow',
-    'matplotlib',
-    'importlib-resources',
-    'fabio>=0.11',
-    'pyyaml',
     'hexrd',
-    'silx'
+    'fabio>=0.11',
+    'matplotlib',
+    'Pillow',
+    'pyside6',
+    'pyyaml',
+    'silx',
 ]
-
-# This is a hack to get around the fact that pyside2 on conda-forge doesn't install
-# dist info so setuptools can't find it, even though its there, which results in
-# pkg_resources.DistributionNotFound, even though the package is available. So we
-# only added it if we aren't building with conda.
-if os.environ.get('CONDA_BUILD') != '1':
-    install_reqs.append('pyside2>=5.15')
 
 setup(
     name='hexrdgui',
