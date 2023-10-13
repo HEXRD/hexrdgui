@@ -47,6 +47,10 @@ jobs:
         python-version: '3.10'
         auto-activate-base: false
 
+    - name: Install EGL on Linux (PySide6 needs it)
+      if: ${{ matrix.config.name == 'Linux' }}
+      run: sudo apt-get install -y libegl1-mesa-dev
+
     - name: Get version using git describe
       working-directory: hexrdgui
       run: echo "HEXRDGUI_GIT_DESCRIBE=$(git describe --tag)" >> $GITHUB_ENV

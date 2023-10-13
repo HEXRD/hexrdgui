@@ -55,9 +55,13 @@ jobs:
         repository: HEXRD/examples
         path: examples
 
+    - name: Install EGL on Linux (PySide6 needs it)
+      if: ${{ matrix.config.name == 'Linux' }}
+      run: sudo apt-get install -y libegl1-mesa-dev
+
     - name: Set environment variable to work around setuptools/numpy issue
       run: echo 'SETUPTOOLS_USE_DISTUTILS=stdlib' >> $GITHUB_ENV
-      if: ${{ matrix.config.os == 'windows-latest'}}
+      if: ${{ matrix.config.name == 'Windows' }}
 
     - name: Install HEXRD
       run: |
