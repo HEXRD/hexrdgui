@@ -20,7 +20,7 @@ requirements:
     - python
     - pyside6
     - Pillow
-    - matplotlib
+    - matplotlib-base
     - importlib_resources
     - fabio
     - pyyaml
