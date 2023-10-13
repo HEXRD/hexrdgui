@@ -48,7 +48,8 @@ class Runner(QObject):
 
     def setup_connections(self):
         self.progress_text.connect(self.progress_dialog.setLabelText)
-        self.accept_progress_signal.connect(self.progress_dialog.accept)
+        self.accept_progress_signal.connect(self.progress_dialog.accept,
+                                            Qt.QueuedConnection)
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
@@ -387,6 +388,8 @@ class IndexingRunner(Runner):
             self.grains_table)
 
     def confirm_indexing_results(self):
+        # FIXME: why is accepting the progress necessary here?
+        self.accept_progress()
         if self.grains_table is None:
             msg = 'No grains found'
             QMessageBox.critical(self.parent, msg, msg)
