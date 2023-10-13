@@ -142,7 +142,7 @@ class TableSelectorDialog(QDialog):
 class TableRowSelectorDialog(TableSelectorDialog):
     def set_options(self):
         super().set_options()
-        self.table.setSelectionBehavior(self.table.SelectRows)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
 
         self.table.verticalHeader().hide()
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -156,7 +156,7 @@ class TableRowSelectorDialog(TableSelectorDialog):
 class TableSingleRowSelectorDialog(TableRowSelectorDialog):
     def set_options(self):
         super().set_options()
-        self.table.setSelectionMode(self.table.SingleSelection)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
 
     @property
     def selected_row(self):
