@@ -18,14 +18,14 @@ requirements:
 
   run:
     - python
-    - pyside6
-    - Pillow
-    - matplotlib-base
-    - importlib_resources
     - fabio
-    - pyyaml
     - hexrd=={{ hexrd_version }}
+    - matplotlib-base
+    - Pillow
     - pyhdf
+    - pyside6
+    - pyyaml
+    - silx-base
 
 test:
   imports:

@@ -9,6 +9,7 @@ install_reqs = [
     'Pillow',
     'pyside6',
     'pyyaml',
+    'silx',
 ]
 
 setup(
