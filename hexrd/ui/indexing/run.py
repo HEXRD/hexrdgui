@@ -48,8 +48,7 @@ class Runner(QObject):
 
     def setup_connections(self):
         self.progress_text.connect(self.progress_dialog.setLabelText)
-        self.accept_progress_signal.connect(self.progress_dialog.accept,
-                                            Qt.QueuedConnection)
+        self.accept_progress_signal.connect(self.progress_dialog.accept)
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
@@ -322,9 +321,13 @@ class IndexingRunner(Runner):
         worker = AsyncWorker(self.run_cluster_functions)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self.confirm_indexing_results,
-                                      Qt.QueuedConnection)
-        worker.signals.finished.connect(self.accept_progress)
+        def on_finished():
+            # Since this is a QueuedConnection, we must accept the progress
+            # before proceeding.
+            self.accept_progress()
+            self.confirm_indexing_results()
+
+        worker.signals.result.connect(on_finished, Qt.QueuedConnection)
         worker.signals.error.connect(self.on_async_error)
 
     @property
@@ -388,8 +391,6 @@ class IndexingRunner(Runner):
             self.grains_table)
 
     def confirm_indexing_results(self):
-        # FIXME: why is accepting the progress necessary here?
-        self.accept_progress()
         if self.grains_table is None:
             msg = 'No grains found'
             QMessageBox.critical(self.parent, msg, msg)
