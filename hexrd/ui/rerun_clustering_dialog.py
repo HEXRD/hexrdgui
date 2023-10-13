@@ -83,11 +83,20 @@ class RerunClusteringDialog(QDialog):
         runner.is_rerunning_clustering = True
         worker = AsyncWorker(runner.run_cluster)
         runner.thread_pool.start(worker)
-        worker.signals.result.connect(
-            runner.confirm_indexing_results, Qt.QueuedConnection)
-        runner.indexing_results_rejected.connect(
-            self.exec_, Qt.QueuedConnection)
-        worker.signals.finished.connect(runner.accept_progress)
+
+        def on_finished():
+            # Since this is a QueuedConnection, we need to accept progress here
+            runner.accept_progress()
+            runner.confirm_indexing_results()
+
+        def on_rejected():
+            # Since this is a QueuedConnection, we need to accept progress here
+            runner.accept_progress()
+            self.exec_()
+
+        worker.signals.result.connect(on_finished, Qt.QueuedConnection)
+        runner.indexing_results_rejected.connect(on_rejected,
+            Qt.QueuedConnection)
         worker.signals.error.connect(runner.on_async_error)
         runner.progress_dialog.exec_()
 
