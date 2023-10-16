@@ -42,8 +42,8 @@ class MaterialPropertiesEditor:
     @property
     def elastic_tensor_type(self):
         type_map = {
-            'Stiffness': 'stiffness',
-            'Compliance': 'compliance',
+            'Stiffness (GPa)': 'stiffness',
+            'Compliance (TPa⁻¹)': 'compliance',
         }
         return type_map[self.ui.elastic_tensor_type.currentText()]
 

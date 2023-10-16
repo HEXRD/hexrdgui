@@ -66,12 +66,12 @@
     <widget class="QComboBox" name="elastic_tensor_type">
      <item>
       <property name="text">
-       <string>Stiffness</string>
+       <string>Stiffness (GPa)</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Compliance</string>
+       <string>Compliance (TPa⁻¹)</string>
       </property>
      </item>
     </widget>
