@@ -555,14 +555,26 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         recurse(v, config)
 
+    @property
+    def _q_settings_version(self):
+        # Keep track of a QSettings version so we can ignore versions
+        # that we might not be able to load.
+        return 1
+
     def save_settings(self):
         settings = QSettings()
+        settings.setValue('settings_version', self._q_settings_version)
 
         state = self.state_to_persist()
         self._save_state_to_settings(state, settings)
 
     def load_settings(self):
         settings = QSettings()
+        if settings.value('settings_version') != self._q_settings_version:
+            # The QSettings version is different (probably PySide6 is
+            # trying to load a PySide2 QSettings, which has issues)
+            # Ignore the settings, as there may be compatibility issues.
+            return
 
         state = self._load_state_from_settings(settings)
         self.load_from_state(state)
