@@ -231,7 +231,8 @@ class CheckBoxDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         check = QCheckBox(parent)
 
-        check.toggled.connect(self.statusChanged)
+        # Only indicate the status has changed on user interaction
+        check.clicked.connect(self.statusChanged)
 
         return check
 

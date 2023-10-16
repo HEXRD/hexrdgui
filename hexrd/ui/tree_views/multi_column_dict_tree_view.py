@@ -291,7 +291,8 @@ class ColumnEditorFactory(QItemEditorFactory):
         if user_type == bool_type:
             cb = QCheckBox(parent)
             # Force an update when the check state changes
-            cb.toggled.connect(self.delegate.state_changed)
+            # Only indicate the status has changed on user interaction
+            cb.clicked.connect(self.delegate.state_changed)
             return cb
         if user_type == float_type:
             return ScientificDoubleSpinBox(parent)
