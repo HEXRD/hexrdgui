@@ -216,7 +216,7 @@ progress(int) # Emitted only if a progress callback was used, and it
 
 The `AsyncWorker` is used like the following:
 ```
-thread_pool = QThreadPool() # Probably should be a member variable
+thread_pool = QThreadPool.globalInstance()
 worker = AsyncWorker(func_to_call)
 thread_pool.start(worker)
 

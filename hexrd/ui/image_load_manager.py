@@ -37,8 +37,12 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     enable_transforms = Signal()
 
     def __init__(self):
-        super(ImageLoadManager, self).__init__(None)
+        super().__init__(None)
         self.transformed_images = False
+
+    @property
+    def thread_pool(self):
+        return QThreadPool.globalInstance()
 
     def load_images(self, fnames):
         files = self.explict_selection(fnames)
@@ -143,7 +147,6 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         self.live_update_status.emit(False)
 
         # Create threads and loading dialog
-        thread_pool = QThreadPool(self.ui_parent)
         progress_dialog = ProgressDialog(self.ui_parent)
         progress_dialog.setWindowTitle('Loading Processed Imageseries')
         self.progress_text.connect(progress_dialog.setLabelText)

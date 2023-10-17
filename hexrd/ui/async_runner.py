@@ -10,8 +10,6 @@ class AsyncRunner:
     def __init__(self, parent):
         self.parent = parent
 
-        self.thread_pool = QThreadPool(parent)
-
         self.progress_dialog = ProgressDialog(parent)
 
         # Some defaults...
@@ -68,3 +66,7 @@ class AsyncRunner:
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
         msg_box.setDetailedText(traceback)
         msg_box.exec()
+
+    @property
+    def thread_pool(self):
+        return QThreadPool.globalInstance()

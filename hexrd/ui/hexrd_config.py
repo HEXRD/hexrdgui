@@ -246,7 +246,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def __init__(self):
         # Should this have a parent?
-        super(HexrdConfig, self).__init__(None)
+        super().__init__(None)
         self.config = {}
         self.default_config = {}
         self.gui_yaml_dict = None

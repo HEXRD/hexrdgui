@@ -96,7 +96,6 @@ class MainWindow(QObject):
         self.ui = loader.load_file('main_window.ui', parent)
         self.confirm_application_close = True
 
-        self.thread_pool = QThreadPool(self)
         self.progress_dialog = ProgressDialog(self.ui)
         self.progress_dialog.setWindowTitle('Calibration Running')
 
@@ -1517,3 +1516,7 @@ class MainWindow(QObject):
 
     def on_action_edit_apply_threshold_triggered(self):
         self.threshold_mask_dialog.show()
+
+    @property
+    def thread_pool(self):
+        return QThreadPool.globalInstance()

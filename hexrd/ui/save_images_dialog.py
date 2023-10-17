@@ -15,7 +15,6 @@ class SaveImagesDialog:
         self.ui = loader.load_file('save_images_dialog.ui', parent)
 
         self.parent_dir = HexrdConfig().working_dir
-        self.thread_pool = QThreadPool()
         self.progress_dialog = ProgressDialog(self.ui)
 
         self.setup_gui()
@@ -92,3 +91,7 @@ class SaveImagesDialog:
     def exec(self):
         if self.ui.exec():
             self.save_images()
+
+    @property
+    def thread_pool(self):
+        return QThreadPool.globalInstance()

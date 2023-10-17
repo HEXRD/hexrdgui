@@ -65,9 +65,6 @@ class ImageCanvas(FigureCanvas):
         )
         self.polar_res_config = HexrdConfig().config['image']['polar'].copy()
 
-        # Set up our async stuff
-        self.thread_pool = QThreadPool(parent)
-
         if image_names is not None:
             self.load_images(image_names)
 
@@ -102,6 +99,10 @@ class ImageCanvas(FigureCanvas):
             self.on_polar_x_axis_type_changed)
         HexrdConfig().beam_energy_modified.connect(
             self.on_beam_energy_modified)
+
+    @property
+    def thread_pool(self):
+        return QThreadPool.globalInstance()
 
     def __del__(self):
         # This is so that the figure can be cleaned up

@@ -40,7 +40,6 @@ class Runner(QObject):
         super().__init__(parent)
         self.parent = parent
 
-        self.thread_pool = QThreadPool(self.parent)
         self.progress_dialog = ProgressDialog(self.parent)
         self.clear_cancel_tracker()
 
@@ -49,6 +48,10 @@ class Runner(QObject):
     def setup_connections(self):
         self.progress_text.connect(self.progress_dialog.setLabelText)
         self.accept_progress_signal.connect(self.progress_dialog.accept)
+
+    @property
+    def thread_pool(self):
+        return QThreadPool.globalInstance()
 
     def update_progress_text(self, text):
         self.progress_text.emit(text)
