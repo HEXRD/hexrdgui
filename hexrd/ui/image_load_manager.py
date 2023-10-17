@@ -154,7 +154,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         # Start processing in background
         worker = AsyncWorker(self.process_ims, postprocess)
-        thread_pool.start(worker)
+        self.thread_pool.start(worker)
 
         worker.signals.progress.connect(progress_dialog.setValue)
         # On completion load imageseries nd close loading dialog
