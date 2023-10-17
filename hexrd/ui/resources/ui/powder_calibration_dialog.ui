@@ -6,9 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>744</width>
+    <width>750</width>
     <height>479</height>
    </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Fast Powder Calibration</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="3" column="0" colspan="3">
