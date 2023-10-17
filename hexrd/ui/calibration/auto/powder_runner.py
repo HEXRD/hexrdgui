@@ -31,7 +31,7 @@ class PowderRunner(QObject):
 
         if hasattr(self, '_ask_if_lines_are_acceptable_box'):
             # Remove the box if it is still there...
-            self._ask_if_lines_are_acceptable_box.reject()
+            self._ask_if_lines_are_acceptable_box.hide()
             del self._ask_if_lines_are_acceptable_box
 
     def run(self):
