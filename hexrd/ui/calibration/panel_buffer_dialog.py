@@ -1,7 +1,7 @@
 import copy
 import os
 
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import Signal, QObject, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 import matplotlib.pyplot as plt
@@ -28,6 +28,10 @@ class PanelBufferDialog(QObject):
         self.detector = detector
         loader = UiLoader()
         self.ui = loader.load_file('panel_buffer_dialog.ui')
+
+        # Keep the dialog in front
+        flags = self.ui.windowFlags()
+        self.ui.setWindowFlags(flags | Qt.Tool)
 
         add_help_url(self.ui.button_box,
                      'configuration/instrument/#panel-buffer')
