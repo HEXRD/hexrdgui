@@ -15,7 +15,7 @@ def load_resource(module, name, binary=False):
 
 
 def resource_path(module, name):
-    return importlib_resources.path(module, name)
+    return path(module, name)
 
 
 def module_contents(module):

@@ -123,6 +123,9 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         return files
 
     def read_data(self, files=None, data=None, ui_parent=None, **kwargs):
+        # Make sure this is reset to zero when data is being read
+        HexrdConfig().current_imageseries_idx = 0
+
         # When this is pressed read in a complete set of data for all detectors.
         # Run the imageseries processing in a background thread and display a
         # loading dialog
