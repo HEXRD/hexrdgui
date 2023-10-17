@@ -76,6 +76,10 @@ jobs:
       run: |
           conda activate hexrdgui-package
           mkdir output
+
+          # Use libmamba as the solver for all future conda commands
+          export CONDA_SOLVER=libmamba
+
           HEXRD_PACKAGE_CHANNEL=${HEXRD_PACKAGE_CHANNEL} HEXRDGUI_OUTPUT_FOLDER=output/ cpack
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
       # command works.
