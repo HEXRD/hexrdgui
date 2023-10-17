@@ -87,8 +87,8 @@ class SaveImagesDialog:
             self.progress_dialog.setWindowTitle(f'Saving {filename}')
             self.progress_dialog.setRange(0, 0)
             worker.signals.finished.connect(self.progress_dialog.accept)
-            self.progress_dialog.exec_()
+            self.progress_dialog.exec()
 
-    def exec_(self):
-        if self.ui.exec_():
+    def exec(self):
+        if self.ui.exec():
             self.save_images()

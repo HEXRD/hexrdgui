@@ -86,12 +86,12 @@ class ProgressDialog(QObject):
         # Shrink the dialog to the size of the contents
         self.shrink_later()
 
-    def exec_(self):
+    def exec(self):
         self.reset_messages()
-        self.ui.exec_()
+        self.ui.exec()
 
-    def exec_later(self):
-        QTimer.singleShot(0, lambda: self.exec_())
+    def execlater(self):
+        QTimer.singleShot(0, lambda: self.exec())
 
     @property
     def cancel_visible(self):

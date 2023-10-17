@@ -46,7 +46,7 @@ def main():
         # Load the entrypoint file
         window.load_entrypoint_file(parsed_args.state_file)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 def apply_parsed_args_to_hexrd_config(parsed_args):

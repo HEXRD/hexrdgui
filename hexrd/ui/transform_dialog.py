@@ -42,8 +42,8 @@ class TransformDialog:
         self.ui.update_each.clicked.connect(self.toggle_options)
         self.ui.accepted.connect(self.apply_transforms)
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     def toggle_options(self):
         enabled = self.ui.update_all.isChecked()

@@ -102,8 +102,8 @@ class HEDMCalibrationResultsDialog:
         self.ax = ax
         self.canvas = canvas
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     @property
     def selected_detector_key(self):

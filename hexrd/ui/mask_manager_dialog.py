@@ -210,7 +210,7 @@ class MaskManagerDialog(QObject):
         if index.row() >= 0:
             menu = QMenu(self.ui.masks_table)
             export = menu.addAction('Export Mask')
-            action = menu.exec_(QCursor.pos())
+            action = menu.exec(QCursor.pos())
             if action == export:
                 selection = self.ui.masks_table.item(index.row(), 0).text()
                 data = HexrdConfig().raw_mask_coords[selection]
@@ -354,7 +354,7 @@ class MaskManagerDialog(QObject):
             button_box.rejected.connect(dialog.reject)
             layout.addWidget(button_box)
 
-            if not dialog.exec_():
+            if not dialog.exec():
                 # canceled
                 return
 

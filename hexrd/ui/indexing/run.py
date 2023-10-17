@@ -67,7 +67,7 @@ class Runner(QObject):
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
         msg_box.setDetailedText(traceback)
-        msg_box.exec_()
+        msg_box.exec()
 
     def reset_cancel_tracker(self):
         self.cancel_tracker = CancelTracker()
@@ -178,7 +178,7 @@ class IndexingRunner(Runner):
             worker.signals.result.connect(self.ome_maps_loaded)
             worker.signals.error.connect(self.on_async_error)
             worker.signals.finished.connect(self.accept_progress)
-            self.progress_dialog.exec_()
+            self.progress_dialog.exec()
 
     def run_eta_ome_maps(self, config):
         self.ome_maps = generate_eta_ome_maps(config, save=False)
@@ -239,7 +239,7 @@ class IndexingRunner(Runner):
             worker.signals.result.connect(self.orientation_fibers_generated)
             worker.signals.error.connect(self.on_async_error)
 
-        self.progress_dialog.exec_()
+        self.progress_dialog.exec()
 
     def generate_orientation_fibers(self, config):
         # Generate the orientation fibers
@@ -524,7 +524,7 @@ class FitGrainsRunner(Runner):
 
         self.progress_dialog.cancel_visible = True
         self.progress_dialog.cancel_clicked.connect(self.on_cancel_clicked)
-        self.progress_dialog.exec_()
+        self.progress_dialog.exec()
 
     def run_fit_grains(self):
         cfg = create_indexing_config()

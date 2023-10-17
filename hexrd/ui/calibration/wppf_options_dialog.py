@@ -286,7 +286,7 @@ class WppfOptionsDialog(QObject):
         selected = self.selected_materials
         items = [(name, name in selected) for name in materials]
         dialog = SelectItemsDialog(items, self.ui)
-        if dialog.exec_() and self.selected_materials != dialog.selected_items:
+        if dialog.exec() and self.selected_materials != dialog.selected_items:
             self.selected_materials = dialog.selected_items
             self.update_params()
 
@@ -531,7 +531,7 @@ class WppfOptionsDialog(QObject):
 
     def edit_plot_style(self):
         dialog = WppfStylePicker(self.ui)
-        dialog.ui.exec_()
+        dialog.ui.exec()
 
     def create_label(self, v):
         w = QTableWidgetItem(v)
@@ -926,7 +926,7 @@ if __name__ == '__main__':
     app = QApplication()
 
     dialog = WppfOptionsDialog()
-    dialog.ui.exec_()
+    dialog.ui.exec()
 
     print(f'{dialog.method=}')
     print(f'{dialog.background_method=}')

@@ -23,9 +23,9 @@ class AzimuthalOverlayStylePicker(QObject):
         self.setup_connections()
         self.update_gui()
 
-    def exec_(self):
+    def exec(self):
         self.ui.adjustSize()
-        return self.ui.exec_()
+        return self.ui.exec()
 
     def setup_connections(self):
         self.ui.color.pressed.connect(self.pick_color)
@@ -72,7 +72,7 @@ class AzimuthalOverlayStylePicker(QObject):
         color = sender.text()
 
         dialog = QColorDialog(QColor(color), self.ui)
-        if dialog.exec_():
+        if dialog.exec():
             sender.setText(dialog.selectedColor().name())
             self.update_button_colors()
             self.update_config()

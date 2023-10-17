@@ -90,8 +90,8 @@ class SelectGrainsDialog(QObject):
         enable_list = list(methods_and_enable.values())
         set_combobox_enabled_items(self.ui.method, enable_list)
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     def on_accepted(self):
         self.update_config()

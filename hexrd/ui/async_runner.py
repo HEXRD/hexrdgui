@@ -41,7 +41,7 @@ class AsyncRunner:
         # have a segmentation fault.
         self.thread_pool.start(worker)
 
-        self.progress_dialog.exec_()
+        self.progress_dialog.exec()
 
     def on_worker_finished(self):
         self.reset_callbacks()
@@ -67,4 +67,4 @@ class AsyncRunner:
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
         msg_box.setDetailedText(traceback)
-        msg_box.exec_()
+        msg_box.exec()

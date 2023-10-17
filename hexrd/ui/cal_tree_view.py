@@ -305,7 +305,7 @@ class CalTreeView(QTreeView):
                 menu.addSeparator()
                 check = menu.addAction('Check All')
                 uncheck = menu.addAction('Uncheck All')
-            action = menu.exec_(QCursor.pos())
+            action = menu.exec(QCursor.pos())
 
             if action == collapse:
                 self.collapse_selection(item, index)

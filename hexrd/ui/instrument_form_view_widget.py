@@ -118,7 +118,7 @@ class InstrumentFormViewWidget(QObject):
 
     def open_xray_energies_dialog(self):
         dialog = XRayEnergySelectionDialog(self.ui)
-        if not dialog.exec_():
+        if not dialog.exec():
             return
 
         # The table has units in eV. Convert to keV.

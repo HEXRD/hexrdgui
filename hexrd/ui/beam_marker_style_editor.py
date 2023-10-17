@@ -80,7 +80,7 @@ class BeamMarkerStyleEditor:
         color = w.text()
 
         dialog = QColorDialog(QColor(color), self.ui)
-        if dialog.exec_():
+        if dialog.exec():
             w.setText(dialog.selectedColor().name())
             self.update_button_colors()
             self.update_config()

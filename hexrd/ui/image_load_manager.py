@@ -157,7 +157,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         # On completion load imageseries nd close loading dialog
         worker.signals.result.connect(self.finish_processing_ims)
         worker.signals.finished.connect(progress_dialog.accept)
-        progress_dialog.exec_()
+        progress_dialog.exec()
 
     def set_state(self, state=None):
         if state is None:

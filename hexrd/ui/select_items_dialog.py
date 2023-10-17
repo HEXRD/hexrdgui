@@ -48,5 +48,5 @@ if __name__ == '__main__':
         print(f'Selection changed: {dialog.selected_items}')
 
     dialog.select_items_widget.selection_changed.connect(selection_changed)
-    if dialog.exec_():
+    if dialog.exec():
         print(f'{dialog.selected_items=}')

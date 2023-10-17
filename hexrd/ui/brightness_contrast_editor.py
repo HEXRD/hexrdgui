@@ -397,7 +397,7 @@ class BrightnessContrastEditor(QObject):
 
         UiLoader().install_dialog_enter_key_filters(dialog)
 
-        if not dialog.exec_():
+        if not dialog.exec():
             # User canceled
             return
 

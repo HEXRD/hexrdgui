@@ -92,16 +92,16 @@ class RerunClusteringDialog(QDialog):
         def on_rejected():
             # Since this is a QueuedConnection, we need to accept progress here
             runner.accept_progress()
-            self.exec_()
+            self.exec()
 
         worker.signals.result.connect(on_finished, Qt.QueuedConnection)
         runner.indexing_results_rejected.connect(on_rejected,
             Qt.QueuedConnection)
         worker.signals.error.connect(runner.on_async_error)
-        runner.progress_dialog.exec_()
+        runner.progress_dialog.exec()
 
         super().accept()
 
-    def exec_(self):
+    def exec(self):
         self.setup_gui()
-        self.ui.exec_()
+        self.ui.exec()

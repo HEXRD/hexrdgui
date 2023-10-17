@@ -369,7 +369,7 @@ class LLNLImportToolDialog(QObject):
         color = sender.text()
 
         dialog = QColorDialog(QColor(color), self.ui)
-        if dialog.exec_():
+        if dialog.exec():
             sender.setText(dialog.selectedColor().name())
             lc = self.ui.line_color
             lc.setStyleSheet('QPushButton {background-color: %s}' % lc.text())

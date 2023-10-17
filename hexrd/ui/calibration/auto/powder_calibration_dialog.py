@@ -71,8 +71,8 @@ class PowderCalibrationDialog:
         options['pk_type'] = self.peak_fit_type
         options['bg_type'] = self.background_type
 
-    def exec_(self):
-        if not self.ui.exec_():
+    def exec(self):
+        if not self.ui.exec():
             return False
 
         self.update_config()

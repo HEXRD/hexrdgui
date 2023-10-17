@@ -26,8 +26,8 @@ class SelectItemDialog(QObject):
 
         self.setup_connections()
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     def setup_connections(self):
         self.ui.button_box.accepted.connect(self.on_accepted)

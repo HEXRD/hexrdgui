@@ -185,4 +185,4 @@ if __name__ == '__main__':
     dialog.finished.connect(selected_rows)
     dialog.finished.connect(app.quit)
     dialog.show()
-    app.exec_()
+    app.exec()

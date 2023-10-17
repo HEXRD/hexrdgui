@@ -39,10 +39,10 @@ class LoadImagesDialog:
         self.ui.regex_line_edit.textChanged.connect(self.update_combo_state)
         self.ui.regex_line_edit.textChanged.connect(self.update_table)
 
-    def exec_(self):
+    def exec(self):
         # Loop until canceled or validation succeeds
         while True:
-            if self.ui.exec_():
+            if self.ui.exec():
                 # Perform some validation before returning
                 detectors, image_files = self.results()
                 if Counter(detectors) != Counter(self.detectors):

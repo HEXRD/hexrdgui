@@ -60,6 +60,6 @@ if __name__ == '__main__':
     app = QApplication()
 
     dialog = PeriodicTableDialog(['H', 'Ni', 'Ta'])
-    dialog.exec_()
+    dialog.exec()
 
     print(f'{dialog.selected_atoms=}')

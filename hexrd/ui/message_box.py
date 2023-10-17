@@ -15,8 +15,8 @@ class MessageBox:
         self.message = message
         self.details = details
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     def show(self):
         return self.ui.show()
@@ -86,4 +86,4 @@ if __name__ == '__main__':
     dialog = MessageBox(**kwargs)
     dialog.align_details_hcenter()
     dialog.ui.show()
-    app.exec_()
+    app.exec()

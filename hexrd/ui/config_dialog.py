@@ -14,9 +14,9 @@ class ConfigDialog:
     def setup_connections(self):
         self.ui.accepted.connect(self.on_accepted)
 
-    def exec_(self):
+    def exec(self):
         self.update_gui()
-        self.ui.exec_()
+        self.ui.exec()
 
     def update_gui(self):
         self.max_cpus_ui = self.max_cpus_config

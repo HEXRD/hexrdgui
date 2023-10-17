@@ -140,4 +140,4 @@ if __name__ == '__main__':
 
     dialog.accepted.connect(finished)
     dialog.show()
-    app.exec_()
+    app.exec()

@@ -57,8 +57,8 @@ class LaueAutoPickerDialog:
         options['use_blob_detection'] = self.ui.use_blob_detection.isChecked()
         options['blob_threshold'] = self.ui.blob_threshold.value()
 
-    def exec_(self):
-        if not self.ui.exec_():
+    def exec(self):
+        if not self.ui.exec():
             return False
 
         self.update_config()

@@ -70,7 +70,7 @@ class MaterialSiteEditor(QObject):
 
     def select_atom_types(self):
         dialog = PeriodicTableDialog(self.atom_types, self.ui)
-        if not dialog.exec_():
+        if not dialog.exec():
             return
 
         self.atom_types = dialog.selected_atoms
@@ -452,7 +452,7 @@ class ThermalFactorSpinBox(ScientificDoubleSpinBox):
 
     def open_editor(self):
         original = copy.deepcopy(self.editor.value)
-        if not self.editor.exec_():
+        if not self.editor.exec():
             self.editor.value = original
             return
 

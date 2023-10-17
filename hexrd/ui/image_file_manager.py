@@ -172,7 +172,7 @@ class ImageFileManager(metaclass=Singleton):
     def path_prompt(self, f):
         path_dialog = LoadHDF5Dialog(f)
         if path_dialog.paths:
-            path_dialog.ui.exec_()
+            path_dialog.ui.exec()
             group, data, remember = path_dialog.results()
             self.path = [group, data]
             self.remember = remember

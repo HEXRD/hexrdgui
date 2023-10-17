@@ -390,7 +390,7 @@ class BaseDictTreeView(QTreeView):
             return super().contextMenuEvent(event)
 
         # Open up the context menu
-        action_chosen = menu.exec_(QCursor.pos())
+        action_chosen = menu.exec(QCursor.pos())
 
         if action_chosen is None:
             # No action chosen

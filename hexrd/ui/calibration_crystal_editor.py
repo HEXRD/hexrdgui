@@ -281,7 +281,7 @@ class CalibrationCrystalEditor(QObject):
 
     def load(self):
         dialog = SelectGrainsDialog(1, self.ui)
-        if not dialog.exec_():
+        if not dialog.exec():
             return
 
         self.load_from_grain(dialog.selected_grain)

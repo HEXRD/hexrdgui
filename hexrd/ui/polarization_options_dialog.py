@@ -18,8 +18,8 @@ class PolarizationOptionsDialog:
         self.ui.horizontal.valueChanged.connect(self.horizontal_modified)
         self.ui.vertical.valueChanged.connect(self.vertical_modified)
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     def accept(self):
         # When the dialog is accepted, save the settings in HexrdConfig.

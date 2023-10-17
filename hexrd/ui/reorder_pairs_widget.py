@@ -124,4 +124,4 @@ if __name__ == '__main__':
         print(f'Items reordered: {widget.items}')
 
     widget.items_reordered.connect(items_reordered)
-    dialog.exec_()
+    dialog.exec()

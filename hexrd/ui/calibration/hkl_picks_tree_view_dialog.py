@@ -53,11 +53,11 @@ class HKLPicksTreeViewDialog:
     def on_finished(self):
         self.tree_view.clear_artists()
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
-    def exec_later(self):
-        QTimer.singleShot(0, lambda: self.exec_())
+    def execlater(self):
+        QTimer.singleShot(0, lambda: self.exec())
 
     def export_picks_clicked(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(

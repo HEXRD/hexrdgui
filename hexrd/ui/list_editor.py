@@ -263,4 +263,4 @@ if __name__ == '__main__':
     dialog.finished.connect(dialog_finished)
     dialog.finished.connect(app.quit)
     dialog.show()
-    app.exec_()
+    app.exec()

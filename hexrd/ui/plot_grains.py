@@ -21,4 +21,4 @@ def plot_grains(grains_table, ome_maps=None, parent=None):
 
     dialog = IndexingResultsDialog(ome_maps, grains_table, parent)
     dialog.plot_grains_mode = True
-    dialog.exec_()
+    dialog.exec()

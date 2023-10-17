@@ -117,7 +117,7 @@ class StructurelessCalibrationRunner(QObject):
             'parent': self.canvas,
         }
         dialog = SelectItemDialog(**kwargs)
-        if not dialog.exec_():
+        if not dialog.exec():
             # User canceled
             return
 

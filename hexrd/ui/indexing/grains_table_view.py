@@ -55,7 +55,7 @@ class GrainsTableView(QTableView):
         if not actions:
             return super().contextMenuEvent(event)
 
-        action_chosen = menu.exec_(QCursor.pos())
+        action_chosen = menu.exec(QCursor.pos())
 
         if action_chosen is None:
             # No action chosen
@@ -157,7 +157,7 @@ class GrainsTableView(QTableView):
         dialog.table.horizontal_headers = headers
         dialog.setWindowTitle('Select tolerances to use')
 
-        if not dialog.exec_():
+        if not dialog.exec():
             return False
 
         self.selected_tol_id = dialog.selected_row

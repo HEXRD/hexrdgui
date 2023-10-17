@@ -29,8 +29,8 @@ class ThermalFactorEditor:
         tab = getattr(self.ui, f'{prefix}_tab')
         self.ui.tab_widget.setCurrentWidget(tab)
 
-    def exec_(self):
-        return self.ui.exec_()
+    def exec(self):
+        return self.ui.exec()
 
     @property
     def value(self):

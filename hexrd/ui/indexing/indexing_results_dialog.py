@@ -78,9 +78,9 @@ class IndexingResultsDialog(QObject):
         self.update_enable_states()
         self.update_spots()
 
-    def exec_(self):
+    def exec(self):
         self.update_plot()
-        self.ui.exec_()
+        self.ui.exec()
 
     def show(self):
         self.update_plot()

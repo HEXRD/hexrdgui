@@ -518,7 +518,7 @@ class MainWindow(QObject):
 
             dialog = LoadImagesDialog(files, manual, self.ui)
 
-            if dialog.exec_():
+            if dialog.exec():
                 detector_names, image_files = dialog.results()
                 image_files = [img for f in files for img in f]
                 files = [[] for det in HexrdConfig().detector_names]
@@ -550,7 +550,7 @@ class MainWindow(QObject):
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        SaveImagesDialog(self.ui).exec_()
+        SaveImagesDialog(self.ui).exec()
 
     def on_action_save_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -670,7 +670,7 @@ class MainWindow(QObject):
         self._indexing_runner.run()
 
     def on_action_rerun_clustering(self):
-        RerunClusteringDialog(self._indexing_runner, self.ui).exec_()
+        RerunClusteringDialog(self._indexing_runner, self.ui).exec()
 
     def on_action_run_fit_grains_triggered(self):
         kwargs = {
@@ -908,7 +908,7 @@ class MainWindow(QObject):
 
     def edit_refinements(self):
         w = self._refinements_editor = RefinementsEditor(self.ui)
-        if not w.ui.exec_():
+        if not w.ui.exec():
             return
 
         # Update the UI in case settings have changed
@@ -1220,7 +1220,7 @@ class MainWindow(QObject):
         return labels
 
     def on_action_transform_detectors_triggered(self):
-        _ = TransformDialog(self.ui).exec_()
+        _ = TransformDialog(self.ui).exec()
 
     def open_image_calculator(self):
         if dialog := getattr(self, '_image_calculator_dialog', None):
@@ -1242,7 +1242,7 @@ class MainWindow(QObject):
         dialog.accepted.connect(on_accepted)
 
     def on_action_edit_config_triggered(self):
-        ConfigDialog(self.ui).exec_()
+        ConfigDialog(self.ui).exec()
 
     def update_enable_states(self):
         has_images = HexrdConfig().has_images
@@ -1474,7 +1474,7 @@ class MainWindow(QObject):
 
         # Get the user to first select the Lorentz polarization options
         d = PolarizationOptionsDialog(self.ui)
-        if not d.exec_():
+        if not d.exec():
             # Canceled... uncheck the action.
             action = self.ui.action_apply_polarization_correction
             action.setChecked(False)
@@ -1503,7 +1503,7 @@ class MainWindow(QObject):
 
     def on_action_about_triggered(self):
         dialog = AboutDialog(self.ui)
-        dialog.ui.exec_()
+        dialog.ui.exec()
 
     def on_action_documentation_triggered(self):
         QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))

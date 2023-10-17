@@ -362,7 +362,7 @@ class SimpleImageSeriesDialog(QObject):
 
         if manual:
             dialog = LoadImagesDialog(self.files, manual, self.ui.parent())
-            if not dialog.exec_():
+            if not dialog.exec():
                 self.reset_data()
                 return
 
@@ -456,7 +456,7 @@ class SimpleImageSeriesDialog(QObject):
         # Allow user to delete selected file(s)
         menu = QMenu(self.ui)
         remove = menu.addAction('Remove Selected Files')
-        action = menu.exec_(QCursor.pos())
+        action = menu.exec(QCursor.pos())
 
         # Re-selects the current row if context menu is called on disabled cell
         i = self.ui.file_options.indexAt(event)

@@ -52,7 +52,7 @@ class PowderRunner(QObject):
 
     def _run(self):
         # First, have the user pick some options
-        if not PowderCalibrationDialog(self.material, self.parent).exec_():
+        if not PowderCalibrationDialog(self.material, self.parent).exec():
             # User canceled...
             return
 
@@ -196,7 +196,7 @@ class PowderRunner(QObject):
         msg = 'Optimization successful!'
         msg_box = QMessageBox(QMessageBox.Information, 'HEXRD', msg)
         msg_box.setDetailedText(self.results_message)
-        msg_box.exec_()
+        msg_box.exec()
 
         output_dict = instr_to_internal_dict(self.instr)
 

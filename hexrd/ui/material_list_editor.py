@@ -113,4 +113,4 @@ if __name__ == '__main__':
 
     dialog.ui.finished.connect(app.quit)
     dialog.ui.show()
-    app.exec_()
+    app.exec()

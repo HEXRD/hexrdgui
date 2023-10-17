@@ -272,7 +272,7 @@ class AzimuthalOverlayManager:
     def edit_style(self):
         self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay,
                                                          self.ui)
-        self._style_picker.exec_()
+        self._style_picker.exec()
 
     def show_legend(self, value):
         HexrdConfig().show_azimuthal_legend = value

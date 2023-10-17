@@ -142,7 +142,7 @@ class CalibrationRunner(QObject):
             'parent': self.canvas,
         }
         dialog = SelectItemDialog(**kwargs)
-        if not dialog.exec_():
+        if not dialog.exec():
             # User canceled
             self.restore_state()
             return
@@ -744,7 +744,7 @@ class CalibrationRunner(QObject):
         material = overlay.material
         dialog = PowderCalibrationDialog(material, self.canvas)
         dialog.show_optimization_parameters(False)
-        if not dialog.exec_():
+        if not dialog.exec():
             # User canceled
             self.restore_state()
             return
@@ -806,7 +806,7 @@ class CalibrationRunner(QObject):
     def auto_pick_laue_points(self):
         overlay = self.active_overlay
         dialog = LaueAutoPickerDialog(overlay, self.canvas)
-        if not dialog.exec_():
+        if not dialog.exec():
             # User canceled
             self.restore_state()
             return

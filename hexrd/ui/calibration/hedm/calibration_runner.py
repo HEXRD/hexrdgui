@@ -164,7 +164,7 @@ class HEDMCalibrationRunner(QObject):
             'parent': self.parent,
         }
         dialog = HEDMCalibrationResultsDialog(**kwargs)
-        if not dialog.exec_():
+        if not dialog.exec():
             return
 
         # Run optimization
@@ -195,7 +195,7 @@ class HEDMCalibrationRunner(QObject):
                 'parent': self.parent,
             }
             dialog = HEDMCalibrationResultsDialog(**kwargs)
-            if not dialog.exec_():
+            if not dialog.exec():
                 return
 
             # All done! Update the results.
@@ -278,7 +278,7 @@ class HEDMCalibrationRunner(QObject):
             'parent': self.parent,
         }
         dialog = HEDMCalibrationResultsDialog(**kwargs)
-        if not dialog.exec_():
+        if not dialog.exec():
             return
 
         # update calibration crystal params
@@ -372,7 +372,7 @@ class HEDMCalibrationRunner(QObject):
             'parent': self.parent,
         }
         msg_box = MessageBox(**kwargs)
-        msg_box.exec_()
+        msg_box.exec()
 
         # Update rotation series parameters from the results
         for results, overlay in zip(self.results, self.active_overlays):

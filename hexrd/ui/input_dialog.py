@@ -35,7 +35,7 @@ class InputDialog(QDialog):
         if help_url:
             add_help_url(button_box, help_url)
 
-        if not dialog.exec_():
+        if not dialog.exec():
             return None, False
 
         name = combo_box.currentText()

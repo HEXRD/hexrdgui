@@ -778,4 +778,4 @@ if __name__ == '__main__':
     dialog.ui.resize(1200, 800)
     dialog.finished.connect(app.quit)
     dialog.show()
-    app.exec_()
+    app.exec()
