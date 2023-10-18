@@ -58,8 +58,8 @@ def clean_text(func):
     """
     @wraps(func)
     def wrapped(self, text, *args, **kwargs):
-        text = remove_prefix(text, self.prefix())
-        text = remove_suffix(text, self.suffix())
+        text = text.removeprefix(self.prefix())
+        text = text.removesuffix(self.suffix())
         text = text.strip()
         return func(self, text, *args, **kwargs)
     return wrapped
@@ -141,17 +141,3 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
         else:
             # Reset the range so we can have values that are not nan
             self.reset_range()
-
-
-def remove_prefix(text, prefix):
-    # This can be replaced with str.removeprefix() in python >=3.9
-    if prefix and text.startswith(prefix):
-        return text[len(prefix):]
-    return text
-
-
-def remove_suffix(text, suffix):
-    # This can be replaced with str.removesuffix() in python >=3.9
-    if suffix and text.endswith(suffix):
-        return text[:-len(suffix)]
-    return text

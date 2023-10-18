@@ -44,7 +44,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
-        python-version: '3.10'
+        python-version: '3.11'
         auto-activate-base: false
 
     - name: Install EGL on Linux (PySide6 needs it)
