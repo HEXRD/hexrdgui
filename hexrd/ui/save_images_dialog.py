@@ -1,3 +1,4 @@
+from pathlib import Path
 from PySide6.QtCore import QThreadPool
 from PySide6.QtWidgets import QFileDialog, QInputDialog
 
@@ -32,14 +33,19 @@ class SaveImagesDialog:
         self.ui.single_detector.toggled.connect(self.ui.detectors.setEnabled)
         self.ui.change_directory.clicked.connect(self.change_directory)
 
+    @property
+    def parent_dir(self):
+        if (Path(HexrdConfig().images_dir).exists()):
+            return HexrdConfig().images_dir
+        return str(Path.cwd())
+
     def change_directory(self):
         caption = 'Select directory for images'
         new_dir = QFileDialog.getExistingDirectory(
             self.ui, caption, dir=self.parent_dir)
 
         if new_dir:
-            HexrdConfig().working_dir = new_dir
-            self.parent_dir = new_dir
+            HexrdConfig().set_images_dir(new_dir)
             self.ui.pwd.setText(self.parent_dir)
             self.ui.pwd.setToolTip(self.parent_dir)
 
