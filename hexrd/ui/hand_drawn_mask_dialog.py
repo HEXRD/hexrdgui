@@ -34,6 +34,10 @@ class HandDrawnMaskDialog(QObject):
         self.dets = []
         self.det = None
 
+        self.bp_id = None
+        self.enter_id = None
+        self.exit_id = None
+
         prop_cycle = plt.rcParams['axes.prop_cycle']
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
 
@@ -47,12 +51,28 @@ class HandDrawnMaskDialog(QObject):
         self.ui.rejected.connect(self.rejected)
 
     def setup_canvas_connections(self):
+        # Ensure previous canvas connections are disconnected
+        self.disconnect_canvas_connections()
+
         self.bp_id = self.canvas.mpl_connect('button_press_event',
                                             self.button_pressed)
         self.enter_id = self.canvas.mpl_connect('axes_enter_event',
                                                 self.axes_entered)
         self.exit_id = self.canvas.mpl_connect('axes_leave_event',
                                             self.axes_exited)
+
+    def disconnect_canvas_connections(self):
+        if self.bp_id:
+            self.canvas.mpl_disconnect(self.bp_id)
+            self.bp_id = None
+
+        if self.enter_id:
+            self.canvas.mpl_disconnect(self.enter_id)
+            self.enter_id = None
+
+        if self.exit_id:
+            self.canvas.mpl_disconnect(self.exit_id)
+            self.exit_id = None
 
     def move_dialog_to_left(self):
         # This moves the dialog to the left border of the parent
@@ -75,13 +95,8 @@ class HandDrawnMaskDialog(QObject):
         self.linebuilder = None
         self.cursor = None
 
-        self.canvas.mpl_disconnect(self.bp_id)
-        self.canvas.mpl_disconnect(self.enter_id)
-        self.canvas.mpl_disconnect(self.exit_id)
+        self.disconnect_canvas_connections()
 
-        self.bp_id = None
-        self.enter_id = None
-        self.exit_id = None
         self.dets.clear()
         self.canvas.draw()
 
