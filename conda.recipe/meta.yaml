@@ -27,7 +27,7 @@ requirements:
     - pyyaml
     - silx-base
 
-test:
+test:         # [build_platform == target_platform]
   imports:
     - hexrdgui
 
