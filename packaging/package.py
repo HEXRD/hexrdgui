@@ -127,7 +127,6 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     hexrd_version = results['hexrd'][-1]['version']
     config.variant['hexrd_version'] = hexrd_version
 
-    config.CONDA_PY = '38'
     config.CONDA_SOLVER = 'libmamba'
     logger.info('Building hexrdgui conda package.')
     CondaBuild.build(recipe_path, config=config)

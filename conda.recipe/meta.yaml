@@ -11,8 +11,8 @@ build:
     - hexrdgui = hexrdgui.main:main
 
 requirements:
-  build:
-    - python=3.11
+  host:
+    - python {{ python }}
     - setuptools
     - setuptools_scm
 
