@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: [3.9, '3.10']
+        python-version: ['3.10', '3.11']
         config:
         - {
             name: "Linux",
@@ -39,25 +39,29 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Checkout HEXRD
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: HEXRD/hexrd
         path: hexrd
 
     - name: Checkout HEXRDGUI
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: hexrdgui
 
     - name: Checkout examples
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: HEXRD/examples
         path: examples
 
+    - name: Install EGL on Linux (PySide6 needs it)
+      if: ${{ matrix.config.name == 'Linux' }}
+      run: sudo apt-get install -y libegl1-mesa-dev
+
     - name: Set environment variable to work around setuptools/numpy issue
       run: echo 'SETUPTOOLS_USE_DISTUTILS=stdlib' >> $GITHUB_ENV
-      if: ${{ matrix.config.os == 'windows-latest'}}
+      if: ${{ matrix.config.name == 'Windows' }}
 
     - name: Install HEXRD
       run: |

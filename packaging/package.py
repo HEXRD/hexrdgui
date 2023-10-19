@@ -102,8 +102,8 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     # First build the hexrdgui package
     recipe_path = str(base_path / '..' / 'conda.recipe')
     config = Config()
-    config.channel = ['cjh1', 'conda-forge']
-    config.channel_urls = ['cjh1', 'conda-forge']
+    config.channel = ['conda-forge']
+    config.channel_urls = ['conda-forge']
     config.override_channels = True
 
     if hexrdgui_output_folder is not None:
@@ -127,7 +127,6 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     hexrd_version = results['hexrd'][-1]['version']
     config.variant['hexrd_version'] = hexrd_version
 
-    config.CONDA_PY = '38'
     config.CONDA_SOLVER = 'libmamba'
     logger.info('Building hexrdgui conda package.')
     CondaBuild.build(recipe_path, config=config)
@@ -160,7 +159,6 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         '--override-channels',
         '--channel', hexrdgui_output_folder_uri,
         '--channel', hexrd_package_channel,
-        '--channel', 'cjh1',
         '--channel', 'conda-forge',
         f'hexrd=={hexrd_version}',
         'hexrdgui'

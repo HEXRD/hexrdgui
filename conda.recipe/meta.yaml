@@ -8,32 +8,34 @@ source:
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   entry_points:
-    - hexrdgui = hexrd.ui.main:main
+    - hexrdgui = hexrdgui.main:main
 
 requirements:
   build:
-    - python=3.10
+    - python {{ python }}                    # [build_platform != target_platform]
+    - cross-python_{{ target_platform }}     # [build_platform != target_platform]
+  host:
+    - python {{ python }}
     - setuptools
     - setuptools_scm
 
   run:
     - python
-    - pyside2>=5.15
-    - Pillow
-    - matplotlib
-    - importlib_resources
     - fabio
-    - pyyaml
     - hexrd=={{ hexrd_version }}
+    - matplotlib-base
+    - Pillow
     - pyhdf
-    - silx
+    - pyside6
+    - pyyaml
+    - silx-base
 
-test:
+test:         # [build_platform == target_platform]
   imports:
-    - hexrd.ui
+    - hexrdgui
 
 about:
   home: https://github.com/HEXRD/hexrdgui
   license: BSD
   license_family: BSD
-  summary: "Qt5 PySide2 based HEXRD GUI"
+  summary: "Qt6 PySide6 based HEXRD GUI"
