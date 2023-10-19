@@ -38,7 +38,7 @@ setup(
     install_requires=install_reqs,
     entry_points={
         'gui_scripts': [
-            'hexrdgui = hexrd.ui.main:main'
+            'hexrdgui = hexrdgui.main:main'
         ]
     }
 )

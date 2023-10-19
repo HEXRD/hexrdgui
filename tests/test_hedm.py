@@ -2,7 +2,7 @@ import numpy as np
 
 from PySide6.QtCore import Qt
 
-from hexrd.ui.hexrd_config import HexrdConfig
+from hexrdgui.hexrd_config import HexrdConfig
 
 from utils import select_files_when_asked
 
