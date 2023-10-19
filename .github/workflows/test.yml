@@ -39,18 +39,18 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Checkout HEXRD
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: HEXRD/hexrd
         path: hexrd
 
     - name: Checkout HEXRDGUI
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: hexrdgui
 
     - name: Checkout examples
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: HEXRD/examples
         path: examples
