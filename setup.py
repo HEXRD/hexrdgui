@@ -33,7 +33,7 @@ setup(
         'Programming Language :: Python :: 3.11',
     ],
     packages=find_packages(),
-    package_data={'hexrd': ['resources/**/*']},
+    package_data={'hexrdgui': ['resources/**/*']},
     python_requires='>=3.10',
     install_requires=install_reqs,
     entry_points={
