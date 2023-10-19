@@ -85,8 +85,13 @@ class CalibrationRunner(QObject):
             raise Exception('There are no refinable parameters')
 
     def enable_focus_mode(self, b):
-        HexrdConfig().enable_canvas_focus_mode.emit(b)
-        HexrdConfig().enable_canvas_toolbar.emit(not b)
+        # FIXME: We must avoid using focus mode until we can be sure
+        # that this issue will not happen again: https://github.com/HEXRD/hexrdgui/issues/1556
+        # We *cannot* allow the GUI to remain disabled after calibration.
+
+        # HexrdConfig().enable_canvas_focus_mode.emit(b)
+        # HexrdConfig().enable_canvas_toolbar.emit(not b)
+        pass
 
     def clear_all_overlay_picks(self):
         for overlay in self.active_overlays:
