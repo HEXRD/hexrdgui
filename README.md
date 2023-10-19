@@ -23,11 +23,11 @@ Please see [here](https://hexrdgui.readthedocs.io/en/latest/issues/)
 
 ## PRs
 
-PRs are built using the [`hexrd-prerelease`](https://anaconda.org/hexrd/repo/files?type=any&label=hexrd-prerelease) label on the [HEXRD](https://anaconda.org/hexrd) conda channel
+PRs are built using the [`prerelease`](https://anaconda.org/hexrd/repo/files?type=any&label=prerelease) label on the [HEXRD](https://anaconda.org/hexrd) conda channel
 
 ## Merges to master
 
-When a PR is merged into master the conda package is uploaded to the [HEXRD](https://anaconda.org/hexrd) channel using the [`hexrdgui-prerelease`](https://anaconda.org/hexrd/repo/files?type=any&label=hexrdgui-prerelease) label.
+When a PR is merged into master the conda package is uploaded to the [HEXRD](https://anaconda.org/hexrd) channel using the [`prerelease`](https://anaconda.org/hexrd/repo/files?type=any&label=prerelease) label.
 
 ## Pushed tag
 
