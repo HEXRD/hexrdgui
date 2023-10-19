@@ -236,7 +236,7 @@
   <customwidget>
    <class>ScientificDoubleSpinBox</class>
    <extends>QSpinBox</extends>
-   <header>hexrd/ui/scientificspinbox</header>
+   <header>hexrdgui/scientificspinbox</header>
   </customwidget>
  </customwidgets>
  <tabstops>
