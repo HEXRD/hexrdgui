@@ -33,10 +33,10 @@ package_env_name = 'hexrd_package_env'
 archive_format = 'zip' if platform.system() == 'Windows' else 'tar'
 
 def patch_qt_config(base_path):
-    logger.info('Patching qt.conf.')
-    with (base_path / 'bin' / 'qt.conf').open('w') as fp:
+    logger.info('Patching qt6.conf.')
+    with (base_path / 'bin' / 'qt6.conf').open('w') as fp:
         fp.write('[Paths]\n')
-        fp.write('Plugins=../plugins')
+        fp.write('Plugins=../lib/qt6/plugins/')
 
 def install_macos_script(base_path, package_path):
    # Add hexrd bash start script
