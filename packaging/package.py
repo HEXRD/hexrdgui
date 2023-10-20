@@ -77,7 +77,7 @@ def install_linux_script(base_path, package_path):
 
     # First we rename the setuptools script
     hexrd_path = package_path / 'bin' / 'hexrdgui'
-    hexrdgui_path = package_path / 'bin' / 'hexrdgui.py'
+    hexrdgui_path = package_path / 'bin' / 'run-hexrdgui.py'
     hexrd_path.rename(hexrdgui_path)
 
     # Now install a shell script to call the setuptools script

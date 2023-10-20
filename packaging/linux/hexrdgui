@@ -4,5 +4,5 @@ SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 export FONTCONFIG_PATH="${SCRIPT_DIR}/../etc/fonts"
 export FONTCONFIG_FILE="${SCRIPT_DIR}/../etc/fonts/fonts.conf"
 
-"${SCRIPT_DIR}/python" "${SCRIPT_DIR}/hexrdgui.py"
+"${SCRIPT_DIR}/python" "${SCRIPT_DIR}/run-hexrdgui.py"
 
