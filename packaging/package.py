@@ -189,6 +189,16 @@ def install_windows_script(base_path, package_path):
     shutil.copyfile(base_path / 'windows' / 'hexrdgui-script.py', hexrdgui_script)
 
 def patch_qt_config_windows(base_path):
+    # FIXME: this qt6.conf file appears to be completely ignored.
+    # When I try to play with it locally, I cannot get Qt to use it
+    # at all, and I don't know why.
+
+    # Until we can get it to read the qt6.conf file, we must copy all
+    # plugin directories into the base path.
+    plugin_path = base_path / 'Library/lib/qt6/plugins'
+    for d in plugin_path.iterdir():
+        shutil.move(d, base_path)
+
     logger.info('Patching qt6.conf.')
     with (base_path / 'qt6.conf').open('w') as fp:
         fp.write('[Paths]\n')
@@ -198,7 +208,9 @@ def patch_qt_config_windows(base_path):
         fp.write('Headers = Library/include/qt\n')
         fp.write('TargetSpec = win32-msvc\n')
         fp.write('HostSpec = win32-msvc\n')
-        fp.write('Plugins = Library/lib/qt6/plugins\n')
+        # FIXME: if Qt starts reading this file, add this line back in
+        # and remove the above `shutil.move()` commands.
+        # fp.write('Plugins = Library/lib/qt6/plugins\n')
 
 def build_windows_package_dir(base_path, archive_path):
     logger.info('Extracting %s into package/ directory.' % archive_format)
