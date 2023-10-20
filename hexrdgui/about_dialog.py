@@ -6,7 +6,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QTreeWidgetItem, QLabel
 from PySide6.QtGui import QPixmap
 
-import hexrd
+import hexrdgui
 
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.resource_loader import load_resource
