@@ -33,6 +33,9 @@ package_env_name = 'hexrd_package_env'
 archive_format = 'zip' if platform.system() == 'Windows' else 'tar'
 
 def patch_qt_config(base_path):
+    # We could use "qt.conf" instead, but Qt is automatically producing a
+    # "qt6.conf" file that overrides ours. Instead of deleting this one,
+    # let's just overwrite it...
     logger.info('Patching qt6.conf.')
     with (base_path / 'bin' / 'qt6.conf').open('w') as fp:
         fp.write('[Paths]\n')
@@ -186,8 +189,8 @@ def install_windows_script(base_path, package_path):
     shutil.copyfile(base_path / 'windows' / 'hexrdgui-script.py', hexrdgui_script)
 
 def patch_qt_config_windows(base_path):
-    logger.info('Patching qt.conf.')
-    with (base_path / 'qt.conf').open('w') as fp:
+    logger.info('Patching qt6.conf.')
+    with (base_path / 'qt6.conf').open('w') as fp:
         fp.write('[Paths]\n')
         fp.write('Prefix = Library\n')
         fp.write('Binaries = Library/bin\n')
@@ -195,6 +198,7 @@ def patch_qt_config_windows(base_path):
         fp.write('Headers = Library/include/qt\n')
         fp.write('TargetSpec = win32-msvc\n')
         fp.write('HostSpec = win32-msvc\n')
+        fp.write('Plugins = Library/lib/qt6/plugins\n')
 
 def build_windows_package_dir(base_path, archive_path):
     logger.info('Extracting %s into package/ directory.' % archive_format)
