@@ -33,10 +33,13 @@ package_env_name = 'hexrd_package_env'
 archive_format = 'zip' if platform.system() == 'Windows' else 'tar'
 
 def patch_qt_config(base_path):
-    logger.info('Patching qt.conf.')
-    with (base_path / 'bin' / 'qt.conf').open('w') as fp:
+    # We could use "qt.conf" instead, but Qt is automatically producing a
+    # "qt6.conf" file that overrides ours. Instead of deleting this one,
+    # let's just overwrite it...
+    logger.info('Patching qt6.conf.')
+    with (base_path / 'bin' / 'qt6.conf').open('w') as fp:
         fp.write('[Paths]\n')
-        fp.write('Plugins=../plugins')
+        fp.write('Plugins=../lib/qt6/plugins/')
 
 def install_macos_script(base_path, package_path):
    # Add hexrd bash start script
@@ -77,7 +80,7 @@ def install_linux_script(base_path, package_path):
 
     # First we rename the setuptools script
     hexrd_path = package_path / 'bin' / 'hexrdgui'
-    hexrdgui_path = package_path / 'bin' / 'hexrdgui.py'
+    hexrdgui_path = package_path / 'bin' / 'run-hexrdgui.py'
     hexrd_path.rename(hexrdgui_path)
 
     # Now install a shell script to call the setuptools script
@@ -186,8 +189,18 @@ def install_windows_script(base_path, package_path):
     shutil.copyfile(base_path / 'windows' / 'hexrdgui-script.py', hexrdgui_script)
 
 def patch_qt_config_windows(base_path):
-    logger.info('Patching qt.conf.')
-    with (base_path / 'qt.conf').open('w') as fp:
+    # FIXME: this qt6.conf file appears to be completely ignored.
+    # When I try to play with it locally, I cannot get Qt to use it
+    # at all, and I don't know why.
+
+    # Until we can get it to read the qt6.conf file, we must copy all
+    # plugin directories into the base path.
+    plugin_path = base_path / 'Library/lib/qt6/plugins'
+    for d in plugin_path.iterdir():
+        shutil.move(d, base_path)
+
+    logger.info('Patching qt6.conf.')
+    with (base_path / 'qt6.conf').open('w') as fp:
         fp.write('[Paths]\n')
         fp.write('Prefix = Library\n')
         fp.write('Binaries = Library/bin\n')
@@ -195,6 +208,9 @@ def patch_qt_config_windows(base_path):
         fp.write('Headers = Library/include/qt\n')
         fp.write('TargetSpec = win32-msvc\n')
         fp.write('HostSpec = win32-msvc\n')
+        # FIXME: if Qt starts reading this file, add this line back in
+        # and remove the above `shutil.move()` commands.
+        # fp.write('Plugins = Library/lib/qt6/plugins\n')
 
 def build_windows_package_dir(base_path, archive_path):
     logger.info('Extracting %s into package/ directory.' % archive_format)
