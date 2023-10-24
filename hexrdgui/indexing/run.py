@@ -69,7 +69,6 @@ class Runner(QObject):
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
-        msg_box.setDetailedText(traceback)
         msg_box.exec()
 
     def reset_cancel_tracker(self):

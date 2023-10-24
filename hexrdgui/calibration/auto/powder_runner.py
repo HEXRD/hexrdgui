@@ -195,7 +195,6 @@ class PowderRunner(QObject):
     def update_config(self):
         msg = 'Optimization successful!'
         msg_box = QMessageBox(QMessageBox.Information, 'HEXRD', msg)
-        msg_box.setDetailedText(self.results_message)
         msg_box.exec()
 
         output_dict = instr_to_internal_dict(self.instr)
