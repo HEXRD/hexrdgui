@@ -64,7 +64,6 @@ class AsyncRunner:
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
-        msg_box.setDetailedText(traceback)
         msg_box.exec()
 
     @property
