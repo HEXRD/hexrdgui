@@ -847,7 +847,7 @@ class ImageCanvas(FigureCanvas):
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Integration')
+                axis.set_ylabel(r'Azimuthal Average')
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
