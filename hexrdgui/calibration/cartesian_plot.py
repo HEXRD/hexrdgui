@@ -278,7 +278,8 @@ class InstrumentViewer:
         tform3.estimate(src, dst)
 
         res = tf.warp(img, tform3,
-                      output_shape=(self.dpanel.rows, self.dpanel.cols))
+                      output_shape=(self.dpanel.rows, self.dpanel.cols),
+                      preserve_range=True)
         self.warp_dict[detector_id] = res
         return res
 
