@@ -244,7 +244,7 @@ class ImageModeWidget(QObject):
         cart_config = HexrdConfig().config['image']['cartesian']
 
         # Round these to two for a nicer display
-        cart_config['pixel_size'] = round(average_size * 5, 2)
+        cart_config['pixel_size'] = round(average_size, 2)
         cart_config['virtual_plane_distance'] = round(abs(average_dist), 2)
 
         # Get the GUI to update with the new values
