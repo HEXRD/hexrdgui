@@ -114,6 +114,14 @@ class OmeMapsSelectDialog(QObject):
             self.ui.threshold.setValue(v)
 
     @property
+    def eta_step(self):
+        return self.ui.eta_step.value()
+
+    @eta_step.setter
+    def eta_step(self, v):
+        self.ui.eta_step.setValue(v)
+
+    @property
     def material_options(self):
         w = self.ui.material
         return [w.itemText(i) for i in range(w.count())]
@@ -153,6 +161,7 @@ class OmeMapsSelectDialog(QObject):
         maps_config['_select_method'] = self.method_name
         maps_config['file'] = self.file_name
         maps_config['threshold'] = self.threshold
+        maps_config['eta_step'] = self.eta_step
 
         indexing_config['_selected_material'] = self.selected_material
 
@@ -168,6 +177,8 @@ class OmeMapsSelectDialog(QObject):
 
             self.ui.file_name.setText(file_name)
             self.threshold = maps_config['threshold']
+
+            self.eta_step = maps_config['eta_step']
 
             self.selected_material = indexing_config.get('_selected_material')
 
