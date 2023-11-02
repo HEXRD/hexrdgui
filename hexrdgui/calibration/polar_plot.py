@@ -5,11 +5,12 @@ import numpy as np
 
 from .polarview import PolarView
 
-from hexrdgui.constants import ViewType
+from hexrdgui.calibration.utils.maud_headers import header0, header, block_hdr
+from hexrdgui.constants import PolarXAxisType, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays import update_overlay_data
-from hexrdgui.calibration.utils.maud_headers import header0, header, block_hdr
+from hexrdgui.utils.conversions import tth_to_q
 
 
 def polar_viewer():
@@ -85,11 +86,16 @@ class InstrumentViewer:
     def write_image(self, filename='polar_image.npz'):
         filename = Path(filename)
 
-        azimuthal_integration = (
+        azimuthal_integration = np.array(
             HexrdConfig().last_unscaled_azimuthal_integral_data)
 
+        if HexrdConfig().polar_x_axis_type == PolarXAxisType.q:
+            # Convert to Q
+            azimuthal_integration[0] = tth_to_q(azimuthal_integration[0],
+                                                self.instr.beam_energy)
+
         # Re-format the data so that it is in 2 columns
-        azimuthal_integration = np.array(azimuthal_integration).T
+        azimuthal_integration = azimuthal_integration.T
 
         # Lineout suffixes and their delimiters
         lineout_suffixes = {
@@ -110,10 +116,13 @@ class InstrumentViewer:
         intensities = self.raw_img.data
         intensities[self.raw_mask] = np.nan
 
+        eta, tth = np.degrees(self.angular_grid)
+
         # Prepare the data to write out
         data = {
-            'tth_coordinates': np.degrees(self.angular_grid[1]),
-            'eta_coordinates': np.degrees(self.angular_grid[0]),
+            'tth_coordinates': tth,
+            'eta_coordinates': eta,
+            'q_coordinates': tth_to_q(tth, self.instr.beam_energy),
             'intensities': intensities,
             'extent': self._extent,
             'azimuthal_integration': azimuthal_integration,
