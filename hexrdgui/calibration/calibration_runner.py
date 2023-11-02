@@ -9,7 +9,7 @@ import numpy as np
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from hexrd.crystallography import hklToStr
+from hexrd.material.crystallography import hklToStr
 from hexrd.fitting.calibration import (
     InstrumentCalibrator, LaueCalibrator, PowderCalibrator
 )

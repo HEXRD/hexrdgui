@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QMenu, QTableWidgetItem
 
-from hexrd.crystallography import hklToStr
+from hexrd.material.crystallography import hklToStr
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.reflections_selection_helper import ReflectionsSelectionHelper

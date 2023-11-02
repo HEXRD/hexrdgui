@@ -2,7 +2,7 @@ import copy
 import numpy as np
 from numpy.linalg import LinAlgError, inv
 
-from hexrd.unitcell import _StiffnessDict
+from hexrd.material.unitcell import _StiffnessDict
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.matrix_editor import MatrixEditor
