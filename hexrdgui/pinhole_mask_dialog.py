@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QDialogButtonBox
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils.dialog import add_help_url
 
 
 class PinholeMaskDialog(QObject):
@@ -15,6 +16,10 @@ class PinholeMaskDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file('pinhole_mask_dialog.ui', parent)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/masking/#pinhole')
+
         self.load_settings()
         self.setup_connections()
 

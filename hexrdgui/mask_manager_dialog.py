@@ -20,6 +20,7 @@ from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.constants import ViewType
+from hexrdgui.utils.dialog import add_help_url
 
 import matplotlib.pyplot as plt
 
@@ -37,6 +38,10 @@ class MaskManagerDialog(QObject):
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/masking/#mask-manager')
+
         self.create_masks_list()
         self.threshold = None
         self.image_mode = ViewType.raw

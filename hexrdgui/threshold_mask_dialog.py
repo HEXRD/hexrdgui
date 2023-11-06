@@ -9,6 +9,7 @@ from hexrdgui.create_raw_mask import apply_threshold_mask
 from hexrdgui.hexrd_config import HexrdConfig
 
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils.dialog import add_help_url
 
 MAX_ROWS = 2
 
@@ -25,6 +26,9 @@ class ThresholdMaskDialog(QObject):
         self.ui = loader.load_file('threshold_mask_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/masking/#threshold')
 
         self.values = []
 
