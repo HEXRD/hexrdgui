@@ -95,6 +95,8 @@ class MaskManagerDialog(QObject):
         self.ui.view_masks.clicked.connect(self.show_masks)
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
+        self.ui.hide_all_boundaries.clicked.connect(self.hide_all_boundaries)
+        self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
 
         HexrdConfig().threshold_mask_changed.connect(
             self.update_masks_list)
@@ -111,7 +113,7 @@ class MaskManagerDialog(QObject):
                 self.ui.masks_table.insertRow(i)
                 self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
-                # Add checkbox to toggle visibility
+                # Add checkbox to toggle value masking
                 cb = QCheckBox()
                 status = key in HexrdConfig().visible_masks
                 cb.setChecked(status)
@@ -120,9 +122,19 @@ class MaskManagerDialog(QObject):
                 cb.toggled.connect(
                     lambda c, k=key: self.toggle_visibility(c, k))
 
+                # Add checkbox to toggle boundary visibility
+                cb = QCheckBox()
+                status = key in HexrdConfig().visible_mask_boundaries
+                cb.setChecked(status)
+                # TODO: Disable for certain mask types
+                cb.setStyleSheet('margin-left:50%; margin-right:50%;')
+                self.ui.masks_table.setCellWidget(i, 2, cb)
+                cb.toggled.connect(
+                    lambda c, k=key: self.toggle_boundary(c, k))
+
                 # Add push button to remove mask
                 pb = QPushButton('Remove Mask')
-                self.ui.masks_table.setCellWidget(i, 2, pb)
+                self.ui.masks_table.setCellWidget(i, 3, pb)
                 pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
 
     def image_mode_changed(self, mode):
