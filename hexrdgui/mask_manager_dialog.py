@@ -59,6 +59,7 @@ class MaskManagerDialog(QObject):
             self.masks['threshold'] = (
                 'threshold', HexrdConfig().threshold_masks)
         HexrdConfig().visible_masks = list(self.masks.keys())
+        HexrdConfig().visible_mask_boundaries = list(self.masks.keys())
 
     def update_masks_list(self, mask_type):
         if mask_type == 'raw' or mask_type == 'polar':
@@ -172,6 +173,8 @@ class MaskManagerDialog(QObject):
         del self.masks[name]
         if name in HexrdConfig().visible_masks:
             HexrdConfig().visible_masks.remove(name)
+        if name in HexrdConfig().visible_mask_boundaries:
+            HexrdConfig().visible_mask_boundaries.remove(name)
         HexrdConfig().raw_mask_coords.pop(name, None)
         HexrdConfig().masks.pop(name, None)
         if mtype == 'threshold':
@@ -210,6 +213,8 @@ class MaskManagerDialog(QObject):
             if self.old_name in HexrdConfig().visible_masks:
                 HexrdConfig().visible_masks.append(new_name)
                 HexrdConfig().visible_masks.remove(self.old_name)
+                HexrdConfig().visible_mask_boundaries.append(new_name)
+                HexrdConfig().visible_mask_boundaries.remove(self.old_name)
 
             if self.old_name == self.threshold:
                 self.threshold = new_name
@@ -226,9 +231,11 @@ class MaskManagerDialog(QObject):
             if action == export:
                 selection = self.ui.masks_table.item(index.row(), 0).text()
                 data = HexrdConfig().raw_mask_coords[selection]
-                d = {'_visible': []}
+                d = {'_visible': [], '_bounds': []}
                 if selection in HexrdConfig().visible_masks:
                     d['_visible'] = [selection]
+                if selection in HexrdConfig().visible_mask_boundaries:
+                    d['_bounds'] = [selection]
                 for i, (det, mask) in enumerate(data):
                     parent = d.setdefault(det, {})
                     parent.setdefault(selection, {})[str(i)] = mask
@@ -247,7 +254,10 @@ class MaskManagerDialog(QObject):
             self.load_masks(h5py_group['masks'])
 
     def write_all_masks(self, h5py_group=None):
-        d = {'_visible': HexrdConfig().visible_masks}
+        d = {
+            '_visible': HexrdConfig().visible_masks,
+            '_bounds': HexrdConfig().visible_mask_boundaries
+        }
         for name, data in HexrdConfig().raw_mask_coords.items():
             for i, (det, mask) in enumerate(data):
                 parent = d.setdefault(det, {})
@@ -279,6 +289,7 @@ class MaskManagerDialog(QObject):
     def clear_masks(self):
         HexrdConfig().masks.clear()
         HexrdConfig().visible_masks.clear()
+        HexrdConfig().visible_mask_boundaries.clear()
         HexrdConfig().raw_mask_coords.clear()
         self.masks.clear()
         self.setup_table()
@@ -304,6 +315,9 @@ class MaskManagerDialog(QObject):
             if key == '_visible':
                 # Convert strings into actual python strings
                 HexrdConfig().visible_masks = list(h5py_read_string(data))
+            elif key == '_bounds':
+                # Convert strings into actual python strings
+                HexrdConfig().visible_mask_boundaries = list(h5py_read_string(data))
             elif key == 'threshold':
                 HexrdConfig().threshold_values = data['values'][()].tolist()
                 threshold_masks = {}
@@ -402,18 +416,40 @@ class MaskManagerDialog(QObject):
         fig.canvas.draw_idle()
         fig.show()
 
-    def update_visibility_checkboxes(self):
+    def update_checkboxes(self, column):
         with block_signals(self.ui.masks_table):
             for i, key in enumerate(self.masks.keys()):
-                cb = self.ui.masks_table.cellWidget(i, 1)
+                cb = self.ui.masks_table.cellWidget(i, column)
                 status = key in HexrdConfig().visible_masks
                 cb.setChecked(status)
         self.masks_changed()
 
     def hide_all_masks(self):
         HexrdConfig().visible_masks.clear()
-        self.update_visibility_checkboxes()
+        self.update_checkboxes(column=1)
 
     def show_all_masks(self):
         HexrdConfig().visible_masks = list(self.masks.keys())
-        self.update_visibility_checkboxes()
+        self.update_checkboxes(column=1)
+
+    def boundaries_changed(self):
+        if self.image_mode in (ViewType.polar, ViewType.stereo):
+            HexrdConfig().polar_masks_changed.emit()
+        elif self.image_mode == ViewType.raw:
+            HexrdConfig().raw_masks_changed.emit()
+
+    def toggle_boundary(self, checked, name):
+        if checked and name not in HexrdConfig().visible_mask_boundaries:
+            HexrdConfig().visible_mask_boundaries.append(name)
+        elif not checked and name in HexrdConfig().visible_mask_boundaries:
+            HexrdConfig().visible_mask_boundaries.remove(name)
+
+        self.masks_changed()
+
+    def hide_all_boundaries(self):
+        HexrdConfig().visible_mask_boundaries.clear()
+        self.update_checkboxes(column=2)
+
+    def show_all_boundaries(self):
+        HexrdConfig().visible_mask_boundaries = list(self.masks.keys())
+        self.update_checkboxes(column=2)

@@ -142,6 +142,7 @@ def create_polar_mask_from_raw(name, value):
     for det, data in value:
         line_data.extend(convert_raw_to_polar(det, data))
     create_polar_mask(name, line_data)
+    HexrdConfig().polar_bounds[name] = line_data
 
 
 def rebuild_polar_masks():

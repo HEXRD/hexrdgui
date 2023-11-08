@@ -4,6 +4,7 @@ import math
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
+from matplotlib import patches
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 from matplotlib.figure import Figure
@@ -177,6 +178,9 @@ class ImageCanvas(FigureCanvas):
             for i, name in enumerate(image_names):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
+
+        for name, axis in self.raw_axes.items():
+            self.update_mask_boundaries(axis, name)
 
         # This will call self.draw_idle()
         self.show_saturation()
@@ -1075,6 +1079,7 @@ class ImageCanvas(FigureCanvas):
         if skip:
             return
 
+        self.update_mask_boundaries(self.axis)
         self.iviewer.reapply_masks()
         self.axes_images[0].set_data(self.scaled_images[0])
         self.update_azimuthal_integral_plot()
@@ -1404,6 +1409,20 @@ class ImageCanvas(FigureCanvas):
 
         self._snip_viewer_dialog = SnipViewerDialog(background, extent)
         self._snip_viewer_dialog.show()
+
+    def update_mask_boundaries(self, axis, det=None):
+        for p in axis.patches:
+            p.remove()
+
+        for boundary in HexrdConfig().visible_mask_boundaries:
+            if self.mode == ViewType.raw:
+                raw = HexrdConfig().raw_mask_coords[boundary]
+                verts = [v for k, v in raw if k == det]
+            if self.mode == ViewType.polar or self.mode == ViewType.stereo:
+                verts = HexrdConfig().polar_bounds[boundary]
+            for vert in verts:
+                kwargs = {'fill': False, 'lw': 1, 'linestyle': '--'}
+                axis.add_patch(patches.Polygon(vert, **kwargs))
 
 
 class PolarXAxisTickLocator(AutoLocator):

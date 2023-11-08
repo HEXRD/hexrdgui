@@ -109,7 +109,7 @@ class MaskRegionsDialog(QObject):
         det = self.added_templates.pop()
         it = self.interactive_templates[det].pop()
         it.disconnect()
-        it.template.remove()
+        it.clear()
 
     def undo_selection(self):
         if not self.added_templates:

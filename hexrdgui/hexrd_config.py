@@ -296,6 +296,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.default_cmap = constants.DEFAULT_CMAP
         self._previous_structureless_calibration_picks_data = None
         self.image_mode = constants.ViewType.raw
+        self.visible_mask_boundaries = []
+        self.polar_bounds = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
