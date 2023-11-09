@@ -518,7 +518,7 @@ class CalibrationRunner(QObject):
                     if hkl_index == -1:
                         continue
 
-                    tth_values = data[key][data_key][hkl_index][:, 1]
+                    tth_values = data[key][data_key][hkl_index][:, 0]
                     min_value = min(min_value, np.nanmin(tth_values))
 
                 min_tth_values.append(min_value)
@@ -542,7 +542,7 @@ class CalibrationRunner(QObject):
                     rings = data[key][data_key]
 
                     keys.append(key)
-                    min_eta_values[key] = np.nanmin(rings[hkl_index][:, 0])
+                    min_eta_values[key] = np.nanmin(rings[hkl_index][:, 1])
                     hkl_indices[key] = hkl_index
 
                 keys.sort(key=lambda x: min_eta_values[x])
