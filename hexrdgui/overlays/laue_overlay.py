@@ -329,7 +329,13 @@ class LaueOverlay(Overlay):
         if self.width_shape not in range_func:
             raise Exception(f'Unknown range shape: {self.width_shape}')
 
-        return range_func[self.width_shape](spots, display_mode, panel)
+        data = range_func[self.width_shape](spots, display_mode, panel)
+
+        # Add a nans row at the end of each range
+        # This makes it easier to vstack them for plotting
+        data = [np.append(x, nans_row, axis=0) for x in data]
+
+        return data
 
     def rectangular_range_data(self, spots, display_mode, panel):
         range_corners = self.range_corners(spots)
@@ -456,3 +462,6 @@ class LaueRangeShape(str, Enum):
 class LaueLabelType(str, Enum):
     hkls = 'hkls'
     energy = 'energy'
+
+# Constants
+nans_row = np.nan * np.ones((1, 2))

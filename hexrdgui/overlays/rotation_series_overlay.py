@@ -282,7 +282,13 @@ class RotationSeriesOverlay(Overlay):
         return ranges
 
     def range_data(self, spots, display_mode, panel):
-        return self.rectangular_range_data(spots, display_mode, panel)
+        data = self.rectangular_range_data(spots, display_mode, panel)
+
+        # Add a nans row at the end of each range
+        # This makes it easier to vstack them for plotting
+        data = [np.append(x, nans_row, axis=0) for x in data]
+
+        return data
 
     def rectangular_range_data(self, spots, display_mode, panel):
         from hexrdgui.hexrd_config import HexrdConfig
@@ -371,3 +377,6 @@ class RotationSeriesOverlay(Overlay):
         if self.update_needed:
             HexrdConfig().overlay_config_changed.emit()
             HexrdConfig().update_overlay_editor.emit()
+
+# Constants
+nans_row = np.nan * np.ones((1, 2))
