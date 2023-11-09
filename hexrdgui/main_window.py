@@ -817,8 +817,7 @@ class MainWindow(QObject):
             for _, val in overlay.data.items():
                 a = iter(val['rbnds'])
                 for start, end in zip(a, a):
-                    ranges = np.array(np.flip(start, axis=1))
-                    ranges = np.append(ranges, np.flip(end), axis=0)
+                    ranges = np.append(start, np.flip(end, axis=0), axis=0)
                     ranges = np.append(ranges, [ranges[0]], axis=0)
                     data.append(ranges[~np.isnan(ranges).any(axis=1)])
 
