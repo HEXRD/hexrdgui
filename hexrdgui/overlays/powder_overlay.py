@@ -344,19 +344,19 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     skipped_tth.append(i)
                     continue
 
-                # Swap columns, convert to degrees
-                ang_crds[:, [0, 1]] = np.degrees(ang_crds[:, [1, 0]])
+                # Convert to degrees
+                ang_crds = np.degrees(ang_crds)
 
                 # fix eta period
-                ang_crds[:, 0] = xfcapi.mapAngle(
-                    ang_crds[:, 0], self.eta_period, units='degrees'
+                ang_crds[:, 1] = xfcapi.mapAngle(
+                    ang_crds[:, 1], self.eta_period, units='degrees'
                 )
 
                 # sort points for monotonic eta
-                eidx = np.argsort(ang_crds[:, 0])
+                eidx = np.argsort(ang_crds[:, 1])
                 ang_crds = ang_crds[eidx, :]
 
-                diff = np.diff(ang_crds[:, 0])
+                diff = np.diff(ang_crds[:, 1])
                 if len(diff) == 0:
                     skipped_tth.append(i)
                     continue
@@ -374,8 +374,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     # append to list with nan padding
                     ring_pts.append(np.vstack([ang_crds, nans_row]))
                 elif display_mode == ViewType.stereo:
-                    # Swap back, convert to radians
-                    ang_crds[:, [0, 1]] = np.radians(ang_crds[:, [1, 0]])
+                    # Convert back to radians
+                    ang_crds = np.radians(ang_crds)
 
                     # Convert the ang_crds to stereo ij
                     stereo_ij = angles_to_stereo(
@@ -383,10 +383,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                         instr,
                         HexrdConfig().stereo_size,
                     )
-
-                    # FIXME: why??
-                    # swap i and j
-                    stereo_ij[:, [0, 1]] = stereo_ij[:, [1, 0]]
 
                     # append to list with nan padding
                     ring_pts.append(np.vstack([stereo_ij, nans_row]))
@@ -398,9 +394,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     if panel.distortion is not None:
                         xys = panel.distortion.apply_inverse(xys)
 
-                    # Convert to pixel coordinates
-                    # ??? keep in pixels?
-                    xys = panel.cartToPixel(xys)
+                    # Convert to pixel coordinates and swap columns
+                    xys = panel.cartToPixel(xys)[:, [1, 0]]
 
                 diff_tol = np.radians(self.delta_eta) + 1e-4
                 ring_breaks = np.where(

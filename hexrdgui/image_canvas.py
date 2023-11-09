@@ -335,13 +335,13 @@ class ImageCanvas(FigureCanvas):
                 # Override with highlight style
                 current_style = highlight_style['data']
 
-            x, y = self.extract_ring_coords(pr)
+            x, y = pr.T
             artist, = axis.plot(x, y, **current_style)
             artists.append(artist)
 
         # Add the rbnds too
         for ind, pr in zip(rbnd_indices, rbnds):
-            x, y = self.extract_ring_coords(pr)
+            x, y = pr.T
             current_style = copy.deepcopy(ranges_style)
             if any(x in highlight_indices for x in ind):
                 # Override with highlight style
@@ -355,7 +355,7 @@ class ImageCanvas(FigureCanvas):
         if self.azimuthal_integral_axis is not None:
             az_axis = self.azimuthal_integral_axis
             for pr in rings:
-                x, _ = self.extract_ring_coords(pr)
+                x = pr[:, 0]
                 if len(x) == 0:
                     # Skip over rings that are out of bounds
                     continue
@@ -367,7 +367,7 @@ class ImageCanvas(FigureCanvas):
 
             # Add the rbnds too
             for ind, pr in zip(rbnd_indices, rbnds):
-                x, _ = self.extract_ring_coords(pr)
+                x = pr[:, 0]
                 if len(x) == 0:
                     # Skip over rbnds that are out of bounds
                     continue
@@ -569,13 +569,6 @@ class ImageCanvas(FigureCanvas):
     def draw_auto_picked_data(self):
         self.update_auto_picked_data()
         self.draw_idle()
-
-    def extract_ring_coords(self, data):
-        if self.mode == ViewType.cartesian:
-            # These are in x, y coordinates. Do not swap them.
-            return data[:, 0], data[:, 1]
-
-        return data[:, 1], data[:, 0]
 
     def clear_saturation(self):
         for t in self.saturation_texts:
