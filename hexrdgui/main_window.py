@@ -815,8 +815,30 @@ class MainWindow(QObject):
         data = []
         for overlay in powder_overlays:
             for _, val in overlay.data.items():
-                a = iter(val['rbnds'])
-                for start, end in zip(a, a):
+                # We will only apply masks for ranges that have both a
+                # start and a stop.
+                start_end_pairs = {}
+                for i, indices in enumerate(val['rbnd_indices']):
+                    for idx in indices:
+                        # Get the pair for this HKL index
+                        pairs = start_end_pairs.setdefault(idx, [])
+                        if len(pairs) == 2:
+                            # We already got this one (this shouldn't happen)
+                            continue
+
+                        pairs.append(val['rbnds'][i])
+
+                        # We only want to use the ranges once each.
+                        # Since we found a use of this range already,
+                        # just break.
+                        break
+
+                for key in list(start_end_pairs):
+                    # Remove any ranges that have a missing half
+                    if len(start_end_pairs[key]) < 2:
+                        del start_end_pairs[key]
+
+                for start, end in start_end_pairs.values():
                     ranges = np.append(start, np.flip(end, axis=0), axis=0)
                     ranges = np.append(ranges, [ranges[0]], axis=0)
                     data.append(ranges[~np.isnan(ranges).any(axis=1)])
