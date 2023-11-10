@@ -378,5 +378,6 @@ class RotationSeriesOverlay(Overlay):
             HexrdConfig().overlay_config_changed.emit()
             HexrdConfig().update_overlay_editor.emit()
 
+
 # Constants
 nans_row = np.nan * np.ones((1, 2))

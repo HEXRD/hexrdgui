@@ -463,5 +463,6 @@ class LaueLabelType(str, Enum):
     hkls = 'hkls'
     energy = 'energy'
 
+
 # Constants
 nans_row = np.nan * np.ones((1, 2))
