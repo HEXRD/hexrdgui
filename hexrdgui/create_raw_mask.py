@@ -47,9 +47,10 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
         line_data[i] = line
 
     raw_line_data = []
+    instr = create_hedm_instrument()
     for line in line_data:
-        for key, panel in create_hedm_instrument().detectors.items():
-            raw = angles_to_pixels(line, panel)
+        for key, panel in instr.detectors.items():
+            raw = angles_to_pixels(line, panel, tvec_s=instr.tvec)
             if all([np.isnan(x) for x in raw.flatten()]):
                 continue
 
