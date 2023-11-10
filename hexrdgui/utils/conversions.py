@@ -46,8 +46,10 @@ def angles_to_cart(angles, panel, tvec_s=None, tvec_c=None,
     return panel.angles_to_cart(**kwargs)
 
 
-def angles_to_pixels(angles, panel):
-    xys = angles_to_cart(angles, panel)
+def angles_to_pixels(angles, panel, tvec_s=None, tvec_c=None,
+                     apply_distortion=True):
+    xys = angles_to_cart(angles, panel, tvec_s=tvec_s, tvec_c=tvec_c,
+                         apply_distortion=apply_distortion)
     return cart_to_pixels(xys, panel)
 
 

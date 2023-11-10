@@ -223,16 +223,22 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
             if plane_data.tThWidth is not None:
                 # Generate the ranges too
-                lower_pts, _ = self.generate_ring_points(
+                lower_pts, lower_skipped = self.generate_ring_points(
                     instr, r_lower, etas, panel, display_mode
                 )
-                upper_pts, _ = self.generate_ring_points(
+                upper_pts, upper_skipped = self.generate_ring_points(
                     instr, r_upper, etas, panel, display_mode
                 )
-                for lpts, upts in zip(lower_pts, upper_pts):
-                    point_groups[det_key]['rbnds'] += [lpts, upts]
-                for ind in indices:
-                    point_groups[det_key]['rbnd_indices'] += [ind, ind]
+                lower_indices = [x for i, x in enumerate(indices)
+                                 if i not in lower_skipped]
+                upper_indices = [x for i, x in enumerate(indices)
+                                 if i not in upper_skipped]
+
+                point_groups[det_key]['rbnds'] += lower_pts
+                point_groups[det_key]['rbnd_indices'] += lower_indices
+
+                point_groups[det_key]['rbnds'] += upper_pts
+                point_groups[det_key]['rbnd_indices'] += upper_indices
 
         return point_groups
 
