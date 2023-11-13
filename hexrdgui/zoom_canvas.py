@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal, QTimer
 from PySide6.QtWidgets import QSizePolicy
 
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvas
 
 from matplotlib.figure import Figure
 from matplotlib.widgets import Cursor
