@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import h5py
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 

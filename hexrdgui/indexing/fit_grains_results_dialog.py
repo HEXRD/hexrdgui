@@ -9,7 +9,7 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D, proj3d  # noqa: F401 unused import
 import matplotlib
 import matplotlib.ticker as ticker
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide6.QtCore import QObject, QTimer, Qt, Signal

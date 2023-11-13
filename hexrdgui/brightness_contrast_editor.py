@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QMessageBox, QVBoxLayout
 )
 
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 
 from hexrdgui.range_widget import RangeWidget

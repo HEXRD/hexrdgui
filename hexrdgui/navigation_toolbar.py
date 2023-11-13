@@ -1,5 +1,5 @@
 from matplotlib import rc_context
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
 from hexrdgui.utils import wrap_with_callbacks
 
