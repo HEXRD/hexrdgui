@@ -42,6 +42,9 @@
    </item>
    <item row="0" column="0" colspan="4">
     <widget class="QTableWidget" name="table">
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;left click a row to activate the hkl&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>

@@ -1,10 +1,13 @@
 from contextlib import contextmanager
+import csv
+from io import StringIO
 import math
 
 import numpy as np
 
 from PySide6.QtCore import Qt, QItemSelectionModel
-from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QApplication, QMenu, QTableWidgetItem
 
 from hexrd.crystallography import hklToStr
 
@@ -55,6 +58,8 @@ class ReflectionsTable:
     def setup_connections(self):
         self.ui.table.selectionModel().selectionChanged.connect(
             self.update_selections)
+        self.ui.table.customContextMenuRequested.connect(
+            self.on_table_context_menu_requested)
 
         HexrdConfig().materials_removed.connect(self.on_materials_removed)
         HexrdConfig().material_renamed.connect(self.on_material_renamed)
@@ -73,6 +78,52 @@ class ReflectionsTable:
 
         self.selection_helper.apply_clicked.connect(
             self.on_selection_helper_apply)
+
+    def on_table_context_menu_requested(self, pos):
+        # This is the item that was right-clicked
+        item = self.ui.table.itemAt(pos)  # noqa
+
+        menu = QMenu(self.ui)
+        actions = {}
+
+        # Helper functions
+        def add_actions(d: dict):
+            actions.update({menu.addAction(k): v for k, v in d.items()})
+
+        add_actions({'Copy to Clipboard': self.copy_selected_to_clipboard})
+
+        action_chosen = menu.exec(QCursor.pos())
+
+        if action_chosen is None:
+            return
+
+        # Run the function for the action that was chosen
+        actions[action_chosen]()
+
+    def copy_selected_to_clipboard(self):
+        table = self.ui.table
+        clipboard = QApplication.instance().clipboard()
+
+        with StringIO() as string_io:
+            writer = csv.writer(string_io)
+
+            # Write the headers
+            headers = [table.horizontalHeaderItem(j).text()
+                       for j in range(table.columnCount)]
+            writer.writerow(headers)
+
+            # Write the rows
+            for i in sorted(self.selected_rows):
+                row = []
+                for j in range(table.columnCount()):
+                    item = table.item(i, j)
+                    text = item.text() if item is not None else ''
+                    row.append(text)
+
+                writer.writerow(row)
+
+            # Copy it to the clipboard
+            clipboard.setText(string_io.getvalue())
 
     def populate_relative_scale_options(self):
         old_setting = self.relative_scale_material_name
@@ -180,7 +231,8 @@ class ReflectionsTable:
         self.material.planeData.exclusions = exclusions
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
 
-        # Indicate that we are modifying exclusions so the table will not update
+        # Indicate that we are modifying exclusions so the table will not
+        # update
         self._modifying_exclusions = True
         try:
             HexrdConfig().overlay_config_changed.emit()
@@ -415,8 +467,8 @@ class ReflectionsTable:
                 exclusions[sf > max_sfac] = True
 
         self.exclusions = exclusions
-        # update_selected_rows() would be better here, but it doesn't always update
-        # unless we update the whole table.
+        # update_selected_rows() would be better here, but it doesn't always
+        # update unless we update the whole table.
         self.update_table()
 
 
