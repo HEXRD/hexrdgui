@@ -40,7 +40,7 @@ class MaskManagerDialog(QObject):
         self.ui.setWindowFlags(flags | Qt.Tool)
 
         add_help_url(self.ui.button_box,
-                     'configuration/masking/#mask-manager')
+                     'configuration/masking/#managing-masks')
 
         self.create_masks_list()
         self.threshold = None

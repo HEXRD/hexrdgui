@@ -39,7 +39,7 @@ class MaskRegionsDialog(QObject):
         self.ui.setWindowFlags(flags | Qt.Tool)
 
         add_help_url(self.ui.button_box,
-                     'configuration/masking/#ellipse-and-rectange')
+                     'configuration/masking/#ellipse-and-rectangle')
 
         self.setup_canvas_connections()
         self.setup_ui_connections()
