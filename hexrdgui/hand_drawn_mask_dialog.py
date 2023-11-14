@@ -10,6 +10,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import add_sample_points
+from hexrdgui.utils.dialog import add_help_url
 
 # TODO: How to handle image mode? Mode has changed byt the time the signal has been emitted.
 
@@ -25,6 +26,9 @@ class HandDrawnMaskDialog(QObject):
         self.ui = loader.load_file('hand_drawn_mask_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.buttonBox,
+                     'configuration/masking/#polygon')
 
         self.canvas = canvas
         self.ring_data = []

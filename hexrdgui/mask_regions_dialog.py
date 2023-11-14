@@ -8,6 +8,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.constants import KEY_ROTATE_ANGLE_COARSE, ViewType
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import add_sample_points
+from hexrdgui.utils.dialog import add_help_url
 
 from matplotlib import patches
 
@@ -36,6 +37,9 @@ class MaskRegionsDialog(QObject):
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
+
+        add_help_url(self.ui.button_box,
+                     'configuration/masking/#ellipse-and-rectangle')
 
         self.setup_canvas_connections()
         self.setup_ui_connections()

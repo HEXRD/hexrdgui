@@ -6,14 +6,42 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>649</width>
-    <height>254</height>
+    <width>695</width>
+    <height>229</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Mask Management</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="1">
+    <widget class="QPushButton" name="view_masks">
+     <property name="text">
+      <string>View Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QPushButton" name="panel_buffer">
+     <property name="text">
+      <string>Masks to Panel Buffer</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QPushButton" name="show_all_masks">
+     <property name="text">
+      <string>Show All Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="import_masks">
+     <property name="text">
+      <string>Import Masks</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="1">
     <widget class="QPushButton" name="export_masks">
      <property name="text">
@@ -21,8 +49,31 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0" rowspan="6">
+   <item row="4" column="1">
+    <widget class="QPushButton" name="hide_all_masks">
+     <property name="text">
+      <string>Hide All Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::NoButton</set>
+     </property>
+     <property name="centerButtons">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" rowspan="7">
     <widget class="QTableWidget" name="masks_table">
+     <property name="minimumSize">
+      <size>
+       <width>500</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
      </property>
@@ -59,41 +110,6 @@
        <string>Remove</string>
       </property>
      </column>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QPushButton" name="import_masks">
-     <property name="text">
-      <string>Import Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QPushButton" name="view_masks">
-     <property name="text">
-      <string>View Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QPushButton" name="show_all_masks">
-     <property name="text">
-      <string>Show All Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QPushButton" name="panel_buffer">
-     <property name="text">
-      <string>Masks to Panel Buffer</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QPushButton" name="hide_all_masks">
-     <property name="text">
-      <string>Hide All Masks</string>
-     </property>
     </widget>
    </item>
   </layout>

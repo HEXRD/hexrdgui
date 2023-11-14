@@ -42,7 +42,7 @@
      </property>
     </widget>
    </item>
-   <item alignment="Qt::AlignHCenter">
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
