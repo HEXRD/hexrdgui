@@ -30,8 +30,8 @@ class LoadImagesDialog:
         # Create a list of detectors to match the number of files
         # This is neccessary to check validity of file/detector association
         # when the association is set manually
-        multiple = int(len(self.image_files)/len(HexrdConfig().detector_names))
         dets = HexrdConfig().detector_names
+        multiple = max(len(self.image_files) // len(dets), 1)
         self.detectors = [det for det in dets for i in range(multiple)]
 
     def setup_connections(self):

@@ -981,6 +981,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         formats = {
             '.yml': read_yaml,
+            '.yaml': read_yaml,
             '.hexrd': read_hexrd,
         }
 
