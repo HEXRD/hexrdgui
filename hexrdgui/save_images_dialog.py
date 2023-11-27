@@ -15,7 +15,6 @@ class SaveImagesDialog:
         loader = UiLoader()
         self.ui = loader.load_file('save_images_dialog.ui', parent)
 
-        self.parent_dir = HexrdConfig().working_dir
         self.progress_dialog = ProgressDialog(self.ui)
 
         self.setup_gui()
