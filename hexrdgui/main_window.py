@@ -518,12 +518,11 @@ class MainWindow(QObject):
             dialog = LoadImagesDialog(files, manual, self.ui)
 
             if dialog.exec():
-                detector_names, image_files = dialog.results()
-                image_files = [img for f in files for img in f]
-                files = [[] for det in HexrdConfig().detector_names]
-                for d, f in zip(detector_names, image_files):
-                    pos = HexrdConfig().detector_names.index(d)
-                    files[pos].append(f)
+                results = dialog.results()
+                self.files = []
+                for det in HexrdConfig().detector_names:
+                    self.files.append(results[det])
+                image_files = [v for f in results.values() for v in f]
                 HexrdConfig().recent_images = image_files
                 ImageLoadManager().read_data(files, ui_parent=self.ui)
 

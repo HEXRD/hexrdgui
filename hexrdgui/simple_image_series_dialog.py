@@ -346,11 +346,7 @@ class SimpleImageSeriesDialog(QObject):
         # We will not have an ROI most of the time. Perform
         # a quick check for an ROI, and if we have one, proceed
         # to add the rectangle info.
-        has_roi = False
-        for det in HexrdConfig().detectors.values():
-            if det.get('pixels', {}).get('roi', {}).get('value'):
-                has_roi = True
-                break
+        has_roi = HexrdConfig().is_roi_instrument_config
 
         if not has_roi:
             # No need to proceed further
@@ -388,12 +384,14 @@ class SimpleImageSeriesDialog(QObject):
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
+        using_roi = HexrdConfig().is_roi_instrument_config
 
-        # if len(self.files) % len(HexrdConfig().detector_names) != 0:
-        #     msg = ('Please select at least one file for each detector.')
-        #     QMessageBox.warning(self.ui, 'HEXRD', msg)
-        #     self.files = []
-        #     return
+        if (not using_roi and
+                len(self.files) % len(HexrdConfig().detector_names) != 0):
+            msg = ('Please select at least one file for each detector.')
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.files = []
+            return
 
         if manual:
             dialog = LoadImagesDialog(self.files, manual, self.ui.parent())
@@ -401,13 +399,11 @@ class SimpleImageSeriesDialog(QObject):
                 self.reset_data()
                 return
 
-            detector_names, files = dialog.results()
-            image_files = [img for f in self.files for img in f]
+            results = dialog.results()
             # Make sure files are matched to selected detector
-            self.files = [[] for det in HexrdConfig().detector_names]
-            for d, f in zip(detector_names, image_files):
-                pos = HexrdConfig().detector_names.index(d)
-                self.files[pos].append(f)
+            self.files = []
+            for det in HexrdConfig().detector_names:
+                self.files.append(results[det])
 
         self.dir_changed()
 
