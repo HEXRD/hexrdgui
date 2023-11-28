@@ -109,7 +109,7 @@ class ReflectionsTable:
 
             # Write the headers
             headers = [table.horizontalHeaderItem(j).text()
-                       for j in range(table.columnCount)]
+                       for j in range(table.columnCount())]
             writer.writerow(headers)
 
             # Write the rows
