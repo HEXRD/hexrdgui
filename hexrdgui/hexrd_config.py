@@ -16,6 +16,7 @@ from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.instrument import HEDMInstrument
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
+from hexrd.utils.yaml import NumpyToNativeDumper
 from hexrd.valunits import valWUnit
 
 from hexrdgui import constants
@@ -1154,7 +1155,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         cfg['working_dir'] = '.'
 
         with open(output_file, 'w') as f:
-            yaml.dump(cfg, f)
+            yaml.dump(cfg, f, Dumper=NumpyToNativeDumper)
 
     def create_internal_config(self, cur_config):
         if not self.has_status(cur_config):

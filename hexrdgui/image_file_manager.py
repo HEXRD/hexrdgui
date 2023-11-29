@@ -99,7 +99,7 @@ class ImageFileManager(metaclass=Singleton):
             input_dict['meta'] = {}
             temp = tempfile.NamedTemporaryFile(delete=False)
             try:
-                data = yaml.dump(input_dict).encode('utf-8')
+                data = yaml.safe_dump(input_dict).encode('utf-8')
                 temp.write(data)
                 temp.close()
                 ims = imageseries.open(temp.name, 'image-files')
@@ -129,7 +129,7 @@ class ImageFileManager(metaclass=Singleton):
         input_dict['meta'] = {}
         temp = tempfile.NamedTemporaryFile(delete=False)
         try:
-            data = yaml.dump(input_dict).encode('utf-8')
+            data = yaml.safe_dump(input_dict).encode('utf-8')
             temp.write(data)
             temp.close()
             ims = imageseries.open(temp.name, 'image-files')
