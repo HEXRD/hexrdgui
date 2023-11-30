@@ -16,6 +16,7 @@ import matplotlib.transforms as tx
 import numpy as np
 
 from hexrdgui.async_worker import AsyncWorker
+from hexrdgui.blit_manager import BlitManager
 from hexrdgui.calibration.cartesian_plot import cartesian_viewer
 from hexrdgui.calibration.polar_plot import polar_viewer
 from hexrdgui.calibration.raw_iviewer import raw_iviewer
@@ -42,7 +43,6 @@ class ImageCanvas(FigureCanvas):
 
         self.raw_axes = {}  # only used for raw currently
         self.axes_images = []
-        self.overlay_artists = {}
         self.cached_detector_borders = []
         self.saturation_texts = []
         self.cmap = HexrdConfig().default_cmap
@@ -57,6 +57,7 @@ class ImageCanvas(FigureCanvas):
         self._last_stereo_size = None
         self.stereo_border_artists = []
         self.azimuthal_overlay_artists = []
+        self.blit_manager = BlitManager(self)
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -225,24 +226,20 @@ class ImageCanvas(FigureCanvas):
     def scaled_images(self):
         return [self.transform(x) for x in self.unscaled_images]
 
+    @property
+    def blit_artists(self):
+        return self.blit_manager.artists
+
+    @property
+    def overlay_artists(self):
+        return self.blit_artists.setdefault('overlays', {})
+
     def remove_all_overlay_artists(self):
-        while self.overlay_artists:
-            key = next(iter(self.overlay_artists))
-            self.remove_overlay_artists(key)
+        self.blit_manager.remove_artists('overlays')
+        self.blit_manager.artists['overlays'] = {}
 
     def remove_overlay_artists(self, key):
-        if key not in self.overlay_artists:
-            return
-
-        for det_key, artist_dict in self.overlay_artists[key].items():
-            for artist_name, artist in artist_dict.items():
-                if isinstance(artist, list):
-                    while artist:
-                        artist.pop(0).remove()
-                else:
-                    artist.remove()
-
-        del self.overlay_artists[key]
+        self.blit_manager.remove_artists('overlays', key)
 
     def prune_overlay_artists(self):
         # Remove overlay artists that no longer have an overlay associated
@@ -380,7 +377,8 @@ class ImageCanvas(FigureCanvas):
         def plot(data, key, kwargs):
             # This logic was repeated
             if len(data) != 0:
-                artists[key], = axis.plot(*np.vstack(data).T, **kwargs)
+                artists[key], = axis.plot(*np.vstack(data).T, animated=True,
+                                          **kwargs)
 
         plot(rings, 'rings', data_style)
         plot(h_rings, 'h_rings', highlight_style['data'])
@@ -404,7 +402,8 @@ class ImageCanvas(FigureCanvas):
                 x = np.repeat(xmeans, 3)
                 y = np.tile([0, 1, np.nan], len(xmeans))
 
-                artists[key], = az_axis.plot(x, y, transform=trans, **kwargs)
+                artists[key], = az_axis.plot(x, y, transform=trans,
+                                             animated=True, **kwargs)
 
             az_plot(rings, 'az_rings', data_style)
             # NOTE: we still use the data_style for az_axis highlighted rings
@@ -452,12 +451,14 @@ class ImageCanvas(FigureCanvas):
         def scatter(data, key, kwargs):
             # This logic was repeated
             if len(data) != 0:
-                artists[key] = axis.scatter(*np.asarray(data).T, **kwargs)
+                artists[key] = axis.scatter(*np.asarray(data).T, animated=True,
+                                            **kwargs)
 
         def plot(data, key, kwargs):
             # This logic was repeated
             if len(data) != 0:
-                artists[key], = axis.plot(*np.vstack(data).T, **kwargs)
+                artists[key], = axis.plot(*np.vstack(data).T, animated=True,
+                                          **kwargs)
 
         # Draw spots and highlighted spots
         scatter(spots, 'spots', data_style)
@@ -530,11 +531,12 @@ class ImageCanvas(FigureCanvas):
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
         artists = overlay_artists.setdefault(det_key, {})
 
-        artists['data'] = axis.scatter(*sliced_data.T, **data_style)
+        artists['data'] = axis.scatter(*sliced_data.T, animated=True,
+                                       **data_style)
 
         sliced_ranges = np.asarray(ranges)[slicer]
         artists['ranges'], = axis.plot(*np.vstack(sliced_ranges).T,
-                                       **ranges_style)
+                                       animated=True, **ranges_style)
 
     def redraw_overlay(self, overlay):
         # Remove the artists for this overlay
@@ -573,7 +575,7 @@ class ImageCanvas(FigureCanvas):
         for overlay in HexrdConfig().overlays:
             self.draw_overlay(overlay)
 
-        self.draw_idle()
+        self.blit_manager.update()
 
     def clear_detector_borders(self):
         while self.cached_detector_borders:
@@ -825,9 +827,9 @@ class ImageCanvas(FigureCanvas):
             self.figure.tight_layout()
 
         self.update_auto_picked_data()
-        self.update_overlays()
         self.draw_detector_borders()
         self.update_beam_marker()
+        self.update_overlays()
 
         HexrdConfig().image_view_loaded.emit({'img': img})
 
@@ -952,9 +954,9 @@ class ImageCanvas(FigureCanvas):
             self.figure.tight_layout()
 
         self.update_auto_picked_data()
-        self.update_overlays()
         self.draw_detector_borders()
         self.update_beam_marker()
+        self.update_overlays()
 
         HexrdConfig().image_view_loaded.emit({'img': img})
 
@@ -1018,9 +1020,9 @@ class ImageCanvas(FigureCanvas):
 
         self.draw_stereo_border()
         self.update_auto_picked_data()
-        self.update_overlays()
         self.draw_detector_borders()
         self.update_beam_marker()
+        self.update_overlays()
 
         HexrdConfig().image_view_loaded.emit({'img': img})
 

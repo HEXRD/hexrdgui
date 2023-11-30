@@ -320,6 +320,11 @@ class CalibrationRunner(QObject):
             self.set_highlighting(highlighting)
         self.overlay_visibilities = prev_visibilities
 
+        # Updating the overlays no longer calls draw_idle(), so we need
+        # to do so now. Maybe we should change the line picker so that
+        # picked points are animated too...
+        self.canvas.draw_idle()
+
     def finish_line(self):
         self.save_overlay_picks()
         self.pick_next_line()
