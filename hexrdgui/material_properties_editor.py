@@ -6,7 +6,7 @@ from hexrd.material.unitcell import _StiffnessDict
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.matrix_editor import MatrixEditor
-from hexrdgui.pressure_slider_dialog import PressureSliderDialog
+from hexrdgui.pt_slider_dialog import PTSliderDialog
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import apply_symmetric_constraint, block_signals, compose
 
@@ -35,7 +35,7 @@ class MaterialPropertiesEditor:
             self.elastic_tensor_type_changed)
         self.elastic_tensor_editor.data_modified.connect(
             self.elastic_tensor_edited)
-        self.ui.show_pressure_slider.clicked.connect(self.show_pressure_slider)
+        self.ui.show_pt_slider.clicked.connect(self.show_pt_slider)
 
     @property
     def material(self):
@@ -132,10 +132,10 @@ class MaterialPropertiesEditor:
             self.ui.volume_per_atom,
         ]
 
-    def show_pressure_slider(self):
-        if dialog := getattr(self, '_pressure_slider_dialog', None):
+    def show_pt_slider(self):
+        if dialog := getattr(self, '_pt_slider_dialog', None):
             dialog.hide()
 
-        dialog = PressureSliderDialog(self.material, self.ui)
+        dialog = PTSliderDialog(self.material, self.ui)
         dialog.show()
-        self._pressure_slider_dialog = dialog
+        self._pt_slider_dialog = dialog

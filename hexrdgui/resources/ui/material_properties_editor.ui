@@ -194,9 +194,9 @@
     </widget>
    </item>
    <item row="5" column="0" colspan="2">
-    <widget class="QPushButton" name="show_pressure_slider">
+    <widget class="QPushButton" name="show_pt_slider">
      <property name="text">
-      <string>Show Pressure Slider</string>
+      <string>Show PT Slider</string>
      </property>
     </widget>
    </item>
@@ -214,7 +214,7 @@
   <tabstop>density</tabstop>
   <tabstop>volume</tabstop>
   <tabstop>volume_per_atom</tabstop>
-  <tabstop>show_pressure_slider</tabstop>
+  <tabstop>show_pt_slider</tabstop>
  </tabstops>
  <resources/>
  <connections/>
