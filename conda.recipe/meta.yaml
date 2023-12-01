@@ -27,6 +27,9 @@ requirements:
     - Pillow
     - pyhdf
     - pyside6
+    # FIXME: the latest qt6-main isn't compatible with PySide6, so we are pinning
+    # the version. Remove this pin when this is fixed.
+    - qt6-main==6.6.0
     - pyyaml
     - silx-base
 
