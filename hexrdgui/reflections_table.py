@@ -184,6 +184,7 @@ class ReflectionsTable:
         self.ui.relative_scale_material.setCurrentText(v)
 
     def show(self):
+        self.update_table()
         self.ui.show()
 
     def hide(self):
@@ -280,6 +281,10 @@ class ReflectionsTable:
     def update_table(self):
         if self._modifying_exclusions:
             # Don't update the table if we are modifying the exclusions
+            return
+
+        if not self.ui.isVisible():
+            # If it is not visible, don't bother updating the table.
             return
 
         material = self.material
