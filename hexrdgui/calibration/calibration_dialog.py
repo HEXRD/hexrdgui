@@ -15,7 +15,7 @@ from hexrdgui.utils.dialog import add_help_url
 import hexrdgui.resources.calibration
 
 
-class StructurelessCalibrationDialog(QObject):
+class CalibrationDialog(QObject):
 
     draw_picks_toggled = Signal(bool)
 
@@ -30,16 +30,17 @@ class StructurelessCalibrationDialog(QObject):
     undo_run = Signal()
     finished = Signal()
 
-    def __init__(self, instr, params_dict, parent=None,
-                 engineering_constraints=None):
+    def __init__(self, instr, params_dict, format_extra_params_func=None, parent=None,
+                 engineering_constraints=None, window_title='Calibration Dialog'):
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('structureless_calibration_dialog.ui',
+        self.ui = loader.load_file('calibration_dialog.ui',
                                    parent)
 
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
-        add_help_url(self.ui.button_box, 'calibration/structureless/')
+        add_help_url(self.ui.button_box, 'calibration/')
+        self.ui.setWindowTitle(window_title)
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         editor = self.pinhole_correction_editor
@@ -51,6 +52,7 @@ class StructurelessCalibrationDialog(QObject):
 
         self.instr = instr
         self._params_dict = params_dict
+        self.format_extra_params_func = format_extra_params_func
         self.engineering_constraints = engineering_constraints
 
         self.initialize_advanced_options()
@@ -242,16 +244,16 @@ class StructurelessCalibrationDialog(QObject):
 
     def load_tree_view_mapping(self):
         module = hexrdgui.resources.calibration
-        filename = 'structureless_params_tree_view.yml'
+        filename = 'calibration_params_tree_view.yml'
         text = resource_loader.load_resource(module, filename)
-        self.yaml_tree_view = yaml.safe_load(text)
+        self.tree_view_mapping = yaml.safe_load(text)
 
     @property
     def tree_view_dict_of_params(self):
         params_dict = self.params_dict
 
         tree_dict = {}
-        template_dict = copy.deepcopy(self.yaml_tree_view)
+        template_dict = copy.deepcopy(self.tree_view_mapping)
 
         # Keep track of which params have been used.
         used_params = []
@@ -335,19 +337,8 @@ class StructurelessCalibrationDialog(QObject):
             det = det_key.replace('-', '_')
             recursively_format_det(det, this_config, this_template)
 
-        # Now make the debye scherrer ring means
-        key = 'Debye-Scherrer ring means'
-        template = 'DS_ring_{i}'
-        i = 0
-        current = template.format(i=i)
-        while current in params_dict:
-            param = params_dict[current]
-            # Wait to create this dict until now
-            # (when we know that we have at least one parameter)
-            this_dict = tree_dict.setdefault(key, {})
-            this_dict[i + 1] = create_param_item(param)
-            i += 1
-            current = template.format(i=i)
+        if self.format_extra_params_func is not None:
+            self.format_extra_params_func(params_dict, tree_dict, create_param_item)
 
         # Now all keys should have been used. Verify this is true.
         if sorted(used_params) != sorted(list(params_dict)):

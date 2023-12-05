@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.fitting.calibration import StructureLessCalibrator
 
+from hexrdgui.calibration.calibration_dialog import CalibrationDialog
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
@@ -22,7 +23,6 @@ from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
-from .calibration_dialog import StructurelessCalibrationDialog
 from .picks_io import load_picks_from_file, save_picks_to_file
 
 
@@ -226,14 +226,31 @@ class StructurelessCalibrationRunner(QObject):
         # Round the calibrator numbers to 3 decimal places
         self.round_param_numbers(3)
 
+        def format_extra_params_func(params_dict, tree_dict, create_param_item):
+            # Make the debye scherrer ring means
+            key = 'Debye-Scherrer ring means'
+            template = 'DS_ring_{i}'
+            i = 0
+            current = template.format(i=i)
+            while current in params_dict:
+                param = params_dict[current]
+                # Wait to create this dict until now
+                # (when we know that we have at least one parameter)
+                this_dict = tree_dict.setdefault(key, {})
+                this_dict[i + 1] = create_param_item(param)
+                i += 1
+                current = template.format(i=i)
+
         # Now show the calibration dialog
         kwargs = {
             'instr': self.instr,
             'params_dict': self.calibrator.params,
+            'format_extra_params_func': format_extra_params_func,
             'parent': self.parent,
             'engineering_constraints': engineering_constraints,
+            'window_title': 'Structureless Calibration Dialog',
         }
-        dialog = StructurelessCalibrationDialog(**kwargs)
+        dialog = CalibrationDialog(**kwargs)
 
         self.draw_picks(True)
 
