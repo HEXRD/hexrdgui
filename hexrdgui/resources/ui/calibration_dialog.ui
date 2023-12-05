@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>structureless_calibration_dialog</class>
- <widget class="QDialog" name="structureless_calibration_dialog">
+ <class>calibration_dialog</class>
+ <widget class="QDialog" name="calibration_dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Structureless Calibration Dialog</string>
+   <string>Calibration Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="2" column="1">
@@ -148,7 +148,7 @@
       <item row="0" column="2">
        <widget class="QPushButton" name="load_picks_button">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load picks from a calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to calibration. Other HDF5 files will not work.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Load Picks</string>
@@ -158,7 +158,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="save_picks_button">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a structureless calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to structureless calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save picks to a calibration HDF5 file.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This HDF5 file is special to calibration.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Picks are saved as detector Cartesian coordinates (not as polar coordinates).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Save Picks</string>
