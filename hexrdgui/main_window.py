@@ -1205,6 +1205,7 @@ class MainWindow(QObject):
             labels.append(f'tth = {info["tth"]:8.3f}')
             labels.append(f'eta = {info["eta"]:8.3f}')
             labels.append(f'dsp = {info["dsp"]:8.3f}')
+            labels.append(f'chi = {info["chi"]:8.3f}')
             labels.append(f'Q = {info["Q"]:8.3f}')
             labels.append(f'hkl ({material_name}) = {info["hkl"]}')
 
@@ -1230,6 +1231,7 @@ class MainWindow(QObject):
             labels.append(f'eta = {info["y_data"]:8.3f}')
             labels.append(f'value = {info["intensity"]:8.3f}')
             labels.append(f'dsp = {info["dsp"]:8.3f}')
+            labels.append(f'chi = {info["chi"]:8.3f}')
             labels.append(f'Q = {info["Q"]:8.3f}')
             labels.append(f'hkl ({material_name}) = {info["hkl"]}')
 

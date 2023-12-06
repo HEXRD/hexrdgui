@@ -24,6 +24,7 @@ class OverlayStylePicker(QObject):
         self.overlay = overlay
         self.ui.material_name.setText(overlay.material_name)
 
+        self.ui.range_style_group.setVisible(self.include_ranges)
         self.ui.label_group.setVisible(self.include_labels)
 
         self.setup_labels()
@@ -120,16 +121,18 @@ class OverlayStylePicker(QObject):
 
     def update_gui(self):
         data = self.style['data']
-        ranges = self.style['ranges']
         keys = self.keys
 
         with block_signals(*self.all_widgets):
             self.ui.data_color.setText(data[keys['data_color']])
             self.ui.data_style.setCurrentText(data[keys['data_style']])
             self.ui.data_size.setValue(data[keys['data_size']])
-            self.ui.range_color.setText(ranges[keys['range_color']])
-            self.ui.range_style.setCurrentText(ranges[keys['range_style']])
-            self.ui.range_size.setValue(ranges[keys['range_size']])
+
+            if self.include_ranges:
+                ranges = self.style['ranges']
+                self.ui.range_color.setText(ranges[keys['range_color']])
+                self.ui.range_style.setCurrentText(ranges[keys['range_style']])
+                self.ui.range_size.setValue(ranges[keys['range_size']])
 
             if self.include_labels:
                 labels = self.style['labels']
@@ -142,15 +145,17 @@ class OverlayStylePicker(QObject):
 
     def update_config(self):
         data = self.style['data']
-        ranges = self.style['ranges']
         keys = self.keys
 
         data[keys['data_color']] = self.ui.data_color.text()
         data[keys['data_style']] = self.ui.data_style.currentData()
         data[keys['data_size']] = self.ui.data_size.value()
-        ranges[keys['range_color']] = self.ui.range_color.text()
-        ranges[keys['range_style']] = self.ui.range_style.currentData()
-        ranges[keys['range_size']] = self.ui.range_size.value()
+
+        if self.include_ranges:
+            ranges = self.style['ranges']
+            ranges[keys['range_color']] = self.ui.range_color.text()
+            ranges[keys['range_style']] = self.ui.range_style.currentData()
+            ranges[keys['range_size']] = self.ui.range_size.value()
 
         if self.include_labels:
             labels = self.style['labels']
@@ -189,6 +194,7 @@ class OverlayStylePicker(QObject):
                 OverlayType.powder: self.powder_keys,
                 OverlayType.laue: self.laue_keys,
                 OverlayType.rotation_series: self.rotation_series_keys,
+                OverlayType.const_chi: self.const_chi_keys,
             }
 
         type = self.overlay.type
@@ -228,12 +234,21 @@ class OverlayStylePicker(QObject):
         return self.laue_keys
 
     @property
+    def const_chi_keys(self):
+        return {
+            'data_color': 'c',
+            'data_style': 'ls',
+            'data_size': 'lw',
+        }
+
+    @property
     def labels(self):
         if not hasattr(self, '_labels'):
             self._labels = {
                 OverlayType.powder: self.powder_labels,
                 OverlayType.laue: self.laue_labels,
                 OverlayType.rotation_series: self.rotation_series_labels,
+                OverlayType.const_chi: self.const_chi_labels,
             }
 
         type = self.overlay.type
@@ -258,6 +273,15 @@ class OverlayStylePicker(QObject):
     def rotation_series_labels(self):
         # Same as Laue
         return self.laue_labels
+
+    @property
+    def const_chi_labels(self):
+        # No labels to override
+        return {}
+
+    @property
+    def include_ranges(self):
+        return not self.overlay.is_const_chi
 
     @property
     def include_labels(self):

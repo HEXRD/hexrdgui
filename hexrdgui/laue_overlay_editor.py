@@ -3,13 +3,13 @@ import numpy as np
 
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
 
-from hexrd.rotations import angles_from_rmat_xyz, rotMatOfExpMap
-
 from hexrdgui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays.laue_overlay import LaueLabelType, LaueRangeShape
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals, convert_angle_convention
+from hexrdgui.utils import (
+    block_signals, euler_angles_to_rmat, rmat_to_euler_angles
+)
 
 
 class LaueOverlayEditor:
@@ -183,27 +183,11 @@ class LaueOverlayEditor:
     def sample_rmat(self):
         # Convert to rotation matrix
         angles = [w.value() for w in self.sample_orientation_widgets]
-        old_convention = HexrdConfig().euler_angle_convention
-        if old_convention is not None:
-            angles = np.radians(angles)
-            new_convention = None
-            angles = convert_angle_convention(angles, old_convention,
-                                              new_convention)
-        return rotMatOfExpMap(np.asarray(angles))
+        return euler_angles_to_rmat(angles)
 
     @sample_rmat.setter
     def sample_rmat(self, v):
-        # Convert from rotation matrix
-        xyz = angles_from_rmat_xyz(v)
-        old_convention = {
-            'axes_order': 'xyz',
-            'extrinsic': True,
-        }
-        new_convention = HexrdConfig().euler_angle_convention
-        angles = convert_angle_convention(xyz, old_convention, new_convention)
-        if new_convention is not None:
-            angles = np.degrees(angles)
-
+        angles = rmat_to_euler_angles(v)
         for w, v in zip(self.sample_orientation_widgets, angles):
             w.setValue(v)
 

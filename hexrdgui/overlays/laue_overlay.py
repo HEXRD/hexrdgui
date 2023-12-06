@@ -22,7 +22,7 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 class LaueOverlay(Overlay):
 
     type = OverlayType.laue
-    hkl_data_key = 'spots'
+    hkl_data_key = None
 
     def __init__(self, material_name, crystal_params=None, sample_rmat=None,
                  min_energy=5, max_energy=35, tth_width=None, eta_width=None,

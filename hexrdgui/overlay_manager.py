@@ -61,6 +61,7 @@ class OverlayManager:
     @staticmethod
     def format_type(type):
         types = {
+            OverlayType.const_chi: 'Constant Chi',
             OverlayType.powder: 'Powder',
             OverlayType.laue: 'Laue',
             OverlayType.rotation_series: 'Rotation Series',

@@ -1,3 +1,4 @@
+from hexrdgui.const_chi_overlay_editor import ConstChiOverlayEditor
 from hexrdgui.laue_overlay_editor import LaueOverlayEditor
 from hexrdgui.powder_overlay_editor import PowderOverlayEditor
 from hexrdgui.rotation_series_overlay_editor import RotationSeriesOverlayEditor
@@ -22,6 +23,10 @@ class OverlayEditor:
             RotationSeriesOverlayEditor(self.ui))
         self.ui.rotation_series_overlay_editor_layout.addWidget(
             self.rotation_series_overlay_editor.ui)
+
+        self.const_chi_overlay_editor = ConstChiOverlayEditor(self.ui)
+        self.ui.const_chi_overlay_editor_layout.addWidget(
+            self.const_chi_overlay_editor.ui)
 
         self.ui.tab_widget.tabBar().hide()
 
@@ -59,6 +64,7 @@ class OverlayEditor:
             'powder': self.powder_overlay_editor,
             'laue': self.laue_overlay_editor,
             'rotation_series': self.rotation_series_overlay_editor,
+            'const_chi': self.const_chi_overlay_editor,
         }
 
         if self.type is None or self.type.value not in widgets:

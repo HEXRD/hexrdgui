@@ -213,6 +213,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when overlays were added, removed, or upon type change"""
     overlay_list_modified = Signal()
 
+    """Emitted when the sample tilt is modified"""
+    sample_tilt_modified = Signal()
+
     """Emitted when the loaded images change"""
     recent_images_changed = Signal()
 
@@ -297,6 +300,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.default_cmap = constants.DEFAULT_CMAP
         self._previous_structureless_calibration_picks_data = None
         self.image_mode = constants.ViewType.raw
+        self._sample_tilt = np.asarray([0, 0, 0], float)
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -397,6 +401,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('default_cmap', constants.DEFAULT_CMAP),
             ('custom_polar_tth_distortion_object_serialized', None),
             ('_previous_structureless_calibration_picks_data', None),
+            ('sample_tilt', [0, 0, 0]),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -1951,6 +1956,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def flag_overlay_updates_for_all_materials(self):
         for name in self.materials:
             self.flag_overlay_updates_for_material(name)
+
+    @property
+    def sample_tilt(self):
+        return self._sample_tilt
+
+    @sample_tilt.setter
+    def sample_tilt(self, v):
+        v = np.asarray(v, float)
+        if np.array_equal(v, self.sample_tilt):
+            return
+
+        self._sample_tilt = v
+        self.sample_tilt_modified.emit()
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']

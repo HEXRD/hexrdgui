@@ -149,10 +149,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
     @property
     def calibration_picks_polar(self):
         # Convert from cartesian to polar
-        from hexrdgui.hexrd_config import HexrdConfig
-
-        eta_period = HexrdConfig().polar_res_eta_period
-
         instr = self.instrument
         picks = copy.deepcopy(self.calibration_picks)
         for det_key, det_picks in picks.items():
@@ -164,7 +160,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 det_picks[i] = cart_to_angles(
                     det_picks[i],
                     panel,
-                    eta_period,
+                    self.eta_period,
                 ).tolist()
 
         return picks

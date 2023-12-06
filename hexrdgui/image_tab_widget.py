@@ -8,7 +8,9 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_canvas import ImageCanvas
 from hexrdgui.image_series_toolbar import ImageSeriesToolbar, ImageSeriesInfoToolbar
 from hexrdgui.navigation_toolbar import NavigationToolbar
-from hexrdgui.utils.conversions import stereo_to_angles, tth_to_q
+from hexrdgui.utils.conversions import (
+    angles_to_chi, stereo_to_angles, tth_to_q
+)
 from hexrdgui import utils
 
 
@@ -341,6 +343,7 @@ class ImageTabWidget(QTabWidget):
         if intensity is not None:
 
             iviewer = self.image_canvases[0].iviewer
+            instr = iviewer.instr
 
             if mode in (ViewType.cartesian, ViewType.raw):
                 if mode == ViewType.cartesian:
@@ -348,7 +351,7 @@ class ImageTabWidget(QTabWidget):
                 else:
                     # The title is the name of the detector
                     key = event.inaxes.get_title()
-                    dpanel = iviewer.instr.detectors[key]
+                    dpanel = instr.detectors[key]
 
                 xy_data = dpanel.pixelToCart(np.vstack([i, j]).T)
                 ang_data, gvec = dpanel.cart_to_angles(xy_data)
@@ -360,7 +363,7 @@ class ImageTabWidget(QTabWidget):
                 stereo_size = HexrdConfig().stereo_size
                 tth, eta = stereo_to_angles(
                     ij=np.vstack([j, i]).T,
-                    instr=iviewer.instr,
+                    instr=instr,
                     stereo_size=stereo_size,
                 )
             else:
@@ -374,31 +377,38 @@ class ImageTabWidget(QTabWidget):
             hkl = str(plane_data.getHKLs(asStr=True, allHKLs=True,
                                          thisTTh=tth))
 
+            chi = angles_to_chi(
+                [[tth, eta]],
+                HexrdConfig().sample_tilt,
+                bvec=instr.beam_vector,
+                evec=instr.eta_vector)[0]
+
             info['tth'] = np.degrees(tth)
             info['eta'] = np.degrees(eta)
             info['dsp'] = dsp
             info['hkl'] = hkl
             info['material_name'] = material.name
-            info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
+            info['Q'] = tth_to_q(info['tth'], instr.beam_energy)
+            info['chi'] = chi
         elif mode == ViewType.polar:
             # No intensities in the polar view implies we are in the azimuthal
             # integral plot. Compute Q.
             info['is_lineout'] = True
             info['tth'] = info['x_data']
 
-            iviewer = self.image_canvases[0].iviewer
-            info['Q'] = tth_to_q(info['tth'], iviewer.instr.beam_energy)
+            instr = self.image_canvases[0].iviewer.instr
+            info['Q'] = tth_to_q(info['tth'], instr.beam_energy)
 
         display_detector = (
             intensity is not None and
             mode != ViewType.raw and
-            len(iviewer.instr.detectors) > 1
+            len(instr.detectors) > 1
         )
         if display_detector:
             # If we are not in the raw view and there is more than one
             # detector, then let's also display the detector we are
             # hovering over (if any)
-            det_dict = iviewer.instr.detectors
+            det_dict = instr.detectors
 
             ang_crd = np.radians([[info['tth'], info['eta']]])
             detector_matches = []

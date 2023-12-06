@@ -15,7 +15,9 @@ from PySide6.QtWidgets import QLayout
 
 from hexrd import imageutil
 from hexrd.imageseries.omega import OmegaImageSeries
-from hexrd.rotations import angleAxisOfRotMat, RotMatEuler
+from hexrd.rotations import (
+    angleAxisOfRotMat, angles_from_rmat_xyz, RotMatEuler, rotMatOfExpMap
+)
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 from hexrd.utils.decorators import memoize
 
@@ -82,9 +84,9 @@ def convert_angle_convention(angles, old_convention, new_convention):
         phi, n = angleAxisOfRotMat(rme.rmat)
         angles = (phi * n.flatten()).tolist()
 
-        if new_convention is None:
-            # We are done
-            return angles
+    if new_convention is None:
+        # We are done
+        return angles
 
     # Update to the new mapping
     rme = RotMatEuler(np.zeros(3), **new_convention)
@@ -145,6 +147,7 @@ def run_snip1d(img):
 
     # Call the memoized function
     return _run_snip1d(img, snip_width, numiter, algorithm)
+
 
 @memoize
 def _run_snip1d(img, snip_width, numiter, algorithm):
@@ -524,3 +527,50 @@ def masks_applied_to_panel_buffers(instr):
     finally:
         for det_key, panel in instr.detectors.items():
             panel.panel_buffer = panel_buffers[det_key]
+
+
+def euler_angles_to_rmat(angles):
+    return rotMatOfExpMap(euler_angles_to_exp_map(angles))
+
+
+def rmat_to_euler_angles(rmat):
+    from hexrdgui.hexrd_config import HexrdConfig
+
+    # Convert from exp map parameters
+    xyz = angles_from_rmat_xyz(rmat)
+    old_convention = {
+        'axes_order': 'xyz',
+        'extrinsic': True,
+    }
+    new_convention = HexrdConfig().euler_angle_convention
+    angles = convert_angle_convention(xyz, old_convention, new_convention)
+    if new_convention is not None:
+        angles = np.degrees(angles)
+
+    return angles
+
+
+def euler_angles_to_exp_map(angles):
+    from hexrdgui.hexrd_config import HexrdConfig
+    # Convert to exp map parameters
+    old_convention = HexrdConfig().euler_angle_convention
+    if old_convention is not None:
+        angles = np.radians(angles)
+        new_convention = None
+        angles = convert_angle_convention(angles, old_convention,
+                                          new_convention)
+
+    return np.asarray(angles)
+
+
+def exp_map_to_euler_angles(angles):
+    from hexrdgui.hexrd_config import HexrdConfig
+
+    # Convert from exp map parameters
+    old_convention = None
+    new_convention = HexrdConfig().euler_angle_convention
+    angles = convert_angle_convention(angles, old_convention, new_convention)
+    if new_convention is not None:
+        angles = np.degrees(angles)
+
+    return angles

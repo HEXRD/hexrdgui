@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>548</width>
-    <height>200</height>
+    <height>449</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -62,6 +62,16 @@
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="rotation_series_overlay_editor_layout"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="const_chi_tab">
+      <attribute name="title">
+       <string>Const Chi</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="const_chi_overlay_editor_layout"/>
        </item>
       </layout>
      </widget>
