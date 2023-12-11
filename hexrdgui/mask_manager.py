@@ -16,51 +16,11 @@ from abc import ABC, abstractmethod
 
 class Mask(ABC):
     def __init__(self, mtype='', name='', mask_image=True, show_border=False):
-        self._mask_type = mtype
-        self._name = name
-        self._mask_image = mask_image
-        self._show_border = show_border
-        self._masked_arrays = None
-
-    @property
-    def masked_arrays(self):
-        return self._masked_arrays
-
-    @masked_arrays.setter
-    def masked_arrays(self, arrs):
-        self._masked_arrays = arrs
-
-    @property
-    def mask_type(self):
-        return self._mask_type
-
-    @mask_type.setter
-    def mask_type(self, mtype):
-        self._mask_type = mtype
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, new_name):
-        self._name = new_name
-
-    @property
-    def mask_image(self):
-        return self._mask_image
-
-    @mask_image.setter
-    def mask_image(self, status):
-        self._mask_image = status
-
-    @property
-    def show_border(self):
-        return self._show_border
-
-    @show_border.setter
-    def show_border(self, status):
-        self._show_border = status
+        self.mask_type = mtype
+        self.name = name
+        self.mask_image = mask_image
+        self.show_border = show_border
+        self.masked_arrays = None
 
     # Abstract methods
     @abstractmethod
