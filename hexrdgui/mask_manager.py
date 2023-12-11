@@ -7,7 +7,7 @@ from hexrdgui.create_raw_mask import (
     apply_threshold_mask, convert_polar_to_raw, create_raw_mask
 )
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.mask_compatability import load_old_mask_file
+from hexrdgui.mask_compatability import load_masks_v1_to_v2
 from hexrdgui.singletons import Singleton
 from hexrdgui.utils import unique_name
 
@@ -234,7 +234,7 @@ class MaskManager(metaclass=Singleton):
         self.masks.pop(name)
 
     def write_all_masks(self, h5py_group=None):
-        d = {}
+        d = { '_version': 2 }
         for name, mask_info in self.masks:
             d[name] = mask_info.serialize()
         if h5py_group:
@@ -250,10 +250,7 @@ class MaskManager(metaclass=Singleton):
 
     def load_masks(self, h5py_group):
         # TODO: Handle case of detector name mismatch (loading wrong mask file)
-        items = h5py_group.items()
-        if '_visible' in h5py_group.values():
-            # This is a file using the old format
-            items = load_old_mask_file(h5py_group)
+        items = load_masks_v1_to_v2(h5py_group)
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
         for key, data in items:
