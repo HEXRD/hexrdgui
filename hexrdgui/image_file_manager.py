@@ -2,10 +2,9 @@ import glob
 import os
 import numpy as np
 import tempfile
+import traceback
 import yaml
 import h5py
-
-from PySide6.QtWidgets import QMessageBox
 
 from hexrd import imageseries
 
@@ -53,9 +52,12 @@ class ImageFileManager(metaclass=Singleton):
                     f = f[0]
                 ims = self.open_file(f, options)
                 HexrdConfig().imageseries_dict[name] = ims
-            except (Exception, IOError) as error:
-                msg = ('ERROR - Could not read file: \n' + str(error))
-                QMessageBox.warning(None, 'HEXRD', msg)
+            except (Exception, IOError):
+                exc_str = traceback.format_exc()
+                msg = f'ERROR - Could not read file: \n{exc_str}'
+                HexrdConfig().logger.critical(msg)
+                # Since this is a non-gui thread, we can't use QMessageBox
+                # here, or we will have a segmentation fault.
                 return
 
         # Save the path if it should be remembered
