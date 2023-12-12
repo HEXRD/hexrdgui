@@ -56,16 +56,19 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         return files, manual
 
     def check_success(self, files):
-        detectors = HexrdConfig().detector_names
+        dets = HexrdConfig().detector_names
+        groups = [HexrdConfig().detector_roi_group(d) for d in dets]
+        groups = [g for g in groups if g is not None]
+        options = [*dets, *groups]
         # Make sure there are the same number of files for each detector
         # and at least one file per detector
         if (not files[0]
-                or len(files) != len(detectors)
+                or len(files) != len(dets)
                 or any(len(files[0]) != len(elem) for elem in files)):
             return False
-        # If the files do not contain detector names they will need to
-        # be manually matched
-        return all(any(d in f for d in detectors) for f in files[0])
+        # If the files do not contain detector or group names they will need
+        # to be manually matched
+        return all(any(o in f for o in options) for f in files[0])
 
     def explict_selection(self, fnames):
         # Assume the user has selected all of the files they would like to load
@@ -84,20 +87,23 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
     def match_files(self, fnames):
         dets = HexrdConfig().detector_names
+        groups = [HexrdConfig().detector_roi_group(d) for d in dets]
+        groups = [g for g in groups if g is not None]
+        options = [*dets, *groups]
         # Look for files that match everything except detector name
         # ex: /home/user/images/Ruby_line_ff_000017_ge1.npz becomes
         # /home/user/images/Ruby_line_ff_000017_*.npz
         search = []
         for f in fnames:
             path, fname = os.path.split(f)
-            files = [det for det in dets if det in fname]
+            files = [option for option in options if option in fname]
             if not files:
                 search.append('/'.join([path, fname]))
             else:
-                for d in dets:
-                    next_file = d.join(fname.rsplit(files[0]))
+                for o in options:
+                    next_file = o.join(fname.rsplit(files[0]))
                     search.append('/'.join([path, next_file]))
-        files = self.match_selected_files(fnames, search)
+        files = self.match_selected_files(options, set(search))
         if not self.check_success(files):
             # Look in sibling directories if the matching files were not
             # found in the current directory.
@@ -106,10 +112,10 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                 directory = os.path.basename(os.path.dirname(f))
                 for d in dets:
                     revised_search.append(d.join(f.split(directory)))
-            files = self.match_selected_files(fnames, revised_search)
+            files = self.match_selected_files(options, revised_search)
         return files
 
-    def match_selected_files(self, fnames, search):
+    def match_selected_files(self, options, search):
         dets = HexrdConfig().detector_names
         files = [[] for i in range(len(dets))]
         results = [f for f in search if glob.glob(f, recursive=True)]
@@ -117,13 +123,14 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         if results:
             for fname in [fname for f in results for fname in f]:
                 path, f = os.path.split(fname)
-                matches = [i for i, det in enumerate(dets) if det in f]
+                matches = [i for i, op in enumerate(options) if op in f]
                 if not matches:
                     root, dirs = os.path.split(path)
-                    matches = [i for i, det in enumerate(dets) if det in dirs]
+                    matches = [i for i, op in enumerate(options) if op in dirs]
                 if len(matches):
-                    idx = matches[0]
-                    files[idx].append('/'.join([path, f]))
+                    for m in matches:
+                        idx = m % len(dets)
+                        files[idx].append('/'.join([path, f]))
         return files
 
     def read_data(self, files=None, data=None, ui_parent=None, **kwargs):

@@ -1555,8 +1555,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def is_roi_instrument_config(self):
         for det in HexrdConfig().detectors.values():
             if det.get('pixels', {}).get('roi', {}).get('value'):
-                 return True
+                return True
         return False
+
+    def detector_roi_group(self, detector_name):
+        if self.is_roi_instrument_config:
+            det = self.detector(detector_name)
+            return det.get('group', {}).get('value')
 
     def detector_pixel_size(self, detector_name):
         detector = self.detector(detector_name)
