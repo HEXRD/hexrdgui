@@ -44,6 +44,14 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     def thread_pool(self):
         return QThreadPool.globalInstance()
 
+    @property
+    def naming_options(self):
+        dets = HexrdConfig().detector_names
+        if HexrdConfig().is_roi_instrument_config:
+            groups = [HexrdConfig().detector_group(d) for d in dets]
+            dets.extend([g for g in groups if g is not None])
+        return dets
+
     def load_images(self, fnames):
         files = self.explict_selection(fnames)
         manual = False
@@ -57,9 +65,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
     def check_success(self, files):
         dets = HexrdConfig().detector_names
-        groups = [HexrdConfig().detector_group(d) for d in dets]
-        groups = [g for g in groups if g is not None]
-        options = [*dets, *groups]
+        options = self.naming_options
         # Make sure there are the same number of files for each detector
         # and at least one file per detector
         if (not files[0]
@@ -87,9 +93,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
     def match_files(self, fnames):
         dets = HexrdConfig().detector_names
-        groups = [HexrdConfig().detector_group(d) for d in dets]
-        groups = [g for g in groups if g is not None]
-        options = [*dets, *groups]
+        options = self.naming_options
         # Look for files that match everything except detector name
         # ex: /home/user/images/Ruby_line_ff_000017_ge1.npz becomes
         # /home/user/images/Ruby_line_ff_000017_*.npz
