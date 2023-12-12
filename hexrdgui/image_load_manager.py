@@ -57,7 +57,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
     def check_success(self, files):
         dets = HexrdConfig().detector_names
-        groups = [HexrdConfig().detector_roi_group(d) for d in dets]
+        groups = [HexrdConfig().detector_group(d) for d in dets]
         groups = [g for g in groups if g is not None]
         options = [*dets, *groups]
         # Make sure there are the same number of files for each detector
@@ -87,7 +87,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
     def match_files(self, fnames):
         dets = HexrdConfig().detector_names
-        groups = [HexrdConfig().detector_roi_group(d) for d in dets]
+        groups = [HexrdConfig().detector_group(d) for d in dets]
         groups = [g for g in groups if g is not None]
         options = [*dets, *groups]
         # Look for files that match everything except detector name
