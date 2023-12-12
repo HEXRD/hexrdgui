@@ -18,6 +18,7 @@ class LoadImagesDialog:
         self.ui = loader.load_file('load_images_dialog.ui', parent)
         self.manual_assign = manual_assign
         self.using_roi = HexrdConfig().is_roi_instrument_config
+        self.orignal_file_names = [f for i in image_files for f in i]
 
         self.setup_connections()
         self.setup_state()
@@ -171,9 +172,11 @@ class LoadImagesDialog:
             results.setdefault(detector, [])
 
             if isinstance(table.item(i, 2), QTableWidgetItem):
-                results[detector].append(table.item(i, 2).text())
+                fp = table.item(i, 2).text()
             else:
-                results[detector].append(table.cellWidget(i, 2).currentText())
+                fp = table.cellWidget(i, 2).currentText()
+            fp = [f for f in self.orignal_file_names if fp in f][0]
+            results[detector].append(fp)
 
             idx = table.cellWidget(i, 1).currentIndex()
             det_idx = i
