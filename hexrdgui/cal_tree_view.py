@@ -111,6 +111,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         non_editable_keys = (
             'detector_type',
+            'group',
         )
 
         non_editable_parent_keys = (
