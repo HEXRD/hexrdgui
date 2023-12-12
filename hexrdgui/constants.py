@@ -111,3 +111,14 @@ KNOWN_DETECTOR_NAMES = {
 KEY_ROTATE_ANGLE_FINE = 0.00175
 KEY_ROTATE_ANGLE_COARSE = 0.01
 KEY_TRANSLATE_DELTA = 0.5
+
+
+TRANSFORM_OPTIONS = [
+    "None",
+    "Mirror about Vertical",
+    "Mirror about Horizontal",
+    "Transpose",
+    "Rotate 90°",
+    "Rotate 180°",
+    "Rotate 270°"
+]

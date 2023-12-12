@@ -111,6 +111,11 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         non_editable_keys = (
             'detector_type',
+            'group',
+        )
+
+        non_editable_parent_keys = (
+            'roi',
         )
 
         # The second and third columns with no children are editable
@@ -118,7 +123,8 @@ class CalTreeItemModel(BaseTreeItemModel):
             index.column() == STATUS_COL or
             (index.column() == VALUE_COL and
              item.child_count() == 0 and
-             item.data(KEY_COL) not in non_editable_keys)
+             item.data(KEY_COL) not in non_editable_keys and
+             item.parent_item.data(KEY_COL) not in non_editable_parent_keys)
         )
 
         if editable:

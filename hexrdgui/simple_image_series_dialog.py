@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 from hexrdgui.constants import (
     MAXIMUM_OMEGA_RANGE, UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE,
     UI_AGG_INDEX_NONE, UI_TRANS_INDEX_NONE, YAML_EXTS)
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
@@ -287,10 +288,18 @@ class SimpleImageSeriesDialog(QObject):
             if ImageFileManager().path_prompt(selected_files[0]) is None:
                 return
 
+        # This is only really used for the ROI cases, where we
+        # might have multiple detectors per file.
+        # It just makes this block of code run faster.
+        already_opened = {}
+
         tmp_ims = []
         for img in selected_files:
             if self.ext not in YAML_EXTS:
-                tmp_ims.append(ImageFileManager().open_file(img))
+                if img not in already_opened:
+                    already_opened[img] = ImageFileManager().open_file(img)
+
+                tmp_ims.append(already_opened[img])
 
         self.find_images(selected_files)
 
@@ -328,6 +337,28 @@ class SimpleImageSeriesDialog(QObject):
                     self.omega_max.append(0.25)
                 self.nsteps.append(len(ims))
 
+        self.add_roi_to_state()
+
+    def add_roi_to_state(self):
+        if 'rect' in self.state:
+            del self.state['rect']
+
+        # We will not have an ROI most of the time. Perform
+        # a quick check for an ROI, and if we have one, proceed
+        # to add the rectangle info.
+        has_roi = HexrdConfig().is_roi_instrument_config
+
+        if not has_roi:
+            # No need to proceed further
+            return
+
+        rect_dict = {}
+        instr = create_hedm_instrument()
+        for det_key, panel in instr.detectors.items():
+            rect_dict[det_key] = panel.roi
+
+        self.state['rect'] = rect_dict
+
     def get_omega_data(self, ims):
         minimum = ims.metadata['omega'][0][0]
         maximum = ims.metadata['omega'][-1][1]
@@ -353,8 +384,10 @@ class SimpleImageSeriesDialog(QObject):
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
+        using_roi = HexrdConfig().is_roi_instrument_config
 
-        if len(self.files) % len(HexrdConfig().detector_names) != 0:
+        if (not using_roi and
+                len(self.files) % len(HexrdConfig().detector_names) != 0):
             msg = ('Please select at least one file for each detector.')
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             self.files = []
@@ -366,13 +399,11 @@ class SimpleImageSeriesDialog(QObject):
                 self.reset_data()
                 return
 
-            detector_names, files = dialog.results()
-            image_files = [img for f in self.files for img in f]
+            results = dialog.results()
             # Make sure files are matched to selected detector
-            self.files = [[] for det in HexrdConfig().detector_names]
-            for d, f in zip(detector_names, image_files):
-                pos = HexrdConfig().detector_names.index(d)
-                self.files[pos].append(f)
+            self.files = []
+            for det in HexrdConfig().detector_names:
+                self.files.append(results[det])
 
         self.dir_changed()
 
