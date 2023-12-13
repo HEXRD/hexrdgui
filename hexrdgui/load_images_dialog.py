@@ -18,7 +18,7 @@ class LoadImagesDialog:
         loader = UiLoader()
         self.ui = loader.load_file('load_images_dialog.ui', parent)
         self.manual_assign = manual_assign
-        self.using_roi = HexrdConfig().is_roi_instrument_config
+        self.using_roi = HexrdConfig().instrument_has_roi
         self.orignal_file_names = [f for i in image_files for f in i]
 
         self.setup_connections()

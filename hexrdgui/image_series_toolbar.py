@@ -56,17 +56,16 @@ class ImageSeriesInfoToolbar(QWidget):
 
 class ImageSeriesToolbar(QWidget):
 
-    def __init__(self, name, parent=None):
+    def __init__(self, ims, parent=None):
         super().__init__(parent)
 
-        self.ims = HexrdConfig().imageseries(name)
+        self.ims = ims
         self.slider = None
         self.frame = None
         self.layout = None
         self.widget = None
 
         self.show = False
-        self.name = name
 
         self.create_widget()
         self.set_range()
@@ -132,15 +131,13 @@ class ImageSeriesToolbar(QWidget):
         self.update_omega_label_text()
 
     def update_range(self, current_tab):
-        self.ims = HexrdConfig().imageseries(self.name)
         self.set_range(current_tab)
 
         if self.slider.value() != HexrdConfig().current_imageseries_idx:
             self.val_changed(self.slider.value())
 
-    def update_name(self, name):
-        if not name == self.name:
-            self.name = name
+    def update_ims(self, ims):
+        self.ims = ims
 
     def set_visible(self, b=False):
         self.widget.setVisible(b and len(self.ims)>1)

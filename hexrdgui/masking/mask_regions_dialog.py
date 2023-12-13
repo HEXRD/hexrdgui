@@ -206,6 +206,12 @@ class MaskRegionsDialog(QObject):
             print('Masking must be done in raw or polar view')
             return
 
+        if HexrdConfig().stitch_raw_roi_images:
+            print('Ellipse/rectangle masks do not yet support drawing on a '
+                  'stitched raw view. Please switch to an unstitched view to '
+                  'draw the masks.')
+            return
+
         if not self.axes:
             return
 

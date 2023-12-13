@@ -15,7 +15,8 @@ from hexrdgui.utils.conversions import (
 class ConstChiOverlay(Overlay):
 
     type = OverlayType.const_chi
-    hkl_data_key = 'data'
+    data_key = 'data'
+    ranges_key = None
 
     def __init__(self, material_name, chi_values=None, tvec=None,
                  chi_values_serialized=None, **overlay_kwargs):
@@ -106,7 +107,10 @@ class ConstChiOverlay(Overlay):
     def generate_overlay(self):
         instr = self.instrument
 
-        data = {}
+        data = {
+            det_key: {'data': [], 'chi': []}
+            for det_key in instr.detectors
+        }
         for chi_value in self.chi_values:
             if not chi_value.visible:
                 continue
@@ -115,18 +119,15 @@ class ConstChiOverlay(Overlay):
             result = generate_ring_points_chi(chi, self.sample_tilt, instr)
 
             for det_key, xys in result.items():
-                data.setdefault(det_key, [])
                 if len(xys) == 0:
                     continue
 
                 # Convert to the display mode
                 pts = self.cart_to_display_mode(xys, instr, det_key)
 
-                data[det_key].append({
-                    'chi': chi,
-                    # Add a nans row so they can be combined easier for drawing
-                    'data': np.vstack([pts, nans_row]),
-                })
+                data[det_key]['chi'].append(chi)
+                # Add a nans row so they can be combined easier for drawing
+                data[det_key]['data'].append(np.vstack([pts, nans_row]))
 
         return data
 

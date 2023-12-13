@@ -346,7 +346,7 @@ class SimpleImageSeriesDialog(QObject):
         # We will not have an ROI most of the time. Perform
         # a quick check for an ROI, and if we have one, proceed
         # to add the rectangle info.
-        has_roi = HexrdConfig().is_roi_instrument_config
+        has_roi = HexrdConfig().instrument_has_roi
 
         if not has_roi:
             # No need to proceed further
@@ -384,7 +384,7 @@ class SimpleImageSeriesDialog(QObject):
 
     def find_images(self, fnames):
         self.files, manual = ImageLoadManager().load_images(fnames)
-        using_roi = HexrdConfig().is_roi_instrument_config
+        using_roi = HexrdConfig().instrument_has_roi
 
         if (not using_roi and
                 len(self.files) % len(HexrdConfig().detector_names) != 0):

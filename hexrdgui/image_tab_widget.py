@@ -107,9 +107,31 @@ class ImageTabWidget(QTabWidget):
         self.update_canvas_norms()
         self.tabBar().hide()
 
+    @property
+    def using_stitched_images(self):
+        return (
+            HexrdConfig().image_mode == ViewType.raw and
+            HexrdConfig().stitch_raw_roi_images
+        )
+
     def update_image_names(self):
-        if self.image_names != list(HexrdConfig().imageseries_dict.keys()):
-            self.image_names = list(HexrdConfig().imageseries_dict.keys())
+        if self.using_stitched_images:
+            # The image names will be the detector group names
+            image_names = HexrdConfig().detector_group_names
+        else:
+            image_names = list(HexrdConfig().imageseries_dict.keys())
+
+        self.image_names = image_names
+
+    def ims_for_name(self, name):
+        if self.using_stitched_images:
+            # The name is a "group" name.
+            # Just return the first ims that matches.
+            for det_key in HexrdConfig().detectors:
+                if HexrdConfig().detector_group(det_key) == name:
+                    name = det_key
+
+        return HexrdConfig().imageseries(name)
 
     def load_images(self):
         self.update_image_names()
@@ -159,8 +181,8 @@ class ImageTabWidget(QTabWidget):
             idx = len(self.toolbars)
             tb = NavigationToolbar(self.image_canvases[idx], parent, False)
             # Current detector
-            name = self.image_names[idx]
-            sb = ImageSeriesToolbar(name, self)
+            ims = self.ims_for_name(self.image_names[idx])
+            sb = ImageSeriesToolbar(ims, self)
             ib = ImageSeriesInfoToolbar(self)
 
             # This will put it at the bottom of the central widget
@@ -191,7 +213,8 @@ class ImageTabWidget(QTabWidget):
     def update_ims_toolbar(self):
         idx = self.current_index
         if self.toolbars:
-            self.toolbars[idx]['sb'].update_name(self.image_names[idx])
+            ims = self.ims_for_name(self.image_names[idx])
+            self.toolbars[idx]['sb'].update_ims(ims)
             self.toolbars[idx]['sb'].update_range(True)
 
     def toggle_off_toolbar(self):
@@ -314,6 +337,30 @@ class ImageTabWidget(QTabWidget):
             'mode': mode
         }
 
+        # These get modified when we perform stitching, so keep
+        # the raw versions around.
+        raw_xy_data = [event.xdata, event.ydata]
+        stitched = (
+            mode == ViewType.raw and
+            event.inaxes.get_images() and
+            HexrdConfig().stitch_raw_roi_images
+        )
+        if stitched:
+            # Convert the xdata and ydata to subpanel coordinates
+            canvas = self.active_canvas
+            group = event.inaxes.get_title()
+            ij = [event.ydata, event.xdata]
+            result = canvas.iviewer.stitched_to_raw(ij, group)
+            if result:
+                det_key = next(iter(result))
+                info['x_data'] = result[det_key][0][1]
+                info['y_data'] = result[det_key][0][0]
+            else:
+                # The mouse wasn't hovering over a subpanel
+                self.clear_mouse_position.emit()
+                return
+
+
         # TODO: we are currently calculating the pixel intensity
         # mathematically, because I couldn't find any other way
         # to obtain it. If we find a better way, let's do it.
@@ -322,7 +369,7 @@ class ImageTabWidget(QTabWidget):
             # Image was created with imshow()
             artist = event.inaxes.get_images()[0]
 
-            i, j = utils.coords2index(artist, info['x_data'], info['y_data'])
+            i, j = utils.coords2index(artist, *raw_xy_data)
             try:
                 intensity = artist.get_array().data[i, j]
             except IndexError:
@@ -348,6 +395,8 @@ class ImageTabWidget(QTabWidget):
             if mode in (ViewType.cartesian, ViewType.raw):
                 if mode == ViewType.cartesian:
                     dpanel = iviewer.dpanel
+                elif stitched:
+                    dpanel = instr.detectors[det_key]
                 else:
                     # The title is the name of the detector
                     key = event.inaxes.get_title()
@@ -401,7 +450,7 @@ class ImageTabWidget(QTabWidget):
 
         display_detector = (
             intensity is not None and
-            mode != ViewType.raw and
+            (mode != ViewType.raw or stitched) and
             len(instr.detectors) > 1
         )
         if display_detector:

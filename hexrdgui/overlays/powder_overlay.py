@@ -18,7 +18,9 @@ from hexrdgui.utils.conversions import (
 class PowderOverlay(Overlay, PolarDistortionObject):
 
     type = OverlayType.powder
-    hkl_data_key = 'rings'
+    data_key = 'rings'
+    ranges_key = 'rbnds'
+    ranges_indices_key = 'rbnd_indices'
 
     def __init__(self, material_name, tvec=None, eta_steps=360,
                  tth_distortion_type=None, tth_distortion_kwargs=None,

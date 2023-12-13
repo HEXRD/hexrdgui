@@ -15,7 +15,8 @@ from hexrdgui.utils.conversions import angles_to_stereo
 class RotationSeriesOverlay(Overlay):
 
     type = OverlayType.rotation_series
-    hkl_data_key = 'data'
+    data_key = 'data'
+    ranges_key = 'ranges'
 
     def __init__(self, material_name, crystal_params=None, eta_ranges=None,
                  ome_ranges=None, ome_period=None, aggregated=True,
