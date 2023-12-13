@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle
 from matplotlib.ticker import AutoLocator, FuncFormatter
@@ -149,32 +150,172 @@ class ImageCanvas(FigureCanvas):
             # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
             self.mode = ViewType.raw
-            images_dict = self.scaled_image_dict
 
             # This will be used for drawing the rings
             self.iviewer = raw_iviewer()
+            images_dict = self.scaled_image_dict
 
-            cols = 1
-            if len(image_names) > 1:
-                cols = 2
+            instr = self.iviewer.instr
 
-            rows = math.ceil(len(image_names) / cols)
+            img_shape = next(iter(images_dict.values())).shape
+            for img in images_dict.values():
+                if img.shape != img_shape:
+                    msg = (
+                        'We currently only support uniform subpanels for ROI. '
+                        'Please contact HEXRDGUI developers.'
+                    )
+                    raise Exception(msg)
+            data_aspect = img_shape[0] / img_shape[1]
 
-            for i, name in enumerate(image_names):
-                img = images_dict[name]
-                axis = self.figure.add_subplot(rows, cols, i + 1)
-                axis.set_title(name)
-                kwargs = {
-                    'X': img,
-                    'cmap': self.cmap,
-                    'norm': self.norm,
-                    'interpolation': 'none',
+            # Gather detectors by group
+            groups = {}
+            for det_key, panel in instr.detectors.items():
+                groups.setdefault(panel.group, []).append(det_key)
+
+            # Arrange them in rows/columns
+            group_info = {}
+            for group, det_keys in groups.items():
+                row_starts = []
+                col_starts = []
+                for det_key in det_keys:
+                    panel = instr.detectors[det_key]
+                    if panel.roi[0][0] not in row_starts:
+                        row_starts.append(panel.roi[0][0])
+                    if panel.roi[1][0] not in col_starts:
+                        col_starts.append(panel.roi[1][0])
+
+                row_starts.sort()
+                col_starts.sort()
+                arrangement = []
+                for i, r_start in enumerate(row_starts):
+                    col = []
+                    for j, c_start in enumerate(col_starts):
+                        for det_key in det_keys:
+                            panel = instr.detectors[det_key]
+                            if (r_start == panel.roi[0][0] and
+                                    c_start == panel.roi[1][0]):
+                                col.append(det_key)
+                                break
+
+                    arrangement.append(col)
+
+                group_info[group] = {
+                    'num_rows': len(row_starts),
+                    'num_cols': len(col_starts),
+                    'arrangement': arrangement,
                 }
-                self.axes_images.append(axis.imshow(**kwargs))
-                axis.autoscale(False)
-                self.raw_axes[name] = axis
 
-            self.figure.tight_layout()
+            def compute_rows_cols(num):
+                cols = 1
+                if num > 1:
+                    cols = 2
+
+                rows = math.ceil(num / cols)
+                return rows, cols
+
+
+            def compute_extents(x, groups, data_aspect, figure_aspect=1, h_margin=0.05):
+                rows, cols = compute_rows_cols(len(groups))
+
+                idx = groups.index(x)
+                row = idx // cols
+                col = idx % cols
+
+                left = col / cols + h_margin
+                right = (col + 1) / cols - h_margin
+
+                print(f'{data_aspect=} {figure_aspect=}')
+                v_margin = (-data_aspect * figure_aspect * (right - left) - row / rows + (row + 1) / rows) / 2
+                top = 1 - (row / rows + v_margin)
+                bottom = 1 - ((row + 1) / rows - v_margin)
+                return left, right, top, bottom
+
+
+            self.figure.set_tight_layout(False)
+            figure_shape = self.figure.get_size_inches()
+            figure_aspect = figure_shape[0] / figure_shape[1]
+
+            group_axes = {}
+            grid_specs = {}
+            for group in groups:
+                group_axes[group] = []
+                left, right, top, bottom = compute_extents(group, list(groups), data_aspect, figure_aspect)
+                rows = group_info[group]['num_rows']
+                cols = group_info[group]['num_cols']
+                arrangement = group_info[group]['arrangement']
+
+                gs = GridSpec(rows, cols)
+                gs.update(left=left, right=right, top=top, bottom=bottom, wspace=0, hspace=0)
+
+                # Add a ghost axis for the title
+                ghost_axis = self.figure.add_subplot(gs[:])
+                ghost_axis.axis('off')
+                ghost_axis.set_title(group)
+                group_axes[group].append(ghost_axis)
+
+                for row in range(rows):
+                    for col in range(cols):
+                        det_key = arrangement[row][col]
+                        img = images_dict[det_key]
+
+                        ax = self.figure.add_subplot(gs[row, col])
+                        ax.set_title(det_key)
+                        ax.title.set_visible(False)
+
+                        kwargs = {
+                            'X': img,
+                            'cmap': self.cmap,
+                            'norm': self.norm,
+                            'interpolation': 'none',
+                        }
+                        self.axes_images.append(ax.imshow(**kwargs))
+
+                        ax.label_outer()
+                        if row != 0:
+                            # Hide the last y tick (so we don't overlap with a neighbor)
+                            ax.yaxis.get_major_ticks()[-1].label1.set_visible(False)
+                        if col != cols - 1:
+                            # Hide the last x tick (so we don't overlap with a neighbor)
+                            ax.xaxis.get_major_ticks()[-1].label1.set_visible(False)
+                        if col != 0:
+                            ax.tick_params(left=False)
+
+                        ax.autoscale(False)
+                        self.raw_axes[det_key] = ax
+                        group_axes[group].append(ax)
+
+                grid_specs[group] = gs
+
+            def on_resize(event):
+                size = self.figure.get_size_inches()
+                figure_aspect = size[0] / size[1]
+                print(f'{figure_aspect}')
+                for group, gs in grid_specs.items():
+                    left, right, top, bottom = compute_extents(group, list(groups), data_aspect, figure_aspect)
+                    gs.update(left=left, right=right, top=top, bottom=bottom)
+
+
+            self.mpl_connect('resize_event', on_resize)
+
+            #cols = 1
+            #if len(image_names) > 1:
+            #    cols = 2
+
+            #rows = math.ceil(len(image_names) / cols)
+
+            #for i, name in enumerate(image_names):
+            #    img = images_dict[name]
+            #    axis = self.figure.add_subplot(rows, cols, i + 1)
+            #    axis.set_title(name)
+            #    kwargs = {
+            #        'X': img,
+            #        'cmap': self.cmap,
+            #        'norm': self.norm,
+            #        'interpolation': 'none',
+            #    }
+            #    self.axes_images.append(axis.imshow(**kwargs))
+            #    axis.autoscale(False)
+            #    self.raw_axes[name] = axis
         else:
             images_dict = self.scaled_image_dict
             for i, name in enumerate(image_names):
