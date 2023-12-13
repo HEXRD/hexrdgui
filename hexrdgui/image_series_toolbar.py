@@ -1,7 +1,7 @@
 from pathlib import Path
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QFontMetrics, QPixmap
 from hexrdgui import resource_loader
 
 import hexrdgui.resources.icons
@@ -88,6 +88,15 @@ class ImageSeriesToolbar(QWidget):
         self.omega_label = QLabel(self.parent())
         self.omega_label.setVisible(False)
 
+        # Compute the text width for the maximum size label we will have
+        # with the current font, and set the label width to be fixed at
+        # this width. This will prevent the slider from shifting around
+        # while we are sliding.
+        metrics = QFontMetrics(QCoreApplication.instance().font())
+        example_label_text = omega_label_text(359.999, 359.999)
+        text_width = metrics.boundingRect(example_label_text).width()
+        self.omega_label.setFixedWidth(text_width)
+
         self.layout = QGridLayout(self.widget)
         self.layout.addWidget(self.slider, 0, 0, 1, 9)
         self.layout.addWidget(self.frame, 0, 9, 1, 1)
@@ -153,9 +162,11 @@ class ImageSeriesToolbar(QWidget):
         if not enable:
             return
 
-        ome_min, ome_max = ome_range
-        # We will display 6 digits at most, because omegas go up to 360
-        # degrees (so up to 3 digits before the decimal place), and we
-        # will always show at least 3 digits after the decimal place.
-        text = f'  Omega range: [{ome_min:.6g}°, {ome_max:.6g}°]'
-        self.omega_label.setText(text)
+        self.omega_label.setText(omega_label_text(*ome_range))
+
+
+def omega_label_text(ome_min, ome_max):
+    # We will display 6 digits at most, because omegas go up to 360
+    # degrees (so up to 3 digits before the decimal place), and we
+    # will always show at least 3 digits after the decimal place.
+    return f'  Omega range: [{ome_min:.6g}°, {ome_max:.6g}°]'
