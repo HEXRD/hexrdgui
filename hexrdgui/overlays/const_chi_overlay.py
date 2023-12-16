@@ -18,11 +18,16 @@ class ConstChiOverlay(Overlay):
     hkl_data_key = 'data'
 
     def __init__(self, material_name, chi_values=None, tvec=None,
-                 **overlay_kwargs):
+                 chi_values_serialized=None, **overlay_kwargs):
+        # chi_values_serialized is only used if chi_values is None.
+        # It is used for state loading.
         Overlay.__init__(self, material_name, **overlay_kwargs)
 
         if chi_values is None:
-            chi_values = []
+            if chi_values_serialized is not None:
+                chi_values = chi_values_serialized
+            else:
+                chi_values = []
 
         if tvec is None:
             tvec = constants.zeros_3.copy()
