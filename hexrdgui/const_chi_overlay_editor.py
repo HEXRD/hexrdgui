@@ -1,6 +1,6 @@
 import re
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, QTimer, Qt, Signal
 from PySide6.QtGui import QCursor, QKeyEvent
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QMenu, QSpinBox,
@@ -149,7 +149,11 @@ class ConstChiOverlayEditor(QObject):
 
         # The ConstChiOverlay might sort or remove duplicate chi values.
         # So we should update the GUI in case that happened.
-        self.update_gui()
+        # We need to do this on the next iteration of the event loop
+        # to avoid the following error message:
+        # QAbstractItemView::closeEditor called with an editor that does
+        # not belong to this view
+        QTimer.singleShot(0, self.update_gui)
 
     def euler_angle_convention_changed(self):
         self.update_gui()
