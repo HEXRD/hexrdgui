@@ -26,7 +26,7 @@ from hexrdgui.config_dialog import ConfigDialog
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.cal_tree_view import CalTreeView
-from hexrdgui.hand_drawn_mask_dialog import HandDrawnMaskDialog
+from hexrdgui.masking.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrdgui.image_stack_dialog import ImageStackDialog
 from hexrdgui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrdgui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
