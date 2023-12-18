@@ -1,15 +1,21 @@
 import math
+import numpy as np
+
+from PySide6.QtCore import Signal
+
 from hexrdgui.constants import ViewType
-from hexrdgui.create_polar_mask import (
-    convert_raw_to_polar, create_polar_mask_from_raw
+from hexrdgui.masking.create_polar_mask import (
+    convert_raw_to_polar, create_polar_mask_from_raw, rebuild_polar_masks
 )
-from hexrdgui.create_raw_mask import (
-    apply_threshold_mask, convert_polar_to_raw, create_raw_mask
+from hexrdgui.masking.create_raw_mask import (
+    apply_threshold_mask, convert_polar_to_raw, create_raw_mask, rebuild_raw_masks
 )
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.mask_compatability import load_masks_v1_to_v2
+from hexrdgui.masking.mask_compatability import load_masks_v1_to_v2
 from hexrdgui.singletons import Singleton
 from hexrdgui.utils import unique_name
+
+from hexrd.instrument import unwrap_dict_to_h5
 
 from abc import ABC, abstractmethod
 
@@ -161,9 +167,22 @@ class ThresholdMask(Mask):
 
 
 class MaskManager(metaclass=Singleton):
+    """Emitted when a new raw mask has been created"""
+    raw_masks_changed = Signal()
+
+    """Emitted when a new polar mask has been created"""
+    polar_masks_changed = Signal()
+
+    """Emitted when the masks have changed and the
+    MaskManagerDialog table should be updated"""
+    mask_mgr_dialog_update = Signal()
+
     def __init__(self, view_mode):
         self.masks = {}
         self.view_mode = view_mode
+        self.image_mode = ViewType.raw
+
+        self.setup_connections()
 
     @property
     def visible_masks(self):
@@ -180,6 +199,33 @@ class MaskManager(metaclass=Singleton):
                 return mask
         return None
 
+    @property
+    def mask_names(self):
+        return list(self.masks.keys())
+
+    def setup_connections(self):
+        HexrdConfig().save_state.connect(self.save_state)
+        HexrdConfig().load_state.connect(self.load_state)
+        HexrdConfig().detectors_changed.connect(self.clear_all)
+        HexrdConfig().state_loaded.connect(self.rebuild_masks)
+
+    def image_mode_changed(self, mode):
+        self.image_mode = mode
+
+    def masks_changed(self):
+        if self.image_mode in (ViewType.polar, ViewType.stereo):
+            self.polar_masks_changed.emit()
+        elif self.image_mode == ViewType.raw:
+            self.raw_masks_changed.emit()
+
+    def rebuild_masks(self):
+        if self.image_mode == ViewType.raw:
+            rebuild_raw_masks()
+        elif self.image_mode in (ViewType.polar, ViewType.stereo):
+            rebuild_polar_masks()
+        self.masks_changed()
+        self.mask_mgr_dialog_update.emit()
+
     def add_mask(self, name, data, mtype, mask_image=True, show_border=False):
         # Enforce name uniqueness
         name = unique_name(self.masks.keys(), name)
@@ -192,6 +238,14 @@ class MaskManager(metaclass=Singleton):
 
     def remove_mask(self, name):
         self.masks.pop(name)
+
+    def write_masks_to_group(self, data, h5py_group):
+        unwrap_dict_to_h5(h5py_group, data, asattr=False)
+
+    def write_single_mask(self, name):
+        d = { '_version': 2 }
+        d[name] = self.masks[name].serialize()
+        self.export_masks_to_file(d)
 
     def write_all_masks(self, h5py_group=None):
         d = { '_version': 2 }
@@ -225,14 +279,44 @@ class MaskManager(metaclass=Singleton):
         if not HexrdConfig().loading_state:
             # We're importing masks directly,
             # don't wait for the state loaded signal
-            # FIXME: This is not connected to anything atm
             self.rebuild_masks()
         self.view_mode = actual_view_mode
 
     def load_state(self, h5py_group):
         self.masks = {}
+        self.reset_threshold()
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
+        self.mask_mgr_dialog_update.emit()
 
     def update_view_mode(self, mode):
         self.view_mode = mode
+
+    def update_mask_visibility(self, name, visibility):
+        self.masks[name].mask_image = visibility
+
+    def reset_threshold(self):
+        [m.reset() for m in self.masks if self.mask_type == 'threshold']
+
+    def update_name(self, old_name, new_name):
+        mask = self.masks.pop(old_name)
+        mask.name = new_name
+        self.masks[new_name] = mask
+
+    def masks_to_panel_buffer(self, selection, buff_val):
+        # Set the visible masks as the panel buffer(s)
+        # We must ensure that we are using raw masks
+        for det, mask in HexrdConfig().raw_masks_dict.items():
+            detector_config = HexrdConfig().detector(det)
+            buffer_default = {'status': 0}
+            buffer = detector_config.setdefault('buffer', buffer_default)
+            buffer_value = detector_config['buffer'].get('value', None)
+            if isinstance(buffer_value, np.ndarray) and buff_val.ndim == 2:
+                if selection == 'Logical AND with buffer':
+                    mask = np.logical_and(mask, buffer_value)
+                elif selection == 'Logical OR with buffer':
+                    mask = np.logical_or(mask, buffer_value)
+            buffer['value'] = mask
+
+    def clear_all(self):
+        self.masks.clear()
