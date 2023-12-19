@@ -169,27 +169,18 @@ class PTSliderDialog:
     def on_pt_change(self):
         mat = self.material
 
-        # First compute lparms0
-        f = mat.pt_lp_factor
-        lparms = mat.lparms
-        lparms0 = np.array([
-            *(lparms[:3] / f),
-            *lparms[3:],
-        ])
-
-        # Now compute the new lp factor
-        f = mat.calc_lp_factor(self.pressure, self.temperature)
-        if np.isnan(f):
-            raise Exception('lp factor is nan')
+        # Compute the lp factor
+        lparms = mat.calc_lp_at_PT(self.pressure, self.temperature)
+        if np.any(np.isnan(lparms)):
+            raise Exception(f'lparms contains nan: {lparms}')
 
         mat.latticeParameters = np.array([
             # Convert to angstroms
-            *(lparms0[:3] * 10 * f),
-            *lparms0[3:],
+            *(lparms[:3] * 10),
+            *lparms[3:],
         ])
         mat.pressure = self.pressure
         mat.temperature = self.temperature
-        mat.pt_lp_factor = f
 
         self.material_modified()
         self.rerender_overlays()
