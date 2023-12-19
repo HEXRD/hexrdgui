@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
@@ -14,7 +16,10 @@ class PTSliderDialog:
     SLIDER_TO_VAL = 1 / VAL_TO_SLIDER
 
     MIN_PRESSURE = 1e-4
+    DEFAULT_PRESSURE = MIN_PRESSURE
+
     MIN_TEMPERATURE = 0
+    DEFAULT_TEMPERATURE = 298
 
     def __init__(self, material, parent=None):
         self.ui = UiLoader().load_file('pt_slider_dialog.ui', parent)
@@ -104,6 +109,10 @@ class PTSliderDialog:
             for name in self.pt_param_names:
                 getattr(self.ui, name).setValue(getattr(self.material, name))
 
+        with block_signals(self.ui.pressure, self.ui.temperature):
+            self.pressure = self.material.pressure
+            self.temperature = self.material.temperature
+
         self.update_pressure_slider_range()
         self.update_temperature_slider_range()
 
@@ -158,8 +167,30 @@ class PTSliderDialog:
         self.ui.temperature.setValue(v)
 
     def on_pt_change(self):
-        lp = self.material.calc_lp_at_PT(self.pressure, self.temperature)
-        self.material.latticeParameters = lp
+        mat = self.material
+
+        # First compute lparms0
+        f = mat.pt_lp_factor
+        lparms = mat.lparms
+        lparms0 = np.array([
+            *(lparms[:3] / f),
+            *lparms[3:],
+        ])
+
+        # Now compute the new lp factor
+        f = mat.calc_lp_factor(self.pressure, self.temperature)
+        if np.isnan(f):
+            raise Exception('lp factor is nan')
+
+        mat.latticeParameters = np.array([
+            # Convert to angstroms
+            *(lparms0[:3] * 10 * f),
+            *lparms0[3:],
+        ])
+        mat.pressure = self.pressure
+        mat.temperature = self.temperature
+        mat.pt_lp_factor = f
+
         self.material_modified()
         self.rerender_overlays()
 
@@ -190,8 +221,11 @@ class PTSliderDialog:
 
         # Set pressure and temperature back to 0
         with block_signals(self.ui.pressure, self.ui.temperature):
-            self.pressure = self.MIN_PRESSURE
-            self.temperature = self.MIN_TEMPERATURE
+            self.pressure = self.DEFAULT_PRESSURE
+            self.temperature = self.DEFAULT_TEMPERATURE
+
+        self.material.pressure = self.pressure
+        self.material.temperature = self.temperature
 
         self.update_gui()
 

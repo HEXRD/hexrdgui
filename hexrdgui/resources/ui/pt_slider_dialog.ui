@@ -412,11 +412,16 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>read_from_jcpds_button</tabstop>
   <tabstop>k0</tabstop>
   <tabstop>k0p</tabstop>
   <tabstop>pressure_slider_range</tabstop>
   <tabstop>pressure_slider</tabstop>
   <tabstop>pressure</tabstop>
+  <tabstop>dk0dt</tabstop>
+  <tabstop>dk0pdt</tabstop>
+  <tabstop>alpha_t</tabstop>
+  <tabstop>dalpha_t_dt</tabstop>
   <tabstop>temperature_slider_range</tabstop>
   <tabstop>temperature_slider</tabstop>
   <tabstop>temperature</tabstop>
