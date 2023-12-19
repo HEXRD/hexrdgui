@@ -1,12 +1,14 @@
 from hexrdgui.constants import OverlayType
 
 from . import compatibility
+from .const_chi_overlay import ConstChiOverlay
 from .laue_overlay import LaueOverlay
 from .overlay import Overlay
 from .powder_overlay import PowderOverlay
 from .rotation_series_overlay import RotationSeriesOverlay
 
 type_dict = {
+    OverlayType.const_chi: ConstChiOverlay,
     OverlayType.laue: LaueOverlay,
     OverlayType.powder: PowderOverlay,
     OverlayType.rotation_series: RotationSeriesOverlay,
@@ -66,6 +68,7 @@ def update_overlay_data(instr, display_mode):
 
 
 __all__ = [
+    'ConstChiOverlay',
     'LaueOverlay',
     'Overlay',
     'PowderOverlay',

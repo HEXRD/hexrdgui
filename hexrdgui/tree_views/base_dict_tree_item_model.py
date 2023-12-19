@@ -6,7 +6,6 @@ from PySide6.QtWidgets import QMenu, QMessageBox, QTreeView
 
 from hexrdgui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrdgui.tree_views.tree_item import TreeItem
-from hexrdgui.utils import is_int
 
 
 # Global constants
@@ -162,7 +161,6 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         cur_tree_item = tree_item
         while cur_tree_item is not self.root_item:
             text = cur_tree_item.data(KEY_COL)
-            text = int(text) if is_int(text) else text
             path.insert(0, text)
             cur_tree_item = cur_tree_item.parent_item
 
@@ -176,6 +174,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
                 cur_val = cur_val[val]
         except KeyError:
             msg = f'Path: {path}\nwas not found in dict: {self.config}'
+            breakpoint()
             raise Exception(msg)
 
         return cur_val
@@ -242,9 +241,18 @@ class BaseDictTreeView(QTreeView):
     def rebuild_tree(self):
         self.model().rebuild_tree()
 
-    def expand_rows(self, parent=QModelIndex()):
-        # Recursively expands all rows
-        for i in range(self.model().rowCount(parent)):
+    def expand_rows(self, parent=QModelIndex(), rows=None):
+        row_count = self.model().rowCount(parent)
+
+        if rows is None:
+            # Default to all rows
+            rows = list(range(row_count))
+
+        # Recursively expands rows
+        for i in rows:
+            if i >= row_count:
+                continue
+
             index = self.model().index(i, KEY_COL, parent)
             self.expand(index)
             self.expand_rows(index)
@@ -252,6 +260,10 @@ class BaseDictTreeView(QTreeView):
     @property
     def lists_resizable(self):
         return self.model().lists_resizable
+
+    @lists_resizable.setter
+    def lists_resizable(self, v):
+        self.model().lists_resizable = v
 
     @property
     def blacklisted_paths(self):

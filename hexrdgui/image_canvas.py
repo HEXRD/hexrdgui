@@ -278,6 +278,7 @@ class ImageCanvas(FigureCanvas):
             OverlayType.powder: self.draw_powder_overlay,
             OverlayType.laue: self.draw_laue_overlay,
             OverlayType.rotation_series: self.draw_rotation_series_overlay,
+            OverlayType.const_chi: self.draw_const_chi_overlay,
         }
 
         if type not in overlay_funcs:
@@ -537,6 +538,39 @@ class ImageCanvas(FigureCanvas):
         sliced_ranges = np.asarray(ranges)[slicer]
         artists['ranges'], = axis.plot(*np.vstack(sliced_ranges).T,
                                        animated=True, **ranges_style)
+
+    def draw_const_chi_overlay(self, artist_key, det_key, axis, data, style,
+                               highlight_style):
+        points = [x['data'] for x in data]
+
+        data_style = style['data']
+
+        overlay_artists = self.overlay_artists.setdefault(artist_key, {})
+        artists = overlay_artists.setdefault(det_key, {})
+
+        highlight_indices = []
+
+        if self.overlay_highlight_ids:
+            # Split up highlighted and non-highlighted components for all
+            highlight_indices = [i for i, x in enumerate(points)
+                                 if id(x) in self.overlay_highlight_ids]
+
+        def split(data):
+            if not highlight_indices or len(data) == 0:
+                return [], data
+
+            return split_array(data, highlight_indices)
+
+        h_points, points = split(points)
+
+        def plot(data, key, kwargs):
+            # This logic was repeated
+            if len(data) != 0:
+                artists[key], = axis.plot(*np.vstack(data).T, animated=True,
+                                          **kwargs)
+
+        plot(points, 'points', data_style)
+        plot(h_points, 'h_points', highlight_style['data'])
 
     def redraw_overlay(self, overlay):
         # Remove the artists for this overlay

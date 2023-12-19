@@ -45,10 +45,10 @@ class DictTreeItemModel(BaseDictTreeItemModel):
 
 class DictTreeView(BaseDictTreeView):
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(self, dictionary, model=DictTreeItemModel, parent=None):
         super().__init__(parent)
 
-        self.setModel(DictTreeItemModel(dictionary, parent=self))
+        self.setModel(model(dictionary, parent=self))
         self.setItemDelegateForColumn(
             VALUE_COL, ValueColumnDelegate(self))
 
@@ -66,7 +66,7 @@ class DictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.tree_view = DictTreeView(dictionary, self)
+        self.tree_view = DictTreeView(dictionary, parent=self)
         self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)

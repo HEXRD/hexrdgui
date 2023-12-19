@@ -2,7 +2,9 @@ from typing import Union
 
 import numpy as np
 
-from hexrd.transforms.xfcapi import mapAngle
+from hexrd import constants
+from hexrd.rotations import make_rmat_euler
+from hexrd.transforms.xfcapi import angles_to_gvec, mapAngle
 
 from hexrdgui.constants import KEV_TO_WAVELENGTH
 
@@ -97,3 +99,16 @@ def q_to_tth(q: Union[np.ndarray, float], beam_energy: float):
     # Convert the q-space values (Angstrom^-1) to tth in degrees
     tth = np.arcsin(q / 4 / np.pi * KEV_TO_WAVELENGTH / beam_energy) * 2
     return np.degrees(tth)
+
+
+def angles_to_chi(tth_eta, sample_tilt, bvec, evec):
+    rmat = make_rmat_euler(sample_tilt, 'xyz', extrinsic=True)
+    nhat = np.dot(rmat, constants.lab_z)
+
+    angs = np.hstack([tth_eta, np.tile(0, (len(tth_eta), 1))])
+    gvecs = angles_to_gvec(angs, beam_vec=bvec, eta_vec=evec)
+
+    dp = np.dot(gvecs, nhat)
+    mask = np.abs(dp) > 1.0
+    dp[mask] = np.sign(dp[mask])
+    return np.degrees(np.arccos(dp))

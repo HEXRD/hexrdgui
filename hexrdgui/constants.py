@@ -45,6 +45,7 @@ class OverlayType(Enum):
     powder = 'powder'
     laue = 'laue'
     rotation_series = 'rotation_series'
+    const_chi = 'const_chi'
 
 
 class PolarXAxisType:

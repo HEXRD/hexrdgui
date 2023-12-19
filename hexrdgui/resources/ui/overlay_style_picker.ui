@@ -10,6 +10,9 @@
     <height>336</height>
    </rect>
   </property>
+  <property name="windowTitle">
+   <string>Overlay Style</string>
+  </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
     <number>6</number>

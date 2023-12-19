@@ -332,6 +332,10 @@ class Overlay(ABC):
     def is_rotation_series(self):
         return self.type == OverlayType.rotation_series
 
+    @property
+    def is_const_chi(self):
+        return self.type == OverlayType.const_chi
+
     def on_new_images_loaded(self):
         # Do nothing by default. Subclasses can re-implement.
         pass
