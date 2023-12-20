@@ -878,76 +878,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         """Default to intensity corrected images dict"""
         return self.intensity_corrected_images_dict
 
-    @property
-    def raw_masks_dict(self):
-        """Get a masks dict"""
-        # We must ensure that we are using raw masks
-        from hexrdgui.create_raw_mask import rebuild_raw_masks
-        prev_masks = copy.deepcopy(self.masks)
-        try:
-            rebuild_raw_masks()
-            masks = copy.deepcopy(self.masks)
-        finally:
-            self.masks = prev_masks
-
-        masks_dict = {}
-        images_dict = self.images_dict
-        for name, img in images_dict.items():
-            final_mask = np.ones(img.shape, dtype=bool)
-            for mask_name, data in masks.items():
-                if mask_name not in self.visible_masks:
-                    continue
-
-                for det, mask in data:
-                    if det == name:
-                        final_mask = np.logical_and(final_mask, mask)
-            if (self.threshold_mask_status and
-                    self.threshold_masks.get(name) is not None):
-                idx = self.current_imageseries_idx
-                thresh_mask = self.threshold_masks[name][idx]
-                final_mask = np.logical_and(final_mask, thresh_mask)
-            masks_dict[name] = final_mask
-
-        return masks_dict
-
-    @property
-    def masked_images_dict(self):
-        return self.create_masked_images_dict()
-
-    def create_masked_images_dict(self, fill_value=0):
-        """Get an images dict where masks have been applied"""
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-
-        images_dict = self.images_dict
-        instr = create_hedm_instrument()
-
-        has_masks = bool(self.visible_masks)
-        has_panel_buffers = any(panel.panel_buffer is not None
-                                for panel in instr.detectors.values())
-
-        if not has_masks and not has_panel_buffers:
-            # Force a fill_value of 0 if there are no visible masks
-            # and no panel buffers.
-            fill_value = 0
-
-        for det, mask in self.raw_masks_dict.items():
-            if has_panel_buffers:
-                panel = instr.detectors[det]
-                utils.convert_panel_buffer_to_2d_array(panel)
-
-            for name, img in images_dict.items():
-                if (np.issubdtype(type(fill_value), np.floating) and
-                        not np.issubdtype(img.dtype, np.floating)):
-                    img = img.astype(float)
-                    images_dict[name] = img
-                if det == name:
-                    img[~mask] = fill_value
-
-                    if has_panel_buffers:
-                        img[~panel.panel_buffer] = fill_value
-
-        return images_dict
-
     def save_imageseries(self, ims, name, write_file, selected_format,
                          **kwargs):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
@@ -2698,20 +2628,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             v[det] = imgs if isinstance(imgs, list) else [imgs]
         self._recent_images = v
         self.recent_images_changed.emit()
-
-    def apply_masks_to_panel_buffers(self, instr):
-        # Apply raw masks to the panel buffers on the passed instrument
-        for det_key, mask in self.raw_masks_dict.items():
-            panel = instr.detectors[det_key]
-
-            # Make sure it is a 2D array
-            utils.convert_panel_buffer_to_2d_array(panel)
-
-            # Add the mask
-            # NOTE: the mask here is False when pixels should be masked.
-            # This is the same as the panel buffer, which is why we are
-            # doing a `np.logical_and()`.
-            panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
 
     def clean_panel_buffers(self):
         # Ensure that the panel buffer sizes match the pixel sizes.

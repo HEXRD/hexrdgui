@@ -66,7 +66,7 @@ class PowderRunner(QObject):
             fwhm_estimate = options['initial_fwhm']
 
         # Get an intensity-corrected masked dict of the images
-        img_dict = HexrdConfig().masked_images_dict
+        img_dict = MaskManager().masked_images_dict
 
         statuses = self.refinement_flags_without_overlays
         self.cf = statuses
