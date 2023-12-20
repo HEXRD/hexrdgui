@@ -11,10 +11,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QCursor
 
 from hexrd.instrument import unwrap_h5_to_dict
-from hexrdgui.masking.mask_manager import MaskManager
 
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
 
@@ -56,17 +56,17 @@ class MaskManagerDialog(QObject):
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
 
-    def setup_table(self, status=True):
+    def setup_table(self):
         with block_signals(self.ui.masks_table):
             self.ui.masks_table.setRowCount(0)
-            for i, key in enumerate(self.masks.keys()):
+            for i, key in enumerate(MaskManager().mask_names):
                 # Add label
                 self.ui.masks_table.insertRow(i)
                 self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
                 # Add checkbox to toggle visibility
                 cb = QCheckBox()
-                status = key in HexrdConfig().visible_masks
+                status = key in MaskManager().visible_masks
                 cb.setChecked(status)
                 cb.setStyleSheet('margin-left:50%; margin-right:50%;')
                 self.ui.masks_table.setCellWidget(i, 1, cb)
@@ -193,13 +193,13 @@ class MaskManagerDialog(QObject):
         for i, det in enumerate(HexrdConfig().detector_names):
             axis = fig.add_subplot(rows, cols, i + 1)
             axis.set_title(det)
-            axis.imshow(HexrdConfig().raw_masks_dict[det])
+            axis.imshow(MaskManager().raw_masks_dict[det])
         fig.canvas.draw_idle()
         fig.show()
 
     def update_visibility_checkboxes(self):
         with block_signals(self.ui.masks_table):
-            for i, key in enumerate(self.masks.keys()):
+            for i, key in enumerate(MaskManager().mask_names):
                 cb = self.ui.masks_table.cellWidget(i, 1)
                 status = key in MaskManager().visible_masks
                 cb.setChecked(status)

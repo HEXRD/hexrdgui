@@ -267,9 +267,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = {}
-        self.masks = {}
-        self.raw_mask_coords = {}
-        self.visible_masks = []
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None
@@ -2519,33 +2516,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return 8
 
         raise Exception('Unknown distortion function: ' + func_name)
-
-    @property
-    def threshold_values(self):
-        return self._threshold_data.setdefault('values', [])
-
-    @threshold_values.setter
-    def threshold_values(self, v):
-        self._threshold_data['values'] = v
-
-    @property
-    def threshold_mask_status(self):
-        mask_vals = HexrdConfig().threshold_masks.values()
-        if self._threshold_data.get('visible', True) and len(mask_vals) > 0:
-            return all([v is not None for v in mask_vals])
-        return False
-
-    @threshold_mask_status.setter
-    def threshold_mask_status(self, v):
-        self._threshold_data['visible'] = v
-
-    @property
-    def threshold_masks(self):
-        return self._threshold_data.setdefault('masks', {})
-
-    @threshold_masks.setter
-    def threshold_masks(self, masks):
-        self._threshold_data['masks'] = masks
 
     @property
     def unagg_images(self):

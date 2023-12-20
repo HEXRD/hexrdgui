@@ -1,10 +1,12 @@
 import numpy as np
 
 from skimage.draw import polygon
+from hexrdgui.constants import ViewType
 
 from hexrdgui.create_hedm_instrument import create_view_hedm_instrument
 from hexrdgui.calibration.polarview import PolarView
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
 from hexrdgui.utils.conversions import pixels_to_angles
 
@@ -25,7 +27,7 @@ def convert_raw_to_polar(det, line):
     return [pixels_to_angles(**kwargs)]
 
 
-def create_polar_mask(name, line_data):
+def create_polar_mask(line_data):
     # Calculate current image dimensions
     pv = PolarView(None)
     shape = pv.shape
@@ -81,7 +83,7 @@ def create_polar_mask(name, line_data):
         for mask in masks:
             final_mask = np.logical_and(final_mask, mask)
 
-    HexrdConfig().masks[name] = final_mask
+    return final_mask
 
 
 def _pixel_perimeter_to_mask(r, c, shape):
@@ -137,14 +139,16 @@ def _interpolate_split_coords_1d(coords1, coords2):
     return coords1, coords2
 
 
-def create_polar_mask_from_raw(name, value):
+def create_polar_mask_from_raw(value):
     line_data = []
     for det, data in value:
         line_data.extend(convert_raw_to_polar(det, data))
-    create_polar_mask(name, line_data)
+    return create_polar_mask(line_data)
 
 
 def rebuild_polar_masks():
-    HexrdConfig().masks.clear()
-    for name, value in HexrdConfig().raw_mask_coords.items():
-        create_polar_mask_from_raw(name, value)
+    from hexrdgui.masking.mask_manager import MaskManager
+    for mask in MaskManager().masks.values():
+        if mask.type == MaskType.threshold:
+            continue
+        mask.update_masked_arrays(ViewType.polar)

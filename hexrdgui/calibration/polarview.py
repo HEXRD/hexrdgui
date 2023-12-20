@@ -13,6 +13,7 @@ from hexrd.xrdutil import (
 from hexrd import instrument
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
 tvec_c = ct.zeros_3
@@ -410,15 +411,16 @@ class PolarView:
 
     def apply_masks(self, img):
         # Apply user-specified masks if they are present
+        from hexrdgui.masking.mask_manager import MaskManager
         img = img.copy()
         total_mask = self.raw_mask
-        for name in HexrdConfig().visible_masks:
-            if name not in HexrdConfig().masks:
+        for mask in MaskManager().masks.values():
+            if mask.type == MaskType.threshold or not mask.visible:
                 continue
-            mask = HexrdConfig().masks[name]
-            total_mask = np.logical_or(total_mask, ~mask)
-        if HexrdConfig().threshold_mask_status:
-            lt_val, gt_val = HexrdConfig().threshold_values
+            mask_arr = mask.masked_arrays
+            total_mask = np.logical_or(total_mask, ~mask_arr)
+        if MaskManager().threshold_mask:
+            lt_val, gt_val = MaskManager().threshold_mask.get_data()
             lt_mask = img < lt_val
             gt_mask = img > gt_val
             mask = np.logical_or(lt_mask, gt_mask)
