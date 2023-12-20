@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QMessageBox
 
 import numpy as np
 
-from hexrd import spacegroup
+from hexrd.material import spacegroup
 from hexrd.material import _angstroms
 
 from hexrdgui.hexrd_config import HexrdConfig
