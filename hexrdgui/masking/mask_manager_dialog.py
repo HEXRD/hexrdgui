@@ -55,6 +55,8 @@ class MaskManagerDialog(QObject):
         self.ui.view_masks.clicked.connect(self.show_masks)
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
+        MaskManager().mask_mgr_dialog_update.connect(self.setup_table)
+        MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
 
     def setup_table(self):
         with block_signals(self.ui.masks_table):

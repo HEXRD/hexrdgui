@@ -23,6 +23,7 @@ from hexrdgui.calibration.raw_iviewer import raw_iviewer
 from hexrdgui.calibration.stereo_plot import stereo_viewer
 from hexrdgui.constants import OverlayType, PolarXAxisType, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
 from hexrdgui import utils
 from hexrdgui.utils.array import split_array
@@ -92,7 +93,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().beam_marker_modified.connect(self.update_beam_marker)
         HexrdConfig().oscillation_stage_changed.connect(
             self.oscillation_stage_changed)
-        HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
+        MaskManager().polar_masks_changed.connect(self.polar_masks_changed)
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
         HexrdConfig().azimuthal_options_modified.connect(
             self.update_azimuthal_integral_plot)
@@ -203,7 +204,7 @@ class ImageCanvas(FigureCanvas):
     def unscaled_image_dict(self):
         # Returns a dict of the unscaled images
         if self.mode == ViewType.raw:
-            return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
+            return MaskManager().create_masked_images_dict(fill_value=np.nan)
         else:
             # Masks are already applied...
             return {'img': self.iviewer.img}

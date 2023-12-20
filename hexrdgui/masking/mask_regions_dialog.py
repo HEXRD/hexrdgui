@@ -275,8 +275,8 @@ class MaskRegionsDialog(QObject):
             mask.update_masked_arrays(self.image_mode)
 
         masks_changed_signal = {
-            'raw': HexrdConfig().raw_masks_changed,
-            'polar': HexrdConfig().polar_masks_changed
+            'raw': MaskManager().raw_masks_changed,
+            'polar': MaskManager().polar_masks_changed
         }
         masks_changed_signal[self.image_mode].emit()
 

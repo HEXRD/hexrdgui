@@ -302,7 +302,7 @@ class MainWindow(QObject):
             self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
-        HexrdConfig().raw_masks_changed.connect(self.update_all)
+        MaskManager().raw_masks_changed.connect(self.update_all)
         HexrdConfig().enable_canvas_toolbar.connect(
             self.on_enable_canvas_toolbar)
         HexrdConfig().tab_images_changed.connect(
@@ -317,7 +317,7 @@ class MainWindow(QObject):
         ImageLoadManager().state_updated.connect(
             self.simple_image_series_dialog.setup_gui)
 
-        self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
+        self.new_mask_added.connect(self.mask_manager_dialog.setup_table)
         self.image_mode_widget.tab_changed.connect(MaskManager().view_mode_changed)
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
@@ -754,14 +754,14 @@ class MainWindow(QObject):
                 raw_line = convert_polar_to_raw([line])
                 mask = MaskManager().add_mask(name, raw_line, MaskType.polygon)
                 mask.update_masked_arrays(self.image_mode)
-            HexrdConfig().polar_masks_changed.emit()
+            MaskManager().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
                 name = unique_name(MaskManager().mask_names, 'raw_mask_0')
                 mask = MaskManager().add_mask(
                     name, [(det, line.copy())], MaskType.polygon)
                 mask.update_masked_arrays(self.image_mode)
-            HexrdConfig().raw_masks_changed.emit()
+            MaskManager().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -793,7 +793,7 @@ class MainWindow(QObject):
         mask = MaskManager().add_mask(name, raw_data, MaskType.laue)
         mask.update_masked_arrays(self.image_mode)
         self.new_mask_added.emit(self.image_mode)
-        HexrdConfig().polar_masks_changed.emit()
+        MaskManager().polar_masks_changed.emit()
 
     def action_edit_apply_powder_mask_to_polar(self):
         if not HexrdConfig().show_overlays:
@@ -849,7 +849,7 @@ class MainWindow(QObject):
         mask = MaskManager().add_mask(name, raw_data, MaskType.powder)
         mask.update_masked_arrays(self.image_mode)
         self.new_mask_added.emit(self.image_mode)
-        HexrdConfig().polar_masks_changed.emit()
+        MaskManager().polar_masks_changed.emit()
 
     def update_mask_region_canvas(self):
         if hasattr(self, '_masks_regions_dialog'):
@@ -913,7 +913,7 @@ class MainWindow(QObject):
             MaskManager().masks[name].set_data(ph_masks)
         else:
             MaskManager().add_mask(name, ph_masks, MaskType.pinhole)
-        HexrdConfig().raw_masks_changed.emit()
+        MaskManager().raw_masks_changed.emit()
 
         self.new_mask_added.emit(self.image_mode)
 

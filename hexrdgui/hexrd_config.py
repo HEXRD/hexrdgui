@@ -129,12 +129,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
 
-    """Emitted when the threshold mask status changes via the dialog"""
-    threshold_mask_changed = Signal(str)
-
-    """Emitted when the threshold mask status changes via mask manager"""
-    mgr_threshold_mask_changed = Signal()
-
     """Emitted when the active material is changed to a different material"""
     active_material_changed = Signal()
 
@@ -164,12 +158,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Emitted to update the tth width in the powder overlay editor"""
     material_tth_width_modified = Signal(str)
-
-    """Emitted when a new raw mask has been created"""
-    raw_masks_changed = Signal()
-
-    """Emitted when a new polar mask has been created"""
-    polar_masks_changed = Signal()
 
     """Emitted when the polar x-axis type changes"""
     polar_x_axis_type_changed = Signal()
