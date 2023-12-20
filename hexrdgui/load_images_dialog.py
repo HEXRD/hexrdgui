@@ -1,6 +1,7 @@
 from collections import Counter  # To compare two lists' contents
 import re
 import os
+from pathlib import Path
 
 from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
 from hexrdgui.constants import TRANSFORM_OPTIONS
@@ -49,13 +50,14 @@ class LoadImagesDialog:
             if self.ui.exec():
                 # Perform some validation before returning
                 results = self.results()
-                image_files = [v for f in results.values() for v in f]
+                matches = [Path(v).name for f in results.values() for v in f]
+                image_files = [Path(f).name for f in self.image_files]
                 if Counter(results.keys()) != Counter(self.detectors):
                     msg = 'Detectors do not match the current detectors'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
                     continue
                 elif (not self.using_roi and
-                        Counter(image_files) != Counter(self.image_files)):
+                        (Counter(matches) != Counter(image_files))):
                     msg = 'Image files do not match the selected files'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
                     continue
@@ -182,7 +184,7 @@ class LoadImagesDialog:
             det_idx = i
             if not self.using_roi:
                 imgs_per_det = len(self.image_files) / len(self.detectors)
-                det_idx = i // imgs_per_det
+                det_idx = int(i / imgs_per_det)
             HexrdConfig().load_panel_state['trans'][det_idx] = idx
 
         return results
