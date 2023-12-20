@@ -123,7 +123,7 @@ class LoadImagesDialog:
             table.cellWidget(i, 1).currentTextChanged.connect(
                 lambda v, i=i: self.selection_changed(v, i))
 
-            f = QTableWidgetItem(self.image_files[i])
+            f = QTableWidgetItem(Path(self.image_files[i]).name)
             table.setItem(i, 2, f)
 
     def setup_table(self):
@@ -160,7 +160,7 @@ class LoadImagesDialog:
                 table.cellWidget(i, 2).currentTextChanged.connect(
                     lambda v, i=i: self.selection_changed(v, i))
             else:
-                f = QTableWidgetItem(image_files[i])
+                f = QTableWidgetItem(Path(image_files[i]).name)
                 table.setItem(i, 2, f)
 
     def results(self):
