@@ -16,7 +16,6 @@ def recompute_raw_threshold_mask():
     results = {}
     if tm := MaskManager().threshold_mask:
         for det in HexrdConfig().detector_names:
-            print(f'recompute_raw_threshold_mask det: {det}')
             ims = HexrdConfig().imageseries(det)
             masks = [None for i in range(len(ims))]
             for idx in range(len(ims)):
