@@ -3,9 +3,9 @@ from hexrd.utils.compatibility import h5py_read_string
 
 def load_masks_v1_to_v2(h5py_group):
     items = {}
-    if '_version' in h5py_group.values() and h5py_group['_version'] == 2:
+    if '_version' in h5py_group.keys() and h5py_group['_version'] == 2:
         items = h5py_group.items()
-    elif '_version' not in h5py_group.values():
+    elif '_version' not in h5py_group.keys():
         # This is a file using the old format
         visible = list(h5py_read_string(h5py_group['_visible']))
         for key, data in h5py_group.items():

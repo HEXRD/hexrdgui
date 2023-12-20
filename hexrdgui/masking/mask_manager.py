@@ -1,18 +1,20 @@
 import math
 import numpy as np
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QObject
+from hexrdgui import utils
 
 from hexrdgui.constants import ViewType
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.create_polar_mask import (
-    convert_raw_to_polar, create_polar_mask_from_raw, rebuild_polar_masks
+    create_polar_mask_from_raw, rebuild_polar_masks
 )
 from hexrdgui.masking.create_raw_mask import (
-    apply_threshold_mask, convert_polar_to_raw, create_raw_mask, rebuild_raw_masks
+    recompute_raw_threshold_mask, create_raw_mask, rebuild_raw_masks
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.mask_compatability import load_masks_v1_to_v2
-from hexrdgui.singletons import Singleton
+from hexrdgui.singletons import QSingleton
 from hexrdgui.utils import unique_name
 
 from hexrd.instrument import unwrap_dict_to_h5
@@ -21,12 +23,14 @@ from abc import ABC, abstractmethod
 
 
 class Mask(ABC):
-    def __init__(self, mtype='', name='', mask_image=True, show_border=False):
-        self.mask_type = mtype
+    def __init__(self, name='', mtype='', visible=True):
+        self.type = mtype
         self.name = name
-        self.mask_image = mask_image
-        self.show_border = show_border
+        self.visible = visible
         self.masked_arrays = None
+
+    def update_mask_visibility(self, visibility):
+        self.visible = visibility
 
     # Abstract methods
     @abstractmethod
@@ -38,11 +42,7 @@ class Mask(ABC):
         pass
 
     @abstractmethod
-    def get_mask_arrays(self):
-        pass
-
-    @abstractmethod
-    def update_mask_array(self):
+    def update_masked_arrays(self):
         pass
 
     @abstractmethod
@@ -55,46 +55,28 @@ class Mask(ABC):
 
 
 class RegionMask(Mask):
-    def __init__(self):
-        self._polar = None
+    def __init__(self, name='', mtype='', visible=True):
+        super().__init__(name, mtype, visible)
         self._raw = None
 
-    def get_data(self, view=ViewType.raw):
-        if view == ViewType.raw:
-            return self._raw
-        else:
-            return self._polar
+    def get_data(self):
+        return self._raw
 
-    def set_data(self, data, view=ViewType.raw):
-        if view == ViewType.raw:
-            raw_data = data
-            polar_data = []
-            for det, value in data:
-                polar_data.extend(convert_raw_to_polar(det, value))
-        else:
-            polar_data = data
-            raw_data = convert_polar_to_raw(data)
-        self._raw = raw_data
-        self._polar = polar_data
-        self.update_mask_array()
+    def set_data(self, data):
+        self._raw = data
+        self.update_masked_arrays()
 
-    def get_mask_arrays(self, view=ViewType.raw):
+    def update_masked_arrays(self, view=ViewType.raw):
         if view == ViewType.raw:
-            return self._masked_arrays
+            self.masked_arrays = create_raw_mask(self._raw)
         else:
-            # FIXME: Function parameters changed
-            return create_polar_mask_from_raw(self._raw)
-
-    def update_mask_array(self):
-        # FIXME: Function parameters changed
-        self._masked_arrays = create_raw_mask(self._raw)
+            self.masked_arrays = create_polar_mask_from_raw(self._raw)
 
     def serialize(self):
         data = {
             'name': self.name,
-            'mtype': self.mask_type,
-            'visible': self.mask_image,
-            'border': self.show_border,
+            'mtype': self.type,
+            'visible': self.visible,
         }
         for det, values in self._raw:
             data.setdefault(det, []).append(values)
@@ -102,35 +84,34 @@ class RegionMask(Mask):
 
     def deserialize(self, data):
         self.name = data['name']
-        self.mask_type = data['mtype']
-        self.mask_image = data['visible']
-        self.show_border = data['border']
+        self.type = data['mtype']
+        self.visible = data['visible']
         raw_data = []
         for det in HexrdConfig().detector_names:
-            raw_data.append([(det, v) for v in data[det]])
+            if det not in data.keys():
+                continue
+            raw_data.extend([(det, v) for v in data[det]])
         self.set_data(raw_data)
 
 
 class ThresholdMask(Mask):
-    def __init__(self):
-        self._min = -math.inf
-        self._max = math.inf
+    def __init__(self, name='', mtype='', visible=True):
+        super().__init__(name, mtype, visible)
+        self.min_val = -math.inf
+        self.max_val = math.inf
+        self._hidden_mask_data = None
 
-    @property
-    def min_val(self):
-        return self._min
+    def update_mask_visibility(self, visible):
+        if visible == self.visible:
+            return
 
-    @min_val.setter
-    def min_val(self, val):
-        self._min = val
-
-    @property
-    def max_val(self):
-        return self._max
-
-    @max_val.setter
-    def max_val(self, val):
-        self._max = val
+        self.visible = visible
+        if visible and self._hidden_mask_data:
+            self.set_data(self._hidden_mask_data)
+            self._hidden_mask_data = None
+        elif not visible:
+            self._hidden_mask_data = self.get_data()
+            self.set_data([-math.inf, math.inf])
 
     def get_data(self):
         return [self.min_val, self.max_val]
@@ -138,35 +119,28 @@ class ThresholdMask(Mask):
     def set_data(self, data):
         self.min_val = data[0]
         self.max_val = data[1]
-        self.update_mask_array()
+        self.update_masked_arrays()
 
-    def get_mask_arrays(self):
-        return self._masked_arrays
-
-    def update_mask_array(self):
-        # TODO: rename apply_threshold_mask since its purpose has changed now?
-        # FIXME: Function parameters changed
-        self._masked_arrays = apply_threshold_mask(self.values)
+    def update_masked_arrays(self):
+        self.masked_arrays = recompute_raw_threshold_mask()
 
     def serialize(self):
         return {
             'min_val': self.min_val,
             'max_val': self.max_val,
             'name': self.name,
-            'mtype': self.mask_type,
-            'visible': self.mask_image,
-            'border': self.show_border,
+            'mtype': self.type,
+            'visible': self.visible,
         }
 
     def deserialize(self, data):
         self.name = data['name']
-        self.mask_type = data['mtype']
-        self.mask_image = data['visible']
-        self.show_border = data['border']
+        self.type = data['mtype']
+        self.visible = data['visible']
         self.set_data([data['min_val'], data['max_val']])
 
 
-class MaskManager(metaclass=Singleton):
+class MaskManager(QObject, metaclass=QSingleton):
     """Emitted when a new raw mask has been created"""
     raw_masks_changed = Signal()
 
@@ -177,25 +151,30 @@ class MaskManager(metaclass=Singleton):
     MaskManagerDialog table should be updated"""
     mask_mgr_dialog_update = Signal()
 
-    def __init__(self, view_mode):
+    """Emitted when the threshold mask status changes via the dialog"""
+    threshold_mask_changed = Signal()
+
+    """Emitted when we need to open a save file dialog
+
+    The argument is the dict of data to export to hdf5
+    """
+    export_masks_to_file = Signal(dict)
+
+    def __init__(self):
+        super().__init__(None)
         self.masks = {}
-        self.view_mode = view_mode
-        self.image_mode = ViewType.raw
+        self.view_mode = ViewType.raw
 
         self.setup_connections()
 
     @property
     def visible_masks(self):
-        return [k for k, v in self.masks if v.mask_image]
-
-    @property
-    def visible_boundaries(self):
-        return [k for k, v in self.masks if v.show_border]
+        return [k for k, v in self.masks.items() if v.visible]
 
     @property
     def threshold_mask(self):
         for mask in self.masks.values():
-            if mask.mask_type == 'threshold':
+            if mask.type == MaskType.threshold:
                 return mask
         return None
 
@@ -203,41 +182,78 @@ class MaskManager(metaclass=Singleton):
     def mask_names(self):
         return list(self.masks.keys())
 
+    @property
+    def masked_images_dict(self):
+        return self.create_masked_images_dict()
+
+    @property
+    def raw_masks_dict(self):
+        """Get a masks dict"""
+        masks_dict = {}
+        images_dict = HexrdConfig().images_dict
+        for name, img in images_dict.items():
+            final_mask = np.ones(img.shape, dtype=bool)
+            for mask in self.masks.values():
+                if not mask.visible or mask.type == MaskType.threshold:
+                    continue
+
+                if self.view_mode != ViewType.raw:
+                    # Make sure we have the raw masked arrays
+                    mask.update_masked_arrays(ViewType.raw)
+                for det, arr in mask.masked_arrays:
+                    if det == name:
+                        final_mask = np.logical_and(final_mask, arr)
+                if self.view_mode != ViewType.raw:
+                    # Reset the masked arrays for the current view
+                    mask.update_masked_arrays(self.view_mode)
+            if tm := self.threshold_mask:
+                idx = HexrdConfig().current_imageseries_idx
+                thresh_mask = tm.masked_arrays[name][idx]
+                final_mask = np.logical_and(final_mask, thresh_mask)
+            masks_dict[name] = final_mask
+
+        return masks_dict
+
     def setup_connections(self):
+        self.threshold_mask_changed.connect(self.threshold_toggled)
         HexrdConfig().save_state.connect(self.save_state)
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().detectors_changed.connect(self.clear_all)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
 
-    def image_mode_changed(self, mode):
-        self.image_mode = mode
+    def view_mode_changed(self, mode):
+        self.view_mode = mode
 
     def masks_changed(self):
-        if self.image_mode in (ViewType.polar, ViewType.stereo):
+        if self.view_mode in (ViewType.polar, ViewType.stereo):
             self.polar_masks_changed.emit()
-        elif self.image_mode == ViewType.raw:
+        elif self.view_mode == ViewType.raw:
             self.raw_masks_changed.emit()
 
     def rebuild_masks(self):
-        if self.image_mode == ViewType.raw:
+        if self.view_mode == ViewType.raw:
             rebuild_raw_masks()
-        elif self.image_mode in (ViewType.polar, ViewType.stereo):
+        elif self.view_mode in (ViewType.polar, ViewType.stereo):
             rebuild_polar_masks()
         self.masks_changed()
         self.mask_mgr_dialog_update.emit()
 
-    def add_mask(self, name, data, mtype, mask_image=True, show_border=False):
+    def add_mask(self, name, data, mtype, visible=True):
         # Enforce name uniqueness
-        name = unique_name(self.masks.keys(), name)
-        if mtype == 'threshold':
-            new_mask = ThresholdMask(name, mtype, mask_image)
+        name = unique_name(self.mask_names, name)
+        if mtype == MaskType.threshold:
+            new_mask = ThresholdMask(name, mtype, visible)
         else:
-            new_mask = RegionMask(name, mtype, mask_image, show_border)
-        new_mask.set_data(self.view_mode, data)
+            new_mask = RegionMask(name, mtype, visible)
+        new_mask.set_data(data)
         self.masks[name] = new_mask
+        self.mask_mgr_dialog_update.emit()
+        return new_mask
 
     def remove_mask(self, name):
-        self.masks.pop(name)
+        removed_mask = self.masks.pop(name)
+        self.mask_mgr_dialog_update.emit()
+        return removed_mask
 
     def write_masks_to_group(self, data, h5py_group):
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
@@ -245,16 +261,16 @@ class MaskManager(metaclass=Singleton):
     def write_single_mask(self, name):
         d = { '_version': 2 }
         d[name] = self.masks[name].serialize()
-        self.export_masks_to_file(d)
+        self.export_masks_to_file.emit(d)
 
     def write_all_masks(self, h5py_group=None):
         d = { '_version': 2 }
-        for name, mask_info in self.masks:
+        for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
         else:
-            self.export_masks_to_file(d)
+            self.export_masks_to_file.emit(d)
 
     def save_state(self, h5py_group):
         if 'masks' not in h5py_group:
@@ -263,18 +279,18 @@ class MaskManager(metaclass=Singleton):
         self.write_all_masks(h5py_group['masks'])
 
     def load_masks(self, h5py_group):
-        # TODO: Handle case of detector name mismatch (loading wrong mask file)
         items = load_masks_v1_to_v2(h5py_group)
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
         for key, data in items:
-            if data['mtype'] == 'threshold':
+            if key == '_version':
+                continue
+            elif data['mtype'] == MaskType.threshold:
                 new_mask = ThresholdMask(None, None)
-                new_mask.deserialize(data)
             else:
                 new_mask = RegionMask(None, None)
-                new_mask.deserialize(data)
             self.masks[key] = new_mask
+            new_mask.deserialize(data)
 
         if not HexrdConfig().loading_state:
             # We're importing masks directly,
@@ -284,7 +300,6 @@ class MaskManager(metaclass=Singleton):
 
     def load_state(self, h5py_group):
         self.masks = {}
-        self.reset_threshold()
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
         self.mask_mgr_dialog_update.emit()
@@ -293,20 +308,25 @@ class MaskManager(metaclass=Singleton):
         self.view_mode = mode
 
     def update_mask_visibility(self, name, visibility):
-        self.masks[name].mask_image = visibility
+        self.masks[name].update_mask_visibility(visibility)
 
-    def reset_threshold(self):
-        [m.reset() for m in self.masks if self.mask_type == 'threshold']
+    def threshold_toggled(self):
+        if self.threshold_mask:
+            self.remove_mask(self.threshold_mask.name)
+        else:
+            self.add_mask(
+                'threshold', [-math.inf, math.inf], MaskType.threshold)
+        self.mask_mgr_dialog_update.emit()
 
     def update_name(self, old_name, new_name):
-        mask = self.masks.pop(old_name)
+        mask = self.remove_mask(old_name)
         mask.name = new_name
         self.masks[new_name] = mask
 
     def masks_to_panel_buffer(self, selection, buff_val):
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
-        for det, mask in HexrdConfig().raw_masks_dict.items():
+        for det, mask in self.raw_masks_dict.items():
             detector_config = HexrdConfig().detector(det)
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
@@ -320,3 +340,51 @@ class MaskManager(metaclass=Singleton):
 
     def clear_all(self):
         self.masks.clear()
+
+    def create_masked_images_dict(self, fill_value=0):
+        """Get an images dict where masks have been applied"""
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+
+        images_dict = HexrdConfig().images_dict
+        instr = create_hedm_instrument()
+
+        has_masks = bool(self.visible_masks)
+        has_panel_buffers = any(panel.panel_buffer is not None
+                                for panel in instr.detectors.values())
+
+        if not has_masks and not has_panel_buffers:
+            # Force a fill_value of 0 if there are no visible masks
+            # and no panel buffers.
+            fill_value = 0
+
+        for det, mask in self.raw_masks_dict.items():
+            if has_panel_buffers:
+                panel = instr.detectors[det]
+                utils.convert_panel_buffer_to_2d_array(panel)
+
+            for name, img in images_dict.items():
+                if (np.issubdtype(type(fill_value), np.floating) and
+                        not np.issubdtype(img.dtype, np.floating)):
+                    img = img.astype(float)
+                    images_dict[name] = img
+                if det == name:
+                    img[~mask] = fill_value
+
+                    if has_panel_buffers:
+                        img[~panel.panel_buffer] = fill_value
+
+        return images_dict
+
+    def apply_masks_to_panel_buffers(self, instr):
+        # Apply raw masks to the panel buffers on the passed instrument
+        for det_key, mask in self.raw_masks_dict.items():
+            panel = instr.detectors[det_key]
+
+            # Make sure it is a 2D array
+            utils.convert_panel_buffer_to_2d_array(panel)
+
+            # Add the mask
+            # NOTE: the mask here is False when pixels should be masked.
+            # This is the same as the panel buffer, which is why we are
+            # doing a `np.logical_and()`.
+            panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
