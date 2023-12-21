@@ -30,7 +30,7 @@ def load_masks_v1_to_v2(h5py_group):
                         'visible': name in visible,
                         'border': False,
                     })
-                    for mask in masks.values():
+                    for i, mask in enumerate(masks.values()):
                         # Load the numpy array from the hdf5 file
-                        items[name].setdefault(key, []).append(mask[()])
-    return items
+                        items[name].setdefault(key, {})[i] = mask[()]
+    return [(k, v) for k, v in items.items()]

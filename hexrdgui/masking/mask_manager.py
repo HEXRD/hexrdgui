@@ -78,8 +78,8 @@ class RegionMask(Mask):
             'mtype': self.type,
             'visible': self.visible,
         }
-        for det, values in self._raw:
-            data.setdefault(det, []).append(values)
+        for i, (det, values) in enumerate(self._raw):
+            data.setdefault(det, {})[str(i)] = values
         return data
 
     def deserialize(self, data):
@@ -90,7 +90,7 @@ class RegionMask(Mask):
         for det in HexrdConfig().detector_names:
             if det not in data.keys():
                 continue
-            raw_data.extend([(det, v) for v in data[det]])
+            raw_data.extend([(det, v) for v in data[det].values()])
         self.set_data(raw_data)
 
 
