@@ -57,6 +57,9 @@ class PTSliderDialog:
         self.ui.read_from_jcpds_button.clicked.connect(
             self.open_jcpds)
 
+        self.ui.set_ambient_structure_button.clicked.connect(
+            self.set_ambient_structure)
+
         HexrdConfig().material_renamed.connect(self.update_window_title)
 
     def on_pt_param_widget_changed(self):
@@ -115,6 +118,7 @@ class PTSliderDialog:
 
         self.update_pressure_slider_range()
         self.update_temperature_slider_range()
+        self.update_ambient_structure()
 
     def update_pressure_slider_range(self):
         r = self.ui.pressure_slider_range.value() * self.VAL_TO_SLIDER
@@ -188,9 +192,54 @@ class PTSliderDialog:
     def material_modified(self):
         HexrdConfig().material_modified.emit(self.material.name)
 
+    @property
+    def ambient_structure_widgets(self):
+        names = [
+            'a',
+            'b',
+            'c',
+            'alpha',
+            'beta',
+            'gamma',
+        ]
+        return [getattr(self.ui, f'ambient_{name}') for name in names]
+
+    def update_ambient_structure(self):
+        lparms0 = self.material.lparms0
+
+        # Convert to angstroms
+        lparms0 = [
+            *(10 * lparms0[:3]),
+            *lparms0[3:],
+        ]
+
+        for v, w in zip(lparms0, self.ambient_structure_widgets):
+            w.setValue(v)
+
     def rerender_overlays(self):
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
         HexrdConfig().overlay_config_changed.emit()
+
+    def reset_pressure_and_temperature(self):
+        # Set the lattice parameters back to v0
+        lparms0 = self.material.lparms0
+
+        # Convert to angstroms
+        self.material.latticeParameters = [
+            *(10 * lparms0[:3]),
+            *lparms0[3:],
+        ]
+
+        # Set pressure and temperature back to 0
+        with block_signals(self.ui.pressure, self.ui.temperature):
+            self.pressure = self.DEFAULT_PRESSURE
+            self.temperature = self.DEFAULT_TEMPERATURE
+
+        self.material.pressure = self.pressure
+        self.material.temperature = self.temperature
+
+        self.update_gui()
+        self.material_modified()
 
     def open_jcpds(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -210,18 +259,7 @@ class PTSliderDialog:
         # We will always write the pt parameters to the material
         jcpds.write_pt_params_to_material(self.material)
 
-        # Set pressure and temperature back to 0
-        with block_signals(self.ui.pressure, self.ui.temperature):
-            self.pressure = self.DEFAULT_PRESSURE
-            self.temperature = self.DEFAULT_TEMPERATURE
-
-        self.material.pressure = self.pressure
-        self.material.temperature = self.temperature
-
-        self.update_gui()
-
-        # Trigger an update
-        self.on_pt_change()
+        self.reset_pressure_and_temperature()
 
     def validate_jcpds(self, jcpds):
         if not jcpds.symmetry_matches(self.material):
@@ -251,3 +289,7 @@ class PTSliderDialog:
                 self.rerender_overlays()
 
         return True
+
+    def set_ambient_structure(self):
+        self.material.reset_v0()
+        self.reset_pressure_and_temperature()
