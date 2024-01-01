@@ -381,7 +381,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('config_image', None),
             ('font_size', 11),
             ('images_dir', None),
-            ('working_dir', None),
+            ('working_dir', '.'),
             ('hdf5_path', []),
             ('live_update', True),
             ('euler_angle_convention',
