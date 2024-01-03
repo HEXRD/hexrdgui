@@ -49,9 +49,9 @@ class Mask(ABC):
     def serialize(self):
         pass
 
-    @abstractmethod
-    def deserialize(self, data):
-        pass
+    @classmethod
+    def deserialize(cls, data):
+        return cls(data['name'], data['mtype'], data['visible'])
 
 
 class RegionMask(Mask):
@@ -82,16 +82,16 @@ class RegionMask(Mask):
             data.setdefault(det, {})[str(i)] = values
         return data
 
-    def deserialize(self, data):
-        self.name = data['name']
-        self.type = data['mtype']
-        self.visible = data['visible']
+    @classmethod
+    def deserialize(cls, data):
+        new_cls = cls(data['name'], data['mtype'], data['visible'])
         raw_data = []
         for det in HexrdConfig().detector_names:
             if det not in data.keys():
                 continue
             raw_data.extend([(det, v) for v in data[det].values()])
-        self.set_data(raw_data)
+        new_cls.set_data(raw_data)
+        return new_cls
 
 
 class ThresholdMask(Mask):
@@ -133,11 +133,11 @@ class ThresholdMask(Mask):
             'visible': self.visible,
         }
 
-    def deserialize(self, data):
-        self.name = data['name']
-        self.type = data['mtype']
-        self.visible = data['visible']
-        self.set_data([data['min_val'], data['max_val']])
+    @classmethod
+    def deserialize(cls, data):
+        new_cls = cls(data['name'], data['mtype'], data['visible'])
+        new_cls.set_data([data['min_val'], data['max_val']])
+        return new_cls
 
 
 class MaskManager(QObject, metaclass=QSingleton):
@@ -286,11 +286,11 @@ class MaskManager(QObject, metaclass=QSingleton):
             if key == '_version':
                 continue
             elif data['mtype'] == MaskType.threshold:
-                new_mask = ThresholdMask(None, None)
+                new_mask = ThresholdMask.deserialize(data)
             else:
-                new_mask = RegionMask(None, None)
+                new_mask = RegionMask.deserialize(data)
             self.masks[key] = new_mask
-            new_mask.deserialize(data)
+            new_mask.update_masked_arrays()
 
         if not HexrdConfig().loading_state:
             # We're importing masks directly,
