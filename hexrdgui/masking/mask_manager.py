@@ -259,12 +259,12 @@ class MaskManager(QObject, metaclass=QSingleton):
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
     def write_single_mask(self, name):
-        d = { '_version': 2 }
+        d = {'_version': 2}
         d[name] = self.masks[name].serialize()
         self.export_masks_to_file.emit(d)
 
     def write_all_masks(self, h5py_group=None):
-        d = { '_version': 2 }
+        d = {'_version': 2}
         for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
         if h5py_group:
