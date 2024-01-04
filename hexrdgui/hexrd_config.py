@@ -586,7 +586,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def load_settings(self):
         settings = QSettings()
-        if settings.value('settings_version') != self._q_settings_version:
+        current_version = int(settings.value('settings_version', -1))
+        if current_version != self._q_settings_version:
             # The QSettings version is different (probably PySide6 is
             # trying to load a PySide2 QSettings, which has issues)
             # Ignore the settings, as there may be compatibility issues.
