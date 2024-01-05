@@ -454,8 +454,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         Return a dict of the parts of HexrdConfig that should persisted to
         preserve the state of the application.
         """
+        # Skip these when determining which parts of the state to persist.
+        # These need to be saved between sessions, but we do not want them to
+        # persist in state files.
+        skip = [
+            'recent_state_files',
+        ]
         state = {}
         for name, _ in self._attributes_to_persist():
+            if name in skip:
+                continue
+
             state[self._attribute_to_settings_key(name)] = getattr(self, name)
 
         return state
@@ -582,6 +591,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         settings.setValue('settings_version', self._q_settings_version)
 
         state = self.state_to_persist()
+        # Add the recent_state_files state. This needs to be saved between
+        # sessions, but we do not in state files.
+        state['recent_state_files'] = self.recent_state_files
         self._save_state_to_settings(state, settings)
 
     def load_settings(self):
