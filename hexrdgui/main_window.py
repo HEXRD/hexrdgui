@@ -1551,8 +1551,8 @@ class MainWindow(QObject):
 
     def update_recent_state_files(self):
         # Update actions to list recent state files for quick load
-        state_menu = self.ui.menu_state
-        [state_menu.removeAction(a) for a in state_menu.actions()[2:]]
+        recents_menu = self.ui.menu_open_recent
+        [recents_menu.removeAction(a) for a in recents_menu.actions()]
         for recent in HexrdConfig().recent_state_files:
-            action = state_menu.addAction(Path(recent).name)
+            action = recents_menu.addAction(Path(recent).name)
             action.triggered.connect(partial(self.load_state_file, recent))

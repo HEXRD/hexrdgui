@@ -58,15 +58,8 @@
      <property name="toolTipsVisible">
       <bool>true</bool>
      </property>
-     <widget class="QMenu" name="menu_state">
-      <property name="title">
-       <string>State</string>
-      </property>
-      <addaction name="action_open_state"/>
-      <addaction name="separator"/>
-     </widget>
      <addaction name="action_open_images"/>
-     <addaction name="menu_state"/>
+     <addaction name="action_open_state"/>
      <addaction name="action_open_config_file"/>
      <addaction name="action_open_materials"/>
      <addaction name="separator"/>
@@ -115,7 +108,13 @@
      <addaction name="action_image_stack"/>
      <addaction name="action_llnl_import_tool"/>
     </widget>
+    <widget class="QMenu" name="menu_open_recent">
+     <property name="title">
+      <string>Open Recent</string>
+     </property>
+    </widget>
     <addaction name="menu_open"/>
+    <addaction name="menu_open_recent"/>
     <addaction name="menu_save"/>
     <addaction name="menu_import"/>
     <addaction name="menu_export"/>
@@ -749,6 +748,11 @@
     <string>State</string>
    </property>
   </action>
+  <action name="action_open_state">
+   <property name="text">
+    <string>State</string>
+   </property>
+  </action>
   <action name="action_llnl_import_tool">
    <property name="text">
     <string>LLNL Import Tool</string>
@@ -845,11 +849,6 @@
   <action name="action_edit_config">
    <property name="text">
     <string>Configuration</string>
-   </property>
-  </action>
-  <action name="action_open_state">
-   <property name="text">
-    <string>Load new state file</string>
    </property>
   </action>
  </widget>
