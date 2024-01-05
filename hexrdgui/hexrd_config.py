@@ -2780,6 +2780,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 }
 
     def add_recent_state_file(self, new_file):
+        if new_file in self.recent_state_files:
+            self.recent_state_files.remove(new_file)
         self.recent_state_files.append(new_file)
         # Maintain order and ensure no duplicate entries
         recent = list(dict.fromkeys(self.recent_state_files))
