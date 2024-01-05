@@ -37,12 +37,12 @@ class AzimuthalOverlayEditor:
 
     def update_fwhm(self, value):
         self.selected_overlay['fwhm'] = value
-        HexrdConfig().azimuthal_plot_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def update_scale(self, value):
         self.selected_overlay['scale'] = value
-        HexrdConfig().azimuthal_plot_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def update_name_label(self, name):
         self.ui.name_label.setText(name)
-        HexrdConfig().azimuthal_plot_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()

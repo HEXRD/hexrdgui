@@ -436,7 +436,7 @@ class ImageModeWidget(QObject):
 
     def update_azimuthal_offset(self, value):
         HexrdConfig().azimuthal_offset = value
-        HexrdConfig().azimuthal_plot_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
 
 POLAR_X_AXIS_LABELS_TO_VALUES = {
