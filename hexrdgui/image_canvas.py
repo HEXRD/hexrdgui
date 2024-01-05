@@ -94,7 +94,7 @@ class ImageCanvas(FigureCanvas):
             self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
-        HexrdConfig().azimuthal_overlay_modified.connect(
+        HexrdConfig().azimuthal_plot_modified.connect(
             self.update_azimuthal_integral_plot)
         HexrdConfig().azimuthal_plot_save_requested.connect(
             self.save_azimuthal_plot)
