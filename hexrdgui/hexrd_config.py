@@ -2781,5 +2781,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def add_recent_state_file(self, new_file):
         self.recent_state_files.append(new_file)
-        recent = list(set(self.recent_state_files))
-        self.recent_state_files = recent[1:] if len(recent) > 10 else recent
+        # Maintain order and ensure no duplicate entries
+        recent = list(dict.fromkeys(self.recent_state_files))
+        while len(recent) > 10:
+            recent.pop(0)
+        self.recent_state_files = recent
