@@ -106,6 +106,8 @@ class ImageModeWidget(QObject):
 
         self.ui.polar_azimuthal_overlays.pressed.connect(
             self.show_polar_overlay_manager)
+        self.ui.azimuthal_offset.valueChanged.connect(
+            self.update_azimuthal_offset)
 
         HexrdConfig().state_loaded.connect(self.update_gui_from_config)
 
@@ -431,6 +433,10 @@ class ImageModeWidget(QObject):
 
         self._polar_overlay_manager = AzimuthalOverlayManager(self.ui)
         self._polar_overlay_manager.show()
+
+    def update_azimuthal_offset(self, value):
+        HexrdConfig().azimuthal_offset = value
+        HexrdConfig().azimuthal_plot_modified.emit()
 
 
 POLAR_X_AXIS_LABELS_TO_VALUES = {

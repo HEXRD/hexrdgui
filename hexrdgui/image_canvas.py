@@ -1220,7 +1220,8 @@ class ImageCanvas(FigureCanvas):
         # !!! NOTE: visible polar masks have already been applied
         #           in polarview.py
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
-        return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
+        offset = HexrdConfig().azimuthal_offset
+        return masked.sum(axis=0) / np.sum(~masked.mask, axis=0) + offset
 
     def clear_azimuthal_overlay_artists(self):
         while self.azimuthal_overlay_artists:

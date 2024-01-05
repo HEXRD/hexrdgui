@@ -294,6 +294,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._recent_images = {}
         self.max_cpus = None
         self.azimuthal_overlays = []
+        self.azimuthal_offset = 0.
         self.show_azimuthal_legend = True
         self.show_all_colormaps = False
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
@@ -402,6 +403,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('custom_polar_tth_distortion_object_serialized', None),
             ('_previous_structureless_calibration_picks_data', None),
             ('sample_tilt', [0, 0, 0]),
+            ('azimuthal_offset', 0.0),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -431,6 +433,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # to persist in between regular sessions.
         skip = [
             'azimuthal_overlays',
+            'azimuthal_offset',
             '_recent_images',
         ]
 
