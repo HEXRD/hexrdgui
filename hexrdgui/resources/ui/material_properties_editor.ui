@@ -24,44 +24,6 @@
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="1">
-    <widget class="ScientificDoubleSpinBox" name="density">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Roboto,arial,sans-serif'; font-size:14px; color:#4d5156; background-color:#ffffff;&quot;&gt;Computed from lattice parameters and structure info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">background-color: #F0F0F0</string>
-     </property>
-     <property name="frame">
-      <bool>false</bool>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
-     <property name="buttonSymbols">
-      <enum>QAbstractSpinBox::NoButtons</enum>
-     </property>
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="suffix">
-      <string> g/cm³</string>
-     </property>
-     <property name="maximum">
-      <double>100000.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="volume_per_atom_label">
-     <property name="text">
-      <string>Volume per atom:</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1">
     <widget class="QComboBox" name="elastic_tensor_type">
      <item>
@@ -86,7 +48,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item row="6" column="0" colspan="2">
     <spacer name="vertical_spacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -130,6 +92,13 @@
      </property>
     </widget>
    </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="elastic_tensor_type_label">
+     <property name="text">
+      <string>Elastic Tensor type:</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QGroupBox" name="elastic_tensor_group">
      <property name="toolTip">
@@ -148,17 +117,41 @@
      </layout>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="volume_label">
-     <property name="text">
-      <string>Volume:</string>
+   <item row="2" column="1">
+    <widget class="ScientificDoubleSpinBox" name="density">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Roboto,arial,sans-serif'; font-size:14px; color:#4d5156; background-color:#ffffff;&quot;&gt;Computed from lattice parameters and structure info&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #F0F0F0</string>
+     </property>
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::NoButtons</enum>
+     </property>
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+     <property name="suffix">
+      <string> g/cm³</string>
+     </property>
+     <property name="maximum">
+      <double>100000.000000000000000</double>
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="elastic_tensor_type_label">
+   <item row="4" column="0">
+    <widget class="QLabel" name="volume_per_atom_label">
      <property name="text">
-      <string>Elastic Tensor type:</string>
+      <string>Volume per atom:</string>
      </property>
     </widget>
    </item>
@@ -193,6 +186,20 @@
      </property>
     </widget>
    </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="volume_label">
+     <property name="text">
+      <string>Volume:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QPushButton" name="show_pt_slider">
+     <property name="text">
+      <string>Show PT Slider</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -207,6 +214,7 @@
   <tabstop>density</tabstop>
   <tabstop>volume</tabstop>
   <tabstop>volume_per_atom</tabstop>
+  <tabstop>show_pt_slider</tabstop>
  </tabstops>
  <resources/>
  <connections/>

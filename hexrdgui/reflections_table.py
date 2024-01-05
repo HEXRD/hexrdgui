@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QMenu, QTableWidgetItem
 
-from hexrd.crystallography import hklToStr
+from hexrd.material.crystallography import hklToStr
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.reflections_selection_helper import ReflectionsSelectionHelper
@@ -53,7 +53,7 @@ class ReflectionsTable:
 
         self.update_material_name()
         self.populate_relative_scale_options()
-        self.update_table()
+        self.update_table(only_if_visible=False)
 
     def setup_connections(self):
         self.ui.table.selectionModel().selectionChanged.connect(
@@ -184,6 +184,7 @@ class ReflectionsTable:
         self.ui.relative_scale_material.setCurrentText(v)
 
     def show(self):
+        self.update_table(only_if_visible=False)
         self.ui.show()
 
     def hide(self):
@@ -277,9 +278,13 @@ class ReflectionsTable:
             self.populate_relative_scale_options()
             self.update_table()
 
-    def update_table(self):
+    def update_table(self, only_if_visible=True):
         if self._modifying_exclusions:
             # Don't update the table if we are modifying the exclusions
+            return
+
+        if only_if_visible and not self.ui.isVisible():
+            # If it is not visible, don't bother updating the table.
             return
 
         material = self.material

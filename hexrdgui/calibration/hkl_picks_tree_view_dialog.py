@@ -4,7 +4,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from hexrd.crystallography import hklToStr
+from hexrd.material.crystallography import hklToStr
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFileDialog, QMessageBox

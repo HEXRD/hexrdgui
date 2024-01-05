@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 from hexrd import constants
-from hexrd import unitcell
+from hexrd.material import unitcell
 
 from hexrd.transforms import xfcapi
 
