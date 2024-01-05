@@ -1572,8 +1572,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         pixel_size = detector.get('pixels', {}).get('size', {})
         return pixel_size.get('value', [0.1, 0.1])
 
-    def add_detector(self, detector_name, detector_to_copy=None):
-        if detector_to_copy is not None:
+    def add_detector(self, detector_name, detector_to_copy=None, config=None):
+        if config is not None:
+            new_detector = copy.deepcopy(config)
+            self.create_internal_config(new_detector)
+        elif detector_to_copy is not None:
             new_detector = copy.deepcopy(self.detector(detector_to_copy))
         else:
             new_detector = self.default_detector

@@ -1,19 +1,21 @@
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QFocusEvent, QKeyEvent
 from PySide6.QtWidgets import (
-    QComboBox, QLineEdit, QMessageBox, QPushButton
+    QComboBox, QInputDialog, QLineEdit, QMessageBox, QPushButton
 )
 
 import numpy as np
+import yaml
 
+from hexrd.resources import detector_templates
 from hexrd.instrument import calc_angles_from_beam_vec, calc_beam_vec
 from hexrd.transforms import xfcapi
 
-from hexrdgui import constants
+from hexrdgui import constants, resource_loader
 from hexrdgui.calibration.panel_buffer_dialog import PanelBufferDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals
+from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 
 
@@ -167,18 +169,51 @@ class InstrumentFormViewWidget(QObject):
             self.update_detector_from_config()
 
     def on_detector_add_clicked(self):
+        # Grab current selection info
         combo = self.ui.cal_det_current
         current_detector = self.get_current_detector()
-        detector_names = self.cfg.detector_names
-        new_detector_name_base = 'detector_'
-        for i in range(1000000):
-            new_detector_name = new_detector_name_base + str(i + 1)
-            if new_detector_name not in detector_names:
-                self.cfg.add_detector(new_detector_name, current_detector)
-                self.update_detector_from_config()
-                new_ind = combo.findText(new_detector_name)
-                combo.setCurrentIndex(new_ind)
-                return
+
+        # Create a dict of options for adding a detector, mapping name to
+        # imported detector config (or None for copying from currently
+        # selected detector)
+        options = {f'Copy {current_detector}': None}
+        for f in resource_loader.module_contents(detector_templates):
+            if f.endswith(('.yml', '.yaml')):
+                det = resource_loader.load_resource(detector_templates, f)
+                if default := yaml.safe_load(det):
+                    name = next(iter(default))
+                    options[name] = default[name]
+
+        # Provide simple dialog for selecting detector to import/copy
+        msg = 'Copy current or select template'
+        det_name, ok = QInputDialog.getItem(
+            self.ui, 'Add New Detector', msg, list(options), 0, False)
+
+        if not ok:
+            return
+
+        if (new_det := options.get(det_name)) is None:
+            new_detector_name = f'Copy of {current_detector}'
+        else:
+            new_detector_name = det_name
+
+            if 'transform' not in new_det:
+                # Add in the default transform
+                transform = HexrdConfig().default_detector['transform']
+                new_det['transform'] = transform
+
+        # Ensure it is unique
+        new_detector_name = unique_name(HexrdConfig().detector_names,
+                                        new_detector_name)
+
+        # Add the imported or copied detector and update current selection
+        self.cfg.add_detector(new_detector_name, current_detector, new_det)
+
+        self.update_detector_from_config()
+
+        # Set the current detector to be the newly added one
+        new_ind = combo.findText(new_detector_name)
+        combo.setCurrentIndex(new_ind)
 
     def update_config_from_gui(self):
         """This function only updates the sender value"""
