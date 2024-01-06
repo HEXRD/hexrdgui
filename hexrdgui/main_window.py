@@ -1556,7 +1556,15 @@ class MainWindow(QObject):
         # Update actions to list recent state files for quick load
         recents_menu = self.ui.menu_open_recent
         [recents_menu.removeAction(a) for a in recents_menu.actions()]
-        for idx in range(len(HexrdConfig().recent_state_files)):
-            recent = HexrdConfig().recent_state_files[idx]
+
+        recent_state_files = HexrdConfig().recent_state_files
+        if not recent_state_files:
+            # Put in a placeholder action. Otherwise, the menu will not
+            # render correctly when we add the real actions later.
+            recents_menu.addAction('None')
+            return
+
+        for idx in range(len(recent_state_files)):
+            recent = recent_state_files[idx]
             action = recents_menu.addAction(Path(recent).name)
             action.triggered.connect(partial(self.load_state_file, recent))
