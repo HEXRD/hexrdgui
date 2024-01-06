@@ -1567,4 +1567,20 @@ class MainWindow(QObject):
         for idx in range(len(recent_state_files)):
             recent = recent_state_files[idx]
             action = recents_menu.addAction(Path(recent).name)
-            action.triggered.connect(partial(self.load_state_file, recent))
+            action.triggered.connect(partial(self.load_recent_state_file,
+                                             recent))
+
+    def load_recent_state_file(self, path):
+        if not Path(path).exists():
+            msg = (
+                f'Recent state file: "{path}"\n\nno longer exists. '
+                'Remove from recent files list?'
+            )
+            response = QMessageBox.question(self.ui, 'HEXRD', msg)
+            if response == QMessageBox.Yes:
+                HexrdConfig().recent_state_files.remove(path)
+                self.update_recent_state_files()
+
+            return
+
+        self.load_state_file(path)
