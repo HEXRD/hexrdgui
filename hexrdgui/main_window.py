@@ -1,8 +1,8 @@
+from functools import partial
 import os
 from pathlib import Path
 import shutil
 import tempfile
-from functools import partial
 
 import h5py
 import numpy as np
@@ -1463,6 +1463,9 @@ class MainWindow(QObject):
 
     def load_state_file(self, filepath):
         path = Path(filepath)
+        if not path.exists():
+            raise OSError(2, 'No such file or directory', filepath)
+
         HexrdConfig().working_dir = str(path.parent)
 
         # Some older state files have issues that need to be resolved.
@@ -1553,7 +1556,7 @@ class MainWindow(QObject):
         # Update actions to list recent state files for quick load
         recents_menu = self.ui.menu_open_recent
         [recents_menu.removeAction(a) for a in recents_menu.actions()]
-        for idx in reversed(range(len(HexrdConfig().recent_state_files))):
+        for idx in range(len(HexrdConfig().recent_state_files)):
             recent = HexrdConfig().recent_state_files[idx]
             action = recents_menu.addAction(Path(recent).name)
             action.triggered.connect(partial(self.load_state_file, recent))

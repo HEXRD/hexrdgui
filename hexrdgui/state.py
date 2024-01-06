@@ -137,9 +137,11 @@ def save(h5_file):
     Save the state of the application in a HDF5 file
     """
 
-    # We load the instrument config in a different way...
     skip_list = [
+        # We load the instrument config in a different way...
         'config_instrument',
+        # We don't want to save the recent state files to the state file...
+        'recent_state_files',
     ]
 
     state = HexrdConfig().state_to_persist()

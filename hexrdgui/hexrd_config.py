@@ -454,17 +454,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         Return a dict of the parts of HexrdConfig that should persisted to
         preserve the state of the application.
         """
-        # Skip these when determining which parts of the state to persist.
-        # These need to be saved between sessions, but we do not want them to
-        # persist in state files.
-        skip = [
-            'recent_state_files',
-        ]
         state = {}
         for name, _ in self._attributes_to_persist():
-            if name in skip:
-                continue
-
             state[self._attribute_to_settings_key(name)] = getattr(self, name)
 
         return state
@@ -483,15 +474,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         ]
 
         if self.loading_state:
-            # Do not load default materials if we are loading state
-            skip.append('_imported_default_materials')
             skip += [
+                # Do not load default materials if we are loading state
+                '_imported_default_materials',
                 # Skip colormap settings
                 'show_all_colormaps',
                 'limited_cmaps_list',
                 'default_cmap',
                 # Ignore the font size when loading from state
                 'font_size',
+                # Ignore recent state files when loading from state
+                'recent_state_files',
             ]
 
         try:
@@ -509,6 +502,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
         if not isinstance(self.show_all_colormaps, bool):
             self.show_all_colormaps = self.show_all_colormaps == 'true'
+
+        # This is None sometimes. Make sure it is an empty list instead.
+        if self.recent_state_files is None:
+            self.recent_state_files = []
 
         # A list with a single item will come back from QSettings as a str,
         # so make sure we convert it to a list.
@@ -591,9 +588,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         settings.setValue('settings_version', self._q_settings_version)
 
         state = self.state_to_persist()
-        # Add the recent_state_files state. This needs to be saved between
-        # sessions, but we do not in state files.
-        state['recent_state_files'] = self.recent_state_files
         self._save_state_to_settings(state, settings)
 
     def load_settings(self):
@@ -2792,11 +2786,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 }
 
     def add_recent_state_file(self, new_file):
-        if new_file in self.recent_state_files:
-            self.recent_state_files.remove(new_file)
-        self.recent_state_files.append(new_file)
+        self.recent_state_files.insert(0, str(new_file))
         # Maintain order and ensure no duplicate entries
         recent = list(dict.fromkeys(self.recent_state_files))
         while len(recent) > 10:
-            recent.pop(0)
+            recent.pop(-1)
         self.recent_state_files = recent
