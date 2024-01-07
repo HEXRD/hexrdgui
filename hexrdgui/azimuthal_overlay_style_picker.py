@@ -50,7 +50,7 @@ class AzimuthalOverlayStylePicker(QObject):
         self.color = self.overlay['color']
         self.opacity = self.overlay['opacity']
         self.update_gui()
-        HexrdConfig().azimuthal_overlay_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def update_gui(self):
         with block_signals(*self.all_widgets):
@@ -63,7 +63,7 @@ class AzimuthalOverlayStylePicker(QObject):
         self.overlay['color'] = self.ui.color.text()
         self.overlay['opacity'] = self.ui.opacity.value()
 
-        HexrdConfig().azimuthal_overlay_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def pick_color(self):
         # This should only be called by signals/slots

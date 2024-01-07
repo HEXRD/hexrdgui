@@ -220,7 +220,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     recent_images_changed = Signal()
 
     """Emitted when an azimuthal overlay gets modified"""
-    azimuthal_overlay_modified = Signal()
+    azimuthal_options_modified = Signal()
 
     """Emitted when an azimuthal overlay gets modified"""
     azimuthal_plot_save_requested = Signal()
@@ -294,6 +294,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._recent_images = {}
         self.max_cpus = None
         self.azimuthal_overlays = []
+        self.azimuthal_offset = 0.
         self.show_azimuthal_legend = True
         self.show_all_colormaps = False
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
@@ -402,6 +403,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('custom_polar_tth_distortion_object_serialized', None),
             ('_previous_structureless_calibration_picks_data', None),
             ('sample_tilt', [0, 0, 0]),
+            ('azimuthal_offset', 0.0),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -431,6 +433,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # to persist in between regular sessions.
         skip = [
             'azimuthal_overlays',
+            'azimuthal_offset',
             '_recent_images',
         ]
 
@@ -1913,7 +1916,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                            if x['material'] in mats]
         if len(self.azimuthal_overlays) != len(pruned_overlays):
             self.azimuthal_overlays = pruned_overlays
-            HexrdConfig().azimuthal_overlay_modified.emit()
+            HexrdConfig().azimuthal_options_modified.emit()
 
     def append_overlay(self, material_name, type):
         kwargs = {

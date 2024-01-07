@@ -94,7 +94,7 @@ class ImageCanvas(FigureCanvas):
             self.oscillation_stage_changed)
         HexrdConfig().polar_masks_changed.connect(self.polar_masks_changed)
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
-        HexrdConfig().azimuthal_overlay_modified.connect(
+        HexrdConfig().azimuthal_options_modified.connect(
             self.update_azimuthal_integral_plot)
         HexrdConfig().azimuthal_plot_save_requested.connect(
             self.save_azimuthal_plot)
@@ -1220,7 +1220,8 @@ class ImageCanvas(FigureCanvas):
         # !!! NOTE: visible polar masks have already been applied
         #           in polarview.py
         masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
-        return masked.sum(axis=0) / np.sum(~masked.mask, axis=0)
+        offset = HexrdConfig().azimuthal_offset
+        return masked.sum(axis=0) / np.sum(~masked.mask, axis=0) + offset
 
     def clear_azimuthal_overlay_artists(self):
         while self.azimuthal_overlay_artists:

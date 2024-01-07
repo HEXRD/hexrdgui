@@ -195,13 +195,13 @@ class AzimuthalOverlayManager:
         if any_changed:
             # In case the material was renamed
             self.update_table()
-            HexrdConfig().azimuthal_overlay_modified.emit()
+            HexrdConfig().azimuthal_options_modified.emit()
 
     def update_visibilities(self):
         for i in range(self.ui.table.rowCount()):
             w = self.visibility_boxes[i]
             self.overlays[i]['visible'] = w.isChecked()
-        HexrdConfig().azimuthal_overlay_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     @property
     def active_material_name(self):
@@ -262,12 +262,12 @@ class AzimuthalOverlayManager:
         self.add_azimuthal_overlay()
         self.update_table()
         self.select_row(len(self.overlays) - 1)
-        HexrdConfig().azimuthal_overlay_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def remove(self):
         self.overlays.pop(self.selected_row)
         self.update_table()
-        HexrdConfig().azimuthal_overlay_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def edit_style(self):
         self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay,
@@ -276,7 +276,7 @@ class AzimuthalOverlayManager:
 
     def show_legend(self, value):
         HexrdConfig().show_azimuthal_legend = value
-        HexrdConfig().azimuthal_overlay_modified.emit()
+        HexrdConfig().azimuthal_options_modified.emit()
 
     def on_material_modified(self, material_name):
         update_needed = False
@@ -286,4 +286,4 @@ class AzimuthalOverlayManager:
                 break
 
         if update_needed:
-            HexrdConfig().azimuthal_overlay_modified.emit()
+            HexrdConfig().azimuthal_options_modified.emit()
