@@ -23,9 +23,6 @@ import matplotlib.pyplot as plt
 
 class MaskManagerDialog(QObject):
 
-    # Emitted when masks are removed or visibility is toggled
-    update_masks = Signal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
