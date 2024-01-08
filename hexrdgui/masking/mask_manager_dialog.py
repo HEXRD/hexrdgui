@@ -195,7 +195,7 @@ class MaskManagerDialog(QObject):
         for i, det in enumerate(HexrdConfig().detector_names):
             axis = fig.add_subplot(rows, cols, i + 1)
             axis.set_title(det)
-            axis.imshow(MaskManager().raw_masks_dict[det])
+            axis.imshow(HexrdConfig().raw_masks_dict[det])
         fig.canvas.draw_idle()
         fig.show()
 

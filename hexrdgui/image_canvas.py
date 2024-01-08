@@ -204,7 +204,7 @@ class ImageCanvas(FigureCanvas):
     def unscaled_image_dict(self):
         # Returns a dict of the unscaled images
         if self.mode == ViewType.raw:
-            return MaskManager().create_masked_images_dict(fill_value=np.nan)
+            return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
         else:
             # Masks are already applied...
             return {'img': self.iviewer.img}

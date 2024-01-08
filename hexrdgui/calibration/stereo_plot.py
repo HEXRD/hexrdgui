@@ -42,7 +42,7 @@ class InstrumentViewer:
 
     @property
     def raw_img_dict(self):
-        return MaskManager().masked_images_dict
+        return HexrdConfig().masked_images_dict
 
     @property
     def stereo_size(self):

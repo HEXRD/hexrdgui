@@ -23,6 +23,7 @@ from hexrdgui import constants
 from hexrdgui import overlays
 from hexrdgui import resource_loader
 from hexrdgui import utils
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.singletons import QSingleton
 
 import hexrdgui.resources.calibration
@@ -877,6 +878,74 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def images_dict(self):
         """Default to intensity corrected images dict"""
         return self.intensity_corrected_images_dict
+
+    @property
+    def raw_masks_dict(self):
+        """Get a masks dict"""
+        from hexrdgui.masking.mask_manager import MaskManager
+        masks_dict = {}
+        for name, img in self.images_dict.items():
+            final_mask = np.ones(img.shape, dtype=bool)
+            for mask in MaskManager().masks.values():
+                if not mask.visible:
+                    continue
+
+                if mask.type == MaskType.threshold:
+                    idx = HexrdConfig().current_imageseries_idx
+                    thresh_mask = mask.masked_arrays[name][idx]
+                    final_mask = np.logical_and(final_mask, thresh_mask)
+                else:
+                    if MaskManager().view_mode != constants.ViewType.raw:
+                        # Make sure we have the raw masked arrays
+                        mask.update_masked_arrays(constants.ViewType.raw)
+                    for det, arr in mask.masked_arrays:
+                        if det == name:
+                            final_mask = np.logical_and(final_mask, arr)
+                    if MaskManager().view_mode != constants.ViewType.raw:
+                        # Reset the masked arrays for the current view
+                        mask.update_masked_arrays(MaskManager().view_mode)
+            masks_dict[name] = final_mask
+
+        return masks_dict
+
+    @property
+    def masked_images_dict(self):
+        return self.create_masked_images_dict()
+
+    def create_masked_images_dict(self, fill_value=0):
+        """Get an images dict where masks have been applied"""
+        from hexrdgui.masking.mask_manager import MaskManager
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+
+        images_dict = self.images_dict
+        instr = create_hedm_instrument()
+
+        has_masks = bool(MaskManager().visible_masks)
+        has_panel_buffers = any(panel.panel_buffer is not None
+                                for panel in instr.detectors.values())
+
+        if not has_masks and not has_panel_buffers:
+            # Force a fill_value of 0 if there are no visible masks
+            # and no panel buffers.
+            fill_value = 0
+
+        for det, mask in self.raw_masks_dict.items():
+            if has_panel_buffers:
+                panel = instr.detectors[det]
+                utils.convert_panel_buffer_to_2d_array(panel)
+
+            for name, img in images_dict.items():
+                if (np.issubdtype(type(fill_value), np.floating) and
+                        not np.issubdtype(img.dtype, np.floating)):
+                    img = img.astype(float)
+                    images_dict[name] = img
+                if det == name:
+                    img[~mask] = fill_value
+
+                    if has_panel_buffers:
+                        img[~panel.panel_buffer] = fill_value
+
+        return images_dict
 
     def save_imageseries(self, ims, name, write_file, selected_format,
                          **kwargs):
