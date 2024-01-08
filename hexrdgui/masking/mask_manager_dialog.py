@@ -42,7 +42,6 @@ class MaskManagerDialog(QObject):
         self.ui.show()
 
     def setup_connections(self):
-        self.ui.masks_table.cellDoubleClicked.connect(self.get_old_name)
         self.ui.masks_table.cellChanged.connect(self.update_mask_name)
         self.ui.masks_table.customContextMenuRequested.connect(
             self.context_menu_event)
@@ -87,24 +86,15 @@ class MaskManagerDialog(QObject):
         self.update_table()
         MaskManager().masks_changed()
 
-    def get_old_name(self, row, column):
-        if column != 0:
-            return
-
-        self.old_name = self.ui.masks_table.item(row, 0).text()
-
     def update_mask_name(self, row):
-        if not hasattr(self, 'old_name') or self.old_name is None:
-            return
-
+        old_name = MaskManager().mask_names[row]
         new_name = self.ui.masks_table.item(row, 0).text()
-        if self.old_name != new_name:
+        if old_name != new_name:
             if new_name in MaskManager().mask_names:
-                self.ui.masks_table.item(row, 0).setText(self.old_name)
+                self.ui.masks_table.item(row, 0).setText(old_name)
                 return
-            MaskManager().update_name(self.old_name, new_name)
+            MaskManager().update_name(old_name, new_name)
 
-        self.old_name = None
         self.update_table()
 
     def context_menu_event(self, event):
