@@ -33,12 +33,14 @@ class Mask(ABC):
         self.visible = visibility
 
     # Abstract methods
+    @property
     @abstractmethod
-    def get_data(self):
+    def data(self):
         pass
 
+    @data.setter
     @abstractmethod
-    def set_data(self, data):
+    def data(self, values):
         pass
 
     @abstractmethod
@@ -59,11 +61,13 @@ class RegionMask(Mask):
         super().__init__(name, mtype, visible)
         self._raw = None
 
-    def get_data(self):
+    @property
+    def data(self):
         return self._raw
 
-    def set_data(self, data):
-        self._raw = data
+    @data.setter
+    def data(self, values):
+        self._raw = values
         self.update_masked_arrays()
 
     def update_masked_arrays(self, view=ViewType.raw):
@@ -90,7 +94,7 @@ class RegionMask(Mask):
             if det not in data.keys():
                 continue
             raw_data.extend([(det, v) for v in data[det].values()])
-        new_cls.set_data(raw_data)
+        new_cls.data = raw_data
         return new_cls
 
 
@@ -107,18 +111,20 @@ class ThresholdMask(Mask):
 
         self.visible = visible
         if visible and self._hidden_mask_data:
-            self.set_data(self._hidden_mask_data)
+            self.data = self._hidden_mask_data
             self._hidden_mask_data = None
         elif not visible:
-            self._hidden_mask_data = self.get_data()
-            self.set_data([-math.inf, math.inf])
+            self._hidden_mask_data = self.data
+            self.data = [-math.inf, math.inf]
 
-    def get_data(self):
+    @property
+    def data(self):
         return [self.min_val, self.max_val]
 
-    def set_data(self, data):
-        self.min_val = data[0]
-        self.max_val = data[1]
+    @data.setter
+    def data(self, values):
+        self.min_val = values[0]
+        self.max_val = values[1]
         self.update_masked_arrays()
 
     def update_masked_arrays(self):
@@ -136,7 +142,7 @@ class ThresholdMask(Mask):
     @classmethod
     def deserialize(cls, data):
         new_cls = cls(data['name'], data['mtype'], data['visible'])
-        new_cls.set_data([data['min_val'], data['max_val']])
+        new_cls.data = [data['min_val'], data['max_val']]
         return new_cls
 
 
@@ -213,7 +219,7 @@ class MaskManager(QObject, metaclass=QSingleton):
             new_mask = ThresholdMask(name, mtype, visible)
         else:
             new_mask = RegionMask(name, mtype, visible)
-        new_mask.set_data(data)
+        new_mask.data = data
         self.masks[name] = new_mask
         self.mask_mgr_dialog_update.emit()
         return new_mask

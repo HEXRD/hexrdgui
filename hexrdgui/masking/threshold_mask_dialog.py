@@ -41,7 +41,7 @@ class ThresholdMaskDialog(QObject):
         if reset or not MaskManager().threshold_mask:
             vals = []
         else:
-            vals = MaskManager().threshold_mask.get_data()
+            vals = MaskManager().threshold_mask.data
 
         val = vals[0] if len(vals) > 0 else -math.inf
         self.ui.first_value.setValue(val)
@@ -67,6 +67,6 @@ class ThresholdMaskDialog(QObject):
             MaskManager().add_mask(
                 'threshold', self.values, MaskType.threshold)
         else:
-            MaskManager().threshold_mask.set_data(self.values)
+            MaskManager().threshold_mask.data = self.values
         MaskManager().threshold_mask.update_masked_arrays()
         self.mask_applied.emit()

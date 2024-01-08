@@ -911,7 +911,7 @@ class MainWindow(QObject):
         # Overwrite previous pinhole masks
         name = 'pinhole_mask'
         if name in MaskManager().mask_names:
-            MaskManager().masks[name].set_data(ph_masks)
+            MaskManager().masks[name].data = ph_masks
         else:
             MaskManager().add_mask(name, ph_masks, MaskType.pinhole)
         MaskManager().raw_masks_changed.emit()

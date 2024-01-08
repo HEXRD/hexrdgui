@@ -20,7 +20,7 @@ def recompute_raw_threshold_mask():
             masks = [None for i in range(len(ims))]
             for idx in range(len(ims)):
                 img = HexrdConfig().image(det, idx)
-                mask = create_threshold_mask(img, tm.get_data())
+                mask = create_threshold_mask(img, tm.data)
                 masks[idx] = mask
             results[det] = masks
     return results
