@@ -5,3 +5,5 @@ class MaskType:
     powder = 'powder'
     laue = 'laue'
     pinhole = 'pinhole'
+
+CURRENT_MASK_VERSION = 2

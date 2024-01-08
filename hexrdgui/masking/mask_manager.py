@@ -5,7 +5,7 @@ from PySide6.QtCore import Signal, QObject
 from hexrdgui import utils
 
 from hexrdgui.constants import ViewType
-from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.constants import CURRENT_MASK_VERSION, MaskType
 from hexrdgui.masking.create_polar_mask import (
     create_polar_mask_from_raw, rebuild_polar_masks
 )
@@ -13,7 +13,7 @@ from hexrdgui.masking.create_raw_mask import (
     recompute_raw_threshold_mask, create_raw_mask, rebuild_raw_masks
 )
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.masking.mask_compatability import load_masks_v1_to_v2
+from hexrdgui.masking.mask_compatability import load_masks
 from hexrdgui.singletons import QSingleton
 from hexrdgui.utils import unique_name
 
@@ -227,12 +227,12 @@ class MaskManager(QObject, metaclass=QSingleton):
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
     def write_single_mask(self, name):
-        d = {'_version': 2}
+        d = {'_version': CURRENT_MASK_VERSION}
         d[name] = self.masks[name].serialize()
         self.export_masks_to_file.emit(d)
 
     def write_all_masks(self, h5py_group=None):
-        d = {'_version': 2}
+        d = {'_version': CURRENT_MASK_VERSION}
         for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
         if h5py_group:
@@ -247,7 +247,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.write_all_masks(h5py_group['masks'])
 
     def load_masks(self, h5py_group):
-        items = load_masks_v1_to_v2(h5py_group)
+        items = load_masks(h5py_group)
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
         for key, data in items:
