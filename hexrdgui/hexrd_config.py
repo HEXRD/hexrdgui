@@ -302,6 +302,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._previous_structureless_calibration_picks_data = None
         self.image_mode = constants.ViewType.raw
         self._sample_tilt = np.asarray([0, 0, 0], float)
+        self.recent_state_files = []
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -404,6 +405,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_previous_structureless_calibration_picks_data', None),
             ('sample_tilt', [0, 0, 0]),
             ('azimuthal_offset', 0.0),
+            ('recent_state_files', []),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -472,15 +474,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         ]
 
         if self.loading_state:
-            # Do not load default materials if we are loading state
-            skip.append('_imported_default_materials')
             skip += [
+                # Do not load default materials if we are loading state
+                '_imported_default_materials',
                 # Skip colormap settings
                 'show_all_colormaps',
                 'limited_cmaps_list',
                 'default_cmap',
                 # Ignore the font size when loading from state
                 'font_size',
+                # Ignore recent state files when loading from state
+                'recent_state_files',
             ]
 
         try:
@@ -498,6 +502,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
         if not isinstance(self.show_all_colormaps, bool):
             self.show_all_colormaps = self.show_all_colormaps == 'true'
+
+        # This is None sometimes. Make sure it is an empty list instead.
+        if self.recent_state_files is None:
+            self.recent_state_files = []
+
+        # A list with a single item will come back from QSettings as a str,
+        # so make sure we convert it to a list.
+        if not isinstance(self.recent_state_files, list):
+            self.recent_state_files = [self.recent_state_files]
 
         if self.azimuthal_overlays is None:
             self.azimuthal_overlays = []
@@ -579,7 +592,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def load_settings(self):
         settings = QSettings()
-        if settings.value('settings_version') != self._q_settings_version:
+        current_version = int(settings.value('settings_version', -1))
+        if current_version != self._q_settings_version:
             # The QSettings version is different (probably PySide6 is
             # trying to load a PySide2 QSettings, which has issues)
             # Ignore the settings, as there may be compatibility issues.
@@ -2770,3 +2784,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     'status': 0,
                     'value': [0., 0.],
                 }
+
+    def add_recent_state_file(self, new_file):
+        self.recent_state_files.insert(0, str(new_file))
+        # Maintain order and ensure no duplicate entries
+        recent = list(dict.fromkeys(self.recent_state_files))
+        while len(recent) > 10:
+            recent.pop(-1)
+        self.recent_state_files = recent

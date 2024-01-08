@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>26</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -108,7 +108,13 @@
      <addaction name="action_image_stack"/>
      <addaction name="action_llnl_import_tool"/>
     </widget>
+    <widget class="QMenu" name="menu_open_recent">
+     <property name="title">
+      <string>Open Recent</string>
+     </property>
+    </widget>
     <addaction name="menu_open"/>
+    <addaction name="menu_open_recent"/>
     <addaction name="menu_save"/>
     <addaction name="menu_import"/>
     <addaction name="menu_export"/>
@@ -317,7 +323,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>753</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">
@@ -330,7 +336,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>753</height>
+          <height>775</height>
          </rect>
         </property>
         <attribute name="label">

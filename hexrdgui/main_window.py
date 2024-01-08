@@ -1,10 +1,10 @@
+from functools import partial
 import os
 from pathlib import Path
 import shutil
 import tempfile
 
 import h5py
-from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 import numpy as np
 from skimage import measure
 
@@ -23,6 +23,7 @@ from hexrdgui.calibration_slider_widget import CalibrationSliderWidget
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.config_dialog import ConfigDialog
+from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.cal_tree_view import CalTreeView
 from hexrdgui.hand_drawn_mask_dialog import HandDrawnMaskDialog
@@ -171,6 +172,7 @@ class MainWindow(QObject):
         # the first paint event has occurred (see MainWindow.eventFilter).
 
         self.add_view_dock_widget_actions()
+        self.update_recent_state_files()
 
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
@@ -1457,12 +1459,15 @@ class MainWindow(QObject):
         if not selected_file:
             return
 
-        path = Path(selected_file)
-        HexrdConfig().working_dir = str(path.parent)
-
         self.load_state_file(selected_file)
 
     def load_state_file(self, filepath):
+        path = Path(filepath)
+        if not path.exists():
+            raise OSError(2, 'No such file or directory', filepath)
+
+        HexrdConfig().working_dir = str(path.parent)
+
         # Some older state files have issues that need to be resolved.
         # Perform an update, if needed, to fix them, before reading.
         state.update_if_needed(filepath)
@@ -1475,6 +1480,10 @@ class MainWindow(QObject):
             # If an exception occurred, assume we should close the file...
             h5_file.close()
             raise
+
+        # Remember the state file in the recent files list
+        HexrdConfig().add_recent_state_file(filepath)
+        self.update_recent_state_files()
 
         # Since statuses are added after the instrument config is loaded,
         # the statuses in the GUI might not be up to date. Ensure it is.
@@ -1542,3 +1551,36 @@ class MainWindow(QObject):
     @property
     def thread_pool(self):
         return QThreadPool.globalInstance()
+
+    def update_recent_state_files(self):
+        # Update actions to list recent state files for quick load
+        recents_menu = self.ui.menu_open_recent
+        [recents_menu.removeAction(a) for a in recents_menu.actions()]
+
+        recent_state_files = HexrdConfig().recent_state_files
+        if not recent_state_files:
+            # Put in a placeholder action. Otherwise, the menu will not
+            # render correctly when we add the real actions later.
+            recents_menu.addAction('None')
+            return
+
+        for idx in range(len(recent_state_files)):
+            recent = recent_state_files[idx]
+            action = recents_menu.addAction(Path(recent).name)
+            action.triggered.connect(partial(self.load_recent_state_file,
+                                             recent))
+
+    def load_recent_state_file(self, path):
+        if not Path(path).exists():
+            msg = (
+                f'Recent state file: "{path}"\n\nno longer exists. '
+                'Remove from recent files list?'
+            )
+            response = QMessageBox.question(self.ui, 'HEXRD', msg)
+            if response == QMessageBox.Yes:
+                HexrdConfig().recent_state_files.remove(path)
+                self.update_recent_state_files()
+
+            return
+
+        self.load_state_file(path)
