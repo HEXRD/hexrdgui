@@ -13,7 +13,7 @@ from hexrdgui.masking.create_raw_mask import (
     recompute_raw_threshold_mask, create_raw_mask, rebuild_raw_masks
 )
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.masking.mask_compatability import load_masks
+from hexrdgui.masking.mask_compatibility import load_masks
 from hexrdgui.singletons import QSingleton
 from hexrdgui.utils import unique_name
 
