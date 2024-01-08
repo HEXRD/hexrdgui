@@ -38,7 +38,7 @@ class MaskManagerDialog(QObject):
         self.setup_connections()
 
     def show(self):
-        self.setup_table()
+        self.update_table()
         self.ui.show()
 
     def setup_connections(self):
@@ -52,10 +52,10 @@ class MaskManagerDialog(QObject):
         self.ui.view_masks.clicked.connect(self.show_masks)
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
-        MaskManager().mask_mgr_dialog_update.connect(self.setup_table)
+        MaskManager().mask_mgr_dialog_update.connect(self.update_table)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
 
-    def setup_table(self):
+    def update_table(self):
         with block_signals(self.ui.masks_table):
             self.ui.masks_table.setRowCount(0)
             for i, key in enumerate(MaskManager().mask_names):
@@ -84,7 +84,7 @@ class MaskManagerDialog(QObject):
     def remove_mask(self, row, name):
         MaskManager().remove_mask(name)
         self.ui.masks_table.removeRow(row)
-        self.setup_table()
+        self.update_table()
         MaskManager().masks_changed()
 
     def get_old_name(self, row, column):
@@ -105,7 +105,7 @@ class MaskManagerDialog(QObject):
             MaskManager().update_name(self.old_name, new_name)
 
         self.old_name = None
-        self.setup_table()
+        self.update_table()
 
     def context_menu_event(self, event):
         index = self.ui.masks_table.indexAt(event)
