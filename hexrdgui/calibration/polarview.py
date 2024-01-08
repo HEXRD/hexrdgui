@@ -419,8 +419,8 @@ class PolarView:
                 continue
             mask_arr = mask.masked_arrays
             total_mask = np.logical_or(total_mask, ~mask_arr)
-        if MaskManager().threshold_mask:
-            lt_val, gt_val = MaskManager().threshold_mask.data
+        if (tm := MaskManager().threshold_mask) and tm.visible:
+            lt_val, gt_val = tm.data
             lt_mask = img < lt_val
             gt_mask = img > gt_val
             mask = np.logical_or(lt_mask, gt_mask)

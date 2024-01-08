@@ -29,9 +29,6 @@ class Mask(ABC):
         self.visible = visible
         self.masked_arrays = None
 
-    def update_mask_visibility(self, visibility):
-        self.visible = visibility
-
     # Abstract methods
     @property
     @abstractmethod
@@ -103,19 +100,6 @@ class ThresholdMask(Mask):
         super().__init__(name, mtype, visible)
         self.min_val = -math.inf
         self.max_val = math.inf
-        self._hidden_mask_data = None
-
-    def update_mask_visibility(self, visible):
-        if visible == self.visible:
-            return
-
-        self.visible = visible
-        if visible and self._hidden_mask_data:
-            self.data = self._hidden_mask_data
-            self._hidden_mask_data = None
-        elif not visible:
-            self._hidden_mask_data = self.data
-            self.data = [-math.inf, math.inf]
 
     @property
     def data(self):
@@ -127,7 +111,7 @@ class ThresholdMask(Mask):
         self.max_val = values[1]
         self.update_masked_arrays()
 
-    def update_masked_arrays(self):
+    def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays = recompute_raw_threshold_mask()
 
     def serialize(self):
@@ -282,7 +266,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.view_mode = mode
 
     def update_mask_visibility(self, name, visibility):
-        self.masks[name].update_mask_visibility(visibility)
+        self.masks[name].visible = visibility
 
     def threshold_toggled(self):
         if self.threshold_mask:

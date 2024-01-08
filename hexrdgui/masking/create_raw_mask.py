@@ -17,11 +17,14 @@ def recompute_raw_threshold_mask():
     if tm := MaskManager().threshold_mask:
         for det in HexrdConfig().detector_names:
             ims = HexrdConfig().imageseries(det)
-            masks = [None for i in range(len(ims))]
-            for idx in range(len(ims)):
-                img = HexrdConfig().image(det, idx)
-                mask = create_threshold_mask(img, tm.data)
-                masks[idx] = mask
+            if tm.visible:
+                masks = [None for i in range(len(ims))]
+                for idx in range(len(ims)):
+                    img = HexrdConfig().image(det, idx)
+                    mask = create_threshold_mask(img, tm.data)
+                    masks[idx] = mask
+            else:
+                masks = np.ones(ims.shape, dtype=bool)
             results[det] = masks
     return results
 
@@ -83,6 +86,4 @@ def create_raw_mask(line_data):
 def rebuild_raw_masks():
     from hexrdgui.masking.mask_manager import MaskManager
     for mask in MaskManager().masks.values():
-        if mask.type == MaskType.threshold:
-            continue
         mask.update_masked_arrays(ViewType.raw)
