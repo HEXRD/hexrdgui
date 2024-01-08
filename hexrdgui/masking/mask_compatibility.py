@@ -27,10 +27,11 @@ def convert_masks_v1_to_v2(h5py_group):
                     'mtype': 'unknown',
                     'visible': name in visible,
                     'border': False,
+                    'data': {},
                 })
                 for i, mask in enumerate(masks.values()):
                     # Load the numpy array from the hdf5 file
-                    items[name].setdefault(key, {})[i] = mask[()]
+                    items[name]['data'].setdefault(key, {})[i] = mask[()]
     return [(k, v) for k, v in items.items()]
 
 

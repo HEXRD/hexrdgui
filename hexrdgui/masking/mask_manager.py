@@ -78,9 +78,10 @@ class RegionMask(Mask):
             'name': self.name,
             'mtype': self.type,
             'visible': self.visible,
+            'data': {},
         }
         for i, (det, values) in enumerate(self._raw):
-            data.setdefault(det, {})[str(i)] = values
+            data['data'].setdefault(det, {})[str(i)] = values
         return data
 
     @classmethod
@@ -88,9 +89,9 @@ class RegionMask(Mask):
         new_cls = cls(data['name'], data['mtype'], data['visible'])
         raw_data = []
         for det in HexrdConfig().detector_names:
-            if det not in data.keys():
+            if det not in data['data'].keys():
                 continue
-            raw_data.extend([(det, v) for v in data[det].values()])
+            raw_data.extend([(det, v) for v in data['data'][det].values()])
         new_cls.data = raw_data
         return new_cls
 
