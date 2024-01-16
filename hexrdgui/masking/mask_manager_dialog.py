@@ -192,14 +192,15 @@ class MaskManagerDialog(QObject):
                 cb = self.ui.masks_table.cellWidget(i, 1)
                 status = key in MaskManager().visible_masks
                 cb.setChecked(status)
-        MaskManager().masks_changed()
 
     def hide_all_masks(self):
         for name in MaskManager().mask_names:
             MaskManager().update_mask_visibility(name, False)
         self.update_visibility_checkboxes()
+        MaskManager().masks_changed()
 
     def show_all_masks(self):
         for name in MaskManager().mask_names:
             MaskManager().update_mask_visibility(name, True)
         self.update_visibility_checkboxes()
+        MaskManager().masks_changed()
