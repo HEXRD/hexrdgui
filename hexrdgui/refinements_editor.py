@@ -101,6 +101,9 @@ class RefinementsEditor:
         for overlay in self.overlays:
             name = overlay.name
             values = refinement_values(overlay)
+            if not values:
+                continue
+
             mdict[name] = {}
             for rname, b in overlay.refinements_with_labels:
                 mdict[name][rname] = {}
@@ -247,10 +250,14 @@ def refinement_values(overlay):
         # Currently the same as laue
         return laue_values()
 
+    def const_chi_values():
+        return ret
+
     func_dict = {
         OverlayType.powder: powder_values,
         OverlayType.laue: laue_values,
         OverlayType.rotation_series: rotation_series_values,
+        OverlayType.const_chi: const_chi_values,
     }
 
     return func_dict[overlay.type]()
