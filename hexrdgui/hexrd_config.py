@@ -892,18 +892,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
                 if mask.type == MaskType.threshold:
                     idx = HexrdConfig().current_imageseries_idx
-                    thresh_mask = mask.masked_arrays[name][idx]
+                    thresh_mask = mask.get_masked_arrays()
+                    thresh_mask = thresh_mask[name][idx]
                     final_mask = np.logical_and(final_mask, thresh_mask)
                 else:
-                    if MaskManager().view_mode != constants.ViewType.raw:
-                        # Make sure we have the raw masked arrays
-                        mask.update_masked_arrays(constants.ViewType.raw)
-                    for det, arr in mask.masked_arrays:
+                    masks = mask.get_masked_arrays(constants.ViewType.raw)
+                    for det, arr in masks:
                         if det == name:
                             final_mask = np.logical_and(final_mask, arr)
-                    if MaskManager().view_mode != constants.ViewType.raw:
-                        # Reset the masked arrays for the current view
-                        mask.update_masked_arrays(MaskManager().view_mode)
             masks_dict[name] = final_mask
 
         return masks_dict

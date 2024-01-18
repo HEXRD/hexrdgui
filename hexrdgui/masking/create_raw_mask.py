@@ -86,4 +86,4 @@ def create_raw_mask(line_data):
 def rebuild_raw_masks():
     from hexrdgui.masking.mask_manager import MaskManager
     for mask in MaskManager().masks.values():
-        mask.update_masked_arrays(ViewType.raw)
+        mask.invalidate_masked_arrays()

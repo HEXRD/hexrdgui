@@ -12,6 +12,7 @@ from hexrd.xrdutil import (
 )
 from hexrd import instrument
 
+from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
@@ -417,7 +418,7 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
-            mask_arr = mask.masked_arrays
+            mask_arr = mask.get_masked_arrays(ViewType.polar)
             total_mask = np.logical_or(total_mask, ~mask_arr)
         if (tm := MaskManager().threshold_mask) and tm.visible:
             lt_val, gt_val = tm.data

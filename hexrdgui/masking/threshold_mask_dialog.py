@@ -68,5 +68,4 @@ class ThresholdMaskDialog(QObject):
                 'threshold', self.values, MaskType.threshold)
         else:
             MaskManager().threshold_mask.data = self.values
-        MaskManager().threshold_mask.update_masked_arrays()
         self.mask_applied.emit()

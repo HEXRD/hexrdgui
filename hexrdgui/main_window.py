@@ -753,15 +753,13 @@ class MainWindow(QObject):
             for line in line_data:
                 name = unique_name(MaskManager().mask_names, 'polar_mask_0')
                 raw_line = convert_polar_to_raw([line])
-                mask = MaskManager().add_mask(name, raw_line, MaskType.polygon)
-                mask.update_masked_arrays(self.image_mode)
+                MaskManager().add_mask(name, raw_line, MaskType.polygon)
             MaskManager().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
                 name = unique_name(MaskManager().mask_names, 'raw_mask_0')
-                mask = MaskManager().add_mask(
+                MaskManager().add_mask(
                     name, [(det, line.copy())], MaskType.polygon)
-                mask.update_masked_arrays(self.image_mode)
             MaskManager().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
@@ -791,8 +789,7 @@ class MainWindow(QObject):
 
         name = unique_name(MaskManager().mask_names, 'laue_mask')
         raw_data = convert_polar_to_raw(data)
-        mask = MaskManager().add_mask(name, raw_data, MaskType.laue)
-        mask.update_masked_arrays(self.image_mode)
+        MaskManager().add_mask(name, raw_data, MaskType.laue)
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
@@ -847,8 +844,7 @@ class MainWindow(QObject):
 
         name = unique_name(MaskManager().mask_names, 'powder_mask')
         raw_data = convert_polar_to_raw(data)
-        mask = MaskManager().add_mask(name, raw_data, MaskType.powder)
-        mask.update_masked_arrays(self.image_mode)
+        MaskManager().add_mask(name, raw_data, MaskType.powder)
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 

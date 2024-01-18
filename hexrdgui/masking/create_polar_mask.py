@@ -151,4 +151,4 @@ def rebuild_polar_masks():
     for mask in MaskManager().masks.values():
         if mask.type == MaskType.threshold:
             continue
-        mask.update_masked_arrays(ViewType.polar)
+        mask.invalidate_masked_arrays()

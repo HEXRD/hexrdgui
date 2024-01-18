@@ -28,6 +28,16 @@ class Mask(ABC):
         self.name = name
         self.visible = visible
         self.masked_arrays = None
+        self.masked_arrays_view_mode = ViewType.raw
+
+    def get_masked_arrays(self):
+        if self.masked_arrays is None:
+            self.update_masked_arrays()
+
+        return self.masked_arrays
+
+    def invalidate_masked_arrays(self):
+        self.masked_arrays = None
 
     # Abstract methods
     @property
@@ -68,10 +78,17 @@ class RegionMask(Mask):
         self.update_masked_arrays()
 
     def update_masked_arrays(self, view=ViewType.raw):
+        self.masked_arrays_view_mode = view
         if view == ViewType.raw:
             self.masked_arrays = create_raw_mask(self._raw)
         else:
             self.masked_arrays = create_polar_mask_from_raw(self._raw)
+
+    def get_masked_arrays(self, image_mode=ViewType.raw):
+        if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
+            self.update_masked_arrays(image_mode)
+
+        return self.masked_arrays
 
     def serialize(self):
         data = {
@@ -249,7 +266,6 @@ class MaskManager(QObject, metaclass=QSingleton):
             else:
                 new_mask = RegionMask.deserialize(data)
             self.masks[key] = new_mask
-            new_mask.update_masked_arrays()
 
         if not HexrdConfig().loading_state:
             # We're importing masks directly,

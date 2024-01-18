@@ -139,7 +139,7 @@ class InstrumentViewer:
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
 
-            data[f'mask_{name}'] = mask.masked_arrays
+            data[f'mask_{name}'] = mask.get_masked_arrays(self.type)
 
         # Delete the file if it already exists
         if filename.exists():
