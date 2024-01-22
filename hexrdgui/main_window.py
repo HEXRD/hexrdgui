@@ -13,7 +13,8 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QApplication, QDockWidget, QFileDialog, QMainWindow, QMessageBox
+    QApplication, QDockWidget, QFileDialog,
+    QInputDialog, QMainWindow, QMessageBox
 )
 
 from hexrdgui.about_dialog import AboutDialog
@@ -76,7 +77,8 @@ from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
-from hexrdgui import state
+from hexrdgui import resource_loader, state
+from hexrd.resources import instrument_templates
 
 
 class MainWindow(QObject):
@@ -177,7 +179,7 @@ class MainWindow(QObject):
     def setup_connections(self):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
-        self.ui.action_open_config_file.triggered.connect(
+        self.ui.action_open_instrument_file.triggered.connect(
             self.on_action_open_config_file_triggered)
         self.ui.action_open_grain_fitting_results.triggered.connect(
             self.open_grain_fitting_results)
@@ -286,6 +288,8 @@ class MainWindow(QObject):
             self.active_canvas_changed)
         self.ui.action_edit_apply_threshold.triggered.connect(
             self.on_action_edit_apply_threshold_triggered)
+        self.ui.action_open_preconfigured_instrument_file.triggered.connect(
+            self.on_action_open_preconfigured_instrument_file_triggered)
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -1575,3 +1579,32 @@ class MainWindow(QObject):
             return
 
         self.load_state_file(path)
+
+    def on_action_open_preconfigured_instrument_file_triggered(self):
+        # Should we put this in HEXRD?
+        aliases = {
+            'dual_dexelas.yml': 'Dual Dexelas',
+        }
+
+        # Create a dict of options for loading an instrument, mapping file
+        # name to instrument config
+        options = {}
+        for f in resource_loader.module_contents(instrument_templates):
+            if f.endswith(('.yml', '.yaml', '.hexrd', '.h5', '.hdf5')):
+                name = Path(f).name
+                if name in aliases:
+                    name = aliases[name]
+
+                options[name] = f
+
+        # Provide simple dialog for selecting instrument to import
+        msg = 'Select pre-configured instrument to load'
+        instr_name, ok = QInputDialog.getItem(
+            self.ui, 'Load Instrument', msg, list(options), 0, False)
+
+        if not ok:
+            return
+
+        fname = options[instr_name]
+        with resource_loader.resource_path(instrument_templates, fname) as f:
+            HexrdConfig().load_instrument_config(Path(f))

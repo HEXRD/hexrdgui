@@ -13,7 +13,7 @@ def test_load_data(qtbot, main_window, default_config_path, default_data_path):
 
     # Load config file
     with select_files_when_asked(default_config_path):
-        main_window.ui.action_open_config_file.triggered.emit()
+        main_window.ui.action_open_instrument_file.triggered.emit()
 
     # Should have loaded the instrument config
     detectors = HexrdConfig().detectors

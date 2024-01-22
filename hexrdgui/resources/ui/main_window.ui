@@ -58,9 +58,16 @@
      <property name="toolTipsVisible">
       <bool>true</bool>
      </property>
+     <widget class="QMenu" name="menu_instrument">
+      <property name="title">
+       <string>Instrument</string>
+      </property>
+      <addaction name="action_open_instrument_file"/>
+      <addaction name="action_open_preconfigured_instrument_file"/>
+     </widget>
      <addaction name="action_open_images"/>
      <addaction name="action_open_state"/>
-     <addaction name="action_open_config_file"/>
+     <addaction name="menu_instrument"/>
      <addaction name="action_open_materials"/>
      <addaction name="separator"/>
      <addaction name="action_open_grain_fitting_results"/>
@@ -74,7 +81,7 @@
      </property>
      <widget class="QMenu" name="menu_save_config">
       <property name="title">
-       <string>&amp;Configuration</string>
+       <string>&amp;Instrument</string>
       </property>
       <property name="toolTipsVisible">
        <bool>true</bool>
@@ -629,11 +636,6 @@
     <string>Laue</string>
    </property>
   </action>
-  <action name="action_open_config_file">
-   <property name="text">
-    <string>Configuration</string>
-   </property>
-  </action>
   <action name="action_save_config_yaml">
    <property name="text">
     <string>YAML</string>
@@ -849,6 +851,16 @@
   <action name="action_edit_config">
    <property name="text">
     <string>Configuration</string>
+   </property>
+  </action>
+  <action name="action_open_instrument_file">
+   <property name="text">
+    <string>File</string>
+   </property>
+  </action>
+  <action name="action_open_preconfigured_instrument_file">
+   <property name="text">
+    <string>Preconfigured</string>
    </property>
   </action>
  </widget>
