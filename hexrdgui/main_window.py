@@ -1590,12 +1590,20 @@ class MainWindow(QObject):
         self.load_state_file(path)
 
     def on_action_open_preconfigured_instrument_file_triggered(self):
+        # Should we put this in HEXRD?
+        aliases = {
+            'dual_dexelas.yml': 'Dual Dexelas',
+        }
+
         # Create a dict of options for loading an instrument, mapping file
         # name to instrument config
         options = {}
         for f in resource_loader.module_contents(instrument_templates):
             if f.endswith(('.yml', '.yaml', '.hexrd', '.h5', '.hdf5')):
                 name = Path(f).name
+                if name in aliases:
+                    name = aliases[name]
+
                 options[name] = f
 
         # Provide simple dialog for selecting instrument to import
