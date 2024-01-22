@@ -75,7 +75,7 @@ class RegionMask(Mask):
     @data.setter
     def data(self, values):
         self._raw = values
-        self.update_masked_arrays()
+        self.invalidate_masked_arrays()
 
     def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays_view_mode = view
@@ -127,7 +127,7 @@ class ThresholdMask(Mask):
     def data(self, values):
         self.min_val = values[0]
         self.max_val = values[1]
-        self.update_masked_arrays()
+        self.invalidate_masked_arrays()
 
     def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays = recompute_raw_threshold_mask()
