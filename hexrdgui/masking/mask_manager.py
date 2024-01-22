@@ -232,15 +232,15 @@ class MaskManager(QObject, metaclass=QSingleton):
         return removed_mask
 
     def write_masks_to_group(self, data, h5py_group):
+        h5py_group.attrs['_version'] = CURRENT_MASK_VERSION
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
     def write_single_mask(self, name):
-        d = {'_version': CURRENT_MASK_VERSION}
-        d[name] = self.masks[name].serialize()
+        d = {name: self.masks[name].serialize()}
         self.export_masks_to_file.emit(d)
 
     def write_all_masks(self, h5py_group=None):
-        d = {'_version': CURRENT_MASK_VERSION}
+        d = {}
         for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
         if h5py_group:
@@ -259,9 +259,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
         for key, data in items:
-            if key == '_version':
-                continue
-            elif data['mtype'] == MaskType.threshold:
+            if data['mtype'] == MaskType.threshold:
                 new_mask = ThresholdMask.deserialize(data)
             else:
                 new_mask = RegionMask.deserialize(data)
