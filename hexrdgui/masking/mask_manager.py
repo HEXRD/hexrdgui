@@ -258,11 +258,12 @@ class MaskManager(QObject, metaclass=QSingleton):
         items = load_masks(h5py_group)
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
-        for key, data in items:
+        for key, data in items.items():
             if data['mtype'] == MaskType.threshold:
                 new_mask = ThresholdMask.deserialize(data)
             else:
                 new_mask = RegionMask.deserialize(data)
+
             self.masks[key] = new_mask
 
         if not HexrdConfig().loading_state:

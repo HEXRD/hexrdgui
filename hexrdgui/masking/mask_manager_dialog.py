@@ -10,8 +10,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QCursor
 
-from hexrd.instrument import unwrap_h5_to_dict
-
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.mask_manager import MaskManager
@@ -123,18 +121,16 @@ class MaskManagerDialog(QObject):
 
     def import_masks(self):
         selected_file, _ = QFileDialog.getOpenFileName(
-            self.ui, 'Save Mask', HexrdConfig().working_dir,
+            self.ui, 'Import Masks', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
 
         if not selected_file:
             return
 
         HexrdConfig().working_dir = os.path.dirname(selected_file)
-        # Unwrap the h5 file to a dict
-        masks_dict = {}
+
         with h5py.File(selected_file, 'r') as f:
-            unwrap_h5_to_dict(f, masks_dict)
-        MaskManager().load_masks(masks_dict['masks'])
+            MaskManager().load_masks(f['masks'])
 
     def masks_to_panel_buffer(self):
         show_dialog = False
@@ -191,7 +187,8 @@ class MaskManagerDialog(QObject):
             for i, key in enumerate(MaskManager().mask_names):
                 cb = self.ui.masks_table.cellWidget(i, 1)
                 status = key in MaskManager().visible_masks
-                cb.setChecked(status)
+                with block_signals(cb):
+                    cb.setChecked(status)
 
     def hide_all_masks(self):
         for name in MaskManager().mask_names:
