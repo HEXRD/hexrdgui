@@ -9,6 +9,8 @@ from hexrdgui.calibration.utils.maud_headers import header0, header, block_hdr
 from hexrdgui.constants import PolarXAxisType, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.overlays import update_overlay_data
 from hexrdgui.utils.conversions import tth_to_q
 
@@ -133,11 +135,11 @@ class InstrumentViewer:
             data['snip_background'] = self.snip_background
 
         # Add visible polar mask data if we have any
-        for name, mask in HexrdConfig().masks.items():
-            if name not in HexrdConfig().visible_masks:
+        for name, mask in MaskManager().masks.items():
+            if mask.type == MaskType.threshold or not mask.visible:
                 continue
 
-            data[f'mask_{name}'] = mask
+            data[f'mask_{name}'] = mask.get_masked_arrays(self.type)
 
         # Delete the file if it already exists
         if filename.exists():

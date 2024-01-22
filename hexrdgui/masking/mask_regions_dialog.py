@@ -1,10 +1,11 @@
 from PySide6.QtCore import QObject, Signal, Qt
 
-from hexrdgui.create_raw_mask import convert_polar_to_raw, create_raw_mask
-from hexrdgui.create_polar_mask import create_polar_mask_from_raw
+from hexrdgui.masking.create_raw_mask import convert_polar_to_raw
 from hexrdgui.interactive_template import InteractiveTemplate
 from hexrdgui.utils import unique_name
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.constants import KEY_ROTATE_ANGLE_COARSE, ViewType
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import add_sample_points
@@ -265,19 +266,16 @@ class MaskRegionsDialog(QObject):
     def create_masks(self):
         for data in self.raw_mask_coords:
             name = unique_name(
-                HexrdConfig().raw_mask_coords, f'{self.image_mode}_mask_0')
+                MaskManager().mask_names, f'{self.image_mode}_mask_0')
             if self.image_mode == 'raw':
-                HexrdConfig().raw_mask_coords[name] = [data]
-                create_raw_mask(name, [data])
+                coords = [data]
             elif self.image_mode == 'polar':
-                raw_coords = convert_polar_to_raw(data)
-                HexrdConfig().raw_mask_coords[name] = raw_coords
-                create_polar_mask_from_raw(name, raw_coords)
-            HexrdConfig().visible_masks.append(name)
+                coords = convert_polar_to_raw(data)
+            mask = MaskManager().add_mask(name, coords, MaskType.region)
 
         masks_changed_signal = {
-            'raw': HexrdConfig().raw_masks_changed,
-            'polar': HexrdConfig().polar_masks_changed
+            'raw': MaskManager().raw_masks_changed,
+            'polar': MaskManager().polar_masks_changed
         }
         masks_changed_signal[self.image_mode].emit()
 

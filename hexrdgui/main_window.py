@@ -24,9 +24,11 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.config_dialog import ConfigDialog
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
+from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.cal_tree_view import CalTreeView
-from hexrdgui.hand_drawn_mask_dialog import HandDrawnMaskDialog
+from hexrdgui.masking.hand_drawn_mask_dialog import HandDrawnMaskDialog
 from hexrdgui.image_stack_dialog import ImageStackDialog
 from hexrdgui.indexing.run import FitGrainsRunner, IndexingRunner
 from hexrdgui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
@@ -40,11 +42,9 @@ from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
 )
 from hexrdgui.calibration.structureless import StructurelessCalibrationRunner
 from hexrdgui.calibration.wppf_runner import WppfRunner
-from hexrdgui.create_polar_mask import (
-    create_polar_mask_from_raw, rebuild_polar_masks
-)
-from hexrdgui.create_raw_mask import (
-    convert_polar_to_raw, create_raw_mask, rebuild_raw_masks)
+from hexrdgui.masking.create_polar_mask import rebuild_polar_masks
+from hexrdgui.masking.create_raw_mask import (
+    convert_polar_to_raw, rebuild_raw_masks)
 from hexrdgui.constants import ViewType, DOCUMENTATION_URL
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_calculator_dialog import ImageCalculatorDialog
@@ -58,13 +58,13 @@ from hexrdgui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrdgui.polarization_options_dialog import (
     PolarizationOptionsDialog
 )
-from hexrdgui.mask_manager_dialog import MaskManagerDialog
-from hexrdgui.mask_regions_dialog import MaskRegionsDialog
+from hexrdgui.masking.mask_manager_dialog import MaskManagerDialog
+from hexrdgui.masking.mask_regions_dialog import MaskRegionsDialog
 from hexrdgui.materials_panel import MaterialsPanel
 from hexrdgui.messages_widget import MessagesWidget
 from hexrdgui.refinements_editor import RefinementsEditor
 from hexrdgui.save_images_dialog import SaveImagesDialog
-from hexrdgui.threshold_mask_dialog import ThresholdMaskDialog
+from hexrdgui.masking.threshold_mask_dialog import ThresholdMaskDialog
 from hexrdgui.transform_dialog import TransformDialog
 from hexrdgui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
 from hexrdgui.indexing.fit_grains_tree_view_dialog import (
@@ -302,7 +302,7 @@ class MainWindow(QObject):
             self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
-        HexrdConfig().raw_masks_changed.connect(self.update_all)
+        MaskManager().raw_masks_changed.connect(self.update_all)
         HexrdConfig().enable_canvas_toolbar.connect(
             self.on_enable_canvas_toolbar)
         HexrdConfig().tab_images_changed.connect(
@@ -317,9 +317,9 @@ class MainWindow(QObject):
         ImageLoadManager().state_updated.connect(
             self.simple_image_series_dialog.setup_gui)
 
-        self.new_mask_added.connect(self.mask_manager_dialog.update_masks_list)
+        self.new_mask_added.connect(self.mask_manager_dialog.update_table)
         self.image_mode_widget.tab_changed.connect(
-            self.mask_manager_dialog.image_mode_changed)
+            MaskManager().view_mode_changed)
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)
@@ -751,21 +751,16 @@ class MainWindow(QObject):
     def run_apply_hand_drawn_mask(self, dets, line_data):
         if self.image_mode == ViewType.polar:
             for line in line_data:
-                name = unique_name(
-                    HexrdConfig().raw_mask_coords, 'polar_mask_0')
+                name = unique_name(MaskManager().mask_names, 'polar_mask_0')
                 raw_line = convert_polar_to_raw([line])
-                HexrdConfig().raw_mask_coords[name] = raw_line
-                HexrdConfig().visible_masks.append(name)
-                create_polar_mask_from_raw(name, raw_line)
-            HexrdConfig().polar_masks_changed.emit()
+                MaskManager().add_mask(name, raw_line, MaskType.polygon)
+            MaskManager().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
-                name = unique_name(
-                    HexrdConfig().raw_mask_coords, 'raw_mask_0')
-                HexrdConfig().raw_mask_coords[name] = [(det, line.copy())]
-                HexrdConfig().visible_masks.append(name)
-                create_raw_mask(name, [(det, line)])
-            HexrdConfig().raw_masks_changed.emit()
+                name = unique_name(MaskManager().mask_names, 'raw_mask_0')
+                MaskManager().add_mask(
+                    name, [(det, line.copy())], MaskType.polygon)
+            MaskManager().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
     def on_action_edit_apply_laue_mask_to_polar_triggered(self):
@@ -792,13 +787,11 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        name = unique_name(HexrdConfig().raw_mask_coords, 'laue_mask')
+        name = unique_name(MaskManager().mask_names, 'laue_mask')
         raw_data = convert_polar_to_raw(data)
-        HexrdConfig().raw_mask_coords[name] = raw_data
-        create_polar_mask_from_raw(name, raw_data)
-        HexrdConfig().visible_masks.append(name)
+        MaskManager().add_mask(name, raw_data, MaskType.laue)
         self.new_mask_added.emit(self.image_mode)
-        HexrdConfig().polar_masks_changed.emit()
+        MaskManager().polar_masks_changed.emit()
 
     def action_edit_apply_powder_mask_to_polar(self):
         if not HexrdConfig().show_overlays:
@@ -849,13 +842,11 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        name = unique_name(HexrdConfig().raw_mask_coords, 'powder_mask')
+        name = unique_name(MaskManager().mask_names, 'powder_mask')
         raw_data = convert_polar_to_raw(data)
-        HexrdConfig().raw_mask_coords[name] = raw_data
-        create_polar_mask_from_raw(name, raw_data)
-        HexrdConfig().visible_masks.append(name)
+        MaskManager().add_mask(name, raw_data, MaskType.powder)
         self.new_mask_added.emit(self.image_mode)
-        HexrdConfig().polar_masks_changed.emit()
+        MaskManager().polar_masks_changed.emit()
 
     def update_mask_region_canvas(self):
         if hasattr(self, '_masks_regions_dialog'):
@@ -915,11 +906,11 @@ class MainWindow(QObject):
 
         # Overwrite previous pinhole masks
         name = 'pinhole_mask'
-        HexrdConfig().raw_mask_coords[name] = ph_masks
-        if name not in HexrdConfig().visible_masks:
-            HexrdConfig().visible_masks.append(name)
-
-        HexrdConfig().raw_masks_changed.emit()
+        if name in MaskManager().mask_names:
+            MaskManager().masks[name].data = ph_masks
+        else:
+            MaskManager().add_mask(name, ph_masks, MaskType.pinhole)
+        MaskManager().raw_masks_changed.emit()
 
         self.new_mask_added.emit(self.image_mode)
 

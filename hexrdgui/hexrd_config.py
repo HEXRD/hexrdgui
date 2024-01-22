@@ -23,6 +23,7 @@ from hexrdgui import constants
 from hexrdgui import overlays
 from hexrdgui import resource_loader
 from hexrdgui import utils
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.singletons import QSingleton
 
 import hexrdgui.resources.calibration
@@ -129,12 +130,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
 
-    """Emitted when the threshold mask status changes via the dialog"""
-    threshold_mask_changed = Signal(str)
-
-    """Emitted when the threshold mask status changes via mask manager"""
-    mgr_threshold_mask_changed = Signal()
-
     """Emitted when the active material is changed to a different material"""
     active_material_changed = Signal()
 
@@ -164,12 +159,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Emitted to update the tth width in the powder overlay editor"""
     material_tth_width_modified = Signal(str)
-
-    """Emitted when a new raw mask has been created"""
-    raw_masks_changed = Signal()
-
-    """Emitted when a new polar mask has been created"""
-    polar_masks_changed = Signal()
 
     """Emitted when the polar x-axis type changes"""
     polar_x_axis_type_changed = Signal()
@@ -267,9 +256,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.previous_active_material = None
         self.collapsed_state = []
         self.load_panel_state = {}
-        self.masks = {}
-        self.raw_mask_coords = {}
-        self.visible_masks = []
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None
@@ -896,31 +882,24 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def raw_masks_dict(self):
         """Get a masks dict"""
-        # We must ensure that we are using raw masks
-        from hexrdgui.create_raw_mask import rebuild_raw_masks
-        prev_masks = copy.deepcopy(self.masks)
-        try:
-            rebuild_raw_masks()
-            masks = copy.deepcopy(self.masks)
-        finally:
-            self.masks = prev_masks
-
+        from hexrdgui.masking.mask_manager import MaskManager
         masks_dict = {}
-        images_dict = self.images_dict
-        for name, img in images_dict.items():
+        for name, img in self.images_dict.items():
             final_mask = np.ones(img.shape, dtype=bool)
-            for mask_name, data in masks.items():
-                if mask_name not in self.visible_masks:
+            for mask in MaskManager().masks.values():
+                if not mask.visible:
                     continue
 
-                for det, mask in data:
-                    if det == name:
-                        final_mask = np.logical_and(final_mask, mask)
-            if (self.threshold_mask_status and
-                    self.threshold_masks.get(name) is not None):
-                idx = self.current_imageseries_idx
-                thresh_mask = self.threshold_masks[name][idx]
-                final_mask = np.logical_and(final_mask, thresh_mask)
+                if mask.type == MaskType.threshold:
+                    idx = HexrdConfig().current_imageseries_idx
+                    thresh_mask = mask.get_masked_arrays()
+                    thresh_mask = thresh_mask[name][idx]
+                    final_mask = np.logical_and(final_mask, thresh_mask)
+                else:
+                    masks = mask.get_masked_arrays(constants.ViewType.raw)
+                    for det, arr in masks:
+                        if det == name:
+                            final_mask = np.logical_and(final_mask, arr)
             masks_dict[name] = final_mask
 
         return masks_dict
@@ -931,12 +910,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def create_masked_images_dict(self, fill_value=0):
         """Get an images dict where masks have been applied"""
+        from hexrdgui.masking.mask_manager import MaskManager
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
 
         images_dict = self.images_dict
         instr = create_hedm_instrument()
 
-        has_masks = bool(self.visible_masks)
+        has_masks = bool(MaskManager().visible_masks)
         has_panel_buffers = any(panel.panel_buffer is not None
                                 for panel in instr.detectors.values())
 
@@ -2521,33 +2501,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         raise Exception('Unknown distortion function: ' + func_name)
 
     @property
-    def threshold_values(self):
-        return self._threshold_data.setdefault('values', [])
-
-    @threshold_values.setter
-    def threshold_values(self, v):
-        self._threshold_data['values'] = v
-
-    @property
-    def threshold_mask_status(self):
-        mask_vals = HexrdConfig().threshold_masks.values()
-        if self._threshold_data.get('visible', True) and len(mask_vals) > 0:
-            return all([v is not None for v in mask_vals])
-        return False
-
-    @threshold_mask_status.setter
-    def threshold_mask_status(self, v):
-        self._threshold_data['visible'] = v
-
-    @property
-    def threshold_masks(self):
-        return self._threshold_data.setdefault('masks', {})
-
-    @threshold_masks.setter
-    def threshold_masks(self, masks):
-        self._threshold_data['masks'] = masks
-
-    @property
     def unagg_images(self):
         img_dict = self.unaggregated_images
         if img_dict is None:
@@ -2740,20 +2693,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             v[det] = imgs if isinstance(imgs, list) else [imgs]
         self._recent_images = v
         self.recent_images_changed.emit()
-
-    def apply_masks_to_panel_buffers(self, instr):
-        # Apply raw masks to the panel buffers on the passed instrument
-        for det_key, mask in self.raw_masks_dict.items():
-            panel = instr.detectors[det_key]
-
-            # Make sure it is a 2D array
-            utils.convert_panel_buffer_to_2d_array(panel)
-
-            # Add the mask
-            # NOTE: the mask here is False when pixels should be masked.
-            # This is the same as the panel buffer, which is why we are
-            # doing a `np.logical_and()`.
-            panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
 
     def clean_panel_buffers(self):
         # Ensure that the panel buffer sizes match the pixel sizes.

@@ -1,12 +1,10 @@
 import functools
 import math
 
-import numpy as np
-
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QDialogButtonBox
-from hexrdgui.create_raw_mask import apply_threshold_mask
-from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.mask_manager import MaskManager
 
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
@@ -40,7 +38,10 @@ class ThresholdMaskDialog(QObject):
         self.ui.show()
 
     def setup_gui(self, reset=False):
-        vals = [] if reset else HexrdConfig().threshold_values
+        if reset or not MaskManager().threshold_mask:
+            vals = []
+        else:
+            vals = MaskManager().threshold_mask.data
 
         val = vals[0] if len(vals) > 0 else -math.inf
         self.ui.first_value.setValue(val)
@@ -55,8 +56,6 @@ class ThresholdMaskDialog(QObject):
         reset_button.clicked.connect(
             functools.partial(self.setup_gui, reset=True))
 
-        HexrdConfig().mgr_threshold_mask_changed.connect(self.setup_gui)
-
     def gather_input(self):
         self.values.clear()
         self.values.append(self.ui.first_value.value())
@@ -64,6 +63,9 @@ class ThresholdMaskDialog(QObject):
 
     def accept(self):
         self.gather_input()
-        HexrdConfig().threshold_values = self.values
-        apply_threshold_mask()
+        if MaskManager().threshold_mask is None:
+            MaskManager().add_mask(
+                'threshold', self.values, MaskType.threshold)
+        else:
+            MaskManager().threshold_mask.data = self.values
         self.mask_applied.emit()

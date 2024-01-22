@@ -516,13 +516,13 @@ def masks_applied_to_panel_buffers(instr):
     # This is useful, for instance, for auto point picking, where
     # we want the masked regions to be avoided.
 
-    from hexrdgui.hexrd_config import HexrdConfig
+    from hexrdgui.masking.mask_manager import MaskManager
 
     panel_buffers = {k: copy.deepcopy(v.panel_buffer)
                      for k, v in instr.detectors.items()}
 
     try:
-        HexrdConfig().apply_masks_to_panel_buffers(instr)
+        MaskManager().apply_masks_to_panel_buffers(instr)
         yield
     finally:
         for det_key, panel in instr.detectors.items():

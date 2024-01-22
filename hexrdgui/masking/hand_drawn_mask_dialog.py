@@ -6,7 +6,6 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
-from hexrdgui.hexrd_config import HexrdConfig
 
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import add_sample_points
