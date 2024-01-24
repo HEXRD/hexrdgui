@@ -3,15 +3,17 @@ import os
 import numpy as np
 import h5py
 
-from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
     QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout
 )
 from PySide6.QtGui import QCursor
 
+
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
@@ -50,6 +52,9 @@ class MaskManagerDialog(QObject):
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
         MaskManager().mask_mgr_dialog_update.connect(self.update_table)
+        self.ui.hide_all_boundaries.clicked.connect(self.hide_all_boundaries)
+        self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
+        MaskManager().mask_mgr_dialog_update.connect(self.update_table)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
 
     def update_table(self):
@@ -60,22 +65,39 @@ class MaskManagerDialog(QObject):
                 self.ui.masks_table.insertRow(i)
                 self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
-                # Add checkbox to toggle visibility
-                cb = QCheckBox()
+                # Add checkbox to toggle mask visibility
+                vis_cb = QCheckBox()
                 status = key in MaskManager().visible_masks
-                cb.setChecked(status)
-                cb.setStyleSheet('margin-left:50%; margin-right:50%;')
-                self.ui.masks_table.setCellWidget(i, 1, cb)
-                cb.toggled.connect(
-                    lambda c, k=key: self.toggle_visibility(c, k))
+                vis_cb.setChecked(status)
+                vis_cb.setStyleSheet('margin-left:50%; margin-right:50%;')
+                self.ui.masks_table.setCellWidget(i, 1, vis_cb)
+                vis_cb.toggled.connect(
+                    lambda c, k=key: self.toggle_mask_visibility(c, k))
+
+                mask_type = MaskManager().masks[key].type
+                if (mask_type == MaskType.region or
+                        mask_type == MaskType.polygon):
+                    # Add checkbox to toggle border visibility
+                    border_cb = QCheckBox()
+                    status = key in MaskManager().visible_boundaries
+                    border_cb.setChecked(status)
+                    border_cb.setStyleSheet(
+                        'margin-left:50%; margin-right:50%;')
+                    self.ui.masks_table.setCellWidget(i, 2, border_cb)
+                    border_cb.toggled.connect(
+                        lambda c, k=key: self.toggle_border_visibility(c, k))
 
                 # Add push button to remove mask
                 pb = QPushButton('Remove Mask')
-                self.ui.masks_table.setCellWidget(i, 2, pb)
+                self.ui.masks_table.setCellWidget(i, 3, pb)
                 pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
 
-    def toggle_visibility(self, checked, name):
+    def toggle_mask_visibility(self, checked, name):
         MaskManager().update_mask_visibility(name, checked)
+        MaskManager().masks_changed()
+
+    def toggle_border_visibility(self, checked, name):
+        MaskManager().update_border_visibility(name, checked)
         MaskManager().masks_changed()
 
     def remove_mask(self, row, name):
@@ -200,4 +222,23 @@ class MaskManagerDialog(QObject):
         for name in MaskManager().mask_names:
             MaskManager().update_mask_visibility(name, True)
         self.update_visibility_checkboxes()
+        MaskManager().masks_changed()
+
+    def update_boundary_checkboxes(self):
+        with block_signals(self.ui.masks_table):
+            for i, key in enumerate(MaskManager().mask_names):
+                cb = self.ui.masks_table.cellWidget(i, 2)
+                status = key in MaskManager().visible_boundaries
+                cb.setChecked(status)
+
+    def hide_all_boundaries(self):
+        for name in MaskManager().mask_names:
+            MaskManager().update_border_visibility(name, False)
+        self.update_boundary_checkboxes()
+        MaskManager().masks_changed()
+
+    def show_all_boundaries(self):
+        for name in MaskManager().mask_names:
+            MaskManager().update_border_visibility(name, True)
+        self.update_boundary_checkboxes()
         MaskManager().masks_changed()

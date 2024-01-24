@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Polygon
 from matplotlib.ticker import AutoLocator, FuncFormatter
 
 import matplotlib.pyplot as plt
@@ -23,6 +23,7 @@ from hexrdgui.calibration.raw_iviewer import raw_iviewer
 from hexrdgui.calibration.stereo_plot import stereo_viewer
 from hexrdgui.constants import OverlayType, PolarXAxisType, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
 from hexrdgui import utils
@@ -195,6 +196,8 @@ class ImageCanvas(FigureCanvas):
                 self.axes_images[i].set_data(img)
 
         self.raw_view_images_dict = images_dict
+        for name, axis in self.raw_axes.items():
+            self.update_mask_boundaries(axis, name)
 
         # This will call self.draw_idle()
         self.show_saturation()
@@ -959,6 +962,8 @@ class ImageCanvas(FigureCanvas):
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
+            self.update_mask_boundaries(self.axis)
+
             # Get the "tth" vector
             angular_grid = self.iviewer.angular_grid
             tth = np.degrees(angular_grid[1][0])
@@ -1199,6 +1204,7 @@ class ImageCanvas(FigureCanvas):
         if skip:
             return
 
+        self.update_mask_boundaries(self.axis)
         self.iviewer.reapply_masks()
         self.axes_images[0].set_data(self.scaled_images[0])
         self.update_azimuthal_integral_plot()
@@ -1530,6 +1536,20 @@ class ImageCanvas(FigureCanvas):
 
         self._snip_viewer_dialog = SnipViewerDialog(background, extent)
         self._snip_viewer_dialog.show()
+
+    def update_mask_boundaries(self, axis, det=None):
+        for p in axis.patches:
+            p.remove()
+
+        for name in MaskManager().visible_boundaries:
+            mask = MaskManager().masks[name]
+            if self.mode == ViewType.raw:
+                verts = [v for k, v in mask.data if k == det]
+            elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
+                verts = create_polar_line_data_from_raw(mask.data)
+            for vert in verts:
+                kwargs = {'fill': False, 'lw': 1, 'linestyle': '--'}
+                axis.add_patch(Polygon(vert, **kwargs))
 
 
 class PolarXAxisTickLocator(AutoLocator):

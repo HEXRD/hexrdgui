@@ -23,12 +23,14 @@ from abc import ABC, abstractmethod
 
 
 class Mask(ABC):
-    def __init__(self, name='', mtype='', visible=True):
+    def __init__(self, name='', mtype='', visible=True, show_border=False):
         self.type = mtype
         self.name = name
         self.visible = visible
+        self.show_border = show_border
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
+        self.boundary_lines = None
 
     def get_masked_arrays(self):
         if self.masked_arrays is None:
@@ -38,6 +40,9 @@ class Mask(ABC):
 
     def invalidate_masked_arrays(self):
         self.masked_arrays = None
+
+    def update_border_visibility(self, visibility):
+        self.show_border = visibility
 
     # Abstract methods
     @property
@@ -60,12 +65,17 @@ class Mask(ABC):
 
     @classmethod
     def deserialize(cls, data):
-        return cls(data['name'], data['mtype'], data['visible'])
+        return cls(
+            name=data['name'],
+            mtype=data['mtype'],
+            visible=data.get('visible', True),
+            show_border=data.get('border', False),
+        )
 
 
 class RegionMask(Mask):
-    def __init__(self, name='', mtype='', visible=True):
-        super().__init__(name, mtype, visible)
+    def __init__(self, name='', mtype='', visible=True, show_border=False):
+        super().__init__(name, mtype, visible, show_border)
         self._raw = None
 
     @property
@@ -90,11 +100,19 @@ class RegionMask(Mask):
 
         return self.masked_arrays
 
+    def update_border_visibility(self, visibility):
+        can_have_border = [MaskType.region, MaskType.polygon]
+        if self.type not in can_have_border:
+            # Only rectangle, ellipse and hand-drawn masks can show borders
+            visibility = False
+        self.show_border = visibility
+
     def serialize(self):
         data = {
             'name': self.name,
             'mtype': self.type,
             'visible': self.visible,
+            'border': self.show_border,
             'data': {},
         }
         for i, (det, values) in enumerate(self._raw):
@@ -103,7 +121,12 @@ class RegionMask(Mask):
 
     @classmethod
     def deserialize(cls, data):
-        new_cls = cls(data['name'], data['mtype'], data['visible'])
+        new_cls = cls(
+            name=data['name'],
+            mtype=data['mtype'],
+            visible=data.get('visible', True),
+            show_border=data.get('border', False),
+        )
         raw_data = []
         for det in HexrdConfig().detector_names:
             if det not in data['data'].keys():
@@ -132,6 +155,10 @@ class ThresholdMask(Mask):
     def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays = recompute_raw_threshold_mask()
 
+    def update_border_visibility(self, visibility):
+        # Cannot show borders for threshold
+        self.show_border = False
+
     def serialize(self):
         return {
             'min_val': self.min_val,
@@ -139,11 +166,16 @@ class ThresholdMask(Mask):
             'name': self.name,
             'mtype': self.type,
             'visible': self.visible,
+            'border': self.show_border,
         }
 
     @classmethod
     def deserialize(cls, data):
-        new_cls = cls(data['name'], data['mtype'], data['visible'])
+        new_cls = cls(
+            name=data['name'],
+            mtype=data['mtype'],
+            visible=data.get('visible', True),
+        )
         new_cls.data = [data['min_val'], data['max_val']]
         return new_cls
 
@@ -178,6 +210,10 @@ class MaskManager(QObject, metaclass=QSingleton):
     @property
     def visible_masks(self):
         return [k for k, v in self.masks.items() if v.visible]
+
+    @property
+    def visible_boundaries(self):
+        return [k for k, v in self.masks.items() if v.show_border]
 
     @property
     def threshold_mask(self):
@@ -283,6 +319,9 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def update_mask_visibility(self, name, visibility):
         self.masks[name].visible = visibility
+
+    def update_border_visibility(self, name, visibility):
+        self.masks[name].update_border_visibility(visibility)
 
     def threshold_toggled(self):
         if self.threshold_mask:

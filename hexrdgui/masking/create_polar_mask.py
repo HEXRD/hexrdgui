@@ -139,10 +139,15 @@ def _interpolate_split_coords_1d(coords1, coords2):
     return coords1, coords2
 
 
-def create_polar_mask_from_raw(value):
+def create_polar_line_data_from_raw(value):
     line_data = []
     for det, data in value:
         line_data.extend(convert_raw_to_polar(det, data))
+    return line_data
+
+
+def create_polar_mask_from_raw(value):
+    line_data = create_polar_line_data_from_raw(value)
     return create_polar_mask(line_data)
 
 
