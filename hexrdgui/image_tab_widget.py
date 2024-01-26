@@ -369,9 +369,17 @@ class ImageTabWidget(QTabWidget):
             # Image was created with imshow()
             artist = event.inaxes.get_images()[0]
 
-            i, j = utils.coords2index(artist, *raw_xy_data)
+            # Compute i and j
+            i, j = utils.coords2index(artist, info['x_data'], info['y_data'])
+            if stitched:
+                # For the intensity, use raw xy data for i and j
+                raw_i, raw_j = utils.coords2index(artist, *raw_xy_data)
+            else:
+                # They should be the same
+                raw_i, raw_j = i, j
+
             try:
-                intensity = artist.get_array().data[i, j]
+                intensity = artist.get_array().data[raw_i, raw_j]
             except IndexError:
                 # Most likely, this means we are slightly out of bounds,
                 # and the index is too big. Just clear the status bar in
