@@ -59,6 +59,7 @@ class ImageCanvas(FigureCanvas):
         self.stereo_border_artists = []
         self.azimuthal_overlay_artists = []
         self.blit_manager = BlitManager(self)
+        self.raw_view_images_dict = {}
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -115,6 +116,7 @@ class ImageCanvas(FigureCanvas):
     def clear(self):
         self.iviewer = None
         self.mode = None
+        self.raw_view_images_dict = {}
         self.clear_figure()
 
     def clear_figure(self):
@@ -155,6 +157,11 @@ class ImageCanvas(FigureCanvas):
             # This will be used for drawing the rings
             self.iviewer = raw_iviewer()
 
+            if HexrdConfig().stitch_raw_roi_images:
+                # The image_names is actually a list of group names
+                images_dict = self.iviewer.raw_images_to_stitched(
+                    image_names, images_dict)
+
             cols = 1
             if len(image_names) > 1:
                 cols = 2
@@ -178,17 +185,21 @@ class ImageCanvas(FigureCanvas):
             self.figure.tight_layout()
         else:
             images_dict = self.scaled_image_dict
+            if HexrdConfig().stitch_raw_roi_images:
+                # The image_names is actually a list of group names
+                images_dict = self.iviewer.raw_images_to_stitched(
+                    image_names, images_dict)
+
             for i, name in enumerate(image_names):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
+
+        self.raw_view_images_dict = images_dict
 
         # This will call self.draw_idle()
         self.show_saturation()
 
         self.update_beam_marker()
-
-        # Set the detectors to draw
-        self.iviewer.detectors = list(self.raw_axes)
         self.update_auto_picked_data()
         self.update_overlays()
 
@@ -261,14 +272,15 @@ class ImageCanvas(FigureCanvas):
             return []
 
         if self.mode == ViewType.raw:
+            data = self.iviewer.create_overlay_data(overlay)
+
             # If it's raw, there is data for each axis.
             # The title of each axis should match the detector key.
             # Add a safety check to ensure everything is synced up.
-            if not all(x in overlay.data for x in self.raw_axes):
+            if not all(x in data for x in self.raw_axes):
                 return []
 
-            return [(self.raw_axes[x], x, overlay.data[x])
-                    for x in self.raw_axes]
+            return [(self.raw_axes[x], x, data[x]) for x in self.raw_axes]
 
         # If it is anything else, there is only one axis
         # Use the same axis for all of the data
@@ -373,8 +385,8 @@ class ImageCanvas(FigureCanvas):
             if not found:
                 # Not highlighted or merged
                 reg_ranges.append(ranges[i])
-            else:
-                found = False
+
+            found = False
 
         def plot(data, key, kwargs):
             # This logic was repeated
@@ -542,8 +554,7 @@ class ImageCanvas(FigureCanvas):
 
     def draw_const_chi_overlay(self, artist_key, det_key, axis, data, style,
                                highlight_style):
-        points = [x['data'] for x in data]
-
+        points = data['data']
         data_style = style['data']
 
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
@@ -698,21 +709,36 @@ class ImageCanvas(FigureCanvas):
         # Use the unscaled image data to determine saturation
         images_dict = self.unscaled_image_dict
 
-        for img in self.axes_images:
-            # The titles of the images are currently the detector names
-            # If we change this in the future, we will need to change
-            # our method for getting the saturation level as well.
-            ax = img.axes
-            detector_name = ax.get_title()
+        def compute_saturation_and_size(detector_name):
             detector = HexrdConfig().detector(detector_name)
             saturation_level = detector['saturation_level']['value']
 
             array = images_dict[detector_name]
 
             num_sat = (array >= saturation_level).sum()
-            percent = num_sat / array.size * 100.0
-            str_sat = 'Saturation: ' + str(num_sat)
-            str_sat += '\n%5.3f %%' % percent
+
+            return num_sat, array.size
+
+        for img in self.axes_images:
+            # The titles of the images are currently the detector names
+            # If we change this in the future, we will need to change
+            # our method for getting the saturation level as well.
+            ax = img.axes
+
+            axes_title = ax.get_title()
+
+            if HexrdConfig().stitch_raw_roi_images:
+                # The axes title is the group name
+                det_keys = self.iviewer.roi_groups[axes_title]
+                results = [compute_saturation_and_size(x) for x in det_keys]
+                num_sat = sum(x[0] for x in results)
+                size = sum(x[1] for x in results)
+            else:
+                # The axes_title is the detector name
+                num_sat, size = compute_saturation_and_size(axes_title)
+
+            percent = num_sat / size * 100.0
+            str_sat = f'Saturation: {num_sat}\n%{percent:5.3f}'
 
             t = ax.text(0.05, 0.05, str_sat, fontdict={'color': 'w'},
                         transform=ax.transAxes)

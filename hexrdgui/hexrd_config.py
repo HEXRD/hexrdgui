@@ -252,6 +252,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.hdf5_path = []
         self.live_update = True
         self._show_saturation_level = False
+        self._stitch_raw_roi_images = False
         self._tab_images = False
         self.previous_active_material = None
         self.collapsed_state = []
@@ -367,6 +368,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('config_calibration', None),
             ('config_indexing', None),
             ('config_image', None),
+            ('_stitch_raw_roi_images', False),
             ('font_size', 11),
             ('images_dir', None),
             ('working_dir', '.'),
@@ -1554,11 +1556,23 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.default_config['instrument']['detectors']['detector_1'])
 
     @property
-    def is_roi_instrument_config(self):
-        for det in HexrdConfig().detectors.values():
-            if det.get('pixels', {}).get('roi', {}).get('value'):
-                return True
-        return False
+    def instrument_has_roi(self):
+        det = next(iter(self.detectors.values()))
+
+        # Both the group and roi must be present to support ROI
+        has_group = det.get('group', {}).get('value')
+        has_roi = det.get('pixels', {}).get('roi', {}).get('value')
+        return bool(has_group and has_roi)
+
+    @property
+    def detector_group_names(self):
+        names = []
+        for det_key in self.detectors:
+            name = self.detector_group(det_key)
+            if name and name not in names:
+                names.append(name)
+
+        return names
 
     def detector_group(self, detector_name):
         det = self.detector(detector_name)
@@ -2382,6 +2396,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     show_saturation_level = property(get_show_saturation_level,
                                      set_show_saturation_level)
+
+    def get_stitch_raw_roi_images(self):
+        return self.instrument_has_roi and self._stitch_raw_roi_images
+
+    def set_stitch_raw_roi_images(self, v):
+        if self._stitch_raw_roi_images != v:
+            self._stitch_raw_roi_images = v
+            self.deep_rerender_needed.emit()
+
+    stitch_raw_roi_images = property(get_stitch_raw_roi_images,
+                                     set_stitch_raw_roi_images)
 
     def tab_images(self):
         return self._tab_images

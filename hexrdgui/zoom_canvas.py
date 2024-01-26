@@ -587,7 +587,7 @@ class ZoomCanvas(FigureCanvas):
             return self.main_canvas.scaled_images[0]
         elif self.canvas_is_raw:
             name = self.main_axis.get_title()
-            return self.main_canvas.scaled_image_dict[name]
+            return self.main_canvas.raw_view_images_dict[name]
 
     @property
     def disabled(self):

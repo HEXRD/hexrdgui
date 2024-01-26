@@ -47,7 +47,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     @property
     def naming_options(self):
         dets = HexrdConfig().detector_names
-        if HexrdConfig().is_roi_instrument_config:
+        if HexrdConfig().instrument_has_roi:
             groups = [HexrdConfig().detector_group(d) for d in dets]
             dets.extend([g for g in groups if g is not None])
         return dets

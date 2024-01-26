@@ -26,11 +26,6 @@ class Overlay(ABC):
 
     @property
     @abstractmethod
-    def hkl_data_key(self):
-        pass
-
-    @property
-    @abstractmethod
     def has_widths(self):
         pass
 
@@ -73,7 +68,21 @@ class Overlay(ABC):
     def calibration_picks_polar(self, picks):
         pass
 
+    @property
+    @abstractmethod
+    def data_key(self):
+        pass
+
+    @property
+    @abstractmethod
+    def ranges_key(self):
+        pass
+
     # Concrete methods
+    data_key = None
+    ranges_key = None
+    ranges_indices_key = None
+
     def __init__(self, material_name, name=None, refinements=None,
                  calibration_picks=None, style=None, highlight_style=None,
                  visible=True):
@@ -113,6 +122,17 @@ class Overlay(ABC):
         from hexrdgui.image_load_manager import ImageLoadManager
 
         ImageLoadManager().new_images_loaded.connect(self.on_new_images_loaded)
+
+    @property
+    def plot_data_keys(self):
+        # These are the data keys that are intended to be plotted.
+        # This will be used to perform any needed transforms (such as
+        # converting to/from stitched coordinates for ROI instruments).
+        keys = (
+            self.data_key,
+            self.ranges_key,
+        )
+        return tuple(x for x in keys if x is not None)
 
     def to_dict(self):
         d = {k: getattr(self, k) for k in self.attributes_to_save}
@@ -308,7 +328,7 @@ class Overlay(ABC):
         self._highlights.clear()
 
     def path_to_hkl_data(self, detector_key, hkl):
-        data_key = self.hkl_data_key
+        data_key = self.data_key
         detector_data = self.data[detector_key]
         ind = array_index_in_list(hkl, detector_data['hkls'])
         if ind == -1:

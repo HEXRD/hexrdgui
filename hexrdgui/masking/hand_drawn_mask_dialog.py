@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 
+from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import add_sample_points
 from hexrdgui.utils.dialog import add_help_url
@@ -222,6 +223,12 @@ class LineBuilder(QObject):
         """
         Picker callback
         """
+        if HexrdConfig().stitch_raw_roi_images:
+            print('Polygon masks do not yet support drawing on a stitched '
+                  'raw view. Please switch to an unstitched view to draw the '
+                  'masks.')
+            return
+
         print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
               ('double' if event.dblclick else 'single', event.button,
                event.x, event.y, event.xdata, event.ydata))

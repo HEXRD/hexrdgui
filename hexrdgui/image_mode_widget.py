@@ -53,6 +53,8 @@ class ImageModeWidget(QObject):
         self.ui.raw_tabbed_view.toggled.connect(HexrdConfig().set_tab_images)
         self.ui.raw_show_saturation.toggled.connect(
             HexrdConfig().set_show_saturation_level)
+        self.ui.raw_stitch_roi_images.toggled.connect(
+            HexrdConfig().set_stitch_raw_roi_images)
         self.ui.raw_show_zoom_dialog.clicked.connect(
             self.raw_show_zoom_dialog)
         self.ui.cartesian_pixel_size.valueChanged.connect(
@@ -91,9 +93,7 @@ class ImageModeWidget(QObject):
         self.ui.polar_x_axis_type.currentTextChanged.connect(
             self.on_polar_x_axis_type_changed)
         HexrdConfig().instrument_config_loaded.connect(
-            self.auto_generate_cartesian_params)
-        HexrdConfig().instrument_config_loaded.connect(
-            self.auto_generate_polar_params)
+            self.on_instrument_config_load)
 
         HexrdConfig().enable_image_mode_widget.connect(
             self.enable_image_mode_widget)
@@ -146,6 +146,7 @@ class ImageModeWidget(QObject):
         widgets = [
             self.ui.raw_tabbed_view,
             self.ui.raw_show_saturation,
+            self.ui.raw_stitch_roi_images,
             self.ui.raw_show_zoom_dialog,
             self.ui.cartesian_pixel_size,
             self.ui.cartesian_virtual_plane_distance,
@@ -176,6 +177,8 @@ class ImageModeWidget(QObject):
 
     def update_gui_from_config(self):
         with block_signals(*self.all_widgets()):
+            self.ui.raw_stitch_roi_images.setChecked(
+                HexrdConfig().stitch_raw_roi_images)
             self.ui.cartesian_pixel_size.setValue(
                 HexrdConfig().cartesian_pixel_size)
             self.ui.cartesian_virtual_plane_distance.setValue(
@@ -218,11 +221,22 @@ class ImageModeWidget(QObject):
             self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()
 
+        self.update_visibility_states()
+
     def update_enable_states(self):
         apply_snip1d = self.ui.polar_apply_snip1d.isChecked()
         self.ui.polar_snip1d_width.setEnabled(apply_snip1d)
         self.ui.polar_snip1d_numiter.setEnabled(apply_snip1d)
         self.ui.polar_apply_erosion.setEnabled(apply_snip1d)
+
+    def on_instrument_config_load(self):
+        self.update_visibility_states()
+        self.auto_generate_cartesian_params()
+        self.auto_generate_polar_params()
+
+    def update_visibility_states(self):
+        has_roi = HexrdConfig().instrument_has_roi
+        self.ui.raw_stitch_roi_images.setVisible(has_roi)
 
     def auto_generate_cartesian_params(self):
         if HexrdConfig().loading_state:
