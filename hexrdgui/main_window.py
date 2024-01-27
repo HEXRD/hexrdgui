@@ -99,6 +99,8 @@ class MainWindow(QObject):
         self.ui = loader.load_file('main_window.ui', parent)
         self.confirm_application_close = True
 
+        HexrdConfig().active_canvas = self.active_canvas
+
         self.progress_dialog = ProgressDialog(self.ui)
         self.progress_dialog.setWindowTitle('Calibration Running')
 
@@ -733,21 +735,26 @@ class MainWindow(QObject):
         self.update_all()
         self.update_config_gui()
 
+    @property
+    def active_canvas(self):
+        return self.ui.image_tab_widget.active_canvas
+
     def active_canvas_changed(self):
+        # Update the active canvas on HexrdConfig()
+        HexrdConfig().active_canvas = self.active_canvas
         self.update_drawn_mask_line_picker_canvas()
         self.update_mask_region_canvas()
 
     def update_drawn_mask_line_picker_canvas(self):
         if hasattr(self, '_apply_drawn_mask_line_picker'):
             self._apply_drawn_mask_line_picker.canvas_changed(
-                self.ui.image_tab_widget.active_canvas
+                self.active_canvas
             )
 
     def on_action_edit_apply_hand_drawn_mask_triggered(self):
         # Make the dialog
-        canvas = self.ui.image_tab_widget.active_canvas
         self._apply_drawn_mask_line_picker = (
-            HandDrawnMaskDialog(canvas, self.ui))
+            HandDrawnMaskDialog(self.active_canvas, self.ui))
         self._apply_drawn_mask_line_picker.start()
         self._apply_drawn_mask_line_picker.finished.connect(
             self.run_apply_hand_drawn_mask)
@@ -854,9 +861,7 @@ class MainWindow(QObject):
 
     def update_mask_region_canvas(self):
         if hasattr(self, '_masks_regions_dialog'):
-            self._masks_regions_dialog.canvas_changed(
-                self.ui.image_tab_widget.active_canvas
-            )
+            self._masks_regions_dialog.canvas_changed(self.active_canvas)
 
     def on_action_edit_apply_region_mask_triggered(self):
         self._masks_regions_dialog = MaskRegionsDialog(self.ui)
@@ -939,8 +944,7 @@ class MainWindow(QObject):
             self.deep_rerender()
 
     def on_show_raw_zoom_dialog(self):
-        canvas = self.ui.image_tab_widget.active_canvas
-        dialog = ZoomCanvasDialog(canvas, parent=self.ui)
+        dialog = ZoomCanvasDialog(self.active_canvas, parent=self.ui)
         self._zoom_dialog = dialog
         dialog.show()
 
