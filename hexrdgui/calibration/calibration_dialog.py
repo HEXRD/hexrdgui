@@ -30,8 +30,9 @@ class CalibrationDialog(QObject):
     undo_run = Signal()
     finished = Signal()
 
-    def __init__(self, instr, params_dict, format_extra_params_func=None, parent=None,
-                 engineering_constraints=None, window_title='Calibration Dialog'):
+    def __init__(self, instr, params_dict, format_extra_params_func=None,
+                 parent=None, engineering_constraints=None,
+                 window_title='Calibration Dialog'):
         super().__init__(parent)
 
         loader = UiLoader()
@@ -338,7 +339,8 @@ class CalibrationDialog(QObject):
             recursively_format_det(det, this_config, this_template)
 
         if self.format_extra_params_func is not None:
-            self.format_extra_params_func(params_dict, tree_dict, create_param_item)
+            self.format_extra_params_func(params_dict, tree_dict,
+                                          create_param_item)
 
         # Now all keys should have been used. Verify this is true.
         if sorted(used_params) != sorted(list(params_dict)):
