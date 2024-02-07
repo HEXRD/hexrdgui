@@ -12,6 +12,7 @@ from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict, masks_applied_to_panel_buffers
+from hexrdgui.utils.cancelable_process import CancelableProcess, ProcessCanceled
 
 from hexrdgui.calibration.auto import PowderCalibrationDialog
 
@@ -25,9 +26,14 @@ class PowderRunner(QObject):
 
         self.parent = parent
         self.async_runner = AsyncRunner(parent)
+        self.cancelable_process = None
+        self.canceled = False
 
     def clear(self):
         self.remove_lines()
+
+        self.cancelable_process = None
+        self.canceled = False
 
         if hasattr(self, '_ask_if_lines_are_acceptable_box'):
             # Remove the box if it is still there...
@@ -91,7 +97,13 @@ class PowderRunner(QObject):
     def extract_powder_lines(self):
         self.async_runner.progress_title = 'Auto picking points...'
         self.async_runner.success_callback = self.extract_powder_lines_finished
+        self.async_runner.cancel_callback = self.on_cancel
         self.async_runner.run(self.run_extract_powder_lines)
+
+    def on_cancel(self):
+        if self.cancelable_process:
+            self.cancelable_process.cancel()
+            self.canceled = True
 
     def run_extract_powder_lines(self):
         options = HexrdConfig().config['calibration']['powder']
@@ -105,12 +117,22 @@ class PowderRunner(QObject):
         with masks_applied_to_panel_buffers(self.instr):
             # FIXME: currently coded to handle only a single material
             #        so grabbing first (only) element
-            self.data_dict = self.ic.extract_points(**kwargs)[0]
+            self.cancelable_process = CancelableProcess(self.ic.extract_points)
+            try:
+                self.data_dict = self.cancelable_process.run(**kwargs)[0]
+            except ProcessCanceled:
+                # Process was canceled...
+                return
 
         # Save the picks to the active overlay in case we need them later
         self.save_picks_to_overlay()
 
     def extract_powder_lines_finished(self):
+        if self.canceled:
+            # Process was canceled. Go back to the original dialog.
+            self.canceled = False
+            return self._run()
+
         try:
             self.draw_lines()
             self.ask_if_lines_are_acceptable()
@@ -162,6 +184,9 @@ class PowderRunner(QObject):
         box.finished.connect(self.remove_lines)
         box.accepted.connect(self.lines_accepted)
 
+        # Start over on the next iteration of the event loop
+        box.rejected.connect(self._run, Qt.QueuedConnection)
+
         self._show_auto_picks_check_box = cb
         self._ask_if_lines_are_acceptable_box = box
 
@@ -169,6 +194,7 @@ class PowderRunner(QObject):
         # If accepted, run it
         self.async_runner.progress_title = 'Running calibration...'
         self.async_runner.success_callback = self.update_config
+        self.async_runner.cancel_callback = self.on_cancel
         self.async_runner.run(self.run_calibration)
 
     def run_calibration(self):
@@ -182,7 +208,12 @@ class PowderRunner(QObject):
             'max_iter': options['max_iter'],
             'use_robust_optimization': options['use_robust_optimization'],
         }
-        x1 = self.ic.run_calibration(**kwargs)
+        self.cancelable_process = CancelableProcess(self.ic.run_calibration)
+        try:
+            x1 = self.cancelable_process.run(**kwargs)
+        except ProcessCanceled:
+            # Process was canceled...
+            return
 
         results_message = 'Calibration Results:\n'
         for params in np.vstack([x0, x1]).T:
@@ -193,6 +224,10 @@ class PowderRunner(QObject):
         self.results_message = results_message
 
     def update_config(self):
+        if self.canceled:
+            self.canceled = False
+            return self._run()
+
         msg = 'Optimization successful!'
         msg_box = QMessageBox(QMessageBox.Information, 'HEXRD', msg)
         msg_box.exec()

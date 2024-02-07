@@ -16,10 +16,14 @@ class AsyncRunner:
         self.progress_dialog.setWindowTitle('Working...')
         self.progress_dialog.setRange(0, 0)
 
+        self.progress_dialog.cancel_clicked.connect(self.on_cancel_clicked)
+
         self.reset_callbacks()
 
     def run(self, f, *args, **kwargs):
         worker = AsyncWorker(f, *args, **kwargs)
+
+        self.progress_dialog.cancel_visible = bool(self.cancel_callback)
 
         if self.success_callback:
             worker.signals.result.connect(self.success_callback)
@@ -51,6 +55,7 @@ class AsyncRunner:
     def reset_callbacks(self):
         self.success_callback = None
         self.error_callback = None
+        self.cancel_callback = None
 
     @property
     def progress_title(self):
@@ -65,6 +70,10 @@ class AsyncRunner:
         msg = f'An ERROR occurred: {exctype}: {value}.'
         msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
         msg_box.exec()
+
+    def on_cancel_clicked(self):
+        if self.cancel_callback:
+            self.cancel_callback()
 
     @property
     def thread_pool(self):
