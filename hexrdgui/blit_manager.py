@@ -43,6 +43,10 @@ class BlitManager:
                 )
                 raise RuntimeError(msg)
 
+        if not cv.figure.axes:
+            # Ignore the request, as there are currently no axes
+            return
+
         self.bg = cv.copy_from_bbox(cv.figure.bbox)
         self.draw_all_artists()
 
