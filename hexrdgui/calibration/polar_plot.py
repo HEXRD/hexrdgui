@@ -82,8 +82,8 @@ class InstrumentViewer:
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
 
-    def update_detector(self, det):
-        self.pv.update_detector(det)
+    def update_detectors(self, detectors):
+        self.pv.update_detectors(detectors)
 
     def write_image(self, filename='polar_image.npz'):
         filename = Path(filename)

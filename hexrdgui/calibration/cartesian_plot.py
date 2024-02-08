@@ -296,7 +296,7 @@ class InstrumentViewer:
         if HexrdConfig().any_intensity_corrections:
             self.images_dict = HexrdConfig().images_dict
 
-    def update_detector(self, det):
+    def update_detectors(self, detectors):
         # If there are intensity corrections and the detector transform
         # has been modified, we need to update the images dict.
         self.update_images_dict()
@@ -304,9 +304,10 @@ class InstrumentViewer:
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 
-        t_conf = iconfig['detectors'][det]['transform']
-        self.instr.detectors[det].tvec = t_conf['translation']
-        self.instr.detectors[det].tilt = t_conf['tilt']
+        for det in detectors:
+            t_conf = iconfig['detectors'][det]['transform']
+            self.instr.detectors[det].tvec = t_conf['translation']
+            self.instr.detectors[det].tilt = t_conf['tilt']
 
         # If the panel size has increased, re-create the display panel.
         # This is so that interactively moving detectors outside of the
@@ -325,8 +326,9 @@ class InstrumentViewer:
             # Re-create all images
             self.plot_dplane()
         else:
-            # Update the individual detector image
-            self.create_warped_image(det)
+            # Update the individual detector images
+            for det in detectors:
+                self.create_warped_image(det)
 
         # Generate the final image
         self.generate_image()

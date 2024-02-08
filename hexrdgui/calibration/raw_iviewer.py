@@ -24,13 +24,14 @@ class InstrumentViewer:
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
 
-    def update_detector(self, det):
+    def update_detectors(self, detectors):
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 
-        t_conf = iconfig['detectors'][det]['transform']
-        self.instr.detectors[det].tvec = t_conf['translation']
-        self.instr.detectors[det].tilt = t_conf['tilt']
+        for det in detectors:
+            t_conf = iconfig['detectors'][det]['transform']
+            self.instr.detectors[det].tvec = t_conf['translation']
+            self.instr.detectors[det].tilt = t_conf['tilt']
 
         # Since these are just individual images, no further updates are needed
 

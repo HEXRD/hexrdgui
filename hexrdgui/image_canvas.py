@@ -83,8 +83,8 @@ class ImageCanvas(FigureCanvas):
             self.show_saturation)
         HexrdConfig().show_stereo_border_changed.connect(
             self.draw_stereo_border)
-        HexrdConfig().detector_transform_modified.connect(
-            self.on_detector_transform_modified)
+        HexrdConfig().detector_transforms_modified.connect(
+            self.on_detector_transforms_modified)
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
         HexrdConfig().rerender_wppf.connect(self.draw_wppf)
@@ -1405,7 +1405,7 @@ class ImageCanvas(FigureCanvas):
             artist, = axis.plot(rijs[:, 0], rijs[:, 1], 'm+')
             self.auto_picked_data_artists.append(artist)
 
-    def on_detector_transform_modified(self, det):
+    def on_detector_transforms_modified(self, detectors):
         if HexrdConfig().loading_state:
             # Skip the request if we are loading state
             return
@@ -1413,7 +1413,8 @@ class ImageCanvas(FigureCanvas):
         if self.mode is None:
             return
 
-        self.iviewer.update_detector(det)
+        self.iviewer.update_detectors(detectors)
+
         if self.mode == ViewType.raw:
             # Only overlays need to be updated
             HexrdConfig().flag_overlay_updates_for_all_materials()
