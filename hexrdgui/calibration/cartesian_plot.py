@@ -316,10 +316,10 @@ class InstrumentViewer:
                 self.dpanel_sizes[1] < new_panel_size[1]):
             # The panel size has increased. Let's re-create the display panel
             # We will only increase the panel size in this function.
-            # Also bump up the sizes by 5% as well for better interaction.
+            # Also bump up the sizes by 15% as well for better interaction.
             self.dpanel_sizes = (
-                int(max(self.dpanel_sizes[0], new_panel_size[0]) * 1.05),
-                int(max(self.dpanel_sizes[1], new_panel_size[1]) * 1.05),
+                int(max(self.dpanel_sizes[0], new_panel_size[0]) * 1.15),
+                int(max(self.dpanel_sizes[1], new_panel_size[1]) * 1.15),
             )
             self.make_dpanel()
             # Re-create all images
