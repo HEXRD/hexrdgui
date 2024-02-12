@@ -461,7 +461,7 @@ class PolarView:
         if HexrdConfig().any_intensity_corrections:
             self.images_dict = HexrdConfig().images_dict
 
-    def update_detector(self, det):
+    def update_detectors(self, detectors):
         self.reset_cached_distortion_fields()
 
         # If there are intensity corrections and the detector transform
@@ -471,12 +471,13 @@ class PolarView:
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 
-        t_conf = iconfig['detectors'][det]['transform']
-        self.instr.detectors[det].tvec = t_conf['translation']
-        self.instr.detectors[det].tilt = t_conf['tilt']
+        for det in detectors:
+            t_conf = iconfig['detectors'][det]['transform']
+            self.instr.detectors[det].tvec = t_conf['translation']
+            self.instr.detectors[det].tilt = t_conf['tilt']
 
-        # Update the individual detector image
-        self.create_warp_image(det)
+            # Update the individual detector image
+            self.create_warp_image(det)
 
         # Generate the final image
         self.generate_image()

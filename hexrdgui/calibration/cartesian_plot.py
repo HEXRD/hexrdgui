@@ -296,7 +296,7 @@ class InstrumentViewer:
         if HexrdConfig().any_intensity_corrections:
             self.images_dict = HexrdConfig().images_dict
 
-    def update_detector(self, det):
+    def update_detectors(self, detectors):
         # If there are intensity corrections and the detector transform
         # has been modified, we need to update the images dict.
         self.update_images_dict()
@@ -304,9 +304,10 @@ class InstrumentViewer:
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 
-        t_conf = iconfig['detectors'][det]['transform']
-        self.instr.detectors[det].tvec = t_conf['translation']
-        self.instr.detectors[det].tilt = t_conf['tilt']
+        for det in detectors:
+            t_conf = iconfig['detectors'][det]['transform']
+            self.instr.detectors[det].tvec = t_conf['translation']
+            self.instr.detectors[det].tilt = t_conf['tilt']
 
         # If the panel size has increased, re-create the display panel.
         # This is so that interactively moving detectors outside of the
@@ -316,17 +317,18 @@ class InstrumentViewer:
                 self.dpanel_sizes[1] < new_panel_size[1]):
             # The panel size has increased. Let's re-create the display panel
             # We will only increase the panel size in this function.
-            # Also bump up the sizes by 5% as well for better interaction.
+            # Also bump up the sizes by 15% as well for better interaction.
             self.dpanel_sizes = (
-                int(max(self.dpanel_sizes[0], new_panel_size[0]) * 1.05),
-                int(max(self.dpanel_sizes[1], new_panel_size[1]) * 1.05),
+                int(max(self.dpanel_sizes[0], new_panel_size[0]) * 1.15),
+                int(max(self.dpanel_sizes[1], new_panel_size[1]) * 1.15),
             )
             self.make_dpanel()
             # Re-create all images
             self.plot_dplane()
         else:
-            # Update the individual detector image
-            self.create_warped_image(det)
+            # Update the individual detector images
+            for det in detectors:
+                self.create_warped_image(det)
 
         # Generate the final image
         self.generate_image()

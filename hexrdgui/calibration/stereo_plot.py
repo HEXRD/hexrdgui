@@ -178,9 +178,9 @@ class InstrumentViewer:
     def update_overlay_data(self):
         update_overlay_data(self.instr, self.type)
 
-    def update_detector(self, det):
+    def update_detectors(self, detectors):
         if self.project_from_polar:
-            self.pv.update_detector(det)
+            self.pv.update_detectors(detectors)
 
         self.draw_stereo()
 

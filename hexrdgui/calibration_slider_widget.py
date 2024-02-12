@@ -2,8 +2,11 @@ from PySide6.QtCore import QObject
 
 import numpy as np
 
+from hexrd.rotations import angleAxisOfRotMat, rotMatOfExpMap
+
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils import block_signals, convert_angle_convention
 
 
 class CalibrationSliderWidget(QObject):
@@ -25,7 +28,7 @@ class CalibrationSliderWidget(QObject):
     def setup_connections(self):
         self.ui.detector.currentIndexChanged.connect(
             self.update_gui_from_config)
-        for widget in self.config_widgets():
+        for widget in self.config_widgets:
             widget.valueChanged.connect(self.update_widget_counterpart)
             widget.valueChanged.connect(self.update_config_from_gui)
 
@@ -35,27 +38,30 @@ class CalibrationSliderWidget(QObject):
 
         self.ui.push_reset_config.pressed.connect(self.reset_config)
 
+        self.ui.roi_lock_group_transforms.toggled.connect(
+            HexrdConfig().set_roi_lock_group_transforms)
+
         HexrdConfig().euler_angle_convention_changed.connect(
             self.update_labels)
 
     def update_ranges(self):
         r = self.ui.sb_translation_range.value()
         slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
-        for w in self.translation_widgets():
+        for w in self.translation_widgets:
             v = w.value()
             r_val = slider_r if w.objectName().startswith('slider') else r
             w.setRange(v - r_val / 2.0, v + r_val / 2.0)
 
         r = self.ui.sb_tilt_range.value()
         slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
-        for w in self.tilt_widgets():
+        for w in self.tilt_widgets:
             v = w.value()
             r_val = slider_r if w.objectName().startswith('slider') else r
             w.setRange(v - r_val / 2.0, v + r_val / 2.0)
 
         r = self.ui.sb_beam_range.value()
         slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
-        for w in self.beam_widgets():
+        for w in self.beam_widgets:
             v = w.value()
             r_val = slider_r if w.objectName().startswith('slider') else r
             w.setRange(v - r_val / 2.0, v + r_val / 2.0)
@@ -66,6 +72,7 @@ class CalibrationSliderWidget(QObject):
     def current_detector_dict(self):
         return HexrdConfig().detector(self.current_detector())
 
+    @property
     def translation_widgets(self):
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
@@ -79,6 +86,7 @@ class CalibrationSliderWidget(QObject):
 
         return [getattr(self.ui, x) for x in widget_names]
 
+    @property
     def tilt_widgets(self):
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
@@ -92,9 +100,11 @@ class CalibrationSliderWidget(QObject):
 
         return [getattr(self.ui, x) for x in widget_names]
 
+    @property
     def transform_widgets(self):
-        return self.translation_widgets() + self.tilt_widgets()
+        return self.translation_widgets + self.tilt_widgets
 
+    @property
     def beam_widgets(self):
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
@@ -109,26 +119,13 @@ class CalibrationSliderWidget(QObject):
 
         return [getattr(self.ui, x) for x in widget_names]
 
+    @property
     def config_widgets(self):
-        return self.transform_widgets() + self.beam_widgets()
+        return self.transform_widgets + self.beam_widgets
 
+    @property
     def all_widgets(self):
-        return self.config_widgets() + [self.ui.detector]
-
-    def block_all_signals(self):
-        previously_blocked = []
-        all_widgets = self.all_widgets()
-
-        for widget in all_widgets:
-            previously_blocked.append(widget.blockSignals(True))
-
-        return previously_blocked
-
-    def unblock_all_signals(self, previously_blocked):
-        all_widgets = self.all_widgets()
-
-        for block, widget in zip(previously_blocked, all_widgets):
-            widget.blockSignals(block)
+        return self.config_widgets + [self.ui.detector]
 
     def on_detector_changed(self):
         self.update_gui_from_config()
@@ -159,16 +156,20 @@ class CalibrationSliderWidget(QObject):
     def update_gui_from_config(self):
         self.update_detectors_from_config()
 
-        previously_blocked = self.block_all_signals()
-        try:
-            for widget in self.config_widgets():
+        with block_signals(*self.config_widgets):
+            for widget in self.config_widgets:
                 self.update_widget_value(widget)
 
-        finally:
-            self.unblock_all_signals(previously_blocked)
+        self.ui.roi_lock_group_transforms.setChecked(
+            HexrdConfig().roi_lock_group_transforms)
 
         self.update_ranges()
         self.update_labels()
+        self.update_visibility_states()
+
+    def update_visibility_states(self):
+        self.ui.roi_lock_group_transforms.setVisible(
+            HexrdConfig().instrument_has_roi)
 
     def update_detectors_from_config(self):
         widget = self.ui.detector
@@ -211,14 +212,17 @@ class CalibrationSliderWidget(QObject):
                 # Convert to radians, and to the native python type before save
                 val = np.radians(val).item()
 
-            det['transform'][key]['value'][ind] = val
+            if HexrdConfig().roi_lock_group_transforms:
+                self._transform_locked_group(det, key, ind, val)
+            else:
+                det['transform'][key]['value'][ind] = val
 
-            # Since we modify the value directly instead of letting the
-            # HexrdConfig() do it, let's also emit the signal it would
-            # have emitted.
-            HexrdConfig().detector_transform_modified.emit(
-                self.current_detector()
-            )
+                # Since we modify the value directly instead of letting the
+                # HexrdConfig() do it, let's also emit the signal it would
+                # have emitted.
+                HexrdConfig().detector_transforms_modified.emit(
+                    [self.current_detector()]
+                )
         else:
             iconfig = HexrdConfig().config['instrument']
             if key == 'energy':
@@ -230,6 +234,82 @@ class CalibrationSliderWidget(QObject):
             else:
                 iconfig['beam']['vector'][key]['value'] = val
                 HexrdConfig().beam_vector_changed.emit()
+
+    def _transform_locked_group(self, det, key, ind, val):
+        group = det.get('group', {}).get('value')
+        if not group:
+            raise Exception(f'Detector does not have a group: {det}')
+
+        group_dets = {}
+        for name in HexrdConfig().detector_names:
+            if HexrdConfig().detector_group(name) == group:
+                group_dets[name] = HexrdConfig().detector(name)
+
+        if key == 'translation':
+            # Compute the diff
+            previous = det['transform']['translation']['value'][ind]
+            diff = val - previous
+
+            # Translate all detectors in the same group by the same difference
+            for detector in group_dets.values():
+                detector['transform']['translation']['value'][ind] += diff
+        else:
+            # It is tilt. Compute the center of rotation first.
+            detector_centers = np.array([x['transform']['translation']['value']
+                                        for x in group_dets.values()])
+            center_of_rotation = detector_centers.mean(axis=0)
+
+            # Gather the old tilt and the new tilt to compute a difference.
+            old_tilt = det['transform']['tilt']['value']
+            new_tilt = old_tilt.copy()
+            # Apply the changed value
+            new_tilt[ind] = val
+
+            # Convert them to rotation matrices and compute the diff
+            old_rmat = _tilt_to_rmat(old_tilt)
+            new_rmat = _tilt_to_rmat(new_tilt)
+
+            # Compute the rmat used to convert from old to new
+            rmat_diff = new_rmat @ old_rmat.T
+
+            # Rotate each detector using the rmat_diff
+            for det_key, detector in group_dets.items():
+                transform = detector['transform']
+
+                # Compute current rmat
+                rmat = _tilt_to_rmat(transform['tilt']['value'])
+
+                # Apply rmat diff
+                new_rmat = rmat_diff @ rmat
+
+                if detector is det:
+                    # This tilt is set from user interaction. Just keep it
+                    # that way, rather than re-computing it, to avoid issues
+                    # with non-uniqueness when converting to/from exponential
+                    # map parameters.
+                    tilt = new_tilt
+                else:
+                    # Convert back to tilt (using our convention) and set it
+                    tilt = _rmat_to_tilt(new_rmat)
+
+                transform['tilt']['value'] = tilt
+
+                # Compute change in translation
+                translation = np.asarray(transform['translation']['value'])
+
+                # Translate to center and apply rmat diff
+                translation -= center_of_rotation
+                translation = rmat_diff @ translation + center_of_rotation
+
+                transform['translation']['value'] = translation.tolist()
+
+        HexrdConfig().detector_transforms_modified.emit(list(group_dets))
+
+        # Since we modified potentially all translations and tilts, we
+        # must update the GUI too.
+        with block_signals(*self.transform_widgets):
+            for w in self.transform_widgets:
+                self.update_widget_value(w)
 
     def update_widget_value(self, widget):
         name = widget.objectName()
@@ -285,3 +365,25 @@ class CalibrationSliderWidget(QObject):
         self.ui.label_tilt_2.setText(str.upper(a + ':'))
         self.ui.label_tilt_0.setText(str.upper(b + ':'))
         self.ui.label_tilt_1.setText(str.upper(c + ':'))
+
+
+def _tilt_to_rmat(tilt):
+    # Convert the tilt to exponential map parameters, and then
+    # to the rotation matrix, and return.
+    convention = HexrdConfig().euler_angle_convention
+    return rotMatOfExpMap(np.asarray(
+        convert_angle_convention(tilt, convention, None)
+    ))
+
+
+def _rmat_to_tilt(rmat):
+    # Convert the rotation matrix to exponential map parameters,
+    # and then to the tilt, and return.
+    convention = HexrdConfig().euler_angle_convention
+
+    # Compute tilt
+    phi, n = angleAxisOfRotMat(rmat)
+    tilt = phi * n.flatten()
+
+    # Convert back to convention
+    return convert_angle_convention(tilt, None, convention)
