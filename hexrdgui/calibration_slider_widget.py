@@ -282,8 +282,17 @@ class CalibrationSliderWidget(QObject):
                 # Apply rmat diff
                 new_rmat = rmat_diff @ rmat
 
-                # Convert back to tilt (using our convention) and set it
-                transform['tilt']['value'] = _rmat_to_tilt(new_rmat)
+                if detector is det:
+                    # This tilt is set from user interaction. Just keep it
+                    # that way, rather than re-computing it, to avoid issues
+                    # with non-uniqueness when converting to/from exponential
+                    # map parameters.
+                    tilt = new_tilt
+                else:
+                    # Convert back to tilt (using our convention) and set it
+                    tilt = _rmat_to_tilt(new_rmat)
+
+                transform['tilt']['value'] = tilt
 
                 # Compute change in translation
                 translation = np.asarray(transform['translation']['value'])
