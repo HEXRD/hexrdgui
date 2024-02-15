@@ -7,7 +7,7 @@ import numpy as np
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from hexrd.fitting.calibration import StructureLessCalibrator
+from hexrd.fitting.calibration import StructurelessCalibrator
 
 from hexrdgui.calibration.calibration_dialog import CalibrationDialog
 from hexrdgui.calibration.calibration_dialog_callbacks import (
@@ -208,7 +208,7 @@ class StructurelessCalibrationRunner(QObject):
             'data': calibrator_lines,
             'engineering_constraints': engineering_constraints,
         }
-        self.calibrator = StructureLessCalibrator(**kwargs)
+        self.calibrator = StructurelessCalibrator(**kwargs)
 
         def format_extra_params_func(params_dict, tree_dict,
                                      create_param_item):
@@ -234,6 +234,7 @@ class StructurelessCalibrationRunner(QObject):
             'parent': self.parent,
             'engineering_constraints': engineering_constraints,
             'window_title': 'Structureless Calibration Dialog',
+            'help_url': 'calibration/structureless'
         }
         dialog = CalibrationDialog(**kwargs)
 
@@ -344,6 +345,12 @@ def validate_picks(picks, instr):
 
 class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.edit_picks_dialog = None
+        self.edit_picks_dictionary = None
+
     @property
     def calibrator_lines(self):
         return self.calibrator.data
@@ -412,6 +419,16 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
 
     def load_picks_from_file(self, selected_file):
         return load_picks_from_file(selected_file)
+
+    def set_picks(self, picks):
+        self.validate_picks(picks)
+        self.calibrator.data = picks
+
+        # Update the dialog
+        self.clear_drawn_picks()
+        self.dialog.params_dict = self.calibrator.params
+
+        self.redraw_picks()
 
     def validate_picks(self, picks):
         return validate_picks(picks, self.instr)

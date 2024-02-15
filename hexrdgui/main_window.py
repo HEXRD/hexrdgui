@@ -609,7 +609,7 @@ class MainWindow(QObject):
         canvas = self.ui.image_tab_widget.image_canvases[0]
         runner = CalibrationRunner(canvas, async_runner)
         self._calibration_runner = runner
-        runner.finished.connect(self.calibration_finished)
+        runner.calibration_finished.connect(self.calibration_finished)
 
         try:
             runner.run()
@@ -618,8 +618,6 @@ class MainWindow(QObject):
             raise
 
     def calibration_finished(self):
-        print('Calibration finished')
-        print('Updating the GUI')
         self.update_config_gui()
         self.deep_rerender()
 
@@ -998,13 +996,9 @@ class MainWindow(QObject):
         if hasattr(self, '_powder_runner'):
             self._powder_runner.clear()
 
-        self._powder_runner = PowderRunner(self.ui)
-        self._powder_runner.finished.connect(self.finish_powder_calibration)
-        self._powder_runner.run()
-
-    def finish_powder_calibration(self):
-        self.update_config_gui()
-        self.deep_rerender()
+        self._powder_runner = runner = PowderRunner(self.ui)
+        runner.calibration_finished.connect(self.calibration_finished)
+        runner.run()
 
     def update_config_gui(self):
         current_widget = self.ui.calibration_tab_widget.currentWidget()
@@ -1149,10 +1143,6 @@ class MainWindow(QObject):
         canvas = self.ui.image_tab_widget.image_canvases[0]
 
         overlays = HexrdConfig().overlays
-
-        # Pad all of the overlays to make sure their data is updated
-        for overlay in overlays:
-            overlay.pad_picks_data()
 
         kwargs = {
             'dictionary': overlays_to_tree_format(overlays),

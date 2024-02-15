@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QApplication, QMenu, QTableWidgetItem
 
-from hexrd.material.crystallography import hklToStr
+from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.reflections_selection_helper import ReflectionsSelectionHelper
@@ -319,7 +319,7 @@ class ReflectionsTable:
             hkl_ids = [-1] * len(hkls)
             for hkl_data in plane_data.hklDataList:
                 try:
-                    idx = hkls.index(hklToStr(hkl_data['hkl']))
+                    idx = hkls.index(hkl_to_str(hkl_data['hkl']))
                 except ValueError:
                     continue
                 else:

@@ -6,6 +6,7 @@ import numpy as np
 from hexrd import constants
 from hexrd.transforms import xfcapi
 from hexrd.utils.decorators import numba_njit_if_available
+from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.constants import (
@@ -132,16 +133,16 @@ class LaueOverlay(Overlay):
 
     def pad_picks_data(self):
         for k, v in self.data.items():
-            num_hkls = len(self.data[k]['hkls'])
-            current = self.calibration_picks.setdefault(k, [])
-            while len(current) < num_hkls:
-                current.append((np.nan, np.nan))
+            current = self.calibration_picks.setdefault(k, {})
+            for hkl in self.data[k]['hkls']:
+                current.setdefault(hkl_to_str(hkl), [np.nan, np.nan])
 
     @property
     def has_picks_data(self):
-        for det_key, hkl_list in self.calibration_picks.items():
-            if hkl_list and not np.min(np.isnan(hkl_list)):
-                return True
+        for det_key, hkl_dict in self.calibration_picks.items():
+            for hkl_str, hkl_list in hkl_dict.items():
+                if hkl_list and not np.min(np.isnan(hkl_list)):
+                    return True
 
         return False
 
@@ -154,13 +155,20 @@ class LaueOverlay(Overlay):
 
         instr = self.instrument
         picks = copy.deepcopy(self.calibration_picks)
-        for det_key, det_picks in picks.items():
-            panel = instr.detectors[det_key]
-            picks[det_key] = cart_to_angles(
-                det_picks,
-                panel,
-                eta_period,
-            ).tolist()
+        for det_key, hkl_dict in picks.items():
+            for hkl_str, hkl_picks in hkl_dict.items():
+                panel = instr.detectors[det_key]
+                if np.any(np.isnan(hkl_picks)):
+                    # Skip the runtime warning...
+                    picks[det_key][hkl_str] = [np.nan, np.nan]
+                else:
+                    angles = cart_to_angles(
+                        hkl_picks,
+                        panel,
+                        eta_period,
+                    )
+                    picks[det_key][hkl_str] = apply_tth_distortion_if_needed(
+                        angles, in_degrees=True).tolist()[0]
 
         return picks
 
@@ -171,9 +179,16 @@ class LaueOverlay(Overlay):
         # Convert from polar to cartesian
         instr = self.instrument
         picks = copy.deepcopy(picks)
-        for det_key, det_picks in picks.items():
-            panel = instr.detectors[det_key]
-            picks[det_key] = angles_to_cart(det_picks, panel).tolist()
+        for det_key, hkl_dict in picks.items():
+            for hkl_str, hkl_picks in hkl_dict.items():
+                panel = instr.detectors[det_key]
+                if len(hkl_picks) == 0 or np.any(np.isnan(hkl_picks)):
+                    picks[det_key][hkl_str] = [np.nan, np.nan]
+                else:
+                    angles = apply_tth_distortion_if_needed(
+                        [hkl_picks], in_degrees=True, reverse=True)
+                    picks[det_key][hkl_str] = angles_to_cart(angles,
+                                                             panel)[0].tolist()
 
         self.calibration_picks = picks
 
