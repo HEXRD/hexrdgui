@@ -1,4 +1,3 @@
-from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMessageBox
 
 import numpy as np
@@ -44,10 +43,7 @@ class PowderCalibrationDialog:
         self.ui.tth_tolerance.setValue(self.tth_tol)
         self.ui.eta_tolerance.setValue(options['eta_tol'])
         self.ui.fit_tth_tol.setValue(options['fit_tth_tol'])
-        self.ui.max_iter.setValue(options['max_iter'])
         self.ui.int_cutoff.setValue(options['int_cutoff'])
-        self.ui.conv_tol.setValue(options['conv_tol'])
-        self.ui.robust.setChecked(options['use_robust_optimization'])
 
         self.auto_guess_initial_fwhm = options['auto_guess_initial_fwhm']
         self.initial_fwhm = options['initial_fwhm']
@@ -60,10 +56,7 @@ class PowderCalibrationDialog:
         self.tth_tol = self.ui.tth_tolerance.value()
         options['eta_tol'] = self.ui.eta_tolerance.value()
         options['fit_tth_tol'] = self.ui.fit_tth_tol.value()
-        options['max_iter'] = self.ui.max_iter.value()
         options['int_cutoff'] = self.ui.int_cutoff.value()
-        options['conv_tol'] = self.ui.conv_tol.value()
-        options['use_robust_optimization'] = self.ui.robust.isChecked()
 
         options['auto_guess_initial_fwhm'] = self.auto_guess_initial_fwhm
         options['initial_fwhm'] = self.initial_fwhm
@@ -144,12 +137,6 @@ class PowderCalibrationDialog:
 
         if not found:
             raise Exception(f'Unknown background type: {v}')
-
-    def show_optimization_parameters(self, b=True):
-        self.ui.optimization_parameters_group.setVisible(b)
-
-        # Resize later so that the dialog is the correct size
-        QTimer.singleShot(0, lambda: self.ui.resize(self.ui.sizeHint()))
 
 
 # If this gets added as a list to hexrd, we can import it from there

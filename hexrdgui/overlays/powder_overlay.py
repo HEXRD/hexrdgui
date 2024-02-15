@@ -132,17 +132,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
     def default_refinements(self):
         return np.asarray([False] * 6)
 
-    def pad_picks_data(self):
-        for k, v in self.data.items():
-            num_hkls = len(self.data[k]['hkls'])
-            current = self.calibration_picks.setdefault(k, [])
-            while len(current) < num_hkls:
-                current.append([])
-
     @property
     def has_picks_data(self):
-        for det_key, hkl_list in self.calibration_picks.items():
-            for hkl_picks in hkl_list:
+        for det_key, hkl_dict in self.calibration_picks.items():
+            for hkl_str, hkl_picks in hkl_dict.items():
                 if hkl_picks:
                     return True
 
@@ -153,14 +146,14 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Convert from cartesian to polar
         instr = self.instrument
         picks = copy.deepcopy(self.calibration_picks)
-        for det_key, det_picks in picks.items():
+        for det_key, hkl_dict in picks.items():
             panel = instr.detectors[det_key]
-            for i in range(len(det_picks)):
-                if len(det_picks[i]) == 0:
+            for hkl_str, hkl_picks in hkl_dict.items():
+                if len(hkl_picks) == 0:
                     continue
 
-                det_picks[i] = cart_to_angles(
-                    det_picks[i],
+                hkl_dict[hkl_str] = cart_to_angles(
+                    hkl_picks,
                     panel,
                     self.eta_period,
                 ).tolist()
@@ -174,13 +167,13 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Convert from polar to cartesian
         instr = self.instrument
         picks = copy.deepcopy(picks)
-        for det_key, det_picks in picks.items():
+        for det_key, hkl_dict in picks.items():
             panel = instr.detectors[det_key]
-            for i in range(len(det_picks)):
-                if len(det_picks[i]) == 0:
+            for hkl_str, hkl_picks in hkl_dict.items():
+                if len(hkl_picks) == 0:
                     continue
 
-                det_picks[i] = angles_to_cart(det_picks[i], panel).tolist()
+                hkl_dict[hkl_str] = angles_to_cart(hkl_picks, panel).tolist()
 
         self.calibration_picks = picks
 

@@ -54,10 +54,6 @@ class Overlay(ABC):
     def has_picks_data(self):
         pass
 
-    @abstractmethod
-    def pad_picks_data(self):
-        pass
-
     @property
     @abstractmethod
     def calibration_picks_polar(self):
@@ -386,5 +382,15 @@ class Overlay(ABC):
     def reset_calibration_picks(self):
         # Make an empty list for each detector
         self._calibration_picks.clear()
-        self._calibration_picks |= {k: [] for k in self.data}
+
+        if self.display_mode != ViewType.cartesian:
+            # Cartesian uses a fake detector, so we don't want to
+            # use that for the calibration picks.
+            # But all other display modes should work.
+            self._calibration_picks |= {k: {} for k in self.data}
+
         self.pad_picks_data()
+
+    def pad_picks_data(self):
+        # Subclasses only need to override this if they actually need it
+        pass

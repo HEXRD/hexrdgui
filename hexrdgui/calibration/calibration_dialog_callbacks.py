@@ -12,6 +12,8 @@ from hexrdgui.utils.abc_qobject import ABCQObject
 class CalibrationDialogCallbacks(ABCQObject):
     """A class with default behavior for calibration dialog callbacks"""
 
+    # This gets emitted when the instrument is updated
+    # (which also happens after the other params are updated too)
     instrument_updated = Signal()
 
     def __init__(self, dialog, calibrator, instr, async_runner):
@@ -20,9 +22,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.calibrator = calibrator
         self.instr = instr
         self.async_runner = async_runner
-
-        self.edit_picks_dictionary = None
-        self.edit_picks_dialog = None
 
         self.drawing_picks = True
 
@@ -75,6 +74,10 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     @abstractmethod
     def validate_picks(self, picks):
+        pass
+
+    @abstractmethod
+    def set_picks(self, picks):
         pass
 
     def set_focus_mode(self, b):
@@ -157,7 +160,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def on_run_clicked(self):
         self.async_runner.progress_title = 'Running calibration...'
-        self.async_runner.success_callback = self.update_config_from_instrument
+        self.async_runner.success_callback = self.on_calibration_finished
         self.async_runner.run(self.run_calibration)
 
     def on_undo_run_clicked(self):
@@ -182,7 +185,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         self.draw_picks_on_canvas()
 
-    def run_calibration(self):
+    def run_calibration(self, **extra_kwargs):
         # Update the tth distortion on the calibrator from the dialog
         self.update_tth_distortion_from_dialog()
 
@@ -192,7 +195,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         odict = copy.deepcopy(self.dialog.advanced_options)
 
         x0 = self.calibrator.params.valuesdict()
-        result = self.calibrator.run_calibration(odict=odict)
+        result = self.calibrator.run_calibration(odict=odict, **extra_kwargs)
 
         # Round the calibrator numbers to 3 decimal places
         self.round_param_numbers()
@@ -211,6 +214,9 @@ class CalibrationDialogCallbacks(ABCQObject):
         print(results_message)
 
         self.results_message = results_message
+
+    def on_calibration_finished(self):
+        self.update_config_from_instrument()
 
     def update_config_from_instrument(self):
         output_dict = instr_to_internal_dict(self.instr)
@@ -257,6 +263,9 @@ class CalibrationDialogCallbacks(ABCQObject):
             for attr in attrs:
                 setattr(param, attr, round(getattr(param, attr), 3))
 
+        # Make sure the tree view is updated
+        self.dialog.update_tree_view()
+
     def on_edit_picks_finished(self):
         # Show this again
         self.dialog.show()
@@ -288,16 +297,6 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         picks = self.load_picks_from_file(selected_file)
         self.set_picks(picks)
-
-    def set_picks(self, picks):
-        self.validate_picks(picks)
-        self.calibrator.data = picks
-
-        # Update the dialog
-        self.clear_drawn_picks()
-        self.dialog.params_dict = self.calibrator.params
-
-        self.redraw_picks()
 
     def on_finished(self):
         self.draw_picks(False)

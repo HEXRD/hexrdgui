@@ -244,39 +244,82 @@ class GenericPicksTreeView(BaseDictTreeView):
         return selected_grouped
 
     @property
-    def default_line_settings(self):
+    def default_artist_settings(self):
         return {
-            'marker': igor_marker,
-            'markeredgecolor': 'black',
-            'markersize': 16,
-            'linestyle': 'None',
+            'line': {
+                'marker': igor_marker,
+                'markeredgecolor': 'black',
+                'markersize': 16,
+                'linestyle': 'None',
+            },
+            'spot': {
+                'marker': 'o',
+                'fillstyle': 'none',
+                'markersize': 8,
+                'markeredgewidth': 2,
+                'linewidth': 0,
+            },
         }
 
     @property
-    def highlighted_line_settings(self):
+    def highlighted_artist_settings(self):
         return {
-            'marker': igor_marker,
-            'markeredgecolor': 'yellow',
-            'markersize': 16,
-            'linestyle': 'None',
+            'line': {
+                'marker': igor_marker,
+                'markeredgecolor': 'yellow',
+                'markersize': 16,
+                'linestyle': 'None',
+            },
+            'spot': {
+                'marker': 'o',
+                'fillstyle': 'none',
+                'markersize': 8,
+                'markeredgewidth': 2,
+                'linewidth': 0,
+            },
         }
 
     def create_color_cycler(self):
         prop_cycle = plt.rcParams['axes.prop_cycle']
         return cycle(prop_cycle.by_key()['color'])
 
+    def item_type(self, tree_item):
+        root_item = self.model().root_item
+
+        parents_to_root = 1
+        parent = tree_item.parent_item
+        while parent is not root_item:
+            parent = parent.parent_item
+            parents_to_root += 1
+
+        if parents_to_root == 3:
+            return 'spot'
+        elif parents_to_root == 4:
+            return 'line'
+
+        raise Exception(f'Unknown parents_to_root: {parents_to_root}')
+
     def draw_all_picks(self):
         if not self.show_all_picks:
             return
 
-        line_settings = self.default_line_settings
+        artist_settings = self.default_artist_settings
         color_cycler = self.create_color_cycler()
 
         for group in self.all_pick_items_grouped.values():
-            line_settings['color'] = next(color_cycler)
+            # Always cycle the color
+            color = next(color_cycler)
+
+            if not group:
+                continue
+
+            # Get the type of the first item, and use that for settings
+            item_type = self.item_type(group[0])
+            settings = artist_settings[item_type]
+            settings['color'] = color
 
             xys = [item.data_list[1:] for item in group]
-            artist, = self.canvas.axis.plot(*list(zip(*xys)), **line_settings)
+            artist, = self.canvas.axis.plot(*list(zip(*xys)), **settings)
             self.all_picks_line_artists.append(artist)
 
         self.canvas.draw_idle()
@@ -285,23 +328,33 @@ class GenericPicksTreeView(BaseDictTreeView):
         if not self.selected_items:
             return
 
-        line_settings = self.default_line_settings
+        artist_settings = self.default_artist_settings
         if self.show_all_picks:
-            # Use highlighted line settings instead
-            line_settings = self.highlighted_line_settings
+            # Use highlighted artist settings instead
+            artist_settings = self.highlighted_artist_settings
 
         color_cycler = self.create_color_cycler()
 
         for group in self.selected_items_grouped.values():
             # Always cycle to the next color, even if the group is empty,
             # so that the colors will match up with all_pick_items_grouped
-            line_settings['color'] = next(color_cycler)
+            color = next(color_cycler)
 
             if not group:
                 continue
 
+            # Get the type of the first item, and use that for settings
+            item_type = self.item_type(group[0])
+            settings = artist_settings[item_type]
+
+            if self.show_all_picks and item_type == 'spot':
+                # Force yellow for highlight
+                settings['color'] = 'yellow'
+            else:
+                settings['color'] = color
+
             xys = [item.data_list[1:] for item in group]
-            artist, = self.canvas.axis.plot(*list(zip(*xys)), **line_settings)
+            artist, = self.canvas.axis.plot(*list(zip(*xys)), **settings)
             self.selected_picks_line_artists.append(artist)
 
         self.canvas.draw_idle()

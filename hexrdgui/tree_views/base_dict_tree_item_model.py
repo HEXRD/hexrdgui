@@ -174,7 +174,6 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
                 cur_val = cur_val[val]
         except KeyError:
             msg = f'Path: {path}\nwas not found in dict: {self.config}'
-            breakpoint()
             raise Exception(msg)
 
         return cur_val
@@ -325,6 +324,9 @@ class BaseDictTreeView(QTreeView):
     @property
     def selected_items(self):
         return [self.model().get_item(x) for x in self.selected_rows]
+
+    def clear_selection(self):
+        self.selectionModel().clearSelection()
 
     def contextMenuEvent(self, event):
         # Generate the actions

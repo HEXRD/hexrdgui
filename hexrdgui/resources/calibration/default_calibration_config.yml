@@ -1,12 +1,9 @@
 powder:
   eta_tol: 5.0
   fit_tth_tol: 0.1
-  max_iter: 2
   int_cutoff: 0.0001
-  conv_tol: 0.0001
   pk_type: 'gaussian'
   bg_type: 'linear'
-  use_robust_optimization: true
   auto_guess_initial_fwhm: true
   initial_fwhm: 1.0
 laue_auto_picker:

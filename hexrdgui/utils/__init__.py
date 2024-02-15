@@ -20,6 +20,7 @@ from hexrd.rotations import (
 )
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 from hexrd.utils.decorators import memoize
+from hexrd.utils.hkl import str_to_hkl
 
 
 class SnipAlgorithmType(IntEnum):
@@ -429,7 +430,7 @@ def apply_symmetric_constraint(x):
 
 def hkl_str_to_array(hkl):
     # For instance: '1 -1 10' => np.array((1, -1, 10))
-    return np.array(list(map(int, hkl.split())))
+    return np.array(str_to_hkl(hkl))
 
 
 def is_omega_imageseries(ims):

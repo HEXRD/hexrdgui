@@ -7,67 +7,21 @@
     <x>0</x>
     <y>0</y>
     <width>750</width>
-    <height>479</height>
+    <height>395</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Fast Powder Calibration</string>
+   <string>Auto Pick Powder Points</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="3" column="0" colspan="3">
-    <widget class="QGroupBox" name="optimization_parameters_group">
-     <property name="title">
-      <string>Optimization Parameters:</string>
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
-     <layout class="QGridLayout" name="gridLayout_5">
-      <item row="0" column="0">
-       <widget class="QLabel" name="conv_tol_label">
-        <property name="text">
-         <string>Convergence Tolerance (Δr):</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSpinBox" name="max_iter">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>10000000</number>
-        </property>
-        <property name="value">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="ScientificDoubleSpinBox" name="conv_tol">
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.000100000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="max_iter_label">
-        <property name="text">
-         <string>Max iterations:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QCheckBox" name="robust">
-        <property name="text">
-         <string>Use robust optimization?</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="centerButtons">
+      <bool>false</bool>
+     </property>
     </widget>
    </item>
    <item row="0" column="1" rowspan="2" colspan="2">
@@ -199,16 +153,6 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0" rowspan="2">
     <widget class="QGroupBox" name="annular_sector_widths_group">
      <property name="title">
@@ -294,9 +238,6 @@
   <tabstop>background_type</tabstop>
   <tabstop>auto_guess_initial_fwhm</tabstop>
   <tabstop>initial_fwhm</tabstop>
-  <tabstop>conv_tol</tabstop>
-  <tabstop>max_iter</tabstop>
-  <tabstop>robust</tabstop>
  </tabstops>
  <resources/>
  <connections>

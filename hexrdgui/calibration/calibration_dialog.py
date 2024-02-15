@@ -5,10 +5,12 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
 from hexrdgui import resource_loader
+from hexrdgui.constants import ViewType
+from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrdgui.tree_views.multi_column_dict_tree_view import (
     MultiColumnDictTreeItemModel, MultiColumnDictTreeView
 )
-from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
 
@@ -32,7 +34,7 @@ class CalibrationDialog(QObject):
 
     def __init__(self, instr, params_dict, format_extra_params_func=None,
                  parent=None, engineering_constraints=None,
-                 window_title='Calibration Dialog'):
+                 window_title='Calibration Dialog', help_url='calibration/'):
         super().__init__(parent)
 
         loader = UiLoader()
@@ -40,7 +42,7 @@ class CalibrationDialog(QObject):
                                    parent)
 
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
-        add_help_url(self.ui.button_box, 'calibration/')
+        add_help_url(self.ui.button_box, help_url)
         self.ui.setWindowTitle(window_title)
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
@@ -61,6 +63,8 @@ class CalibrationDialog(QObject):
         self.load_tree_view_mapping()
         self.initialize_tree_view()
 
+        self.update_edit_picks_enable_state()
+
         self.load_settings()
         self.setup_connections()
 
@@ -76,6 +80,10 @@ class CalibrationDialog(QObject):
             self.on_undo_run_button_clicked)
         self.ui.finished.connect(self.finish)
 
+        # Picks editing is currently only supported in the polar mode
+        HexrdConfig().image_mode_changed.connect(
+            self.update_edit_picks_enable_state)
+
     def show(self):
         self.ui.show()
 
@@ -84,6 +92,16 @@ class CalibrationDialog(QObject):
 
     def load_settings(self):
         pass
+
+    def update_edit_picks_enable_state(self):
+        is_polar = HexrdConfig().image_mode == ViewType.polar
+
+        polar_tooltip = ''
+        not_polar_tooltip = 'Must be in polar view to edit picks'
+        tooltip = polar_tooltip if is_polar else not_polar_tooltip
+
+        self.ui.edit_picks_button.setEnabled(is_polar)
+        self.ui.edit_picks_button.setToolTip(tooltip)
 
     def initialize_advanced_options(self):
         self.ui.advanced_options_group.setVisible(
