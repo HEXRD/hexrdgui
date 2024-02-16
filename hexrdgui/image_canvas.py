@@ -221,7 +221,7 @@ class ImageCanvas(FigureCanvas):
             return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
         else:
             # Masks are already applied...
-            return {'img': self.iviewer.img}
+            return {'img': self.iviewer.display_img}
 
     @property
     def unscaled_images(self):
@@ -229,7 +229,7 @@ class ImageCanvas(FigureCanvas):
         if self.mode == ViewType.raw:
             return list(self.unscaled_image_dict.values())
         else:
-            return [self.iviewer.img]
+            return [self.iviewer.display_img]
 
     @property
     def scaled_image_dict(self):
@@ -1516,7 +1516,7 @@ class ImageCanvas(FigureCanvas):
             print('No instrument viewer! Cannot generate snip1d!')
             return
 
-        if self.iviewer.img is None:
+        if self.iviewer.display_img is None:
             print('No image! Cannot generate snip1d!')
             return
 

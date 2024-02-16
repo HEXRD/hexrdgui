@@ -52,6 +52,10 @@ class InstrumentViewer:
         return self.pv.img
 
     @property
+    def display_img(self):
+        return self.pv.display_img
+
+    @property
     def snip_background(self):
         return self.pv.snip_background
 
