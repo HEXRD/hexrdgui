@@ -7,3 +7,10 @@ class MaskType:
     pinhole = 'pinhole'
 
 CURRENT_MASK_VERSION = 2
+
+
+class MaskStatus:
+    none = 0
+    visible = 1
+    boundary = 2
+    all = 3
