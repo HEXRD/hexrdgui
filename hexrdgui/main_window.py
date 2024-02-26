@@ -1480,6 +1480,9 @@ class MainWindow(QObject):
         HexrdConfig().add_recent_state_file(filepath)
         self.update_recent_state_files()
 
+        # Show the loaded state in the window title
+        self.ui.setWindowTitle(f'HEXRD - {path.name}')
+
         # Since statuses are added after the instrument config is loaded,
         # the statuses in the GUI might not be up to date. Ensure it is.
         self.update_config_gui()
