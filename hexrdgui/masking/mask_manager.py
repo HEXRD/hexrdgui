@@ -30,7 +30,6 @@ class Mask(ABC):
         self.show_border = show_border
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
-        self.boundary_lines = None
 
     def get_masked_arrays(self):
         if self.masked_arrays is None:
@@ -204,6 +203,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         super().__init__(None)
         self.masks = {}
         self.view_mode = ViewType.raw
+        self.boundary_color = '#000'  # Default to black
 
         self.setup_connections()
 

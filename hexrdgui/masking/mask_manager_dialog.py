@@ -6,9 +6,9 @@ import h5py
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
-    QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout
+    QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout, QColorDialog
 )
-from PySide6.QtGui import QCursor
+from PySide6.QtGui import QCursor, QColor
 
 
 from hexrdgui.utils import block_signals
@@ -56,6 +56,7 @@ class MaskManagerDialog(QObject):
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
         MaskManager().mask_mgr_dialog_update.connect(self.update_table)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
+        self.ui.border_color.clicked.connect(self.set_boundary_color)
 
     def update_table(self):
         with block_signals(self.ui.masks_table):
@@ -244,3 +245,9 @@ class MaskManagerDialog(QObject):
             MaskManager().update_border_visibility(name, True)
         self.update_presentation_selector()
         MaskManager().masks_changed()
+
+    def set_boundary_color(self):
+        dialog = QColorDialog(QColor(MaskManager().boundary_color), self.ui)
+        if dialog.exec():
+            MaskManager().boundary_color = dialog.selectedColor().name()
+            MaskManager().masks_changed()

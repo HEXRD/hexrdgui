@@ -1548,7 +1548,12 @@ class ImageCanvas(FigureCanvas):
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
                 verts = create_polar_line_data_from_raw(mask.data)
             for vert in verts:
-                kwargs = {'fill': False, 'lw': 1, 'linestyle': '--'}
+                kwargs = {
+                    'fill': False,
+                    'lw': 1,
+                    'linestyle': '--',
+                    'color': MaskManager().boundary_color
+                }
                 axis.add_patch(Polygon(vert, **kwargs))
 
 
