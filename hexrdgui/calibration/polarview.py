@@ -384,6 +384,7 @@ class PolarView:
         # Both "visible" and "boundary" masks are applied to the
         # computational image
         comp_img = self.apply_boundary_masks(img)
+        comp_img = self.apply_tth_distortion(comp_img)
         self.computation_img = comp_img
 
     def apply_snip(self, img):
@@ -466,6 +467,7 @@ class PolarView:
         # Both "visible" and "boundary" masks are applied to the
         # computational image
         comp_img = self.apply_boundary_masks(img)
+        comp_img = self.apply_tth_distortion(comp_img)
         self.computation_img = comp_img
 
     @property
