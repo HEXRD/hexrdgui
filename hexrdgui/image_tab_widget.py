@@ -316,7 +316,7 @@ class ImageTabWidget(QTabWidget):
     def scaled_image_data(self):
         # Even for tabbed mode for a raw view, this function should
         # return the whole image data dict.
-        return self.image_canvases[0].scaled_image_dict
+        return self.image_canvases[0].scaled_display_image_dict
 
     def on_motion_notify_event(self, event):
         # Clear the info if the mouse leaves a plot

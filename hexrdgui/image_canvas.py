@@ -153,7 +153,7 @@ class ImageCanvas(FigureCanvas):
             # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
             self.mode = ViewType.raw
-            images_dict = self.scaled_image_dict
+            images_dict = self.scaled_display_image_dict
 
             # This will be used for drawing the rings
             self.iviewer = raw_iviewer()
@@ -185,7 +185,7 @@ class ImageCanvas(FigureCanvas):
 
             self.figure.tight_layout()
         else:
-            images_dict = self.scaled_image_dict
+            images_dict = self.scaled_display_image_dict
             if HexrdConfig().stitch_raw_roi_images:
                 # The image_names is actually a list of group names
                 images_dict = self.iviewer.raw_images_to_stitched(
@@ -216,7 +216,16 @@ class ImageCanvas(FigureCanvas):
 
     @property
     def unscaled_image_dict(self):
-        # Returns a dict of the unscaled images
+        # Returns a dict of the unscaled computation images
+        if self.mode == ViewType.raw:
+            return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
+        else:
+            # Masks are already applied...
+            return {'img': self.iviewer.img}
+
+    @property
+    def unscaled_display_image_dict(self):
+        # Returns a dict of the unscaled display images
         if self.mode == ViewType.raw:
             return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
         else:
@@ -225,21 +234,39 @@ class ImageCanvas(FigureCanvas):
 
     @property
     def unscaled_images(self):
-        # Returns a list of the unscaled images
+        # Returns a list of the unscaled computation images
         if self.mode == ViewType.raw:
             return list(self.unscaled_image_dict.values())
+        else:
+            return [self.iviewer.img]
+
+    @property
+    def unscaled_display_images(self):
+        # Returns a list of the unscaled display images
+        if self.mode == ViewType.raw:
+            return list(self.unscaled_display_image_dict.values())
         else:
             return [self.iviewer.display_img]
 
     @property
     def scaled_image_dict(self):
-        # Returns a dict of the scaled images
+        # Returns a dict of the scaled computation images
         unscaled = self.unscaled_image_dict
+        return {k: self.transform(v) for k, v in unscaled.items()}
+
+    @property
+    def scaled_display_image_dict(self):
+        # Returns a dict of the scaled display images
+        unscaled = self.unscaled_display_image_dict
         return {k: self.transform(v) for k, v in unscaled.items()}
 
     @property
     def scaled_images(self):
         return [self.transform(x) for x in self.unscaled_images]
+
+    @property
+    def scaled_display_images(self):
+        return [self.transform(x) for x in self.unscaled_display_image_dict]
 
     @property
     def blit_artists(self):
@@ -710,7 +737,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         # Use the unscaled image data to determine saturation
-        images_dict = self.unscaled_image_dict
+        images_dict = self.unscaled_display_image_dict
 
         def compute_saturation_and_size(detector_name):
             detector = HexrdConfig().detector(detector_name)
@@ -861,7 +888,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
-        img, = self.scaled_images
+        img, = self.scaled_display_images
 
         # It is important to persist the plot so that we don't reset the scale.
         rescale_image = True
@@ -928,7 +955,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
-        img, = self.scaled_images
+        img, = self.scaled_display_images
         extent = self.iviewer._extent
 
         rescale_image = True
@@ -1059,7 +1086,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
-        img, = self.scaled_images
+        img, = self.scaled_display_images
 
         rescale_image = True
         if len(self.axes_images) == 0:
@@ -1206,7 +1233,7 @@ class ImageCanvas(FigureCanvas):
 
         self.update_mask_boundaries(self.axis)
         self.iviewer.reapply_masks()
-        self.axes_images[0].set_data(self.scaled_images[0])
+        self.axes_images[0].set_data(self.scaled_display_images[0])
         self.update_azimuthal_integral_plot()
         self.update_overlays()
         self.draw_idle()
@@ -1222,8 +1249,8 @@ class ImageCanvas(FigureCanvas):
     def set_scaling(self, transform):
         # Apply the scaling, and set the data
         self.transform = transform
-        for axes_image, img in zip(self.axes_images, self.scaled_images):
-            axes_image.set_data(img)
+        for axes_img, img in zip(self.axes_images, self.scaled_display_images):
+            axes_img.set_data(img)
 
         self.update_azimuthal_integral_plot()
         self.draw_idle()
@@ -1435,7 +1462,7 @@ class ImageCanvas(FigureCanvas):
 
             return
 
-        self.axes_images[0].set_data(self.scaled_images[0])
+        self.axes_images[0].set_data(self.scaled_display_images[0])
         if self.mode == ViewType.cartesian:
             old_extent = self.axes_images[0].get_extent()
             new_extent = self.iviewer.extent

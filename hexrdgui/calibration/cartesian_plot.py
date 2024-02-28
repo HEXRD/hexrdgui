@@ -284,7 +284,6 @@ class InstrumentViewer:
         self.warp_dict[detector_id] = res
         return res
 
-
     @property
     def display_img(self):
         return self.img
