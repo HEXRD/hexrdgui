@@ -1109,6 +1109,8 @@ class ImageCanvas(FigureCanvas):
             self.axis.autoscale_view()
             self.figure.tight_layout()
 
+        self.update_mask_boundaries(self.axis)
+
         self.draw_stereo_border()
         self.update_auto_picked_data()
         self.draw_detector_borders()
@@ -1541,7 +1543,7 @@ class ImageCanvas(FigureCanvas):
             print('No instrument viewer! Cannot generate snip1d!')
             return
 
-        if self.iviewer.display_img is None:
+        if self.iviewer.img is None:
             print('No image! Cannot generate snip1d!')
             return
 
@@ -1572,6 +1574,15 @@ class ImageCanvas(FigureCanvas):
                 verts = [v for k, v in mask.data if k == det]
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
                 verts = create_polar_line_data_from_raw(mask.data)
+                if self.mode == ViewType.stereo:
+                    # Now convert from polar to stereo
+                    for i, vert in enumerate(verts):
+                        verts[i] = angles_to_stereo(
+                            np.radians(vert),
+                            self.iviewer.instr_pv,
+                            HexrdConfig().stereo_size,
+                        )
+
             for vert in verts:
                 kwargs = {
                     'fill': False,
