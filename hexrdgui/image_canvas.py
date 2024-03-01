@@ -195,7 +195,13 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
 
-        self.raw_view_images_dict = images_dict
+        # Create a computed version for the images dict
+        computed_images_dict = self.scaled_image_dict
+        if HexrdConfig().stitch_raw_roi_images:
+            computed_images_dict = self.iviewer.raw_images_to_stitched(
+                image_names, computed_images_dict)
+
+        self.raw_view_images_dict = computed_images_dict
         for name, axis in self.raw_axes.items():
             self.update_mask_boundaries(axis, name)
 
@@ -1571,7 +1577,21 @@ class ImageCanvas(FigureCanvas):
         for name in MaskManager().visible_boundaries:
             mask = MaskManager().masks[name]
             if self.mode == ViewType.raw:
-                verts = [v for k, v in mask.data if k == det]
+                if HexrdConfig().stitch_raw_roi_images:
+                    # Find masks to keep
+                    dets_to_keep = self.iviewer.roi_info['groups'][det]
+                    masks_to_keep = []
+                    for k, v in mask.data:
+                        if k in dets_to_keep:
+                            masks_to_keep.append((k, v))
+
+                    # Convert the vertices to their stitched versions.
+                    verts = []
+                    for k, v in masks_to_keep:
+                        ij, _ = self.iviewer.raw_to_stitched(v[:, [1, 0]], k)
+                        verts.append(ij[:, [1, 0]])
+                else:
+                    verts = [v for k, v in mask.data if k == det]
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
                 verts = create_polar_line_data_from_raw(mask.data)
                 if self.mode == ViewType.stereo:
