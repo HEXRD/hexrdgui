@@ -214,59 +214,57 @@ class ImageCanvas(FigureCanvas):
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    @property
-    def unscaled_image_dict(self):
+    def create_image_dict(self, display=False):
         # Returns a dict of the unscaled computation images
         if self.mode == ViewType.raw:
             return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
         else:
             # Masks are already applied...
-            return {'img': self.iviewer.img}
+            img = self.iviewer.display_img if display else self.iviewer.img
+            return {'img': img}
+
+    @property
+    def unscaled_image_dict(self):
+        return self.create_image_dict(display=False)
 
     @property
     def unscaled_display_image_dict(self):
-        # Returns a dict of the unscaled display images
-        if self.mode == ViewType.raw:
-            return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
-        else:
-            # Masks are already applied...
-            return {'img': self.iviewer.display_img}
+        return self.create_image_dict(display=True)
 
     @property
     def unscaled_images(self):
         # Returns a list of the unscaled computation images
-        if self.mode == ViewType.raw:
-            return list(self.unscaled_image_dict.values())
-        else:
-            return [self.iviewer.img]
+        return list(self.unscaled_image_dict.values())
 
     @property
     def unscaled_display_images(self):
         # Returns a list of the unscaled display images
-        if self.mode == ViewType.raw:
-            return list(self.unscaled_display_image_dict.values())
+        return list(self.unscaled_display_image_dict.values())
+
+    def create_scaled_image_dict(self, display=False):
+        if display:
+            unscaled = self.unscaled_display_image_dict
         else:
-            return [self.iviewer.display_img]
+            unscaled = self.unscaled_image_dict
+        return {k: self.transform(v) for k, v in unscaled.items()}
 
     @property
     def scaled_image_dict(self):
         # Returns a dict of the scaled computation images
-        unscaled = self.unscaled_image_dict
-        return {k: self.transform(v) for k, v in unscaled.items()}
+        return self.create_scaled_image_dict(display=False)
 
     @property
     def scaled_display_image_dict(self):
         # Returns a dict of the scaled display images
-        unscaled = self.unscaled_display_image_dict
-        return {k: self.transform(v) for k, v in unscaled.items()}
+        return self.create_scaled_image_dict(display=True)
 
     @property
     def scaled_images(self):
-        return [self.transform(x) for x in self.unscaled_images]
+        return list(self.scaled_image_dict.values())
 
     @property
     def scaled_display_images(self):
-        return [self.transform(x) for x in self.unscaled_display_image_dict]
+        return list(self.scaled_display_image_dict.values())
 
     @property
     def blit_artists(self):
