@@ -54,7 +54,8 @@ class PolarView:
 
         self.raw_img = None
         self.snipped_img = None
-        self.processed_img = None
+        self.computation_img = None
+        self.display_image = None
 
         self.snip_background = None
 
@@ -374,11 +375,17 @@ class PolarView:
 
         # Apply the masks before the polar_tth_distortion, because the
         # masks should also be distorted as well.
-        img = self.apply_masks(img)
 
-        img = self.apply_tth_distortion(img)
+        # We only apply "visible" masks to the display image
+        img = self.apply_visible_masks(img)
+        disp_img = self.apply_tth_distortion(img)
+        self.display_image = disp_img
 
-        self.processed_img = img
+        # Both "visible" and "boundary" masks are applied to the
+        # computational image
+        comp_img = self.apply_boundary_masks(img)
+        comp_img = self.apply_tth_distortion(comp_img)
+        self.computation_img = comp_img
 
     def apply_snip(self, img):
         # do SNIP if requested
@@ -410,7 +417,7 @@ class PolarView:
 
         return img
 
-    def apply_masks(self, img):
+    def apply_visible_masks(self, img):
         # Apply user-specified masks if they are present
         from hexrdgui.masking.mask_manager import MaskManager
         img = img.copy()
@@ -430,6 +437,20 @@ class PolarView:
 
         return img
 
+    def apply_boundary_masks(self, img):
+        # Apply user-specified masks if they are present
+        from hexrdgui.masking.mask_manager import MaskManager
+        img = img.copy()
+        total_mask = self.raw_mask
+        for mask in MaskManager().masks.values():
+            if mask.type == MaskType.threshold or not mask.show_border:
+                continue
+            mask_arr = mask.get_masked_arrays(ViewType.polar)
+            total_mask = np.logical_or(total_mask, ~mask_arr)
+        img[total_mask] = np.nan
+
+        return img
+
     def reapply_masks(self):
         # This will only re-run the final steps of the processing...
         if self.snipped_img is None:
@@ -437,15 +458,25 @@ class PolarView:
 
         # Apply the masks before the polar_tth_distortion, because the
         # masks should also be distorted as well.
-        img = self.apply_masks(self.snipped_img)
 
-        img = self.apply_tth_distortion(img)
+        # We only apply "visible" masks to the display image
+        img = self.apply_visible_masks(self.snipped_img)
+        disp_img = self.apply_tth_distortion(img)
+        self.display_image = disp_img
 
-        self.processed_img = img
+        # Both "visible" and "boundary" masks are applied to the
+        # computational image
+        comp_img = self.apply_boundary_masks(img)
+        comp_img = self.apply_tth_distortion(comp_img)
+        self.computation_img = comp_img
 
     @property
     def img(self):
-        return self.processed_img
+        return self.computation_img
+
+    @property
+    def display_img(self):
+        return self.display_image
 
     def warp_all_images(self):
         self.reset_cached_distortion_fields()

@@ -56,6 +56,10 @@ class InstrumentViewer:
     def project_from_polar(self):
         return HexrdConfig().stereo_project_from_polar
 
+    @property
+    def display_img(self):
+        return self.img
+
     def detector_borders(self, det):
         panel = self.instr_pv.detectors[det]
 
@@ -135,7 +139,7 @@ class InstrumentViewer:
             # Don't redraw the polar view unless we have to
             self.draw_polar()
 
-        polar_img = self.pv.img
+        polar_img = self.pv.display_img
 
         extent = np.degrees(self.pv.extent)
         tth_range = extent[:2]

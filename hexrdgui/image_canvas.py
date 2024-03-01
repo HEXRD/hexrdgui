@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Polygon
 from matplotlib.ticker import AutoLocator, FuncFormatter
 
 import matplotlib.pyplot as plt
@@ -23,6 +23,7 @@ from hexrdgui.calibration.raw_iviewer import raw_iviewer
 from hexrdgui.calibration.stereo_plot import stereo_viewer
 from hexrdgui.constants import OverlayType, PolarXAxisType, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
 from hexrdgui import utils
@@ -152,7 +153,7 @@ class ImageCanvas(FigureCanvas):
             # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
             self.mode = ViewType.raw
-            images_dict = self.scaled_image_dict
+            images_dict = self.scaled_display_image_dict
 
             # This will be used for drawing the rings
             self.iviewer = raw_iviewer()
@@ -184,7 +185,7 @@ class ImageCanvas(FigureCanvas):
 
             self.figure.tight_layout()
         else:
-            images_dict = self.scaled_image_dict
+            images_dict = self.scaled_display_image_dict
             if HexrdConfig().stitch_raw_roi_images:
                 # The image_names is actually a list of group names
                 images_dict = self.iviewer.raw_images_to_stitched(
@@ -194,7 +195,15 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
 
-        self.raw_view_images_dict = images_dict
+        # Create a computed version for the images dict
+        computed_images_dict = self.scaled_image_dict
+        if HexrdConfig().stitch_raw_roi_images:
+            computed_images_dict = self.iviewer.raw_images_to_stitched(
+                image_names, computed_images_dict)
+
+        self.raw_view_images_dict = computed_images_dict
+        for name, axis in self.raw_axes.items():
+            self.update_mask_boundaries(axis, name)
 
         # This will call self.draw_idle()
         self.show_saturation()
@@ -211,32 +220,58 @@ class ImageCanvas(FigureCanvas):
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    @property
-    def unscaled_image_dict(self):
-        # Returns a dict of the unscaled images
+    def create_image_dict(self, display=False):
+        # Returns a dict of the unscaled computation images
         if self.mode == ViewType.raw:
-            return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
+            return HexrdConfig().create_masked_images_dict(fill_value=np.nan,
+                                                           display=display)
         else:
             # Masks are already applied...
-            return {'img': self.iviewer.img}
+            img = self.iviewer.display_img if display else self.iviewer.img
+            return {'img': img}
+
+    @property
+    def unscaled_image_dict(self):
+        return self.create_image_dict(display=False)
+
+    @property
+    def unscaled_display_image_dict(self):
+        return self.create_image_dict(display=True)
 
     @property
     def unscaled_images(self):
-        # Returns a list of the unscaled images
-        if self.mode == ViewType.raw:
-            return list(self.unscaled_image_dict.values())
-        else:
-            return [self.iviewer.img]
+        # Returns a list of the unscaled computation images
+        return list(self.unscaled_image_dict.values())
 
     @property
-    def scaled_image_dict(self):
-        # Returns a dict of the scaled images
-        unscaled = self.unscaled_image_dict
+    def unscaled_display_images(self):
+        # Returns a list of the unscaled display images
+        return list(self.unscaled_display_image_dict.values())
+
+    def create_scaled_image_dict(self, display=False):
+        if display:
+            unscaled = self.unscaled_display_image_dict
+        else:
+            unscaled = self.unscaled_image_dict
         return {k: self.transform(v) for k, v in unscaled.items()}
 
     @property
+    def scaled_image_dict(self):
+        # Returns a dict of the scaled computation images
+        return self.create_scaled_image_dict(display=False)
+
+    @property
+    def scaled_display_image_dict(self):
+        # Returns a dict of the scaled display images
+        return self.create_scaled_image_dict(display=True)
+
+    @property
     def scaled_images(self):
-        return [self.transform(x) for x in self.unscaled_images]
+        return list(self.scaled_image_dict.values())
+
+    @property
+    def scaled_display_images(self):
+        return list(self.scaled_display_image_dict.values())
 
     @property
     def blit_artists(self):
@@ -858,7 +893,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
-        img, = self.scaled_images
+        img, = self.scaled_display_images
 
         # It is important to persist the plot so that we don't reset the scale.
         rescale_image = True
@@ -925,7 +960,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
-        img, = self.scaled_images
+        img, = self.scaled_display_images
         extent = self.iviewer._extent
 
         rescale_image = True
@@ -958,6 +993,8 @@ class ImageCanvas(FigureCanvas):
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
+
+            self.update_mask_boundaries(self.axis)
 
             # Get the "tth" vector
             angular_grid = self.iviewer.angular_grid
@@ -1054,7 +1091,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
-        img, = self.scaled_images
+        img, = self.scaled_display_images
 
         rescale_image = True
         if len(self.axes_images) == 0:
@@ -1078,6 +1115,8 @@ class ImageCanvas(FigureCanvas):
             self.axis.relim()
             self.axis.autoscale_view()
             self.figure.tight_layout()
+
+        self.update_mask_boundaries(self.axis)
 
         self.draw_stereo_border()
         self.update_auto_picked_data()
@@ -1199,8 +1238,9 @@ class ImageCanvas(FigureCanvas):
         if skip:
             return
 
+        self.update_mask_boundaries(self.axis)
         self.iviewer.reapply_masks()
-        self.axes_images[0].set_data(self.scaled_images[0])
+        self.axes_images[0].set_data(self.scaled_display_images[0])
         self.update_azimuthal_integral_plot()
         self.update_overlays()
         self.draw_idle()
@@ -1216,8 +1256,8 @@ class ImageCanvas(FigureCanvas):
     def set_scaling(self, transform):
         # Apply the scaling, and set the data
         self.transform = transform
-        for axes_image, img in zip(self.axes_images, self.scaled_images):
-            axes_image.set_data(img)
+        for axes_img, img in zip(self.axes_images, self.scaled_display_images):
+            axes_img.set_data(img)
 
         self.update_azimuthal_integral_plot()
         self.draw_idle()
@@ -1429,7 +1469,7 @@ class ImageCanvas(FigureCanvas):
 
             return
 
-        self.axes_images[0].set_data(self.scaled_images[0])
+        self.axes_images[0].set_data(self.scaled_display_images[0])
         if self.mode == ViewType.cartesian:
             old_extent = self.axes_images[0].get_extent()
             new_extent = self.iviewer.extent
@@ -1530,6 +1570,48 @@ class ImageCanvas(FigureCanvas):
 
         self._snip_viewer_dialog = SnipViewerDialog(background, extent)
         self._snip_viewer_dialog.show()
+
+    def update_mask_boundaries(self, axis, det=None):
+        for p in axis.patches:
+            p.remove()
+
+        for name in MaskManager().visible_boundaries:
+            mask = MaskManager().masks[name]
+            if self.mode == ViewType.raw:
+                if HexrdConfig().stitch_raw_roi_images:
+                    # Find masks to keep
+                    dets_to_keep = self.iviewer.roi_info['groups'][det]
+                    masks_to_keep = []
+                    for k, v in mask.data:
+                        if k in dets_to_keep:
+                            masks_to_keep.append((k, v))
+
+                    # Convert the vertices to their stitched versions.
+                    verts = []
+                    for k, v in masks_to_keep:
+                        ij, _ = self.iviewer.raw_to_stitched(v[:, [1, 0]], k)
+                        verts.append(ij[:, [1, 0]])
+                else:
+                    verts = [v for k, v in mask.data if k == det]
+            elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
+                verts = create_polar_line_data_from_raw(mask.data)
+                if self.mode == ViewType.stereo:
+                    # Now convert from polar to stereo
+                    for i, vert in enumerate(verts):
+                        verts[i] = angles_to_stereo(
+                            np.radians(vert),
+                            self.iviewer.instr_pv,
+                            HexrdConfig().stereo_size,
+                        )
+
+            for vert in verts:
+                kwargs = {
+                    'fill': False,
+                    'lw': 1,
+                    'linestyle': '--',
+                    'color': MaskManager().boundary_color
+                }
+                axis.add_patch(Polygon(vert, **kwargs))
 
 
 class PolarXAxisTickLocator(AutoLocator):

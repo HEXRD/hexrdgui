@@ -29,6 +29,7 @@ class InstrumentViewer:
         self.type = ViewType.cartesian
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().images_dict
+        self.img = None
 
         # Perform some checks before proceeding
         self.check_keys_match()
@@ -282,6 +283,10 @@ class InstrumentViewer:
                       preserve_range=True)
         self.warp_dict[detector_id] = res
         return res
+
+    @property
+    def display_img(self):
+        return self.img
 
     def generate_image(self):
         img = np.zeros((self.dpanel.rows, self.dpanel.cols))

@@ -888,13 +888,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def raw_masks_dict(self):
+        return self.create_raw_masks_dict(display=False)
+
+    def create_raw_masks_dict(self, display=False):
         """Get a masks dict"""
         from hexrdgui.masking.mask_manager import MaskManager
         masks_dict = {}
         for name, img in self.images_dict.items():
             final_mask = np.ones(img.shape, dtype=bool)
             for mask in MaskManager().masks.values():
-                if not mask.visible:
+                if display and not mask.visible:
+                    # Only apply visible masks for display
+                    continue
+
+                if not mask.visible and not mask.show_border:
+                    # This mask should not be applied at all.
                     continue
 
                 if mask.type == MaskType.threshold:
@@ -915,7 +923,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def masked_images_dict(self):
         return self.create_masked_images_dict()
 
-    def create_masked_images_dict(self, fill_value=0):
+    def create_masked_images_dict(self, fill_value=0, display=False):
         """Get an images dict where masks have been applied"""
         from hexrdgui.masking.mask_manager import MaskManager
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -932,7 +940,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # and no panel buffers.
             fill_value = 0
 
-        for det, mask in self.raw_masks_dict.items():
+        raw_masks_dict = self.create_raw_masks_dict(display=display)
+        for det, mask in raw_masks_dict.items():
             if has_panel_buffers:
                 panel = instr.detectors[det]
                 utils.convert_panel_buffer_to_2d_array(panel)
