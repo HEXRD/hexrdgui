@@ -735,7 +735,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         # Use the unscaled image data to determine saturation
-        images_dict = self.unscaled_display_image_dict
+        images_dict = self.unscaled_image_dict
 
         def compute_saturation_and_size(detector_name):
             detector = HexrdConfig().detector(detector_name)
