@@ -223,7 +223,8 @@ class ImageCanvas(FigureCanvas):
     def create_image_dict(self, display=False):
         # Returns a dict of the unscaled computation images
         if self.mode == ViewType.raw:
-            return HexrdConfig().create_masked_images_dict(fill_value=np.nan)
+            return HexrdConfig().create_masked_images_dict(fill_value=np.nan,
+                                                           display=display)
         else:
             # Masks are already applied...
             img = self.iviewer.display_img if display else self.iviewer.img
