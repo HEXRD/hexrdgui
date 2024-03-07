@@ -31,6 +31,7 @@ from hexrdgui.utils.array import split_array
 from hexrdgui.utils.conversions import (
     angles_to_stereo, cart_to_angles, cart_to_pixels, q_to_tth, tth_to_q,
 )
+from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class ImageCanvas(FigureCanvas):
@@ -1442,6 +1443,10 @@ class ImageCanvas(FigureCanvas):
 
             transform_func = transform_from_plain_cartesian_func(self.mode)
             rijs = transform_func(xys[det_key], panel, self.iviewer)
+
+            if self.mode == ViewType.polar:
+                rijs = apply_tth_distortion_if_needed(rijs, in_degrees=True)
+
             artist, = axis.plot(rijs[:, 0], rijs[:, 1], 'm+')
             self.auto_picked_data_artists.append(artist)
 
