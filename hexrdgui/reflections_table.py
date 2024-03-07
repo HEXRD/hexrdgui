@@ -24,8 +24,9 @@ class COLUMNS:
     D_SPACING = 2
     TTH = 3
     SF = 4
-    POWDER_INTENSITY = 5
-    MULTIPLICITY = 6
+    HEDM_INTENSITY = 5
+    POWDER_INTENSITY = 6
+    MULTIPLICITY = 7
 
 
 class ReflectionsTable:
@@ -307,6 +308,7 @@ class ReflectionsTable:
                     d_spacings = plane_data.getPlaneSpacings()
                     tth = plane_data.getTTh()
                     powder_intensity = plane_data.powder_intensity
+                    hedm_intensity = plane_data.hedm_intensity
                     multiplicity = plane_data.getMultiplicity()
 
                     # Since structure factors use arbitrary scaling, re-scale
@@ -347,6 +349,9 @@ class ReflectionsTable:
 
                     table_item = FloatTableItem(sf[i])
                     table.setItem(i, COLUMNS.SF, table_item)
+
+                    table_item = FloatTableItem(hedm_intensity[i])
+                    table.setItem(i, COLUMNS.HEDM_INTENSITY, table_item)
 
                     table_item = FloatTableItem(powder_intensity[i])
                     table.setItem(i, COLUMNS.POWDER_INTENSITY, table_item)
