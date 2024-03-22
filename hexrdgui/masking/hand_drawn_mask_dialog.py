@@ -193,7 +193,8 @@ class HandDrawnMaskDialog(QObject):
     def canvas_changed(self, canvas):
         self.accepted()
         self.canvas = canvas
-        self.setup_canvas_connections()
+        if self.ui.isVisible():
+            self.setup_canvas_connections()
 
 
 class LineBuilder(QObject):
