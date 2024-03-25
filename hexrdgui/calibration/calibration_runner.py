@@ -166,6 +166,16 @@ class CalibrationRunner(QObject):
             'single_line_mode': overlay.is_laue,
         }
 
+        if overlay.is_laue:
+            # Set the line settings to use a circle
+            kwargs['line_settings'] = {
+                'marker': 'o',
+                'fillstyle': 'none',
+                'markersize': 8,
+                'markeredgewidth': 2,
+                'linewidth': 0,
+            }
+
         picker = LinePickerDialog(**kwargs)
 
         self.line_picker = picker
@@ -230,7 +240,6 @@ class CalibrationRunner(QObject):
         self.reset_overlay_picks()
 
         dialog = self.view_picks_table()
-        dialog.button_box_visible = True
 
         def on_rejected():
             dialog.tree_view.clear_artists()
@@ -262,6 +271,7 @@ class CalibrationRunner(QObject):
             'parent': self.canvas,
         }
         dialog = HKLPicksTreeViewDialog(**kwargs)
+        dialog.button_box_visible = True
         dialog.ui.show()
 
         kwargs = {
@@ -269,28 +279,37 @@ class CalibrationRunner(QObject):
             'highlighting': highlighting,
             'prev_visibilities': prev_visibilities,
         }
-        finished_func = partial(self.finished_viewing_picks, **kwargs)
-        dialog.ui.finished.connect(finished_func)
+
+        # We need to ensure the finished func is called before any
+        # accepted/rejected connections are called. finished() is
+        # normally called after accepted/rejected, so we will connect
+        # to accepted/rejected directly.
+        dialog.ui.accepted.connect(
+            partial(self.view_picks_finished, accepted=True, **kwargs))
+        dialog.ui.rejected.connect(
+            partial(self.view_picks_finished, accepted=False, **kwargs))
 
         # Make sure focus mode is enabled while viewing the picks
         self.enable_focus_mode(True)
 
         return dialog
 
-    def finished_viewing_picks(self, result, dialog, highlighting,
-                               prev_visibilities):
+    def view_picks_finished(self, accepted, dialog, highlighting,
+                            prev_visibilities):
         # Turn off focus mode (which may be turned back on if the line picker
         # will reappear)
         self.enable_focus_mode(False)
-        # Update all of the picks with the modified data
-        updated_picks = tree_format_to_picks(dialog.dictionary)
-        for i, new_picks in enumerate(updated_picks):
-            self.active_overlays[i].calibration_picks_polar = (
-                new_picks['picks']
-            )
 
-        if self.active_overlay:
-            self.reset_overlay_picks()
+        if accepted:
+            # Update all of the picks with the modified data
+            updated_picks = tree_format_to_picks(dialog.dictionary)
+            for i, new_picks in enumerate(updated_picks):
+                self.active_overlays[i].calibration_picks_polar = (
+                    new_picks['picks']
+                )
+
+            if self.active_overlay:
+                self.reset_overlay_picks()
 
         self.update_lines_from_picks()
 
@@ -598,7 +617,7 @@ class CalibrationRunner(QObject):
             # Only a single list for each Laue key
             # Make sure it contains a value for the requested path
             while len(root_list) < val + 1:
-                root_list.append((np.nan, np.nan))
+                root_list.append([np.nan, np.nan])
 
             return root_list
 
@@ -667,7 +686,7 @@ class CalibrationRunner(QObject):
             self.decrement_overlay_data_index()
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
-                self.current_data_list[ind] = (np.nan, np.nan)
+                self.current_data_list[ind] = [np.nan, np.nan]
 
             # The line builder doesn't accurately update the lines
             # during Laue picking, so we force it here.
@@ -814,13 +833,15 @@ class CalibrationRunner(QObject):
         self.active_overlay.calibration_picks = auto_picks
         self.reset_overlay_picks()
 
-        if len(self.active_overlays) == 1:
-            # If this is the only overlay, don't view the picks table,
-            # as the GUI will ask anyways...
-            self.finish_line()
-        else:
-            dialog = self.view_picks_table()
-            dialog.ui.finished.connect(self.finish_line)
+        # View the picks and ask the user to accept them
+        dialog = self.view_picks_table()
+
+        def on_rejected():
+            dialog.tree_view.clear_artists()
+            self.pick_this_line()
+
+        dialog.ui.accepted.connect(self.finish_line)
+        dialog.ui.rejected.connect(on_rejected)
 
     def auto_pick_laue_points(self):
         overlay = self.active_overlay
@@ -868,17 +889,20 @@ class CalibrationRunner(QObject):
 
     def auto_laue_pick_finished(self, auto_picks):
         self.active_overlay.calibration_picks = auto_picks
+        self.active_overlay.pad_picks_data()
 
         # Save these picks to self as well
         self.reset_overlay_picks()
 
-        if len(self.active_overlays) == 1:
-            # If this is the only overlay, don't view the picks table,
-            # as the GUI will ask anyways...
-            self.finish_line()
-        else:
-            dialog = self.view_picks_table()
-            dialog.ui.finished.connect(self.finish_line)
+        # View the picks and ask the user to accept them
+        dialog = self.view_picks_table()
+
+        def on_rejected():
+            dialog.tree_view.clear_artists()
+            self.pick_this_line()
+
+        dialog.ui.accepted.connect(self.finish_line)
+        dialog.ui.rejected.connect(on_rejected)
 
 
 class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):

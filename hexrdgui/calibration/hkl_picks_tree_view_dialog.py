@@ -49,7 +49,10 @@ class HKLPicksTreeViewDialog:
         self.tree_view.expand_rows()
 
     def setup_connections(self):
-        self.ui.finished.connect(self.on_finished)
+        # Use accepted/rejected so these are called before on_finished()
+        self.ui.accepted.connect(self.on_finished)
+        self.ui.rejected.connect(self.on_finished)
+
         self.ui.export_picks.clicked.connect(self.export_picks_clicked)
         self.ui.import_picks.clicked.connect(self.import_picks_clicked)
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
@@ -182,7 +185,7 @@ def convert_picks(picks, conversion_function, **kwargs):
                 for hkl, spot in hkls.items():
                     if np.any(np.isnan(spot)):
                         # Avoid the runtime warning
-                        hkls[hkl] = (np.nan, np.nan)
+                        hkls[hkl] = [np.nan, np.nan]
                     else:
                         hkls[hkl] = conversion_function([spot], panel,
                                                         **kwargs)[0]

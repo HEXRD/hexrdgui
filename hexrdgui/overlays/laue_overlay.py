@@ -135,7 +135,7 @@ class LaueOverlay(Overlay):
         for k, v in self.data.items():
             current = self.calibration_picks.setdefault(k, {})
             for hkl in self.data[k]['hkls']:
-                current.setdefault(hkl_to_str(hkl), (np.nan, np.nan))
+                current.setdefault(hkl_to_str(hkl), [np.nan, np.nan])
 
     @property
     def has_picks_data(self):
@@ -160,7 +160,7 @@ class LaueOverlay(Overlay):
                 panel = instr.detectors[det_key]
                 if np.any(np.isnan(hkl_picks)):
                     # Skip the runtime warning...
-                    picks[det_key][hkl_str] = (np.nan, np.nan)
+                    picks[det_key][hkl_str] = [np.nan, np.nan]
                 else:
                     picks[det_key][hkl_str] = cart_to_angles(
                         hkl_picks,
@@ -181,7 +181,7 @@ class LaueOverlay(Overlay):
             for hkl_str, hkl_picks in hkl_dict.items():
                 panel = instr.detectors[det_key]
                 if len(hkl_picks) == 0 or np.any(np.isnan(hkl_picks)):
-                    picks[det_key][hkl_str] = (np.nan, np.nan)
+                    picks[det_key][hkl_str] = [np.nan, np.nan]
                 else:
                     picks[det_key][hkl_str] = angles_to_cart([hkl_picks],
                                                              panel)[0].tolist()

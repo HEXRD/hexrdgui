@@ -29,6 +29,9 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.undo_stack = []
 
         self.round_param_numbers()
+        # Make sure the tree view is updated
+        self.dialog.update_tree_view()
+
         self.draw_picks()
         self.setup_connections()
 
@@ -262,9 +265,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         for param in params_dict.values():
             for attr in attrs:
                 setattr(param, attr, round(getattr(param, attr), 3))
-
-        # Make sure the tree view is updated
-        self.dialog.update_tree_view()
 
     def on_edit_picks_finished(self):
         # Show this again

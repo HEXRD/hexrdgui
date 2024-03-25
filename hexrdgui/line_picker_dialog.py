@@ -39,7 +39,8 @@ class LinePickerDialog(QObject):
     view_picks = Signal()
 
     def __init__(self, canvas, parent, single_line_mode=False,
-                 single_pick_mode=False, cycle_cursor_colors=False):
+                 single_pick_mode=False, cycle_cursor_colors=False,
+                 line_settings=None):
         super().__init__(parent)
 
         self.canvas = canvas
@@ -55,6 +56,16 @@ class LinePickerDialog(QObject):
         self.single_pick_mode = single_pick_mode
         self.cycle_cursor_colors = cycle_cursor_colors
         self.update_visible_states()
+
+        if line_settings is None:
+            line_settings = {
+                'marker': igor_marker,
+                'markeredgecolor': 'black',
+                'markersize': 16,
+                'linestyle': 'None',
+            }
+
+        self.line_settings = line_settings
 
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
@@ -77,13 +88,6 @@ class LinePickerDialog(QObject):
         self.color_cycler = cycle(prop_cycle.by_key()['color'])
 
         self.move_dialog_to_left()
-
-        self.line_settings = {
-            'marker': igor_marker,
-            'markeredgecolor': 'black',
-            'markersize': 16,
-            'linestyle': 'None',
-        }
 
         self.setup_connections()
 

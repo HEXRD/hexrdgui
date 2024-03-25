@@ -1,4 +1,5 @@
 import copy
+
 import yaml
 
 from PySide6.QtCore import QObject, Qt, Signal
@@ -414,6 +415,26 @@ class CalibrationDialog(QObject):
 
 class TreeItemModel(MultiColumnDictTreeItemModel):
     """Subclass the tree item model so we can customize some behavior"""
+    def data(self, index, role):
+        if role == Qt.ForegroundRole and index.column() in BOUND_INDICES:
+            # If a value hit the boundary, color both the boundary and the
+            # value red.
+            item = self.get_item(index)
+            if not item.child_items:
+                atol = 1e-3
+                pairs = [
+                    (VALUE_IDX, MAX_IDX),
+                    (VALUE_IDX, MIN_IDX),
+                ]
+                for pair in pairs:
+                    if index.column() not in pair:
+                        continue
+
+                    if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
+                        return QColor('red')
+
+        return super().data(index, role)
+
     def set_config_val(self, path, value):
         super().set_config_val(path, value)
         # Now set the parameter too

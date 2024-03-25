@@ -567,7 +567,10 @@ class GenericPicksTreeViewDialog(QDialog):
         self.tree_view.dict_modified.connect(self.dict_modified.emit)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
-        self.finished.connect(self.on_finished)
+
+        # Use accepted and rejected so this will be done before finished()
+        self.accepted.connect(self.on_finished)
+        self.rejected.connect(self.on_finished)
 
     def on_finished(self):
         self.tree_view.clear_artists()
