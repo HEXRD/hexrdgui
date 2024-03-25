@@ -2,6 +2,7 @@ import copy
 import yaml
 
 from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
 from hexrdgui import resource_loader
@@ -359,14 +360,8 @@ class CalibrationDialog(QObject):
             # It has already been initialized
             return
 
-        columns = {
-            'Value': '_value',
-            'Vary': '_vary',
-            'Minimum': '_min',
-            'Maximum': '_max',
-        }
         tree_dict = self.tree_view_dict_of_params
-        self.tree_view = MultiColumnDictTreeView(tree_dict, columns,
+        self.tree_view = MultiColumnDictTreeView(tree_dict, TREE_VIEW_COLUMNS,
                                                  parent=self.parent(),
                                                  model_class=TreeItemModel)
         self.tree_view.check_selection_index = 2
@@ -392,6 +387,24 @@ class CalibrationDialog(QObject):
                 )
                 QMessageBox.information(self.parent(), 'HEXRD', msg)
             editor.apply_to_polar_view = False
+
+
+TREE_VIEW_COLUMNS = {
+    'Value': '_value',
+    'Vary': '_vary',
+    'Minimum': '_min',
+    'Maximum': '_max',
+}
+TREE_VIEW_COLUMN_INDICES = {
+    'Key': 0,
+    **{
+        k: list(TREE_VIEW_COLUMNS).index(k) + 1 for k in TREE_VIEW_COLUMNS
+    }
+}
+VALUE_IDX = TREE_VIEW_COLUMN_INDICES['Value']
+MAX_IDX = TREE_VIEW_COLUMN_INDICES['Maximum']
+MIN_IDX = TREE_VIEW_COLUMN_INDICES['Minimum']
+BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
 
 
 class TreeItemModel(MultiColumnDictTreeItemModel):
