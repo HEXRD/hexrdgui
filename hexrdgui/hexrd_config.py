@@ -923,6 +923,31 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def masked_images_dict(self):
         return self.create_masked_images_dict()
 
+    def apply_panel_buffer_to_images(self, images_dict, fill_value=np.nan):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+
+        instr = create_hedm_instrument()
+
+        has_panel_buffers = any(panel.panel_buffer is not None
+                                for panel in instr.detectors.values())
+        if not has_panel_buffers:
+            return images_dict
+
+        for det_key, panel in instr.detectors.items():
+            # First, ensure the panel buffer is a 2D array
+            utils.convert_panel_buffer_to_2d_array(panel)
+            img = images_dict[det_key]
+            if (np.issubdtype(type(fill_value), np.floating) and
+                    not np.issubdtype(img.dtype, np.floating)):
+                # Convert to float. This is especially important
+                # for nan, since it is a float...
+                img = img.astype(float)
+
+            img[~panel.panel_buffer] = fill_value
+            images_dict[det_key] = img
+
+        return images_dict
+
     def create_masked_images_dict(self, fill_value=0, display=False):
         """Get an images dict where masks have been applied"""
         from hexrdgui.masking.mask_manager import MaskManager
