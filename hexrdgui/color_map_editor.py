@@ -1,5 +1,8 @@
 import copy
 
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QColorDialog
+
 from matplotlib import cm
 import matplotlib.colors
 
@@ -29,6 +32,8 @@ class ColorMapEditor:
 
         self.bounds = (0, 16384)
         self._data = None
+
+        self.bad_color = np.array([0, 0, 0, 0], dtype=float)
 
         self.bc_editor = None
         self.hide_overlays_during_bc_editing = False
@@ -94,6 +99,7 @@ class ColorMapEditor:
         self.ui.reverse.toggled.connect(self.update_cmap)
         self.ui.show_under.toggled.connect(self.update_cmap)
         self.ui.show_over.toggled.connect(self.update_cmap)
+        self.ui.show_invalid.toggled.connect(self.show_invalid_toggled)
         self.ui.scaling.currentIndexChanged.connect(self.update_scaling)
 
     def range_edited(self):
@@ -213,6 +219,21 @@ class ColorMapEditor:
         self.ui.minimum.setValue(self.bounds[0])
         self.ui.maximum.setValue(self.bounds[1])
 
+    def show_invalid_toggled(self, b):
+        if b:
+            color = QColor.fromRgbF(*self.bad_color)
+            title = 'Select Invalid Pixel Color'
+            selected_color = QColorDialog.getColor(color, None, title)
+            if selected_color.isValid():
+                # User accepted
+                self.bad_color = np.array(selected_color.getRgbF())
+            else:
+                # User rejected
+                with block_signals(self.ui.show_invalid):
+                    self.ui.show_invalid.setChecked(False)
+
+        self.update_cmap()
+
     def update_cmap(self):
         # Get the Colormap object from the name
         cmap = cm.get_cmap(self.ui.color_map.currentText())
@@ -229,6 +250,9 @@ class ColorMapEditor:
 
         if self.ui.show_over.isChecked():
             cmap.set_over('r')
+
+        if self.ui.show_invalid.isChecked():
+            cmap.set_bad(self.bad_color)
 
         self.image_object.set_cmap(cmap)
 
