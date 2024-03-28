@@ -372,7 +372,10 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             # frames via the ProcessedImageSeries 'frame_list' arg to slice
             # the frame list
             start = self.data.get('empty_frames', 0)
-        return np.arange(start, len(ims))
+
+        # np.arange() would produce a list of np.uint32, which can overflow.
+        # Convert to a list of python integers, which cannot overflow.
+        return np.arange(start, len(ims)).tolist()
 
     def get_flip_op(self, oplist, idx):
         if self.data:
