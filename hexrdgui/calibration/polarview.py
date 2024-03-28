@@ -48,7 +48,12 @@ class PolarView:
 
         self.distortion_instr = distortion_instrument
 
+        # Use an image dict with the panel buffers applied.
+        # This keeps invalid pixels from bleeding out in the polar view
         self.images_dict = HexrdConfig().images_dict
+        # 0 is a better fill value because it results in fewer nans in
+        # the final image.
+        HexrdConfig().apply_panel_buffer_to_images(self.images_dict, 0)
 
         self.warp_dict = {}
 
