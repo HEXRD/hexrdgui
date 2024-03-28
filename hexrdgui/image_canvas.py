@@ -642,7 +642,9 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.remove_all_overlay_artists()
-        if not HexrdConfig().show_overlays:
+        if not HexrdConfig().show_overlays or not HexrdConfig().overlays:
+            # Avoid proceeding if possible, as updating the blit manager
+            # can be time consuming.
             self.remove_all_overlay_artists()
             self.draw_idle()
             return
