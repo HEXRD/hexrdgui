@@ -888,13 +888,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def raw_masks_dict(self):
-        return self.create_raw_masks_dict(display=False)
+        return self.create_raw_masks_dict(self.images_dict, display=False)
 
-    def create_raw_masks_dict(self, display=False):
+    def create_raw_masks_dict(self, images_dict, display=False):
         """Get a masks dict"""
         from hexrdgui.masking.mask_manager import MaskManager
         masks_dict = {}
-        for name, img in self.images_dict.items():
+        for name, img in images_dict.items():
             final_mask = np.ones(img.shape, dtype=bool)
             for mask in MaskManager().masks.values():
                 if display and not mask.visible:
@@ -940,22 +940,23 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # and no panel buffers.
             fill_value = 0
 
-        raw_masks_dict = self.create_raw_masks_dict(display=display)
+        raw_masks_dict = self.create_raw_masks_dict(images_dict,
+                                                    display=display)
         for det, mask in raw_masks_dict.items():
+            img = images_dict[det]
             if has_panel_buffers:
                 panel = instr.detectors[det]
                 utils.convert_panel_buffer_to_2d_array(panel)
 
-            for name, img in images_dict.items():
-                if (np.issubdtype(type(fill_value), np.floating) and
-                        not np.issubdtype(img.dtype, np.floating)):
-                    img = img.astype(float)
-                    images_dict[name] = img
-                if det == name:
-                    img[~mask] = fill_value
+            if (np.issubdtype(type(fill_value), np.floating) and
+                    not np.issubdtype(img.dtype, np.floating)):
+                img = img.astype(float)
+                images_dict[det] = img
 
-                    if has_panel_buffers:
-                        img[~panel.panel_buffer] = fill_value
+            img[~mask] = fill_value
+
+            if has_panel_buffers:
+                img[~panel.panel_buffer] = fill_value
 
         return images_dict
 
