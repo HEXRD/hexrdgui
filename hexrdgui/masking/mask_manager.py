@@ -329,6 +329,14 @@ class MaskManager(QObject, metaclass=QSingleton):
     def update_border_visibility(self, name, visibility):
         self.masks[name].update_border_visibility(visibility)
 
+    @property
+    def contains_border_only_masks(self):
+        # If we have any border-only masks, that means the display images
+        # are different from computed images, and require extra computation.
+        # If this returns False, we can skip that extra computation and
+        # set display images and computed images to be the same.
+        return any(x.show_border and not x.visible for x in self.masks)
+
     def threshold_toggled(self):
         if self.threshold_mask:
             self.remove_mask(self.threshold_mask.name)

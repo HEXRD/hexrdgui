@@ -196,11 +196,16 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
 
-        # Create a computed version for the images dict
-        computed_images_dict = self.scaled_image_dict
-        if HexrdConfig().stitch_raw_roi_images:
-            computed_images_dict = self.iviewer.raw_images_to_stitched(
-                image_names, computed_images_dict)
+        if MaskManager().contains_border_only_masks:
+            # Create a computed version for the images dict
+            computed_images_dict = self.scaled_image_dict
+            if HexrdConfig().stitch_raw_roi_images:
+                computed_images_dict = self.iviewer.raw_images_to_stitched(
+                    image_names, computed_images_dict)
+        else:
+            # The computed image is the same as the display image.
+            # Save some computation time for faster rendering.
+            computed_images_dict = images_dict
 
         self.raw_view_images_dict = computed_images_dict
         for name, axis in self.raw_axes.items():
