@@ -335,7 +335,8 @@ class MaskManager(QObject, metaclass=QSingleton):
         # are different from computed images, and require extra computation.
         # If this returns False, we can skip that extra computation and
         # set display images and computed images to be the same.
-        return any(x.show_border and not x.visible for x in self.masks)
+        return any(x.show_border and not x.visible
+                   for x in self.masks.values())
 
     def threshold_toggled(self):
         if self.threshold_mask:
