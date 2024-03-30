@@ -11,12 +11,13 @@ from hexrdgui.utils import add_sample_points
 from hexrdgui.utils.conversions import pixels_to_angles
 
 
-def convert_raw_to_polar(det, line):
+def convert_raw_to_polar(instr, det, line):
+    # This accepts an instrument rather than creating one for performance
+
     # Make sure there at least 300 sample points so that the conversion
     # looks correct.
     line = add_sample_points(line, 300)
 
-    instr = create_view_hedm_instrument()
     kwargs = {
         'ij': line,
         'panel': instr.detectors[det],
@@ -139,15 +140,17 @@ def _interpolate_split_coords_1d(coords1, coords2):
     return coords1, coords2
 
 
-def create_polar_line_data_from_raw(value):
+def create_polar_line_data_from_raw(instr, value):
+    # This accepts an instrument rather than creating one for performance
     line_data = []
     for det, data in value:
-        line_data.extend(convert_raw_to_polar(det, data))
+        line_data.extend(convert_raw_to_polar(instr, det, data))
     return line_data
 
 
 def create_polar_mask_from_raw(value):
-    line_data = create_polar_line_data_from_raw(value)
+    instr = create_view_hedm_instrument()
+    line_data = create_polar_line_data_from_raw(instr, value)
     return create_polar_mask(line_data)
 
 

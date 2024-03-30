@@ -57,9 +57,17 @@ class PolarView:
         self.computation_img = None
         self.display_image = None
 
+        # Cache this and invalidate it when needed
+        self._corr_field_polar_cached = None
+
         self.snip_background = None
 
         self.update_angular_grid()
+
+        HexrdConfig().overlay_distortions_modified.connect(
+            self.invalidate_corr_field_polar_cache)
+        HexrdConfig().polar_tth_distortion_overlay_changed.connect(
+            self.invalidate_corr_field_polar_cache)
 
     @property
     def detectors(self):
@@ -298,7 +306,13 @@ class PolarView:
             data=wimg, mask=nan_mask, fill_value=0.
         )
 
+    def invalidate_corr_field_polar_cache(self):
+        self._corr_field_polar_cached = None
+
     def create_corr_field_polar(self):
+        if self._corr_field_polar_cached is not None:
+            return self._corr_field_polar_cached
+
         obj = HexrdConfig().polar_tth_distortion_object
 
         if obj.has_polar_pinhole_displacement_field:
@@ -325,6 +339,7 @@ class PolarView:
             corr_field_polar = np.ma.sum(np.ma.stack(
                 corr_field_polar_dict.values()), axis=0)
 
+        self._corr_field_polar_cached = corr_field_polar
         return corr_field_polar
 
     def apply_tth_distortion(self, pimg):

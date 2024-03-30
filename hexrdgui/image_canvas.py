@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle, Polygon
+from matplotlib.patches import Circle
 from matplotlib.ticker import AutoLocator, FuncFormatter
 
 import matplotlib.pyplot as plt
@@ -22,6 +22,7 @@ from hexrdgui.calibration.polar_plot import polar_viewer
 from hexrdgui.calibration.raw_iviewer import raw_iviewer
 from hexrdgui.calibration.stereo_plot import stereo_viewer
 from hexrdgui.constants import OverlayType, PolarXAxisType, ViewType
+from hexrdgui.create_hedm_instrument import create_view_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
@@ -62,6 +63,7 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_overlay_artists = []
         self.blit_manager = BlitManager(self)
         self.raw_view_images_dict = {}
+        self._mask_boundary_artists = []
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -208,8 +210,9 @@ class ImageCanvas(FigureCanvas):
             computed_images_dict = images_dict
 
         self.raw_view_images_dict = computed_images_dict
+        self.clear_mask_boundaries()
         for name, axis in self.raw_axes.items():
-            self.update_mask_boundaries(axis, name)
+            self.draw_mask_boundaries(axis, name)
 
         # This will call self.draw_idle()
         self.show_saturation()
@@ -1583,10 +1586,21 @@ class ImageCanvas(FigureCanvas):
         self._snip_viewer_dialog = SnipViewerDialog(background, extent)
         self._snip_viewer_dialog.show()
 
-    def update_mask_boundaries(self, axis, det=None):
-        for p in axis.patches:
-            p.remove()
+    def update_mask_boundaries(self, axis):
+        # Update is a clear followed by a draw
+        self.clear_mask_boundaries()
+        self.draw_mask_boundaries(axis)
 
+    def clear_mask_boundaries(self):
+        for artist in self._mask_boundary_artists:
+            artist.remove()
+
+        self._mask_boundary_artists.clear()
+
+    def draw_mask_boundaries(self, axis, det=None):
+        # Create an instrument once that we will re-use
+        instr = create_view_hedm_instrument()
+        all_verts = []
         for name in MaskManager().visible_boundaries:
             mask = MaskManager().masks[name]
             if self.mode == ViewType.raw:
@@ -1606,7 +1620,7 @@ class ImageCanvas(FigureCanvas):
                 else:
                     verts = [v for k, v in mask.data if k == det]
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
-                verts = create_polar_line_data_from_raw(mask.data)
+                verts = create_polar_line_data_from_raw(instr, mask.data)
                 if self.mode == ViewType.stereo:
                     # Now convert from polar to stereo
                     for i, vert in enumerate(verts):
@@ -1616,14 +1630,26 @@ class ImageCanvas(FigureCanvas):
                             HexrdConfig().stereo_size,
                         )
 
-            for vert in verts:
-                kwargs = {
-                    'fill': False,
-                    'lw': 1,
-                    'linestyle': '--',
-                    'color': MaskManager().boundary_color
-                }
-                axis.add_patch(Polygon(vert, **kwargs))
+            if not verts:
+                continue
+
+            # Add nans so they split up in their drawing
+            all_verts.append(np.vstack(
+                [np.vstack((x, (np.nan, np.nan))) for x in verts]
+            ))
+
+        if not all_verts:
+            return
+
+        kwargs = {
+            'lw': 1,
+            'linestyle': '--',
+            'color': MaskManager().boundary_color
+        }
+        self._mask_boundary_artists += axis.plot(
+            *np.vstack(all_verts).T,
+            **kwargs,
+        )
 
 
 class PolarXAxisTickLocator(AutoLocator):
