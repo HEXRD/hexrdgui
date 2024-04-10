@@ -220,6 +220,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when material parameters are modified"""
     material_modified = Signal(str)
 
+    """Emitted when the active canvas is changed"""
+    active_canvas_changed = Signal()
+
     """Emitted when image mode widget should be enabled/disabled"""
     enable_image_mode_widget = Signal(bool)
 
@@ -228,6 +231,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     """Emitted when image mode widget needs to be in a certain mode"""
     set_image_mode_widget_tab = Signal(str)
+
+    """Emitted when the image mode changed"""
+    image_mode_changed = Signal(str)
 
     """Emitted when canvas focus mode should be started/stopped
 
@@ -291,7 +297,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
         self.default_cmap = constants.DEFAULT_CMAP
         self._previous_structureless_calibration_picks_data = None
-        self.image_mode = constants.ViewType.raw
+        self._image_mode = constants.ViewType.raw
+        self._active_canvas = None
         self._sample_tilt = np.asarray([0, 0, 0], float)
         self.recent_state_files = []
 
@@ -757,6 +764,30 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
             if isinstance(default[key], dict):
                 self._recursive_set_defaults(current[key], default[key])
+
+    @property
+    def image_mode(self):
+        return self._image_mode
+
+    @image_mode.setter
+    def image_mode(self, v):
+        if v == self._image_mode:
+            return
+
+        self._image_mode = v
+        self.image_mode_changed.emit(v)
+
+    @property
+    def active_canvas(self):
+        return self._active_canvas
+
+    @active_canvas.setter
+    def active_canvas(self, v):
+        if v is self._active_canvas:
+            return
+
+        self._active_canvas = v
+        self.active_canvas_changed.emit()
 
     def image(self, name, idx):
         return self.imageseries(name)[idx]

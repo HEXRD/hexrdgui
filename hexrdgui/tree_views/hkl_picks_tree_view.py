@@ -19,6 +19,22 @@ Y_COL = X_COL + 1
 
 class HKLPicksTreeView(GenericPicksTreeView):
 
+    def item_type(self, tree_item):
+        root_item = self.model().root_item
+
+        parents_to_root = 1
+        parent = tree_item.parent_item
+        while parent is not root_item:
+            parent = parent.parent_item
+            parents_to_root += 1
+
+        if parents_to_root == 3:
+            return 'spot'
+        elif parents_to_root == 4:
+            return 'line'
+
+        raise Exception(f'Unknown parents_to_root: {parents_to_root}')
+
     def clear_highlights(self):
         for overlay in HexrdConfig().overlays:
             overlay.clear_highlights()

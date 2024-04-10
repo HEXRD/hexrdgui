@@ -13,6 +13,7 @@ from hexrdgui.polar_distortion_object import PolarDistortionObject
 from hexrdgui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
+from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class PowderOverlay(Overlay, PolarDistortionObject):
@@ -132,17 +133,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
     def default_refinements(self):
         return np.asarray([False] * 6)
 
-    def pad_picks_data(self):
-        for k, v in self.data.items():
-            num_hkls = len(self.data[k]['hkls'])
-            current = self.calibration_picks.setdefault(k, [])
-            while len(current) < num_hkls:
-                current.append([])
-
     @property
     def has_picks_data(self):
-        for det_key, hkl_list in self.calibration_picks.items():
-            for hkl_picks in hkl_list:
+        for det_key, hkl_dict in self.calibration_picks.items():
+            for hkl_str, hkl_picks in hkl_dict.items():
                 if hkl_picks:
                     return True
 
@@ -153,17 +147,19 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Convert from cartesian to polar
         instr = self.instrument
         picks = copy.deepcopy(self.calibration_picks)
-        for det_key, det_picks in picks.items():
+        for det_key, hkl_dict in picks.items():
             panel = instr.detectors[det_key]
-            for i in range(len(det_picks)):
-                if len(det_picks[i]) == 0:
+            for hkl_str, hkl_picks in hkl_dict.items():
+                if len(hkl_picks) == 0:
                     continue
 
-                det_picks[i] = cart_to_angles(
-                    det_picks[i],
+                angles = cart_to_angles(
+                    hkl_picks,
                     panel,
                     self.eta_period,
-                ).tolist()
+                )
+                angles = apply_tth_distortion_if_needed(angles, in_degrees=True)
+                hkl_dict[hkl_str] = angles.tolist()
 
         return picks
 
@@ -174,13 +170,16 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Convert from polar to cartesian
         instr = self.instrument
         picks = copy.deepcopy(picks)
-        for det_key, det_picks in picks.items():
+        for det_key, hkl_dict in picks.items():
             panel = instr.detectors[det_key]
-            for i in range(len(det_picks)):
-                if len(det_picks[i]) == 0:
+            for hkl_str, hkl_picks in hkl_dict.items():
+                if len(hkl_picks) == 0:
                     continue
 
-                det_picks[i] = angles_to_cart(det_picks[i], panel).tolist()
+                angles = apply_tth_distortion_if_needed(
+                    hkl_picks, in_degrees=True, reverse=True)
+
+                hkl_dict[hkl_str] = angles_to_cart(angles, panel).tolist()
 
         self.calibration_picks = picks
 
@@ -255,6 +254,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # 1. tth_distortion was set (sd is not None)
         # 2. We are not distorting the polar image with the current overlay
         distortion_object = HexrdConfig().polar_tth_distortion_object
+
         polar_distortion_with_self = (
             display_mode in (ViewType.polar, ViewType.stereo) and
             distortion_object is self
@@ -264,26 +264,26 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             not polar_distortion_with_self
         )
 
-        if apply_distortion:
-            # Offset the distortion if we are distorting the polar image
-            # with a different overlay, and we have all the required
-            # variables defined.
-            polar_corr_field = HexrdConfig().polar_corr_field_polar
-            polar_angular_grid = HexrdConfig().polar_angular_grid
+        # Offset the distortion if we are distorting the polar image
+        # with a different overlay, and we have all the required
+        # variables defined.
+        polar_corr_field = HexrdConfig().polar_corr_field_polar
+        polar_angular_grid = HexrdConfig().polar_angular_grid
 
-            offset_distortion = (
-                display_mode in (ViewType.polar, ViewType.stereo) and
-                distortion_object is not None and
-                polar_corr_field is not None and
-                polar_angular_grid is not None
-            )
+        offset_distortion = (
+            distortion_object is not None and
+            display_mode in (ViewType.polar, ViewType.stereo) and
+            polar_corr_field is not None and
+            polar_angular_grid is not None and
+            not polar_distortion_with_self
+        )
 
-            if offset_distortion:
-                # Set these up outside of the loop
-                polar_field = polar_corr_field.filled(np.nan)
-                eta_centers, tth_centers = polar_angular_grid
-                first_eta_col = eta_centers[:, 0]
-                first_tth_row = tth_centers[0]
+        if offset_distortion:
+            # Set these up outside of the loop
+            polar_field = polar_corr_field.filled(np.nan)
+            eta_centers, tth_centers = polar_angular_grid
+            first_eta_col = eta_centers[:, 0]
+            first_tth_row = tth_centers[0]
 
         for i, tth in enumerate(tths):
             # construct ideal angular coords
@@ -313,28 +313,35 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             if apply_distortion:
                 # Apply distortion correction
                 ang_crds = sd.apply(xys)
+            elif offset_distortion:
+                # Compute ang_crds in the regular way
+                ang_crds, _ = panel.cart_to_angles(
+                    xys,
+                    tvec_s=instr.tvec
+                )
 
-                if offset_distortion:
-                    # Need to offset according to another overlay's distortion
+            if offset_distortion:
+                # Need to offset according to another overlay's distortion
 
-                    # Need to ensure the angles are mapped
-                    ang_crds[:, 1] = xfcapi.mapAngle(
-                        ang_crds[:, 1], np.radians(self.eta_period),
-                        units='radians'
-                    )
+                # Need to ensure the angles are mapped
+                ang_crds[:, 1] = xfcapi.mapAngle(
+                    ang_crds[:, 1], np.radians(self.eta_period),
+                    units='radians'
+                )
 
-                    # Compute and apply offset
-                    for ic, ang_crd in enumerate(ang_crds):
-                        i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
-                        j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
-                        ang_crds[ic, 0] += polar_field[j, i]
+                # Compute and apply offset
+                for ic, ang_crd in enumerate(ang_crds):
+                    i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
+                    j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
+                    ang_crds[ic, 0] += polar_field[j, i]
 
+            if apply_distortion or offset_distortion:
                 if display_mode in (ViewType.raw, ViewType.cartesian):
                     # These need the updated xys
                     xys = panel.angles_to_cart(ang_crds)
 
             if display_mode in [ViewType.polar, ViewType.stereo]:
-                if not apply_distortion:
+                if not apply_distortion and not offset_distortion:
                     # The ang_crds have not yet been computed. Do so now.
                     # In the polar view, the nominal angles refer to the SAMPLE
                     # CS origin, so we omit the addition of any offset to the

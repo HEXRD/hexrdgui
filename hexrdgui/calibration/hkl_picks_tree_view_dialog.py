@@ -4,8 +4,6 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from hexrd.material.crystallography import hklToStr
-
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
@@ -17,7 +15,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.tree_views.hkl_picks_tree_view import HKLPicksTreeView
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.conversions import angles_to_cart, cart_to_angles
-from hexrdgui.utils.dicts import ensure_all_keys_match, ndarrays_to_lists
+from hexrdgui.utils.dicts import ndarrays_to_lists
 
 
 class HKLPicksTreeViewDialog:
@@ -26,7 +24,6 @@ class HKLPicksTreeViewDialog:
                  parent=None):
         self.ui = UiLoader().load_file('hkl_picks_tree_view_dialog.ui', parent)
 
-        self.dictionary = dictionary
         self.tree_view = HKLPicksTreeView(dictionary, coords_type, canvas,
                                           self.ui)
         self.ui.tree_view_layout.addWidget(self.tree_view)
@@ -37,8 +34,25 @@ class HKLPicksTreeViewDialog:
         self.update_gui()
         self.setup_connections()
 
+    @property
+    def dictionary(self):
+        return self.tree_view.model().config
+
+    @dictionary.setter
+    def dictionary(self, v):
+        # Our tree view is expecting lists rather than numpy arrays.
+        # Go ahead and perform the conversion...
+        v = copy.deepcopy(v)
+        ndarrays_to_lists(v)
+        self.tree_view.model().config = v
+        self.tree_view.rebuild_tree()
+        self.tree_view.expand_rows()
+
     def setup_connections(self):
-        self.ui.finished.connect(self.on_finished)
+        # Use accepted/rejected so these are called before on_finished()
+        self.ui.accepted.connect(self.on_finished)
+        self.ui.rejected.connect(self.on_finished)
+
         self.ui.export_picks.clicked.connect(self.export_picks_clicked)
         self.ui.import_picks.clicked.connect(self.import_picks_clicked)
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
@@ -52,6 +66,11 @@ class HKLPicksTreeViewDialog:
 
     def on_finished(self):
         self.tree_view.clear_artists()
+        self.tree_view.clear_highlights()
+
+        # Must call these after clearing highlights for an update...
+        HexrdConfig().flag_overlay_updates_for_all_materials()
+        HexrdConfig().overlay_config_changed.emit()
 
     def exec(self):
         return self.ui.exec()
@@ -102,26 +121,30 @@ class HKLPicksTreeViewDialog:
         self.validate_import_data(cart, filename)
         self.dictionary = picks_cartesian_to_angles(cart)
 
-        # Our tree view is expecting lists rather than numpy arrays.
-        # Go ahead and perform the conversion...
-        ndarrays_to_lists(self.dictionary)
-        self.tree_view.model().config = self.dictionary
-        self.tree_view.rebuild_tree()
-        self.tree_view.expand_rows()
-
     def validate_import_data(self, data, filename):
-        # This will validate and sort the keys to match that of the
-        # internal dict we already have.
-        # All of the dict keys must match exactly.
-        try:
-            ret = ensure_all_keys_match(self.dictionary, data)
-        except KeyError as e:
-            msg = e.args[0]
-            msg += f'\nin file "{filename}"\n'
-            msg += '\nPlease be sure the same settings are being used.'
-
+        # The dict keys should match the config keys.
+        if sorted(data) != sorted(self.dictionary):
+            msg = (
+                f'Overlay keys from imported data ({sorted(data)}) '
+                f'do not match the internal keys ({sorted(self.dictionary)}).'
+            )
             QMessageBox.critical(self.ui, 'HEXRD', msg)
-            raise KeyError(msg)
+            raise Exception(msg)
+
+        # Use the same sorting that we already have
+        ret = {k: data[k] for k in self.dictionary}
+
+        # All detector keys should match, too.
+        instr = create_hedm_instrument()
+        for name, overlay_picks in data.items():
+            if not all(x in instr.detectors for x in overlay_picks):
+                msg = (
+                    f'Imported data detector keys ({list(overlay_picks)}) do '
+                    'not match internal detector keys '
+                    f'({list(instr.detectors)})'
+                )
+                QMessageBox.critical(self.ui, 'HEXRD', msg)
+                raise Exception(msg)
 
         # Update the validated data
         data.clear()
@@ -160,7 +183,12 @@ def convert_picks(picks, conversion_function, **kwargs):
             panel = instr.detectors[detector_name]
             if is_laue:
                 for hkl, spot in hkls.items():
-                    hkls[hkl] = conversion_function([spot], panel, **kwargs)[0]
+                    if np.any(np.isnan(spot)):
+                        # Avoid the runtime warning
+                        hkls[hkl] = [np.nan, np.nan]
+                    else:
+                        hkls[hkl] = conversion_function([spot], panel,
+                                                        **kwargs)[0]
                 continue
 
             # Must be powder
@@ -180,12 +208,10 @@ def picks_cartesian_to_angles(picks):
     return convert_picks(picks, cart_to_angles, **kwargs)
 
 
-def generate_picks_results(overlays):
+def generate_picks_results(overlays, polar=True):
     pick_results = []
 
     for overlay in overlays:
-        # Convert hkls to numpy arrays
-        hkls = {k: np.asarray(v) for k, v in overlay.hkls.items()}
         extras = {}
         if overlay.is_powder:
             options = {
@@ -199,13 +225,17 @@ def generate_picks_results(overlays):
                 'max_energy': overlay.max_energy,
             }
 
+        if polar:
+            picks = overlay.calibration_picks_polar
+        else:
+            picks = overlay.calibration_picks
+
         pick_results.append({
             'material': overlay.material_name,
             'type': overlay.type.value,
             'options': options,
-            'refinements': overlay.refinements_with_labels,
-            'hkls': hkls,
-            'picks': overlay.calibration_picks_polar,
+            'default_refinements': overlay.refinements,
+            'picks': picks,
             **extras,
         })
 
@@ -218,25 +248,10 @@ def overlays_to_tree_format(overlays):
 
 
 def picks_to_tree_format(all_picks):
-    def listify(sequence):
-        sequence = list(sequence)
-        for i, item in enumerate(sequence):
-            if isinstance(item, tuple):
-                sequence[i] = listify(item)
-
-        return sequence
-
     tree_format = {}
     for entry in all_picks:
-        hkl_picks = {}
-
-        for det in entry['hkls']:
-            hkl_picks[det] = {}
-            for hkl, picks in zip(entry['hkls'][det], entry['picks'][det]):
-                hkl_picks[det][hklToStr(hkl)] = listify(picks)
-
         name = f"{entry['material']} {entry['type']}"
-        tree_format[name] = hkl_picks
+        tree_format[name] = entry['picks']
 
     return tree_format
 
@@ -245,20 +260,10 @@ def tree_format_to_picks(tree_format):
     all_picks = []
     for name, entry in tree_format.items():
         material, type = name.split()
-        hkls = {}
-        picks = {}
-        for det, hkl_picks in entry.items():
-            hkls[det] = []
-            picks[det] = []
-            for hkl, cur_picks in hkl_picks.items():
-                hkls[det].append(list(map(int, hkl.split())))
-                picks[det].append(cur_picks)
-
         current = {
             'material': material,
             'type': type,
-            'hkls': hkls,
-            'picks': picks,
+            'picks': entry,
         }
         all_picks.append(current)
 

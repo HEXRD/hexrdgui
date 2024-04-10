@@ -10,6 +10,9 @@
     <height>284</height>
    </rect>
   </property>
+  <property name="windowTitle">
+   <string>Laue Auto Picker</string>
+  </property>
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="3" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="button_box">

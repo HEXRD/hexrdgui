@@ -34,6 +34,14 @@ def from_dict(cls, d):
         type_str = cls.type.value
         d = CONVERSION_DICT[(version, CURRENT_DICT_VERSION)](d, type_str)
 
+    if d.get('calibration_picks'):
+        first_picks = next(iter(d['calibration_picks'].values()))
+        if not isinstance(first_picks, dict):
+            # It is not an HKL dict as we expect.
+            # We need to forget these because they are buggy and incompatible
+            # with the newer versions.
+            del d['calibration_picks']
+
     return cls(**d)
 
 

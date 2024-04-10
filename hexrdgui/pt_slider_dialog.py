@@ -178,11 +178,7 @@ class PTSliderDialog:
         if np.any(np.isnan(lparms)):
             raise Exception(f'lparms contains nan: {lparms}')
 
-        mat.latticeParameters = np.array([
-            # Convert to angstroms
-            *(lparms[:3] * 10),
-            *lparms[3:],
-        ])
+        mat.lparms = lparms
         mat.pressure = self.pressure
         mat.temperature = self.temperature
 

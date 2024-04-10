@@ -1,21 +1,25 @@
 import copy
+
 import yaml
 
 from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
 from hexrdgui import resource_loader
+from hexrdgui.constants import ViewType
+from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrdgui.tree_views.multi_column_dict_tree_view import (
     MultiColumnDictTreeItemModel, MultiColumnDictTreeView
 )
-from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
 
 import hexrdgui.resources.calibration
 
 
-class StructurelessCalibrationDialog(QObject):
+class CalibrationDialog(QObject):
 
     draw_picks_toggled = Signal(bool)
 
@@ -30,16 +34,18 @@ class StructurelessCalibrationDialog(QObject):
     undo_run = Signal()
     finished = Signal()
 
-    def __init__(self, instr, params_dict, parent=None,
-                 engineering_constraints=None):
+    def __init__(self, instr, params_dict, format_extra_params_func=None,
+                 parent=None, engineering_constraints=None,
+                 window_title='Calibration Dialog', help_url='calibration/'):
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('structureless_calibration_dialog.ui',
+        self.ui = loader.load_file('calibration_dialog.ui',
                                    parent)
 
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
-        add_help_url(self.ui.button_box, 'calibration/structureless/')
+        add_help_url(self.ui.button_box, help_url)
+        self.ui.setWindowTitle(window_title)
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         editor = self.pinhole_correction_editor
@@ -51,12 +57,15 @@ class StructurelessCalibrationDialog(QObject):
 
         self.instr = instr
         self._params_dict = params_dict
+        self.format_extra_params_func = format_extra_params_func
         self.engineering_constraints = engineering_constraints
 
         self.initialize_advanced_options()
 
         self.load_tree_view_mapping()
         self.initialize_tree_view()
+
+        self.update_edit_picks_enable_state()
 
         self.load_settings()
         self.setup_connections()
@@ -73,6 +82,10 @@ class StructurelessCalibrationDialog(QObject):
             self.on_undo_run_button_clicked)
         self.ui.finished.connect(self.finish)
 
+        # Picks editing is currently only supported in the polar mode
+        HexrdConfig().image_mode_changed.connect(
+            self.update_edit_picks_enable_state)
+
     def show(self):
         self.ui.show()
 
@@ -81,6 +94,16 @@ class StructurelessCalibrationDialog(QObject):
 
     def load_settings(self):
         pass
+
+    def update_edit_picks_enable_state(self):
+        is_polar = HexrdConfig().image_mode == ViewType.polar
+
+        polar_tooltip = ''
+        not_polar_tooltip = 'Must be in polar view to edit picks'
+        tooltip = polar_tooltip if is_polar else not_polar_tooltip
+
+        self.ui.edit_picks_button.setEnabled(is_polar)
+        self.ui.edit_picks_button.setToolTip(tooltip)
 
     def initialize_advanced_options(self):
         self.ui.advanced_options_group.setVisible(
@@ -242,16 +265,16 @@ class StructurelessCalibrationDialog(QObject):
 
     def load_tree_view_mapping(self):
         module = hexrdgui.resources.calibration
-        filename = 'structureless_params_tree_view.yml'
+        filename = 'calibration_params_tree_view.yml'
         text = resource_loader.load_resource(module, filename)
-        self.yaml_tree_view = yaml.safe_load(text)
+        self.tree_view_mapping = yaml.safe_load(text)
 
     @property
     def tree_view_dict_of_params(self):
         params_dict = self.params_dict
 
         tree_dict = {}
-        template_dict = copy.deepcopy(self.yaml_tree_view)
+        template_dict = copy.deepcopy(self.tree_view_mapping)
 
         # Keep track of which params have been used.
         used_params = []
@@ -335,19 +358,9 @@ class StructurelessCalibrationDialog(QObject):
             det = det_key.replace('-', '_')
             recursively_format_det(det, this_config, this_template)
 
-        # Now make the debye scherrer ring means
-        key = 'Debye-Scherrer ring means'
-        template = 'DS_ring_{i}'
-        i = 0
-        current = template.format(i=i)
-        while current in params_dict:
-            param = params_dict[current]
-            # Wait to create this dict until now
-            # (when we know that we have at least one parameter)
-            this_dict = tree_dict.setdefault(key, {})
-            this_dict[i + 1] = create_param_item(param)
-            i += 1
-            current = template.format(i=i)
+        if self.format_extra_params_func is not None:
+            self.format_extra_params_func(params_dict, tree_dict,
+                                          create_param_item)
 
         # Now all keys should have been used. Verify this is true.
         if sorted(used_params) != sorted(list(params_dict)):
@@ -366,14 +379,8 @@ class StructurelessCalibrationDialog(QObject):
             # It has already been initialized
             return
 
-        columns = {
-            'Value': '_value',
-            'Vary': '_vary',
-            'Minimum': '_min',
-            'Maximum': '_max',
-        }
         tree_dict = self.tree_view_dict_of_params
-        self.tree_view = MultiColumnDictTreeView(tree_dict, columns,
+        self.tree_view = MultiColumnDictTreeView(tree_dict, TREE_VIEW_COLUMNS,
                                                  parent=self.parent(),
                                                  model_class=TreeItemModel)
         self.tree_view.check_selection_index = 2
@@ -401,8 +408,46 @@ class StructurelessCalibrationDialog(QObject):
             editor.apply_to_polar_view = False
 
 
+TREE_VIEW_COLUMNS = {
+    'Value': '_value',
+    'Vary': '_vary',
+    'Minimum': '_min',
+    'Maximum': '_max',
+}
+TREE_VIEW_COLUMN_INDICES = {
+    'Key': 0,
+    **{
+        k: list(TREE_VIEW_COLUMNS).index(k) + 1 for k in TREE_VIEW_COLUMNS
+    }
+}
+VALUE_IDX = TREE_VIEW_COLUMN_INDICES['Value']
+MAX_IDX = TREE_VIEW_COLUMN_INDICES['Maximum']
+MIN_IDX = TREE_VIEW_COLUMN_INDICES['Minimum']
+BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
+
+
 class TreeItemModel(MultiColumnDictTreeItemModel):
     """Subclass the tree item model so we can customize some behavior"""
+    def data(self, index, role):
+        if role == Qt.ForegroundRole and index.column() in BOUND_INDICES:
+            # If a value hit the boundary, color both the boundary and the
+            # value red.
+            item = self.get_item(index)
+            if not item.child_items:
+                atol = 1e-3
+                pairs = [
+                    (VALUE_IDX, MAX_IDX),
+                    (VALUE_IDX, MIN_IDX),
+                ]
+                for pair in pairs:
+                    if index.column() not in pair:
+                        continue
+
+                    if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
+                        return QColor('red')
+
+        return super().data(index, role)
+
     def set_config_val(self, path, value):
         super().set_config_val(path, value)
         # Now set the parameter too

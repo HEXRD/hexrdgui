@@ -206,10 +206,6 @@ class ConstChiOverlay(Overlay):
     def default_refinements(self):
         return []
 
-    def pad_picks_data(self):
-        # Const chi overlays do not currently support picks data
-        pass
-
     @property
     def has_picks_data(self):
         # Const chi overlays do not currently support picks data

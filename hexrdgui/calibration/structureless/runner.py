@@ -1,4 +1,3 @@
-import copy
 from itertools import cycle
 import traceback
 
@@ -8,21 +7,23 @@ import numpy as np
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from hexrd.fitting.calibration import StructureLessCalibrator
+from hexrd.fitting.calibration import StructurelessCalibrator
 
+from hexrdgui.calibration.calibration_dialog import CalibrationDialog
+from hexrdgui.calibration.calibration_dialog_callbacks import (
+    CalibrationDialogCallbacks,
+)
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.markers import igor_marker
 from hexrdgui.select_item_dialog import SelectItemDialog
 from hexrdgui.tree_views import GenericPicksTreeViewDialog
-from hexrdgui.utils import instr_to_internal_dict
 from hexrdgui.utils.conversions import angles_to_cart, cart_to_angles
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
-from .calibration_dialog import StructurelessCalibrationDialog
 from .picks_io import load_picks_from_file, save_picks_to_file
 
 
@@ -36,18 +37,8 @@ class StructurelessCalibrationRunner(QObject):
         self.canvas = canvas
         self.async_runner = async_runner
         self.parent = parent
-        self.drawing_picks = False
 
         self._calibration_dialog = None
-        self._edit_picks_dialog = None
-
-        self.undo_stack = []
-        self.draw_picks_lines = []
-
-        self.setup_connections()
-
-    def setup_connections(self):
-        HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
 
     def clear(self):
         pass
@@ -84,10 +75,6 @@ class StructurelessCalibrationRunner(QObject):
             )
             QMessageBox.information(self.parent, 'HEXRD', msg)
             HexrdConfig().polar_tth_distortion_object = None
-
-    def finished(self):
-        self.draw_picks(False)
-        self.set_focus_mode(False)
 
     def set_focus_mode(self, b):
         # This will disable some widgets in the GUI during focus mode
@@ -180,7 +167,7 @@ class StructurelessCalibrationRunner(QObject):
 
             try:
                 calibration_lines = load_picks_from_file(selected_file)
-                self._validate_picks(calibration_lines)
+                validate_picks(calibration_lines, self.instr)
             except Exception as e:
                 QMessageBox.critical(self.parent, 'HEXRD', f'Error: {e}')
                 traceback.print_exc()
@@ -212,7 +199,7 @@ class StructurelessCalibrationRunner(QObject):
     def show_calibration_dialog(self, calibrator_lines):
         self.previous_picks_data = calibrator_lines
 
-        engineering_constraints = self.guess_engineering_constraints
+        engineering_constraints = guess_instrument_type(self.instr.detectors)
 
         # Create the structureless calibrator with the data
         # FIXME: add the tth_distortion dict here, if present
@@ -221,33 +208,41 @@ class StructurelessCalibrationRunner(QObject):
             'data': calibrator_lines,
             'engineering_constraints': engineering_constraints,
         }
-        self.calibrator = StructureLessCalibrator(**kwargs)
+        self.calibrator = StructurelessCalibrator(**kwargs)
 
-        # Round the calibrator numbers to 3 decimal places
-        self.round_param_numbers(3)
+        def format_extra_params_func(params_dict, tree_dict,
+                                     create_param_item):
+            # Make the debye scherrer ring means
+            key = 'Debye-Scherrer ring means'
+            template = 'DS_ring_{i}'
+            i = 0
+            current = template.format(i=i)
+            while current in params_dict:
+                param = params_dict[current]
+                # Wait to create this dict until now
+                # (when we know that we have at least one parameter)
+                this_dict = tree_dict.setdefault(key, {})
+                this_dict[i + 1] = create_param_item(param)
+                i += 1
+                current = template.format(i=i)
 
         # Now show the calibration dialog
         kwargs = {
             'instr': self.instr,
             'params_dict': self.calibrator.params,
+            'format_extra_params_func': format_extra_params_func,
             'parent': self.parent,
             'engineering_constraints': engineering_constraints,
+            'window_title': 'Structureless Calibration Dialog',
+            'help_url': 'calibration/structureless'
         }
-        dialog = StructurelessCalibrationDialog(**kwargs)
-
-        self.draw_picks(True)
+        dialog = CalibrationDialog(**kwargs)
 
         # Connect interactions to functions
-        dialog.ui.draw_picks.setChecked(self.drawing_picks)
-        dialog.draw_picks_toggled.connect(self.draw_picks)
-        dialog.edit_picks_clicked.connect(self._on_edit_picks_clicked)
-        dialog.save_picks_clicked.connect(self._on_save_picks_clicked)
-        dialog.load_picks_clicked.connect(self._on_load_picks_clicked)
-        dialog.engineering_constraints_changed.connect(
-            self._on_engineering_constraints_changed)
-        dialog.run.connect(self._on_dialog_run_clicked)
-        dialog.undo_run.connect(self._on_dialog_undo_run_clicked)
-        dialog.finished.connect(self._on_dialog_finished)
+        self._dialog_callback_handler = StructurelessCalibrationCallbacks(
+            dialog, self.calibrator, self.instr, self.async_runner)
+        self._dialog_callback_handler.instrument_updated.connect(
+            self.instrument_updated.emit)
         dialog.show()
 
         self._calibration_dialog = dialog
@@ -258,292 +253,6 @@ class StructurelessCalibrationRunner(QObject):
         self.set_focus_mode(True)
 
         return dialog
-
-    def _on_edit_picks_clicked(self):
-        # Convert to polar lines
-        data = cart_to_polar_lines(self.calibrator_lines, self.instr)
-
-        # Convert to lists
-        for i in range(len(data)):
-            data[i] = data[i].tolist()
-
-        # Now convert to a dictionary for the line labels
-        dictionary = {}
-        for ring_idx, v in enumerate(data):
-            name = f'DS ring {ring_idx + 1}'
-            dictionary[name] = data[ring_idx]
-
-        def new_line_name_generator():
-            nonlocal ring_idx
-            ring_idx += 1
-            return f'DS ring {ring_idx + 1}'
-
-        dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
-                                            parent=self.canvas)
-        dialog.tree_view.new_line_name_generator = new_line_name_generator
-        dialog.accepted.connect(self._on_edit_picks_accepted)
-        dialog.finished.connect(self._on_edit_picks_finished)
-        dialog.show()
-
-        self._edit_picks_dictionary = dictionary
-        self._edit_picks_dialog = dialog
-
-        self.clear_drawn_picks()
-        self._calibration_dialog.hide()
-
-    def _on_edit_picks_accepted(self):
-        lines = list(self._edit_picks_dictionary.values())
-        # Convert back to lines in cartesian coords
-        # lines = list(dictionary.values())
-        cart = polar_lines_to_cart(lines, self.instr)
-        self._set_picks(cart)
-
-    def _on_edit_picks_finished(self):
-        # Show this again
-        self._calibration_dialog.show()
-        self.redraw_picks()
-
-    def _on_save_picks_clicked(self):
-        title = 'Save Picks for Structureless Calibration'
-
-        selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.file_dialog_parent, title, HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
-
-        if not selected_file:
-            # The user canceled
-            return
-
-        save_picks_to_file(self.calibrator_lines, selected_file)
-
-    def _on_load_picks_clicked(self):
-        title = 'Load Picks for Structureless Calibration'
-
-        selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.file_dialog_parent, title, HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
-
-        if not selected_file:
-            # The user canceled
-            return
-
-        picks = load_picks_from_file(selected_file)
-        self._set_picks(picks)
-
-    def _set_picks(self, picks):
-        self._validate_picks(picks)
-        self.calibrator.data = picks
-
-        dialog = self._calibration_dialog
-        if dialog:
-            # Update the dialog
-            self.clear_drawn_picks()
-            dialog.params_dict = self.calibrator.params
-        else:
-            self.show_calibration_dialog(picks)
-
-        self.redraw_picks()
-
-    def _on_engineering_constraints_changed(self, new_constraint):
-        self.calibrator.engineering_constraints = new_constraint
-        dialog = self._calibration_dialog
-
-        # Keep old settings in the dialog if they are present in the new params
-        # Remember everything except the name (should be the same) and
-        # the expression (which might be modified from the engineering
-        # constraints).
-        to_remember = [
-            'value',
-            'vary',
-            'min',
-            'max',
-            'brute_step',
-            'user_data',
-        ]
-
-        for param_key, param in dialog.params_dict.items():
-            if param_key in self.calibrator.params:
-                current = self.calibrator.params[param_key]
-                for attr in to_remember:
-                    setattr(current, attr, getattr(param, attr))
-
-        dialog.params_dict = self.calibrator.params
-
-    def _validate_picks(self, picks):
-        # Verify that the detector keys match up
-        for det_lines in picks:
-            for det_key in det_lines:
-                if det_key not in self.instr.detectors:
-                    dets_str = ', '.join(self.instr.detectors)
-                    msg = (
-                        f'Detector "{det_key}" does not match current '
-                        f'detectors "{dets_str}"'
-                    )
-                    raise Exception(msg)
-
-    def _on_dialog_finished(self):
-        # This is called when the dialog finishes.
-        # Call any cleanup code.
-        self.finished()
-
-
-    def on_image_view_loaded(self, img_dict):
-        # If the image view is modified, it may have been because of
-        # edits to tth distortion, so we should redraw the picks.
-        self.redraw_picks()
-
-    def clear_drawn_picks(self):
-        while self.draw_picks_lines:
-            self.draw_picks_lines.pop(0).remove()
-
-        self.canvas.draw_idle()
-
-    def redraw_picks(self):
-        self.draw_picks(self.drawing_picks)
-
-    def draw_picks(self, b=True):
-        self.drawing_picks = b
-        self.clear_drawn_picks()
-
-        if not b:
-            return
-
-        line_settings = {
-            'marker': igor_marker,
-            'markeredgecolor': 'black',
-            'markersize': 16,
-            'linestyle': 'None',
-        }
-
-        prop_cycle = plt.rcParams['axes.prop_cycle']
-        color_cycler = cycle(prop_cycle.by_key()['color'])
-
-        polar_lines = cart_to_polar_lines(self.calibrator_lines, self.instr)
-        for points in polar_lines:
-            color = next(color_cycler)
-            artist, = self.canvas.axis.plot(points[:, 0], points[:, 1],
-                                            color=color, **line_settings)
-            self.draw_picks_lines.append(artist)
-
-        self.canvas.draw_idle()
-
-    def _on_dialog_run_clicked(self):
-        self.async_runner.progress_title = 'Running calibration...'
-        self.async_runner.success_callback = self.update_config_from_instrument
-        self.async_runner.run(self._run_calibration)
-
-    def _on_dialog_undo_run_clicked(self):
-        print('Undo changes')
-        self.pop_undo_stack()
-
-    def update_calibrator_tth_distortion(self):
-        dialog = self._calibration_dialog
-        if not dialog:
-            return
-
-        self.calibrator.tth_distortion = dialog.tth_distortion
-
-    def _run_calibration(self):
-        # Update the tth distortion on the calibrator from the dialog
-        self.update_calibrator_tth_distortion()
-
-        # Add the current parameters to the undo stack
-        self.push_undo_stack()
-
-        odict = self._calibration_dialog.advanced_options
-
-        x0 = self.calibrator.params.valuesdict()
-        result = self.calibrator.run_calibration(odict=odict)
-
-        # Round the calibrator numbers to 3 decimal places
-        self.round_param_numbers(3)
-
-        x1 = result.params.valuesdict()
-
-        results_message = 'Calibration Results:\n'
-        for name in x0:
-            if not result.params[name].vary:
-                continue
-
-            old = x0[name]
-            new = x1[name]
-            results_message += f'{name}: {old:6.3g} ---> {new:6.3g}\n'
-
-        print(results_message)
-
-        self.results_message = results_message
-
-    def update_config_from_instrument(self):
-        output_dict = instr_to_internal_dict(self.instr)
-
-        # Save the previous iconfig to restore the statuses
-        prev_iconfig = HexrdConfig().config['instrument']
-
-        # Update the config
-        HexrdConfig().config['instrument'] = output_dict
-
-        # This adds in any missing keys. In particular, it is going to
-        # add in any "None" detector distortions
-        HexrdConfig().set_detector_defaults_if_missing()
-
-        # Add status values
-        HexrdConfig().add_status(output_dict)
-
-        # Set the previous statuses to be the current statuses
-        HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
-
-        self.instrument_updated.emit()
-
-        # Update the tree_view in the GUI with the new refinements
-        self.update_refinements_tree_view()
-
-        # Update the drawn picks with their new locations
-        self.redraw_picks()
-
-    def update_refinements_tree_view(self):
-        dialog = self._calibration_dialog
-        dialog.params_dict = self.calibrator.params
-
-    def push_undo_stack(self):
-        dialog = self._calibration_dialog
-        calibrator = self.calibrator
-        stack_item = {
-            'engineering_constraints': calibrator.engineering_constraints,
-            'tth_distortion': copy.deepcopy(calibrator.tth_distortion),
-            'params': copy.deepcopy(calibrator.params),
-            'advanced_options': dialog.advanced_options,
-        }
-        self.undo_stack.append(stack_item)
-        self.update_undo_enable_state()
-
-    def pop_undo_stack(self):
-        stack_item = self.undo_stack.pop(-1)
-
-        calibrator_items = [
-            'engineering_constraints',
-            'tth_distortion',
-            # Put this last so it will get set last
-            'params',
-        ]
-
-        # Params should get set last
-        calibrator = self.calibrator
-        for k in calibrator_items:
-            v = stack_item[k]
-            setattr(calibrator, k, v)
-
-        self.instr.update_from_lmfit_parameter_list(calibrator.params)
-        self.update_config_from_instrument()
-
-        dialog = self._calibration_dialog
-        dialog.update_from_calibrator(calibrator)
-        dialog.advanced_options = stack_item['advanced_options']
-
-        self.update_undo_enable_state()
-
-    def update_undo_enable_state(self):
-        dialog = self._calibration_dialog
-        dialog.undo_enabled = bool(self.undo_stack)
 
     @property
     def previous_picks_data(self):
@@ -556,35 +265,11 @@ class StructurelessCalibrationRunner(QObject):
         setattr(HexrdConfig(), name, v)
 
     @property
-    def calibrator_lines(self):
-        return self.calibrator.data
-
-    @property
     def file_dialog_parent(self):
         # Use the calibration dialog as the parent if possible.
         # Otherwise, just use our parent.
         dialog = self._calibration_dialog
         return dialog.ui if dialog else self.canvas
-
-    def round_param_numbers(self, decimals=3):
-        params_dict = self.calibrator.params
-
-        attrs = [
-            'value',
-            'min',
-            'max',
-        ]
-        for param in params_dict.values():
-            for attr in attrs:
-                setattr(param, attr, round(getattr(param, attr), 3))
-
-    @property
-    def guess_engineering_constraints(self):
-        instr_type = guess_instrument_type(self.instr.detectors)
-        if instr_type == 'TARDIS':
-            return 'TARDIS'
-
-        return None
 
 
 def polar_lines_to_cart(data, instr):
@@ -643,3 +328,107 @@ def cart_to_polar_lines(calibrator_lines, instr):
         output.append(points)
 
     return output
+
+
+def validate_picks(picks, instr):
+    # Verify that the detector keys match up
+    for det_lines in picks:
+        for det_key in det_lines:
+            if det_key not in instr.detectors:
+                dets_str = ', '.join(instr.detectors)
+                msg = (
+                    f'Detector "{det_key}" does not match current '
+                    f'detectors "{dets_str}"'
+                )
+                raise Exception(msg)
+
+
+class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.edit_picks_dialog = None
+        self.edit_picks_dictionary = None
+
+    @property
+    def calibrator_lines(self):
+        return self.calibrator.data
+
+    def draw_picks_on_canvas(self):
+        line_settings = {
+            'marker': igor_marker,
+            'markeredgecolor': 'black',
+            'markersize': 16,
+            'linestyle': 'None',
+        }
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        color_cycler = cycle(prop_cycle.by_key()['color'])
+
+        polar_lines = cart_to_polar_lines(self.calibrator_lines, self.instr)
+        for points in polar_lines:
+            color = next(color_cycler)
+            artist, = self.canvas.axis.plot(points[:, 0], points[:, 1],
+                                            color=color, **line_settings)
+            self.draw_picks_lines.append(artist)
+
+        self.canvas.draw_idle()
+
+    def on_edit_picks_clicked(self):
+        # Convert to polar lines
+        data = cart_to_polar_lines(self.calibrator_lines, self.instr)
+
+        # Convert to lists
+        for i in range(len(data)):
+            data[i] = data[i].tolist()
+
+        # Now convert to a dictionary for the line labels
+        dictionary = {}
+        for ring_idx, v in enumerate(data):
+            name = f'DS ring {ring_idx + 1}'
+            dictionary[name] = data[ring_idx]
+
+        def new_line_name_generator():
+            nonlocal ring_idx
+            ring_idx += 1
+            return f'DS ring {ring_idx + 1}'
+
+        dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
+                                            parent=self.canvas)
+        dialog.tree_view.new_line_name_generator = new_line_name_generator
+        dialog.accepted.connect(self.on_edit_picks_accepted)
+        dialog.finished.connect(self.on_edit_picks_finished)
+        dialog.show()
+
+        self.edit_picks_dictionary = dictionary
+        self.edit_picks_dialog = dialog
+
+        self.clear_drawn_picks()
+        self.dialog.hide()
+
+    def on_edit_picks_accepted(self):
+        lines = list(self.edit_picks_dictionary.values())
+        # Convert back to lines in cartesian coords
+        # lines = list(dictionary.values())
+        cart = polar_lines_to_cart(lines, self.instr)
+        self.set_picks(cart)
+
+    def save_picks_to_file(self, selected_file):
+        save_picks_to_file(self.calibrator_lines, selected_file)
+
+    def load_picks_from_file(self, selected_file):
+        return load_picks_from_file(selected_file)
+
+    def set_picks(self, picks):
+        self.validate_picks(picks)
+        self.calibrator.data = picks
+
+        # Update the dialog
+        self.clear_drawn_picks()
+        self.dialog.params_dict = self.calibrator.params
+
+        self.redraw_picks()
+
+    def validate_picks(self, picks):
+        return validate_picks(picks, self.instr)

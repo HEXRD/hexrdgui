@@ -1441,7 +1441,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_auto_picked_data_artists()
 
         xys = HexrdConfig().auto_picked_data
-        if xys is None:
+        if xys is None or self.iviewer is None:
             return
 
         for det_key, panel in self.iviewer.instr.detectors.items():
