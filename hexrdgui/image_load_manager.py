@@ -297,16 +297,18 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         for idx, key in enumerate(ims_dict.keys()):
             ops = []
 
-            if 'rect' in self.state:
-                # Apply the rectangle op first, if we have one
-                ops.append(('rectangle', self.state['rect'][key]))
-
             # Apply dark subtraction
             if key in dark_images:
                 self.get_dark_op(ops, dark_images[key])
 
             if 'trans' in self.state:
                 self.get_flip_op(ops, idx)
+
+            if 'rect' in self.state:
+                # Apply the rectangle op *last*, if we have one
+                # For dexelas, we need to apply flip operations on the whole
+                # images, and then extract the subpanels.
+                ops.append(('rectangle', self.state['rect'][key]))
 
             frames = self.get_range(ims_dict[key])
             if self.state.get('frames_reversed', False):
