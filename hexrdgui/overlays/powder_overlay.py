@@ -11,6 +11,7 @@ from hexrd.utils.hkl import hkl_to_str
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.overlay import Overlay
 from hexrdgui.polar_distortion_object import PolarDistortionObject
+from hexrdgui.utils import array_index_in_list
 from hexrdgui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
@@ -233,6 +234,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 upper_pts, upper_skipped = self.generate_ring_points(
                     instr, r_upper, etas, panel, display_mode
                 )
+
+                # The indexing here is to the original HKL list, *not*
+                # the truncated HKL list.
                 lower_indices = [x for i, x in enumerate(indices)
                                  if i not in lower_skipped]
                 upper_indices = [x for i, x in enumerate(indices)
@@ -254,9 +258,16 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # view azimuthal lineout.
         hkl_data = {}
 
-        for det_key, data in point_groups.items():
-            for i, hkl in enumerate(data['hkls']):
-                hkl_str = hkl_to_str(hkl)
+        all_hkls = self.plane_data.getHKLs()
+        for orig_idx, hkl in enumerate(all_hkls):
+            hkl_str = hkl_to_str(hkl)
+            for det_key, data in point_groups.items():
+                # Find the index of this HKL in the data list
+                i = array_index_in_list(hkl, data['hkls'])
+                if i == -1:
+                    # This HKL doesn't lie on this detector
+                    continue
+
                 if hkl_str not in hkl_data:
                     hkl_data[hkl_str] = {'rings': []}
                     if 'rbnds' in data:
@@ -278,9 +289,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 for j, ind_list in enumerate(data['rbnd_indices']):
                     # Only pay attention to one of the HKLs in the ind
                     # list, so we don't duplicate data.
-                    if ind_list[0] == i:
+                    if ind_list[0] == orig_idx:
                         # This rbnd uses this hkl
                         key = 'lower' if lower else 'upper'
+
                         hkl_data[hkl_str]['rbnds'][key].append(
                             data['rbnds'][j]
                         )
