@@ -86,16 +86,16 @@ class RegionMask(Mask):
         self._raw = values
         self.invalidate_masked_arrays()
 
-    def update_masked_arrays(self, view=ViewType.raw):
+    def update_masked_arrays(self, view=ViewType.raw, instr=None):
         self.masked_arrays_view_mode = view
         if view == ViewType.raw:
             self.masked_arrays = create_raw_mask(self._raw)
         else:
-            self.masked_arrays = create_polar_mask_from_raw(self._raw)
+            self.masked_arrays = create_polar_mask_from_raw(self._raw, instr)
 
-    def get_masked_arrays(self, image_mode=ViewType.raw):
+    def get_masked_arrays(self, image_mode=ViewType.raw, instr=None):
         if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
-            self.update_masked_arrays(image_mode)
+            self.update_masked_arrays(image_mode, instr)
 
         return self.masked_arrays
 

@@ -30,6 +30,7 @@ def convert_raw_to_polar(instr, det, line):
 
 def create_polar_mask(line_data):
     # Calculate current image dimensions
+    # If we pass `None` to the polar view, it is a dummy polar view
     pv = PolarView(None)
     shape = pv.shape
     num_pix_eta = shape[0]
@@ -148,8 +149,12 @@ def create_polar_line_data_from_raw(instr, value):
     return line_data
 
 
-def create_polar_mask_from_raw(value):
-    instr = create_view_hedm_instrument()
+def create_polar_mask_from_raw(value, instr=None):
+    if instr is None:
+        # An instrument can be passed for improved performance.
+        # If one wasn't passed, create one.
+        instr = create_hedm_instrument()
+
     line_data = create_polar_line_data_from_raw(instr, value)
     return create_polar_mask(line_data)
 

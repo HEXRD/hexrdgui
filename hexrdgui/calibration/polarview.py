@@ -48,12 +48,16 @@ class PolarView:
 
         self.distortion_instr = distortion_instrument
 
-        # Use an image dict with the panel buffers applied.
-        # This keeps invalid pixels from bleeding out in the polar view
-        self.images_dict = HexrdConfig().images_dict
-        # 0 is a better fill value because it results in fewer nans in
-        # the final image.
-        HexrdConfig().apply_panel_buffer_to_images(self.images_dict, 0)
+        if instrument is None:
+            # This is a dummy polar view
+            self._images_dict = None
+        else:
+            # Use an image dict with the panel buffers applied.
+            # This keeps invalid pixels from bleeding out in the polar view
+            self.images_dict = HexrdConfig().images_dict
+            # 0 is a better fill value because it results in fewer nans in
+            # the final image.
+            HexrdConfig().apply_panel_buffer_to_images(self.images_dict, 0)
 
         self.warp_dict = {}
 
@@ -445,7 +449,7 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
-            mask_arr = mask.get_masked_arrays(ViewType.polar)
+            mask_arr = mask.get_masked_arrays(ViewType.polar, self.instr)
             total_mask = np.logical_or(total_mask, ~mask_arr)
         if (tm := MaskManager().threshold_mask) and tm.visible:
             lt_val, gt_val = tm.data
@@ -465,7 +469,7 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.show_border:
                 continue
-            mask_arr = mask.get_masked_arrays(ViewType.polar)
+            mask_arr = mask.get_masked_arrays(ViewType.polar, self.instr)
             total_mask = np.logical_or(total_mask, ~mask_arr)
         img[total_mask] = np.nan
 
