@@ -6,10 +6,12 @@ from hexrd import constants
 from hexrd.material import unitcell
 
 from hexrd.transforms import xfcapi
+from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.overlay import Overlay
 from hexrdgui.polar_distortion_object import PolarDistortionObject
+from hexrdgui.utils import array_index_in_list
 from hexrdgui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
@@ -39,6 +41,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         self.tth_distortion_type = tth_distortion_type
         self.tth_distortion_kwargs = tth_distortion_kwargs
         self.clip_with_panel_buffer = clip_with_panel_buffer
+
+        # Store hkl means if we are in the polar view (for azimuthal lineout)
+        self.hkl_means = {}
 
     @property
     def child_attributes_to_save(self):
@@ -184,6 +189,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         self.calibration_picks = picks
 
     def generate_overlay(self):
+        # Ensure hkl means is cleared
+        self.hkl_means.clear()
+
         instr = self.instrument
         plane_data = self.plane_data
         display_mode = self.display_mode
@@ -226,6 +234,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 upper_pts, upper_skipped = self.generate_ring_points(
                     instr, r_upper, etas, panel, display_mode
                 )
+
+                # The indexing here is to the original HKL list, *not*
+                # the truncated HKL list.
                 lower_indices = [x for i, x in enumerate(indices)
                                  if i not in lower_skipped]
                 upper_indices = [x for i, x in enumerate(indices)
@@ -237,7 +248,87 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 point_groups[det_key]['rbnds'] += upper_pts
                 point_groups[det_key]['rbnd_indices'] += upper_indices
 
+        if display_mode == ViewType.polar:
+            self.generate_hkl_means(point_groups)
+
         return point_groups
+
+    def generate_hkl_means(self, point_groups):
+        # Concatenate all hkl rings and rbnds together for the polar
+        # view azimuthal lineout.
+        hkl_data = {}
+
+        all_hkls = self.plane_data.getHKLs()
+        for orig_idx, hkl in enumerate(all_hkls):
+            hkl_str = hkl_to_str(hkl)
+            for det_key, data in point_groups.items():
+                # Find the index of this HKL in the data list
+                i = array_index_in_list(hkl, data['hkls'])
+                if i == -1:
+                    # This HKL doesn't lie on this detector
+                    continue
+
+                if hkl_str not in hkl_data:
+                    hkl_data[hkl_str] = {'rings': []}
+                    if 'rbnds' in data:
+                        hkl_data[hkl_str]['rbnds'] = {
+                            'lower': [],
+                            'upper': [],
+                            'merged': False,
+                        }
+
+                hkl_data[hkl_str]['rings'].append(data['rings'][i])
+
+                if 'rbnds' not in data:
+                    # Do not include ranges
+                    continue
+
+                # We should encounter two instances of this rbnd.
+                # The first index will be lower.
+                lower = True
+                for j, ind_list in enumerate(data['rbnd_indices']):
+                    # Only pay attention to one of the HKLs in the ind
+                    # list, so we don't duplicate data.
+                    if ind_list[0] == orig_idx:
+                        # This rbnd uses this hkl
+                        key = 'lower' if lower else 'upper'
+
+                        hkl_data[hkl_str]['rbnds'][key].append(
+                            data['rbnds'][j]
+                        )
+
+                        # Indicate whether this is a merged range or not
+                        hkl_data[hkl_str]['rbnds']['merged'] = (
+                            len(ind_list) > 1
+                        )
+
+                        # We found the lower. Next must be upper
+                        lower = False
+
+        # Now compute the means
+        means = {}
+        for hkl_str, data in hkl_data.items():
+            hkl_means = means.setdefault(hkl_str, {})
+
+            stacked = np.vstack(data['rings'])
+            hkl_means['rings'] = np.nanmean(stacked[:, 0])
+
+            if 'rbnds' not in data:
+                # No ranges
+                continue
+
+            hkl_rbnd_means = hkl_means.setdefault('rbnds', {})
+            for key in ('lower', 'upper'):
+                entry = data['rbnds'][key]
+                if not entry:
+                    hkl_rbnd_means[key] = np.nan
+                    continue
+
+                hkl_rbnd_means[key] = np.nanmean(np.vstack(entry)[:, 0])
+
+            hkl_rbnd_means['merged'] = data['rbnds']['merged']
+
+        self.hkl_means = means
 
     def generate_ring_points(self, instr, tths, etas, panel, display_mode):
         from hexrdgui.hexrd_config import HexrdConfig

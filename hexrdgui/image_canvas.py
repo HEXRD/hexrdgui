@@ -380,6 +380,9 @@ class ImageCanvas(FigureCanvas):
             }
             self.overlay_draw_func(type)(**kwargs)
 
+        if self.mode == ViewType.polar and overlay.type == OverlayType.powder:
+            self.draw_azimuthal_powder_lines(overlay)
+
     def draw_powder_overlay(self, artist_key, det_key, axis, data, style,
                             highlight_style):
         rings = data['rings']
@@ -446,34 +449,52 @@ class ImageCanvas(FigureCanvas):
         # Highlighting goes after merged ranges to get precedence
         plot(h_ranges, 'h_ranges', highlight_style['ranges'])
 
+    def draw_azimuthal_powder_lines(self, overlay):
         az_axis = self.azimuthal_integral_axis
-        if az_axis:
-            trans = tx.blended_transform_factory(az_axis.transData,
-                                                 az_axis.transAxes)
+        if az_axis is None or not overlay.hkl_means:
+            # Can't draw
+            return
 
-            def az_plot(data, key, kwargs):
-                if len(data) == 0:
-                    return
+        style = overlay.style
+        data_style = style['data']
+        ranges_style = style['ranges']
 
-                xmeans = np.array([np.nanmean(x[:, 0]) for x in data])
+        merged_ranges_style = copy.deepcopy(ranges_style)
+        merged_ranges_style['c'] = 'r'
 
-                x = np.repeat(xmeans, 3)
-                y = np.tile([0, 1, np.nan], len(xmeans))
+        overlay_artists = self.overlay_artists.setdefault(overlay.name, {})
+        artists = overlay_artists.setdefault('__lineout', {})
 
-                artists[key], = az_axis.plot(x, y, transform=trans,
-                                             animated=True, **kwargs)
+        trans = tx.blended_transform_factory(az_axis.transData,
+                                             az_axis.transAxes)
 
-            az_plot(rings, 'az_rings', data_style)
-            # NOTE: we still use the data_style for az_axis highlighted rings
-            az_plot(h_rings, 'az_h_rings', data_style)
+        rings = []
+        ranges = []
+        merged_ranges = []
+        for data in overlay.hkl_means.values():
+            rings.append(data['rings'])
+            if 'rbnds' in data:
+                joined = [data['rbnds']['lower'], data['rbnds']['upper']]
+                if data['rbnds']['merged']:
+                    merged_ranges.extend(joined)
+                else:
+                    ranges.extend(joined)
 
-            az_plot(reg_ranges, 'az_ranges', ranges_style)
+        def az_plot(data, key, kwargs):
+            if len(data) == 0:
+                return
 
-            # NOTE: we still use the ranges_style for az_axis highlighted rings
-            az_plot(h_ranges, 'az_h_ranges', ranges_style)
+            xmeans = np.asarray(data)
 
-            # Give merged ranges style precedence
-            az_plot(merged_ranges, 'az_merged_ranges', merged_ranges_style)
+            x = np.repeat(xmeans, 3)
+            y = np.tile([0, 1, np.nan], len(xmeans))
+
+            artists[key], = az_axis.plot(x, y, transform=trans,
+                                         animated=True, **kwargs)
+
+        az_plot(rings, 'rings', data_style)
+        az_plot(ranges, 'ranges', ranges_style)
+        az_plot(merged_ranges, 'merged_ranges', merged_ranges_style)
 
     def draw_laue_overlay(self, artist_key, det_key, axis, data, style,
                           highlight_style):
