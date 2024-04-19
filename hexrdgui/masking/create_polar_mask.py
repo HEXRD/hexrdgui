@@ -9,6 +9,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
 from hexrdgui.utils.conversions import pixels_to_angles
+from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 def convert_raw_to_polar(instr, det, line):
@@ -25,7 +26,9 @@ def convert_raw_to_polar(instr, det, line):
         'tvec_s': instr.tvec,
     }
 
-    return [pixels_to_angles(**kwargs)]
+    line = pixels_to_angles(**kwargs)
+    line = apply_tth_distortion_if_needed(line, in_degrees=True)
+    return [line]
 
 
 def create_polar_mask(line_data):
