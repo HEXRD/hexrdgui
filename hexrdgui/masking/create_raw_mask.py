@@ -1,13 +1,11 @@
 import numpy as np
 
 from skimage.draw import polygon
-from hexrdgui.constants import ViewType
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
-from hexrdgui.utils.conversions import angles_to_pixels
+from hexrdgui.utils.conversions import angles_to_cart, cart_to_pixels
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -55,7 +53,9 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
     instr = create_hedm_instrument()
     for line in line_data:
         for key, panel in instr.detectors.items():
-            raw = angles_to_pixels(line, panel, tvec_s=instr.tvec)
+            cart = angles_to_cart(line, panel, tvec_s=instr.tvec)
+            clipped_cart, _ = panel.clip_to_panel(cart, buffer_edges=False)
+            raw = cart_to_pixels(clipped_cart, panel)
             if all([np.isnan(x) for x in raw.flatten()]):
                 continue
 
