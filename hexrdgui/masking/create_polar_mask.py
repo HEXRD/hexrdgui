@@ -13,9 +13,11 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 def convert_raw_to_polar(instr, det, line):
     # This accepts an instrument rather than creating one for performance
 
-    # Make sure there at least 300 sample points so that the conversion
+    # Make sure there at least 500 sample points so that the conversion
     # looks correct.
-    line = add_sample_points(line, 300)
+    # This needs to be greater than the number of sample points when going
+    # from polar to raw, so we can ensure that points along borders get added.
+    line = add_sample_points(line, 500)
 
     panel = instr.detectors[det]
     cart = pixels_to_cart(line, panel)

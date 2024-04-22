@@ -54,10 +54,72 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
     for line in line_data:
         for key, panel in instr.detectors.items():
             cart = angles_to_cart(line, panel, tvec_s=instr.tvec)
-            clipped_cart, _ = panel.clip_to_panel(cart, buffer_edges=False)
-            raw = cart_to_pixels(clipped_cart, panel)
-            if all([np.isnan(x) for x in raw.flatten()]):
+            raw = cart_to_pixels(cart, panel)
+
+            # If any rows contain invalid values (negative or past the raw
+            # border), set those values to nan. Then add points to connect
+            # border points, to ensure all border values get masked.
+            invalid_rows = (
+                np.any(raw < 0, axis=1) |
+                np.any(raw > (panel.cols - 1, panel.rows - 1), axis=1)
+            )
+            raw[invalid_rows] = np.nan
+
+            if np.all(np.any(np.isnan(raw), axis=1)):
+                # No coordinates lie on this detector
                 continue
+
+            # Find all points that cross the border.
+            valid = ~np.any(np.isnan(raw), axis=1)
+            edge_indices = np.where(np.logical_xor(valid[:-1], valid[1:]))[0]
+            if len(edge_indices) != 0:
+
+                # For each index, add a point exactly on the border.
+                # We will construct an equation for a line from the
+                # two nearest points, find the border intersection,
+                # and add a point right there.
+                add_coords = []
+                add_indices = []
+                for idx in edge_indices:
+                    new_idx = idx + 1
+                    if np.any(np.isnan(raw[idx])):
+                        coords1 = raw[idx + 1]
+                        tmp_idx = idx + 2
+                        # Some points have duplicate neighbors for some reason
+                        while np.allclose(coords1, raw[tmp_idx]):
+                            tmp_idx += 1
+                        coords2 = raw[tmp_idx]
+                    else:
+                        coords1 = raw[idx]
+                        tmp_idx = idx - 1
+                        # Some points have duplicate neighbors for some reason
+                        while np.allclose(coords1, raw[tmp_idx]):
+                            tmp_idx -= 1
+                        coords2 = raw[tmp_idx]
+
+                    # Create equation of line
+                    m = 1 / np.divide(*(coords2 - coords1))
+                    b = coords1[1] - m * coords1[0]
+
+                    # Find all border intersections
+                    max_x = panel.cols - 1
+                    max_y = panel.rows - 1
+                    intersections = np.array([
+                        [0, b],
+                        [max_x, m * max_x + b],
+                        [-b / m, 0],
+                        [(max_y - b) / m, max_y],
+                    ])
+                    # The correct intersection should be the closest to coords1
+                    distances = np.sqrt(
+                        ((coords1 - intersections)**2).sum(axis=1)
+                    )
+                    new_coords = intersections[np.argmin(distances)]
+
+                    add_coords.append(new_coords)
+                    add_indices.append(new_idx)
+
+                raw = np.insert(raw, add_indices, add_coords, axis=0)
 
             # Go ahead and get rid of nan coordinates. They cause trouble
             # with scikit image's polygon.
