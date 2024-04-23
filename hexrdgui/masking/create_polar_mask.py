@@ -93,10 +93,11 @@ def create_polar_mask(line_data):
 
 
 def _pixel_perimeter_to_mask(r, c, shape):
-    # The arguments are all forwarded to skimage.draw.polygon
-    rr, cc = polygon(r, c, shape=shape)
     mask = np.ones(shape, dtype=bool)
-    mask[rr, cc] = False
+    if len(r) and len(c):
+        # The arguments are all forwarded to skimage.draw.polygon
+        rr, cc = polygon(r, c, shape=shape)
+        mask[rr, cc] = False
     return mask
 
 
