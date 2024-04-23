@@ -5,7 +5,7 @@ from skimage.draw import polygon
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import add_sample_points
-from hexrdgui.utils.conversions import angles_to_cart, cart_to_pixels
+from hexrdgui.utils.conversions import angles_to_pixels
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -53,8 +53,7 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
     instr = create_hedm_instrument()
     for line in line_data:
         for key, panel in instr.detectors.items():
-            cart = angles_to_cart(line, panel, tvec_s=instr.tvec)
-            raw = cart_to_pixels(cart, panel)
+            raw = angles_to_pixels(line, panel, tvec_s=instr.tvec)
 
             # If any rows contain invalid values (negative or past the raw
             # border), set those values to nan. Then add points to connect
@@ -83,19 +82,22 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
                 for idx in edge_indices:
                     new_idx = idx + 1
                     if np.any(np.isnan(raw[idx])):
-                        coords1 = raw[idx + 1]
-                        tmp_idx = idx + 2
-                        # Some points have duplicate neighbors for some reason
-                        while np.allclose(coords1, raw[tmp_idx]):
-                            tmp_idx += 1
-                        coords2 = raw[tmp_idx]
+                        # If this is nan, that means we are going
+                        # from off the panel to on the panel.
+                        coords1_idx = idx + 1
+                        coords2_direction = 1
                     else:
-                        coords1 = raw[idx]
-                        tmp_idx = idx - 1
-                        # Some points have duplicate neighbors for some reason
-                        while np.allclose(coords1, raw[tmp_idx]):
-                            tmp_idx -= 1
-                        coords2 = raw[tmp_idx]
+                        # If this is not nan, that means we are going
+                        # from on the panel to off the panel.
+                        coords1_idx = idx
+                        coords2_direction = -1
+
+                    coords1 = raw[coords1_idx]
+                    coords2_idx = coords1_idx + coords2_direction
+                    # Some points have duplicate neighbors for some reason
+                    while np.allclose(coords1, raw[coords2_idx]):
+                        coords2_idx += coords2_direction
+                    coords2 = raw[coords2_idx]
 
                     # Create equation of line
                     m = 1 / np.divide(*(coords2 - coords1))
