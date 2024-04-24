@@ -42,6 +42,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         self.tth_distortion_kwargs = tth_distortion_kwargs
         self.clip_with_panel_buffer = clip_with_panel_buffer
 
+        self.validate_tth_distortion_kwargs()
+
         # Store hkl means if we are in the polar view (for azimuthal lineout)
         self.hkl_means = {}
 
@@ -56,6 +58,13 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             'tth_distortion_kwargs',
             'clip_with_panel_buffer',
         ]
+
+    def validate_tth_distortion_kwargs(self):
+        if self.tth_distortion_type == 'SampleLayerDistortion':
+            # We added pinhole_radius later. Set a default if it is missing.
+            if 'pinhole_radius' not in self.tth_distortion_kwargs:
+                # Set to 0.15 mm for default
+                self.tth_distortion_kwargs['pinhole_radius'] = 0.15
 
     @property
     def has_widths(self):

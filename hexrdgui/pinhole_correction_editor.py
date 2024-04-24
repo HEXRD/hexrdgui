@@ -115,6 +115,8 @@ class PinholeCorrectionEditor(QObject):
                     self.ui.sample_layer_thickness.value() * 1e-3),
                 'pinhole_thickness': (
                     self.ui.sample_pinhole_thickness.value() * 1e-3),
+                'pinhole_radius': (
+                    self.ui.sample_pinhole_radius.value() * 1e-3),
             }
         elif dtype == 'JHEPinholeDistortion':
             return {
@@ -144,6 +146,7 @@ class PinholeCorrectionEditor(QObject):
             'sample_layer_standoff': ('layer_standoff', 0.15),
             'sample_layer_thickness': ('layer_thickness', 0.005),
             'sample_pinhole_thickness': ('pinhole_thickness', 0.1),
+            'sample_pinhole_radius': ('pinhole_radius', 0.15),
             'rygg_radius': ('pinhole_radius', 0.2),
             'rygg_thickness': ('pinhole_thickness', 0.1),
             'rygg_num_phi_elements': ('num_phi_elements', 60),
@@ -188,6 +191,7 @@ class PinholeCorrectionEditor(QObject):
             self.ui.sample_layer_standoff,
             self.ui.sample_layer_thickness,
             self.ui.sample_pinhole_thickness,
+            self.ui.sample_pinhole_radius,
         ]
 
     @property
