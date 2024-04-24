@@ -459,6 +459,14 @@ def set_combobox_enabled_items(cb, enable_list):
     cb.setCurrentIndex(new_index)
 
 
+def remove_duplicate_neighbors(points):
+    # Remove any points from this 2D array that are duplicates with
+    # their next neighbor.
+    rolled = np.roll(points, -1, axis=0)
+    delete_indices = np.all(np.isclose(rolled - points, 0), axis=1)
+    return np.delete(points, delete_indices, axis=0)
+
+
 def add_sample_points(points, min_output_length):
     """Add extra sample points to a 2D array of points
 
@@ -480,7 +488,8 @@ def add_sample_points(points, min_output_length):
     rolled = np.roll(points, -1, axis=0)
 
     # Generate the extra points between each point and its neighbor
-    output = np.linspace(points, rolled, num=num_reps)
+    # Adding endpoint=False significantly reduces our number of duplicates.
+    output = np.linspace(points, rolled, num=num_reps, endpoint=False)
 
     # Transform back into the correct shape and return
     return output.T.reshape(2, -1).T

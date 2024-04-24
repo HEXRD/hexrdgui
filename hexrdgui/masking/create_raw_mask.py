@@ -1,11 +1,15 @@
 import numpy as np
 
-from skimage.draw import polygon
+from skimage import measure
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.utils import add_sample_points
+from hexrdgui.utils import (
+    add_sample_points,
+    remove_duplicate_neighbors,
+)
 from hexrdgui.utils.conversions import angles_to_pixels
+from hexrdgui.utils.polygon import polygon_to_mask
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -55,78 +59,38 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
         for key, panel in instr.detectors.items():
             raw = angles_to_pixels(line, panel, tvec_s=instr.tvec)
 
-            # If any rows contain invalid values (negative or past the raw
-            # border), set those values to nan. Then add points to connect
-            # border points, to ensure all border values get masked.
-            invalid_rows = (
-                np.any(raw < 0, axis=1) |
-                np.any(raw > (panel.cols - 1, panel.rows - 1), axis=1)
-            )
-            raw[invalid_rows] = np.nan
+            # Remove nans
+            raw = raw[~np.isnan(raw.min(axis=1))]
 
-            if np.all(np.any(np.isnan(raw), axis=1)):
-                # No coordinates lie on this detector
+            # Check if all points lie off the detector. If so, skip it.
+            # We want to keep these invalid rows for now, though, as
+            # we will still use them when we draw the polygon mask.
+            invalid_rows = (
+                np.any(raw < -0.5, axis=1) |
+                np.any(raw > (panel.cols - 0.5, panel.rows - 0.5), axis=1)
+            )
+
+            if len(raw[~invalid_rows]) == 0:
+                # No raw coordinates on the detector
                 continue
 
-            # Find all points that cross the border.
-            valid = ~np.any(np.isnan(raw), axis=1)
-            edge_indices = np.where(np.logical_xor(valid[:-1], valid[1:]))[0]
-            if len(edge_indices) != 0:
+            # Remove duplicate neighbors
+            raw = remove_duplicate_neighbors(raw)
 
-                # For each index, add a point exactly on the border.
-                # We will construct an equation for a line from the
-                # two nearest points, find the border intersection,
-                # and add a point right there.
-                add_coords = []
-                add_indices = []
-                for idx in edge_indices:
-                    new_idx = idx + 1
-                    if np.any(np.isnan(raw[idx])):
-                        # If this is nan, that means we are going
-                        # from off the panel to on the panel.
-                        coords1_idx = idx + 1
-                        coords2_direction = 1
-                    else:
-                        # If this is not nan, that means we are going
-                        # from on the panel to off the panel.
-                        coords1_idx = idx
-                        coords2_direction = -1
+            # Keep raw points off the detector, to ensure we
+            # can draw the polygon correctly.
+            # Then, find contours along the polygon.
+            # We will create a higher resolution shape so that we
+            # can keep resolution from the mask coordinates
+            res = 2
+            mask_shape = np.array(panel.shape) * res
 
-                    coords1 = raw[coords1_idx]
-                    coords2_idx = coords1_idx + coords2_direction
-                    # Some points have duplicate neighbors for some reason
-                    while np.allclose(coords1, raw[coords2_idx]):
-                        coords2_idx += coords2_direction
-                    coords2 = raw[coords2_idx]
+            mask = ~polygon_to_mask(raw * res, mask_shape)
 
-                    # Create equation of line
-                    m = 1 / np.divide(*(coords2 - coords1))
-                    b = coords1[1] - m * coords1[0]
-
-                    # Find all border intersections
-                    max_x = panel.cols - 1
-                    max_y = panel.rows - 1
-                    intersections = np.array([
-                        [0, b],
-                        [max_x, m * max_x + b],
-                        [-b / m, 0],
-                        [(max_y - b) / m, max_y],
-                    ])
-                    # The correct intersection should be the closest to coords1
-                    distances = np.sqrt(
-                        ((coords1 - intersections)**2).sum(axis=1)
-                    )
-                    new_coords = intersections[np.argmin(distances)]
-
-                    add_coords.append(new_coords)
-                    add_indices.append(new_idx)
-
-                raw = np.insert(raw, add_indices, add_coords, axis=0)
-
-            # Go ahead and get rid of nan coordinates. They cause trouble
-            # with scikit image's polygon.
-            raw = raw[~np.isnan(raw.min(axis=1))]
-            raw_line_data.append((key, raw))
+            # Add borders so that border coordinates are kept.
+            contours = measure.find_contours(np.pad(mask, 1))
+            for contour in contours:
+                raw_line_data.append((key, (contour[:, [1, 0]] - 1) / res))
 
     return raw_line_data
 
@@ -138,11 +102,8 @@ def create_raw_mask(line_data):
         img = HexrdConfig().image(det, 0)
         final_mask = np.ones(img.shape, dtype=bool)
         for _, data in det_lines:
-            rr, cc = polygon(data[:, 1], data[:, 0], shape=img.shape)
-            if len(rr) >= 1:
-                mask = np.ones(img.shape, dtype=bool)
-                mask[rr, cc] = False
-                final_mask = np.logical_and(final_mask, mask)
+            mask = polygon_to_mask(data, img.shape)
+            final_mask = np.logical_and(final_mask, mask)
         masks.append((det, final_mask))
     return masks
 

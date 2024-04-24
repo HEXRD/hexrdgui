@@ -1,12 +1,11 @@
 import numpy as np
 
-from skimage.draw import polygon
-
 from hexrdgui.calibration.polarview import PolarView
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
 from hexrdgui.utils.conversions import cart_to_angles, pixels_to_cart
+from hexrdgui.utils.polygon import polygon_to_mask
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -93,12 +92,7 @@ def create_polar_mask(line_data):
 
 
 def _pixel_perimeter_to_mask(r, c, shape):
-    mask = np.ones(shape, dtype=bool)
-    if len(r) and len(c):
-        # The arguments are all forwarded to skimage.draw.polygon
-        rr, cc = polygon(r, c, shape=shape)
-        mask[rr, cc] = False
-    return mask
+    return polygon_to_mask(np.vstack([c, r]).T, shape)
 
 
 def _split_coords_1d(x, gap1, gap2):
