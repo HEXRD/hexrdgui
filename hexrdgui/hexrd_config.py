@@ -54,6 +54,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     image_view_loaded = Signal(dict)
 
+    """Emitted when polar masks have been re-applied.
+
+    This might be needed to update the brightness and contract histogram
+    with the new image data.
+    """
+    polar_masks_reapplied = Signal(np.ndarray)
+
     """Emitted when overlay configuration has changed"""
     overlay_config_changed = Signal()
 
