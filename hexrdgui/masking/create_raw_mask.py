@@ -61,17 +61,7 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
 
             # Remove nans
             raw = raw[~np.isnan(raw.min(axis=1))]
-
-            # Check if all points lie off the detector. If so, skip it.
-            # We want to keep these invalid rows for now, though, as
-            # we will still use them when we draw the polygon mask.
-            invalid_rows = (
-                np.any(raw < -0.5, axis=1) |
-                np.any(raw > (panel.cols - 0.5, panel.rows - 0.5), axis=1)
-            )
-
-            if len(raw[~invalid_rows]) == 0:
-                # No raw coordinates on the detector
+            if raw.size == 0:
                 continue
 
             # Remove duplicate neighbors
@@ -86,11 +76,17 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
             mask_shape = np.array(panel.shape) * res
 
             mask = ~polygon_to_mask(raw * res, mask_shape)
+            if not mask.any():
+                # The mask did not affect this panel.
+                continue
 
             # Add borders so that border coordinates are kept.
             contours = measure.find_contours(np.pad(mask, 1))
             for contour in contours:
-                raw_line_data.append((key, (contour[:, [1, 0]] - 1) / res))
+                # Add 0.5 so all coordinates will be positive before rescaling,
+                # then remove that 0.5 again afterward.
+                contour = ((contour[:, [1, 0]] - 1) + 0.5) / res - 0.5
+                raw_line_data.append((key, contour))
 
     return raw_line_data
 
