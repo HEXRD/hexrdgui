@@ -92,7 +92,11 @@ def create_polar_mask(line_data):
 
 
 def _pixel_perimeter_to_mask(r, c, shape):
-    return polygon_to_mask(np.vstack([c, r]).T, shape)
+    polygon = np.vstack([c, r]).T
+    if polygon.size < 2:
+        return np.ones(shape, dtype=bool)
+
+    return polygon_to_mask(polygon, shape)
 
 
 def _split_coords_1d(x, gap1, gap2):
