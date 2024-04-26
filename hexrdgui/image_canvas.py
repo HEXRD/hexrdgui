@@ -1272,10 +1272,13 @@ class ImageCanvas(FigureCanvas):
 
         self.update_mask_boundaries(self.axis)
         self.iviewer.reapply_masks()
-        self.axes_images[0].set_data(self.scaled_display_images[0])
+        img = self.scaled_display_images[0]
+        self.axes_images[0].set_data(img)
         self.update_azimuthal_integral_plot()
         self.update_overlays()
         self.draw_idle()
+
+        HexrdConfig().polar_masks_reapplied.emit(img)
 
     def async_worker_error(self, error):
         QMessageBox.critical(self, 'HEXRD', str(error[1]))
