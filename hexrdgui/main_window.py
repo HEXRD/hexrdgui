@@ -1427,6 +1427,9 @@ class MainWindow(QObject):
 
         HexrdConfig().working_dir = os.path.dirname(selected_file)
 
+        # Show the loaded state in the window title
+        self.ui.setWindowTitle(f'HEXRD - {Path(selected_file).name}')
+
     def load_entrypoint_file(self, filepath):
         # First, identify what type of entrypoint file it is, and then
         # load based upon whatever it is.
