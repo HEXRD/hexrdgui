@@ -1645,6 +1645,18 @@ class ImageCanvas(FigureCanvas):
                     verts = [v for k, v in mask.data if k == det]
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
                 verts = create_polar_line_data_from_raw(instr, mask.data)
+                if self.mode == ViewType.polar:
+                    # Check for any major jumps in eta. That probably means
+                    # the border is wrapping around.
+                    for i, vert in enumerate(verts):
+                        # If there are two points far away, assume there
+                        # is a gap in the eta range.
+                        eta_diff = np.abs(np.diff(vert[:, 1]))
+                        delta_eta_est = np.nanmedian(eta_diff)
+                        tolerance = delta_eta_est * 10
+                        big_gaps, = np.nonzero(eta_diff > tolerance)
+                        verts[i] = np.insert(vert, big_gaps + 1, np.nan, axis=0)
+
                 if self.mode == ViewType.stereo:
                     # Now convert from polar to stereo
                     for i, vert in enumerate(verts):

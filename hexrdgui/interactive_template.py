@@ -4,13 +4,12 @@ from matplotlib import patches
 from matplotlib.path import Path
 from matplotlib.transforms import Affine2D
 
-from skimage.draw import polygon
-
 from hexrdgui.constants import (
     KEY_ROTATE_ANGLE_FINE, KEY_TRANSLATE_DELTA, ViewType
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import has_nan
+from hexrdgui.utils.polygon import polygon_to_mask
 
 
 class InteractiveTemplate:
@@ -223,9 +222,7 @@ class InteractiveTemplate:
         for c, r in zip(cols, rows):
             c = c[~np.isnan(c)]
             r = r[~np.isnan(r)]
-            rr, cc = polygon(r, c, shape=self.img.shape)
-            mask = np.zeros(self.img.shape, dtype=bool)
-            mask[rr, cc] = True
+            mask = ~polygon_to_mask(np.vstack([c, r]).T, self.img.shape)
             master_mask = np.logical_xor(master_mask, mask)
         self.img[~master_mask] = 0
         return master_mask

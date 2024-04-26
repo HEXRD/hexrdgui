@@ -1,13 +1,15 @@
 import numpy as np
 
-from skimage.draw import polygon
-from hexrdgui.constants import ViewType
+from skimage import measure
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.masking.constants import MaskType
-from hexrdgui.utils import add_sample_points
+from hexrdgui.utils import (
+    add_sample_points,
+    remove_duplicate_neighbors,
+)
 from hexrdgui.utils.conversions import angles_to_pixels
+from hexrdgui.utils.polygon import polygon_to_mask
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -56,13 +58,35 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
     for line in line_data:
         for key, panel in instr.detectors.items():
             raw = angles_to_pixels(line, panel, tvec_s=instr.tvec)
-            if all([np.isnan(x) for x in raw.flatten()]):
+
+            # Remove nans
+            raw = raw[~np.isnan(raw.min(axis=1))]
+            if raw.size == 0:
                 continue
 
-            # Go ahead and get rid of nan coordinates. They cause trouble
-            # with scikit image's polygon.
-            raw = raw[~np.isnan(raw.min(axis=1))]
-            raw_line_data.append((key, raw))
+            # Remove duplicate neighbors
+            raw = remove_duplicate_neighbors(raw)
+
+            # Keep raw points off the detector, to ensure we
+            # can draw the polygon correctly.
+            # Then, find contours along the polygon.
+            # We will create a higher resolution shape so that we
+            # can keep resolution from the mask coordinates
+            res = 2
+            mask_shape = np.array(panel.shape) * res
+
+            mask = ~polygon_to_mask(raw * res, mask_shape)
+            if not mask.any():
+                # The mask did not affect this panel.
+                continue
+
+            # Add borders so that border coordinates are kept.
+            contours = measure.find_contours(np.pad(mask, 1))
+            for contour in contours:
+                # Add 0.5 so all coordinates will be positive before rescaling,
+                # then remove that 0.5 again afterward.
+                contour = ((contour[:, [1, 0]] - 1) + 0.5) / res - 0.5
+                raw_line_data.append((key, contour))
 
     return raw_line_data
 
@@ -74,11 +98,8 @@ def create_raw_mask(line_data):
         img = HexrdConfig().image(det, 0)
         final_mask = np.ones(img.shape, dtype=bool)
         for _, data in det_lines:
-            rr, cc = polygon(data[:, 1], data[:, 0], shape=img.shape)
-            if len(rr) >= 1:
-                mask = np.ones(img.shape, dtype=bool)
-                mask[rr, cc] = False
-                final_mask = np.logical_and(final_mask, mask)
+            mask = polygon_to_mask(data, img.shape)
+            final_mask = np.logical_and(final_mask, mask)
         masks.append((det, final_mask))
     return masks
 

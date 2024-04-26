@@ -1,31 +1,34 @@
 import numpy as np
 
-from skimage.draw import polygon
-from hexrdgui.constants import ViewType
-
-from hexrdgui.create_hedm_instrument import create_view_hedm_instrument
 from hexrdgui.calibration.polarview import PolarView
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
-from hexrdgui.utils.conversions import pixels_to_angles
+from hexrdgui.utils.conversions import cart_to_angles, pixels_to_cart
+from hexrdgui.utils.polygon import polygon_to_mask
+from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 def convert_raw_to_polar(instr, det, line):
     # This accepts an instrument rather than creating one for performance
 
-    # Make sure there at least 300 sample points so that the conversion
+    # Make sure there at least 500 sample points so that the conversion
     # looks correct.
-    line = add_sample_points(line, 300)
+    # This needs to be greater than the number of sample points when going
+    # from polar to raw, so we can ensure that points along borders get added.
+    line = add_sample_points(line, 500)
+
+    panel = instr.detectors[det]
+    cart = pixels_to_cart(line, panel)
+    xys, _ = panel.clip_to_panel(cart, buffer_edges=False)
 
     kwargs = {
-        'ij': line,
-        'panel': instr.detectors[det],
         'eta_period': HexrdConfig().polar_res_eta_period,
-        'tvec_s': instr.tvec,
+        'tvec_s': instr.tvec
     }
-
-    return [pixels_to_angles(**kwargs)]
+    line = cart_to_angles(xys, panel, **kwargs)
+    line = apply_tth_distortion_if_needed(line, in_degrees=True)
+    return [line] if line.size else None
 
 
 def create_polar_mask(line_data):
@@ -89,11 +92,11 @@ def create_polar_mask(line_data):
 
 
 def _pixel_perimeter_to_mask(r, c, shape):
-    # The arguments are all forwarded to skimage.draw.polygon
-    rr, cc = polygon(r, c, shape=shape)
-    mask = np.ones(shape, dtype=bool)
-    mask[rr, cc] = False
-    return mask
+    polygon = np.vstack([c, r]).T
+    if polygon.size < 2:
+        return np.ones(shape, dtype=bool)
+
+    return polygon_to_mask(polygon, shape)
 
 
 def _split_coords_1d(x, gap1, gap2):
@@ -145,7 +148,8 @@ def create_polar_line_data_from_raw(instr, value):
     # This accepts an instrument rather than creating one for performance
     line_data = []
     for det, data in value:
-        line_data.extend(convert_raw_to_polar(instr, det, data))
+        if polar := convert_raw_to_polar(instr, det, data):
+            line_data.extend(polar)
     return line_data
 
 

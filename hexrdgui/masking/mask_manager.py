@@ -351,7 +351,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         mask.name = new_name
         self.masks[new_name] = mask
 
-    def masks_to_panel_buffer(self, selection, buff_val):
+    def masks_to_panel_buffer(self, selection):
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
         for det, mask in HexrdConfig().raw_masks_dict.items():
@@ -359,11 +359,13 @@ class MaskManager(QObject, metaclass=QSingleton):
             buffer_default = {'status': 0}
             buffer = detector_config.setdefault('buffer', buffer_default)
             buffer_value = detector_config['buffer'].get('value', None)
-            if isinstance(buffer_value, np.ndarray) and buff_val.ndim == 2:
+            if isinstance(buffer_value, np.ndarray) and buffer_value.ndim == 2:
                 if selection == 'Logical AND with buffer':
-                    mask = np.logical_and(mask, buffer_value)
+                    # Need to invert so True is invalid
+                    mask = ~np.logical_and(~mask, ~buffer_value)
                 elif selection == 'Logical OR with buffer':
-                    mask = np.logical_or(mask, buffer_value)
+                    # Need to invert so True is invalid
+                    mask = ~np.logical_or(~mask, ~buffer_value)
             buffer['value'] = mask
 
     def clear_all(self):

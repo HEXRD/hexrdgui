@@ -401,14 +401,13 @@ class PolarView:
         # masks should also be distorted as well.
 
         # We only apply "visible" masks to the display image
-        img = self.apply_visible_masks(img)
-        disp_img = self.apply_tth_distortion(img)
+        img = self.apply_tth_distortion(img)
+        disp_img = self.apply_visible_masks(img)
         self.display_image = disp_img
 
         # Both "visible" and "boundary" masks are applied to the
         # computational image
-        comp_img = self.apply_boundary_masks(img)
-        comp_img = self.apply_tth_distortion(comp_img)
+        comp_img = self.apply_boundary_masks(disp_img)
         self.computation_img = comp_img
 
     def apply_snip(self, img):
@@ -484,14 +483,13 @@ class PolarView:
         # masks should also be distorted as well.
 
         # We only apply "visible" masks to the display image
-        img = self.apply_visible_masks(self.snipped_img)
-        disp_img = self.apply_tth_distortion(img)
+        img = self.apply_tth_distortion(self.snipped_img)
+        disp_img = self.apply_visible_masks(img)
         self.display_image = disp_img
 
         # Both "visible" and "boundary" masks are applied to the
         # computational image
-        comp_img = self.apply_boundary_masks(img)
-        comp_img = self.apply_tth_distortion(comp_img)
+        comp_img = self.apply_boundary_masks(disp_img)
         self.computation_img = comp_img
 
     @property

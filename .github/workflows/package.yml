@@ -22,7 +22,7 @@ jobs:
           }
         - {
             name: "MacOSX",
-            os: macos-latest,
+            os: macos-12,
             package: 'dmg'
           }
         - {
@@ -41,7 +41,7 @@ jobs:
         path: hexrdgui
 
     - name: Install conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
         python-version: '3.11'
