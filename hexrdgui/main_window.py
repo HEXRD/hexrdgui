@@ -1417,14 +1417,13 @@ class MainWindow(QObject):
             # Re-load the imageseries
             # Keep the file open and let the imageseries close it...
             HexrdConfig().loading_state = True
+            self.color_map_editor.block_updates(True)
             try:
                 h5_file = h5py.File(selected_file, 'r')
                 state.load_imageseries_dict(h5_file)
             finally:
                 HexrdConfig().loading_state = False
-
-            # Perform a deep rerender so updates are reflected
-            HexrdConfig().deep_rerender_needed.emit()
+                self.color_map_editor.block_updates(False)
 
         HexrdConfig().working_dir = os.path.dirname(selected_file)
 
