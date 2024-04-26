@@ -192,7 +192,7 @@ class MaskManagerDialog(QObject):
 
             selection = options.currentText()
 
-        MaskManager().masks_to_panel_buffer(selection, buff_val)
+        MaskManager().masks_to_panel_buffer(selection)
         msg = 'Masks set as panel buffers.'
         QMessageBox.information(self.parent, 'HEXRD', msg)
 
