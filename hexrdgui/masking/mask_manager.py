@@ -368,6 +368,8 @@ class MaskManager(QObject, metaclass=QSingleton):
                     mask = ~np.logical_or(~mask, ~buffer_value)
             buffer['value'] = mask
 
+        HexrdConfig().rerender_needed.emit()
+
     def clear_all(self):
         self.masks.clear()
 
