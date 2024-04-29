@@ -850,6 +850,13 @@ class ImageCanvas(FigureCanvas):
             if utils.has_nan(beam_position):
                 continue
 
+            if self.mode == ViewType.raw:
+                if HexrdConfig().stitch_raw_roi_images:
+                    # Need to convert these to stitched coordinates
+                    beam_position = self.iviewer.raw_to_stitched(
+                        [beam_position[::-1]],
+                        det_key)[0][0][::-1]
+
             artist, = axis.plot(*beam_position, **style)
             self.beam_marker_artists.append(artist)
 
@@ -1454,9 +1461,15 @@ class ImageCanvas(FigureCanvas):
 
     def detector_axis(self, detector_name):
         if self.mode == ViewType.raw:
-            if detector_name not in self.raw_axes:
+            if HexrdConfig().stitch_raw_roi_images:
+                axes_name = self.iviewer.instr.detectors[detector_name].group
+            else:
+                axes_name = detector_name
+
+            if axes_name not in self.raw_axes:
                 return None
-            return self.raw_axes[detector_name]
+
+            return self.raw_axes[axes_name]
         else:
             # Only one axis for all detectors...
             return self.axis
@@ -1475,8 +1488,19 @@ class ImageCanvas(FigureCanvas):
                 # right canvas for this detector...
                 continue
 
+            data = xys[det_key]
+            if len(data) == 0:
+                # Nothing to draw...
+                continue
+
             transform_func = transform_from_plain_cartesian_func(self.mode)
-            rijs = transform_func(xys[det_key], panel, self.iviewer)
+            rijs = transform_func(data, panel, self.iviewer)
+
+            if self.mode == ViewType.raw:
+                if HexrdConfig().stitch_raw_roi_images:
+                    # Need to convert these to stitched coordinates
+                    rijs = self.iviewer.raw_to_stitched(
+                        rijs[:, ::-1], det_key)[0][:, ::-1]
 
             if self.mode == ViewType.polar:
                 rijs = apply_tth_distortion_if_needed(rijs, in_degrees=True)

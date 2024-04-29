@@ -198,7 +198,13 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
     def data_xys(self):
         ret = {}
         for k, v in self.overlays[0].calibration_picks.items():
-            ret[k] = np.vstack(list(v.values()))
+            points = list(v.values())
+            if not points:
+                # No points on this detector
+                ret[k] = []
+                continue
+
+            ret[k] = np.vstack(points)
         return ret
 
     def draw_picks_on_canvas(self):
