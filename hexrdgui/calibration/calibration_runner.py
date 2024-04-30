@@ -859,6 +859,7 @@ class CalibrationRunner(QObject):
             'grain_params': overlay.crystal_params,
             'min_energy': overlay.min_energy,
             'max_energy': overlay.max_energy,
+            'euler_convention': HexrdConfig().euler_angle_convention,
         }
 
         self.laue_auto_picker = LaueCalibrator(**init_kwargs)

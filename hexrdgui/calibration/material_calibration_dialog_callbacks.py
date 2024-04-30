@@ -1,3 +1,8 @@
+from hexrd.fitting.calibration.lmfit_param_handling import (
+    normalize_euler_convention
+)
+
+from hexrdgui.calibration.calibration_dialog import TILT_LABELS_EULER
 from hexrdgui.calibration.calibration_dialog_callbacks import (
     CalibrationDialogCallbacks,
 )
@@ -5,6 +10,7 @@ from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
     overlays_to_tree_format, HKLPicksTreeViewDialog,
 )
 from hexrdgui.constants import ViewType
+from hexrdgui.hexrd_config import HexrdConfig
 
 
 class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
@@ -118,7 +124,9 @@ def format_material_params_func(params_dict, tree_dict, create_param_item,
         else:
             # Assume grain parameters
             d['Orientation'] = {}
-            labels = ['Z', "X'", "Z''"]
+            euler_convention = normalize_euler_convention(
+                HexrdConfig().euler_angle_convention)
+            labels = TILT_LABELS_EULER[euler_convention]
             for i in range(3):
                 param = params_dict[calibrator.param_names[i]]
                 d['Orientation'][labels[i]] = create_param_item(param)
