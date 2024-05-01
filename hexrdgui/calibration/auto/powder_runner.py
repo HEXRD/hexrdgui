@@ -86,7 +86,9 @@ class PowderRunner(QObject):
 
         self.pc = PowderCalibrator(**kwargs)
         self.ic = InstrumentCalibrator(
-            self.pc, engineering_constraints=engineering_constraints
+            self.pc,
+            engineering_constraints=engineering_constraints,
+            euler_convention=HexrdConfig().euler_angle_convention,
         )
         self.extract_powder_lines()
 

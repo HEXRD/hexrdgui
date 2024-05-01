@@ -6,6 +6,11 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
+from hexrd.fitting.calibration.lmfit_param_handling import (
+    normalize_euler_convention,
+    param_names_euler_convention,
+)
+
 from hexrdgui import resource_loader
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -341,6 +346,16 @@ class CalibrationDialog(QObject):
                         this_dict[i + 1] = create_param_item(param)
                         i += 1
                         current = template.format(det=det, i=i)
+                elif k == 'tilt':
+                    # Special case. Take into account euler angles.
+                    convention = HexrdConfig().euler_angle_convention
+                    normalized = normalize_euler_convention(convention)
+                    param_names = param_names_euler_convention(det, convention)
+                    labels = TILT_LABELS_EULER[normalized]
+                    this_dict = this_config.setdefault(k, {})
+                    for label, param_name in zip(labels, param_names):
+                        param = params_dict[param_name]
+                        this_dict[label] = create_param_item(param)
                 else:
                     # Should be a string. Replace {det} with det if needed
                     if '{det}' in v:
@@ -367,7 +382,7 @@ class CalibrationDialog(QObject):
             used = ', '.join(sorted(used_params))
             params = ', '.join(sorted(params_dict))
             msg = (
-                f'Internal error: used_params ({used}) did not match '
+                f'Internal error: used_params ({used})\n\ndid not match '
                 f'params_dict! ({params})'
             )
             raise Exception(msg)
@@ -460,3 +475,10 @@ class TreeItemModel(MultiColumnDictTreeItemModel):
         # Now set the attribute on the param
         attribute = path[-1].removeprefix('_')
         setattr(param, attribute, value)
+
+
+TILT_LABELS_EULER = {
+    None: ('X', 'Y', 'Z'),
+    ('xyz', True): ('X', 'Y', 'Z'),
+    ('zxz', False): ('Z', "X'", "Z''"),
+}

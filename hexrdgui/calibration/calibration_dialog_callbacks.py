@@ -4,6 +4,10 @@ import copy
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog
 
+from hexrd.fitting.calibration.lmfit_param_handling import (
+    update_instrument_from_params,
+)
+
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict
 from hexrdgui.utils.abc_qobject import ABCQObject
@@ -54,6 +58,10 @@ class CalibrationDialogCallbacks(ABCQObject):
     @property
     def canvas(self):
         return HexrdConfig().active_canvas
+
+    @property
+    def euler_convention(self):
+        return HexrdConfig().euler_angle_convention
 
     @abstractmethod
     def draw_picks_on_canvas(self):
@@ -127,7 +135,11 @@ class CalibrationDialogCallbacks(ABCQObject):
             v = stack_item[k]
             setattr(self.calibrator, k, v)
 
-        self.instr.update_from_lmfit_parameter_list(self.calibrator.params)
+        update_instrument_from_params(
+            self.instr,
+            self.calibrator.params,
+            self.euler_convention,
+        )
         self.update_config_from_instrument()
         self.update_dialog_from_calibrator()
         self.dialog.advanced_options = stack_item['advanced_options']

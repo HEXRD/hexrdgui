@@ -3,10 +3,12 @@ from hexrd.fitting.calibration import (
     LaueCalibrator,
     PowderCalibrator,
 )
+from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 
-def make_calibrators_from_picks(instr, processed_picks, materials, img_dict):
+def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
+                                euler_convention):
     calibrators = []
     for pick_data in processed_picks:
         if pick_data['type'] == 'powder':
@@ -30,17 +32,20 @@ def make_calibrators_from_picks(instr, processed_picks, materials, img_dict):
                 'min_energy': pick_data['options']['min_energy'],
                 'max_energy': pick_data['options']['max_energy'],
                 'calibration_picks': pick_data['picks'],
+                'euler_convention': euler_convention,
             }
             calibrators.append(LaueCalibrator(**kwargs))
     return calibrators
 
 
 def create_instrument_calibrator(picks, instr, img_dict, materials):
+    euler_convention = HexrdConfig().euler_angle_convention
     engineering_constraints = guess_instrument_type(instr.detectors)
     calibrators = make_calibrators_from_picks(instr, picks, materials,
-                                              img_dict)
+                                              img_dict, euler_convention)
 
     return InstrumentCalibrator(
         *calibrators,
         engineering_constraints=engineering_constraints,
+        euler_convention=euler_convention,
     )

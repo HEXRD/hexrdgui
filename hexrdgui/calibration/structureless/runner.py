@@ -207,6 +207,7 @@ class StructurelessCalibrationRunner(QObject):
             'instr': self.instr,
             'data': calibrator_lines,
             'engineering_constraints': engineering_constraints,
+            'euler_convention': HexrdConfig().euler_angle_convention,
         }
         self.calibrator = StructurelessCalibrator(**kwargs)
 
