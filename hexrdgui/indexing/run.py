@@ -250,7 +250,7 @@ class IndexingRunner(Runner):
 
     def orientation_fibers_generated(self):
         # Perform some validation
-        qfib_warning_threshold = 5e7
+        qfib_warning_threshold = 1e8
         if self.qfib.shape[1] > qfib_warning_threshold:
             formatted = format_big_int(self.qfib.shape[1])
             msg = (f'Over {formatted} test orientations were '
