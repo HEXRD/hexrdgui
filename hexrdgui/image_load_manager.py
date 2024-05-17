@@ -170,6 +170,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         worker.signals.progress.connect(progress_dialog.setValue)
         # On completion load imageseries nd close loading dialog
         worker.signals.result.connect(self.finish_processing_ims)
+        worker.signals.error.connect(self.on_process_ims_error)
         worker.signals.finished.connect(progress_dialog.accept)
         progress_dialog.exec()
 
@@ -228,6 +229,12 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             self.update_needed.emit()
         if self.transformed_images:
             HexrdConfig().deep_rerender_needed.emit()
+
+    def on_process_ims_error(self, error):
+        exctype, value, tb = error
+        msg = f'Failed to process imageseries.\n\n{value}'
+        QMessageBox.critical(None, 'Error', msg)
+        HexrdConfig().logger.critical(tb)
 
     def get_dark_aggr_op(self, ims, idx):
         """

@@ -235,7 +235,13 @@ class SimpleImageSeriesDialog(QObject):
         if selected_files:
             self.update_allowed = False
             self.reset_data()
-            self.load_image_data(selected_files)
+
+            try:
+                self.load_image_data(selected_files)
+            except Exception as e:
+                QMessageBox.critical(self.ui, 'Failed to load files', str(e))
+                raise
+
             self.create_table()
             self.setup_gui()
             self.enable_read()

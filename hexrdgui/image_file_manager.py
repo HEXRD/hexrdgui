@@ -47,18 +47,10 @@ class ImageFileManager(metaclass=Singleton):
     def load_images(self, detectors, file_names, options=None):
         HexrdConfig().imageseries_dict.clear()
         for name, f in zip(detectors, file_names):
-            try:
-                if isinstance(f, list):
-                    f = f[0]
-                ims = self.open_file(f, options)
-                HexrdConfig().imageseries_dict[name] = ims
-            except (Exception, IOError):
-                exc_str = traceback.format_exc()
-                msg = f'ERROR - Could not read file: \n{exc_str}'
-                HexrdConfig().logger.critical(msg)
-                # Since this is a non-gui thread, we can't use QMessageBox
-                # here, or we will have a segmentation fault.
-                return
+            if isinstance(f, list):
+                f = f[0]
+            ims = self.open_file(f, options)
+            HexrdConfig().imageseries_dict[name] = ims
 
         # Save the path if it should be remembered
         if self.remember:
@@ -85,7 +77,8 @@ class ImageFileManager(metaclass=Singleton):
                     if ims_type not in registry:
                         msg = (
                             '"dectris-compression" must be installed to load '
-                            'eiger stream files'
+                            'eiger stream files.\n\n'
+                            'Try `pip install dectris-compression`'
                         )
                         raise Exception(msg)
 
