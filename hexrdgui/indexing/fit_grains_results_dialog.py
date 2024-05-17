@@ -677,7 +677,8 @@ class FitGrainsResultsDialog(QObject):
 
     def update_cmap(self):
         # Get the Colormap object from the name
-        self.cmap = matplotlib.cm.get_cmap(self.ui.color_maps.currentText())
+        self.cmap = matplotlib.colormaps.get_cmap(
+            self.ui.color_maps.currentText())
         self.update_plot()
 
     def reset_glyph_size(self, update_plot=True):

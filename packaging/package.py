@@ -13,6 +13,7 @@ import zipfile
 import click
 import coloredlogs
 
+import conda
 import conda.cli.python_api as Conda
 from conda_build import api as CondaBuild
 from conda_build.config import Config
@@ -105,15 +106,12 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     # First build the hexrdgui package
     recipe_path = str(base_path / '..' / 'conda.recipe')
     config = Config()
-    config.channel = ['conda-forge']
     config.channel_urls = ['conda-forge']
-    config.override_channels = True
 
     if hexrdgui_output_folder is not None:
         config.output_folder = hexrdgui_output_folder
 
     if hexrd_package_channel is not None:
-        config.channel.insert(0, 'hexrd-channel')
         config.channel_urls.insert(0, hexrd_package_channel)
 
     # Determine the latest hexrd version in the hexrd_package_channel
