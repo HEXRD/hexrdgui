@@ -3,7 +3,7 @@ import copy
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QColorDialog
 
-from matplotlib import cm
+from matplotlib import colormaps as cm
 import matplotlib.colors
 
 import numpy as np
