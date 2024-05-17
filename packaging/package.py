@@ -106,18 +106,13 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     # First build the hexrdgui package
     recipe_path = str(base_path / '..' / 'conda.recipe')
     config = Config()
-    channels = ['conda-forge']
     config.channel_urls = ['conda-forge']
 
     if hexrdgui_output_folder is not None:
         config.output_folder = hexrdgui_output_folder
 
     if hexrd_package_channel is not None:
-        channels.insert(0, 'hexrd-channel')
         config.channel_urls.insert(0, hexrd_package_channel)
-
-    # Set the channels on the conda context
-    conda.base.context.context.channels = channels
 
     # Determine the latest hexrd version in the hexrd_package_channel
     # (release or pre-release), and force that hexrd version to be used.
