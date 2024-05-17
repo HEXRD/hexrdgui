@@ -75,14 +75,30 @@ class ImageFileManager(metaclass=Singleton):
             dset = hdf.select(self.path[1])
             ims = imageseries.open(None, 'array', data=dset)
         elif ext in self.HDF5_FILE_EXTS:
+            regular_hdf5 = True
             with h5py.File(f, 'r') as data:
-                dset = data['/'.join(self.path)]
-                ndim = dset.ndim
-                if ndim < 3:
-                    # Handle raw two dimesional data
-                    ims = imageseries.open(None, 'array', data=dset[()])
+                if data.attrs.get('version') == 'CHESS_EIGER_STREAM_V1':
+                    ims_type = 'eiger-stream-v1'
+                    registry = (
+                        imageseries.load.registry.Registry.adapter_registry
+                    )
+                    if ims_type not in registry:
+                        msg = (
+                            '"dectris-compression" must be installed to load '
+                            'eiger stream files'
+                        )
+                        raise Exception(msg)
 
-            if ndim >= 3:
+                    ims = imageseries.open(f, 'eiger-stream-v1')
+                    regular_hdf5 = False
+                else:
+                    dset = data['/'.join(self.path)]
+                    ndim = dset.ndim
+                    if ndim < 3:
+                        # Handle raw two dimesional data
+                        ims = imageseries.open(None, 'array', data=dset[()])
+
+            if regular_hdf5 and ndim >= 3:
                 ims = imageseries.open(
                     f, 'hdf5', path=self.path[0], dataname=self.path[1])
         elif ext == '.npz':
@@ -160,6 +176,11 @@ class ImageFileManager(metaclass=Singleton):
         return False
 
     def hdf5_path_exists(self, f):
+        # If it is a special HDF5 file, just return True
+        with h5py.File(f, 'r') as rf:
+            if rf.attrs.get('version') == 'CHESS_EIGER_STREAM_V1':
+                return True
+
         all_paths = []
         if HexrdConfig().hdf5_path:
             all_paths.append(HexrdConfig().hdf5_path)
