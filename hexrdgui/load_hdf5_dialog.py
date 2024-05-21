@@ -63,4 +63,7 @@ class LoadHDF5Dialog:
     group = os.path.split(path_list)[0]
     dataset = os.path.split(path_list)[1]
 
+    # Assume '/' if the group string is empty
+    group = '/' if group == '' else group
+
     return group, dataset, remember
