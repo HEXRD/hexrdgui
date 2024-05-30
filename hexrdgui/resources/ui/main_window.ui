@@ -220,6 +220,7 @@
     <addaction name="action_edit_refinements"/>
     <addaction name="action_image_calculator"/>
     <addaction name="action_edit_config"/>
+    <addaction name="action_physics_package_editor"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -861,6 +862,11 @@
   <action name="action_open_preconfigured_instrument_file">
    <property name="text">
     <string>Preconfigured</string>
+   </property>
+  </action>
+  <action name="action_physics_package_editor">
+   <property name="text">
+    <string>Physics Package</string>
    </property>
   </action>
  </widget>

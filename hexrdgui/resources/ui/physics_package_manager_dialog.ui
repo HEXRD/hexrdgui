@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PhysicsPackageEditor</class>
+ <widget class="QDialog" name="PhysicsPackageEditor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>849</width>
+    <height>521</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Physics Package Manager</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_5">
+   <item row="0" column="0">
+    <widget class="QFrame" name="frame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>450</width>
+       <height>461</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QVBoxLayout" name="diagram"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QFrame" name="inputs">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>348</width>
+       <height>461</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontal_layout">
+        <item>
+         <spacer name="horizontal_spacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="layers_label">
+          <property name="text">
+           <string>Layers</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontal_spacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>77</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="horizontal_layout_2">
+        <item>
+         <spacer name="horizontal_spacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_pinhole">
+          <property name="text">
+           <string>Pinhole</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_window">
+          <property name="text">
+           <string>Window</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontal_spacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+      <item row="5" column="0">
+       <spacer name="vertical_Spacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="6" column="0">
+       <widget class="QDialogButtonBox" name="button_box">
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QGroupBox" name="window_group_box">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="title">
+         <string>Window</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="1" column="4">
+          <widget class="ScientificDoubleSpinBox" name="window_thickness">
+           <property name="suffix">
+            <string> μm</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="window_material_label">
+           <property name="text">
+            <string>Material</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="window_density_label">
+           <property name="text">
+            <string>Density</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3" colspan="2">
+          <widget class="QLineEdit" name="window_material_input">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLabel" name="window_thickness_label">
+           <property name="text">
+            <string>Thickness</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="2">
+          <widget class="QComboBox" name="window_material"/>
+         </item>
+         <item row="1" column="1" colspan="2">
+          <widget class="ScientificDoubleSpinBox" name="window_density">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="suffix">
+            <string> g/cc</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QTabWidget" name="tab_widget">
+        <property name="tabPosition">
+         <enum>QTabWidget::North</enum>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="sample_material_label">
+           <property name="text">
+            <string>Material</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="2">
+          <widget class="QComboBox" name="sample_material"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="sample_density_label">
+           <property name="text">
+            <string>Density</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1" colspan="2">
+          <widget class="ScientificDoubleSpinBox" name="sample_density">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="suffix">
+            <string> g/cc</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="5">
+          <widget class="ScientificDoubleSpinBox" name="sample_thickness">
+           <property name="suffix">
+            <string> μm</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="4">
+          <widget class="QLabel" name="sample_thickness_label">
+           <property name="text">
+            <string>Thickness</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4" colspan="2">
+          <widget class="QLineEdit" name="sample_material_input">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QGroupBox" name="pinhole_group_box">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="sample_tab">
+         <attribute name="title">
+          <string>Sample</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="3" column="0">
+           <widget class="QLabel" name="sample_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="sample_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="6">
+           <widget class="QLineEdit" name="sample_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="sample_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="sample_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="sample_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="5">
+           <widget class="QComboBox" name="sample_material"/>
+          </item>
+          <item row="5" column="0">
+           <spacer name="sample_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="pinhole_tab">
+         <attribute name="title">
+          <string>Pinhole</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="2" column="0">
+           <widget class="QLabel" name="pinhole_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="pinhole_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="pinhole_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="3">
+           <widget class="QComboBox" name="pinhole_material"/>
+          </item>
+          <item row="2" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="pinhole_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="pinhole_diameter">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="pinhole_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="4">
+           <widget class="QLineEdit" name="pinhole_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="pinhole_diameter_label">
+            <property name="text">
+             <string>Diameter</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <spacer name="pinhole_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="window_tab">
+         <attribute name="title">
+          <string>Window</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="3" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="window_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="window_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="3">
+           <widget class="QComboBox" name="window_material"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="window_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="window_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="window_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="4">
+           <widget class="QLineEdit" name="window_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="window_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>show_pinhole</tabstop>
+  <tabstop>show_window</tabstop>
+  <tabstop>sample_material</tabstop>
+  <tabstop>sample_material_input</tabstop>
+  <tabstop>sample_density</tabstop>
+  <tabstop>sample_thickness</tabstop>
+  <tabstop>pinhole_material</tabstop>
+  <tabstop>pinhole_material_input</tabstop>
+  <tabstop>pinhole_density</tabstop>
+  <tabstop>pinhole_thickness</tabstop>
+  <tabstop>pinhole_diameter</tabstop>
+  <tabstop>window_material_input</tabstop>
+  <tabstop>window_density</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
