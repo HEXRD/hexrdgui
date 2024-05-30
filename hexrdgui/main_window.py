@@ -77,6 +77,7 @@ from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
+from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
 from hexrdgui import resource_loader, state
 from hexrd.resources import instrument_templates
 
@@ -153,6 +154,8 @@ class MainWindow(QObject):
             self.ui, self.color_map_editor)
 
         self.threshold_mask_dialog = ThresholdMaskDialog(self.ui)
+
+        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(self.ui)
 
         self.setup_connections()
 
@@ -292,6 +295,9 @@ class MainWindow(QObject):
             self.on_action_edit_apply_threshold_triggered)
         self.ui.action_open_preconfigured_instrument_file.triggered.connect(
             self.on_action_open_preconfigured_instrument_file_triggered)
+        self.ui.action_physics_package_editor.triggered.connect(
+            self.on_action_physics_package_editor_triggered
+        )
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -1614,3 +1620,6 @@ class MainWindow(QObject):
         fname = options[instr_name]
         with resource_loader.resource_path(instrument_templates, fname) as f:
             HexrdConfig().load_instrument_config(Path(f))
+
+    def on_action_physics_package_editor_triggered(self):
+        self.physics_package_manager_dialog.show()
