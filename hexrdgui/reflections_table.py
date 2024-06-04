@@ -304,7 +304,7 @@ class ReflectionsTable:
             # picks the exclusions by selecting the rows.
             with exclusions_off(plane_data):
                 with tth_max_off(plane_data):
-                    hkls = plane_data.getHKLs(asStr=True)
+                    hkls = [hkl_to_str(x) for x in plane_data.getHKLs()]
                     d_spacings = plane_data.getPlaneSpacings()
                     tth = plane_data.getTTh()
                     powder_intensity = plane_data.powder_intensity
