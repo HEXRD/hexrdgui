@@ -47,6 +47,13 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="delta_boundaries">
+        <property name="text">
+         <string>Use delta for boundaries</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -431,6 +438,7 @@ See scipy.optimize.least_squares for more details.</string>
  <tabstops>
   <tabstop>draw_picks</tabstop>
   <tabstop>engineering_constraints</tabstop>
+  <tabstop>delta_boundaries</tabstop>
   <tabstop>edit_picks_button</tabstop>
   <tabstop>save_picks_button</tabstop>
   <tabstop>load_picks_button</tabstop>
@@ -442,6 +450,7 @@ See scipy.optimize.least_squares for more details.</string>
   <tabstop>max_nfev</tabstop>
   <tabstop>jac</tabstop>
   <tabstop>method</tabstop>
+  <tabstop>undo_run_button</tabstop>
   <tabstop>run_button</tabstop>
  </tabstops>
  <resources/>
