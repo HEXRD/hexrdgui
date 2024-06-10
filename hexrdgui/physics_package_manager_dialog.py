@@ -76,11 +76,11 @@ class PhysicsPackageManagerDialog:
         self.diagram.update_diagram(window, pinhole)
 
     def toggle_window(self, enabled):
-        self.ui.window_group_box.setEnabled(enabled)
+        self.ui.window_tab.setEnabled(enabled)
         self.draw_diagram()
 
     def toggle_pinhole(self, enabled):
-        self.ui.pinhole_group_box.setEnabled(enabled)
+        self.ui.pinhole_tab.setEnabled(enabled)
         self.draw_diagram()
 
     def material_changed(self, index, category):

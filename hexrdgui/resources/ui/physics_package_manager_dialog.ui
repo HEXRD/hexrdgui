@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>849</width>
-    <height>521</height>
+    <width>759</width>
+    <height>438</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -21,7 +21,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_5">
    <item row="0" column="0">
-    <widget class="QFrame" name="frame">
+    <widget class="QFrame" name="diagram_frame">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
@@ -30,8 +30,8 @@
      </property>
      <property name="minimumSize">
       <size>
-       <width>450</width>
-       <height>461</height>
+       <width>420</width>
+       <height>420</height>
       </size>
      </property>
      <property name="frameShape">
@@ -57,8 +57,8 @@
      </property>
      <property name="minimumSize">
       <size>
-       <width>348</width>
-       <height>461</height>
+       <width>315</width>
+       <height>420</height>
       </size>
      </property>
      <property name="frameShape">
@@ -104,6 +104,13 @@
          </spacer>
         </item>
        </layout>
+      </item>
+      <item row="3" column="0">
+       <widget class="QDialogButtonBox" name="button_box">
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontal_layout_2">
@@ -155,153 +162,13 @@
         </item>
        </layout>
       </item>
-      <item row="5" column="0">
-       <spacer name="vertical_Spacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="6" column="0">
-       <widget class="QDialogButtonBox" name="button_box">
-        <property name="standardButtons">
-         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QGroupBox" name="window_group_box">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="title">
-         <string>Window</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="1" column="4">
-          <widget class="ScientificDoubleSpinBox" name="window_thickness">
-           <property name="suffix">
-            <string> μm</string>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="window_material_label">
-           <property name="text">
-            <string>Material</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="window_density_label">
-           <property name="text">
-            <string>Density</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3" colspan="2">
-          <widget class="QLineEdit" name="window_material_input">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="QLabel" name="window_thickness_label">
-           <property name="text">
-            <string>Thickness</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" colspan="2">
-          <widget class="QComboBox" name="window_material"/>
-         </item>
-         <item row="1" column="1" colspan="2">
-          <widget class="ScientificDoubleSpinBox" name="window_density">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="suffix">
-            <string> g/cc</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
       <item row="2" column="0">
        <widget class="QTabWidget" name="tab_widget">
         <property name="tabPosition">
          <enum>QTabWidget::North</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="0">
-          <widget class="QLabel" name="sample_material_label">
-           <property name="text">
-            <string>Material</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" colspan="2">
-          <widget class="QComboBox" name="sample_material"/>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="sample_density_label">
-           <property name="text">
-            <string>Density</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1" colspan="2">
-          <widget class="ScientificDoubleSpinBox" name="sample_density">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="suffix">
-            <string> g/cc</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="5">
-          <widget class="ScientificDoubleSpinBox" name="sample_thickness">
-           <property name="suffix">
-            <string> μm</string>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="4">
-          <widget class="QLabel" name="sample_thickness_label">
-           <property name="text">
-            <string>Thickness</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="4" colspan="2">
-          <widget class="QLineEdit" name="sample_material_input">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QGroupBox" name="pinhole_group_box">
-        <property name="enabled">
-         <bool>true</bool>
+        <property name="currentIndex">
+         <number>0</number>
         </property>
         <widget class="QWidget" name="sample_tab">
          <attribute name="title">
@@ -547,6 +414,7 @@
  <tabstops>
   <tabstop>show_pinhole</tabstop>
   <tabstop>show_window</tabstop>
+  <tabstop>tab_widget</tabstop>
   <tabstop>sample_material</tabstop>
   <tabstop>sample_material_input</tabstop>
   <tabstop>sample_density</tabstop>
@@ -556,8 +424,23 @@
   <tabstop>pinhole_density</tabstop>
   <tabstop>pinhole_thickness</tabstop>
   <tabstop>pinhole_diameter</tabstop>
+  <tabstop>window_material</tabstop>
   <tabstop>window_material_input</tabstop>
   <tabstop>window_density</tabstop>
+  <tabstop>window_thickness</tabstop>
+  <tabstop>sample_material</tabstop>
+  <tabstop>sample_density</tabstop>
+  <tabstop>pinhole_material</tabstop>
+  <tabstop>pinhole_material_input</tabstop>
+  <tabstop>pinhole_density</tabstop>
+  <tabstop>pinhole_thickness</tabstop>
+  <tabstop>pinhole_diameter</tabstop>
+  <tabstop>window_material</tabstop>
+  <tabstop>window_material_input</tabstop>
+  <tabstop>window_density</tabstop>
+  <tabstop>window_thickness</tabstop>
+  <tabstop>sample_thickness</tabstop>
+  <tabstop>sample_material_input</tabstop>
  </tabstops>
  <resources/>
  <connections/>
