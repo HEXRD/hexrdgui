@@ -20,6 +20,7 @@ from hexrdgui.tree_views.multi_column_dict_tree_view import (
 )
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 import hexrdgui.resources.calibration
 
@@ -65,6 +66,12 @@ class CalibrationDialog(QObject):
         self.format_extra_params_func = format_extra_params_func
         self.engineering_constraints = engineering_constraints
 
+        instr_type = guess_instrument_type(instr.detectors)
+        # Use delta boundaries by default for anything other than TARDIS
+        # and PXRDIP. We might want to change this to a whitelist later.
+        use_delta_boundaries = instr_type not in ('TARDIS', 'PXRDIP')
+        self.delta_boundaries = use_delta_boundaries
+
         self.initialize_advanced_options()
 
         self.load_tree_view_mapping()
@@ -79,6 +86,8 @@ class CalibrationDialog(QObject):
         self.ui.draw_picks.toggled.connect(self.on_draw_picks_toggled)
         self.ui.engineering_constraints.currentIndexChanged.connect(
             self.on_engineering_constraints_changed)
+        self.ui.delta_boundaries.toggled.connect(
+            self.on_delta_boundaries_toggled)
         self.ui.edit_picks_button.clicked.connect(self.on_edit_picks_clicked)
         self.ui.save_picks_button.clicked.connect(self.on_save_picks_clicked)
         self.ui.load_picks_button.clicked.connect(self.on_load_picks_clicked)
@@ -166,6 +175,11 @@ class CalibrationDialog(QObject):
         self.draw_picks_toggled.emit(b)
 
     def on_run_button_clicked(self):
+        if self.delta_boundaries:
+            # If delta boundaries are being used, set the min/max according to
+            # the delta boundaries. Lmfit requires min/max to run.
+            self.apply_delta_boundaries()
+
         try:
             self.validate_parameters()
         except Exception as e:
@@ -182,6 +196,27 @@ class CalibrationDialog(QObject):
     def finish(self):
         self.finished.emit()
 
+    def apply_delta_boundaries(self):
+        # lmfit only uses min/max, not delta
+        # So if we used a delta, apply that to the min/max
+
+        if not self.delta_boundaries:
+            # We don't actually need to apply delta boundaries...
+            return
+
+        def recurse(cur):
+            for k, v in cur.items():
+                if '_param' in v:
+                    param = v['_param']
+                    # There should be a delta.
+                    # We want an exception if it is missing.
+                    param.min = param.value - param.delta
+                    param.max = param.value + param.delta
+                elif isinstance(v, dict):
+                    recurse(v)
+
+        recurse(self.tree_view.model().config)
+
     def validate_parameters(self):
         # Recursively look through the tree dict, and add on errors
         config = self.tree_view.model().config
@@ -197,6 +232,11 @@ class CalibrationDialog(QObject):
                         full_path = '->'.join(path)
                         msg = f'{full_path}: min is greater than max'
                         errors.append(msg)
+                    elif param.min == param.max:
+                        # Slightly modify these to prevent lmfit
+                        # from raising an exception.
+                        param.min -= 1e-8
+                        param.max += 1e-8
                 elif isinstance(v, dict):
                     recurse(v)
                 path.pop(-1)
@@ -237,6 +277,14 @@ class CalibrationDialog(QObject):
 
         w.setCurrentText(v)
 
+    @property
+    def delta_boundaries(self):
+        return self.ui.delta_boundaries.isChecked()
+
+    @delta_boundaries.setter
+    def delta_boundaries(self, b):
+        self.ui.delta_boundaries.setChecked(b)
+
     def on_edit_picks_clicked(self):
         self.edit_picks_clicked.emit()
 
@@ -263,6 +311,10 @@ class CalibrationDialog(QObject):
     def on_engineering_constraints_changed(self):
         self.engineering_constraints_changed.emit(self.engineering_constraints)
 
+    def on_delta_boundaries_toggled(self, b):
+        # The columns have changed, so we need to reinitialize the tree view
+        self.reinitialize_tree_view()
+
     def update_from_calibrator(self, calibrator):
         self.engineering_constraints = calibrator.engineering_constraints
         self.tth_distortion = calibrator.tth_distortion
@@ -286,13 +338,28 @@ class CalibrationDialog(QObject):
 
         def create_param_item(param):
             used_params.append(param.name)
-            return {
+            d = {
                 '_param': param,
                 '_value': param.value,
                 '_vary': bool(param.vary),
-                '_min': param.min,
-                '_max': param.max,
             }
+            if self.delta_boundaries:
+                if not hasattr(param, 'delta'):
+                    # We store the delta on the param object
+                    # Default the delta to the minimum of the differences
+                    diffs = [
+                        abs(param.min - param.value),
+                        abs(param.max - param.value),
+                    ]
+                    param.delta = min(diffs)
+
+                d['_delta'] = param.delta
+            else:
+                d.update(**{
+                    '_min': param.min,
+                    '_max': param.max,
+                })
+            return d
 
         # Treat these root keys specially
         special_cases = [
@@ -395,14 +462,30 @@ class CalibrationDialog(QObject):
             return
 
         tree_dict = self.tree_view_dict_of_params
-        self.tree_view = MultiColumnDictTreeView(tree_dict, TREE_VIEW_COLUMNS,
-                                                 parent=self.parent(),
-                                                 model_class=TreeItemModel)
+        self.tree_view = MultiColumnDictTreeView(
+            tree_dict,
+            self.tree_view_columns,
+            parent=self.parent(),
+            model_class=self.tree_view_model_class,
+        )
         self.tree_view.check_selection_index = 2
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
         # Make the key section a little larger
         self.tree_view.header().resizeSection(0, 300)
+
+    def reinitialize_tree_view(self):
+        # Keep the same scroll position
+        scrollbar = self.tree_view.verticalScrollBar()
+        scroll_value = scrollbar.value()
+
+        self.ui.tree_view_layout.removeWidget(self.tree_view)
+        self.tree_view.deleteLater()
+        del self.tree_view
+        self.initialize_tree_view()
+
+        # Restore scroll bar position
+        self.tree_view.verticalScrollBar().setValue(scroll_value)
 
     def update_tree_view(self):
         tree_dict = self.tree_view_dict_of_params
@@ -422,46 +505,29 @@ class CalibrationDialog(QObject):
                 QMessageBox.information(self.parent(), 'HEXRD', msg)
             editor.apply_to_polar_view = False
 
+    @property
+    def tree_view_columns(self):
+        return self.tree_view_model_class.COLUMNS
 
-TREE_VIEW_COLUMNS = {
-    'Value': '_value',
-    'Vary': '_vary',
-    'Minimum': '_min',
-    'Maximum': '_max',
-}
-TREE_VIEW_COLUMN_INDICES = {
-    'Key': 0,
-    **{
-        k: list(TREE_VIEW_COLUMNS).index(k) + 1 for k in TREE_VIEW_COLUMNS
+    @property
+    def tree_view_model_class(self):
+        if self.delta_boundaries:
+            return DeltaTreeItemModel
+        else:
+            return DefaultTreeItemModel
+
+
+def _tree_columns_to_indices(columns):
+    return {
+        'Key': 0,
+        **{
+            k: list(columns).index(k) + 1 for k in columns
+        }
     }
-}
-VALUE_IDX = TREE_VIEW_COLUMN_INDICES['Value']
-MAX_IDX = TREE_VIEW_COLUMN_INDICES['Maximum']
-MIN_IDX = TREE_VIEW_COLUMN_INDICES['Minimum']
-BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
 
 
 class TreeItemModel(MultiColumnDictTreeItemModel):
     """Subclass the tree item model so we can customize some behavior"""
-    def data(self, index, role):
-        if role == Qt.ForegroundRole and index.column() in BOUND_INDICES:
-            # If a value hit the boundary, color both the boundary and the
-            # value red.
-            item = self.get_item(index)
-            if not item.child_items:
-                atol = 1e-3
-                pairs = [
-                    (VALUE_IDX, MAX_IDX),
-                    (VALUE_IDX, MIN_IDX),
-                ]
-                for pair in pairs:
-                    if index.column() not in pair:
-                        continue
-
-                    if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
-                        return QColor('red')
-
-        return super().data(index, role)
 
     def set_config_val(self, path, value):
         super().set_config_val(path, value)
@@ -474,7 +540,69 @@ class TreeItemModel(MultiColumnDictTreeItemModel):
 
         # Now set the attribute on the param
         attribute = path[-1].removeprefix('_')
+
         setattr(param, attribute, value)
+
+
+class DefaultTreeItemModel(TreeItemModel):
+    """This model uses minimum/maximum for the boundary constraints"""
+    COLUMNS = {
+        'Value': '_value',
+        'Vary': '_vary',
+        'Minimum': '_min',
+        'Maximum': '_max',
+    }
+    COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
+
+    VALUE_IDX = COLUMN_INDICES['Value']
+    MAX_IDX = COLUMN_INDICES['Maximum']
+    MIN_IDX = COLUMN_INDICES['Minimum']
+    BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
+
+    def data(self, index, role):
+        if role == Qt.ForegroundRole and index.column() in self.BOUND_INDICES:
+            # If a value hit the boundary, color both the boundary and the
+            # value red.
+            item = self.get_item(index)
+            if not item.child_items:
+                atol = 1e-3
+                pairs = [
+                    (self.VALUE_IDX, self.MAX_IDX),
+                    (self.VALUE_IDX, self.MIN_IDX),
+                ]
+                for pair in pairs:
+                    if index.column() not in pair:
+                        continue
+
+                    if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
+                        return QColor('red')
+
+        return super().data(index, role)
+
+
+class DeltaTreeItemModel(TreeItemModel):
+    """This model uses the delta for the parameters"""
+    COLUMNS = {
+        'Value': '_value',
+        'Vary': '_vary',
+        'Delta': '_delta',
+    }
+    COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
+
+    VALUE_IDX = COLUMN_INDICES['Value']
+    DELTA_IDX = COLUMN_INDICES['Delta']
+    BOUND_INDICES = (VALUE_IDX, DELTA_IDX)
+
+    def data(self, index, role):
+        if role == Qt.ForegroundRole and index.column() in self.BOUND_INDICES:
+            # If a delta is zero, color both the delta and the value red.
+            item = self.get_item(index)
+            if not item.child_items:
+                atol = 1e-3
+                if abs(item.data(self.DELTA_IDX)) < atol:
+                    return QColor('red')
+
+        return super().data(index, role)
 
 
 TILT_LABELS_EULER = {

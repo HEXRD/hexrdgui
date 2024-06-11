@@ -107,6 +107,13 @@ KNOWN_DETECTOR_NAMES = {
         'IMAGE-PLATE-3',
         'IMAGE-PLATE-4',
     ],
+    'PXRDIP': [
+        'IMAGE-PLATE-B',
+        'IMAGE-PLATE-D',
+        'IMAGE-PLATE-L',
+        'IMAGE-PLATE-R',
+        'IMAGE-PLATE-U',
+    ],
 }
 
 KEY_ROTATE_ANGLE_FINE = 0.00175
