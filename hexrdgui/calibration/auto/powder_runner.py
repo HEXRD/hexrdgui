@@ -10,7 +10,10 @@ from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.calibration.auto import PowderCalibrationDialog
-from hexrdgui.calibration.calibration_dialog import CalibrationDialog
+from hexrdgui.calibration.calibration_dialog import (
+    CalibrationDialog,
+    guess_engineering_constraints,
+)
 from hexrdgui.calibration.material_calibration_dialog_callbacks import (
     format_material_params_func,
     MaterialCalibrationDialogCallbacks,
@@ -18,7 +21,6 @@ from hexrdgui.calibration.material_calibration_dialog_callbacks import (
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import masks_applied_to_panel_buffers
-from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 
 class PowderRunner(QObject):
@@ -67,7 +69,7 @@ class PowderRunner(QObject):
         else:
             fwhm_estimate = options['initial_fwhm']
 
-        engineering_constraints = guess_instrument_type(self.instr.detectors)
+        engineering_constraints = guess_engineering_constraints(self.instr)
 
         # Get an intensity-corrected masked dict of the images
         img_dict = HexrdConfig().masked_images_dict

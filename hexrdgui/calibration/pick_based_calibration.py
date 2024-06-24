@@ -3,8 +3,10 @@ from hexrd.fitting.calibration import (
     LaueCalibrator,
     PowderCalibrator,
 )
+from hexrdgui.calibration.calibration_dialog import (
+    guess_engineering_constraints,
+)
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 
 def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
@@ -40,7 +42,7 @@ def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
 
 def create_instrument_calibrator(picks, instr, img_dict, materials):
     euler_convention = HexrdConfig().euler_angle_convention
-    engineering_constraints = guess_instrument_type(instr.detectors)
+    engineering_constraints = guess_engineering_constraints(instr)
     calibrators = make_calibrators_from_picks(instr, picks, materials,
                                               img_dict, euler_convention)
 

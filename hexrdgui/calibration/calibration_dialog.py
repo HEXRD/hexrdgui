@@ -610,3 +610,17 @@ TILT_LABELS_EULER = {
     ('xyz', True): ('X', 'Y', 'Z'),
     ('zxz', False): ('Z', "X'", "Z''"),
 }
+
+
+def guess_engineering_constraints(instr) -> str | None:
+    # First guess the instrument type.
+    instr_type = guess_instrument_type(instr.detectors)
+
+    # If it matches one of our expected engineering constraints, use it.
+    expected_options = [
+        'TARDIS',
+    ]
+    if instr_type in expected_options:
+        return instr_type
+
+    return None
