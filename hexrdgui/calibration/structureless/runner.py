@@ -9,7 +9,10 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.fitting.calibration import StructurelessCalibrator
 
-from hexrdgui.calibration.calibration_dialog import CalibrationDialog
+from hexrdgui.calibration.calibration_dialog import (
+    CalibrationDialog,
+    guess_engineering_constraints,
+)
 from hexrdgui.calibration.calibration_dialog_callbacks import (
     CalibrationDialogCallbacks,
 )
@@ -21,7 +24,6 @@ from hexrdgui.select_item_dialog import SelectItemDialog
 from hexrdgui.tree_views import GenericPicksTreeViewDialog
 from hexrdgui.utils.conversions import angles_to_cart, cart_to_angles
 from hexrdgui.utils.dialog import add_help_url
-from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 from .picks_io import load_picks_from_file, save_picks_to_file
@@ -199,7 +201,7 @@ class StructurelessCalibrationRunner(QObject):
     def show_calibration_dialog(self, calibrator_lines):
         self.previous_picks_data = calibrator_lines
 
-        engineering_constraints = guess_instrument_type(self.instr.detectors)
+        engineering_constraints = guess_engineering_constraints(self.instr)
 
         # Create the structureless calibrator with the data
         # FIXME: add the tth_distortion dict here, if present
