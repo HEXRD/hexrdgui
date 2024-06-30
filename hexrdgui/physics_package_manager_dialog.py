@@ -16,6 +16,7 @@ class PhysicsPackageManagerDialog:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
+        self.det_type = None
 
         canvas = FigureCanvas(Figure(tight_layout=True))
         # Get the canvas to take up the majority of the screen most of the time

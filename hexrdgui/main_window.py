@@ -126,9 +126,13 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
+        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(self.ui)
+
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
-                                        self.color_map_editor, self.ui)
+                                        self.color_map_editor,
+                                        self.physics_package_manager_dialog,
+                                        self.ui)
         self.image_stack_dialog = ImageStackDialog(
                                     self.ui, self.simple_image_series_dialog)
 
@@ -154,8 +158,6 @@ class MainWindow(QObject):
             self.ui, self.color_map_editor)
 
         self.threshold_mask_dialog = ThresholdMaskDialog(self.ui)
-
-        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(self.ui)
 
         self.setup_connections()
 
