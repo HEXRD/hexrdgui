@@ -1,4 +1,5 @@
 import copy
+import h5py
 import numpy as np
 
 from matplotlib.patches import Rectangle, Polygon
@@ -7,8 +8,14 @@ from matplotlib.figure import Figure
 
 from PySide6.QtWidgets import QSizePolicy
 
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrd.material import _angstroms, _kev, Material
 from hexrdgui.ui_loader import UiLoader
+
+from hexrdgui import resource_loader
+
+import hexrd.resources as module
 
 
 class PhysicsPackageManagerDialog:
@@ -16,6 +23,8 @@ class PhysicsPackageManagerDialog:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
+        self.additional_materials = {}
+        self.instr = create_hedm_instrument()
         self.det_type = None
 
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -24,6 +33,7 @@ class PhysicsPackageManagerDialog:
         self.diagram = PhysicsPackageDiagram(canvas)
         self.ui.diagram.addWidget(canvas)
 
+        self.load_additional_materials()
         self.setup_connections()
 
     def show(self):
@@ -63,13 +73,30 @@ class PhysicsPackageManagerDialog:
             w.currentIndexChanged.connect(
                 lambda index, k=k: self.material_changed(index, k))
 
+    def load_additional_materials(self):
+        # Use a high dmin since we do not care about the HKLs here.
+        # We only care about the absorption length.
+        dmin = _angstroms(2)
+        energy = _kev(HexrdConfig().beam_energy)
+        for key in self.material_selectors.keys():
+            materials = {}
+            with resource_loader.path(module, f'{key}_materials.h5') as file_path:
+                with h5py.File(file_path) as f:
+                    mat_names = list(f.keys())
+
+                    for name in mat_names:
+                        materials[name] = Material(name, file_path, dmin=dmin, kev=energy)
+            self.additional_materials[key] = materials
+
     def setup_form(self):
         mat_names = list(HexrdConfig().materials.keys())
-        options = ['Enter Manually', *mat_names]
-        for w in self.material_selectors.values():
+        for key, w in self.material_selectors.items():
+            custom_mats = list(self.additional_materials[key])
+            options = ['Enter Manually', *custom_mats, *mat_names]
             w.clear()
             w.addItems(options)
             w.insertSeparator(1)
+            w.insertSeparator(2 + len(custom_mats))
 
     def draw_diagram(self):
         window = self.ui.show_window.isChecked()
@@ -89,7 +116,10 @@ class PhysicsPackageManagerDialog:
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
         if index > 0:
-            material = HexrdConfig().materials[material]
+            try:
+                material = HexrdConfig().materials[material]
+            except KeyError:
+                material = self.additional_materials[category][material]
             density = getattr(material.unitcell, 'density', 0)
             self.density_inputs[category].setValue(density)
         else:
