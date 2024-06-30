@@ -98,6 +98,28 @@ class PhysicsPackageManagerDialog:
             w.insertSeparator(1)
             w.insertSeparator(2 + len(custom_mats))
 
+        # Set default values
+        det = list(self.instr.detectors.values())[0]
+        # PINHOLE
+        self.ui.pinhole_material.setCurrentText(det.pinhole.material)
+        self.ui.pinhole_density.setValue(det.pinhole.density)
+        self.ui.pinhole_thickness.setValue(det.pinhole.thickness)
+        self.ui.pinhole_diameter.setValue(det.pinhole.diameter)
+        # WINDOW
+        if det.physics_package.window_material not in options:
+            self.ui.window_material_input.setText(det.physics_package.window_material)
+        else:
+            self.ui.window_material.setCurrentText(det.physics_package.window_material)
+        self.ui.window_density.setValue(det.physics_package.window_density)
+        self.ui.window_thickness.setValue(det.physics_package.window_thickness)
+        # SAMPLE
+        if det.physics_package.sample_material not in options:
+            self.ui.sample_material_input.setText(det.physics_package.sample_material)
+        else:
+            self.ui.sample_material.setCurrentText(det.physics_package.sample_material)
+        self.ui.sample_density.setValue(det.physics_package.sample_density)
+        self.ui.sample_thickness.setValue(det.physics_package.sample_thickness)
+
     def draw_diagram(self):
         window = self.ui.show_window.isChecked()
         pinhole = self.ui.show_pinhole.isChecked()
