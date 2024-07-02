@@ -17,6 +17,8 @@ from hexrdgui import resource_loader
 
 import hexrd.resources as module
 
+from hexrd.material import sample
+
 
 class PhysicsPackageManagerDialog:
 
@@ -67,6 +69,7 @@ class PhysicsPackageManagerDialog:
     def setup_connections(self):
         self.ui.show_pinhole.toggled.connect(self.toggle_pinhole)
         self.ui.show_window.toggled.connect(self.toggle_window)
+        self.ui.button_box.accepted.connect(self.accept_changes)
         self.ui.button_box.accepted.connect(self.ui.accept)
         self.ui.button_box.rejected.connect(self.ui.reject)
         for k, w in self.material_selectors.items():
@@ -146,6 +149,34 @@ class PhysicsPackageManagerDialog:
             self.density_inputs[category].setValue(density)
         else:
             self.density_inputs[category].setValue(0.0)
+
+    def accept_changes(self):
+        materials = {}
+        for key, selector in self.material_selectors.items():
+            if selector.currentIndex() == 0:
+                materials[key] = self.material_inputs[key].text()
+            else:
+                materials[key] = selector.currentText()
+
+        physics_package = {
+            'sample_material': materials['sample'],
+            'sample_density': self.ui.sample_density.value(),
+            'sample_thickness': self.ui.sample_thickness.value(),
+            'window_material': materials['window'],
+            'window_density': self.ui.window_density.value(),
+            'window_thickness': self.ui.window_thickness.value(),
+        }
+        pinhole = {
+            'material': materials['pinhole'],
+            'diameter': self.ui.pinhole_diameter.value(),
+            'thickness': self.ui.pinhole_thickness.value(),
+            'density': self.ui.pinhole_density.value(),
+        }
+
+        for detector in self.instr.detectors.values():
+            detector.physics_package = physics_package
+            detector.pinhole = pinhole
+        self.instr.calc_transmission()
 
 
 class PhysicsPackageDiagram:
