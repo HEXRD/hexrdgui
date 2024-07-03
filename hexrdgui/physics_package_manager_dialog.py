@@ -16,7 +16,6 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui import resource_loader
 
 import hexrd.resources as module
-
 from hexrd.material import sample
 
 
@@ -176,7 +175,6 @@ class PhysicsPackageManagerDialog:
         for detector in self.instr.detectors.values():
             detector.physics_package = physics_package
             detector.pinhole = pinhole
-        self.instr.calc_transmission()
 
 
 class PhysicsPackageDiagram:

@@ -736,7 +736,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Apply Physics Package</string>
+    <string>Apply Absorption Correction</string>
    </property>
   </action>
   <action name="action_rerun_clustering">

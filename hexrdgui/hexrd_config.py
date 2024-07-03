@@ -308,6 +308,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._active_canvas = None
         self._sample_tilt = np.asarray([0, 0, 0], float)
         self.recent_state_files = []
+        self._apply_absorption_correction = False
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -916,6 +917,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             minimum = min([np.nanmin(x) for x in images_dict.values()])
             for name, img in images_dict.items():
                 images_dict[name] = img - minimum
+
+        if HexrdConfig().apply_absorption_correction:
+            instr.calc_transmission()
+
+            transmissions = [x.transmission for x in instr.detectors.values()]
+            max_transmission = max([np.nanmax(x) for x in transmissions])
+
+            for name, img in images_dict.items():
+                transmission = instr.detectors[name].transmission
+                # normalize by maximum of the entire instrument
+                transmission /= max_transmission
+                images_dict[name] = img * (1 / transmission)
 
         return images_dict
 
@@ -2460,6 +2473,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'apply_polarization_correction',
             'apply_lorentz_correction',
             'intensity_subtract_minimum',
+            'apply_absorption_correction',
         ]
 
         return any(getattr(self, x) for x in corrections)
@@ -2843,3 +2857,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         while len(recent) > 10:
             recent.pop(-1)
         self.recent_state_files = recent
+
+    @property
+    def apply_absorption_correction(self):
+        return self._apply_absorption_correction
+
+    @apply_absorption_correction.setter
+    def apply_absorption_correction(self, v):
+        if v != self.apply_absorption_correction:
+            self._apply_absorption_correction = v
+            self.deep_rerender_needed.emit()
