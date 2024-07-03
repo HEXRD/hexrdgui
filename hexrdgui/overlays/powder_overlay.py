@@ -440,14 +440,26 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             if offset_distortion:
                 # Need to offset according to another overlay's distortion
 
+                # Since this correction is based upon field position, we must
+                # use raw coordinates for the most accurate correction.
+                if apply_distortion:
+                    # Use coordinates where distortion correction was not applied
+                    raw_ang_crds, _ = panel.cart_to_angles(
+                        xys,
+                        tvec_s=instr.tvec
+                    )
+                else:
+                    # Distortion correction was not applied
+                    raw_ang_crds = ang_crds
+
                 # Need to ensure the angles are mapped
-                ang_crds[:, 1] = xfcapi.mapAngle(
-                    ang_crds[:, 1], np.radians(self.eta_period),
+                raw_ang_crds[:, 1] = xfcapi.mapAngle(
+                    raw_ang_crds[:, 1], np.radians(self.eta_period),
                     units='radians'
                 )
 
                 # Compute and apply offset
-                for ic, ang_crd in enumerate(ang_crds):
+                for ic, ang_crd in enumerate(raw_ang_crds):
                     i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
                     j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
                     ang_crds[ic, 0] += polar_field[j, i]
