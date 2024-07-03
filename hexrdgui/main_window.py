@@ -343,6 +343,8 @@ class MainWindow(QObject):
             self.apply_lorentz_correction_toggled)
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
+        self.ui.action_apply_physics_package.toggled.connect(
+            self.action_apply_physics_package_toggled)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
@@ -1625,3 +1627,6 @@ class MainWindow(QObject):
 
     def on_action_physics_package_editor_triggered(self):
         self.physics_package_manager_dialog.show()
+
+    def action_apply_physics_package_toggled(self, b):
+        HexrdConfig().apply_absorption_correction = b
