@@ -105,8 +105,12 @@ class PhysicsPackageManagerDialog:
         # PINHOLE
         self.ui.pinhole_material.setCurrentText(det.pinhole.material)
         self.ui.pinhole_density.setValue(det.pinhole.density)
-        self.ui.pinhole_thickness.setValue(det.pinhole.thickness)
-        self.ui.pinhole_diameter.setValue(det.pinhole.diameter)
+        if self.det_type == 'PXRDIP':
+            self.ui.pinhole_thickness.setValue(70)
+            self.ui.pinhole_diameter.setValue(130)
+        else:
+            self.ui.pinhole_thickness.setValue(det.pinhole.thickness)
+            self.ui.pinhole_diameter.setValue(det.pinhole.diameter)
         # WINDOW
         if det.physics_package.window_material not in options:
             self.ui.window_material_input.setText(det.physics_package.window_material)
