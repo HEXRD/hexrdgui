@@ -411,22 +411,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 xys_full, buffer_edges=self.clip_with_panel_buffer
             )
 
-            if (
-                (apply_distortion or offset_distortion) and
-                not polar_distortion_with_self and
-                distortion_object and
-                distortion_object.tth_distortion_type == 'SampleLayerDistortion'
-            ):
-                # Need to cut off values past critical beta. Their correction
-                # will be very incorrect.
-                kwargs = distortion_object.tth_distortion_kwargs
-                pinhole_thickness = kwargs['pinhole_thickness']
-                pinhole_radius = kwargs['pinhole_radius']
-                invalidate_past_critical_beta(panel, xys, pinhole_thickness,
-                                              pinhole_radius)
-                # Remove any invalidated values
-                xys = xys[~np.any(np.isnan(xys), axis=1)]
-
             if apply_distortion:
                 # Apply distortion correction
                 ang_crds = sd.apply(xys)
@@ -437,8 +421,26 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     tvec_s=instr.tvec
                 )
 
+            # Need to offset according to another overlay's distortion
+            if (
+                (polar_distortion_with_self or offset_distortion) and
+                distortion_object and
+                distortion_object.pinhole_distortion_type == 'SampleLayerDistortion'
+            ):
+                # Need to cut off values past critical beta. Their correction
+                # will be very incorrect.
+                kwargs = distortion_object.pinhole_distortion_kwargs
+                pinhole_thickness = kwargs['pinhole_thickness']
+                pinhole_radius = kwargs['pinhole_radius']
+                invalidate_past_critical_beta(panel, xys, pinhole_thickness,
+                                              pinhole_radius)
+                # Remove any invalidated values
+                if not polar_distortion_with_self:
+                    ang_crds = ang_crds[~np.any(np.isnan(xys), axis=1)]
+
+                xys = xys[~np.any(np.isnan(xys), axis=1)]
+
             if offset_distortion:
-                # Need to offset according to another overlay's distortion
 
                 # Since this correction is based upon field position, we must
                 # use raw coordinates for the most accurate correction.
