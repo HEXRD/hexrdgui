@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 )
 
+import hexrd.resources
 from hexrd.material import _angstroms, _kev, Material
 from hexrd.xrdutil.phutil import (
     JHEPinholeDistortion, RyggPinholeDistortion, SampleLayerDistortion,
@@ -19,7 +20,6 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 
 from hexrdgui import resource_loader
-import hexrdgui.resources.materials
 
 
 class PinholeCorrectionEditor(QObject):
@@ -354,7 +354,7 @@ class PinholeCorrectionEditor(QObject):
         self.auto_select_rygg_absorption_length()
 
     def load_pinhole_materials(self):
-        module = hexrdgui.resources.materials
+        module = hexrd.resources
 
         # Use a high dmin since we do not care about the HKLs here.
         # We only care about the absorption length.
