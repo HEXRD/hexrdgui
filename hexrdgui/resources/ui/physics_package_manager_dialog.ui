@@ -86,7 +86,27 @@
         <item>
          <widget class="QLabel" name="layers_label">
           <property name="text">
-           <string>Layers</string>
+           <string>Layers:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_pinhole">
+          <property name="text">
+           <string>Pinhole</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_window">
+          <property name="text">
+           <string>Window</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -128,23 +148,30 @@
          </spacer>
         </item>
         <item>
-         <widget class="QCheckBox" name="show_pinhole">
+         <widget class="QLabel" name="label">
           <property name="text">
-           <string>Pinhole</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
+           <string>Package Type</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="show_window">
-          <property name="text">
-           <string>Window</string>
+         <widget class="QComboBox" name="comboBox">
+          <property name="enabled">
+           <bool>false</bool>
           </property>
-          <property name="checked">
-           <bool>true</bool>
+          <property name="currentIndex">
+           <number>1</number>
           </property>
+          <item>
+           <property name="text">
+            <string>HED</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>HEDM</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item>
@@ -412,8 +439,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>show_pinhole</tabstop>
-  <tabstop>show_window</tabstop>
   <tabstop>tab_widget</tabstop>
   <tabstop>sample_material</tabstop>
   <tabstop>sample_material_input</tabstop>
