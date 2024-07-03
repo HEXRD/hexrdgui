@@ -8,15 +8,13 @@ from matplotlib.figure import Figure
 
 from PySide6.QtWidgets import QSizePolicy
 
+import hexrdgui.resources.materials as module
+from hexrdgui import resource_loader
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrd.material import _angstroms, _kev, Material
 from hexrdgui.ui_loader import UiLoader
 
-from hexrdgui import resource_loader
-
-import hexrd.resources as module
-from hexrd.material import sample
+from hexrd.material import _angstroms, _kev, Material, sample
 
 
 class PhysicsPackageManagerDialog:
@@ -82,12 +80,14 @@ class PhysicsPackageManagerDialog:
         energy = _kev(HexrdConfig().beam_energy)
         for key in self.material_selectors.keys():
             materials = {}
-            with resource_loader.path(module, f'{key}_materials.h5') as file_path:
+            file_name = f'{key}_materials.h5'
+            with resource_loader.path(module, file_name) as file_path:
                 with h5py.File(file_path) as f:
                     mat_names = list(f.keys())
 
                     for name in mat_names:
-                        materials[name] = Material(name, file_path, dmin=dmin, kev=energy)
+                        materials[name] = Material(name, file_path, dmin=dmin,
+                                                   kev=energy)
             self.additional_materials[key] = materials
 
     def setup_form(self):
@@ -113,16 +113,20 @@ class PhysicsPackageManagerDialog:
             self.ui.pinhole_diameter.setValue(det.pinhole.diameter)
         # WINDOW
         if det.physics_package.window_material not in options:
-            self.ui.window_material_input.setText(det.physics_package.window_material)
+            self.ui.window_material_input.setText(
+                det.physics_package.window_material)
         else:
-            self.ui.window_material.setCurrentText(det.physics_package.window_material)
+            self.ui.window_material.setCurrentText(
+                det.physics_package.window_material)
         self.ui.window_density.setValue(det.physics_package.window_density)
         self.ui.window_thickness.setValue(det.physics_package.window_thickness)
         # SAMPLE
         if det.physics_package.sample_material not in options:
-            self.ui.sample_material_input.setText(det.physics_package.sample_material)
+            self.ui.sample_material_input.setText(
+                det.physics_package.sample_material)
         else:
-            self.ui.sample_material.setCurrentText(det.physics_package.sample_material)
+            self.ui.sample_material.setCurrentText(
+                det.physics_package.sample_material)
         self.ui.sample_density.setValue(det.physics_package.sample_density)
         self.ui.sample_thickness.setValue(det.physics_package.sample_thickness)
 
@@ -189,24 +193,36 @@ class PhysicsPackageDiagram:
 
     offset = 0.20
     patches = {
-        'NIF laser drive': Polygon([(0.05, 0.2), (0.05, 0.8), (0.2, 0.75), (0.2, 0.25)], facecolor=(0.5, 0, 1, 0.3)),
-        'ablator': Rectangle((0.2, 0.2), 0.07, 0.6, facecolor=(0, 1, 0, 0.5), edgecolor=(0, 0, 0)),
-        'heatshield': Rectangle((0.27, 0.2), 0.03, 0.6, facecolor=(1, 1, 1), edgecolor=(0, 0, 0)),
-        'pusher': Rectangle((0.3, 0.2), 0.08, 0.6, facecolor=(0.8, 0, 1, 0.4), edgecolor=(0, 0, 0)),
-        'sample': Rectangle((0.38, 0.2), 0.03, 0.6, facecolor=(0, 0, 1, 0.4), edgecolor=(0, 0, 0)),
-        'VISAR': Polygon([(0.41, 0.4), (0.41, 0.6), (0.91, 0.65), (0.91, 0.35)], facecolor=(1, 0, 0, 0.3)),
-        'window': Rectangle((0.4, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8), edgecolor=(0, 0, 0)),
-        'pinhole': Polygon([(0.6, 0.2), (0.6, 0.8), (0.8, 0.8), (0.75, 0.6), (0.6, 0.6), (0.6, 0.4), (0.75, 0.4), (0.75, 0.6), (0.75, 0.4), (0.8, 0.2)], facecolor=(0.5, 0.5, 0.5, 0.6), edgecolor=(0, 0, 0))
+        'NIF laser drive': Polygon(
+            [(0.05, 0.2), (0.05, 0.8), (0.2, 0.75), (0.2, 0.25)],
+            facecolor=(0.5, 0, 1, 0.3)),
+        'ablator': Rectangle((0.2, 0.2), 0.07, 0.6, facecolor=(0, 1, 0, 0.5),
+                             edgecolor=(0, 0, 0)),
+        'heatshield': Rectangle((0.27, 0.2), 0.03, 0.6, facecolor=(1, 1, 1),
+                                edgecolor=(0, 0, 0)),
+        'pusher': Rectangle((0.3, 0.2), 0.08, 0.6, facecolor=(0.8, 0, 1, 0.4),
+                            edgecolor=(0, 0, 0)),
+        'sample': Rectangle((0.38, 0.2), 0.03, 0.6, facecolor=(0, 0, 1, 0.4),
+                            edgecolor=(0, 0, 0)),
+        'VISAR': Polygon(
+            [(0.41, 0.4), (0.41, 0.6), (0.91, 0.65), (0.91, 0.35)],
+            facecolor=(1, 0, 0, 0.3)),
+        'window': Rectangle((0.4, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8),
+                            edgecolor=(0, 0, 0)),
+        'pinhole': Polygon(
+            [(0.6, 0.2), (0.6, 0.8), (0.8, 0.8), (0.75, 0.6), (0.6, 0.6),
+             (0.6, 0.4), (0.75, 0.4), (0.75, 0.6), (0.75, 0.4), (0.8, 0.2)],
+            facecolor=(0.5, 0.5, 0.5, 0.6), edgecolor=(0, 0, 0))
 
     }
 
     def __init__(self, canvas):
-            self.fig = canvas.figure
-            self.ax = self.fig.add_subplot()
-            self.ax = self.fig.add_subplot(fc=(0, 0, 0))
-            self.ax.set_axis_off()
-            self.ax.set_aspect(1)
-            self.update_diagram()
+        self.fig = canvas.figure
+        self.ax = self.fig.add_subplot()
+        self.ax = self.fig.add_subplot(fc=(0, 0, 0))
+        self.ax.set_axis_off()
+        self.ax.set_aspect(1)
+        self.update_diagram()
 
     def clear(self):
         for text, patch in zip(self.ax.texts, self.ax.patches):
@@ -224,7 +240,8 @@ class PhysicsPackageDiagram:
                 x = (np.min(xy[:, 0]) + np.max(xy[:, 0])) / 1.5
         else:
             x, y = patch.get_center()
-        self.ax.text(x, y, label, ha='center', va='center', rotation=90, fontsize='small')
+        self.ax.text(x, y, label, ha='center', va='center',
+                     rotation=90, fontsize='small')
 
     def update_diagram(self, show_window=True, show_pinhole=True):
         self.clear()

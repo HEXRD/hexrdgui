@@ -126,7 +126,8 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
-        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(self.ui)
+        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(
+                                                self.ui)
 
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
