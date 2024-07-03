@@ -211,6 +211,7 @@
      <addaction name="action_apply_lorentz_correction"/>
      <addaction name="action_apply_polarization_correction"/>
      <addaction name="action_subtract_minimum"/>
+     <addaction name="action_apply_physics_package"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
     <addaction name="action_edit_euler_angle_convention"/>
@@ -728,6 +729,14 @@
    </property>
    <property name="text">
     <string>Subtract Minimum</string>
+   </property>
+  </action>
+  <action name="action_apply_physics_package">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Apply Physics Package</string>
    </property>
   </action>
   <action name="action_rerun_clustering">
