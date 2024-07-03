@@ -176,6 +176,10 @@ class PhysicsPackageManagerDialog:
             detector.physics_package = physics_package
             detector.pinhole = pinhole
 
+        if HexrdConfig().apply_absorption_correction:
+            # Make sure changes are reflected
+            HexrdConfig().deep_rerender_needed.emit()
+
 
 class PhysicsPackageDiagram:
 
