@@ -6,6 +6,7 @@ from hexrd import constants
 from hexrd.material import unitcell
 
 from hexrd.transforms import xfcapi
+from hexrd.xrdutil.phutil import invalidate_past_critical_beta
 from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
@@ -409,6 +410,22 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             xys, on_panel = panel.clip_to_panel(
                 xys_full, buffer_edges=self.clip_with_panel_buffer
             )
+
+            if (
+                (apply_distortion or offset_distortion) and
+                not polar_distortion_with_self and
+                distortion_object and
+                distortion_object.tth_distortion_type == 'SampleLayerDistortion'
+            ):
+                # Need to cut off values past critical beta. Their correction
+                # will be very incorrect.
+                kwargs = distortion_object.tth_distortion_kwargs
+                pinhole_thickness = kwargs['pinhole_thickness']
+                pinhole_radius = kwargs['pinhole_radius']
+                invalidate_past_critical_beta(panel, xys, pinhole_thickness,
+                                              pinhole_radius)
+                # Remove any invalidated values
+                xys = xys[~np.any(np.isnan(xys), axis=1)]
 
             if apply_distortion:
                 # Apply distortion correction
