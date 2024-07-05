@@ -292,5 +292,5 @@ class OverlayManager:
         self.update_table()
 
     def edit_style(self):
-        self._style_picker = OverlayStylePicker(self.active_overlay, self.ui)
+        self._style_picker = OverlayStylePicker(self.active_overlay)
         self._style_picker.exec()
