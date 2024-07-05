@@ -91,7 +91,13 @@ class RegionMask(Mask):
         if view == ViewType.raw:
             self.masked_arrays = create_raw_mask(self._raw)
         else:
-            self.masked_arrays = create_polar_mask_from_raw(self._raw, instr)
+            # Do not apply tth distortion for pinhole mask types
+            apply_tth_distortion = self.type != MaskType.pinhole
+            self.masked_arrays = create_polar_mask_from_raw(
+                self._raw,
+                instr,
+                apply_tth_distortion=apply_tth_distortion,
+            )
 
     def get_masked_arrays(self, image_mode=ViewType.raw, instr=None):
         if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
@@ -100,7 +106,7 @@ class RegionMask(Mask):
         return self.masked_arrays
 
     def update_border_visibility(self, visibility):
-        can_have_border = [MaskType.region, MaskType.polygon]
+        can_have_border = [MaskType.region, MaskType.polygon, MaskType.pinhole]
         if self.type not in can_have_border:
             # Only rectangle, ellipse and hand-drawn masks can show borders
             visibility = False

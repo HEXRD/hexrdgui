@@ -9,7 +9,7 @@ from hexrdgui.utils.polygon import polygon_to_mask
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
-def convert_raw_to_polar(instr, det, line):
+def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
     # This accepts an instrument rather than creating one for performance
 
     # Make sure there at least 500 sample points so that the conversion
@@ -27,7 +27,10 @@ def convert_raw_to_polar(instr, det, line):
         'tvec_s': instr.tvec
     }
     line = cart_to_angles(xys, panel, **kwargs)
-    line = apply_tth_distortion_if_needed(line, in_degrees=True)
+
+    if apply_tth_distortion:
+        line = apply_tth_distortion_if_needed(line, in_degrees=True)
+
     return [line] if line.size else None
 
 
@@ -144,22 +147,31 @@ def _interpolate_split_coords_1d(coords1, coords2):
     return coords1, coords2
 
 
-def create_polar_line_data_from_raw(instr, value):
+def create_polar_line_data_from_raw(instr, value, apply_tth_distortion=True):
     # This accepts an instrument rather than creating one for performance
     line_data = []
     for det, data in value:
-        if polar := convert_raw_to_polar(instr, det, data):
+        if polar := convert_raw_to_polar(
+            instr,
+            det,
+            data,
+            apply_tth_distortion=apply_tth_distortion,
+        ):
             line_data.extend(polar)
     return line_data
 
 
-def create_polar_mask_from_raw(value, instr=None):
+def create_polar_mask_from_raw(value, instr=None, apply_tth_distortion=True):
     if instr is None:
         # An instrument can be passed for improved performance.
         # If one wasn't passed, create one.
         instr = create_hedm_instrument()
 
-    line_data = create_polar_line_data_from_raw(instr, value)
+    line_data = create_polar_line_data_from_raw(
+        instr,
+        value,
+        apply_tth_distortion=apply_tth_distortion,
+    )
     return create_polar_mask(line_data)
 
 
