@@ -748,8 +748,8 @@ class WppfOptionsDialog(QObject):
         else:
             x, y = HexrdConfig().last_unscaled_azimuthal_integral_data
             if isinstance(y, np.ma.MaskedArray):
-                # Fill any masked values with zero
-                y = y.filled(0)
+                # Fill any masked values with nan
+                y = y.filled(np.nan)
 
             # Re-format it to match the expected input format
             expt_spectrum = np.array(list(zip(x, y)))
