@@ -1460,6 +1460,12 @@ class ImageCanvas(FigureCanvas):
 
         self.wppf_plot = axis.scatter(*wppf_data, **style)
 
+        # Rescale.
+        # This actually ignores the scatter plot data when rescaling,
+        # which is fine. We will stay zoomed in on the line.
+        axis.relim()
+        axis.autoscale_view(scalex=False)
+
     def detector_axis(self, detector_name):
         if self.mode == ViewType.raw:
             if HexrdConfig().stitch_raw_roi_images:
