@@ -75,7 +75,8 @@ class MaskManagerDialog(QObject):
                 if key in MaskManager().visible_masks:
                     idx = MaskStatus.visible
                 if (mask_type == MaskType.region or
-                        mask_type == MaskType.polygon):
+                        mask_type == MaskType.polygon or
+                        mask_type == MaskType.pinhole):
                     presentation_combo.addItem('Boundary Only')
                     presentation_combo.addItem('Visible + Boundary')
                     if key in MaskManager().visible_boundaries:

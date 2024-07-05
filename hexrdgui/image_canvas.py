@@ -24,6 +24,7 @@ from hexrdgui.calibration.stereo_plot import stereo_viewer
 from hexrdgui.constants import OverlayType, PolarXAxisType, ViewType
 from hexrdgui.create_hedm_instrument import create_view_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
@@ -1668,7 +1669,13 @@ class ImageCanvas(FigureCanvas):
                 else:
                     verts = [v for k, v in mask.data if k == det]
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
-                verts = create_polar_line_data_from_raw(instr, mask.data)
+                # Do not apply tth distortion for the pinhole mask
+                apply_tth_distortion = mask.type != MaskType.pinhole
+                verts = create_polar_line_data_from_raw(
+                    instr,
+                    mask.data,
+                    apply_tth_distortion=apply_tth_distortion,
+                )
                 if self.mode == ViewType.polar:
                     # Check for any major jumps in eta. That probably means
                     # the border is wrapping around.
