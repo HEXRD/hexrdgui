@@ -411,6 +411,32 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 xys_full, buffer_edges=self.clip_with_panel_buffer
             )
 
+            has_pinhole_distortion = (
+                self.pinhole_distortion_type is not None and
+                display_mode in (ViewType.polar, ViewType.stereo)
+            )
+
+            if has_pinhole_distortion or (
+                (polar_distortion_with_self or offset_distortion) and
+                distortion_object and
+                distortion_object.pinhole_distortion_type == 'SampleLayerDistortion'
+            ):
+                # If this overlay has a pinhole distortion of any kind, or
+                # if a sample layer distortion is being applied to the polar
+                # view, we need to cut off all values past critical beta.
+                # Their correction will be very incorrect.
+                if has_pinhole_distortion:
+                    kwargs = self.pinhole_distortion_kwargs
+                else:
+                    kwargs = distortion_object.pinhole_distortion_kwargs
+
+                pinhole_thickness = kwargs['pinhole_thickness']
+                pinhole_radius = kwargs['pinhole_radius']
+                invalidate_past_critical_beta(panel, xys, pinhole_thickness,
+                                              pinhole_radius)
+                # Remove any invalidated values
+                xys = xys[~np.any(np.isnan(xys), axis=1)]
+
             if apply_distortion:
                 # Apply distortion correction
                 ang_crds = sd.apply(xys)
@@ -420,25 +446,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     xys,
                     tvec_s=instr.tvec
                 )
-
-            # Need to offset according to another overlay's distortion
-            if (
-                (polar_distortion_with_self or offset_distortion) and
-                distortion_object and
-                distortion_object.pinhole_distortion_type == 'SampleLayerDistortion'
-            ):
-                # Need to cut off values past critical beta. Their correction
-                # will be very incorrect.
-                kwargs = distortion_object.pinhole_distortion_kwargs
-                pinhole_thickness = kwargs['pinhole_thickness']
-                pinhole_radius = kwargs['pinhole_radius']
-                invalidate_past_critical_beta(panel, xys, pinhole_thickness,
-                                              pinhole_radius)
-                # Remove any invalidated values
-                if not polar_distortion_with_self:
-                    ang_crds = ang_crds[~np.any(np.isnan(xys), axis=1)]
-
-                xys = xys[~np.any(np.isnan(xys), axis=1)]
 
             if offset_distortion:
 
