@@ -6,6 +6,7 @@ from hexrd import constants
 from hexrd.material import unitcell
 
 from hexrd.transforms import xfcapi
+from hexrd.xrdutil.phutil import invalidate_past_critical_beta
 from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
@@ -410,6 +411,32 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 xys_full, buffer_edges=self.clip_with_panel_buffer
             )
 
+            has_pinhole_distortion = (
+                self.pinhole_distortion_type is not None and
+                display_mode in (ViewType.polar, ViewType.stereo)
+            )
+
+            if has_pinhole_distortion or (
+                (polar_distortion_with_self or offset_distortion) and
+                distortion_object and
+                distortion_object.pinhole_distortion_type == 'SampleLayerDistortion'
+            ):
+                # If this overlay has a pinhole distortion of any kind, or
+                # if a sample layer distortion is being applied to the polar
+                # view, we need to cut off all values past critical beta.
+                # Their correction will be very incorrect.
+                if has_pinhole_distortion:
+                    kwargs = self.pinhole_distortion_kwargs
+                else:
+                    kwargs = distortion_object.pinhole_distortion_kwargs
+
+                pinhole_thickness = kwargs['pinhole_thickness']
+                pinhole_radius = kwargs['pinhole_radius']
+                invalidate_past_critical_beta(panel, xys, pinhole_thickness,
+                                              pinhole_radius)
+                # Remove any invalidated values
+                xys = xys[~np.any(np.isnan(xys), axis=1)]
+
             if apply_distortion:
                 # Apply distortion correction
                 ang_crds = sd.apply(xys)
@@ -421,16 +448,27 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 )
 
             if offset_distortion:
-                # Need to offset according to another overlay's distortion
+
+                # Since this correction is based upon field position, we must
+                # use raw coordinates for the most accurate correction.
+                if apply_distortion:
+                    # Use coordinates where distortion correction was not applied
+                    raw_ang_crds, _ = panel.cart_to_angles(
+                        xys,
+                        tvec_s=instr.tvec
+                    )
+                else:
+                    # Distortion correction was not applied
+                    raw_ang_crds = ang_crds
 
                 # Need to ensure the angles are mapped
-                ang_crds[:, 1] = xfcapi.mapAngle(
-                    ang_crds[:, 1], np.radians(self.eta_period),
+                raw_ang_crds[:, 1] = xfcapi.mapAngle(
+                    raw_ang_crds[:, 1], np.radians(self.eta_period),
                     units='radians'
                 )
 
                 # Compute and apply offset
-                for ic, ang_crd in enumerate(ang_crds):
+                for ic, ang_crd in enumerate(raw_ang_crds):
                     i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
                     j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
                     ang_crds[ic, 0] += polar_field[j, i]

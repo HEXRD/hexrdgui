@@ -1,11 +1,11 @@
 import copy
 from enum import Enum
 
+from numba import njit
 import numpy as np
 
 from hexrd import constants
 from hexrd.transforms import xfcapi
-from hexrd.utils.decorators import numba_njit_if_available
 from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
@@ -455,7 +455,7 @@ class LaueOverlay(Overlay):
         }
 
 
-@numba_njit_if_available(cache=True, nogil=True)
+@njit(cache=True, nogil=True)
 def ellipse_points(h, k, a, b, num_points=30):
     # skimage.draw.ellipse_perimeter could work instead, but it is
     # intended to work with indices, and it doesn't sort points.
