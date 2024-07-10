@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 
 from PySide6.QtWidgets import QDialog, QFileDialog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.hexrd_config import HexrdConfig
@@ -88,6 +88,10 @@ class RerunClusteringDialog(QDialog):
             # Since this is a QueuedConnection, we need to accept progress here
             runner.accept_progress()
             runner.confirm_indexing_results()
+
+            if runner.grains_table is None:
+                # The previous step must have failed. Show again.
+                QTimer.singleShot(0, self.exec)
 
         def on_rejected():
             # Since this is a QueuedConnection, we need to accept progress here
