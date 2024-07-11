@@ -72,6 +72,8 @@ class PhysicsPackageManagerDialog:
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
                 lambda index, k=k: self.material_changed(index, k))
+        self.ui.pinhole_thickness.valueChanged.connect(self.sync_pinhole_values)
+        self.ui.pinhole_diameter.valueChanged.connect(self.sync_pinhole_values)
 
     def load_additional_materials(self):
         # Use a high dmin since we do not care about the HKLs here.
@@ -187,6 +189,11 @@ class PhysicsPackageManagerDialog:
         if HexrdConfig().apply_absorption_correction:
             # Make sure changes are reflected
             HexrdConfig().deep_rerender_needed.emit()
+
+    def sync_pinhole_values(self):
+        settings = HexrdConfig().config['image']['pinhole_mask_settings']
+        settings['thickness'] = self.ui.pinhole_thickness.value() / 1e-3
+        settings['radius'] = (self.ui.pinhole_diameter.value() / 2) / 1e-3
 
 
 class PhysicsPackageDiagram:
