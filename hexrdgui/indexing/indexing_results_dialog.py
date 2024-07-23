@@ -1,18 +1,21 @@
 import copy
+from pathlib import Path
 
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
 from PySide6.QtCore import Signal, QObject, Qt, QTimer
-from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QFileDialog, QSizePolicy
 
+from hexrd.cli.fit_grains import GrainData
 from hexrd.transforms import xfcapi
 
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.grains_viewer_dialog import GrainsViewerDialog
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.utils import write_grains_txt
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
@@ -56,6 +59,7 @@ class IndexingResultsDialog(QObject):
         self.ui.show_results.toggled.connect(self.show_results_toggled)
         self.ui.grain_id.currentIndexChanged.connect(self.update_spots)
         self.ui.show_all_grains.toggled.connect(self.show_all_grains_toggled)
+        self.ui.export_grains.clicked.connect(self.on_export_grains_clicked)
 
         self.ui.accepted.connect(self.accepted.emit)
         self.ui.rejected.connect(self.rejected.emit)
@@ -90,6 +94,29 @@ class IndexingResultsDialog(QObject):
         # In case this was called in a separate thread, post the show() to the
         # event loop. Otherwise, on Mac, the dialog will not move to the front.
         QTimer.singleShot(0, lambda: self.show())
+
+    def on_export_grains_clicked(self):
+        selected_file, selected_filter = QFileDialog.getSaveFileName(
+            self.ui, 'Save Grains', HexrdConfig().working_dir,
+            'Output files (*.out *.txt);; NPZ files (*.npz)')
+
+        if not selected_file:
+            return
+
+        HexrdConfig().working_dir = str(Path(selected_file).parent)
+
+        self.export_grains(selected_file)
+
+    def export_grains(self, filename):
+        filename = Path(filename)
+        grains = self.grains_table
+        if filename.suffix.lower() == '.npz':
+            # Save as an npz
+            grain_data = GrainData.from_array(grains)
+            grain_data.save(selected_file)
+        else:
+            # Save as txt
+            write_grains_txt(grains, filename)
 
     @property
     def extent(self):

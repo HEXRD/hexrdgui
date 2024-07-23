@@ -20,6 +20,15 @@ def generate_grains_table(qbar):
     return grains_table
 
 
+def write_grains_txt(grains_table, filename):
+    gw = instrument.GrainDataWriter(filename=filename)
+    try:
+        for grain in grains_table:
+            gw.dump_grain(grain[0], grain[1], grain[2], grain[3:15])
+    finally:
+        gw.close()
+
+
 def hkl_in_list(hkl, hkl_list):
     def hkls_equal(hkl_a, hkl_b):
         return all(x == y for x, y in zip(hkl_a, hkl_b))
