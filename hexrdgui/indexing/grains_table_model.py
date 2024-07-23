@@ -2,6 +2,8 @@ import numpy as np
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
 
+from hexrdgui.indexing.utils import write_grains_txt
+
 
 class GrainsTableModel(QAbstractTableModel):
     """Model for viewing grains"""
@@ -103,33 +105,5 @@ class GrainsTableModel(QAbstractTableModel):
                 if i not in self.excluded_columns]
 
     def save(self, path):
-        with open(path, 'w') as fp:
-            header_items = self.full_headers.copy()
-            header_items[0] = f'# {self.full_headers[0]}'
-
-            # Formatting logic is copied from instrument GrainDataWriter
-            delim = '  '
-            header = delim.join(
-                [delim.join(
-                    np.tile('{:<12}', 3)
-                    ).format(*header_items[:3]), delim.join(
-                        np.tile('{:<23}', len(header_items) - 3)
-                    ).format(*header_items[3:])]
-            )
-            fp.write(header)
-            fp.write('\n')
-
-            for row in self.full_grains_table:
-                res = row.tolist()
-                res[0] = int(res[0])
-                output_str = delim.join(
-                    [delim.join(
-                        ['{:<12d}', '{:<12f}', '{:<12e}']
-                    ).format(*res[:3]), delim.join(
-                        np.tile('{:<23.16e}', len(res) - 3)
-                    ).format(*res[3:])]
-                )
-                fp.write(output_str)
-                fp.write('\n')
-
-            print('Wrote', path)
+        write_grains_txt(self.full_grains_table, path)
+        print('Wrote', path)
