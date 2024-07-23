@@ -380,6 +380,7 @@ class IndexingRunner(Runner):
         num_grains = self.qbar.shape[1]
         if num_grains == 0:
             print('No grains found')
+            self.grains_table = None
             return
 
         plural = 's' if num_grains != 1 else ''
