@@ -77,6 +77,7 @@ from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
+from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
 from hexrdgui import resource_loader, state
 from hexrd.resources import instrument_templates
 
@@ -125,9 +126,14 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
+        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(
+                                                self.ui)
+
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
-                                        self.color_map_editor, self.ui)
+                                        self.color_map_editor,
+                                        self.physics_package_manager_dialog,
+                                        self.ui)
         self.image_stack_dialog = ImageStackDialog(
                                     self.ui, self.simple_image_series_dialog)
 
@@ -292,6 +298,9 @@ class MainWindow(QObject):
             self.on_action_edit_apply_threshold_triggered)
         self.ui.action_open_preconfigured_instrument_file.triggered.connect(
             self.on_action_open_preconfigured_instrument_file_triggered)
+        self.ui.action_physics_package_editor.triggered.connect(
+            self.on_action_physics_package_editor_triggered
+        )
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -335,6 +344,8 @@ class MainWindow(QObject):
             self.apply_lorentz_correction_toggled)
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
+        self.ui.action_apply_physics_package.toggled.connect(
+            self.action_apply_physics_package_toggled)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
@@ -1614,3 +1625,9 @@ class MainWindow(QObject):
         fname = options[instr_name]
         with resource_loader.resource_path(instrument_templates, fname) as f:
             HexrdConfig().load_instrument_config(Path(f))
+
+    def on_action_physics_package_editor_triggered(self):
+        self.physics_package_manager_dialog.show()
+
+    def action_apply_physics_package_toggled(self, b):
+        HexrdConfig().apply_absorption_correction = b
