@@ -1875,7 +1875,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         energy = self.beam_energy
 
         # If the plane data energy already matches, skip it
-        pd_wavelength = mat.planeData.get_wavelength()
+        pd_wavelength = mat.planeData.wavelength
         old_energy = constants.WAVELENGTH_TO_KEV / pd_wavelength
 
         # If these are rounded to 5 decimal places instead of 4, this

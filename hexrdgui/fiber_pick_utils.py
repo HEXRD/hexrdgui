@@ -67,7 +67,7 @@ def _pick_to_fiber(pick_coords, eta_ome_maps, map_index, step=0.5,
         crys_dir, samp_dir,
         B=bmat, ndiv=ndiv,
         invert=False,
-        csym=pd.getQSym(), ssym=None
+        csym=pd.q_sym, ssym=None
     )[0]
 
     if as_expmap:
