@@ -141,6 +141,9 @@ class WppfOptionsDialog(QObject):
 
         enable_refinement_steps = self.method != 'Rietveld'
         self.ui.refinement_steps.setEnabled(enable_refinement_steps)
+        if not enable_refinement_steps:
+            # Also set the value to 1
+            self.ui.refinement_steps.setValue(1)
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
