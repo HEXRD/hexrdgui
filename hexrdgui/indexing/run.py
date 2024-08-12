@@ -363,7 +363,7 @@ class IndexingRunner(Runner):
         kwargs = {
             'compl': self.completeness,
             'qfib': self.qfib,
-            'qsym': config.material.plane_data.getQSym(),
+            'qsym': config.material.plane_data.q_sym,
             'cfg': config,
             'min_samples': self.min_samples,
             'compl_thresh': config.find_orientations.clustering.completeness,
