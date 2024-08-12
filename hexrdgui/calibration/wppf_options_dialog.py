@@ -22,6 +22,7 @@ from hexrd.wppf.wppfsupport import (
 
 from hexrdgui.dynamic_widget import DynamicWidget
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.point_picker_dialog import PointPickerDialog
 from hexrdgui.scientificspinbox import ScientificDoubleSpinBox
 from hexrdgui.select_items_dialog import SelectItemsDialog
 from hexrdgui.ui_loader import UiLoader
@@ -66,6 +67,7 @@ class WppfOptionsDialog(QObject):
 
         self.dynamic_background_widgets = []
 
+        self.spline_points = []
         self._wppf_object = None
         self._prev_background_method = None
 
@@ -86,6 +88,7 @@ class WppfOptionsDialog(QObject):
         self.ui.display_wppf_plot.toggled.connect(
             self.display_wppf_plot_toggled)
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
+        self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
 
         self.ui.export_table.clicked.connect(self.export_table)
         self.ui.import_table.clicked.connect(self.import_table)
@@ -225,6 +228,12 @@ class WppfOptionsDialog(QObject):
                 self.reset_object()
 
     def begin_run(self):
+        if self.background_method == 'spline':
+            points = self.background_method_dict['spline']
+            if not points:
+                # Force points to be chosen now
+                self.pick_spline_points()
+
         try:
             self.validate()
         except Exception as e:
@@ -246,6 +255,11 @@ class WppfOptionsDialog(QObject):
         if not any(x.vary for x in self.params.param_dict.values()):
             msg = 'All parameters are fixed. Need to vary at least one'
             raise Exception(msg)
+
+        if self.background_method == 'spline':
+            points = self.background_method_dict['spline']
+            if not points:
+                raise Exception('Points must be chosen to use "spline" method')
 
     def generate_params(self):
         kwargs = {
@@ -376,6 +390,10 @@ class WppfOptionsDialog(QObject):
         if len(value) == 1:
             value = value[0]
 
+        if method == 'spline':
+            # For spline, the value is stored on self
+            value = self.spline_points
+
         return {method: value}
 
     @background_method_dict.setter
@@ -387,7 +405,11 @@ class WppfOptionsDialog(QObject):
         # Make sure these get updated (it may have already been called, but
         # calling it twice is not a problem)
         self.update_background_parameters()
-        if v[method]:
+
+        if method == 'spline':
+            # Store the spline points on self
+            self.spline_points = v[method]
+        elif v[method]:
             widgets = self.dynamic_background_widgets
             if len(widgets) == 1:
                 widgets[0].set_value(v[method])
@@ -398,6 +420,33 @@ class WppfOptionsDialog(QObject):
         if method == 'chebyshev':
             # We probably need to update the parameters as well
             self.update_params()
+
+    def pick_spline_points(self):
+        if self.background_method != 'spline':
+            # Should not be using this method
+            return
+
+        # Make a canvas with the spectrum plotted.
+        expt_spectrum = self.wppf_object_kwargs['expt_spectrum']
+        fig, ax = plt.subplots()
+        ax.plot(*expt_spectrum.T, '-k')
+
+        ax.set_xlabel(r'2$\theta$')
+        ax.set_ylabel(r'intensity (a.u.)')
+
+        dialog = PointPickerDialog(fig.canvas, 'Pick Background Points',
+                                   parent=self.ui)
+        if not dialog.exec():
+            # User canceled.
+            return
+
+        # Make sure these are native types for saving
+        self.spline_points = (
+            np.asarray([dialog.points]).tolist() if dialog.points else []
+        )
+
+        # We must reset the WPPF object to reflect these changes
+        self.reset_object()
 
     @property
     def limit_tth(self):
@@ -592,6 +641,10 @@ class WppfOptionsDialog(QObject):
             return
 
         self._prev_background_method = self.background_method
+
+        # Update the visibility of this button
+        self.ui.pick_spline_points.setVisible(
+            self.background_method == 'spline')
 
         main_layout = self.ui.background_method_parameters_layout
         clear_layout(main_layout)
