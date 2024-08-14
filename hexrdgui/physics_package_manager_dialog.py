@@ -10,7 +10,6 @@ from PySide6.QtWidgets import QSizePolicy
 
 import hexrdgui.resources.materials as module
 from hexrdgui import resource_loader
-from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 
@@ -23,7 +22,6 @@ class PhysicsPackageManagerDialog:
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
         self.additional_materials = {}
-        self.instr = create_hedm_instrument()
         self.det_type = None
 
         canvas = FigureCanvas(Figure(tight_layout=True))
@@ -101,34 +99,35 @@ class PhysicsPackageManagerDialog:
             w.insertSeparator(2 + len(custom_mats))
 
         # Set default values
-        det = list(self.instr.detectors.values())[0]
+        physics = HexrdConfig().physics_package
+        pinhole = HexrdConfig().pinhole_package
         # PINHOLE
-        self.ui.pinhole_material.setCurrentText(det.pinhole.material)
-        self.ui.pinhole_density.setValue(det.pinhole.density)
+        self.ui.pinhole_material.setCurrentText(pinhole.material)
+        self.ui.pinhole_density.setValue(pinhole.density)
         if self.det_type == 'PXRDIP':
             self.ui.pinhole_thickness.setValue(70)
             self.ui.pinhole_diameter.setValue(130)
         else:
-            self.ui.pinhole_thickness.setValue(det.pinhole.thickness)
-            self.ui.pinhole_diameter.setValue(det.pinhole.diameter)
+            self.ui.pinhole_thickness.setValue(pinhole.thickness)
+            self.ui.pinhole_diameter.setValue(pinhole.diameter)
         # WINDOW
-        if det.physics_package.window_material not in options:
+        if physics.window_material not in options:
             self.ui.window_material_input.setText(
-                det.physics_package.window_material)
+                physics.window_material)
         else:
             self.ui.window_material.setCurrentText(
-                det.physics_package.window_material)
-        self.ui.window_density.setValue(det.physics_package.window_density)
-        self.ui.window_thickness.setValue(det.physics_package.window_thickness)
+                physics.window_material)
+        self.ui.window_density.setValue(physics.window_density)
+        self.ui.window_thickness.setValue(physics.window_thickness)
         # SAMPLE
-        if det.physics_package.sample_material not in options:
+        if physics.sample_material not in options:
             self.ui.sample_material_input.setText(
-                det.physics_package.sample_material)
+                physics.sample_material)
         else:
             self.ui.sample_material.setCurrentText(
-                det.physics_package.sample_material)
-        self.ui.sample_density.setValue(det.physics_package.sample_density)
-        self.ui.sample_thickness.setValue(det.physics_package.sample_thickness)
+                physics.sample_material)
+        self.ui.sample_density.setValue(physics.sample_density)
+        self.ui.sample_thickness.setValue(physics.sample_thickness)
 
     def draw_diagram(self):
         window = self.ui.show_window.isChecked()
@@ -179,10 +178,8 @@ class PhysicsPackageManagerDialog:
             'thickness': self.ui.pinhole_thickness.value(),
             'density': self.ui.pinhole_density.value(),
         }
-
-        for detector in self.instr.detectors.values():
-            detector.physics_package = physics_package
-            detector.pinhole = pinhole
+        HexrdConfig().physics_package = physics_package
+        HexrdConfig().pinhole_package = pinhole
 
         if HexrdConfig().apply_absorption_correction:
             # Make sure changes are reflected

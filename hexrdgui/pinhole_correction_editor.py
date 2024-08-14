@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 )
@@ -106,27 +106,26 @@ class PinholeCorrectionEditor(QObject):
     @property
     def correction_kwargs(self):
         dtype = self.correction_type
+        physics = HexrdConfig().physics_package
+        pinhole = HexrdConfig().pinhole_package
         if dtype is None:
             return None
         elif dtype == 'SampleLayerDistortion':
             return {
-                'layer_standoff': self.ui.sample_layer_standoff.value() * 1e-3,
-                'layer_thickness': (
-                    self.ui.sample_layer_thickness.value() * 1e-3),
-                'pinhole_thickness': (
-                    self.ui.sample_pinhole_thickness.value() * 1e-3),
-                'pinhole_radius': (
-                    self.ui.sample_pinhole_radius.value() * 1e-3),
+                'layer_standoff': physics.window_thickness,
+                'layer_thickness': physics.sample_thickness,
+                'pinhole_thickness': pinhole.thickness,
+                'pinhole_radius': pinhole.radius,
             }
         elif dtype == 'JHEPinholeDistortion':
             return {
-                'pinhole_radius': self.ui.jhe_radius.value() * 1e-3,
-                'pinhole_thickness': self.ui.jhe_thickness.value() * 1e-3,
+                'pinhole_radius': pinhole.radius,
+                'pinhole_thickness': pinhole.thickness,
             }
         elif dtype == 'RyggPinholeDistortion':
             output = {
-                'pinhole_radius': self.ui.rygg_radius.value() * 1e-3,
-                'pinhole_thickness': self.ui.rygg_thickness.value() * 1e-3,
+                'pinhole_radius': pinhole.radius,
+                'pinhole_thickness': pinhole.thickness,
                 'num_phi_elements': self.ui.rygg_num_phi_elements.value(),
             }
             if self.rygg_absorption_length_visible:
@@ -141,18 +140,20 @@ class PinholeCorrectionEditor(QObject):
         if v is None:
             return
 
+        pinhole = HexrdConfig().pinhole_package
+        physics = HexrdConfig().physics_package
         # Values are (key, default)
         values = {
-            'sample_layer_standoff': ('layer_standoff', 0.15),
-            'sample_layer_thickness': ('layer_thickness', 0.005),
-            'sample_pinhole_thickness': ('pinhole_thickness', 0.1),
-            'sample_pinhole_radius': ('pinhole_radius', 0.15),
-            'rygg_radius': ('pinhole_radius', 0.2),
-            'rygg_thickness': ('pinhole_thickness', 0.1),
+            'sample_layer_standoff': ('layer_standoff', physics.window_thickness),
+            'sample_layer_thickness': ('layer_thickness', physics.sample_thickness),
+            'sample_pinhole_thickness': ('pinhole_thickness', pinhole.thickness),
+            'sample_pinhole_diameter': ('pinhole_diameter', pinhole.diameter),
+            'rygg_diameter': ('pinhole_diameter', pinhole.diameter),
+            'rygg_thickness': ('pinhole_thickness', pinhole.thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 60),
             'rygg_absorption_length_value': ('absorption_length', 100),
-            'jhe_radius': ('pinhole_radius', 0.2),
-            'jhe_thickness': ('pinhole_thickness', 0.1),
+            'jhe_diameter': ('pinhole_diameter', pinhole.diameter),
+            'jhe_thickness': ('pinhole_thickness', pinhole.thickness),
         }
 
         dtype = self.correction_type
@@ -172,15 +173,8 @@ class PinholeCorrectionEditor(QObject):
                 # Extract the value from the dict
                 value = v.get(key, value)
 
-            # Most units are in mm and we must convert to micrometer.
-            # Skip the ones that we don't need to convert.
-            if key in ('num_phi_elements', 'absorption_length'):
-                multiplier = 1
-            else:
-                multiplier = 1e3
-
             w = getattr(self.ui, w_name)
-            w.setValue(value * multiplier)
+            w.setValue(value)
 
         if dtype == 'RyggPinholeDistortion':
             self.auto_select_rygg_absorption_length()
@@ -191,20 +185,20 @@ class PinholeCorrectionEditor(QObject):
             self.ui.sample_layer_standoff,
             self.ui.sample_layer_thickness,
             self.ui.sample_pinhole_thickness,
-            self.ui.sample_pinhole_radius,
+            self.ui.sample_pinhole_diameter,
         ]
 
     @property
     def jhe_widgets(self):
         return [
-            self.ui.jhe_radius,
+            self.ui.jhe_diameter,
             self.ui.jhe_thickness,
         ]
 
     @property
     def rygg_widgets(self):
         return [
-            self.ui.rygg_radius,
+            self.ui.rygg_diameter,
             self.ui.rygg_thickness,
             self.ui.rygg_num_phi_elements,
         ] + self.rygg_absorption_length_widgets
@@ -558,6 +552,11 @@ class PinholeCorrectionEditor(QObject):
 
         if any_changes:
             # Make sure the polar view gets rerendered.
+            HexrdConfig().pinhole_package.diameter = self.correction_kwargs['pinhole_diameter']
+            HexrdConfig().pinhole_package.thickness = self.correction_kwargs['pinhole_thickness']
+            layer = self.correction_kwargs.get('layer_thickness', None)
+            if layer is not None:
+                HexrdConfig().physics_package.sample_thickness = layer
             HexrdConfig().flag_overlay_updates_for_all_materials()
             HexrdConfig().rerender_needed.emit()
 
