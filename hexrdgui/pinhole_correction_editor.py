@@ -283,18 +283,7 @@ class PinholeCorrectionEditor(QObject):
 
     def apply_panel_buffers(self):
         instr = create_hedm_instrument()
-
-        config = self.correction_kwargs
-        required_keys = ('pinhole_radius', 'pinhole_thickness')
-        if config is None or any(x not in config for x in required_keys):
-            raise Exception(f'Failed to create panel buffer with {config=}')
-
-        kwargs = {
-            'instr': instr,
-            'pinhole_radius': config['pinhole_radius'],
-            'pinhole_thickness': config['pinhole_thickness'],
-        }
-        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
+        ph_buffer = generate_pinhole_panel_buffer(instr)
 
         # merge with any existing panel buffer
         for det_key, det in instr.detectors.items():

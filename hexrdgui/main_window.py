@@ -890,13 +890,9 @@ class MainWindow(QObject):
 
         self._pinhole_mask_dialog.show()
 
-    def apply_pinhole_mask(self, radius, thickness):
-        kwargs = {
-            'instr': create_hedm_instrument(),
-            'pinhole_radius': radius,
-            'pinhole_thickness': thickness,
-        }
-        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
+    def apply_pinhole_mask(self):
+        instr = create_hedm_instrument()
+        ph_buffer = generate_pinhole_panel_buffer(instr)
 
         ph_masks = []
         for det_key, buffer in ph_buffer.items():

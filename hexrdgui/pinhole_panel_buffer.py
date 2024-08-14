@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def generate_pinhole_panel_buffer(instr, pinhole_radius, pinhole_thickness):
+def generate_pinhole_panel_buffer(instr):
     ph_buffer = {}
 
     # Save the beam vector so we can restore it later
@@ -11,7 +11,7 @@ def generate_pinhole_panel_buffer(instr, pinhole_radius, pinhole_thickness):
     instr.beam_vector = np.r_[0., 0., -1.]
     try:
         for det_key, det in instr.detectors.items():
-            crit_angle = np.arctan(2 * pinhole_radius / pinhole_thickness)
+            crit_angle = np.arctan(det.pinhole.diameter / det.pinhole.thickness)
             ptth, peta = det.pixel_angles()
             ph_buffer[det_key] = ptth < crit_angle
     finally:

@@ -9,7 +9,7 @@ from hexrdgui.utils.dialog import add_help_url
 class PinholeMaskDialog(QObject):
 
     # Arguments are radius, thickness
-    apply_clicked = Signal(float, float)
+    apply_clicked = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -32,32 +32,24 @@ class PinholeMaskDialog(QObject):
 
     def on_apply_clicked(self):
         self.save_settings()
-        self.apply_clicked.emit(self.pinhole_radius, self.pinhole_thickness)
+        self.apply_clicked.emit()
 
     @property
     def settings(self):
         return HexrdConfig().config['image']['pinhole_mask_settings']
 
     def load_settings(self):
-        for name, value in self.settings.items():
-            setattr(self, name, value)
+        self.ui.pinhole_diameter.setValue(HexrdConfig().pinhole_package.diameter)
+        self.ui.pinhole_thickness.setValue(HexrdConfig().pinhole_package.thickness)
 
     def save_settings(self):
         for name in self.settings:
             self.settings[name] = getattr(self, name)
 
     @property
-    def pinhole_radius(self):
-        return self.ui.pinhole_radius.value() * 1e-3
+    def pinhole_diameter(self):
+        return HexrdConfig().pinhole_package.diameter
 
     @property
     def pinhole_thickness(self):
-        return self.ui.pinhole_thickness.value() * 1e-3
-
-    @pinhole_radius.setter
-    def pinhole_radius(self, v):
-        self.ui.pinhole_radius.setValue(v / 1e-3)
-
-    @pinhole_thickness.setter
-    def pinhole_thickness(self, v):
-        self.ui.pinhole_thickness.setValue(v / 1e-3)
+        return HexrdConfig().pinhole_package.thickness
