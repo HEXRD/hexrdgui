@@ -2867,3 +2867,35 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if v != self.apply_absorption_correction:
             self._apply_absorption_correction = v
             self.deep_rerender_needed.emit()
+
+    @property
+    def physics_package(self):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        return list(instr.detectors.values())[0].physics_package
+
+    @physics_package.setter
+    def physics_package(self, changes):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        for detector in instr.detectors.values():
+            for attr, val in changes.items():
+                setattr(detector.physics_package, attr, val)
+
+    @property
+    def pinhole_package(self):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        return list(instr.detectors.values())[0].pinhole
+
+    @pinhole_package.setter
+    def pinhole_package(self, changes):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        for detector in instr.detectors.values():
+            for attr, val in changes.items():
+                setattr(detector.pinhole, attr, val)
