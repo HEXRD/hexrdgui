@@ -1,0 +1,39 @@
+background:
+instrumental parameters:
+  zero point error (Bragg-Brentano): 'zero_error'
+  sample displacement (Bragg-Brentano): 'shft'
+  transparency coefficient (Bragg-Brentano): 'trns'
+  peak broadening:
+    U: 'U'
+    V: 'V'
+    W: 'W'
+materials:
+  '{mat}':
+    peak broadening:
+      lorentzian scherrer broadening: '{mat_X}'
+      gaussian scherrer broadening: '{mat_P}'
+      microstrain: '{mat_Y}'
+    lattice constants:
+      a: '{mat}_a'
+      b: '{mat}_b'
+      c: '{mat}_c'
+      alpha: '{mat}_alpha'
+      beta:  '{mat}_beta'
+      gamma: '{mat}_gamma'
+      anisotropic broadening:
+        mixing coefficient: '{mat}_eta_fwhm'
+        S_{400}: '{mat}_s400'
+        S_{040}: '{mat}_s040'
+        S_{004}: '{mat}_s004'
+        S_{220}: '{mat}_s220'
+        S_{202}: '{mat}_s202'
+        S_{022}: '{mat}_s022'
+        S_{310}: '{mat}_s310'
+        S_{103}: '{mat}_s103'
+        S_{031}: '{mat}_s031'
+        S_{130}: '{mat}_s130'
+        S_{301}: '{mat}_s301'
+        S_{013}: '{mat}_s013'
+        S_{211}: '{mat}_s211'
+        S_{121}: '{mat}_s121'
+        S_{112}: '{mat}_s112'
