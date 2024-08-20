@@ -20,6 +20,23 @@
       <string>Constraints</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="engineering_constraints_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Add engineering constraints for:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="delta_boundaries">
+        <property name="text">
+         <string>Use delta for boundaries</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="1">
        <widget class="QComboBox" name="engineering_constraints">
         <property name="toolTip">
@@ -37,20 +54,13 @@
         </item>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="engineering_constraints_label">
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="mirror_vary_from_first_detector">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If clicked, the &amp;quot;Vary&amp;quot; statuses of the first detector's tilt/translation parameters will be copied to all other detectors' tilt/translation parameters.&lt;/p&gt;&lt;p&gt;This is helpful if you have many detectors and want to modify all of their &amp;quot;Vary&amp;quot; settings in a similar way.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Add engineering constraints for:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="delta_boundaries">
-        <property name="text">
-         <string>Use delta for boundaries</string>
+         <string>Mirror &quot;Vary&quot; from First Detector</string>
         </property>
        </widget>
       </item>
@@ -439,6 +449,7 @@ See scipy.optimize.least_squares for more details.</string>
   <tabstop>draw_picks</tabstop>
   <tabstop>engineering_constraints</tabstop>
   <tabstop>delta_boundaries</tabstop>
+  <tabstop>mirror_vary_from_first_detector</tabstop>
   <tabstop>edit_picks_button</tabstop>
   <tabstop>save_picks_button</tabstop>
   <tabstop>load_picks_button</tabstop>

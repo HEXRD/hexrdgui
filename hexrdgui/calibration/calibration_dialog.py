@@ -88,6 +88,8 @@ class CalibrationDialog(QObject):
             self.on_engineering_constraints_changed)
         self.ui.delta_boundaries.toggled.connect(
             self.on_delta_boundaries_toggled)
+        self.ui.mirror_vary_from_first_detector.clicked.connect(
+            self.mirror_vary_from_first_detector)
         self.ui.edit_picks_button.clicked.connect(self.on_edit_picks_clicked)
         self.ui.save_picks_button.clicked.connect(self.on_save_picks_clicked)
         self.ui.load_picks_button.clicked.connect(self.on_load_picks_clicked)
@@ -314,6 +316,32 @@ class CalibrationDialog(QObject):
     def on_delta_boundaries_toggled(self, b):
         # The columns have changed, so we need to reinitialize the tree view
         self.reinitialize_tree_view()
+
+    def mirror_vary_from_first_detector(self):
+        config = self.tree_view.model().config
+        detector_iterator = iter(config['detectors'])
+        first_detector_name = next(detector_iterator)
+        first_detector = config['detectors'][first_detector_name]
+        tilts = first_detector['transform']['tilt']
+        translations = first_detector['transform']['translation']
+
+        statuses = {
+            'tilt': {k: v['_param'].vary for k, v in tilts.items()},
+            'translation': {
+                k: v['_param'].vary for k, v in translations.items()
+            },
+        }
+
+        # Now loop through all other detectors and update them
+        for det_name in detector_iterator:
+            detector = config['detectors'][det_name]
+            for transform, transform_vary in statuses.items():
+                det_transform = detector['transform'][transform]
+                for k, v in transform_vary.items():
+                    det_transform[k]['_param'].vary = v
+                    det_transform[k]['_vary'] = v
+
+        self.tree_view.reset_gui()
 
     def update_from_calibrator(self, calibrator):
         self.engineering_constraints = calibrator.engineering_constraints
