@@ -241,20 +241,24 @@ class BaseDictTreeView(QTreeView):
         self.model().rebuild_tree()
 
     def expand_rows(self, parent=QModelIndex(), rows=None):
-        row_count = self.model().rowCount(parent)
-
         if rows is None:
-            # Default to all rows
-            rows = list(range(row_count))
+            # Perform expandRecursively(), as it is *significantly* faster.
+            self.expandRecursively(parent)
+            return
+
+        # If there are certain rows selected for expansion, we have to do
+        # it ourselves.
 
         # Recursively expands rows
+        row_count = self.model().rowCount(parent)
         for i in rows:
             if i >= row_count:
                 continue
 
             index = self.model().index(i, KEY_COL, parent)
-            self.expand(index)
-            self.expand_rows(index)
+            if self.model().hasChildren(index):
+                self.expand(index)
+                self.expand_rows(index)
 
     @property
     def lists_resizable(self):
