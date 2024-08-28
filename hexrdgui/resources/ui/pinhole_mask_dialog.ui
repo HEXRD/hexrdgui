@@ -47,8 +47,12 @@
      <property name="value">
       <double>150.000000000000000</double>
      </property>
-     <property name="readOnly">
-      <bool>true</bool>
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+      </string>
      </property>
     </widget>
    </item>
@@ -76,8 +80,12 @@
      <property name="value">
       <double>75.000000000000000</double>
      </property>
-     <property name="readOnly">
-      <bool>true</bool>
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+      </string>
      </property>
     </widget>
    </item>
