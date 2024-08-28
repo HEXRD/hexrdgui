@@ -67,9 +67,15 @@ class PinholeCorrectionEditor(QObject):
             self.on_beam_energy_modified)
         HexrdConfig().materials_dict_modified.connect(
             self.on_materials_dict_modified)
+        HexrdConfig().physics_package_modified.connect(self.synchronize_values)
 
         self.ui.apply_to_polar_view.toggled.connect(
             self.on_apply_to_polar_view_toggled)
+
+    def synchronize_values(self):
+        with block_signals(*self.all_widgets):
+            self.correction_kwargs = {}
+        self.on_settings_modified()
 
     def on_settings_modified(self):
         self.settings_modified.emit()
@@ -552,11 +558,6 @@ class PinholeCorrectionEditor(QObject):
 
         if any_changes:
             # Make sure the polar view gets rerendered.
-            HexrdConfig().pinhole_package.diameter = self.correction_kwargs['pinhole_diameter']
-            HexrdConfig().pinhole_package.thickness = self.correction_kwargs['pinhole_thickness']
-            layer = self.correction_kwargs.get('layer_thickness', None)
-            if layer is not None:
-                HexrdConfig().physics_package.sample_thickness = layer
             HexrdConfig().flag_overlay_updates_for_all_materials()
             HexrdConfig().rerender_needed.emit()
 

@@ -242,6 +242,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the image mode changed"""
     image_mode_changed = Signal(str)
 
+    """Emitted when the physics package was modified"""
+    physics_package_modified = Signal()
+
     """Emitted when canvas focus mode should be started/stopped
 
     In canvas focus mode, the following widgets in the main window are
@@ -2883,6 +2886,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for detector in instr.detectors.values():
             for attr, val in changes.items():
                 setattr(detector.physics_package, attr, val)
+        self.physics_package_modified.emit()
 
     @property
     def pinhole_package(self):
@@ -2899,3 +2903,4 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for detector in instr.detectors.values():
             for attr, val in changes.items():
                 setattr(detector.pinhole, attr, val)
+        self.physics_package_modified.emit()

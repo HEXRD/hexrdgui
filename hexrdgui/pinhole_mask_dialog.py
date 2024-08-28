@@ -20,12 +20,13 @@ class PinholeMaskDialog(QObject):
         add_help_url(self.ui.button_box,
                      'configuration/masking/#pinhole')
 
-        self.load_settings()
+        self.set_values()
         self.setup_connections()
 
     def setup_connections(self):
         apply_button = self.ui.button_box.button(QDialogButtonBox.Apply)
         apply_button.clicked.connect(self.on_apply_clicked)
+        HexrdConfig().physics_package_modified.connect(self.set_values)
 
     def show(self):
         return self.ui.show()
@@ -38,7 +39,7 @@ class PinholeMaskDialog(QObject):
     def settings(self):
         return HexrdConfig().config['image']['pinhole_mask_settings']
 
-    def load_settings(self):
+    def set_values(self):
         self.ui.pinhole_diameter.setValue(HexrdConfig().pinhole_package.diameter)
         self.ui.pinhole_thickness.setValue(HexrdConfig().pinhole_package.thickness)
 
