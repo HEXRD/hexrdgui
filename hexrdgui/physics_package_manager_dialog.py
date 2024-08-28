@@ -190,7 +190,7 @@ class PhysicsPackageDiagram:
 
     offset = 0.20
     patches = {
-        'NIF laser drive': Polygon(
+        'laser drive': Polygon(
             [(0.05, 0.2), (0.05, 0.8), (0.2, 0.75), (0.2, 0.25)],
             facecolor=(0.5, 0, 1, 0.3)),
         'ablator': Rectangle((0.2, 0.2), 0.07, 0.6, facecolor=(0, 1, 0, 0.5),
