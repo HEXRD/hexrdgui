@@ -156,7 +156,7 @@ class PinholeCorrectionEditor(QObject):
             'sample_pinhole_diameter': ('pinhole_diameter', pinhole.diameter),
             'rygg_diameter': ('pinhole_diameter', pinhole.diameter),
             'rygg_thickness': ('pinhole_thickness', pinhole.thickness),
-            'rygg_num_phi_elements': ('num_phi_elements', 60),
+            'rygg_num_phi_elements': ('num_phi_elements', 30),
             'rygg_absorption_length_value': ('absorption_length', 100),
             'jhe_diameter': ('pinhole_diameter', pinhole.diameter),
             'jhe_thickness': ('pinhole_thickness', pinhole.thickness),
