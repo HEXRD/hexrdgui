@@ -216,7 +216,6 @@ class PhysicsPackageDiagram:
     def __init__(self, canvas):
         self.fig = canvas.figure
         self.ax = self.fig.add_subplot()
-        self.ax = self.fig.add_subplot(fc=(0, 0, 0))
         self.ax.set_axis_off()
         self.ax.set_aspect(1)
         self.update_diagram()
