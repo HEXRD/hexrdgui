@@ -1,7 +1,7 @@
 import signal
 import sys
 
-from PySide6.QtCore import QCoreApplication, Qt
+from PySide6.QtCore import QCoreApplication, Qt, QTimer
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import QApplication
 
@@ -38,6 +38,10 @@ def main():
     icon = QIcon(pixmap)
     app.setWindowIcon(icon)
 
+    import cProfile, pstats
+    profiler = cProfile.Profile()
+    profiler.enable()
+
     window = MainWindow()
     window.set_icon(icon)
     window.show()
@@ -45,6 +49,13 @@ def main():
     if parsed_args.state_file is not None:
         # Load the entrypoint file
         window.load_entrypoint_file(parsed_args.state_file)
+
+    profiler.disable()
+    pstats.Stats(profiler).sort_stats('cumtime').print_stats(30)
+    pstats.Stats(profiler).sort_stats('tottime').print_stats(30)
+
+    # Do this on the next iteration of the event loop
+    QTimer.singleShot(0, window.start_fast_powder_calibration)
 
     sys.exit(app.exec())
 

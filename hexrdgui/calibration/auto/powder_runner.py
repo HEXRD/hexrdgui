@@ -1,4 +1,5 @@
 from functools import partial
+from pathlib import Path
 import traceback
 
 import numpy as np
@@ -51,10 +52,12 @@ class PowderRunner(QObject):
             raise Exception('There must be exactly one visible powder overlay')
 
     def _run(self):
-        # First, have the user pick some options
-        if not PowderCalibrationDialog(self.material, self.parent).exec():
-            # User canceled...
-            return
+        premade_picks = Path('./premade_calibration_picks.npy')
+        if not premade_picks.exists():
+            # First, have the user pick some options
+            if not PowderCalibrationDialog(self.material, self.parent).exec():
+                # User canceled...
+                return
 
         # The options they chose are saved here
         options = HexrdConfig().config['calibration']['powder']
@@ -92,6 +95,13 @@ class PowderRunner(QObject):
             engineering_constraints=engineering_constraints,
             euler_convention=HexrdConfig().euler_angle_convention,
         )
+        if premade_picks.exists():
+            self.pc.calibration_picks = np.load(premade_picks, allow_pickle=True).item()
+            # Skip ahead
+            self.save_picks_to_overlay()
+            self.extract_powder_lines_finished()
+            return
+
         self.extract_powder_lines()
 
     def extract_powder_lines(self):
