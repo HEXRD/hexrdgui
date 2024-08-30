@@ -13,7 +13,7 @@ from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 
-from hexrd.material import _angstroms, _kev, Material, sample
+from hexrd.material import _angstroms, _kev, Material
 
 
 class PhysicsPackageManagerDialog:
@@ -73,7 +73,6 @@ class PhysicsPackageManagerDialog:
 
     def load_additional_materials(self):
         # Use a high dmin since we do not care about the HKLs here.
-        # We only care about the absorption length.
         dmin = _angstroms(2)
         energy = _kev(HexrdConfig().beam_energy)
         for key in self.material_selectors.keys():

@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
 )
 
 from hexrdgui.about_dialog import AboutDialog
+from hexrdgui.absorption_correction_options_dialog import (
+    AbsorptionCorrectionOptionsDialog
+)
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.beam_marker_style_editor import BeamMarkerStyleEditor
 from hexrdgui.calibration_slider_widget import CalibrationSliderWidget
@@ -344,8 +347,8 @@ class MainWindow(QObject):
             self.apply_lorentz_correction_toggled)
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
-        self.ui.action_apply_physics_package.toggled.connect(
-            self.action_apply_physics_package_toggled)
+        self.ui.action_apply_absorption_correction.toggled.connect(
+            self.action_apply_absorption_correction_toggled)
 
         HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
@@ -1625,5 +1628,20 @@ class MainWindow(QObject):
     def on_action_physics_package_editor_triggered(self):
         self.physics_package_manager_dialog.show()
 
-    def action_apply_physics_package_toggled(self, b):
+    def action_apply_absorption_correction_toggled(self, b):
+        if not b:
+            # Just turn it off and return
+            HexrdConfig().apply_absorption_correction = b
+            return
+
+        # Get the user to first select the absorption correction options
+        d = AbsorptionCorrectionOptionsDialog(self.ui)
+        if not d.exec():
+            # Canceled... uncheck the action.
+            action = self.ui.action_apply_absorption_correction
+            action.setChecked(False)
+            return
+
+        # The dialog should have modified HexrdConfig's absorption
+        # correction options already. Just apply it now.
         HexrdConfig().apply_absorption_correction = b

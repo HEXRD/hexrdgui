@@ -2904,3 +2904,49 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             for attr, val in changes.items():
                 setattr(detector.pinhole, attr, val)
         self.physics_package_modified.emit()
+
+    def detector_filter(self, det_name):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        return instr.detectors[det_name].filter
+
+    def update_detector_filter(self, det_name, **kwargs):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        detector = instr.detectors[det_name]
+        for attr, val in kwargs.items():
+            setattr(detector.filter, attr, val)
+
+    @property
+    def detector_coating(self):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        return list(instr.detectors.values())[0].coating
+
+    @detector_coating.setter
+    def detector_coating(self, changes):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        for detector in instr.detectors.values():
+            for attr, val in changes.items():
+                setattr(detector.coating, attr, val)
+
+    @property
+    def phosphor(self):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        return list(instr.detectors.values())[0].phosphor
+
+    @phosphor.setter
+    def phosphor(self, changes):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        for detector in instr.detectors.values():
+            for attr, val in changes.items():
+                setattr(detector.phosphor, attr, val)
