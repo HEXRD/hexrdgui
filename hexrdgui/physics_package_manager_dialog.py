@@ -145,6 +145,9 @@ class PhysicsPackageManagerDialog:
         material = self.material_selectors[category].currentText()
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
+        if category == 'pinhole':
+            self.ui.absorption_length.setEnabled(index == 0)
+
         if index > 0:
             try:
                 material = HexrdConfig().materials[material]
@@ -154,6 +157,9 @@ class PhysicsPackageManagerDialog:
             self.density_inputs[category].setValue(density)
         else:
             self.density_inputs[category].setValue(0.0)
+        energy = HexrdConfig().beam_energy
+        absorption_length = HexrdConfig().pinhole_package.absorption_length
+        self.ui.absorption_length.setValue(absorption_length(energy))
 
     def accept_changes(self):
         materials = {}

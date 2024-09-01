@@ -442,7 +442,7 @@ See scipy.optimize.least_squares for more details.</string>
   <customwidget>
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header location="global">scientificspinbox.h</header>
+   <header>scientificspinbox.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

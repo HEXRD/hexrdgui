@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>759</width>
+    <width>793</width>
     <height>438</height>
    </rect>
   </property>
@@ -273,13 +273,6 @@
           <string>Pinhole</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_6">
-          <item row="2" column="0">
-           <widget class="QLabel" name="pinhole_density_label">
-            <property name="text">
-             <string>Density</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <widget class="QLabel" name="pinhole_material_label">
             <property name="text">
@@ -287,12 +280,28 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="pinhole_thickness_label">
-            <property name="text">
-             <string>Thickness</string>
+          <item row="3" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="pinhole_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
             </property>
            </widget>
+          </item>
+          <item row="6" column="0">
+           <spacer name="pinhole_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
           </item>
           <item row="0" column="1" colspan="3">
            <widget class="QComboBox" name="pinhole_material"/>
@@ -307,27 +316,10 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1" colspan="3">
-           <widget class="ScientificDoubleSpinBox" name="pinhole_diameter">
-            <property name="suffix">
-             <string> μm</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1" colspan="3">
-           <widget class="ScientificDoubleSpinBox" name="pinhole_thickness">
-            <property name="suffix">
-             <string> μm</string>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0" colspan="4">
-           <widget class="QLineEdit" name="pinhole_material_input">
-            <property name="enabled">
-             <bool>false</bool>
+          <item row="3" column="0">
+           <widget class="QLabel" name="pinhole_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
             </property>
            </widget>
           </item>
@@ -338,18 +330,40 @@
             </property>
            </widget>
           </item>
+          <item row="1" column="0" colspan="4">
+           <widget class="QLineEdit" name="pinhole_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="pinhole_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="pinhole_diameter">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+           </widget>
+          </item>
           <item row="5" column="0">
-           <spacer name="pinhole_vertical_spacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
+           <widget class="QLabel" name="absorption_length_label">
+            <property name="text">
+             <string>Absorption Length</string>
             </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
+           </widget>
+          </item>
+          <item row="5" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="absorption_length">
+            <property name="singleStep">
+             <double>0.100000000000000</double>
             </property>
-           </spacer>
+           </widget>
           </item>
          </layout>
         </widget>

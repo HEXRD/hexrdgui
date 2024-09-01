@@ -67,11 +67,18 @@
        </item>
        <item row="1" column="0">
         <widget class="ScientificDoubleSpinBox" name="sample_layer_standoff">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -94,22 +101,22 @@
          <property name="value">
           <double>150.000000000000000</double>
          </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
-         </property>
         </widget>
        </item>
        <item row="1" column="2">
         <widget class="ScientificDoubleSpinBox" name="sample_pinhole_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -132,22 +139,22 @@
          <property name="value">
           <double>100.000000000000000</double>
          </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
-         </property>
         </widget>
        </item>
        <item row="1" column="1">
         <widget class="ScientificDoubleSpinBox" name="sample_layer_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -169,13 +176,6 @@
          </property>
          <property name="value">
           <double>5.000000000000000</double>
-         </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
          </property>
         </widget>
        </item>
@@ -202,11 +202,18 @@
        </item>
        <item row="3" column="2">
         <widget class="ScientificDoubleSpinBox" name="sample_pinhole_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -225,13 +232,6 @@
          </property>
          <property name="value">
           <double>200.000000000000000</double>
-         </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
          </property>
         </widget>
        </item>
@@ -329,11 +329,18 @@
        </item>
        <item row="1" column="1">
         <widget class="ScientificDoubleSpinBox" name="rygg_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -352,13 +359,6 @@
          </property>
          <property name="value">
           <double>100.000000000000000</double>
-         </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
          </property>
         </widget>
        </item>
@@ -409,11 +409,18 @@
        </item>
        <item row="1" column="0">
         <widget class="ScientificDoubleSpinBox" name="rygg_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -432,13 +439,6 @@
          </property>
          <property name="value">
           <double>200.000000000000000</double>
-         </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
          </property>
         </widget>
        </item>
@@ -468,11 +468,18 @@
        </item>
        <item row="1" column="0">
         <widget class="ScientificDoubleSpinBox" name="jhe_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -492,13 +499,6 @@
          <property name="value">
           <double>200.000000000000000</double>
          </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
-         </property>
         </widget>
        </item>
        <item row="0" column="1">
@@ -510,11 +510,18 @@
        </item>
        <item row="1" column="1">
         <widget class="ScientificDoubleSpinBox" name="jhe_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
            <height>30</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
+          </string>
          </property>
          <property name="keyboardTracking">
           <bool>false</bool>
@@ -533,13 +540,6 @@
          </property>
          <property name="value">
           <double>100.000000000000000</double>
-         </property>
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-          </string>
          </property>
         </widget>
        </item>
@@ -615,7 +615,7 @@ This will override any overlays that are currently being used for polar distorti
   <customwidget>
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>scientificspinbox.py</header>
+   <header>scientificspinbox.h</header>
   </customwidget>
   <customwidget>
    <class>HiddenBarTabWidget</class>
