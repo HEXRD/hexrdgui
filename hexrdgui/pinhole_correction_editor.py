@@ -148,6 +148,7 @@ class PinholeCorrectionEditor(QObject):
 
         pinhole = HexrdConfig().pinhole_package
         physics = HexrdConfig().physics_package
+        absorption = pinhole.absorption_length(HexrdConfig().beam_energy)
         # Values are (key, default)
         values = {
             'sample_layer_standoff': ('layer_standoff', physics.window_thickness),
@@ -157,7 +158,7 @@ class PinholeCorrectionEditor(QObject):
             'rygg_diameter': ('pinhole_diameter', pinhole.diameter),
             'rygg_thickness': ('pinhole_thickness', pinhole.thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 30),
-            'rygg_absorption_length_value': ('absorption_length', 100),
+            'rygg_absorption_length_value': ('absorption_length', absorption),
             'jhe_diameter': ('pinhole_diameter', pinhole.diameter),
             'jhe_thickness': ('pinhole_thickness', pinhole.thickness),
         }
@@ -245,6 +246,9 @@ class PinholeCorrectionEditor(QObject):
 
         self.update_tab_widget_visibility()
 
+        if self.correction_type == 'RyggPinholeDistortion':
+            self.auto_select_rygg_absorption_length()
+
         self.validate()
         self.on_settings_modified()
 
@@ -320,27 +324,8 @@ class PinholeCorrectionEditor(QObject):
 
     @property
     def rygg_absorption_length(self):
-        i = self.ui.rygg_absorption_length_selector.currentIndex()
-        return self.get_rygg_absorption_length(i)
-
-    def get_rygg_absorption_length(self, idx):
-        name = self.ui.rygg_absorption_length_selector.itemText(idx)
-        if idx == self.enter_manually_idx:
-            return self.ui.rygg_absorption_length_value.value()
-        elif idx >= self.user_material_names_start_idx:
-            mat = HexrdConfig().materials[name]
-        else:
-            mat = self.pinhole_materials[name]
-
-            # Make sure this beam energy is updated
-            mat.beamEnergy = HexrdConfig().beam_energy
-
-        return mat.absorption_length
-
-    @rygg_absorption_length.setter
-    def rygg_absorption_length(self, v):
-        self.ui.rygg_absorption_length_value.setValue(v)
-        self.auto_select_rygg_absorption_length()
+        pinhole = HexrdConfig().pinhole_package
+        return pinhole.absorption_length(HexrdConfig().beam_energy)
 
     def load_pinhole_materials(self):
         module = hexrd.resources
@@ -370,15 +355,8 @@ class PinholeCorrectionEditor(QObject):
 
     def on_materials_dict_modified(self):
         # This gets called if materials get added/removed/deleted/renamed
-        # The absorption length value should not be modified.
-        prev_value = self.ui.rygg_absorption_length_value.value()
         with block_signals(self, self.ui.rygg_absorption_length_selector):
             self.populate_rygg_absorption_length_options()
-
-            # Auto-select the material that has a matching absorption length
-            # This should work, unless the material was deleted (in which case
-            # it will be "Enter Manually")
-            self.rygg_absorption_length = prev_value
 
     def populate_rygg_absorption_length_options(self):
         self.ui.rygg_absorption_length_selector.clear()
@@ -411,13 +389,6 @@ class PinholeCorrectionEditor(QObject):
         return 0
 
     def on_rygg_absorption_length_selector_changed(self):
-        text = self.ui.rygg_absorption_length_selector.currentText()
-
-        enter_manually = text == 'Enter Manually'
-        self.ui.rygg_absorption_length_value.setEnabled(enter_manually)
-        if enter_manually:
-            return
-
         # self.rygg_absorption_length should be updated
         self.ui.rygg_absorption_length_value.setValue(
             self.rygg_absorption_length)
@@ -464,18 +435,15 @@ class PinholeCorrectionEditor(QObject):
 
     def auto_select_rygg_absorption_length(self):
         w = self.ui.rygg_absorption_length_selector
-        value = self.ui.rygg_absorption_length_value.value()
 
-        # Check if there is an absorption length that matches other than
-        # "Enter Manually", and auto set it if there is.
+        # Set the material to match the pinhole package if it exists.
+        # If not default to "Enter Manually"
         for i in range(1, w.count()):
             name = w.itemText(i)
             if not name:
                 # It's a separator
                 continue
-
-            absorption_length = self.get_rygg_absorption_length(i)
-            if np.isclose(value, absorption_length):
+            if name == HexrdConfig().pinhole_package.material:
                 w.setCurrentText(name)
                 return
 

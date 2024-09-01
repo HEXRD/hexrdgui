@@ -58,10 +58,11 @@ class CalibrationDialog(QObject):
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         editor = self.pinhole_correction_editor
+        editor.synchronize_values()
         editor.update_gui_from_polar_distortion_object()
         self.ui.pinhole_distortion_layout.addWidget(editor.ui)
         editor.apply_panel_buffer_visible = False
-        editor.settings_modified.connect(
+        HexrdConfig().physics_package_modified.connect(
             self.on_pinhole_correction_settings_modified)
 
         self.instr = instr

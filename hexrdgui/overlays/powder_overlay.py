@@ -596,10 +596,13 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
     @property
     def pinhole_distortion_kwargs(self):
+        from hexrdgui.hexrd_config import HexrdConfig
         kwargs = self.tth_distortion_kwargs.copy()
         if self.pinhole_distortion_type == 'RyggPinholeDistortion':
             # Add our absorption length
-            kwargs['absorption_length'] = self.material.absorption_length
+            energy = HexrdConfig().beam_energy
+            absorption_length = HexrdConfig().pinhole_package.absorption_length
+            kwargs['absorption_length'] = absorption_length(energy)
         return kwargs
     # END PolarDistortionObject mixin reroutes
 
