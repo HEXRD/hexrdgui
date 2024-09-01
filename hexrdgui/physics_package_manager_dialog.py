@@ -22,7 +22,7 @@ class PhysicsPackageManagerDialog:
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
         self.additional_materials = {}
-        self.det_type = None
+        self._instrument_type = None
 
         canvas = FigureCanvas(Figure(tight_layout=True))
         # Get the canvas to take up the majority of the screen most of the time
@@ -36,6 +36,18 @@ class PhysicsPackageManagerDialog:
     def show(self):
         self.setup_form()
         self.ui.show()
+
+    @property
+    def instrument_type(self):
+        return self._instrument_type
+
+    instrument_type.setter
+    def instrument_type(self, value):
+        self._instrument_type = value
+        pinhole = HexrdConfig().pinhole_package
+        if value == 'PXRDIP':
+            pinhole.thickness = 70
+            pinhole.diameter = 130
 
     @property
     def material_selectors(self):
@@ -103,7 +115,7 @@ class PhysicsPackageManagerDialog:
         # PINHOLE
         self.ui.pinhole_material.setCurrentText(pinhole.material)
         self.ui.pinhole_density.setValue(pinhole.density)
-        if self.det_type == 'PXRDIP':
+        if self.instrument_type == 'PXRDIP':
             self.ui.pinhole_thickness.setValue(70)
             self.ui.pinhole_diameter.setValue(130)
         else:
