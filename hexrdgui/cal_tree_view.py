@@ -279,9 +279,7 @@ class CalTreeView(QTreeView):
         self.setItemDelegateForColumn(
             STATUS_COL, CheckBoxDelegate(self))
 
-        self.blockSignals(True)
-        self.expand_rows()
-        self.blockSignals(False)
+        self.expand_all_rows()
 
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)
@@ -330,13 +328,25 @@ class CalTreeView(QTreeView):
         # We rebuild it from scratch every time it is shown in case
         # the number of detectors have changed.
         self.model().rebuild_tree()
+        self.expand_all_rows()
 
+    def expand_all_rows(self):
         self.blockSignals(True)
-        self.expand_rows()
+        # It is *significantly* faster to recursively expand
+        # all rows using Qt's function and then to collapse as
+        # needed afterward.
+        self.expandRecursively(QModelIndex())
+        self.fix_row_states()
         self.blockSignals(False)
 
-    def expand_rows(self, parent=QModelIndex()):
-        # Recursively expands all rows
+    def fix_row_states(self, parent=QModelIndex()):
+        # Recursively fix all row states
+        # This includes opening persistent editors and collapsing any
+        # needed rows.
+        # We performed an "expandRecursively()" earlier, as we typically
+        # have everything expanded, and then we only collapse what was
+        # specifically requested to be collapsed.
+        collapsed_state = HexrdConfig().collapsed_state
         for i in range(self.model().rowCount(parent)):
             index = self.model().index(i, KEY_COL, parent)
             item = self.model().get_item(index)
@@ -347,13 +357,12 @@ class CalTreeView(QTreeView):
                 self.openPersistentEditor(self.model().index(i, VALUE_COL,
                                           parent))
 
-            if (HexrdConfig().collapsed_state is None
-                    or path not in HexrdConfig().collapsed_state):
-                self.expand(index)
+            if collapsed_state and path in collapsed_state:
+                self.collapse(index)
 
             self.display_status_checkbox(i, parent)
 
-            self.expand_rows(index)
+            self.fix_row_states(index)
 
     def expand_selection(self, parent, index):
         for child in range(parent.child_count()):
