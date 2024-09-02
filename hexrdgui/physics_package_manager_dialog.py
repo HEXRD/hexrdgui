@@ -41,7 +41,7 @@ class PhysicsPackageManagerDialog:
     def instrument_type(self):
         return self._instrument_type
 
-    instrument_type.setter
+    @instrument_type.setter
     def instrument_type(self, value):
         self._instrument_type = value
         pinhole = HexrdConfig().pinhole_package

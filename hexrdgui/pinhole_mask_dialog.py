@@ -40,8 +40,10 @@ class PinholeMaskDialog(QObject):
         return HexrdConfig().config['image']['pinhole_mask_settings']
 
     def set_values(self):
-        self.ui.pinhole_diameter.setValue(HexrdConfig().pinhole_package.diameter)
-        self.ui.pinhole_thickness.setValue(HexrdConfig().pinhole_package.thickness)
+        self.ui.pinhole_diameter.setValue(
+            HexrdConfig().pinhole_package.diameter)
+        self.ui.pinhole_thickness.setValue(
+            HexrdConfig().pinhole_package.thickness)
 
     def save_settings(self):
         for name in self.settings:

@@ -151,9 +151,12 @@ class PinholeCorrectionEditor(QObject):
         absorption = pinhole.absorption_length(HexrdConfig().beam_energy)
         # Values are (key, default)
         values = {
-            'sample_layer_standoff': ('layer_standoff', physics.window_thickness),
-            'sample_layer_thickness': ('layer_thickness', physics.sample_thickness),
-            'sample_pinhole_thickness': ('pinhole_thickness', pinhole.thickness),
+            'sample_layer_standoff': ('layer_standoff',
+                                      physics.window_thickness),
+            'sample_layer_thickness': ('layer_thickness',
+                                       physics.sample_thickness),
+            'sample_pinhole_thickness': ('pinhole_thickness',
+                                         pinhole.thickness),
             'sample_pinhole_diameter': ('pinhole_diameter', pinhole.diameter),
             'rygg_diameter': ('pinhole_diameter', pinhole.diameter),
             'rygg_thickness': ('pinhole_thickness', pinhole.thickness),

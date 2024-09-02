@@ -60,8 +60,8 @@ class AbsorptionCorrectionOptionsDialog:
                         mat_names = list(f.keys())
 
                         for name in mat_names:
-                            materials[name] = Material(name, file_path, dmin=dmin,
-                                                    kev=energy)
+                            materials[name] = Material(name, file_path,
+                                                       dmin=dmin, kev=energy)
             except:
                 # FIXME: Do we need this? Will there be additional files to load?
                 print(f'No such file: {file_name}')
