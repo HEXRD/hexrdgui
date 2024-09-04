@@ -146,7 +146,6 @@ class LLNLImportToolDialog(QObject):
     def instrument_selected(self, idx):
         instruments = {1: 'TARDIS', 2: 'PXRDIP'}
         self.instrument = instruments.get(idx, None)
-        self.physics_package_manager.det_type = self.instrument
 
         if HexrdConfig().show_beam_marker:
             HexrdConfig().show_beam_marker = False

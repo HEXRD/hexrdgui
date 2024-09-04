@@ -8,10 +8,12 @@ from matplotlib.figure import Figure
 
 from PySide6.QtWidgets import QSizePolicy
 
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 import hexrdgui.resources.materials as module
 from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 from hexrd.material import _angstroms, _kev, Material
 
@@ -22,7 +24,6 @@ class PhysicsPackageManagerDialog:
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
         self.additional_materials = {}
-        self._instrument_type = None
 
         canvas = FigureCanvas(Figure(tight_layout=True))
         # Get the canvas to take up the majority of the screen most of the time
@@ -31,23 +32,12 @@ class PhysicsPackageManagerDialog:
         self.ui.diagram.addWidget(canvas)
 
         self.load_additional_materials()
+        self.update_instrument_type()
         self.setup_connections()
 
     def show(self):
         self.setup_form()
         self.ui.show()
-
-    @property
-    def instrument_type(self):
-        return self._instrument_type
-
-    @instrument_type.setter
-    def instrument_type(self, value):
-        self._instrument_type = value
-        pinhole = HexrdConfig().pinhole_package
-        if value == 'PXRDIP':
-            pinhole.thickness = 70
-            pinhole.diameter = 130
 
     @property
     def material_selectors(self):
@@ -82,6 +72,7 @@ class PhysicsPackageManagerDialog:
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
                 lambda index, k=k: self.material_changed(index, k))
+        HexrdConfig().instrument_config_loaded.connect(self.update_instrument_type)
 
     def load_additional_materials(self):
         # Use a high dmin since we do not care about the HKLs here.
@@ -98,6 +89,14 @@ class PhysicsPackageManagerDialog:
                         materials[name] = Material(name, file_path, dmin=dmin,
                                                    kev=energy)
             self.additional_materials[key] = materials
+
+    def update_instrument_type(self):
+        instr = create_hedm_instrument()
+        self.instrument_type = guess_instrument_type(instr.detectors)
+        if self.instrument_type == 'PXRDIP':
+            pinhole = HexrdConfig().pinhole_package
+            pinhole.thickness = 70
+            pinhole.diameter = 130
 
     def setup_form(self):
         mat_names = list(HexrdConfig().materials.keys())
