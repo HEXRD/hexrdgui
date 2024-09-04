@@ -87,7 +87,7 @@ class PhysicsPackageManagerDialog:
         # Use a high dmin since we do not care about the HKLs here.
         dmin = _angstroms(2)
         energy = _kev(HexrdConfig().beam_energy)
-        for key in self.material_selectors.keys():
+        for key in ['pinhole', 'window']:
             materials = {}
             file_name = f'{key}_materials.h5'
             with resource_loader.path(module, file_name) as file_path:
@@ -102,7 +102,7 @@ class PhysicsPackageManagerDialog:
     def setup_form(self):
         mat_names = list(HexrdConfig().materials.keys())
         for key, w in self.material_selectors.items():
-            custom_mats = list(self.additional_materials[key])
+            custom_mats = list(self.additional_materials.get(key, {}))
             options = ['Enter Manually', *custom_mats, *mat_names]
             w.clear()
             w.addItems(options)
