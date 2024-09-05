@@ -88,8 +88,8 @@ class CalibrationDialog(QObject):
             self.on_engineering_constraints_changed)
         self.ui.delta_boundaries.toggled.connect(
             self.on_delta_boundaries_toggled)
-        self.ui.mirror_vary_from_first_detector.clicked.connect(
-            self.mirror_vary_from_first_detector)
+        self.ui.mirror_constraints_from_first_detector.clicked.connect(
+            self.mirror_constraints_from_first_detector)
         self.ui.edit_picks_button.clicked.connect(self.on_edit_picks_clicked)
         self.ui.save_picks_button.clicked.connect(self.on_save_picks_clicked)
         self.ui.load_picks_button.clicked.connect(self.on_load_picks_clicked)
@@ -317,7 +317,7 @@ class CalibrationDialog(QObject):
         # The columns have changed, so we need to reinitialize the tree view
         self.reinitialize_tree_view()
 
-    def mirror_vary_from_first_detector(self):
+    def mirror_constraints_from_first_detector(self):
         config = self.tree_view.model().config
         detector_iterator = iter(config['detectors'])
         first_detector_name = next(detector_iterator)
@@ -332,6 +332,15 @@ class CalibrationDialog(QObject):
             },
         }
 
+        if self.delta_boundaries:
+            # Mirror the delta values too
+            deltas = {
+                'tilt': {k: v['_delta'] for k, v in tilts.items()},
+                'translation': {
+                    k: v['_delta'] for k, v in translations.items()
+                },
+            }
+
         # Now loop through all other detectors and update them
         for det_name in detector_iterator:
             detector = config['detectors'][det_name]
@@ -340,6 +349,14 @@ class CalibrationDialog(QObject):
                 for k, v in transform_vary.items():
                     det_transform[k]['_param'].vary = v
                     det_transform[k]['_vary'] = v
+
+            if self.delta_boundaries:
+                # Mirror the delta values too
+                for transform, delta_dict in deltas.items():
+                    det_transform = detector['transform'][transform]
+                    for k, v in delta_dict.items():
+                        det_transform[k]['_param'].delta = v
+                        det_transform[k]['_delta'] = v
 
         self.tree_view.reset_gui()
 
