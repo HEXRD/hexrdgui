@@ -198,7 +198,7 @@
        </widget>
        <widget class="QWidget" name="phosphor_tab">
         <attribute name="title">
-         <string>Phosphorus</string>
+         <string>Phosphor</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="3" column="1" colspan="3">
@@ -285,12 +285,18 @@
          <item row="5" column="0">
           <widget class="QLabel" name="phosphor_pre_U0_label">
            <property name="text">
-            <string>Pre U0</string>
+            <string>PreU 0</string>
            </property>
           </widget>
          </item>
          <item row="5" column="1" colspan="3">
           <widget class="ScientificDoubleSpinBox" name="phosphor_pre_U0">
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="suffix">
+            <string> PSL/MeV</string>
+           </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
            </property>
