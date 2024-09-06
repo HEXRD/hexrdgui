@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PhysicsPackageEditor</class>
- <widget class="QDialog" name="PhysicsPackageEditor">
+ <class>AbsorptionCorrectionEditor</class>
+ <widget class="QDialog" name="AbsorptionCorrectionEditor">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Physics Package Manager</string>
+   <string>Absorption Correction Editor</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
