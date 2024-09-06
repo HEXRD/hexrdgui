@@ -55,12 +55,12 @@
        </widget>
       </item>
       <item row="2" column="0" colspan="2">
-       <widget class="QPushButton" name="mirror_vary_from_first_detector">
+       <widget class="QPushButton" name="mirror_constraints_from_first_detector">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If clicked, the &amp;quot;Vary&amp;quot; statuses of the first detector's tilt/translation parameters will be copied to all other detectors' tilt/translation parameters.&lt;/p&gt;&lt;p&gt;This is helpful if you have many detectors and want to modify all of their &amp;quot;Vary&amp;quot; settings in a similar way.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If clicked, the &amp;quot;Vary&amp;quot; and &amp;quot;Delta&amp;quot; (if &amp;quot;Use delta for boundaries&amp;quot; is checked) settings of the first detector's tilt/translation parameters will be copied to all other detectors' tilt/translation parameters.&lt;/p&gt;&lt;p&gt;This is helpful if you have many detectors and want to modify all of their &amp;quot;Vary&amp;quot; and &amp;quot;Delta&amp;quot; settings in a similar way.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Mirror &quot;Vary&quot; from First Detector</string>
+         <string>Mirror Constraints from First Detector</string>
         </property>
        </widget>
       </item>
@@ -449,7 +449,7 @@ See scipy.optimize.least_squares for more details.</string>
   <tabstop>draw_picks</tabstop>
   <tabstop>engineering_constraints</tabstop>
   <tabstop>delta_boundaries</tabstop>
-  <tabstop>mirror_vary_from_first_detector</tabstop>
+  <tabstop>mirror_constraints_from_first_detector</tabstop>
   <tabstop>edit_picks_button</tabstop>
   <tabstop>save_picks_button</tabstop>
   <tabstop>load_picks_button</tabstop>
