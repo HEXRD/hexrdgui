@@ -48,25 +48,8 @@ class AbsorptionCorrectionOptionsDialog:
         }
 
     def load_additional_materials(self):
-        # Use a high dmin since we do not care about the HKLs here.
-        dmin = _angstroms(2)
-        energy = _kev(HexrdConfig().beam_energy)
-        for key in self.material_selectors.keys():
-            materials = {}
-            file_name = f'{key}_materials.h5'
-            try:
-                with resource_loader.path(module, file_name) as file_path:
-                    with h5py.File(file_path) as f:
-                        mat_names = list(f.keys())
-
-                        for name in mat_names:
-                            materials[name] = Material(name, file_path,
-                                                       dmin=dmin, kev=energy)
-            except:
-                # FIXME: Do we need this? Will there be additional files to load?
-                print(f'No such file: {file_name}')
-            finally:
-                self.additional_materials[key] = materials
+        # FIXME: Update to use defaults once they've been added to HEXRD
+        return
 
     def update_gui(self):
         # Filter info is set per detector
@@ -76,7 +59,7 @@ class AbsorptionCorrectionOptionsDialog:
         # for each layer
         mat_names = list(HexrdConfig().materials.keys())
         for key, w in self.material_selectors.items():
-            custom_mats = list(self.additional_materials[key])
+            custom_mats = list(self.additional_materials.get(key, {}))
             self.mat_options = ['Enter Manually', *custom_mats, *mat_names]
             w.clear()
             w.addItems(self.mat_options)
