@@ -160,6 +160,7 @@ class PhysicsPackageManagerDialog:
             self.ui.absorption_length.setEnabled(index == 0)
 
         if index > 0:
+            self.material_inputs[category].setText('')
             try:
                 material = HexrdConfig().materials[material]
             except KeyError:

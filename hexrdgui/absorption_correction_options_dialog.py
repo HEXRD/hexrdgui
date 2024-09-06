@@ -112,7 +112,9 @@ class AbsorptionCorrectionOptionsDialog:
         selected = self.material_selectors[category].currentText()
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
+
         if index > 0:
+            self.material_inputs[category].setText('')
             try:
                 material = HexrdConfig().materials[selected]
             except KeyError:
