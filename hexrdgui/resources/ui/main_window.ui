@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -210,8 +210,8 @@
      <addaction name="action_apply_pixel_solid_angle_correction"/>
      <addaction name="action_apply_lorentz_correction"/>
      <addaction name="action_apply_polarization_correction"/>
-     <addaction name="action_subtract_minimum"/>
      <addaction name="action_apply_absorption_correction"/>
+     <addaction name="action_subtract_minimum"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
     <addaction name="action_edit_euler_angle_convention"/>
@@ -332,7 +332,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>783</height>
          </rect>
         </property>
         <attribute name="label">
@@ -345,7 +345,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>783</height>
          </rect>
         </property>
         <attribute name="label">

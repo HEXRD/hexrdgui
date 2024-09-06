@@ -916,11 +916,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 factor = panel.lorentz_factor()
                 images_dict[name] = img / factor
 
-        if HexrdConfig().intensity_subtract_minimum:
-            minimum = min([np.nanmin(x) for x in images_dict.values()])
-            for name, img in images_dict.items():
-                images_dict[name] = img - minimum
-
         if HexrdConfig().apply_absorption_correction:
             instr.calc_transmission()
 
@@ -932,6 +927,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 # normalize by maximum of the entire instrument
                 transmission /= max_transmission
                 images_dict[name] = img * (1 / transmission)
+
+        if HexrdConfig().intensity_subtract_minimum:
+            minimum = min([np.nanmin(x) for x in images_dict.values()])
+            for name, img in images_dict.items():
+                images_dict[name] = img - minimum
 
         return images_dict
 
