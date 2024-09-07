@@ -65,7 +65,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         if self.tth_distortion_type == 'SampleLayerDistortion':
             # We added pinhole_diameter later. Set a default if it is missing.
             if 'pinhole_diameter' not in self.tth_distortion_kwargs:
-                diameter = HexrdConfig().pinhole_package.diameter
+                diameter = HexrdConfig().physics_package.pinhole_diameter
                 self.tth_distortion_kwargs['pinhole_diameter'] = diameter
 
     @property
@@ -601,7 +601,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         if self.pinhole_distortion_type == 'RyggPinholeDistortion':
             # Add our absorption length
             energy = HexrdConfig().beam_energy
-            absorption_length = HexrdConfig().pinhole_package.absorption_length
+            absorption_length = HexrdConfig().physics_package.pinhole_absorption_length
             kwargs['absorption_length'] = absorption_length(energy)
         return kwargs
     # END PolarDistortionObject mixin reroutes

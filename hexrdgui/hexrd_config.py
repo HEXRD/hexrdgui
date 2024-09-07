@@ -2887,23 +2887,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 setattr(detector.physics_package, attr, val)
         self.physics_package_modified.emit()
 
-    @property
-    def pinhole_package(self):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        return list(instr.detectors.values())[0].pinhole
-
-    @pinhole_package.setter
-    def pinhole_package(self, changes):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        for detector in instr.detectors.values():
-            for attr, val in changes.items():
-                setattr(detector.pinhole, attr, val)
-        self.physics_package_modified.emit()
-
     def detector_filter(self, det_name):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()

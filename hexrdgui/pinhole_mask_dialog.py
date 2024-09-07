@@ -41,9 +41,9 @@ class PinholeMaskDialog(QObject):
 
     def set_values(self):
         self.ui.pinhole_diameter.setValue(
-            HexrdConfig().pinhole_package.diameter)
+            HexrdConfig().physics_package.pinhole_diameter)
         self.ui.pinhole_thickness.setValue(
-            HexrdConfig().pinhole_package.thickness)
+            HexrdConfig().physics_package.pinhole_thickness)
 
     def save_settings(self):
         for name in self.settings:
@@ -51,8 +51,8 @@ class PinholeMaskDialog(QObject):
 
     @property
     def pinhole_diameter(self):
-        return HexrdConfig().pinhole_package.diameter
+        return HexrdConfig().physics_package.pinhole_diameter
 
     @property
     def pinhole_thickness(self):
-        return HexrdConfig().pinhole_package.thickness
+        return HexrdConfig().physics_package.pinhole_thickness

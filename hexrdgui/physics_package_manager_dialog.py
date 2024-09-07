@@ -94,9 +94,9 @@ class PhysicsPackageManagerDialog:
         instr = create_hedm_instrument()
         self.instrument_type = guess_instrument_type(instr.detectors)
         if self.instrument_type == 'PXRDIP':
-            pinhole = HexrdConfig().pinhole_package
-            pinhole.thickness = 70
-            pinhole.diameter = 130
+            physics_package = HexrdConfig().physics_package
+            physics_package.pinhole_thickness = 70
+            physics_package.pinhole_diameter = 130
 
     def setup_form(self):
         mat_names = list(HexrdConfig().materials.keys())
@@ -110,16 +110,15 @@ class PhysicsPackageManagerDialog:
 
         # Set default values
         physics = HexrdConfig().physics_package
-        pinhole = HexrdConfig().pinhole_package
         # PINHOLE
-        self.ui.pinhole_material.setCurrentText(pinhole.material)
-        self.ui.pinhole_density.setValue(pinhole.density)
+        self.ui.pinhole_material.setCurrentText(physics.pinhole_material)
+        self.ui.pinhole_density.setValue(physics.pinhole_density)
         if self.instrument_type == 'PXRDIP':
             self.ui.pinhole_thickness.setValue(70)
             self.ui.pinhole_diameter.setValue(130)
         else:
-            self.ui.pinhole_thickness.setValue(pinhole.thickness)
-            self.ui.pinhole_diameter.setValue(pinhole.diameter)
+            self.ui.pinhole_thickness.setValue(physics.pinhole_thickness)
+            self.ui.pinhole_diameter.setValue(physics.pinhole_diameter)
         # WINDOW
         if physics.window_material not in options:
             self.ui.window_material_input.setText(
@@ -170,7 +169,7 @@ class PhysicsPackageManagerDialog:
         else:
             self.density_inputs[category].setValue(0.0)
         energy = HexrdConfig().beam_energy
-        absorption_length = HexrdConfig().pinhole_package.absorption_length
+        absorption_length = HexrdConfig().physics_package.pinhole_absorption_length
         self.ui.absorption_length.setValue(absorption_length(energy))
 
     def accept_changes(self):
@@ -181,22 +180,18 @@ class PhysicsPackageManagerDialog:
             else:
                 materials[key] = selector.currentText()
 
-        physics_package = {
+        HexrdConfig().physics_package = {
             'sample_material': materials['sample'],
             'sample_density': self.ui.sample_density.value(),
             'sample_thickness': self.ui.sample_thickness.value(),
             'window_material': materials['window'],
             'window_density': self.ui.window_density.value(),
             'window_thickness': self.ui.window_thickness.value(),
+            'pinhole_material': materials['pinhole'],
+            'pinhole_diameter': self.ui.pinhole_diameter.value(),
+            'pinhole_thickness': self.ui.pinhole_thickness.value(),
+            'pinhole_density': self.ui.pinhole_density.value(),
         }
-        pinhole = {
-            'material': materials['pinhole'],
-            'diameter': self.ui.pinhole_diameter.value(),
-            'thickness': self.ui.pinhole_thickness.value(),
-            'density': self.ui.pinhole_density.value(),
-        }
-        HexrdConfig().physics_package = physics_package
-        HexrdConfig().pinhole_package = pinhole
 
         if HexrdConfig().apply_absorption_correction:
             # Make sure changes are reflected

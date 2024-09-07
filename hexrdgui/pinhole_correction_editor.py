@@ -113,25 +113,24 @@ class PinholeCorrectionEditor(QObject):
     def correction_kwargs(self):
         dtype = self.correction_type
         physics = HexrdConfig().physics_package
-        pinhole = HexrdConfig().pinhole_package
         if dtype is None:
             return None
         elif dtype == 'SampleLayerDistortion':
             return {
                 'layer_standoff': physics.window_thickness,
                 'layer_thickness': physics.sample_thickness,
-                'pinhole_thickness': pinhole.thickness,
-                'pinhole_radius': pinhole.radius,
+                'pinhole_thickness': physics.pinhole_thickness,
+                'pinhole_radius': physics.pinhole_radius,
             }
         elif dtype == 'JHEPinholeDistortion':
             return {
-                'pinhole_radius': pinhole.radius,
-                'pinhole_thickness': pinhole.thickness,
+                'pinhole_radius': physics.pinhole_radius,
+                'pinhole_thickness': physics.pinhole_thickness,
             }
         elif dtype == 'RyggPinholeDistortion':
             output = {
-                'pinhole_radius': pinhole.radius,
-                'pinhole_thickness': pinhole.thickness,
+                'pinhole_radius': physics.pinhole_radius,
+                'pinhole_thickness': physics.pinhole_thickness,
                 'num_phi_elements': self.ui.rygg_num_phi_elements.value(),
             }
             if self.rygg_absorption_length_visible:
@@ -146,9 +145,8 @@ class PinholeCorrectionEditor(QObject):
         if v is None:
             return
 
-        pinhole = HexrdConfig().pinhole_package
         physics = HexrdConfig().physics_package
-        absorption = pinhole.absorption_length(HexrdConfig().beam_energy)
+        absorption = physics.pinhole_absorption_length(HexrdConfig().beam_energy)
         # Values are (key, default)
         values = {
             'sample_layer_standoff': ('layer_standoff',
@@ -156,14 +154,14 @@ class PinholeCorrectionEditor(QObject):
             'sample_layer_thickness': ('layer_thickness',
                                        physics.sample_thickness),
             'sample_pinhole_thickness': ('pinhole_thickness',
-                                         pinhole.thickness),
-            'sample_pinhole_diameter': ('pinhole_diameter', pinhole.diameter),
-            'rygg_diameter': ('pinhole_diameter', pinhole.diameter),
-            'rygg_thickness': ('pinhole_thickness', pinhole.thickness),
+                                         physics.pinhole_thickness),
+            'sample_pinhole_diameter': ('pinhole_diameter', physics.pinhole_diameter),
+            'rygg_diameter': ('pinhole_diameter', physics.pinhole_diameter),
+            'rygg_thickness': ('pinhole_thickness', physics.pinhole_thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 30),
             'rygg_absorption_length_value': ('absorption_length', absorption),
-            'jhe_diameter': ('pinhole_diameter', pinhole.diameter),
-            'jhe_thickness': ('pinhole_thickness', pinhole.thickness),
+            'jhe_diameter': ('pinhole_diameter', physics.pinhole_diameter),
+            'jhe_thickness': ('pinhole_thickness', physics.pinhole_thickness),
         }
 
         dtype = self.correction_type
@@ -327,8 +325,8 @@ class PinholeCorrectionEditor(QObject):
 
     @property
     def rygg_absorption_length(self):
-        pinhole = HexrdConfig().pinhole_package
-        return pinhole.absorption_length(HexrdConfig().beam_energy)
+        physics = HexrdConfig().physics_package
+        return physics.pinhole_absorption_length(HexrdConfig().beam_energy)
 
     def load_pinhole_materials(self):
         module = hexrd.resources
@@ -446,7 +444,7 @@ class PinholeCorrectionEditor(QObject):
             if not name:
                 # It's a separator
                 continue
-            if name == HexrdConfig().pinhole_package.material:
+            if name == HexrdConfig().physics_package.pinhole_material:
                 w.setCurrentText(name)
                 return
 
