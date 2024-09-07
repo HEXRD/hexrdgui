@@ -1,15 +1,16 @@
+import copy
 from pathlib import Path
 
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import re
+import yaml
 
-from PySide6.QtCore import Qt, QObject, QTimer, Signal
-from PySide6.QtWidgets import (
-    QCheckBox, QFileDialog, QHBoxLayout, QMessageBox, QSizePolicy,
-    QTableWidgetItem, QWidget
-)
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox
 
+from hexrdgui import resource_loader
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
 from hexrd.wppf import LeBail, Rietveld
@@ -20,29 +21,26 @@ from hexrd.wppf.wppfsupport import (
     _generate_default_parameters_Rietveld,
 )
 
+from hexrdgui.calibration.tree_item_models import (
+    DefaultCalibrationTreeItemModel,
+    DeltaCalibrationTreeItemModel,
+)
 from hexrdgui.dynamic_widget import DynamicWidget
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.point_picker_dialog import PointPickerDialog
-from hexrdgui.scientificspinbox import ScientificDoubleSpinBox
 from hexrdgui.select_items_dialog import SelectItemsDialog
+from hexrdgui.tree_views.multi_column_dict_tree_view import (
+    MultiColumnDictTreeView
+)
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, clear_layout, has_nan
 from hexrdgui.wppf_style_picker import WppfStylePicker
+import hexrdgui.resources.wppf.tree_views as tree_view_resources
 
 
 inverted_peakshape_dict = {v: k for k, v in peakshape_dict.items()}
 
 DEFAULT_PEAK_SHAPE = 'pvtch'
-
-COLUMNS = {
-    'name': 0,
-    'value': 1,
-    'minimum': 2,
-    'maximum': 3,
-    'vary': 4
-}
-
-LENGTH_SUFFIXES = ['_a', '_b', '_c']
 
 
 class WppfOptionsDialog(QObject):
@@ -60,19 +58,19 @@ class WppfOptionsDialog(QObject):
         self.populate_background_methods()
         self.populate_peakshape_methods()
 
-        self.value_spinboxes = []
-        self.minimum_spinboxes = []
-        self.maximum_spinboxes = []
-        self.vary_checkboxes = []
-
         self.dynamic_background_widgets = []
 
         self.spline_points = []
         self._wppf_object = None
         self._prev_background_method = None
 
-        self.reset_params()
+        self.params = self.generate_params()
+        self.initialize_tree_view()
+
         self.load_settings()
+
+        # Default setting for delta boundaries
+        self.delta_boundaries = False
 
         self.update_gui()
         self.setup_connections()
@@ -83,6 +81,8 @@ class WppfOptionsDialog(QObject):
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
         self.ui.background_method.currentIndexChanged.connect(
             self.update_background_parameters)
+        self.ui.delta_boundaries.toggled.connect(
+            self.on_delta_boundaries_toggled)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file)
         self.ui.display_wppf_plot.toggled.connect(
@@ -90,9 +90,9 @@ class WppfOptionsDialog(QObject):
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
         self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
 
-        self.ui.export_table.clicked.connect(self.export_table)
-        self.ui.import_table.clicked.connect(self.import_table)
-        self.ui.reset_table_to_defaults.clicked.connect(self.reset_params)
+        self.ui.export_params.clicked.connect(self.export_params)
+        self.ui.import_params.clicked.connect(self.import_params)
+        self.ui.reset_params_to_defaults.clicked.connect(self.reset_params)
 
         self.ui.save_plot.pressed.connect(self.save_plot)
         self.ui.reset_object.pressed.connect(self.reset_object)
@@ -243,6 +243,11 @@ class WppfOptionsDialog(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
             return
 
+        if self.delta_boundaries:
+            # If delta boundaries are being used, set the min/max according to
+            # the delta boundaries. Lmfit requires min/max to run.
+            self.apply_delta_boundaries()
+
         self.save_settings()
         self.run.emit()
 
@@ -274,8 +279,8 @@ class WppfOptionsDialog(QObject):
         return generate_params(**kwargs)
 
     def reset_params(self):
-        self.params = self.generate_params()
-        self.update_table()
+        self.params.param_dict = self.generate_params()
+        self.update_tree_view()
 
     def update_params(self):
         if not hasattr(self, 'params'):
@@ -293,7 +298,7 @@ class WppfOptionsDialog(QObject):
             param_dict[key] = param
 
         self.params.param_dict = param_dict
-        self.update_table()
+        self.update_tree_view()
 
     def show(self):
         self.ui.show()
@@ -302,7 +307,7 @@ class WppfOptionsDialog(QObject):
         materials = self.powder_overlay_materials
         selected = self.selected_materials
         items = [(name, name in selected) for name in materials]
-        dialog = SelectItemsDialog(items, self.ui)
+        dialog = SelectItemsDialog(items, 'Select Materials', self.ui)
         if dialog.exec() and self.selected_materials != dialog.selected_items:
             self.selected_materials = dialog.selected_items
             self.update_params()
@@ -356,6 +361,21 @@ class WppfOptionsDialog(QObject):
     def peak_shape(self, v):
         label = peakshape_dict[v]
         self.ui.peak_shape.setCurrentText(label)
+
+    @property
+    def peak_shape_tree_dict(self):
+        filename = f'peak_{self.peak_shape}.yml'
+        return load_yaml_dict(tree_view_resources, filename)
+
+    @property
+    def background_tree_dict(self):
+        filename = f'background_{self.background_method}.yml'
+        return load_yaml_dict(tree_view_resources, filename)
+
+    @property
+    def method_tree_dict(self):
+        filename = f'{self.method}.yml'
+        return load_yaml_dict(tree_view_resources, filename)
 
     @property
     def peak_shape_index(self):
@@ -585,58 +605,11 @@ class WppfOptionsDialog(QObject):
         dialog = WppfStylePicker(self.ui)
         dialog.ui.exec()
 
-    def create_label(self, v):
-        w = QTableWidgetItem(v)
-        w.setTextAlignment(Qt.AlignCenter)
-        return w
-
-    def create_spinbox(self, v):
-        sb = ScientificDoubleSpinBox(self.ui.table)
-        sb.setKeyboardTracking(False)
-        sb.setValue(float(v))
-        sb.valueChanged.connect(self.update_config)
-
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sb.setSizePolicy(size_policy)
-        return sb
-
-    def create_value_spinbox(self, v):
-        sb = self.create_spinbox(v)
-        self.value_spinboxes.append(sb)
-        return sb
-
-    def create_minimum_spinbox(self, v):
-        sb = self.create_spinbox(v)
-        self.minimum_spinboxes.append(sb)
-        return sb
-
-    def create_maximum_spinbox(self, v):
-        sb = self.create_spinbox(v)
-        self.maximum_spinboxes.append(sb)
-        return sb
-
-    def create_vary_checkbox(self, b):
-        cb = QCheckBox(self.ui.table)
-        cb.setChecked(b)
-        cb.toggled.connect(self.on_checkbox_toggled)
-
-        self.vary_checkboxes.append(cb)
-        return self.create_table_widget(cb)
-
-    def create_table_widget(self, w):
-        # These are required to center the widget...
-        tw = QWidget(self.ui.table)
-        layout = QHBoxLayout(tw)
-        layout.addWidget(w)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(0, 0, 0, 0)
-        return tw
-
     def update_gui(self):
         with block_signals(self.ui.display_wppf_plot):
             self.display_wppf_plot = HexrdConfig().display_wppf_plot
             self.update_background_parameters()
-            self.update_table()
+            self.update_tree_view()
 
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
@@ -681,74 +654,241 @@ class WppfOptionsDialog(QObject):
         # methods have parameters.
         self.update_params()
 
-    def clear_table(self):
-        self.value_spinboxes.clear()
-        self.minimum_spinboxes.clear()
-        self.maximum_spinboxes.clear()
-        self.vary_checkboxes.clear()
-        self.ui.table.clearContents()
+    def initialize_tree_view(self):
+        if hasattr(self, 'tree_view'):
+            # It has already been initialized
+            return
 
-    def update_table(self):
-        table = self.ui.table
+        tree_dict = self.tree_view_dict_of_params
+        self.tree_view = MultiColumnDictTreeView(
+            tree_dict,
+            self.tree_view_columns,
+            parent=self.parent(),
+            model_class=self.tree_view_model_class,
+        )
+        self.tree_view.check_selection_index = 2
+        self.ui.tree_view_layout.addWidget(self.tree_view)
 
+        # Make the key section a little larger
+        self.tree_view.header().resizeSection(0, 300)
+
+    def reinitialize_tree_view(self):
         # Keep the same scroll position
-        scrollbar = table.verticalScrollBar()
+        scrollbar = self.tree_view.verticalScrollBar()
         scroll_value = scrollbar.value()
 
-        with block_signals(table):
-            self.clear_table()
-            self.ui.table.setRowCount(len(self.params.param_dict))
-            for i, (key, param) in enumerate(self.params.param_dict.items()):
-                name = param.name
-                w = self.create_label(name)
-                table.setItem(i, COLUMNS['name'], w)
+        self.ui.tree_view_layout.removeWidget(self.tree_view)
+        self.tree_view.deleteLater()
+        del self.tree_view
+        self.initialize_tree_view()
 
-                w = self.create_value_spinbox(self.convert(name, param.value))
-                table.setCellWidget(i, COLUMNS['value'], w)
+        # Restore scroll bar position
+        self.tree_view.verticalScrollBar().setValue(scroll_value)
 
-                w = self.create_minimum_spinbox(self.convert(name, param.lb))
-                w.setEnabled(param.vary)
-                table.setCellWidget(i, COLUMNS['minimum'], w)
+    def update_tree_view(self):
+        tree_dict = self.tree_view_dict_of_params
+        self.tree_view.model().config = tree_dict
+        self.tree_view.reset_gui()
 
-                w = self.create_maximum_spinbox(self.convert(name, param.ub))
-                w.setEnabled(param.vary)
-                table.setCellWidget(i, COLUMNS['maximum'], w)
+    @property
+    def tree_view_dict_of_params(self):
+        params_dict = self.params.param_dict
 
-                w = self.create_vary_checkbox(param.vary)
-                table.setCellWidget(i, COLUMNS['vary'], w)
+        tree_dict = {}
+        template_dict = self.tree_view_mapping
 
-        # During event processing, it looks like the scrollbar gets resized
-        # so its maximum is one less than one it actually is. Thus, if we
-        # set the value to the maximum right now, it will end up being one
-        # less than the actual maximum.
-        # Thus, we need to post an event to the event loop to set the
-        # scroll value after the other event processing. This works, but
-        # the UI still scrolls back one and then to the maximum. So it
-        # doesn't look that great. FIXME: figure out how to fix this.
-        QTimer.singleShot(0, lambda: scrollbar.setValue(scroll_value))
+        # Keep track of which params have been used.
+        used_params = []
 
-    def on_checkbox_toggled(self):
-        self.update_min_max_enable_states()
-        self.update_config()
+        def create_param_item(param):
+            used_params.append(param.name)
+            d = {
+                '_param': param,
+                '_value': param.value,
+                '_vary': bool(param.vary),
+            }
+            if self.delta_boundaries:
+                if not hasattr(param, 'delta'):
+                    # We store the delta on the param object
+                    # Default the delta to the minimum of the differences
+                    diffs = [
+                        abs(param.min - param.value),
+                        abs(param.max - param.value),
+                    ]
+                    param.delta = min(diffs)
 
-    def update_min_max_enable_states(self):
-        for i in range(len(self.params.param_dict)):
-            enable = self.vary_checkboxes[i].isChecked()
-            self.minimum_spinboxes[i].setEnabled(enable)
-            self.maximum_spinboxes[i].setEnabled(enable)
-
-    def update_config(self):
-        for i, (name, param) in enumerate(self.params.param_dict.items()):
-            if any(name.endswith(x) for x in LENGTH_SUFFIXES):
-                # Convert from angstrom to nm for WPPF
-                multiplier = 0.1
+                d['_delta'] = param.delta
             else:
-                multiplier = 1
+                d.update(**{
+                    '_min': param.min,
+                    '_max': param.max,
+                })
+            return d
 
-            param.value = self.value_spinboxes[i].value() * multiplier
-            param.lb = self.minimum_spinboxes[i].value() * multiplier
-            param.ub = self.maximum_spinboxes[i].value() * multiplier
-            param.vary = self.vary_checkboxes[i].isChecked()
+        # Treat these root keys specially
+        special_cases = [
+            'Materials',
+        ]
+
+        def recursively_set_items(this_config, this_template):
+            param_set = False
+            for k, v in this_template.items():
+                if k in special_cases:
+                    # Skip over it
+                    continue
+
+                if isinstance(v, dict):
+                    this_config.setdefault(k, {})
+                    if recursively_set_items(this_config[k], v):
+                        param_set = True
+                    else:
+                        # Pop this key if no param was set
+                        this_config.pop(k)
+                else:
+                    # Assume it is a string. Grab it if in the params dict.
+                    if v in params_dict:
+                        this_config[k] = create_param_item(params_dict[v])
+                        param_set = True
+
+            return param_set
+
+        # First, recursively set items (except special cases)
+        recursively_set_items(tree_dict, template_dict)
+
+        # Now generate the materials
+        materials_template = template_dict['Materials'].pop('{mat}')
+
+        def recursively_format_site_id(mat, site_id, this_config,
+                                       this_template):
+            for k, v in this_template.items():
+                if isinstance(v, dict):
+                    this_config.setdefault(k, {})
+                    recursively_format_site_id(mat, site_id, this_config[k], v)
+                else:
+                    # Should be a string. Replace {mat} and {site_id} if needed
+                    kwargs = {}
+                    if '{mat}' in v:
+                        kwargs['mat'] = mat
+
+                    if '{site_id}' in v:
+                        kwargs['site_id'] = site_id
+
+                    if kwargs:
+                        v = v.format(**kwargs)
+
+                    if v in params_dict:
+                        this_config[k] = create_param_item(params_dict[v])
+
+        def recursively_format_mat(mat, this_config, this_template):
+            for k, v in this_template.items():
+                if k == 'Atomic Site: {site_id}':
+                    # Identify all site IDs by regular expression
+                    expr = re.compile(f'^{mat}_(.*)_x$')
+                    site_ids = []
+                    for name in params_dict:
+                        m = expr.match(name)
+                        if m:
+                            site_id = m.group(1)
+                            if site_id not in site_ids:
+                                site_ids.append(site_id)
+
+                    for site_id in site_ids:
+                        new_k = k.format(site_id=site_id)
+                        this_config.setdefault(new_k, {})
+                        recursively_format_site_id(
+                            mat,
+                            site_id,
+                            this_config[new_k],
+                            v,
+                        )
+                elif isinstance(v, dict):
+                    this_config.setdefault(k, {})
+                    recursively_format_mat(mat, this_config[k], v)
+                else:
+                    # Should be a string. Replace {mat} if needed
+                    if '{mat}' in v:
+                        v = v.format(mat=mat)
+
+                    if v in params_dict:
+                        this_config[k] = create_param_item(params_dict[v])
+
+        mat_dict = tree_dict.setdefault('Materials', {})
+        for mat in self.selected_materials:
+            this_config = mat_dict.setdefault(mat, {})
+            this_template = copy.deepcopy(materials_template)
+
+            # For the parameters, we need to convert dashes to underscores
+            mat = mat.replace('-', '_')
+            recursively_format_mat(mat, this_config, this_template)
+
+        # Now all keys should have been used. Verify this is true.
+        if sorted(used_params) != sorted(list(params_dict)):
+            used = ', '.join(sorted(used_params))
+            params = ', '.join(sorted(params_dict))
+            msg = (
+                f'Internal error: used_params ({used})\n\ndid not match '
+                f'params_dict! ({params})'
+            )
+            raise Exception(msg)
+
+        return tree_dict
+
+    @property
+    def tree_view_mapping(self):
+        # This will always be a deep copy, so we can modify.
+        method_dict = self.method_tree_dict
+
+        # Insert the background and peak shape dicts too
+        method_dict['Background'] = self.background_tree_dict
+        method_dict['Instrumental Parameters']['Peak Parameters'] = (
+            self.peak_shape_tree_dict
+        )
+
+        return method_dict
+
+    @property
+    def tree_view_columns(self):
+        return self.tree_view_model_class.COLUMNS
+
+    @property
+    def tree_view_model_class(self):
+        if self.delta_boundaries:
+            return DeltaCalibrationTreeItemModel
+        else:
+            return DefaultCalibrationTreeItemModel
+
+    @property
+    def delta_boundaries(self):
+        return self.ui.delta_boundaries.isChecked()
+
+    @delta_boundaries.setter
+    def delta_boundaries(self, b):
+        self.ui.delta_boundaries.setChecked(b)
+
+    def on_delta_boundaries_toggled(self, b):
+        # The columns have changed, so we need to reinitialize the tree view
+        self.reinitialize_tree_view()
+
+    def apply_delta_boundaries(self):
+        # lmfit only uses min/max, not delta
+        # So if we used a delta, apply that to the min/max
+
+        if not self.delta_boundaries:
+            # We don't actually need to apply delta boundaries...
+            return
+
+        def recurse(cur):
+            for k, v in cur.items():
+                if '_param' in v:
+                    param = v['_param']
+                    # There should be a delta.
+                    # We want an exception if it is missing.
+                    param.min = param.value - param.delta
+                    param.max = param.value + param.delta
+                elif isinstance(v, dict):
+                    recurse(v)
+
+        recurse(self.tree_view.model().config)
 
     @property
     def all_widgets(self):
@@ -758,17 +898,9 @@ class WppfOptionsDialog(QObject):
             'peak_shape',
             'background_method',
             'experiment_file',
-            'table',
             'display_wppf_plot',
         ]
         return [getattr(self.ui, x) for x in names]
-
-    def convert(self, name, val):
-        # Check if we need to convert this data to other units
-        if any(name.endswith(x) for x in LENGTH_SUFFIXES):
-            # Convert from nm to Angstroms
-            return val * 10.0
-        return val
 
     @property
     def wppf_object(self):
@@ -855,16 +987,16 @@ class WppfOptionsDialog(QObject):
 
             setattr(obj, key, val)
 
-    def export_table(self):
+    def export_params(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export Table', HexrdConfig().working_dir,
+            self.ui, 'Export Parameters', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
-            return self.export_params(selected_file)
+            return self.save_params(selected_file)
 
-    def export_params(self, filename):
+    def save_params(self, filename):
         filename = Path(filename)
         if filename.exists():
             filename.unlink()
@@ -875,16 +1007,16 @@ class WppfOptionsDialog(QObject):
         with h5py.File(filename, 'w') as wf:
             unwrap_dict_to_h5(wf, export_data)
 
-    def import_table(self):
+    def import_params(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Import Table', HexrdConfig().working_dir,
+            self.ui, 'Import Parameters', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
-            return self.import_params(selected_file)
+            return self.load_params(selected_file)
 
-    def import_params(self, filename):
+    def load_params(self, filename):
         filename = Path(filename)
         if not filename.exists():
             raise FileNotFoundError(filename)
@@ -912,7 +1044,7 @@ class WppfOptionsDialog(QObject):
         for key in self.params.param_dict.keys():
             self.params[key] = dict_to_param(import_params[key])
 
-        self.update_table()
+        self.update_tree_view()
 
     def validate_import_params(self, import_params, filename):
         here = self.params.param_dict.keys()
@@ -974,6 +1106,18 @@ def param_to_dict(param):
 
 def dict_to_param(d):
     return Parameter(**d)
+
+
+LOADED_YAML_DICTS = {}
+
+
+def load_yaml_dict(module, filename):
+    key = (module.__name__, filename)
+    if key not in LOADED_YAML_DICTS:
+        text = resource_loader.load_resource(module, filename)
+        LOADED_YAML_DICTS[key] = yaml.safe_load(text)
+
+    return copy.deepcopy(LOADED_YAML_DICTS[key])
 
 
 if __name__ == '__main__':
