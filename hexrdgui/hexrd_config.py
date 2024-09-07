@@ -917,13 +917,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 images_dict[name] = img / factor
 
         if HexrdConfig().apply_absorption_correction:
-            instr.calc_transmission()
-
-            transmissions = [x.transmission for x in instr.detectors.values()]
-            max_transmission = max([np.nanmax(x) for x in transmissions])
+            transmissions = instr.calc_transmission()
+            max_transmission = max(
+                [np.nanmax(v) for v in transmissions.values()])
 
             for name, img in images_dict.items():
-                transmission = instr.detectors[name].transmission
+                transmission = transmissions[name]
                 # normalize by maximum of the entire instrument
                 transmission /= max_transmission
                 images_dict[name] = img * (1 / transmission)
