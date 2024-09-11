@@ -23,6 +23,7 @@ class LaueOverlayEditor:
         self.crystal_editor = CalibrationCrystalEditor(parent=self.ui)
         self.ui.crystal_editor_layout.addWidget(self.crystal_editor.ui)
 
+        self.update_visibility_states()
         self.setup_combo_boxes()
         self.setup_connections()
 
@@ -44,6 +45,8 @@ class LaueOverlayEditor:
 
         HexrdConfig().euler_angle_convention_changed.connect(
             self.euler_angle_convention_changed)
+        HexrdConfig().instrument_config_loaded.connect(
+            self.update_visibility_states)
 
     def setup_combo_boxes(self):
         width_shapes = [x.value.capitalize() for x in LaueRangeShape]
@@ -67,6 +70,10 @@ class LaueOverlayEditor:
             return
 
         with block_signals(*self.widgets):
+            self.ui.xray_source.clear()
+            if HexrdConfig().has_multi_xrs:
+                self.ui.xray_source.addItems(HexrdConfig().beam_names)
+
             overlay = self.overlay
             self.ui.min_energy.setValue(overlay.min_energy)
             self.ui.max_energy.setValue(overlay.max_energy)
@@ -76,6 +83,7 @@ class LaueOverlayEditor:
             self.width_shape = overlay.width_shape
             self.label_type = overlay.label_type
             self.label_offsets = overlay.label_offsets
+            self.xray_source = overlay.xray_source
 
             self.ui.enable_widths.setChecked(overlay.has_widths)
             if overlay.has_widths:
@@ -84,6 +92,14 @@ class LaueOverlayEditor:
 
             self.update_enable_states()
             self.update_orientation_suffixes()
+
+    def update_visibility_states(self):
+        label = self.ui.xray_source_label
+        combo = self.ui.xray_source
+
+        visible = HexrdConfig().has_multi_xrs
+        label.setVisible(visible)
+        combo.setVisible(visible)
 
     def update_enable_states(self):
         enable_widths = self.enable_widths
@@ -139,6 +155,7 @@ class LaueOverlayEditor:
         overlay.refinements = self.refinements
         overlay.label_type = self.label_type
         overlay.label_offsets = self.label_offsets
+        overlay.xray_source = self.xray_source
 
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
@@ -229,6 +246,21 @@ class LaueOverlayEditor:
         ]
 
     @property
+    def xray_source(self):
+        if not HexrdConfig().has_multi_xrs:
+            return None
+
+        return self.ui.xray_source.currentText()
+
+    @xray_source.setter
+    def xray_source(self, v):
+        if v is None or not HexrdConfig().has_multi_xrs:
+            # Just don't do anything...
+            return
+
+        self.ui.xray_source.setCurrentText(v)
+
+    @property
     def widgets(self):
         return [
             self.ui.min_energy,
@@ -240,4 +272,5 @@ class LaueOverlayEditor:
             self.ui.label_type,
             self.ui.label_offset_x,
             self.ui.label_offset_y,
+            self.ui.xray_source,
         ] + self.sample_orientation_widgets

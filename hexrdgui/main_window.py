@@ -354,9 +354,9 @@ class MainWindow(QObject):
             HexrdConfig().set_intensity_subtract_minimum)
         self.ui.action_apply_absorption_correction.toggled.connect(
             self.action_apply_absorption_correction_toggled)
-
         HexrdConfig().instrument_config_loaded.connect(
             self.on_instrument_config_loaded)
+        HexrdConfig().active_beam_switched.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
         HexrdConfig().polar_masks_reapplied.connect(

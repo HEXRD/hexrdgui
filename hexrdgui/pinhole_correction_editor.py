@@ -287,7 +287,7 @@ class PinholeCorrectionEditor(QObject):
             'RyggPinholeDistortion',
         )
         if self.correction_type in source_distance_needed_types:
-            beam = HexrdConfig().instrument_config['beam']
+            beam = HexrdConfig().active_beam
             source_distance = beam.get('source_distance', np.inf)
             if source_distance is None or source_distance == np.inf:
                 msg = (

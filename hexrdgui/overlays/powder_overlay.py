@@ -5,6 +5,7 @@ import numpy as np
 from hexrd import constants
 from hexrd.material import unitcell
 
+from hexrd.instrument import switch_xray_source
 from hexrd.transforms import xfcapi
 from hexrd.xrdutil.phutil import invalidate_past_critical_beta
 from hexrd.utils.hkl import hkl_to_str
@@ -59,6 +60,24 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             'tth_distortion_kwargs',
             'clip_with_panel_buffer',
         ]
+
+    @property
+    def xray_source(self):
+        from hexrdgui.hexrd_config import HexrdConfig
+        if self._xray_source is None and HexrdConfig().has_multi_xrs:
+            # Force the x-ray source to be locked into a specific one.
+            self._xray_source = HexrdConfig().beam_names[0]
+
+        return self._xray_source
+
+    @xray_source.setter
+    def xray_source(self, v):
+        from hexrdgui.hexrd_config import HexrdConfig
+        if v is None and HexrdConfig().has_multi_xrs:
+            # Force the x-ray source to be locked into a specific one.
+            self._xray_source = HexrdConfig().beam_names[0]
+        else:
+            self._xray_source = v
 
     def validate_tth_distortion_kwargs(self):
         from hexrdgui.hexrd_config import HexrdConfig
@@ -169,6 +188,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Convert from cartesian to polar
         instr = self.instrument
         picks = copy.deepcopy(self.calibration_picks)
+
         for det_key, hkl_dict in picks.items():
             panel = instr.detectors[det_key]
             for hkl_str, hkl_picks in hkl_dict.items():
@@ -192,6 +212,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Convert from polar to cartesian
         instr = self.instrument
         picks = copy.deepcopy(picks)
+
         for det_key, hkl_dict in picks.items():
             panel = instr.detectors[det_key]
             for hkl_str, hkl_picks in hkl_dict.items():
@@ -204,6 +225,11 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 hkl_dict[hkl_str] = angles_to_cart(angles, panel).tolist()
 
         self.calibration_picks = picks
+
+    @property
+    def active_beam_name(self):
+        from hexrdgui.hexrd_config import HexrdConfig
+        return HexrdConfig().active_beam_name
 
     def generate_overlay(self):
         # Ensure hkl means is cleared
@@ -402,11 +428,12 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             #     CS origin and anything specified for the XRD COM for the
             #     overlay.  This is so they get properly mapped back to the
             #     the proper cartesian coords.
-            xys_full = panel.angles_to_cart(
-                ang_crds_full,
-                tvec_s=instr.tvec,
-                tvec_c=self.tvec
-            )
+            with switch_xray_source(self.instrument, self.xray_source):
+                xys_full = panel.angles_to_cart(
+                    ang_crds_full,
+                    tvec_s=instr.tvec,
+                    tvec_c=self.tvec
+                )
 
             # skip if ring not on panel
             if len(xys_full) == 0:
@@ -451,7 +478,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 # Compute ang_crds in the regular way
                 ang_crds, _ = panel.cart_to_angles(
                     xys,
-                    tvec_s=instr.tvec
+                    tvec_s=instr.tvec,
                 )
 
             if offset_distortion:
@@ -462,7 +489,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     # Use coordinates where distortion correction was not applied
                     raw_ang_crds, _ = panel.cart_to_angles(
                         xys,
-                        tvec_s=instr.tvec
+                        tvec_s=instr.tvec,
                     )
                 else:
                     # Distortion correction was not applied
@@ -493,7 +520,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     # diffraction COM in the sample frame!
                     ang_crds, _ = panel.cart_to_angles(
                         xys,
-                        tvec_s=instr.tvec
+                        tvec_s=instr.tvec,
                     )
 
                 if len(ang_crds) == 0:
@@ -508,9 +535,20 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     ang_crds[:, 1], self.eta_period, units='degrees'
                 )
 
-                # sort points for monotonic eta
-                eidx = np.argsort(ang_crds[:, 1])
-                ang_crds = ang_crds[eidx, :]
+                # Figure out whether we are in polar mode with a different
+                # XRS.
+                polar_with_different_xrs = (
+                    display_mode == ViewType.polar and
+                    self.xray_source is not None and
+                    self.xray_source != self.active_beam_name
+                )
+                if not polar_with_different_xrs:
+                    # sort points for monotonic eta
+                    # This really messes up the overlays generated for
+                    # a polar view with a different XRS, so only do that
+                    # if that is true.
+                    eidx = np.argsort(ang_crds[:, 1])
+                    ang_crds = ang_crds[eidx, :]
 
                 diff = np.diff(ang_crds[:, 1])
                 if len(diff) == 0:
@@ -521,24 +559,28 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 # with points that are connected far apart, and run across
                 # other detectors. Thus, we should insert nans at any gaps.
                 # FIXME: is this a reasonable tolerance?
-                delta_eta_est = np.nanmedian(diff)
+                delta_eta_est = np.nanmedian(np.abs(diff))
                 tolerance = delta_eta_est * 2
-                gaps, = np.nonzero(diff > tolerance)
+                gaps, = np.nonzero(np.abs(diff) > tolerance)
                 ang_crds = np.insert(ang_crds, gaps + 1, np.nan, axis=0)
 
                 if display_mode == ViewType.polar:
                     # append to list with nan padding
                     ring_pts.append(np.vstack([ang_crds, nans_row]))
                 elif display_mode == ViewType.stereo:
-                    # Convert back to radians
-                    ang_crds = np.radians(ang_crds)
-
-                    # Convert the ang_crds to stereo ij
-                    stereo_ij = angles_to_stereo(
-                        ang_crds,
-                        instr,
-                        HexrdConfig().stereo_size,
-                    )
+                    with switch_xray_source(self.instrument, self.xray_source):
+                        # The ang_crds need to be recomputed for the
+                        # current x-ray source for stereo.
+                        # FIXME: is there a better way to do this?
+                        ang_crds, _ = panel.cart_to_angles(
+                            xys,
+                            tvec_s=instr.tvec,
+                        )
+                        stereo_ij = angles_to_stereo(
+                            ang_crds,
+                            instr,
+                            HexrdConfig().stereo_size,
+                        )
 
                     # append to list with nan padding
                     ring_pts.append(np.vstack([stereo_ij, nans_row]))
@@ -583,7 +625,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
     @property
     def tth_distortion_dict(self):
-        return self.pinhole_distortion_dict(self.instrument)
+        with switch_xray_source(self.instrument, self.xray_source):
+            return self.pinhole_distortion_dict(self.instrument)
 
     @property
     def has_polar_tth_displacement_field(self):
@@ -591,10 +634,12 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
     @property
     def tth_displacement_field(self):
-        return self.pinhole_displacement_field(self.instrument)
+        with switch_xray_source(self.instrument, self.xray_source):
+            return self.pinhole_displacement_field(self.instrument)
 
     def create_polar_tth_displacement_field(self):
-        return self.create_polar_pinhole_displacement_field(self.instrument)
+        with switch_xray_source(self.instrument, self.xray_source):
+            return self.create_polar_pinhole_displacement_field(self.instrument)
 
     @property
     def pinhole_distortion_type(self):

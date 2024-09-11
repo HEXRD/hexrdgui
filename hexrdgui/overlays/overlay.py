@@ -80,8 +80,8 @@ class Overlay(ABC):
     ranges_indices_key = None
 
     def __init__(self, material_name, name=None, refinements=None,
-                 calibration_picks=None, style=None, highlight_style=None,
-                 visible=True):
+                 calibration_picks=None, xray_source=None, style=None,
+                 highlight_style=None, visible=True):
 
         self._material_name = material_name
 
@@ -103,6 +103,7 @@ class Overlay(ABC):
         self.name = name
         self.refinements = refinements
         self._calibration_picks = calibration_picks
+        self.xray_source = xray_source
         self.style = style
         self.highlight_style = highlight_style
         self._visible = visible
@@ -148,6 +149,7 @@ class Overlay(ABC):
             'name',
             'refinements',
             'calibration_picks',
+            'xray_source',
             'style',
             'highlight_style',
             'visible',

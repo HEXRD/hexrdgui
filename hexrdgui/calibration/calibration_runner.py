@@ -6,7 +6,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QCoreApplication, QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.fitting.calibration import LaueCalibrator, PowderCalibrator
@@ -31,6 +31,7 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
+from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.select_item_dialog import SelectItemDialog
 from hexrdgui.utils import (
     array_index_in_list,
@@ -152,6 +153,28 @@ class CalibrationRunner(QObject):
         overlay.reset_calibration_picks()
 
         title = overlay.name
+
+        if overlay.xray_source is not None and overlay.xray_source != HexrdConfig().active_beam_name:
+            # Update the polar view to use this xrs source
+            HexrdConfig().active_beam_name = overlay.xray_source
+
+            if self.line_picker is not None:
+                if self.line_picker.zoom_canvas is not None:
+                    self.line_picker.zoom_canvas.skip_next_render = True
+
+            # Wait until canvas finishes updating
+            progress_dialog = ProgressDialog(self.canvas)
+            progress_dialog.setRange(0, 0)
+            progress_dialog.setWindowTitle(
+                f'Switching beam to {overlay.xray_source}'
+            )
+            progress_dialog.show()
+            while self.canvas.iviewer is None:
+                # We must process events so that when the polar view has been
+                # generated again, it can set the iviewer on the canvas.
+                QCoreApplication.processEvents()
+
+            progress_dialog.hide()
 
         # Only make the current overlay we are selecting visible
         self.set_exclusive_overlay_visibility(overlay)
@@ -804,6 +827,7 @@ class CalibrationRunner(QObject):
             'pktype': options['pk_type'],
             'bgtype': options['bg_type'],
             'tth_distortion': overlay.tth_distortion_dict,
+            'xray_source': overlay.xray_source,
         }
 
         self.auto_pc = PowderCalibrator(**kwargs)

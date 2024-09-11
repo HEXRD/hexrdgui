@@ -73,6 +73,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when beam vector has changed"""
     beam_vector_changed = Signal()
 
+    """Emitted when the active beam has switched"""
+    active_beam_switched = Signal()
+
     """Emitted when the oscillation stage changes"""
     oscillation_stage_changed = Signal()
 
@@ -305,6 +308,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.max_cpus = None
         self.azimuthal_overlays = []
         self.azimuthal_offset = 0.
+        self._active_beam_name = None
         self.show_azimuthal_legend = True
         self.show_all_colormaps = False
         self.limited_cmaps_list = constants.DEFAULT_LIMITED_CMAPS
@@ -420,6 +424,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_previous_structureless_calibration_picks_data', None),
             ('sample_tilt', [0, 0, 0]),
             ('azimuthal_offset', 0.0),
+            ('_active_beam_name', None),
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
             ('physics_package_dictified', None),
@@ -793,10 +798,24 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._recursive_set_defaults(self.config[key],
                                          self.default_config[key])
 
+        self.set_beam_defaults_if_missing()
         self.set_detector_defaults_if_missing()
 
         # Ensure statuses are added to any missing instrument config keys
         self.add_status(self.config['instrument'])
+
+    def set_beam_defaults_if_missing(self):
+        # Set beam defaults, including support for multi-xrs
+        beam = self.config['instrument'].setdefault('beam', {})
+        default_beam = self.default_config['instrument']['beam']
+        f = self._recursive_set_defaults
+        if beam and 'energy' not in beam:
+            # Multi XRS. Set the default beam settings for each XRS.
+            for settings in beam.values():
+                f(settings, default_beam)
+            return
+
+        f(beam, default_beam)
 
     def set_detector_defaults_if_missing(self):
         # Find missing keys under detectors and set defaults for them
@@ -808,8 +827,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for key in default.keys():
             current.setdefault(key, copy.deepcopy(default[key]))
 
-            if key == 'detectors':
-                # Don't copy the default detectors into the current ones
+            if key in ('beam', 'detectors'):
+                # Skip these defaults
                 continue
 
             if isinstance(default[key], dict):
@@ -1571,11 +1590,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return
 
         # If the beam energy was modified, update the visible materials
-        if path == ['beam', 'energy', 'value']:
+        beam_path = ['beam']
+        if self.has_multi_xrs:
+            beam_path.append(self.active_beam_name)
+
+        if path == beam_path + ['energy', 'value']:
             self.beam_energy_modified.emit()
             return
 
-        if path[:2] == ['beam', 'vector']:
+        if path[:2] == beam_path + ['vector']:
             # Beam vector has been modified. Indicate so.
             self.beam_vector_changed.emit()
             return
@@ -1617,6 +1640,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         """
         cur_val = self.config['instrument']
 
+        if path[0] == 'beam' and self.has_multi_xrs:
+            # There's going to be one more layer to the path
+            path = path.copy()
+            path.insert(1, self.active_beam_name)
+
         # Special case for distortion:
         # If no distortion is specified, return 'None'
         dist_func_path = ['distortion', 'function_name']
@@ -1655,6 +1683,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     if path == chi_path:
                         # This will be in degrees. Convert to radians.
                         value = np.radians(value).item()
+
+                if path[0] == 'beam' and self.has_multi_xrs:
+                    path = path.copy()
+                    path.insert(1, self.active_beam_name)
 
                 self.set_instrument_config_val(path, value)
                 return
@@ -1915,19 +1947,98 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.config['materials'].get('active_material')
 
     @property
+    def has_multi_xrs(self):
+        beam = self.config['instrument']['beam']
+        return beam and 'energy' not in beam
+
+    @property
     def beam_energy(self):
-        cfg = self.config['instrument']
-        return cfg.get('beam', {}).get('energy', {}).get('value')
+        return self.xrs_beam_energy(self.active_beam_name)
+
+    def beam_dict(self, beam_name: str | None) -> dict:
+        cfg = self.config['instrument']['beam']
+        return cfg if beam_name is None else cfg[beam_name]
+
+    def xrs_beam_energy(self, beam_name: str | None) -> float:
+        if beam_name is None and self.has_multi_xrs:
+            # Use the active x-ray source
+            beam_name = self.active_beam_name
+
+        return self.beam_dict(beam_name)['energy']['value']
+
+    @property
+    def active_beam(self):
+        return self.beam_dict(self.active_beam_name)
 
     @property
     def beam_wavelength(self):
         energy = self.beam_energy
         return constants.KEV_TO_WAVELENGTH / energy if energy else None
 
+    @property
+    def beam_names(self) -> list[str]:
+        if not self.has_multi_xrs:
+            return ['XRS1']
+
+        return list(self.config['instrument']['beam'])
+
+    @property
+    def active_beam_name(self) -> str | None:
+        if not self.has_multi_xrs:
+            return None
+
+        if self._active_beam_name is None:
+            # Set it to the first XRS
+            self._active_beam_name = next(iter(self.beam_dict(None)))
+
+        return self._active_beam_name
+
+    @active_beam_name.setter
+    def active_beam_name(self, v: str | None):
+        if not self.has_multi_xrs:
+            self._active_beam_name = None
+            return
+
+        if self._active_beam_name == v:
+            # Don't need to do anything...
+            return
+
+        self._active_beam_name = v
+        self._shift_eta_if_tardis()
+        self.active_beam_switched.emit()
+
+        if self.image_mode == constants.ViewType.polar:
+            self.deep_rerender_needed.emit()
+
+    def _shift_eta_if_tardis(self):
+        # TARDIS users will always shift eta by 180 degrees when
+        # the active beam has been switched. We will do that
+        # automatically for convenience.
+
+        tardis_names = constants.KNOWN_DETECTOR_NAMES['TARDIS']
+        if not all(name in tardis_names for name in self.detector_names):
+            # Assume this is not TARDIS...
+            return
+
+        eta_configurations = {
+            'XRS1': (0, 360),
+            'XRS2': (-180, 180),
+        }
+        if self.active_beam_name not in eta_configurations:
+            # This is unexpected and shouldn't happen
+            return
+
+        eta_range = eta_configurations[self.active_beam_name]
+
+        # We should be triggering a rerender already outside of this function,
+        # so don't trigger another one here.
+        self.set_polar_res_eta_min(eta_range[0], rerender=False)
+        self.set_polar_res_eta_max(eta_range[1], rerender=False)
+
     def update_material_energy(self, mat):
-        # This is a potentially expensive operation...
         energy = self.beam_energy
 
+        # This is a potentially expensive operation...
         # If the plane data energy already matches, skip it
         pd_wavelength = mat.planeData.wavelength
         old_energy = constants.WAVELENGTH_TO_KEV / pd_wavelength

@@ -33,6 +33,7 @@ def create_hedm_instrument():
     kwargs = {
         'instrument_config': iconfig,
         'tilt_calibration_mapping': HexrdConfig().rotation_matrix_euler(),
+        'active_beam_name': HexrdConfig().active_beam_name,
     }
 
     if HexrdConfig().max_cpus is not None:
