@@ -2881,8 +2881,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
 
-        for attr, val in kwargs.items():
-            setattr(instr.physics_package, attr, val)
+        if kwargs is None:
+            instr.physics_package = None
+        else:
+            for attr, val in kwargs.items():
+                setattr(instr.physics_package, attr, val)
         self.physics_package_modified.emit()
 
     def absorption_length(self):

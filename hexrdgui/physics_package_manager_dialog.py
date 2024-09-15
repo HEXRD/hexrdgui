@@ -16,6 +16,7 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 from hexrd.material import _angstroms, _kev, Material
+from hexrd.instrument.constants import FILTER_DEFAULTS, PINHOLE_DEFAULTS
 
 
 class PhysicsPackageManagerDialog:
@@ -92,11 +93,21 @@ class PhysicsPackageManagerDialog:
 
     def update_instrument_type(self):
         instr = create_hedm_instrument()
-        self.instrument_type = guess_instrument_type(instr.detectors)
-        if self.instrument_type == 'PXRDIP':
-            physics_package = HexrdConfig().physics_package
-            physics_package.pinhole_thickness = 70
-            physics_package.pinhole_diameter = 130
+        new_instr_type = guess_instrument_type(instr.detectors)
+        if new_instr_type == self.instrument_type:
+            return
+
+        if new_instr_type == 'TARDIS':
+            HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.TARDIS)
+            for det in HexrdConfig().detector_names:
+                HexrdConfig().update_detector_coating(det, FILTER_DEFAULTS.TARDIS)
+        elif self.instrument_type == 'PXRDIP':
+            HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.PXRDIP)
+            for det in HexrdConfig().detector_names:
+                HexrdConfig().update_detector_coating(det, FILTER_DEFAULTS.PXRDIP)
+        else:
+            HexrdConfig().update_physics_package(None)
+        self.instrument_type = new_instr_type
 
     def setup_form(self):
         mat_names = list(HexrdConfig().materials.keys())
