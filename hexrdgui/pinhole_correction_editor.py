@@ -135,7 +135,7 @@ class PinholeCorrectionEditor(QObject):
             }
             if self.rygg_absorption_length_visible:
                 # Only return an absorption length if it is visible
-                output['absorption_length'] = self.rygg_absorption_length
+                output['absorption_length'] = HexrdConfig().absorption_length()
             return output
 
         raise Exception(f'Not implemented for: {dtype}')
@@ -146,7 +146,6 @@ class PinholeCorrectionEditor(QObject):
             return
 
         physics = HexrdConfig().physics_package
-        absorption = physics.pinhole_absorption_length(HexrdConfig().beam_energy)
         # Values are (key, default)
         values = {
             'sample_layer_standoff': ('layer_standoff',
@@ -159,7 +158,8 @@ class PinholeCorrectionEditor(QObject):
             'rygg_diameter': ('pinhole_diameter', physics.pinhole_diameter),
             'rygg_thickness': ('pinhole_thickness', physics.pinhole_thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 30),
-            'rygg_absorption_length_value': ('absorption_length', absorption),
+            'rygg_absorption_length_value': (
+                'absorption_length', HexrdConfig().absorption_length()),
             'jhe_diameter': ('pinhole_diameter', physics.pinhole_diameter),
             'jhe_thickness': ('pinhole_thickness', physics.pinhole_thickness),
         }
@@ -323,11 +323,6 @@ class PinholeCorrectionEditor(QObject):
         msg = 'Pinhole dimensions were applied to the panel buffers'
         QMessageBox.information(self.ui, 'HEXRD', msg)
 
-    @property
-    def rygg_absorption_length(self):
-        physics = HexrdConfig().physics_package
-        return physics.pinhole_absorption_length(HexrdConfig().beam_energy)
-
     def load_pinhole_materials(self):
         module = hexrd.resources
 
@@ -390,9 +385,8 @@ class PinholeCorrectionEditor(QObject):
         return 0
 
     def on_rygg_absorption_length_selector_changed(self):
-        # self.rygg_absorption_length should be updated
         self.ui.rygg_absorption_length_value.setValue(
-            self.rygg_absorption_length)
+            HexrdConfig().absorption_length())
 
     @property
     def none_option_visible(self):

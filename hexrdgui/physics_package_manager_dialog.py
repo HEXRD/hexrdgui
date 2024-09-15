@@ -168,9 +168,7 @@ class PhysicsPackageManagerDialog:
             self.density_inputs[category].setValue(density)
         else:
             self.density_inputs[category].setValue(0.0)
-        energy = HexrdConfig().beam_energy
-        absorption_length = HexrdConfig().physics_package.pinhole_absorption_length
-        self.ui.absorption_length.setValue(absorption_length(energy))
+        self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
 
     def accept_changes(self):
         materials = {}

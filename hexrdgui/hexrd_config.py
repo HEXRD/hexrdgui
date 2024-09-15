@@ -2875,16 +2875,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
 
-        return list(instr.detectors.values())[0].physics_package
+        return instr.physics_package
 
     def update_physics_package(self, **kwargs):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
 
-        for detector in instr.detectors.values():
-            for attr, val in kwargs.items():
-                setattr(detector.physics_package, attr, val)
+        for attr, val in kwargs.items():
+            setattr(instr.physics_package, attr, val)
         self.physics_package_modified.emit()
+
+    def absorption_length(self):
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+        absorption_length = instr.physics_package.pinhole_absorption_length
+        return absorption_length(HexrdConfig().beam_energy)
 
     def detector_filter(self, det_name):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
