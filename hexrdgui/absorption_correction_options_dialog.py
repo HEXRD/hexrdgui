@@ -1,9 +1,7 @@
 import h5py
 
-from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
-import hexrdgui.resources.materials as module
 
 from hexrd.material import _angstroms, _kev, Material
 
