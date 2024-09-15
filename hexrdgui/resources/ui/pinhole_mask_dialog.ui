@@ -50,10 +50,6 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
-     <property name="styleSheet">
-      <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-      </string>
-     </property>
     </widget>
    </item>
    <item row="1" column="0">
@@ -82,10 +78,6 @@
      </property>
      <property name="enabled">
       <bool>false</bool>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-      </string>
      </property>
     </widget>
    </item>
