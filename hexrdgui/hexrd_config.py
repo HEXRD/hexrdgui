@@ -2877,13 +2877,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return list(instr.detectors.values())[0].physics_package
 
-    @physics_package.setter
-    def physics_package(self, changes):
+    def update_physics_package(self, **kwargs):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
 
         for detector in instr.detectors.values():
-            for attr, val in changes.items():
+            for attr, val in kwargs.items():
                 setattr(detector.physics_package, attr, val)
         self.physics_package_modified.emit()
 
@@ -2908,14 +2907,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return list(instr.detectors.values())[0].coating
 
-    @detector_coating.setter
-    def detector_coating(self, changes):
+    def update_detector_coating(self, det_name, **kwargs):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
 
-        for detector in instr.detectors.values():
-            for attr, val in changes.items():
-                setattr(detector.coating, attr, val)
+        detector = instr.detectors[det_name]
+        for attr, val in kwargs.items():
+            setattr(detector.coating, attr, val)
 
     @property
     def phosphor(self):
@@ -2924,11 +2922,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return list(instr.detectors.values())[0].phosphor
 
-    @phosphor.setter
-    def phosphor(self, changes):
+    def update_phosphor(self, det_name, kwargs):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
 
-        for detector in instr.detectors.values():
-            for attr, val in changes.items():
-                setattr(detector.phosphor, attr, val)
+        detector = instr.detectors[det_name]
+        for attr, val in kwargs.items():
+            setattr(detector.phosphor, attr, val)

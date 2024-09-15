@@ -180,7 +180,7 @@ class PhysicsPackageManagerDialog:
             else:
                 materials[key] = selector.currentText()
 
-        HexrdConfig().physics_package = {
+        kwargs = {
             'sample_material': materials['sample'],
             'sample_density': self.ui.sample_density.value(),
             'sample_thickness': self.ui.sample_thickness.value(),
@@ -192,6 +192,7 @@ class PhysicsPackageManagerDialog:
             'pinhole_thickness': self.ui.pinhole_thickness.value(),
             'pinhole_density': self.ui.pinhole_density.value(),
         }
+        HexrdConfig().update_physics_package(**kwargs)
 
         if HexrdConfig().apply_absorption_correction:
             # Make sure changes are reflected
