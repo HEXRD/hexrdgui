@@ -143,8 +143,8 @@ class PolarDistortionObject:
 
     @classmethod
     def deserialize(cls, d):
-        from hexrdgui.hexrd_config import HexrdConfig
         if d.get('pinhole_distortion_type') == 'SampleLayerDistortion':
+            from hexrdgui.hexrd_config import HexrdConfig
             # We added pinhole_diameter later. Set a default if it is missing.
             if 'pinhole_diameter' not in d['pinhole_distortion_kwargs']:
                 diameter = HexrdConfig().physics_package.pinhole_diameter
