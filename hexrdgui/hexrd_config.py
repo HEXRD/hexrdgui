@@ -27,6 +27,7 @@ from hexrdgui import resource_loader
 from hexrdgui import utils
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.singletons import QSingleton
+from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 import hexrdgui.resources.calibration
 import hexrdgui.resources.indexing
@@ -422,6 +423,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('azimuthal_offset', 0.0),
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
+            ('physics_package_dictified', None),
+            ('detector_coatings_dictified', {})
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -432,6 +435,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'stack_state': 'image_stack_state',
             'active_material_name': 'active_material',
             'overlays_dictified': 'overlays',
+            'physics_package_dictified': 'physics_package',
+            'detector_coatings_dictified': '_detector_coatings'
         }
 
         if attribute_name in exceptions:
@@ -487,6 +492,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # We need to set euler_angle_convention and overlays in a special way
             'euler_angle_convention',
             'overlays_dictified',
+            'physics_package_dictified',
+            'detector_coatings_dictified',
         ]
 
         if self.loading_state:
@@ -560,6 +567,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if '_recent_images' not in state:
             self._recent_images.clear()
+
+        def set_physics_and_coatings():
+            pp = state.get('physics_package_dictified', None)
+            self.physics_package_dictified = pp if pp is not None else {}
+            dc = state.get('detector_coatings_dictified')
+            self.detector_coatings_dictified = dc if dc is not None else {}
+
+        if 'detector_coatings_dictified' in state:
+            # Physics package and detector coatings need a fully constructed
+            # HexrdConfig object to set their values because they need the
+            # correct detector names. Set the objects later.
+            QTimer.singleShot(0, set_physics_and_coatings)
 
         self.recent_images_changed.emit()
 
@@ -2878,18 +2897,29 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.deep_rerender_needed.emit()
 
     @property
+    def physics_package_dictified(self):
+        if self.physics_package is None:
+            return None
+        return self.physics_package.serialize()
+
+    @physics_package_dictified.setter
+    def physics_package_dictified(self, v):
+        instr_type = guess_instrument_type(self.detector_names)
+        self.update_physics_package(instr_type, **v)
+
+    @property
     def physics_package(self):
         return self._physics_package
 
-    def update_physics_package(self, det_type=None, **kwargs):
-        if det_type is None:
+    def update_physics_package(self, instr_type=None, **kwargs):
+        if instr_type is None:
             self._physics_package = None
         elif self.physics_package is None:
-            self._physics_package = HEDPhysicsPackage(
-                **PHYSICS_PACKAGE_DEFAULTS.HED)
-        if det_type is not None and kwargs is not None:
-            for attr, val in kwargs.items():
-                setattr(self._physics_package, attr, val)
+            all_kwargs = PHYSICS_PACKAGE_DEFAULTS.HED
+            all_kwargs.update(**kwargs)
+            self._physics_package = HEDPhysicsPackage(**all_kwargs)
+        else:
+            self._physics_package.deserialize(**kwargs)
         self.physics_package_modified.emit()
 
     def absorption_length(self):
@@ -2898,6 +2928,22 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 f'Cannot calculate absorption length without physics package')
         return self.physics_package.pinhole_absorption_length(
             HexrdConfig().beam_energy)
+
+    @property
+    def detector_coatings_dictified(self):
+        d = {}
+        for k, v in self._detector_coatings.items():
+            d[k] = {}
+            for attr, cls in v.items():
+                d[k][attr] = cls.serialize()
+        return d
+
+    @detector_coatings_dictified.setter
+    def detector_coatings_dictified(self, v):
+        for det, val in v.items():
+            self.update_detector_coating(det, **val['coating'])
+            self.update_detector_filter(det, **val['filter'])
+            self.update_detector_phosphor(det, **val['phosphor'])
 
     def _set_detector_coatings(self, key):
         for name in self.detector_names:
@@ -2920,8 +2966,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def update_detector_filter(self, det_name, **kwargs):
         self._set_detector_coatings('filter')
         filter = self._detector_coatings[det_name]['filter']
-        for attr, val in kwargs.items():
-            setattr(filter, attr, val)
+        filter.deserialize(**kwargs)
 
     def detector_coating(self, det_name):
         self._detector_coatings.setdefault(det_name, {})
@@ -2930,8 +2975,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def update_detector_coating(self, det_name, **kwargs):
         self._set_detector_coatings('coating')
         coating = self._detector_coatings[det_name]['coating']
-        for attr, val in kwargs.items():
-            setattr(coating, attr, val)
+        coating.deserialize(**kwargs)
 
     def detector_phosphor(self, det_name):
         self._detector_coatings.setdefault(det_name, {})
@@ -2940,5 +2984,4 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def update_detector_phosphor(self, det_name, **kwargs):
         self._set_detector_coatings('phosphor')
         phosphor = self._detector_coatings[det_name]['phosphor']
-        for attr, val in kwargs.items():
-            setattr(phosphor, attr, val)
+        phosphor.deserialize(**kwargs)

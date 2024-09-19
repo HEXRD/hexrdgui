@@ -8,7 +8,6 @@ from matplotlib.figure import Figure
 
 from PySide6.QtWidgets import QSizePolicy
 
-from hexrdgui.create_hedm_instrument import create_hedm_instrument
 import hexrdgui.resources.materials as module
 from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
@@ -99,8 +98,7 @@ class PhysicsPackageManagerDialog:
             self.additional_materials[key] = materials
 
     def update_instrument_type(self):
-        instr = create_hedm_instrument()
-        new_instr_type = guess_instrument_type(instr.detectors)
+        new_instr_type = guess_instrument_type(HexrdConfig().detector_names)
         if new_instr_type == self.instrument_type:
             return
 
@@ -118,7 +116,7 @@ class PhysicsPackageManagerDialog:
                 HexrdConfig().update_detector_filter(
                     det, **FILTER_DEFAULTS.PXRDIP)
         else:
-            HexrdConfig().update_physics_package(det_type=None)
+            HexrdConfig().update_physics_package(instr_type=None)
         self.instrument_type = new_instr_type
 
     def setup_form(self):
