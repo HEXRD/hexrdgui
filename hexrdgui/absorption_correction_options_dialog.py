@@ -68,7 +68,7 @@ class AbsorptionCorrectionOptionsDialog:
         filter = HexrdConfig().detector_filter(self.ui.detectors.currentText())
         coating = HexrdConfig().detector_coating(
             self.ui.detectors.currentText())
-        phosphor = HexrdConfig().phosphor(self.ui.detectors.currentText())
+        phosphor = HexrdConfig().detector_phosphor(self.ui.detectors.currentText())
         # FILTER
         if filter.material not in self.mat_options:
             self.ui.filter_material_input.setText(filter.material)
@@ -162,7 +162,7 @@ class AbsorptionCorrectionOptionsDialog:
                 density=self.ui.coating_density.value(),
                 thickness=self.ui.coating_thickness.value()
             )
-            HexrdConfig().update_phosphor(
+            HexrdConfig().update_detector_phosphor(
                 det_name,
                 material=materials['phosphor'],
                 density=self.ui.phosphor_density.value(),

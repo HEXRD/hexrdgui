@@ -14,6 +14,8 @@ import yaml
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.instrument import HEDMInstrument
+from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS
+from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
 from hexrd.utils.yaml import NumpyToNativeDumper
@@ -312,6 +314,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._sample_tilt = np.asarray([0, 0, 0], float)
         self.recent_state_files = []
         self._apply_absorption_correction = False
+        self._physics_package = None
+        self._detector_coatings = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -2872,68 +2876,66 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def physics_package(self):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
+        return self._physics_package
 
-        return instr.physics_package
-
-    def update_physics_package(self, **kwargs):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        if kwargs is None:
-            instr.physics_package = None
-        else:
+    def update_physics_package(self, det_type=None, **kwargs):
+        if det_type is None:
+            self._physics_package = None
+        elif self.physics_package is None:
+            self._physics_package = HEDPhysicsPackage(
+                **PHYSICS_PACKAGE_DEFAULTS.HED)
+        if det_type is not None and kwargs is not None:
             for attr, val in kwargs.items():
-                setattr(instr.physics_package, attr, val)
+                setattr(self._physics_package, attr, val)
         self.physics_package_modified.emit()
 
     def absorption_length(self):
+        if self._physics_package is None:
+            raise ValueError(
+                f'Cannot calculate absorption length without physics package')
+        return self.physics_package.pinhole_absorption_length(
+            HexrdConfig().beam_energy)
+
+    def _set_detector_coatings(self, key):
+        for name in self.detector_names:
+            self._detector_coatings.setdefault(name, {})
+
+        det = list(self._detector_coatings.values())[0]
+        if key in det:
+            return
+
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
         instr = create_hedm_instrument()
-        absorption_length = instr.physics_package.pinhole_absorption_length
-        return absorption_length(HexrdConfig().beam_energy)
+        for name, det in instr.detectors.items():
+            if key not in self._detector_coatings[name]:
+                self._detector_coatings[name][key] = getattr(det, key)
 
     def detector_filter(self, det_name):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        return instr.detectors[det_name].filter
+        self._detector_coatings.setdefault(det_name, {})
+        return self._detector_coatings[det_name].get('filter', None)
 
     def update_detector_filter(self, det_name, **kwargs):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        detector = instr.detectors[det_name]
+        self._set_detector_coatings('filter')
+        filter = self._detector_coatings[det_name]['filter']
         for attr, val in kwargs.items():
-            setattr(detector.filter, attr, val)
+            setattr(filter, attr, val)
 
-    @property
-    def detector_coating(self):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        return list(instr.detectors.values())[0].coating
+    def detector_coating(self, det_name):
+        self._detector_coatings.setdefault(det_name, {})
+        return self._detector_coatings[det_name].get('coating', None)
 
     def update_detector_coating(self, det_name, **kwargs):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        detector = instr.detectors[det_name]
+        self._set_detector_coatings('coating')
+        coating = self._detector_coatings[det_name]['coating']
         for attr, val in kwargs.items():
-            setattr(detector.coating, attr, val)
+            setattr(coating, attr, val)
 
-    @property
-    def phosphor(self):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
+    def detector_phosphor(self, det_name):
+        self._detector_coatings.setdefault(det_name, {})
+        return self._detector_coatings[det_name].get('phosphor', None)
 
-        return list(instr.detectors.values())[0].phosphor
-
-    def update_phosphor(self, det_name, kwargs):
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        detector = instr.detectors[det_name]
+    def update_detector_phosphor(self, det_name, **kwargs):
+        self._set_detector_coatings('phosphor')
+        phosphor = self._detector_coatings[det_name]['phosphor']
         for attr, val in kwargs.items():
-            setattr(detector.phosphor, attr, val)
+            setattr(phosphor, attr, val)
