@@ -384,6 +384,8 @@ class MainWindow(QObject):
             'action_show_detector_borders': 'show_detector_borders',
             'action_show_beam_marker': 'show_beam_marker',
             'action_show_all_colormaps': 'show_all_colormaps',
+            'action_apply_absorption_correction':
+                'apply_absorption_correction',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():

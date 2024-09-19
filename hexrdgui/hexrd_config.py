@@ -421,6 +421,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('sample_tilt', [0, 0, 0]),
             ('azimuthal_offset', 0.0),
             ('recent_state_files', []),
+            ('apply_absorption_correction', False),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -517,6 +518,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.show_azimuthal_legend = self.show_azimuthal_legend == 'true'
         if not isinstance(self.show_all_colormaps, bool):
             self.show_all_colormaps = self.show_all_colormaps == 'true'
+        if not isinstance(self.apply_absorption_correction, bool):
+            self.apply_absorption_correction = self.apply_absorption_correction == 'true'
 
         # This is None sometimes. Make sure it is an empty list instead.
         if self.recent_state_files is None:
