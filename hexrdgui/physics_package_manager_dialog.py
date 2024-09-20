@@ -131,6 +131,9 @@ class PhysicsPackageManagerDialog:
 
         # Set default values
         physics = HexrdConfig().physics_package
+        if physics is None:
+            return
+
         # PINHOLE
         self.ui.pinhole_material.setCurrentText(physics.pinhole_material)
         self.ui.pinhole_density.setValue(physics.pinhole_density)
@@ -189,7 +192,9 @@ class PhysicsPackageManagerDialog:
             self.density_inputs[category].setValue(density)
         else:
             self.density_inputs[category].setValue(0.0)
-        self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
+
+        if HexrdConfig().physics_package is not None:
+            self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
 
     def accept_changes(self):
         materials = {}

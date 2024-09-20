@@ -1636,6 +1636,15 @@ class MainWindow(QObject):
             HexrdConfig().apply_absorption_correction = b
             return
 
+        # Make sure the physics package exists first
+        if HexrdConfig().physics_package is None:
+            msg = (
+                'Physics package must be set before absorption correction can be '
+                'applied. See the "Physics Package" editor under the "Edit" menu.'
+            )
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
         # Get the user to first select the absorption correction options
         d = AbsorptionCorrectionOptionsDialog(self.ui)
         if not d.exec():
