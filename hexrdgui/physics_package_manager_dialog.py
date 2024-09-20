@@ -8,12 +8,12 @@ from matplotlib.figure import Figure
 
 from PySide6.QtWidgets import QSizePolicy
 
-import hexrdgui.resources.materials as module
 from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
+import hexrd.resources as hexrd_resources
 from hexrd.material import _angstroms, _kev, Material
 from hexrd.instrument.constants import FILTER_DEFAULTS, PINHOLE_DEFAULTS
 
@@ -88,7 +88,7 @@ class PhysicsPackageManagerDialog:
         for key in ['pinhole', 'window']:
             materials = {}
             file_name = f'{key}_materials.h5'
-            with resource_loader.path(module, file_name) as file_path:
+            with resource_loader.path(hexrd_resources, file_name) as file_path:
                 with h5py.File(file_path) as f:
                     mat_names = list(f.keys())
 
