@@ -286,6 +286,16 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="undo_last_run">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Undo Last Run</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item row="3" column="0">

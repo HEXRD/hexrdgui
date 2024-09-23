@@ -63,6 +63,7 @@ class WppfOptionsDialog(QObject):
         self.spline_points = []
         self._wppf_object = None
         self._prev_background_method = None
+        self._undo_stack = []
 
         self.params = self.generate_params()
         self.initialize_tree_view()
@@ -93,6 +94,7 @@ class WppfOptionsDialog(QObject):
         self.ui.export_params.clicked.connect(self.export_params)
         self.ui.import_params.clicked.connect(self.import_params)
         self.ui.reset_params_to_defaults.clicked.connect(self.reset_params)
+        self.ui.undo_last_run.clicked.connect(self.pop_undo_stack)
 
         self.ui.save_plot.pressed.connect(self.save_plot)
         self.ui.reset_object.pressed.connect(self.reset_object)
@@ -231,6 +233,8 @@ class WppfOptionsDialog(QObject):
                 self.reset_object()
 
     def begin_run(self):
+        self.push_undo_stack()
+
         if self.background_method == 'spline':
             points = self.background_method_dict['spline']
             if not points:
@@ -1082,6 +1086,46 @@ class WppfOptionsDialog(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             raise Exception(msg)
 
+    def push_undo_stack(self):
+        settings = HexrdConfig().config['calibration'].get('wppf', {})
+
+        stack_item = {
+            'settings': settings,
+            'spline_points': self.spline_points,
+            'method': self.method,
+            'refinement_steps': self.refinement_steps,
+            'peak_shape': self.peak_shape,
+            'background_method': self.background_method,
+            'selected_materials': self.selected_materials,
+        }
+
+        stack_item = {k: copy.deepcopy(v) for k, v in stack_item.items()}
+
+        self._undo_stack.append(stack_item)
+        self.update_undo_enable_state(bool(self._undo_stack))
+
+    def pop_undo_stack(self):
+        stack_item = self._undo_stack.pop(-1)
+
+        wppf_items = [
+            'settings',
+            'spline_points',
+            'method',
+            'refinement_steps',
+            'peak_shape',
+            'background_method',
+            'selected_materials',
+        ]
+        for k in wppf_items:
+            v = stack_item[k]
+            setattr(self, k, v)
+
+        self.save_settings()
+        self.run.emit()
+        self.update_undo_enable_state(bool(self._undo_stack))
+
+    def update_undo_enable_state(self, enabled):
+        self.ui.undo_last_run.setEnabled(enabled)
 
 def generate_params(method, materials, peak_shape, bkgmethod):
     func_dict = {
