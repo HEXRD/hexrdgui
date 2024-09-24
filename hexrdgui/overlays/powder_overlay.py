@@ -625,6 +625,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
     @property
     def tth_distortion_dict(self):
+        if self.instrument is None:
+            return None
+
         with switch_xray_source(self.instrument, self.xray_source):
             return self.pinhole_distortion_dict(self.instrument)
 

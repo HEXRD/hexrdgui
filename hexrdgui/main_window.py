@@ -1207,7 +1207,7 @@ class MainWindow(QObject):
 
         def on_accepted():
             # Write the modified picks to the overlays
-            updated_picks = tree_format_to_picks(dialog.dictionary)
+            updated_picks = tree_format_to_picks(overlays, dialog.dictionary)
             for i, new_picks in enumerate(updated_picks):
                 overlays[i].calibration_picks_polar = new_picks['picks']
 

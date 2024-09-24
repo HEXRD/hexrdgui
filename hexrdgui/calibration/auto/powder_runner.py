@@ -84,6 +84,7 @@ class PowderRunner(QObject):
             'pktype': options['pk_type'],
             'bgtype': options['bg_type'],
             'tth_distortion': self.active_overlay.tth_distortion_dict,
+            'xray_source': self.active_overlay.xray_source,
         }
 
         self.pc = PowderCalibrator(**kwargs)

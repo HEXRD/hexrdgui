@@ -218,13 +218,14 @@ def generate_picks_results(overlays, polar=True):
                 'tvec': overlay.tvec,
             }
             extras['tth_distortion'] = overlay.tth_distortion_dict
-            extras['xray_source'] = overlay.xray_source
         elif overlay.is_laue:
             options = {
                 'crystal_params': overlay.crystal_params,
                 'min_energy': overlay.min_energy,
                 'max_energy': overlay.max_energy,
             }
+
+        extras['xray_source'] = overlay.xray_source
 
         if polar:
             picks = overlay.calibration_picks_polar
@@ -257,14 +258,16 @@ def picks_to_tree_format(all_picks):
     return tree_format
 
 
-def tree_format_to_picks(tree_format):
+def tree_format_to_picks(overlays: list, tree_format: dict):
+    # Make a dict with the names
+    overlays_dict = {x.name: x for x in overlays}
+
     all_picks = []
     for name, entry in tree_format.items():
-        # FIXME: should we really be forcing these naming patterns?
-        material, type, *_ = name.split()
+        overlay = overlays_dict[name]
         current = {
-            'material': material,
-            'type': type,
+            'material': overlay.material,
+            'type': overlay.type,
             'picks': entry,
         }
         all_picks.append(current)

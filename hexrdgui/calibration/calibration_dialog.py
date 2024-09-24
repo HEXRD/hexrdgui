@@ -114,7 +114,6 @@ class CalibrationDialog(QObject):
             self.update_edit_picks_enable_state)
 
         HexrdConfig().active_beam_switched.connect(
-            # This function also updates the active beam name in the combo box
             self.on_active_beam_switched)
 
     def show(self):

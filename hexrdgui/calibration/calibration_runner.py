@@ -260,7 +260,7 @@ class CalibrationRunner(QObject):
         ndarrays_to_lists(results)
 
         # Set the new picks on the overlay
-        updated_picks = tree_format_to_picks(results)
+        updated_picks = tree_format_to_picks(self.overlays, results)
         overlay.calibration_picks_polar = updated_picks[0]['picks']
         overlay.pad_picks_data()
         self.reset_overlay_picks()
@@ -328,7 +328,10 @@ class CalibrationRunner(QObject):
 
         if accepted:
             # Update all of the picks with the modified data
-            updated_picks = tree_format_to_picks(dialog.dictionary)
+            updated_picks = tree_format_to_picks(
+                self.overlays,
+                dialog.dictionary,
+            )
             for i, new_picks in enumerate(updated_picks):
                 self.active_overlays[i].calibration_picks_polar = (
                     new_picks['picks']
@@ -887,6 +890,7 @@ class CalibrationRunner(QObject):
             'min_energy': overlay.min_energy,
             'max_energy': overlay.max_energy,
             'euler_convention': HexrdConfig().euler_angle_convention,
+            'xray_source': overlay.xray_source,
         }
 
         self.laue_auto_picker = LaueCalibrator(**init_kwargs)

@@ -36,6 +36,7 @@ def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
                 'max_energy': pick_data['options']['max_energy'],
                 'calibration_picks': pick_data['picks'],
                 'euler_convention': euler_convention,
+                'xray_source': pick_data['xray_source'],
             }
             calibrators.append(LaueCalibrator(**kwargs))
     return calibrators
