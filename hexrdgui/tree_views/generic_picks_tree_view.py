@@ -32,6 +32,29 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
         self.root_item = TreeItem([''] * 3)
         self.coords_type = coords_type
 
+        """
+        A zero-layer nested structure looks like this:
+        {
+            'line1': [(0, 0), (1, 1)],
+            'line2': [(2, 2), (3, 4)],
+        }
+
+        A one-layer nested structure looks like this:
+        {
+            'XRS1': {
+                'line1': [(0, 0), (1, 1)],
+                'line2': [(2, 2), (3, 4)],
+            },
+            'XRS2': {
+                'line1': [(5, 6), (7, 8)],
+                'line2': [(9, 9), (10, 10)],
+            },
+        }
+
+        By default, we assume one-layer nested structure.
+        """
+        self.num_layers_nested = 1
+
         self.rebuild_tree()
 
     @property
@@ -175,6 +198,10 @@ class GenericPicksTreeView(BaseDictTreeView):
         if items_to_remove:
             model.remove_items(items_to_remove)
             self.draw_picks()
+
+    @property
+    def num_layers_nested(self) -> int:
+        return self.model().num_layers_nested
 
     @property
     def show_all_picks(self):
@@ -370,9 +397,12 @@ class GenericPicksTreeView(BaseDictTreeView):
         model = self.model()
         item = model.get_item(index)
         path = model.path_to_item(item)
-        line_name_clicked = len(path) == 1
-        point_clicked = len(path) == 2
-        line_name = str(path[0])
+        line_name_clicked = len(path) == self.num_layers_nested + 1
+        point_clicked = len(path) == self.num_layers_nested + 2
+        line_name = (
+            str(path[self.num_layers_nested])
+            if len(path) > self.num_layers_nested else 'None'
+        )
         selected_items = self.selected_items
         num_selected = len(selected_items)
         is_hand_pickable = self.is_hand_pickable
@@ -415,7 +445,9 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         # Action logic
         if line_name_clicked and self.can_add_lines:
-            add_actions({'Append new line': self.append_new_line})
+            # The path to the new line will include all but the selected one
+            append = partial(self.append_new_line, path[:-1])
+            add_actions({'Append new line': append})
 
         add_actions({'Insert': insert_item})
 
@@ -491,9 +523,9 @@ class GenericPicksTreeView(BaseDictTreeView):
             # Accept the line
             self._current_picker.ui.accept()
 
-    def append_new_line(self):
-        name = self.new_line_name_generator()
-        config = self.model().config
+    def append_new_line(self, path):
+        name = self.new_line_name_generator(path)
+        config = self.model().config_path(path)
 
         if name in config:
             msg = f'name {name} already exists in config! {list(config)}'
@@ -516,15 +548,17 @@ class GenericPicksTreeView(BaseDictTreeView):
             picker.ui.accept()
 
         accepted_func = partial(self.finished_appending_new_line,
-                                name=name, picker=picker)
+                                path=path, name=name, picker=picker)
         picker.accepted.connect(accepted_func)
         picker.line_completed.connect(on_line_completed)
 
         self._current_picker = picker
 
-    def finished_appending_new_line(self, name, picker):
+    def finished_appending_new_line(self, path, name, picker):
         new_line = picker.line_data[0]
-        self.model().config[name] = new_line.tolist()
+        config = self.model().config_path(path)
+
+        config[name] = new_line.tolist()
         self.model().rebuild_tree()
         self.draw_picks()
         self.expand_rows()

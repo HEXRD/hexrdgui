@@ -26,6 +26,14 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         self.config = dictionary
 
+    def config_path(self, path: list) -> dict:
+        # Return any nested path from the config for viewing/editing
+        config = self.config
+        for entry in path:
+            config = config[entry]
+
+        return config
+
     def setData(self, index, value, role=Qt.EditRole):
         item = self.get_item(index)
 

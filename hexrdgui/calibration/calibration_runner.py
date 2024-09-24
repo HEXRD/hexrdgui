@@ -155,26 +155,7 @@ class CalibrationRunner(QObject):
         title = overlay.name
 
         if overlay.xray_source is not None and overlay.xray_source != HexrdConfig().active_beam_name:
-            # Update the polar view to use this xrs source
-            HexrdConfig().active_beam_name = overlay.xray_source
-
-            if self.line_picker is not None:
-                if self.line_picker.zoom_canvas is not None:
-                    self.line_picker.zoom_canvas.skip_next_render = True
-
-            # Wait until canvas finishes updating
-            progress_dialog = ProgressDialog(self.canvas)
-            progress_dialog.setRange(0, 0)
-            progress_dialog.setWindowTitle(
-                f'Switching beam to {overlay.xray_source}'
-            )
-            progress_dialog.show()
-            while self.canvas.iviewer is None:
-                # We must process events so that when the polar view has been
-                # generated again, it can set the iviewer on the canvas.
-                QCoreApplication.processEvents()
-
-            progress_dialog.hide()
+            self.switch_xray_source(overlay.xray_source)
 
         # Only make the current overlay we are selecting visible
         self.set_exclusive_overlay_visibility(overlay)
@@ -219,6 +200,28 @@ class CalibrationRunner(QObject):
 
         # Enable focus mode during line picking
         self.enable_focus_mode(True)
+
+    def switch_xray_source(self, xray_source: str):
+        # Update the polar view to use this xrs source
+        HexrdConfig().active_beam_name = xray_source
+
+        if self.line_picker is not None:
+            if self.line_picker.zoom_canvas is not None:
+                self.line_picker.zoom_canvas.skip_next_render = True
+
+        # Wait until canvas finishes updating
+        progress_dialog = ProgressDialog(self.canvas)
+        progress_dialog.setRange(0, 0)
+        progress_dialog.setWindowTitle(
+            f'Switching beam to {xray_source}'
+        )
+        progress_dialog.show()
+        while self.canvas.iviewer is None:
+            # We must process events so that when the polar view has been
+            # generated again, it can set the iviewer on the canvas.
+            QCoreApplication.processEvents()
+
+        progress_dialog.hide()
 
     def load_pick_points(self):
         overlay = self.active_overlay

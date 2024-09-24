@@ -115,7 +115,7 @@ class CalibrationDialog(QObject):
 
         HexrdConfig().active_beam_switched.connect(
             # This function also updates the active beam name in the combo box
-            self.update_beam_names)
+            self.on_active_beam_switched)
 
     def show(self):
         self.ui.show()
@@ -195,6 +195,13 @@ class CalibrationDialog(QObject):
 
     def on_draw_picks_toggled(self, b):
         self.draw_picks_toggled.emit(b)
+
+    def on_active_beam_switched(self):
+        # Update the active beam on the instrument
+        self.instr.active_beam_name = HexrdConfig().active_beam_name
+
+        # This will also update the combo box to reflect the new active name
+        self.update_beam_names()
 
     def update_beam_names(self):
         with block_signals(self.ui.active_beam):
@@ -611,7 +618,7 @@ class CalibrationDialog(QObject):
         if self.delta_boundaries:
             return DeltaCalibrationTreeItemModel
         else:
-            return DefaultCalibrationTreeItemModel
+            return DefaultTreeItemModel
 
 
 TILT_LABELS_EULER = {
