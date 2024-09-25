@@ -46,6 +46,7 @@ DEFAULT_PEAK_SHAPE = 'pvtch'
 class WppfOptionsDialog(QObject):
 
     run = Signal()
+    undo_clicked = Signal()
     finished = Signal()
 
     def __init__(self, parent=None):
@@ -1125,6 +1126,8 @@ class WppfOptionsDialog(QObject):
         self.update_undo_enable_state()
         self.update_enable_states()
         self.update_tree_view()
+
+        self.undo_clicked.emit()
 
     def update_undo_enable_state(self):
         self.ui.undo_last_run.setEnabled(len(self._undo_stack) > 0)

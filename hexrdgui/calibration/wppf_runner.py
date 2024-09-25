@@ -12,9 +12,11 @@ class WppfRunner:
 
     def __init__(self, parent=None):
         self.parent = parent
+        self.undo_stack = []
 
     def clear(self):
         self.wppf_options_dialog = None
+        self.undo_stack.clear()
 
     def run(self):
         self.validate()
@@ -35,6 +37,7 @@ class WppfRunner:
     def select_options(self):
         dialog = WppfOptionsDialog(self.parent)
         dialog.run.connect(self.run_wppf)
+        dialog.undo_clicked.connect(self.pop_undo_stack)
         dialog.finished.connect(self.clear)
         dialog.show()
         self.wppf_options_dialog = dialog
@@ -53,6 +56,7 @@ class WppfRunner:
             refine_func()
             self.rerender_wppf()
 
+        self.push_undo_stack()
         self.write_lattice_params_to_materials()
         self.update_param_values()
 
@@ -85,6 +89,27 @@ class WppfRunner:
             HexrdConfig().material_modified.emit(name)
 
         HexrdConfig().overlay_config_changed.emit()
+
+    def push_undo_stack(self):
+        # Save the previous lattice parameters
+        lattice_parameters = {}
+        for name in self.wppf_object.phases.phase_dict:
+            mat = HexrdConfig().material(name)
+            lattice_parameters[name] = mat.lparms
+
+        self.undo_stack.append({
+            'lattice_parameters': lattice_parameters,
+        })
+
+    def pop_undo_stack(self):
+        item = self.undo_stack.pop()
+
+        for name, lparms in item['lattice_parameters'].items():
+            mat = HexrdConfig().material(name)
+            mat.lparms = lparms
+
+            HexrdConfig().flag_overlay_updates_for_material(name)
+            HexrdConfig().material_modified.emit(name)
 
     def update_param_values(self):
         # Update the param values with their new values from the wppf_object
