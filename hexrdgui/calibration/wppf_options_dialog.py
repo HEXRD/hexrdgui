@@ -758,6 +758,16 @@ class WppfOptionsDialog(QObject):
         # First, recursively set items (except special cases)
         recursively_set_items(tree_dict, template_dict)
 
+        # If the background method is chebyshev, fill those in
+        if self.background_method == 'chebyshev':
+            # Put the background first
+            tree_dict = {'Background': {}, **tree_dict}
+            background = tree_dict['Background']
+            i = 0
+            while f'bkg_{i}' in params_dict:
+                background[i] = create_param_item(params_dict[f'bkg_{i}'])
+                i += 1
+
         # Now generate the materials
         materials_template = template_dict['Materials'].pop('{mat}')
 
