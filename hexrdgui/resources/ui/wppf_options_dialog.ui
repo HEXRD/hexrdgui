@@ -245,16 +245,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="undo_last_run">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Undo Run</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="reset_object">
        <property name="enabled">
         <bool>false</bool>
@@ -276,6 +266,16 @@
        <property name="icon">
         <iconset theme="user-desktop">
          <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="undo_last_run">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Undo Run</string>
        </property>
       </widget>
      </item>

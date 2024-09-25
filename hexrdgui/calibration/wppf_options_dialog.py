@@ -980,7 +980,9 @@ class WppfOptionsDialog(QObject):
         return {
             'expt_spectrum': expt_spectrum,
             'params': self.params,
-            'phases': self.materials,
+            # Make a deep copy of the materials so that WPPF
+            # won't modify any arrays in place shared by our materials.
+            'phases': copy.deepcopy(self.materials),
             'wavelength': wavelength,
             'bkgmethod': self.background_method_dict,
             'peakshape': self.peak_shape,

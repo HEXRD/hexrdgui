@@ -57,7 +57,7 @@ class WppfRunner:
             self.rerender_wppf()
 
         self.push_undo_stack()
-        self.write_lattice_params_to_materials()
+        self.write_params_to_materials()
         self.update_param_values()
 
     def rerender_wppf(self):
@@ -69,15 +69,15 @@ class WppfRunner:
         # calls to the event loop in the future instead.
         QCoreApplication.processEvents()
 
-    def write_lattice_params_to_materials(self):
+    def write_params_to_materials(self):
         for name, wppf_mat in self.wppf_object.phases.phase_dict.items():
             mat = HexrdConfig().material(name)
 
             # Work around differences in WPPF objects
             if isinstance(self.wppf_object, Rietveld):
-                lparms = wppf_mat['synchrotron'].lparms
-            else:
-                lparms = wppf_mat.lparms
+                wppf_mat = wppf_mat['synchrotron']
+
+            lparms = wppf_mat.lparms
 
             # Convert units from nm to angstroms
             lparms = copy.deepcopy(lparms)
@@ -85,31 +85,42 @@ class WppfRunner:
                 lparms[i] *= 10.0
 
             mat.latticeParameters = lparms
+            mat.atominfo[:] = wppf_mat.atom_pos
+            mat.U[:] = wppf_mat.U
+
             HexrdConfig().flag_overlay_updates_for_material(name)
             HexrdConfig().material_modified.emit(name)
 
         HexrdConfig().overlay_config_changed.emit()
 
     def push_undo_stack(self):
-        # Save the previous lattice parameters
-        lattice_parameters = {}
+        # Save the previous material parameters
+        mat_params = {}
         for name in self.wppf_object.phases.phase_dict:
             mat = HexrdConfig().material(name)
-            lattice_parameters[name] = mat.lparms
+            mat_params[name] = {
+                'lparms': mat.lparms,
+                'atominfo': mat.atominfo,
+                'U': mat.U,
+            }
 
-        self.undo_stack.append({
-            'lattice_parameters': lattice_parameters,
-        })
+        # Make a deep copy of all parameters
+        self.undo_stack.append(copy.deepcopy(mat_params))
 
     def pop_undo_stack(self):
-        item = self.undo_stack.pop()
+        entry = self.undo_stack.pop()
 
-        for name, lparms in item['lattice_parameters'].items():
+        for name, mat_params in entry.items():
             mat = HexrdConfig().material(name)
-            mat.lparms = lparms
+
+            mat.lparms = mat_params['lparms']
+            mat.atominfo[:] = mat_params['atominfo']
+            mat.U[:] = mat_params['U']
 
             HexrdConfig().flag_overlay_updates_for_material(name)
             HexrdConfig().material_modified.emit(name)
+
+        HexrdConfig().overlay_config_changed.emit()
 
     def update_param_values(self):
         # Update the param values with their new values from the wppf_object
