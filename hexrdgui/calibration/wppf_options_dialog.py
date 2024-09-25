@@ -233,8 +233,6 @@ class WppfOptionsDialog(QObject):
                 self.reset_object()
 
     def begin_run(self):
-        self.push_undo_stack()
-
         if self.background_method == 'spline':
             points = self.background_method_dict['spline']
             if not points:
@@ -253,6 +251,7 @@ class WppfOptionsDialog(QObject):
             self.apply_delta_boundaries()
 
         self.save_settings()
+        self.push_undo_stack()
         self.run.emit()
 
     def finish(self):
@@ -1097,35 +1096,29 @@ class WppfOptionsDialog(QObject):
             'peak_shape': self.peak_shape,
             'background_method': self.background_method,
             'selected_materials': self.selected_materials,
+            '_wppf_object': self._wppf_object,
+            'params': self.params,
         }
 
         stack_item = {k: copy.deepcopy(v) for k, v in stack_item.items()}
 
         self._undo_stack.append(stack_item)
-        self.update_undo_enable_state(bool(self._undo_stack))
+        self.update_undo_enable_state()
 
     def pop_undo_stack(self):
         stack_item = self._undo_stack.pop(-1)
 
-        wppf_items = [
-            'settings',
-            'spline_points',
-            'method',
-            'refinement_steps',
-            'peak_shape',
-            'background_method',
-            'selected_materials',
-        ]
-        for k in wppf_items:
-            v = stack_item[k]
+        for k, v in stack_item.items():
             setattr(self, k, v)
 
         self.save_settings()
-        self.run.emit()
-        self.update_undo_enable_state(bool(self._undo_stack))
+        self.update_undo_enable_state()
+        self.update_enable_states()
+        self.update_tree_view()
 
-    def update_undo_enable_state(self, enabled):
-        self.ui.undo_last_run.setEnabled(enabled)
+    def update_undo_enable_state(self):
+        self.ui.undo_last_run.setEnabled(len(self._undo_stack) > 0)
+
 
 def generate_params(method, materials, peak_shape, bkgmethod):
     func_dict = {
