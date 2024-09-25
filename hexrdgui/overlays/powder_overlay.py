@@ -63,10 +63,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
     def validate_tth_distortion_kwargs(self):
         from hexrdgui.hexrd_config import HexrdConfig
         if self.tth_distortion_type == 'SampleLayerDistortion':
-            # We added pinhole_diameter later. Set a default if it is missing.
-            if 'pinhole_diameter' not in self.tth_distortion_kwargs:
-                diameter = HexrdConfig().physics_package.pinhole_diameter
-                self.tth_distortion_kwargs['pinhole_diameter'] = diameter
+            # We added pinhole_radius later. Set a default if it is missing.
+            if 'pinhole_radius' not in self.tth_distortion_kwargs:
+                radius = HexrdConfig().physics_package.pinhole_radius
+                self.tth_distortion_kwargs['pinhole_radius'] = radius
 
     @property
     def has_widths(self):
