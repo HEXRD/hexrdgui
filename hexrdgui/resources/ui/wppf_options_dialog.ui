@@ -6,82 +6,53 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>635</width>
-    <height>703</height>
+    <width>1000</width>
+    <height>1000</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>WPPF Options Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="1" column="1" colspan="2">
-    <widget class="QComboBox" name="method">
-     <item>
-      <property name="text">
-       <string>LeBail</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Rietveld</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="3">
-    <widget class="QPushButton" name="select_materials_button">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
+   <item row="5" column="0" colspan="3">
+    <widget class="QPushButton" name="pick_spline_points">
      <property name="text">
-      <string>Select Materials</string>
+      <string>Pick Spline Points</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="refinement_steps_label">
-     <property name="text">
-      <string>Refinement Steps:</string>
+   <item row="16" column="0" colspan="3">
+    <widget class="QGroupBox" name="param_settings_group">
+     <property name="title">
+      <string>Parameter Settings</string>
      </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="export_params">
+        <property name="text">
+         <string>Export</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="import_params">
+        <property name="text">
+         <string>Import</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="reset_params_to_defaults">
+        <property name="text">
+         <string>Reset to Defaults</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
-   <item row="13" column="0" colspan="3">
-    <widget class="QTableWidget" name="table">
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Value</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Minimum</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Maximum</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Vary</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QComboBox" name="background_method"/>
+   <item row="7" column="0" colspan="3">
+    <layout class="QVBoxLayout" name="background_method_parameters_layout"/>
    </item>
    <item row="1" column="0">
     <widget class="QLabel" name="method_label">
@@ -90,20 +61,17 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QSpinBox" name="refinement_steps">
-     <property name="minimum">
-      <number>1</number>
+   <item row="8" column="1">
+    <widget class="QLineEdit" name="experiment_file">
+     <property name="enabled">
+      <bool>false</bool>
      </property>
-     <property name="maximum">
-      <number>10000000</number>
-     </property>
-     <property name="value">
-      <number>10</number>
+     <property name="text">
+      <string/>
      </property>
     </widget>
    </item>
-   <item row="10" column="0" colspan="3">
+   <item row="11" column="0" colspan="3">
     <layout class="QHBoxLayout" name="plot_options_layout">
      <item>
       <widget class="QCheckBox" name="display_wppf_plot">
@@ -121,130 +89,7 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="peak_shape_label">
-     <property name="text">
-      <string>Peak shape:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0" colspan="3">
-    <layout class="QVBoxLayout" name="background_method_parameters_layout"/>
-   </item>
-   <item row="16" column="0" colspan="3">
-    <layout class="QHBoxLayout" name="button_layout">
-     <item>
-      <widget class="QPushButton" name="save_plot">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Save Plot</string>
-       </property>
-       <property name="icon">
-        <iconset theme="document-save">
-         <normaloff>.</normaloff>.</iconset>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="button_layout_spacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="reset_object">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Reset Object</string>
-       </property>
-       <property name="icon">
-        <iconset theme="reload">
-         <normaloff>.</normaloff>.</iconset>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="preview_spectrum">
-       <property name="text">
-        <string>Preview Spectrum</string>
-       </property>
-       <property name="icon">
-        <iconset theme="user-desktop">
-         <normaloff>.</normaloff>.</iconset>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="run_button">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Run</string>
-       </property>
-       <property name="icon">
-        <iconset theme="dialog-ok">
-         <normaloff>.</normaloff>.</iconset>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="7" column="2">
-    <widget class="QPushButton" name="select_experiment_file_button">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Select File</string>
-     </property>
-    </widget>
-   </item>
-   <item row="14" column="0" colspan="3">
-    <widget class="QGroupBox" name="table_settings_group">
-     <property name="title">
-      <string>Table Settings</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QPushButton" name="export_table">
-        <property name="text">
-         <string>Export</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="import_table">
-        <property name="text">
-         <string>Import</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="reset_table_to_defaults">
-        <property name="text">
-         <string>Reset to Defaults</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="8" column="0" colspan="3">
+   <item row="9" column="0" colspan="3">
     <layout class="QHBoxLayout" name="limit_tth_layout">
      <item>
       <widget class="QCheckBox" name="limit_tth">
@@ -309,8 +154,29 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QComboBox" name="peak_shape"/>
+   <item row="1" column="1" colspan="2">
+    <widget class="QComboBox" name="method">
+     <item>
+      <property name="text">
+       <string>LeBail</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Rietveld</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
+    <widget class="QComboBox" name="background_method"/>
+   </item>
+   <item row="8" column="0">
+    <widget class="QCheckBox" name="use_experiment_file">
+     <property name="text">
+      <string>Use Experiment File</string>
+     </property>
+    </widget>
    </item>
    <item row="4" column="0">
     <widget class="QLabel" name="background_method_label">
@@ -319,22 +185,148 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1">
-    <widget class="QLineEdit" name="experiment_file">
+   <item row="0" column="0" colspan="3">
+    <widget class="QPushButton" name="select_materials_button">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select Materials</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" colspan="2">
+    <widget class="QSpinBox" name="refinement_steps">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000000</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="refinement_steps_label">
+     <property name="text">
+      <string>Refinement Steps:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="18" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="button_layout">
+     <item>
+      <widget class="QPushButton" name="save_plot">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Save Plot</string>
+       </property>
+       <property name="icon">
+        <iconset theme="document-save">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="button_layout_spacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="reset_object">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Reset Object</string>
+       </property>
+       <property name="icon">
+        <iconset theme="reload">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="preview_spectrum">
+       <property name="text">
+        <string>Preview Spectrum</string>
+       </property>
+       <property name="icon">
+        <iconset theme="user-desktop">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="undo_last_run">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Undo Run</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="run_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+       <property name="icon">
+        <iconset theme="dialog-ok">
+         <normaloff>.</normaloff>.</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="peak_shape_label">
+     <property name="text">
+      <string>Peak shape:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0">
+    <widget class="QCheckBox" name="delta_boundaries">
+     <property name="text">
+      <string>Use delta boundaries</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2">
+    <widget class="QPushButton" name="select_experiment_file_button">
      <property name="enabled">
       <bool>false</bool>
      </property>
      <property name="text">
-      <string/>
+      <string>Select File</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
-    <widget class="QCheckBox" name="use_experiment_file">
-     <property name="text">
-      <string>Use Experiment File</string>
-     </property>
-    </widget>
+   <item row="3" column="1" colspan="2">
+    <widget class="QComboBox" name="peak_shape"/>
+   </item>
+   <item row="15" column="0" colspan="3">
+    <layout class="QVBoxLayout" name="tree_view_layout"/>
    </item>
   </layout>
  </widget>
@@ -351,6 +343,7 @@
   <tabstop>refinement_steps</tabstop>
   <tabstop>peak_shape</tabstop>
   <tabstop>background_method</tabstop>
+  <tabstop>pick_spline_points</tabstop>
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
   <tabstop>select_experiment_file_button</tabstop>
@@ -359,7 +352,10 @@
   <tabstop>max_tth</tabstop>
   <tabstop>display_wppf_plot</tabstop>
   <tabstop>edit_plot_style</tabstop>
-  <tabstop>table</tabstop>
+  <tabstop>delta_boundaries</tabstop>
+  <tabstop>export_params</tabstop>
+  <tabstop>import_params</tabstop>
+  <tabstop>reset_params_to_defaults</tabstop>
   <tabstop>save_plot</tabstop>
   <tabstop>reset_object</tabstop>
   <tabstop>preview_spectrum</tabstop>

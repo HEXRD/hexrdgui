@@ -12,9 +12,11 @@ class WppfRunner:
 
     def __init__(self, parent=None):
         self.parent = parent
+        self.undo_stack = []
 
     def clear(self):
         self.wppf_options_dialog = None
+        self.undo_stack.clear()
 
     def run(self):
         self.validate()
@@ -35,6 +37,7 @@ class WppfRunner:
     def select_options(self):
         dialog = WppfOptionsDialog(self.parent)
         dialog.run.connect(self.run_wppf)
+        dialog.undo_clicked.connect(self.pop_undo_stack)
         dialog.finished.connect(self.clear)
         dialog.show()
         self.wppf_options_dialog = dialog
@@ -53,7 +56,8 @@ class WppfRunner:
             refine_func()
             self.rerender_wppf()
 
-        self.write_lattice_params_to_materials()
+        self.push_undo_stack()
+        self.write_params_to_materials()
         self.update_param_values()
 
     def rerender_wppf(self):
@@ -65,15 +69,15 @@ class WppfRunner:
         # calls to the event loop in the future instead.
         QCoreApplication.processEvents()
 
-    def write_lattice_params_to_materials(self):
+    def write_params_to_materials(self):
         for name, wppf_mat in self.wppf_object.phases.phase_dict.items():
             mat = HexrdConfig().material(name)
 
             # Work around differences in WPPF objects
             if isinstance(self.wppf_object, Rietveld):
-                lparms = wppf_mat['synchrotron'].lparms
-            else:
-                lparms = wppf_mat.lparms
+                wppf_mat = wppf_mat['synchrotron']
+
+            lparms = wppf_mat.lparms
 
             # Convert units from nm to angstroms
             lparms = copy.deepcopy(lparms)
@@ -81,6 +85,38 @@ class WppfRunner:
                 lparms[i] *= 10.0
 
             mat.latticeParameters = lparms
+            mat.atominfo[:] = wppf_mat.atom_pos
+            mat.U[:] = wppf_mat.U
+
+            HexrdConfig().flag_overlay_updates_for_material(name)
+            HexrdConfig().material_modified.emit(name)
+
+        HexrdConfig().overlay_config_changed.emit()
+
+    def push_undo_stack(self):
+        # Save the previous material parameters
+        mat_params = {}
+        for name in self.wppf_object.phases.phase_dict:
+            mat = HexrdConfig().material(name)
+            mat_params[name] = {
+                'lparms': mat.lparms,
+                'atominfo': mat.atominfo,
+                'U': mat.U,
+            }
+
+        # Make a deep copy of all parameters
+        self.undo_stack.append(copy.deepcopy(mat_params))
+
+    def pop_undo_stack(self):
+        entry = self.undo_stack.pop()
+
+        for name, mat_params in entry.items():
+            mat = HexrdConfig().material(name)
+
+            mat.lparms = mat_params['lparms']
+            mat.atominfo[:] = mat_params['atominfo']
+            mat.U[:] = mat_params['U']
+
             HexrdConfig().flag_overlay_updates_for_material(name)
             HexrdConfig().material_modified.emit(name)
 

@@ -5,9 +5,10 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class SelectItemsDialog(QDialog):
-    def __init__(self, items, parent=None):
+    def __init__(self, items, window_title='Select Items', parent=None):
         super().__init__(parent)
 
+        self.setWindowTitle(window_title)
         self.setLayout(QVBoxLayout(self))
 
         self.select_items_widget = SelectItemsWidget(items, parent)
