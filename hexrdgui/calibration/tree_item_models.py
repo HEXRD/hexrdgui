@@ -53,7 +53,7 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
             # If a value hit the boundary, color both the boundary and the
             # value red.
             item = self.get_item(index)
-            if not item.child_items:
+            if not item.child_items and item.data(self.VALUE_IDX) is not None:
                 atol = 1e-3
                 pairs = [
                     (self.VALUE_IDX, self.MAX_IDX),
@@ -86,7 +86,7 @@ class DeltaCalibrationTreeItemModel(CalibrationTreeItemModel):
         if role == Qt.ForegroundRole and index.column() in self.BOUND_INDICES:
             # If a delta is zero, color both the delta and the value red.
             item = self.get_item(index)
-            if not item.child_items:
+            if not item.child_items and item.data(self.VALUE_IDX) is not None:
                 atol = 1e-3
                 if abs(item.data(self.DELTA_IDX)) < atol:
                     return QColor('red')
