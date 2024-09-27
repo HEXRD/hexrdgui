@@ -2940,10 +2940,18 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @detector_coatings_dictified.setter
     def detector_coatings_dictified(self, v):
+        funcs = {
+            'coating': self.update_detector_coating,
+            'filter': self.update_detector_filter,
+            'phosphor': self.update_detector_phosphor,
+        }
         for det, val in v.items():
-            self.update_detector_coating(det, **val['coating'])
-            self.update_detector_filter(det, **val['filter'])
-            self.update_detector_phosphor(det, **val['phosphor'])
+            all_coatings = self._detector_coatings.setdefault(det_name, {})
+            for k, f in funcs.items():
+                if val.get(k) is not None:
+                    f(det, **val[k])
+                else:
+                    all_coatings[k] = None
 
     def _set_detector_coatings(self, key):
         for name in self.detector_names:
