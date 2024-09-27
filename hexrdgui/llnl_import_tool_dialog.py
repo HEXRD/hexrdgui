@@ -36,7 +36,7 @@ class LLNLImportToolDialog(QObject):
 
     cancel_workflow = Signal()
 
-    def __init__(self, cmap=None, parent=None):
+    def __init__(self, cmap=None, physics_package_manager=None, parent=None):
         super().__init__(parent)
 
         loader = UiLoader()
@@ -59,6 +59,7 @@ class LLNLImportToolDialog(QObject):
         self.import_in_progress = False
         self.loaded_images = []
         self.canvas = parent.image_tab_widget.active_canvas
+        self.physics_package_manager = physics_package_manager
 
         self.set_default_color()
         self.setup_connections()
@@ -552,6 +553,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.instrument.setDisabled(False)
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
+        self.physics_package_manager.show()
 
     def show(self):
         self.ui.show()

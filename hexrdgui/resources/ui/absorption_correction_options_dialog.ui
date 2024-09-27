@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AbsorptionCorrectionEditor</class>
+ <widget class="QDialog" name="AbsorptionCorrectionEditor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>332</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Absorption Correction Editor</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="1" column="0">
+      <widget class="QDialogButtonBox" name="button_box">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QTabWidget" name="tab_widget">
+       <property name="tabPosition">
+        <enum>QTabWidget::North</enum>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="filter_tab">
+        <attribute name="title">
+         <string>Filter</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="5" column="1" colspan="5">
+          <widget class="ScientificDoubleSpinBox" name="filter_thickness">
+           <property name="suffix">
+            <string> μm</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="filter_thickness_label">
+           <property name="text">
+            <string>Thickness</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1" colspan="5">
+          <widget class="QComboBox" name="filter_material"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="filter_material_label">
+           <property name="text">
+            <string>Material</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="6">
+          <widget class="QLineEdit" name="filter_material_input">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="detector_selector_label">
+           <property name="text">
+            <string>Detector</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="5">
+          <widget class="QComboBox" name="detectors"/>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="filter_density_label">
+           <property name="text">
+            <string>Density</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1" colspan="5">
+          <widget class="ScientificDoubleSpinBox" name="filter_density">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="suffix">
+            <string> g/cc</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <spacer name="filter_vertical_spacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="0" colspan="6">
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="coating_tab">
+        <attribute name="title">
+         <string>Coating</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="2" column="0">
+          <widget class="QLabel" name="coating_density_label">
+           <property name="text">
+            <string>Density</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="coating_material_label">
+           <property name="text">
+            <string>Material</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="coating_thickness_label">
+           <property name="text">
+            <string>Thickness</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="3">
+          <widget class="QComboBox" name="coating_material"/>
+         </item>
+         <item row="2" column="1" colspan="3">
+          <widget class="ScientificDoubleSpinBox" name="coating_density">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="suffix">
+            <string> g/cc</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1" colspan="3">
+          <widget class="ScientificDoubleSpinBox" name="coating_thickness">
+           <property name="suffix">
+            <string> μm</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="4">
+          <widget class="QLineEdit" name="coating_material_input">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <spacer name="coating_vertical_spacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="phosphor_tab">
+        <attribute name="title">
+         <string>Phosphor</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="3" column="1" colspan="3">
+          <widget class="ScientificDoubleSpinBox" name="phosphor_thickness">
+           <property name="suffix">
+            <string> μm</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="phosphor_material_label">
+           <property name="text">
+            <string>Material</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="3">
+          <widget class="QComboBox" name="phosphor_material"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="phosphor_density_label">
+           <property name="text">
+            <string>Density</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="phosphor_thickness_label">
+           <property name="text">
+            <string>Thickness</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1" colspan="3">
+          <widget class="ScientificDoubleSpinBox" name="phosphor_density">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="suffix">
+            <string> g/cc</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="4">
+          <widget class="QLineEdit" name="phosphor_material_input">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <spacer name="phosphor_vertical_spacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="phosphor_readout_length_label">
+           <property name="text">
+            <string>Readout Length</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1" colspan="3">
+          <widget class="ScientificDoubleSpinBox" name="phosphor_readout_length">
+           <property name="suffix">
+            <string> μm</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="phosphor_pre_U0_label">
+           <property name="text">
+            <string>PreU 0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1" colspan="3">
+          <widget class="ScientificDoubleSpinBox" name="phosphor_pre_U0">
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="suffix">
+            <string> PSL/MeV</string>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>tab_widget</tabstop>
+  <tabstop>detectors</tabstop>
+  <tabstop>filter_material</tabstop>
+  <tabstop>filter_material_input</tabstop>
+  <tabstop>filter_density</tabstop>
+  <tabstop>filter_thickness</tabstop>
+  <tabstop>coating_material</tabstop>
+  <tabstop>coating_material_input</tabstop>
+  <tabstop>coating_density</tabstop>
+  <tabstop>coating_thickness</tabstop>
+  <tabstop>phosphor_material</tabstop>
+  <tabstop>phosphor_material_input</tabstop>
+  <tabstop>phosphor_density</tabstop>
+  <tabstop>phosphor_thickness</tabstop>
+  <tabstop>phosphor_readout_length</tabstop>
+  <tabstop>phosphor_pre_U0</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

@@ -24,14 +24,14 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QLabel" name="pinhole_radius_label">
+    <widget class="QLabel" name="pinhole_diameter_label">
      <property name="text">
-      <string>Pinhole Radius:</string>
+      <string>Pinhole Diameter:</string>
      </property>
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="ScientificDoubleSpinBox" name="pinhole_radius">
+    <widget class="ScientificDoubleSpinBox" name="pinhole_diameter">
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -46,6 +46,9 @@
      </property>
      <property name="value">
       <double>150.000000000000000</double>
+     </property>
+     <property name="enabled">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
@@ -73,6 +76,9 @@
      <property name="value">
       <double>75.000000000000000</double>
      </property>
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
     </widget>
    </item>
    <item row="3" column="0" colspan="2">
@@ -99,7 +105,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>pinhole_radius</tabstop>
+  <tabstop>pinhole_diameter</tabstop>
   <tabstop>pinhole_thickness</tabstop>
  </tabstops>
  <resources/>

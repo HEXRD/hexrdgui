@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
 )
 
 from hexrdgui.about_dialog import AboutDialog
+from hexrdgui.absorption_correction_options_dialog import (
+    AbsorptionCorrectionOptionsDialog
+)
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.beam_marker_style_editor import BeamMarkerStyleEditor
 from hexrdgui.calibration_slider_widget import CalibrationSliderWidget
@@ -75,8 +78,10 @@ from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
+from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
 from hexrdgui import resource_loader, state
 from hexrd.resources import instrument_templates
 
@@ -125,9 +130,14 @@ class MainWindow(QObject):
 
         self.add_materials_panel()
 
+        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(
+                                                self.ui)
+
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
-                                        self.color_map_editor, self.ui)
+                                        self.color_map_editor,
+                                        self.physics_package_manager_dialog,
+                                        self.ui)
         self.image_stack_dialog = ImageStackDialog(
                                     self.ui, self.simple_image_series_dialog)
 
@@ -157,6 +167,7 @@ class MainWindow(QObject):
         self.setup_connections()
 
         self.update_config_gui()
+        self.update_physics_package_visibilities()
 
         self.update_action_check_states()
 
@@ -292,6 +303,9 @@ class MainWindow(QObject):
             self.on_action_edit_apply_threshold_triggered)
         self.ui.action_open_preconfigured_instrument_file.triggered.connect(
             self.on_action_open_preconfigured_instrument_file_triggered)
+        self.ui.action_physics_package_editor.triggered.connect(
+            self.on_action_physics_package_editor_triggered
+        )
 
         self.image_mode_widget.polar_show_snip1d.connect(
             self.ui.image_tab_widget.polar_show_snip1d)
@@ -335,8 +349,11 @@ class MainWindow(QObject):
             self.apply_lorentz_correction_toggled)
         self.ui.action_subtract_minimum.toggled.connect(
             HexrdConfig().set_intensity_subtract_minimum)
+        self.ui.action_apply_absorption_correction.toggled.connect(
+            self.action_apply_absorption_correction_toggled)
 
-        HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
+        HexrdConfig().instrument_config_loaded.connect(
+            self.on_instrument_config_loaded)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
         HexrdConfig().polar_masks_reapplied.connect(
@@ -370,6 +387,8 @@ class MainWindow(QObject):
             'action_show_detector_borders': 'show_detector_borders',
             'action_show_beam_marker': 'show_beam_marker',
             'action_show_all_colormaps': 'show_all_colormaps',
+            'action_apply_absorption_correction':
+                'apply_absorption_correction',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -415,6 +434,10 @@ class MainWindow(QObject):
         for w in disable_widgets:
             w.setEnabled(not b)
 
+    def on_instrument_config_loaded(self):
+        self.update_config_gui()
+        self.update_physics_package_visibilities()
+
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Configuration', HexrdConfig().working_dir,
@@ -442,6 +465,23 @@ class MainWindow(QObject):
 
     def on_action_save_config_yaml_triggered(self):
         self._save_config('.yml', 'YAML files (*.yml)')
+
+    def update_physics_package_visibilities(self):
+        instr_type = guess_instrument_type(HexrdConfig().detector_names)
+        visible = instr_type not in ('TARDIS', 'PXRDIP')
+
+        self.ui.action_physics_package_editor.setVisible(visible)
+        self.ui.action_apply_absorption_correction.setVisible(visible)
+
+        if not visible:
+            # Turn off absorption correction
+            self.ui.action_apply_absorption_correction.setChecked(False)
+
+            # Set the physics package to None
+            HexrdConfig().update_physics_package()
+
+            # Turn off all detector coatings
+            HexrdConfig().detector_coatings_dictified = {}
 
     def open_grain_fitting_results(self):
         selected_file, _ = QFileDialog.getOpenFileName(
@@ -879,13 +919,9 @@ class MainWindow(QObject):
 
         self._pinhole_mask_dialog.show()
 
-    def apply_pinhole_mask(self, radius, thickness):
-        kwargs = {
-            'instr': create_hedm_instrument(),
-            'pinhole_radius': radius,
-            'pinhole_thickness': thickness,
-        }
-        ph_buffer = generate_pinhole_panel_buffer(**kwargs)
+    def apply_pinhole_mask(self):
+        instr = create_hedm_instrument()
+        ph_buffer = generate_pinhole_panel_buffer(instr)
 
         ph_masks = []
         for det_key, buffer in ph_buffer.items():
@@ -1614,3 +1650,33 @@ class MainWindow(QObject):
         fname = options[instr_name]
         with resource_loader.resource_path(instrument_templates, fname) as f:
             HexrdConfig().load_instrument_config(Path(f))
+
+    def on_action_physics_package_editor_triggered(self):
+        self.physics_package_manager_dialog.show()
+
+    def action_apply_absorption_correction_toggled(self, b):
+        if not b:
+            # Just turn it off and return
+            HexrdConfig().apply_absorption_correction = b
+            return
+
+        # Make sure the physics package exists first
+        if HexrdConfig().physics_package is None:
+            msg = (
+                'Physics package must be set before absorption correction can be '
+                'applied. See the "Physics Package" editor under the "Edit" menu.'
+            )
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
+        # Get the user to first select the absorption correction options
+        d = AbsorptionCorrectionOptionsDialog(self.ui)
+        if not d.exec():
+            # Canceled... uncheck the action.
+            action = self.ui.action_apply_absorption_correction
+            action.setChecked(False)
+            return
+
+        # The dialog should have modified HexrdConfig's absorption
+        # correction options already. Just apply it now.
+        HexrdConfig().apply_absorption_correction = b

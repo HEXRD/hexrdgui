@@ -19,10 +19,6 @@
   <property name="windowTitle">
    <string>Pinhole Correction Editor</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QDoubleSpinBox:disabled {background-color: LightGray;}
-</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="0" colspan="2">
     <spacer name="verticalSpacer">
@@ -61,12 +57,15 @@
        <item row="2" column="2">
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Pinhole Radius</string>
+          <string>Pinhole Diameter</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
         <widget class="ScientificDoubleSpinBox" name="sample_layer_standoff">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -98,6 +97,9 @@
        </item>
        <item row="1" column="2">
         <widget class="ScientificDoubleSpinBox" name="sample_pinhole_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -129,6 +131,9 @@
        </item>
        <item row="1" column="1">
         <widget class="ScientificDoubleSpinBox" name="sample_layer_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -180,7 +185,10 @@
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="ScientificDoubleSpinBox" name="sample_pinhole_radius">
+        <widget class="ScientificDoubleSpinBox" name="sample_pinhole_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -228,9 +236,9 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <widget class="QLabel" name="rygg_radius_label">
+        <widget class="QLabel" name="rygg_diameter_label">
          <property name="text">
-          <string>Pinhole Radius</string>
+          <string>Pinhole Diameter</string>
          </property>
         </widget>
        </item>
@@ -274,6 +282,9 @@
        </item>
        <item row="2" column="1">
         <widget class="QComboBox" name="rygg_absorption_length_selector">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Rygg pinhole correction requires the pinhole's absorption length. Select it from one of several methods:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;1. &amp;quot;Enter Manually&amp;quot; - type in the absorption length manually&lt;/p&gt;&lt;p&gt;2. Select a default pinhole material. These are after the first separator in the combo box. The beam energy in the current instrument settings will be used to compute an absorption length, and it will be displayed in the disabled spinbox on the right.&lt;/p&gt;&lt;p&gt;3. Select a material from your materials list. These are after the second separator in the combo box. The absorption length will be displayed in the disabled spinbox on the right. If you add materials via the materials panel in the application, they will show up here.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -298,6 +309,9 @@
        </item>
        <item row="1" column="1">
         <widget class="ScientificDoubleSpinBox" name="rygg_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -370,7 +384,10 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="ScientificDoubleSpinBox" name="rygg_radius">
+        <widget class="ScientificDoubleSpinBox" name="rygg_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -415,14 +432,17 @@
         </widget>
        </item>
        <item row="0" column="0">
-        <widget class="QLabel" name="jhe_radius_label">
+        <widget class="QLabel" name="jhe_diameter_label">
          <property name="text">
-          <string>Pinhole Radius</string>
+          <string>Pinhole Diameter</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="ScientificDoubleSpinBox" name="jhe_radius">
+        <widget class="ScientificDoubleSpinBox" name="jhe_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -458,6 +478,9 @@
        </item>
        <item row="1" column="1">
         <widget class="ScientificDoubleSpinBox" name="jhe_thickness">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -556,7 +579,7 @@ This will override any overlays that are currently being used for polar distorti
   <customwidget>
    <class>ScientificDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>scientificspinbox.py</header>
+   <header>scientificspinbox.h</header>
   </customwidget>
   <customwidget>
    <class>HiddenBarTabWidget</class>
@@ -571,14 +594,14 @@ This will override any overlays that are currently being used for polar distorti
   <tabstop>sample_layer_standoff</tabstop>
   <tabstop>sample_layer_thickness</tabstop>
   <tabstop>sample_pinhole_thickness</tabstop>
-  <tabstop>sample_pinhole_radius</tabstop>
-  <tabstop>rygg_radius</tabstop>
+  <tabstop>sample_pinhole_diameter</tabstop>
+  <tabstop>rygg_diameter</tabstop>
   <tabstop>rygg_thickness</tabstop>
   <tabstop>rygg_num_phi_elements</tabstop>
   <tabstop>rygg_absorption_length_selector</tabstop>
   <tabstop>rygg_absorption_length_value</tabstop>
   <tabstop>rygg_apply_panel_buffers</tabstop>
-  <tabstop>jhe_radius</tabstop>
+  <tabstop>jhe_diameter</tabstop>
   <tabstop>jhe_thickness</tabstop>
   <tabstop>jhe_apply_panel_buffers</tabstop>
   <tabstop>apply_to_polar_view</tabstop>

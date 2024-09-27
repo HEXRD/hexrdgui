@@ -39,5 +39,5 @@ polarization:
   f_vert: 0.0
 intensity_subtract_minimum: false
 pinhole_mask_settings:
-    pinhole_radius: 0.15
+    pinhole_diameter: 0.30
     pinhole_thickness: 0.075

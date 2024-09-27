@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>1600</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -210,6 +210,7 @@
      <addaction name="action_apply_pixel_solid_angle_correction"/>
      <addaction name="action_apply_lorentz_correction"/>
      <addaction name="action_apply_polarization_correction"/>
+     <addaction name="action_apply_absorption_correction"/>
      <addaction name="action_subtract_minimum"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
@@ -220,6 +221,7 @@
     <addaction name="action_edit_refinements"/>
     <addaction name="action_image_calculator"/>
     <addaction name="action_edit_config"/>
+    <addaction name="action_physics_package_editor"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -330,7 +332,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>783</height>
          </rect>
         </property>
         <attribute name="label">
@@ -343,7 +345,7 @@
           <x>0</x>
           <y>0</y>
           <width>550</width>
-          <height>775</height>
+          <height>783</height>
          </rect>
         </property>
         <attribute name="label">
@@ -729,6 +731,14 @@
     <string>Subtract Minimum</string>
    </property>
   </action>
+  <action name="action_apply_absorption_correction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Apply Absorption Correction</string>
+   </property>
+  </action>
   <action name="action_rerun_clustering">
    <property name="enabled">
     <bool>false</bool>
@@ -861,6 +871,11 @@
   <action name="action_open_preconfigured_instrument_file">
    <property name="text">
     <string>Preconfigured</string>
+   </property>
+  </action>
+  <action name="action_physics_package_editor">
+   <property name="text">
+    <string>Physics Package</string>
    </property>
   </action>
  </widget>

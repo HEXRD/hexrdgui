@@ -2,14 +2,10 @@ import copy
 
 import numpy as np
 
-from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
-)
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 
-from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
-from hexrdgui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrdgui.reflections_table import ReflectionsTable
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
