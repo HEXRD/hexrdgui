@@ -494,7 +494,6 @@ class CalibrationDialog(QObject):
         # Now, recursively set items (except special cases)
         recursively_set_items(tree_dict, template_dict)
 
-
         # Now generate the detectors
         detector_template = template_dict['detectors'].pop('{det}')
 
@@ -617,7 +616,7 @@ class CalibrationDialog(QObject):
         if self.delta_boundaries:
             return DeltaCalibrationTreeItemModel
         else:
-            return DefaultTreeItemModel
+            return DefaultCalibrationTreeItemModel
 
 
 TILT_LABELS_EULER = {
