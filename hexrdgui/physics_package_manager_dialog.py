@@ -99,7 +99,10 @@ class PhysicsPackageManagerDialog:
 
     def update_instrument_type(self):
         new_instr_type = guess_instrument_type(HexrdConfig().detector_names)
-        if new_instr_type == self.instrument_type:
+        if (
+            new_instr_type == self.instrument_type or
+            new_instr_type not in ('TARDIS', 'PXRDIP')
+        ):
             return
 
         self.initialize_detector_coatings()

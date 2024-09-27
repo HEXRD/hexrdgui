@@ -78,6 +78,7 @@ from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
@@ -166,6 +167,7 @@ class MainWindow(QObject):
         self.setup_connections()
 
         self.update_config_gui()
+        self.update_physics_package_visibilities()
 
         self.update_action_check_states()
 
@@ -350,7 +352,8 @@ class MainWindow(QObject):
         self.ui.action_apply_absorption_correction.toggled.connect(
             self.action_apply_absorption_correction_toggled)
 
-        HexrdConfig().instrument_config_loaded.connect(self.update_config_gui)
+        HexrdConfig().instrument_config_loaded.connect(
+            self.on_instrument_config_loaded)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
         HexrdConfig().polar_masks_reapplied.connect(
@@ -431,6 +434,10 @@ class MainWindow(QObject):
         for w in disable_widgets:
             w.setEnabled(not b)
 
+    def on_instrument_config_loaded(self):
+        self.update_config_gui()
+        self.update_physics_package_visibilities()
+
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Configuration', HexrdConfig().working_dir,
@@ -458,6 +465,23 @@ class MainWindow(QObject):
 
     def on_action_save_config_yaml_triggered(self):
         self._save_config('.yml', 'YAML files (*.yml)')
+
+    def update_physics_package_visibilities(self):
+        instr_type = guess_instrument_type(HexrdConfig().detector_names)
+        visible = instr_type not in ('TARDIS', 'PXRDIP')
+
+        self.ui.action_physics_package_editor.setVisible(visible)
+        self.ui.action_apply_absorption_correction.setVisible(visible)
+
+        if not visible:
+            # Turn off absorption correction
+            self.ui.action_apply_absorption_correction.setChecked(False)
+
+            # Set the physics package to None
+            HexrdConfig().update_physics_package()
+
+            # Turn off all detector coatings
+            HexrdConfig().detector_coatings_dictified = {}
 
     def open_grain_fitting_results(self):
         selected_file, _ = QFileDialog.getOpenFileName(
