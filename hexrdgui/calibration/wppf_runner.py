@@ -85,8 +85,11 @@ class WppfRunner:
                 lparms[i] *= 10.0
 
             mat.latticeParameters = lparms
-            mat.atominfo[:] = wppf_mat.atom_pos
-            mat.U[:] = wppf_mat.U
+
+            if isinstance(self.wppf_object, Rietveld):
+                # Only update atom info and U if it is Rietveld
+                mat.atominfo[:] = wppf_mat.atom_pos
+                mat.U[:] = wppf_mat.U
 
             HexrdConfig().flag_overlay_updates_for_material(name)
             HexrdConfig().material_modified.emit(name)
