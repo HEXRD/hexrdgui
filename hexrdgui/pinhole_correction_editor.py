@@ -146,6 +146,9 @@ class PinholeCorrectionEditor(QObject):
             return
 
         physics = HexrdConfig().physics_package
+        if physics is None:
+            return
+
         # Values are (key, default)
         values = {
             'sample_layer_standoff': ('layer_standoff',
@@ -385,6 +388,10 @@ class PinholeCorrectionEditor(QObject):
         return 0
 
     def on_rygg_absorption_length_selector_changed(self):
+        if HexrdConfig().physics_package is None:
+            # Cannot update
+            return
+
         self.ui.rygg_absorption_length_value.setValue(
             HexrdConfig().absorption_length())
 
