@@ -150,6 +150,9 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="active_beam"/>
+      </item>
       <item row="1" column="1">
        <widget class="QLabel" name="active_beam_label">
         <property name="text">
@@ -157,8 +160,12 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QComboBox" name="active_beam"/>
+      <item row="2" column="1" colspan="2">
+       <widget class="QCheckBox" name="show_picks_from_all_xray_sources">
+        <property name="text">
+         <string>Show picks from all x-ray sources</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -458,6 +465,7 @@ See scipy.optimize.least_squares for more details.</string>
  <tabstops>
   <tabstop>draw_picks</tabstop>
   <tabstop>active_beam</tabstop>
+  <tabstop>show_picks_from_all_xray_sources</tabstop>
   <tabstop>engineering_constraints</tabstop>
   <tabstop>delta_boundaries</tabstop>
   <tabstop>mirror_constraints_from_first_detector</tabstop>

@@ -33,6 +33,7 @@ import hexrdgui.resources.calibration
 class CalibrationDialog(QObject):
 
     draw_picks_toggled = Signal(bool)
+    show_picks_from_all_xray_sources_toggled = Signal(bool)
 
     edit_picks_clicked = Signal()
     save_picks_clicked = Signal()
@@ -95,6 +96,8 @@ class CalibrationDialog(QObject):
         self.ui.draw_picks.toggled.connect(self.on_draw_picks_toggled)
         self.ui.active_beam.currentIndexChanged.connect(
             self.on_active_beam_changed)
+        self.ui.show_picks_from_all_xray_sources.toggled.connect(
+            self.show_picks_from_all_xray_sources_toggled)
         self.ui.engineering_constraints.currentIndexChanged.connect(
             self.on_engineering_constraints_changed)
         self.ui.delta_boundaries.toggled.connect(
@@ -191,9 +194,13 @@ class CalibrationDialog(QObject):
         has_multi_xrs = HexrdConfig().has_multi_xrs
         self.ui.active_beam.setVisible(has_multi_xrs)
         self.ui.active_beam_label.setVisible(has_multi_xrs)
+        self.ui.show_picks_from_all_xray_sources.setVisible(has_multi_xrs)
 
     def on_draw_picks_toggled(self, b):
         self.draw_picks_toggled.emit(b)
+
+    def on_show_picks_from_all_xray_sources_toggled(self, b):
+        self.show_picks_from_all_xray_sources_toggled.emit(b)
 
     def on_active_beam_switched(self):
         # Update the active beam on the instrument

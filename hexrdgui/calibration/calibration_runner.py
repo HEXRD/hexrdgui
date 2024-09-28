@@ -31,6 +31,7 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
+from hexrdgui.overlays.overlay import Overlay
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.select_item_dialog import SelectItemDialog
 from hexrdgui.utils import (
@@ -950,6 +951,17 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
     def draw_picks_on_canvas(self):
         self.update_edit_picks_dictionary()
         tree_view = self.edit_picks_dialog.tree_view
+
+        if not self.showing_picks_from_all_xray_sources:
+            skip_items = []
+            for item in tree_view.model().root_item.child_items:
+                overlay_name = item.data(0)
+                overlay = Overlay.from_name(overlay_name)
+
+                if overlay.xray_source != HexrdConfig().active_beam_name:
+                    skip_items.append(item)
+
+            tree_view.skip_pick_item_list = skip_items
 
         # Make sure these are set
         tree_view.clear_selection()

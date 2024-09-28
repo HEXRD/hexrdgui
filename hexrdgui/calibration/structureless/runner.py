@@ -480,6 +480,11 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
 
         polar_lines = cart_to_polar_lines(self.calibrator_lines, self.instr)
         for xray_source, lines in polar_lines.items():
+            if not self.showing_picks_from_all_xray_sources:
+                if xray_source != HexrdConfig().active_beam_name:
+                    # Skip over all x-ray sources except the active one
+                    continue
+
             for points in lines:
                 color = next(color_cycler)
                 artist, = self.canvas.axis.plot(points[:, 0], points[:, 1],

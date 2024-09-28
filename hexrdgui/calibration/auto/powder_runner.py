@@ -202,6 +202,11 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
     @property
     def data_xys(self):
         ret = {}
+        if not self.showing_picks_from_all_xray_sources:
+            if self.overlays[0].xray_source != HexrdConfig().active_beam_name:
+                # Just don't show anything
+                return {k: [] for k in self.overlays[0].calibration_picks}
+
         for k, v in self.overlays[0].calibration_picks.items():
             points = list(v.values())
             if not points:

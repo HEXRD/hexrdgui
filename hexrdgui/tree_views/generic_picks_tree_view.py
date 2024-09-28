@@ -135,6 +135,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         self._show_all_picks = True
         self.new_line_name_generator = None
         self._current_picker = None
+        self.skip_pick_item_list = []
 
         if model_class_kwargs is None:
             model_class_kwargs = {}
@@ -245,6 +246,9 @@ class GenericPicksTreeView(BaseDictTreeView):
         def recurse(parent):
             group = []
             for child in parent.child_items:
+                if child in self.skip_pick_item_list:
+                    continue
+
                 if not any(x is None for x in child.data_list):
                     group.append(child)
 

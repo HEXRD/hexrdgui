@@ -28,6 +28,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.async_runner = async_runner
 
         self.drawing_picks = True
+        self.showing_picks_from_all_xray_sources = False
 
         self.draw_picks_lines = []
         self.undo_stack = []
@@ -44,6 +45,8 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         dialog.ui.draw_picks.setChecked(self.drawing_picks)
         dialog.draw_picks_toggled.connect(self.draw_picks)
+        dialog.show_picks_from_all_xray_sources_toggled.connect(
+            self.show_picks_from_all_xray_sources)
         dialog.edit_picks_clicked.connect(self.on_edit_picks_clicked)
         dialog.save_picks_clicked.connect(self.on_save_picks_clicked)
         dialog.load_picks_clicked.connect(self.on_load_picks_clicked)
@@ -199,6 +202,10 @@ class CalibrationDialogCallbacks(ABCQObject):
             return
 
         self.draw_picks_on_canvas()
+
+    def show_picks_from_all_xray_sources(self, b=True):
+        self.showing_picks_from_all_xray_sources = b
+        self.redraw_picks()
 
     def run_calibration(self, **extra_kwargs):
         # Update the tth distortion on the calibrator from the dialog
