@@ -952,7 +952,10 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         self.update_edit_picks_dictionary()
         tree_view = self.edit_picks_dialog.tree_view
 
-        if not self.showing_picks_from_all_xray_sources:
+        if (
+            HexrdConfig().has_multi_xrs and
+            not self.showing_picks_from_all_xray_sources
+        ):
             skip_items = []
             for item in tree_view.model().root_item.child_items:
                 overlay_name = item.data(0)

@@ -481,7 +481,10 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         polar_lines = cart_to_polar_lines(self.calibrator_lines, self.instr)
         for xray_source, lines in polar_lines.items():
             if not self.showing_picks_from_all_xray_sources:
-                if xray_source != HexrdConfig().active_beam_name:
+                if (
+                    HexrdConfig().has_multi_xrs and
+                    xray_source != HexrdConfig().active_beam_name
+                ):
                     # Skip over all x-ray sources except the active one
                     continue
 
