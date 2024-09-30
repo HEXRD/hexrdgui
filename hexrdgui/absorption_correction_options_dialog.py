@@ -135,6 +135,11 @@ class AbsorptionCorrectionOptionsDialog:
 
     def detector_changed(self, new_det):
         filter = HexrdConfig().detector_filter(new_det)
+        if filter is None:
+            # Make sure the filter exists
+            HexrdConfig().update_detector_filter(new_det)
+            filter = HexrdConfig().detector_filter(new_det)
+
         mat = self.filters[new_det].get('material', filter.material)
         if filter.material not in self.mat_options:
             self.ui.filter_material_input.setText(mat)
