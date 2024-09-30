@@ -517,6 +517,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         except AttributeError:
             raise AttributeError(f'Failed to set attribute {name}')
 
+        pinhole_settings = self.config['image'].get('pinhole_mask_settings', {})
+        if 'pinhole_radius' in pinhole_settings:
+            # We store this as diameter now
+            pinhole_settings['pinhole_diameter'] = (
+                pinhole_settings.pop('pinhole_radius') * 2
+            )
+
         # All QSettings come back as strings. So check that we are dealing with
         # a boolean and convert if necessary
         if not isinstance(self.live_update, bool):
