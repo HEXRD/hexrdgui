@@ -890,9 +890,13 @@ class ImageCanvas(FigureCanvas):
             bvec['azimuth']['value'],
             bvec['polar_angle']['value'],
         )
-        self.iviewer.instr.source_distance = (
-            beam_config['source_distance']['value'],
-        )
+        if not np.isinf(beam_config['source_distance']['value']):
+            # Right now, hexrd doesn't want this to be inf.
+            # Maybe that will change in the future...
+            self.iviewer.instr.source_distance = (
+                beam_config['source_distance']['value'],
+            )
+
         self.update_overlays()
         self.update_beam_marker()
 
