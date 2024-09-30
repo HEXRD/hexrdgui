@@ -329,7 +329,266 @@
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <layout class="QGridLayout" name="gridLayout_3">
-            <item row="0" column="6">
+            <item row="5" column="0" rowspan="2" colspan="7">
+             <widget class="Line" name="line_above_snip">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="5">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>max</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="2">
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>min</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="5">
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>η:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="6">
+             <widget class="QCheckBox" name="polar_apply_erosion">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="toolTip">
+               <string>Apply binary erosion to eliminate edge artifacts.</string>
+              </property>
+              <property name="text">
+               <string>Apply erosion?</string>
+              </property>
+             </widget>
+            </item>
+            <item row="15" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+             </layout>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Pixel Size:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="2" rowspan="2">
+             <widget class="QLabel" name="label_10">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>w:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="3" rowspan="2">
+             <widget class="ScientificDoubleSpinBox" name="polar_snip1d_width">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>0.000010000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.100000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.200000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="5">
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>max</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="3">
+             <widget class="ScientificDoubleSpinBox" name="polar_res_tth_min">
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>0.000010000000000</double>
+              </property>
+              <property name="maximum">
+               <double>180.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>2θ Range:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="0" rowspan="2" colspan="7">
+             <widget class="Line" name="line_above_tth_distortion">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="11" column="0" colspan="2">
+             <widget class="QCheckBox" name="polar_apply_tth_distortion">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply 2θ distortion from an overlay to the polar view.&lt;/p&gt;&lt;p&gt;2θ distortion may only be applied using an overlay that has Sample Layer Distortion enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Apply 2θ distortion?</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>η Range:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="3">
+             <widget class="ScientificDoubleSpinBox" name="polar_pixel_size_tth">
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>0.000100000000000</double>
+              </property>
+              <property name="maximum">
+               <double>10.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+              <property name="value">
+               <double>0.050000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="2" colspan="2">
+             <widget class="QPushButton" name="polar_show_snip1d">
+              <property name="text">
+               <string>Show SNIP</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="3">
+             <widget class="ScientificDoubleSpinBox" name="polar_res_eta_min">
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>-360.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>360.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>-180.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="4" rowspan="2">
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="2" column="6">
              <widget class="ScientificDoubleSpinBox" name="polar_pixel_size_eta">
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -357,57 +616,26 @@
               </property>
              </widget>
             </item>
-            <item row="5" column="0">
-             <widget class="QCheckBox" name="polar_apply_snip1d">
-              <property name="text">
-               <string>Apply SNIP?</string>
-              </property>
+            <item row="8" column="0">
+             <widget class="QComboBox" name="polar_snip1d_algorithm">
+              <item>
+               <property name="text">
+                <string>Fast SNIP 1D</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>SNIP 1D</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>SNIP 2D</string>
+               </property>
+              </item>
              </widget>
             </item>
-            <item row="9" column="0" colspan="2">
-             <widget class="QCheckBox" name="polar_apply_tth_distortion">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply 2θ distortion from an overlay to the polar view.&lt;/p&gt;&lt;p&gt;2θ distortion may only be applied using an overlay that has Sample Layer Distortion enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Apply 2θ distortion?</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_4">
-              <property name="text">
-               <string>2θ Range:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="0" rowspan="2" colspan="7">
-             <widget class="Line" name="line_above_tth_distortion">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1" rowspan="2">
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="11" column="0" colspan="7">
+            <item row="13" column="0" colspan="7">
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
                <widget class="QCheckBox" name="polar_apply_scaling_to_lineout">
@@ -497,101 +725,81 @@
               </item>
              </layout>
             </item>
-            <item row="4" column="5" rowspan="2">
-             <widget class="QLabel" name="label_11">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>n iter:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Pixel Size:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="6">
-             <widget class="QCheckBox" name="polar_apply_erosion">
+            <item row="6" column="6" rowspan="2">
+             <widget class="QSpinBox" name="polar_snip1d_numiter">
               <property name="enabled">
                <bool>false</bool>
               </property>
-              <property name="toolTip">
-               <string>Apply binary erosion to eliminate edge artifacts.</string>
-              </property>
-              <property name="text">
-               <string>Apply erosion?</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="5">
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>η:</string>
-              </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+              <property name="value">
+               <number>2</number>
+              </property>
              </widget>
             </item>
-            <item row="10" column="0" colspan="7">
+            <item row="6" column="1" rowspan="2">
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="12" column="0" colspan="7">
              <widget class="QPushButton" name="polar_azimuthal_overlays">
               <property name="text">
                <string>Azimuthal Overlays</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="2" colspan="2">
-             <widget class="QPushButton" name="polar_show_snip1d">
-              <property name="text">
-               <string>Show SNIP</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_13">
-              <property name="text">
-               <string>η Range:</string>
-              </property>
+            <item row="4" column="6">
+             <widget class="ScientificDoubleSpinBox" name="polar_res_eta_max">
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>-360.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>360.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>180.000000000000000</double>
+              </property>
              </widget>
             </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="label_6">
+            <item row="7" column="0">
+             <widget class="QCheckBox" name="polar_apply_snip1d">
               <property name="text">
-               <string>2θ:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               <string>Apply SNIP?</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="2">
-             <widget class="QLabel" name="label_14">
-              <property name="text">
-               <string>min</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QLabel" name="label_12">
-              <property name="text">
-               <string>min</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="6">
+            <item row="3" column="6">
              <widget class="ScientificDoubleSpinBox" name="polar_res_tth_max">
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -619,61 +827,7 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0" rowspan="2" colspan="7">
-             <widget class="Line" name="line_above_snip">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <widget class="QComboBox" name="polar_snip1d_algorithm">
-              <item>
-               <property name="text">
-                <string>Fast SNIP 1D</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>SNIP 1D</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>SNIP 2D</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item row="1" column="3">
-             <widget class="ScientificDoubleSpinBox" name="polar_res_tth_min">
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="suffix">
-               <string>°</string>
-              </property>
-              <property name="decimals">
-               <number>8</number>
-              </property>
-              <property name="minimum">
-               <double>0.000010000000000</double>
-              </property>
-              <property name="maximum">
-               <double>180.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-              <property name="value">
-               <double>1.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="4" rowspan="2" colspan="3">
+            <item row="10" column="4" rowspan="2" colspan="3">
              <widget class="QComboBox" name="polar_tth_distortion_overlay">
               <property name="enabled">
                <bool>false</bool>
@@ -683,191 +837,44 @@
               </property>
              </widget>
             </item>
-            <item row="4" column="3" rowspan="2">
-             <widget class="ScientificDoubleSpinBox" name="polar_snip1d_width">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="suffix">
-               <string>°</string>
-              </property>
-              <property name="decimals">
-               <number>8</number>
-              </property>
-              <property name="minimum">
-               <double>0.000010000000000</double>
-              </property>
-              <property name="maximum">
-               <double>100.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.100000000000000</double>
-              </property>
-              <property name="value">
-               <double>0.200000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="5">
-             <widget class="QLabel" name="label_15">
+            <item row="2" column="2">
+             <widget class="QLabel" name="label_6">
               <property name="text">
-               <string>max</string>
+               <string>2θ:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
-            <item row="0" column="3">
-             <widget class="ScientificDoubleSpinBox" name="polar_pixel_size_tth">
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="suffix">
-               <string>°</string>
-              </property>
-              <property name="decimals">
-               <number>8</number>
-              </property>
-              <property name="minimum">
-               <double>0.000100000000000</double>
-              </property>
-              <property name="maximum">
-               <double>10.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-              <property name="value">
-               <double>0.050000000000000</double>
+            <item row="3" column="2">
+             <widget class="QLabel" name="label_12">
+              <property name="text">
+               <string>min</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="2" rowspan="2">
-             <widget class="QLabel" name="label_10">
+            <item row="6" column="5" rowspan="2">
+             <widget class="QLabel" name="label_11">
               <property name="enabled">
                <bool>true</bool>
               </property>
               <property name="text">
-               <string>w:</string>
+               <string>n iter:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
-            <item row="13" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-             </layout>
-            </item>
-            <item row="2" column="3">
-             <widget class="ScientificDoubleSpinBox" name="polar_res_eta_min">
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="suffix">
-               <string>°</string>
-              </property>
-              <property name="decimals">
-               <number>8</number>
-              </property>
-              <property name="minimum">
-               <double>-360.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>360.000000000000000</double>
-              </property>
-              <property name="value">
-               <double>-180.000000000000000</double>
+            <item row="0" column="6">
+             <widget class="QComboBox" name="polar_active_beam">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place int he program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="6">
-             <widget class="ScientificDoubleSpinBox" name="polar_res_eta_max">
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="suffix">
-               <string>°</string>
-              </property>
-              <property name="decimals">
-               <number>8</number>
-              </property>
-              <property name="minimum">
-               <double>-360.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>360.000000000000000</double>
-              </property>
-              <property name="value">
-               <double>180.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="4" rowspan="2">
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="4" column="6" rowspan="2">
-             <widget class="QSpinBox" name="polar_snip1d_numiter">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="keyboardTracking">
-               <bool>false</bool>
-              </property>
-              <property name="minimum">
-               <number>1</number>
-              </property>
-              <property name="maximum">
-               <number>10000</number>
-              </property>
-              <property name="value">
-               <number>2</number>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="5">
-             <widget class="QLabel" name="label_5">
-              <property name="text">
-               <string>max</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="12" column="4">
+            <item row="0" column="4" colspan="2">
              <widget class="QLabel" name="polar_active_beam_label">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place int he program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -875,12 +882,8 @@
               <property name="text">
                <string>X-Ray Source:</string>
               </property>
-             </widget>
-            </item>
-            <item row="12" column="5" colspan="2">
-             <widget class="QComboBox" name="polar_active_beam">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place int he program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
@@ -1021,10 +1024,13 @@
   <tabstop>tab_widget</tabstop>
   <tabstop>raw_tabbed_view</tabstop>
   <tabstop>raw_show_saturation</tabstop>
+  <tabstop>raw_stitch_roi_images</tabstop>
+  <tabstop>raw_show_zoom_dialog</tabstop>
   <tabstop>cartesian_pixel_size</tabstop>
   <tabstop>cartesian_plane_normal_rotate_x</tabstop>
   <tabstop>cartesian_virtual_plane_distance</tabstop>
   <tabstop>cartesian_plane_normal_rotate_y</tabstop>
+  <tabstop>polar_active_beam</tabstop>
   <tabstop>polar_pixel_size_tth</tabstop>
   <tabstop>polar_pixel_size_eta</tabstop>
   <tabstop>polar_res_tth_min</tabstop>
@@ -1041,11 +1047,11 @@
   <tabstop>polar_tth_distortion_overlay</tabstop>
   <tabstop>polar_azimuthal_overlays</tabstop>
   <tabstop>polar_apply_scaling_to_lineout</tabstop>
+  <tabstop>azimuthal_offset</tabstop>
   <tabstop>polar_x_axis_type</tabstop>
   <tabstop>stereo_size</tabstop>
   <tabstop>stereo_show_border</tabstop>
   <tabstop>stereo_project_from_polar</tabstop>
-  <tabstop>raw_show_zoom_dialog</tabstop>
  </tabstops>
  <resources/>
  <connections>
