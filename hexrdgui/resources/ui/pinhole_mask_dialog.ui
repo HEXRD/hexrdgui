@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>471</width>
-    <height>152</height>
+    <width>533</width>
+    <height>180</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,44 +23,11 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="pinhole_diameter_label">
-     <property name="text">
-      <string>Pinhole Diameter:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="ScientificDoubleSpinBox" name="pinhole_diameter">
-     <property name="keyboardTracking">
-      <bool>false</bool>
-     </property>
-     <property name="suffix">
-      <string> μm</string>
-     </property>
-     <property name="decimals">
-      <number>8</number>
-     </property>
-     <property name="maximum">
-      <double>100000000.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>150.000000000000000</double>
-     </property>
+   <item row="1" column="1">
+    <widget class="ScientificDoubleSpinBox" name="pinhole_thickness">
      <property name="enabled">
       <bool>false</bool>
      </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="pinhole_thickness_label">
-     <property name="text">
-      <string>Pinhole Thickness:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="ScientificDoubleSpinBox" name="pinhole_thickness">
      <property name="keyboardTracking">
       <bool>false</bool>
      </property>
@@ -76,22 +43,62 @@
      <property name="value">
       <double>75.000000000000000</double>
      </property>
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
+   <item row="4" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="button_box">
      <property name="standardButtons">
       <set>QDialogButtonBox::Apply</set>
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
+   <item row="0" column="1">
+    <widget class="ScientificDoubleSpinBox" name="pinhole_diameter">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="keyboardTracking">
+      <bool>false</bool>
+     </property>
+     <property name="suffix">
+      <string> μm</string>
+     </property>
+     <property name="decimals">
+      <number>8</number>
+     </property>
+     <property name="maximum">
+      <double>100000000.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>150.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
     <widget class="QLabel" name="label">
      <property name="text">
       <string>The pinhole mask may be deleted in the mask manager.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="pinhole_thickness_label">
+     <property name="text">
+      <string>Pinhole Thickness:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="pinhole_diameter_label">
+     <property name="text">
+      <string>Pinhole Diameter:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Pinhole settings may be modified in the Physics Package Editor.</string>
      </property>
     </widget>
    </item>

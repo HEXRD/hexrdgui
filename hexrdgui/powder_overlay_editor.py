@@ -10,6 +10,9 @@ from hexrdgui.reflections_table import ReflectionsTable
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
+from hexrdgui.utils.physics_package import (
+    ask_to_create_physics_package_if_missing,
+)
 
 
 class PowderOverlayEditor:
@@ -346,6 +349,12 @@ class PowderOverlayEditor:
 
     def distortion_type_changed(self):
         if self.distortion_type == 'Pinhole Camera Correction':
+            # A physics package is required for this operation
+            if not ask_to_create_physics_package_if_missing():
+                # Switch back to offset.
+                self.distortion_type_gui = None
+                return
+
             if self.pinhole_correction_type is None:
                 # Since we hide None, let's switch to sample layer offset
                 self.pinhole_correction_type = 'SampleLayerDistortion'

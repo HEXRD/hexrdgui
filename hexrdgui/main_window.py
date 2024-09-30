@@ -79,6 +79,9 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
+from hexrdgui.utils.physics_package import (
+    ask_to_create_physics_package_if_missing,
+)
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
@@ -468,7 +471,7 @@ class MainWindow(QObject):
 
     def update_physics_package_visibilities(self):
         instr_type = guess_instrument_type(HexrdConfig().detector_names)
-        visible = instr_type not in ('TARDIS', 'PXRDIP')
+        visible = instr_type in ('TARDIS', 'PXRDIP')
 
         self.ui.action_physics_package_editor.setVisible(visible)
         self.ui.action_apply_absorption_correction.setVisible(visible)
@@ -912,6 +915,10 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.toggle_off_toolbar()
 
     def show_pinhole_mask_dialog(self):
+        if not ask_to_create_physics_package_if_missing():
+            # Physics package is required, but user did not create one.
+            return
+
         if not hasattr(self, '_pinhole_mask_dialog'):
             self._pinhole_mask_dialog = PinholeMaskDialog(self.ui)
             self._pinhole_mask_dialog.apply_clicked.connect(

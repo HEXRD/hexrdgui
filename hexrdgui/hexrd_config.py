@@ -409,7 +409,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('stack_state', {}),
             ('llnl_boundary_positions', {}),
             ('_imported_default_materials', []),
-            ('overlays_dictified', []),
             ('_polar_tth_distortion_overlay_name', None),
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
@@ -424,7 +423,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
             ('physics_package_dictified', None),
-            ('detector_coatings_dictified', {})
+            ('detector_coatings_dictified', {}),
+            ('overlays_dictified', []),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -516,6 +516,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     setattr(self, name, value)
         except AttributeError:
             raise AttributeError(f'Failed to set attribute {name}')
+
+        pinhole_settings = self.config['image'].get('pinhole_mask_settings', {})
+        if 'pinhole_radius' in pinhole_settings:
+            # We store this as diameter now
+            pinhole_settings['pinhole_diameter'] = (
+                pinhole_settings.pop('pinhole_radius') * 2
+            )
 
         # All QSettings come back as strings. So check that we are dealing with
         # a boolean and convert if necessary
@@ -675,6 +682,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 else:
                     # Skip over ones that do not have a matching material
                     continue
+
+            if overlay_dict.get('tth_distortion_type') is not None:
+                if self.physics_package is None:
+                    # We need to create a default physics package
+                    # This is for backward compatibility
+                    self.create_default_physics_package()
 
             self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
@@ -2922,6 +2935,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._physics_package.deserialize(**kwargs)
         self.physics_package_modified.emit()
 
+    def create_default_physics_package(self):
+        self._physics_package = HEDPhysicsPackage(
+            **PHYSICS_PACKAGE_DEFAULTS.HED)
+        self.physics_package_modified.emit()
+
     def absorption_length(self):
         if self._physics_package is None:
             raise ValueError(
@@ -2935,7 +2953,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for k, v in self._detector_coatings.items():
             d[k] = {}
             for attr, cls in v.items():
-                d[k][attr] = cls.serialize()
+                if cls is not None:
+                    d[k][attr] = cls.serialize()
+
+            if not d[k]:
+                del d[k]
+
         return d
 
     @detector_coatings_dictified.setter
@@ -2946,7 +2969,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'phosphor': self.update_detector_phosphor,
         }
         for det, val in v.items():
-            all_coatings = self._detector_coatings.setdefault(det_name, {})
+            all_coatings = self._detector_coatings.setdefault(det, {})
             for k, f in funcs.items():
                 if val.get(k) is not None:
                     f(det, **val[k])
@@ -2957,8 +2980,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for name in self.detector_names:
             self._detector_coatings.setdefault(name, {})
 
-        det = list(self._detector_coatings.values())[0]
-        if key in det:
+        dets = list(self._detector_coatings.values())
+        if all([key in det for det in dets]):
             return
 
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
