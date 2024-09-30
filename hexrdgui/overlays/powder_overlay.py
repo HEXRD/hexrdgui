@@ -72,7 +72,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             # We added pinhole_radius later. Set a default if it is missing.
             if 'pinhole_radius' not in self.tth_distortion_kwargs:
                 radius = HexrdConfig().physics_package.pinhole_radius
-                self.tth_distortion_kwargs['pinhole_radius'] = radius
+                self.tth_distortion_kwargs['pinhole_radius'] = radius * 1e-3
 
     @property
     def has_widths(self):

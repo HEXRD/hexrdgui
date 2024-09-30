@@ -2946,7 +2946,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for k, v in self._detector_coatings.items():
             d[k] = {}
             for attr, cls in v.items():
-                d[k][attr] = cls.serialize()
+                if cls is not None:
+                    d[k][attr] = cls.serialize()
+
+            if not d[k]:
+                del d[k]
+
         return d
 
     @detector_coatings_dictified.setter
