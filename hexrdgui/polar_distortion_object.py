@@ -152,7 +152,7 @@ class PolarDistortionObject:
         if d.get('pinhole_distortion_type') == 'SampleLayerDistortion':
             # We added pinhole_radius later. Set a default if it is missing.
             if 'pinhole_radius' not in d['pinhole_distortion_kwargs']:
-                diameter = HexrdConfig().physics_package.pinhole_radius
+                radius = HexrdConfig().physics_package.pinhole_radius
                 d['pinhole_distortion_kwargs']['pinhole_radius'] = radius * 1e-3
 
         return cls(**d)
