@@ -18,6 +18,9 @@ from hexrdgui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrdgui.polar_distortion_object import PolarDistortionObject
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
+from hexrdgui.utils.physics_package import (
+    ask_to_create_physics_package_if_missing,
+)
 
 from hexrdgui import resource_loader
 
@@ -84,6 +87,12 @@ class PinholeCorrectionEditor(QObject):
     @property
     def correction_type(self):
         v = self.ui.correction_type.currentText()
+
+        if v != 'None':
+            if not ask_to_create_physics_package_if_missing():
+                # There's no physics package. We can't switch.
+                self.correction_type = None
+                return
 
         conversions = {
             'None': None,
@@ -166,7 +175,8 @@ class PinholeCorrectionEditor(QObject):
                                        physics.sample_thickness),
             'sample_pinhole_thickness': ('pinhole_thickness',
                                          physics.pinhole_thickness),
-            'sample_pinhole_diameter': ('pinhole_diameter', physics.pinhole_diameter),
+            'sample_pinhole_diameter': ('pinhole_diameter',
+                                        physics.pinhole_diameter),
             'rygg_diameter': ('pinhole_diameter', physics.pinhole_diameter),
             'rygg_thickness': ('pinhole_thickness', physics.pinhole_thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 30),
