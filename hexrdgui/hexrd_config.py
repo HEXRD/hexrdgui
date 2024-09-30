@@ -2968,8 +2968,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for name in self.detector_names:
             self._detector_coatings.setdefault(name, {})
 
-        det = list(self._detector_coatings.values())[0]
-        if key in det:
+        dets = list(self._detector_coatings.values())
+        if all([key in det for det in dets]):
             return
 
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
