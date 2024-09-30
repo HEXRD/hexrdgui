@@ -409,7 +409,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('stack_state', {}),
             ('llnl_boundary_positions', {}),
             ('_imported_default_materials', []),
-            ('overlays_dictified', []),
             ('_polar_tth_distortion_overlay_name', None),
             ('_recent_images', {}),
             ('azimuthal_overlays', []),
@@ -424,7 +423,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
             ('physics_package_dictified', None),
-            ('detector_coatings_dictified', {})
+            ('detector_coatings_dictified', {}),
+            ('overlays_dictified', []),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -675,6 +675,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 else:
                     # Skip over ones that do not have a matching material
                     continue
+
+            if overlay_dict.get('tth_distortion_type') is not None:
+                if self.physics_package is None:
+                    # We need to create a default physics package
+                    # This is for backward compatibility
+                    self.create_default_physics_package()
 
             self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
@@ -2922,6 +2928,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._physics_package.deserialize(**kwargs)
         self.physics_package_modified.emit()
 
+    def create_default_physics_package(self):
+        self._physics_package = HEDPhysicsPackage(
+            **PHYSICS_PACKAGE_DEFAULTS.HED)
+        self.physics_package_modified.emit()
+
     def absorption_length(self):
         if self._physics_package is None:
             raise ValueError(
@@ -2946,7 +2957,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'phosphor': self.update_detector_phosphor,
         }
         for det, val in v.items():
-            all_coatings = self._detector_coatings.setdefault(det_name, {})
+            all_coatings = self._detector_coatings.setdefault(det, {})
             for k, f in funcs.items():
                 if val.get(k) is not None:
                     f(det, **val[k])
