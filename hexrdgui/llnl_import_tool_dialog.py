@@ -61,6 +61,20 @@ class LLNLImportToolDialog(QObject):
         self.canvas = parent.image_tab_widget.active_canvas
         self.physics_package_manager = physics_package_manager
 
+        # Disable these by default.
+        # If we disable these in Qt Designer, there are some weird bugs
+        # that happen in Designer, so just disable them here.
+        self.enable_widgets(
+            self.ui.raw_image,
+            self.ui.config,
+            self.ui.file_selection,
+            self.ui.finalize,
+            self.ui.outline_appearance,
+            self.ui.template_instructions,
+        enabled=False)
+
+        self.update_config_settings()
+
         self.set_default_color()
         self.setup_connections()
 
@@ -82,6 +96,9 @@ class LLNLImportToolDialog(QObject):
         self.ui.load_config.clicked.connect(self.load_config)
         self.ui.config_selection.currentIndexChanged.connect(
             self.update_config_selection)
+        self.ui.config_settings.currentIndexChanged.connect(
+            # This will update the instrument defaults to the config settings
+            self.get_instrument_defaults)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -117,7 +134,16 @@ class LLNLImportToolDialog(QObject):
                     QMessageBox.warning(None, 'HEXRD', msg)
                     return False
         else:
-            fname = f'{self.instrument.lower()}_reference_config.yml'
+            if self.has_config_settings:
+                # This must be TARDIS with default configuration
+                filenames = {
+                    '1 XRS': 'tardis_reference_config.yml',
+                    '2 XRS': 'tardis_2xrs_reference_config.yml',
+                }
+                fname = filenames[self.config_setting]
+            else:
+                fname = f'{self.instrument.lower()}_reference_config.yml'
+
             text = resource_loader.load_resource(hexrd_resources, fname)
             self.defaults = yaml.safe_load(text)
         self.detector_defaults['default_config'] = self.defaults
@@ -157,6 +183,7 @@ class LLNLImportToolDialog(QObject):
 
         if self.instrument is None:
             HexrdConfig().enable_canvas_toolbar.emit(True)
+            self.update_config_settings()
         else:
             self.import_in_progress = True
             HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
@@ -183,8 +210,48 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
                             enabled=enable_load)
 
+        self.update_config_settings()
         if self.ui.instrument.isEnabled():
             self.get_instrument_defaults()
+
+    @property
+    def config_setting(self) -> str:
+        return self.ui.config_settings.currentText()
+
+    @property
+    def has_config_settings(self):
+        return bool(
+            self.instrument and
+            self.instrument.lower() == 'tardis' and
+            # "Default configuration"
+            self.ui.config_selection.currentIndex() == 0
+        )
+
+    def update_config_settings(self):
+        label = self.ui.config_settings_label
+        combo = self.ui.config_settings
+
+        with block_signals(combo):
+            enable = self.has_config_settings
+            label.setVisible(enable)
+            combo.setVisible(enable)
+            if not enable:
+                # Nothing more to do
+                combo.clear()
+                return
+
+            # Only two settings we currently support are 1 XRS and 2 XRS for TARDIS
+            # If there was a previous selection, keep that.
+            prev = combo.currentText()
+            combo.clear()
+
+            options = [
+                '1 XRS',
+                '2 XRS',
+            ]
+            combo.addItems(options)
+            if prev:
+                combo.setCurrentText(prev)
 
     def load_instrument_config(self):
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')

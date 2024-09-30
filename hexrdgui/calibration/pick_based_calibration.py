@@ -21,6 +21,7 @@ def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
                 'default_refinements': pick_data['default_refinements'],
                 'tth_distortion': pick_data['tth_distortion'],
                 'calibration_picks': pick_data['picks'],
+                'xray_source': pick_data['xray_source'],
             }
             calibrators.append(PowderCalibrator(**kwargs))
 
@@ -35,6 +36,7 @@ def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
                 'max_energy': pick_data['options']['max_energy'],
                 'calibration_picks': pick_data['picks'],
                 'euler_convention': euler_convention,
+                'xray_source': pick_data['xray_source'],
             }
             calibrators.append(LaueCalibrator(**kwargs))
     return calibrators

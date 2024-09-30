@@ -5,6 +5,7 @@ from numba import njit
 import numpy as np
 
 from hexrd import constants
+from hexrd.instrument import switch_xray_source
 from hexrd.transforms import xfcapi
 from hexrd.utils.hkl import hkl_to_str
 
@@ -69,6 +70,24 @@ class LaueOverlay(Overlay):
             'label_type',
             'label_offsets',
         ]
+
+    @property
+    def xray_source(self):
+        from hexrdgui.hexrd_config import HexrdConfig
+        if self._xray_source is None and HexrdConfig().has_multi_xrs:
+            # Force the x-ray source to be locked into a specific one.
+            self._xray_source = HexrdConfig().beam_names[0]
+
+        return self._xray_source
+
+    @xray_source.setter
+    def xray_source(self, v):
+        from hexrdgui.hexrd_config import HexrdConfig
+        if v is None and HexrdConfig().has_multi_xrs:
+            # Force the x-ray source to be locked into a specific one.
+            self._xray_source = HexrdConfig().beam_names[0]
+        else:
+            self._xray_source = v
 
     @property
     def has_widths(self):
@@ -210,12 +229,13 @@ class LaueOverlay(Overlay):
         if not sym_hkls:
             return point_groups
 
-        sim_data = instr.simulate_laue_pattern(
-            self.plane_data_no_exclusions,
-            minEnergy=self.min_energy,
-            maxEnergy=self.max_energy,
-            rmat_s=self.sample_rmat,
-            grain_params=[self.crystal_params, ])
+        with switch_xray_source(instr, self.xray_source):
+            sim_data = instr.simulate_laue_pattern(
+                self.plane_data_no_exclusions,
+                minEnergy=self.min_energy,
+                maxEnergy=self.max_energy,
+                rmat_s=self.sample_rmat,
+                grain_params=[self.crystal_params, ])
 
         for det_key, psim in sim_data.items():
             # grab panel and split out simulation results
@@ -359,21 +379,32 @@ class LaueOverlay(Overlay):
             # All done...
             return np.degrees(range_corners)
 
+        if display_mode == ViewType.stereo:
+            from hexrdgui.hexrd_config import HexrdConfig
+            # Convert the angles to stereo ij
+            return [angles_to_stereo(
+                corners,
+                self.instrument,
+                HexrdConfig().stereo_size,
+            ) for corners in range_corners]
+
         # The range data is curved for raw and cartesian.
         # Get more intermediate points so the data reflects this.
+
         results = []
-        for corners in range_corners:
-            data = []
-            for i in range(len(corners) - 1):
-                tmp = np.linspace(corners[i], corners[i + 1])
-                data.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
+        with switch_xray_source(self.instrument, self.xray_source):
+            for corners in range_corners:
+                data = []
+                for i in range(len(corners) - 1):
+                    tmp = np.linspace(corners[i], corners[i + 1])
+                    data.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
 
-            data = np.array(data)
-            if display_mode == ViewType.raw:
-                data = panel.cartToPixel(data)
-                data[:, [0, 1]] = data[:, [1, 0]]
+                data = np.array(data)
+                if display_mode == ViewType.raw:
+                    data = panel.cartToPixel(data)
+                    data[:, [0, 1]] = data[:, [1, 0]]
 
-            results.append(data)
+                results.append(data)
 
         return results
 
@@ -403,14 +434,15 @@ class LaueOverlay(Overlay):
         if display_mode not in (ViewType.raw, ViewType.cartesian):
             raise Exception(f'Unknown view type: {display_mode}')
 
-        for result in results:
-            # Convert to Cartesian
-            result[:] = panel.angles_to_cart(result, tvec_c=self.tvec_c)
+        with switch_xray_source(self.instrument, self.xray_source):
+            for result in results:
+                # Convert to Cartesian
+                result[:] = panel.angles_to_cart(result, tvec_c=self.tvec_c)
 
-            if display_mode == ViewType.raw:
-                # If raw, convert to pixels
-                result[:] = panel.cartToPixel(result)
-                result[:, [0, 1]] = result[:, [1, 0]]
+                if display_mode == ViewType.raw:
+                    # If raw, convert to pixels
+                    result[:] = panel.cartToPixel(result)
+                    result[:, [0, 1]] = result[:, [1, 0]]
 
         return results
 

@@ -471,13 +471,22 @@ class InstrumentFormViewWidget(QObject):
             lambda _: self.ui.cal_det_buffer.setEnabled(True))
 
     @property
+    def active_beam(self):
+        # We need to use this instead of HexrdConfig().active_beam
+        # because we want to use the config without statuses.
+        return HexrdConfig().active_beam
+
+    @property
     def polar_beam_vector(self):
-        beam_vector = self.cfg.instrument_config['beam']['vector']
-        return beam_vector['azimuth'], beam_vector['polar_angle']
+        beam_vector = self.active_beam['vector']
+        return (
+            beam_vector['azimuth']['value'],
+            beam_vector['polar_angle']['value'],
+        )
 
     @polar_beam_vector.setter
     def polar_beam_vector(self, v):
-        beam_vector = self.cfg.config['instrument']['beam']['vector']
+        beam_vector = self.active_beam['vector']
 
         any_modified = False
 
@@ -538,7 +547,7 @@ class InstrumentFormViewWidget(QObject):
 
     def update_cartesian_beam_vector_styles(self):
         # Set highlighting to reflect whether they are refinable
-        beam_vector = self.cfg.config['instrument']['beam']['vector']
+        beam_vector = self.active_beam['vector']
         az_fixed = not beam_vector['azimuth']['status']
         po_fixed = not beam_vector['polar_angle']['status']
 
@@ -605,7 +614,7 @@ class InstrumentFormViewWidget(QObject):
 
         # Update the config
         v = self.beam_vector_magnitude
-        beam_config = self.cfg.config['instrument']['beam']
+        beam_config = self.active_beam
         if beam_config['source_distance']['value'] != v:
             beam_config['source_distance']['value'] = v
             HexrdConfig().beam_vector_changed.emit()
@@ -638,7 +647,7 @@ class InstrumentFormViewWidget(QObject):
         self.beam_vector_magnitude = v
 
         # Update the config
-        beam_config = self.cfg.config['instrument']['beam']
+        beam_config = self.active_beam
         if beam_config['source_distance']['value'] != v:
             beam_config['source_distance']['value'] = v
             HexrdConfig().beam_vector_changed.emit()
@@ -647,7 +656,7 @@ class InstrumentFormViewWidget(QObject):
         self.update_cartesian_beam_vector_from_magnitude()
 
     def update_beam_vector_magnitude_from_config(self):
-        beam_config = self.cfg.config['instrument']['beam']
+        beam_config = self.active_beam
         self.beam_vector_magnitude = beam_config['source_distance']['value']
 
     @property

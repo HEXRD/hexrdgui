@@ -354,9 +354,9 @@ class MainWindow(QObject):
             HexrdConfig().set_intensity_subtract_minimum)
         self.ui.action_apply_absorption_correction.toggled.connect(
             self.action_apply_absorption_correction_toggled)
-
         HexrdConfig().instrument_config_loaded.connect(
             self.on_instrument_config_loaded)
+        HexrdConfig().active_beam_switched.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
         HexrdConfig().polar_masks_reapplied.connect(
@@ -1207,7 +1207,7 @@ class MainWindow(QObject):
 
         def on_accepted():
             # Write the modified picks to the overlays
-            updated_picks = tree_format_to_picks(dialog.dictionary)
+            updated_picks = tree_format_to_picks(overlays, dialog.dictionary)
             for i, new_picks in enumerate(updated_picks):
                 overlays[i].calibration_picks_polar = new_picks['picks']
 

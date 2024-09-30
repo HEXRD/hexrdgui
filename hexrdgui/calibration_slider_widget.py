@@ -224,15 +224,15 @@ class CalibrationSliderWidget(QObject):
                     [self.current_detector()]
                 )
         else:
-            iconfig = HexrdConfig().config['instrument']
+            beam_dict = HexrdConfig().active_beam
             if key == 'energy':
-                iconfig['beam'][key]['value'] = val
+                beam_dict[key]['value'] = val
                 HexrdConfig().beam_energy_modified.emit()
             elif key == 'polar':
-                iconfig['beam']['vector']['polar_angle']['value'] = val
+                beam_dict['vector']['polar_angle']['value'] = val
                 HexrdConfig().beam_vector_changed.emit()
             else:
-                iconfig['beam']['vector'][key]['value'] = val
+                beam_dict['vector'][key]['value'] = val
                 HexrdConfig().beam_vector_changed.emit()
 
     def _transform_locked_group(self, det, key, ind, val):
@@ -322,13 +322,13 @@ class CalibrationSliderWidget(QObject):
             det = self.current_detector_dict()
             val = det['transform'][key]['value'][ind]
         else:
-            iconfig = HexrdConfig().config['instrument']
+            beam_dict = HexrdConfig().active_beam
             if key == 'energy':
-                val = iconfig['beam'][key]['value']
+                val = beam_dict[key]['value']
             elif key == 'polar':
-                val = iconfig['beam']['vector']['polar_angle']['value']
+                val = beam_dict['vector']['polar_angle']['value']
             else:
-                val = iconfig['beam']['vector'][key]['value']
+                val = beam_dict['vector'][key]['value']
 
         if key == 'tilt':
             if HexrdConfig().rotation_matrix_euler() is None:

@@ -92,8 +92,15 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_polar_apply_scaling_to_lineout)
         self.ui.polar_x_axis_type.currentTextChanged.connect(
             self.on_polar_x_axis_type_changed)
+        self.ui.polar_active_beam.currentIndexChanged.connect(
+            self.on_active_beam_changed)
+
         HexrdConfig().instrument_config_loaded.connect(
             self.on_instrument_config_load)
+        HexrdConfig().active_beam_switched.connect(
+            # We might need to update the eta range as well (for TARDIS),
+            # so just update everything.
+            self.update_gui_from_config)
 
         HexrdConfig().enable_image_mode_widget.connect(
             self.enable_image_mode_widget)
@@ -168,6 +175,7 @@ class ImageModeWidget(QObject):
             self.ui.polar_tth_distortion_overlay,
             self.ui.polar_apply_scaling_to_lineout,
             self.ui.polar_x_axis_type,
+            self.ui.polar_active_beam,
             self.ui.stereo_size,
             self.ui.stereo_show_border,
             self.ui.stereo_project_from_polar,
@@ -212,6 +220,8 @@ class ImageModeWidget(QObject):
             self.ui.polar_apply_scaling_to_lineout.setChecked(
                 HexrdConfig().polar_apply_scaling_to_lineout)
             self.polar_x_axis_type = HexrdConfig().polar_x_axis_type
+            self.ui.polar_active_beam.setCurrentText(
+                HexrdConfig().active_beam_name)
             self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
             self.ui.stereo_show_border.setChecked(
                 HexrdConfig().stereo_show_border)
@@ -231,12 +241,17 @@ class ImageModeWidget(QObject):
 
     def on_instrument_config_load(self):
         self.update_visibility_states()
+        self.update_beam_names()
         self.auto_generate_cartesian_params()
         self.auto_generate_polar_params()
 
     def update_visibility_states(self):
         has_roi = HexrdConfig().instrument_has_roi
         self.ui.raw_stitch_roi_images.setVisible(has_roi)
+
+        has_multi_xrs = HexrdConfig().has_multi_xrs
+        self.ui.polar_active_beam.setVisible(has_multi_xrs)
+        self.ui.polar_active_beam_label.setVisible(has_multi_xrs)
 
     def auto_generate_cartesian_params(self):
         if HexrdConfig().loading_state:
@@ -451,6 +466,16 @@ class ImageModeWidget(QObject):
     def update_azimuthal_offset(self, value):
         HexrdConfig().azimuthal_offset = value
         HexrdConfig().azimuthal_options_modified.emit()
+
+    def update_beam_names(self):
+        with block_signals(self.ui.polar_active_beam):
+            self.ui.polar_active_beam.clear()
+            self.ui.polar_active_beam.addItems(HexrdConfig().beam_names)
+            self.ui.polar_active_beam.setCurrentText(
+                HexrdConfig().active_beam_name)
+
+    def on_active_beam_changed(self):
+        HexrdConfig().active_beam_name = self.ui.polar_active_beam.currentText()
 
 
 POLAR_X_AXIS_LABELS_TO_VALUES = {

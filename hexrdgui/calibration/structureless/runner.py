@@ -4,10 +4,13 @@ import traceback
 import matplotlib.pyplot as plt
 import numpy as np
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QCoreApplication, QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from hexrd.fitting.calibration import StructurelessCalibrator
+from hexrd.fitting.calibration.lmfit_param_handling import (
+    tth_parameter_prefixes,
+)
 
 from hexrdgui.calibration.calibration_dialog import (
     CalibrationDialog,
@@ -20,6 +23,7 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.markers import igor_marker
+from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.select_item_dialog import SelectItemDialog
 from hexrdgui.tree_views import GenericPicksTreeViewDialog
 from hexrdgui.utils.conversions import angles_to_cart, cart_to_angles
@@ -40,13 +44,18 @@ class StructurelessCalibrationRunner(QObject):
         self.async_runner = async_runner
         self.parent = parent
 
+        # Used for 2XRS mainly
+        self._handpicked_lines = {}
+
         self._calibration_dialog = None
 
     def clear(self):
-        pass
+        # Make sure this is cleared
+        self._handpicked_lines.clear()
 
     def run(self):
         try:
+            self.clear()
             self.validate()
             self.instr = create_hedm_instrument()
             self.choose_pick_method()
@@ -124,7 +133,13 @@ class StructurelessCalibrationRunner(QObject):
         picker = LinePickerDialog(**kwargs)
 
         self.line_picker = picker
-        picker.ui.setWindowTitle('Structureless Calibration')
+
+        window_title = 'Structureless Calibration'
+        if HexrdConfig().has_multi_xrs:
+            # Also add the XRS name to the window title
+            window_title += f' ({HexrdConfig().active_beam_name})'
+
+        picker.ui.setWindowTitle(window_title)
 
         # Add the help url
         add_help_url(picker.ui.button_box, 'calibration/structureless/')
@@ -153,6 +168,30 @@ class StructurelessCalibrationRunner(QObject):
         # This will be turned off automatically when the picker finishes
         self.set_focus_mode(True)
 
+    def switch_xray_source(self, xray_source: str):
+        # Update the polar view to use this xrs source
+        HexrdConfig().active_beam_name = xray_source
+
+        if self.line_picker is not None:
+            if self.line_picker.zoom_canvas is not None:
+                self.line_picker.zoom_canvas.skip_next_render = True
+
+        # Wait until canvas finishes updating
+        progress_dialog = ProgressDialog(self.canvas)
+        progress_dialog.setRange(0, 0)
+        progress_dialog.setWindowTitle(
+            f'Switching beam to {xray_source}'
+        )
+        progress_dialog.show()
+        while self.canvas.iviewer is None:
+            # We must process events so that when the polar view has been
+            # generated again, it can set the iviewer on the canvas.
+            QCoreApplication.processEvents()
+
+        progress_dialog.hide()
+
+        self.instr.active_beam_name = xray_source
+
     def load_pick_points(self):
         title = 'Load Picks for Structureless Calibration'
 
@@ -168,7 +207,10 @@ class StructurelessCalibrationRunner(QObject):
                 return
 
             try:
-                calibration_lines = load_picks_from_file(selected_file)
+                calibration_lines = load_picks_from_file(
+                    self.instr,
+                    selected_file,
+                )
                 validate_picks(calibration_lines, self.instr)
             except Exception as e:
                 QMessageBox.critical(self.parent, 'HEXRD', f'Error: {e}')
@@ -188,9 +230,28 @@ class StructurelessCalibrationRunner(QObject):
 
         # These points are in tth, eta. Convert these to cartesian and assign
         # points to detectors.
-        calibrator_lines = polar_lines_to_cart(data, self.instr)
+        if HexrdConfig().has_multi_xrs:
+            beam_name = HexrdConfig().active_beam_name
+        else:
+            beam_name = HexrdConfig().beam_names[0]
 
-        self.show_calibration_dialog(calibrator_lines)
+        entry = {beam_name: data}
+        calibrator_lines = polar_lines_to_cart(entry, self.instr)
+        self._handpicked_lines.update(calibrator_lines)
+
+        if HexrdConfig().has_multi_xrs:
+            # Check and see if we have any more x-ray sources that we
+            # have not picked for. If so, switch to that source and pick
+            # again.
+            for beam_name in HexrdConfig().beam_names:
+                if beam_name not in self._handpicked_lines:
+                    # Switch to the unpicked beam name and pick points again
+                    self.switch_xray_source(beam_name)
+                    self.hand_pick_points()
+                    return
+
+        # Show the picked points!
+        self.show_calibration_dialog(self._handpicked_lines)
 
     def _hand_picking_finished(self):
         # Turn off focus mode until we get to the next step
@@ -213,21 +274,28 @@ class StructurelessCalibrationRunner(QObject):
         }
         self.calibrator = StructurelessCalibrator(**kwargs)
 
+        prefixes = tth_parameter_prefixes(self.instr)
         def format_extra_params_func(params_dict, tree_dict,
                                      create_param_item):
             # Make the debye scherrer ring means
             key = 'Debye-Scherrer ring means'
-            template = 'DS_ring_{i}'
-            i = 0
-            current = template.format(i=i)
-            while current in params_dict:
-                param = params_dict[current]
-                # Wait to create this dict until now
-                # (when we know that we have at least one parameter)
-                this_dict = tree_dict.setdefault(key, {})
-                this_dict[i + 1] = create_param_item(param)
-                i += 1
-                current = template.format(i=i)
+            base_dict = tree_dict.setdefault(key, {})
+
+            for xray_source, prefix in prefixes.items():
+                if len(prefixes) > 1:
+                    # Need to nest another layer down
+                    current_dict = base_dict.setdefault(xray_source, {})
+                else:
+                    # No need to nest another layer down
+                    current_dict = base_dict
+
+                i = 0
+                current = f'{prefix}{i}'
+                while current in params_dict:
+                    param = params_dict[current]
+                    current_dict[i + 1] = create_param_item(param)
+                    i += 1
+                    current = f'{prefix}{i}'
 
         # Now show the calibration dialog
         kwargs = {
@@ -260,7 +328,26 @@ class StructurelessCalibrationRunner(QObject):
     @property
     def previous_picks_data(self):
         name = '_previous_structureless_calibration_picks_data'
-        return getattr(HexrdConfig(), name, None)
+        picks = getattr(HexrdConfig(), name, None)
+
+        # !! Backward compatibility check! We used to only support
+        # one x-ray source. Now we support multiple. If this is a list,
+        # it means it came from a state file with one x-ray source, and
+        # we need to convert it. If it is a dict, then it is the newer
+        # version.
+        if isinstance(picks, list):
+            # These picks are in the old format for only 1 XRS.
+            # Convert them to the new format.
+            if HexrdConfig().has_multi_xrs:
+                # Use the current XRS for the beam name
+                beam_name = HexrdConfig().active_beam_name
+            else:
+                # Otherwise, just grab the first available beam
+                beam_name = HexrdConfig().beam_names[0]
+
+            picks = {beam_name: picks}
+
+        return picks
 
     @previous_picks_data.setter
     def previous_picks_data(self, v):
@@ -276,30 +363,37 @@ class StructurelessCalibrationRunner(QObject):
 
 
 def polar_lines_to_cart(data, instr):
-    calibrator_lines = []
+    ret = {}
     off_panel = []
-    for line in data:
-        line = np.asarray(line)
-        if line.size == 0:
-            continue
+    for xray_source, lines in data.items():
+        # We do not switch x-ray source here because we want
+        # to convert the coordinates to use the *current x-ray source*
+        # in the polar view.
+        calibrator_lines = []
+        for line in lines:
+            line = np.asarray(line)
+            if line.size == 0:
+                continue
 
-        line = apply_tth_distortion_if_needed(line, in_degrees=True,
-                                              reverse=True)
+            line = apply_tth_distortion_if_needed(line, in_degrees=True,
+                                                  reverse=True)
 
-        calibrator_line = {}
-        panel_found = np.zeros(line.shape[0], dtype=bool)
-        for det_key, panel in instr.detectors.items():
-            points = angles_to_cart(line, panel, tvec_c=instr.tvec)
-            _, on_panel = panel.clip_to_panel(points)
-            points[~on_panel] = np.nan
-            valid_points = ~np.any(np.isnan(points), axis=1)
-            panel_found[valid_points] = True
-            calibrator_line[det_key] = points[valid_points]
+            calibrator_line = {}
+            panel_found = np.zeros(line.shape[0], dtype=bool)
+            for det_key, panel in instr.detectors.items():
+                points = angles_to_cart(line, panel, tvec_c=instr.tvec)
+                _, on_panel = panel.clip_to_panel(points)
+                points[~on_panel] = np.nan
+                valid_points = ~np.any(np.isnan(points), axis=1)
+                panel_found[valid_points] = True
+                calibrator_line[det_key] = points[valid_points]
 
-        if not np.all(panel_found):
-            off_panel.append(line[~panel_found])
+            if not np.all(panel_found):
+                off_panel.append(line[~panel_found])
 
-        calibrator_lines.append(calibrator_line)
+            calibrator_lines.append(calibrator_line)
+
+        ret[xray_source] = calibrator_lines
 
     if off_panel:
         off_panel = np.vstack(off_panel)
@@ -309,41 +403,56 @@ def polar_lines_to_cart(data, instr):
         )
         QMessageBox.warning(None, 'HEXRD', msg)
 
-    return calibrator_lines
+    return ret
 
 
 def cart_to_polar_lines(calibrator_lines, instr):
-    output = []
-    for line_dict in calibrator_lines:
-        polar_points = []
-        for det_key, points in line_dict.items():
-            panel = instr.detectors[det_key]
-            kwargs = {
-                'panel': panel,
-                'eta_period': HexrdConfig().polar_res_eta_period,
-                'tvec_c': instr.tvec,
-            }
+    ret = {}
+    for xray_source, lines in calibrator_lines.items():
+        # We do not switch x-ray source here because we want
+        # to convert the coordinates to use the *current x-ray source*
+        # in the polar view.
+        output = []
+        for line_dict in lines:
+            polar_points = []
+            for det_key, points in line_dict.items():
+                panel = instr.detectors[det_key]
+                kwargs = {
+                    'panel': panel,
+                    'eta_period': HexrdConfig().polar_res_eta_period,
+                    'tvec_c': instr.tvec,
+                }
 
-            polar_points.append(cart_to_angles(points, **kwargs))
+                polar_points.append(cart_to_angles(points, **kwargs))
 
-        points = np.vstack(polar_points)
-        points = apply_tth_distortion_if_needed(points, in_degrees=True)
-        output.append(points)
+            points = np.vstack(polar_points)
+            points = apply_tth_distortion_if_needed(points, in_degrees=True)
+            output.append(points)
 
-    return output
+        ret[xray_source] = output
+
+    return ret
 
 
 def validate_picks(picks, instr):
-    # Verify that the detector keys match up
-    for det_lines in picks:
-        for det_key in det_lines:
-            if det_key not in instr.detectors:
-                dets_str = ', '.join(instr.detectors)
-                msg = (
-                    f'Detector "{det_key}" does not match current '
-                    f'detectors "{dets_str}"'
-                )
-                raise Exception(msg)
+    for xray_source, lines in picks.items():
+        if xray_source not in instr.beam_dict:
+            msg = (
+                f'Unknown xray source: {xray_source} '
+                f'(available xray sources: {list(instr.beam_dict)})'
+            )
+            raise Exception(msg)
+
+        # Verify that the detector keys match up
+        for det_lines in lines:
+            for det_key in det_lines:
+                if det_key not in instr.detectors:
+                    dets_str = ', '.join(instr.detectors)
+                    msg = (
+                        f'Detector "{det_key}" does not match current '
+                        f'detectors "{dets_str}"'
+                    )
+                    raise Exception(msg)
 
 
 class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
@@ -370,11 +479,20 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         color_cycler = cycle(prop_cycle.by_key()['color'])
 
         polar_lines = cart_to_polar_lines(self.calibrator_lines, self.instr)
-        for points in polar_lines:
-            color = next(color_cycler)
-            artist, = self.canvas.axis.plot(points[:, 0], points[:, 1],
-                                            color=color, **line_settings)
-            self.draw_picks_lines.append(artist)
+        for xray_source, lines in polar_lines.items():
+            if not self.showing_picks_from_all_xray_sources:
+                if (
+                    HexrdConfig().has_multi_xrs and
+                    xray_source != HexrdConfig().active_beam_name
+                ):
+                    # Skip over all x-ray sources except the active one
+                    continue
+
+            for points in lines:
+                color = next(color_cycler)
+                artist, = self.canvas.axis.plot(points[:, 0], points[:, 1],
+                                                color=color, **line_settings)
+                self.draw_picks_lines.append(artist)
 
         self.canvas.draw_idle()
 
@@ -382,20 +500,21 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         # Convert to polar lines
         data = cart_to_polar_lines(self.calibrator_lines, self.instr)
 
-        # Convert to lists
-        for i in range(len(data)):
-            data[i] = data[i].tolist()
-
         # Now convert to a dictionary for the line labels
         dictionary = {}
-        for ring_idx, v in enumerate(data):
-            name = f'DS ring {ring_idx + 1}'
-            dictionary[name] = data[ring_idx]
+        ring_indices = {}
+        for xray_source, rings in data.items():
+            this_xrs = dictionary.setdefault(xray_source, {})
+            for ring_idx, v in enumerate(rings):
+                name = f'DS ring {ring_idx + 1}'
+                this_xrs[name] = v.tolist()
+            ring_indices[xray_source] = ring_idx
 
-        def new_line_name_generator():
-            nonlocal ring_idx
-            ring_idx += 1
-            return f'DS ring {ring_idx + 1}'
+        def new_line_name_generator(path):
+            # Get the x-ray source
+            xray_source = path[0]
+            ring_indices[xray_source] += 1
+            return f'DS ring {ring_indices[xray_source] + 1}'
 
         dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
                                             parent=self.canvas)
@@ -411,9 +530,10 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         self.dialog.hide()
 
     def on_edit_picks_accepted(self):
-        lines = list(self.edit_picks_dictionary.values())
-        # Convert back to lines in cartesian coords
-        # lines = list(dictionary.values())
+        lines = {}
+        for xray_source, ds_rings in self.edit_picks_dictionary.items():
+            lines[xray_source] = list(ds_rings.values())
+
         cart = polar_lines_to_cart(lines, self.instr)
         self.set_picks(cart)
 
@@ -421,7 +541,7 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         save_picks_to_file(self.calibrator_lines, selected_file)
 
     def load_picks_from_file(self, selected_file):
-        return load_picks_from_file(selected_file)
+        return load_picks_from_file(self.instr, selected_file)
 
     def set_picks(self, picks):
         self.validate_picks(picks)

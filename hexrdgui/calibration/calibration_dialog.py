@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
 
 from hexrd.fitting.calibration.lmfit_param_handling import (
+    create_beam_param_names,
     normalize_euler_convention,
     param_names_euler_convention,
 )
@@ -22,6 +23,7 @@ from hexrdgui.tree_views.multi_column_dict_tree_view import (
     MultiColumnDictTreeView
 )
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
@@ -31,6 +33,7 @@ import hexrdgui.resources.calibration
 class CalibrationDialog(QObject):
 
     draw_picks_toggled = Signal(bool)
+    show_picks_from_all_xray_sources_toggled = Signal(bool)
 
     edit_picks_clicked = Signal()
     save_picks_clicked = Signal()
@@ -83,11 +86,18 @@ class CalibrationDialog(QObject):
 
         self.update_edit_picks_enable_state()
 
+        self.update_beam_names()
+        self.update_visibility_states()
+
         self.load_settings()
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.draw_picks.toggled.connect(self.on_draw_picks_toggled)
+        self.ui.active_beam.currentIndexChanged.connect(
+            self.on_active_beam_changed)
+        self.ui.show_picks_from_all_xray_sources.toggled.connect(
+            self.show_picks_from_all_xray_sources_toggled)
         self.ui.engineering_constraints.currentIndexChanged.connect(
             self.on_engineering_constraints_changed)
         self.ui.delta_boundaries.toggled.connect(
@@ -105,6 +115,9 @@ class CalibrationDialog(QObject):
         # Picks editing is currently only supported in the polar mode
         HexrdConfig().image_mode_changed.connect(
             self.update_edit_picks_enable_state)
+
+        HexrdConfig().active_beam_switched.connect(
+            self.on_active_beam_switched)
 
     def show(self):
         self.ui.show()
@@ -177,8 +190,34 @@ class CalibrationDialog(QObject):
             else:
                 raise NotImplementedError(w)
 
+    def update_visibility_states(self):
+        has_multi_xrs = HexrdConfig().has_multi_xrs
+        self.ui.active_beam.setVisible(has_multi_xrs)
+        self.ui.active_beam_label.setVisible(has_multi_xrs)
+        self.ui.show_picks_from_all_xray_sources.setVisible(has_multi_xrs)
+
     def on_draw_picks_toggled(self, b):
         self.draw_picks_toggled.emit(b)
+
+    def on_show_picks_from_all_xray_sources_toggled(self, b):
+        self.show_picks_from_all_xray_sources_toggled.emit(b)
+
+    def on_active_beam_switched(self):
+        # Update the active beam on the instrument
+        self.instr.active_beam_name = HexrdConfig().active_beam_name
+
+        # This will also update the combo box to reflect the new active name
+        self.update_beam_names()
+
+    def update_beam_names(self):
+        with block_signals(self.ui.active_beam):
+            self.ui.active_beam.clear()
+            self.ui.active_beam.addItems(HexrdConfig().beam_names)
+            self.ui.active_beam.setCurrentText(
+                HexrdConfig().active_beam_name)
+
+    def on_active_beam_changed(self):
+        HexrdConfig().active_beam_name = self.ui.active_beam.currentText()
 
     def on_run_button_clicked(self):
         if self.delta_boundaries:
@@ -438,7 +477,28 @@ class CalibrationDialog(QObject):
 
             return param_set
 
-        # First, recursively set items (except special cases)
+        if HexrdConfig().has_multi_xrs:
+            # For multi-xrs, generate the beam in a special way
+            special_cases.append('beam')
+
+            beam_dict = tree_dict.setdefault('beam', {})
+            beam_param_names = create_beam_param_names(self.instr)
+            for beam_name in self.instr.beam_names:
+                this_beam_dict = beam_dict.setdefault(beam_name, {})
+                names = beam_param_names[beam_name]
+
+                this_beam_dict['energy'] = create_param_item(
+                    params_dict[names['beam_energy']]
+                )
+                vector_dict = this_beam_dict.setdefault('vector', {})
+                vector_dict['azimuth'] = create_param_item(
+                    params_dict[names['beam_azimuth']]
+                )
+                vector_dict['polar angle'] = create_param_item(
+                    params_dict[names['beam_polar']]
+                )
+
+        # Now, recursively set items (except special cases)
         recursively_set_items(tree_dict, template_dict)
 
         # Now generate the detectors

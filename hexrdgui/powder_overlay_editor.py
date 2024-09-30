@@ -34,6 +34,7 @@ class PowderOverlayEditor:
         self.ui.refinements_selector_layout.addWidget(
             self.refinements_selector.ui)
 
+        self.update_visibility_states()
         self.setup_connections()
 
     def setup_connections(self):
@@ -59,6 +60,9 @@ class PowderOverlayEditor:
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed)
+
+        HexrdConfig().instrument_config_loaded.connect(
+            self.update_visibility_states)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -106,6 +110,14 @@ class PowderOverlayEditor:
         self._overlay = v
         self.update_gui()
 
+    def update_visibility_states(self):
+        label = self.ui.xray_source_label
+        combo = self.ui.xray_source
+
+        visible = HexrdConfig().has_multi_xrs
+        label.setVisible(visible)
+        combo.setVisible(visible)
+
     def update_enable_states(self):
         enable_width = self.ui.enable_width.isChecked()
         self.ui.tth_width.setEnabled(enable_width)
@@ -115,6 +127,10 @@ class PowderOverlayEditor:
             return
 
         with block_signals(*self.widgets):
+            self.ui.xray_source.clear()
+            if HexrdConfig().has_multi_xrs:
+                self.ui.xray_source.addItems(HexrdConfig().beam_names)
+
             self.tth_width_gui = self.tth_width_config
             self.offset_gui = self.offset_config
             self.distortion_type_gui = self.distortion_type_config
@@ -122,6 +138,7 @@ class PowderOverlayEditor:
             self.refinements_with_labels = self.overlay.refinements_with_labels
             self.clip_with_panel_buffer_gui = (
                 self.clip_with_panel_buffer_config)
+            self.xray_source_gui = self.xray_source_config
 
             self.update_enable_states()
             self.update_reflections_table()
@@ -131,6 +148,7 @@ class PowderOverlayEditor:
         self.offset_config = self.offset_gui
         self.distortion_config = self.distortion_gui
         self.clip_with_panel_buffer_config = self.clip_with_panel_buffer_gui
+        self.xray_source_config = self.xray_source_gui
 
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
@@ -307,6 +325,7 @@ class PowderOverlayEditor:
             self.ui.enable_width,
             self.ui.tth_width,
             self.ui.clip_with_panel_buffer,
+            self.ui.xray_source,
         ] + distortion_widgets
 
     def material_tth_width_modified_externally(self, material_name):
@@ -346,6 +365,41 @@ class PowderOverlayEditor:
     @pinhole_correction_type.setter
     def pinhole_correction_type(self, v):
         self.pinhole_correction_editor.correction_type = v
+
+    @property
+    def xray_source_config(self) -> str | None:
+        if self.overlay is None or not HexrdConfig().has_multi_xrs:
+            return None
+
+        return self.overlay.xray_source
+
+    @xray_source_config.setter
+    def xray_source_config(self, v: str | None):
+        if v is not None and not HexrdConfig().has_multi_xrs:
+            raise Exception(v)
+
+        self.overlay.xray_source = v
+
+    @property
+    def xray_source_gui(self):
+        if not HexrdConfig().has_multi_xrs:
+            return None
+
+        w = self.ui.xray_source
+        idx = w.currentIndex()
+        return w.currentText()
+
+    @xray_source_gui.setter
+    def xray_source_gui(self, v):
+        if v is not None and not HexrdConfig().has_multi_xrs:
+            raise Exception(v)
+
+        w = self.ui.xray_source
+        if v is None:
+            w.setCurrentIndex(0)
+            return
+
+        w.setCurrentText(v)
 
     def distortion_type_changed(self):
         if self.distortion_type == 'Pinhole Camera Correction':

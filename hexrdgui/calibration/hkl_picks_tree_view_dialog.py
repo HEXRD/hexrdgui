@@ -225,12 +225,15 @@ def generate_picks_results(overlays, polar=True):
                 'max_energy': overlay.max_energy,
             }
 
+        extras['xray_source'] = overlay.xray_source
+
         if polar:
             picks = overlay.calibration_picks_polar
         else:
             picks = overlay.calibration_picks
 
         pick_results.append({
+            'name': overlay.name,
             'material': overlay.material_name,
             'type': overlay.type.value,
             'options': options,
@@ -250,19 +253,21 @@ def overlays_to_tree_format(overlays):
 def picks_to_tree_format(all_picks):
     tree_format = {}
     for entry in all_picks:
-        name = f"{entry['material']} {entry['type']}"
-        tree_format[name] = entry['picks']
+        tree_format[entry['name']] = entry['picks']
 
     return tree_format
 
 
-def tree_format_to_picks(tree_format):
+def tree_format_to_picks(overlays: list, tree_format: dict):
+    # Make a dict with the names
+    overlays_dict = {x.name: x for x in overlays}
+
     all_picks = []
     for name, entry in tree_format.items():
-        material, type = name.split()
+        overlay = overlays_dict[name]
         current = {
-            'material': material,
-            'type': type,
+            'material': overlay.material,
+            'type': overlay.type,
             'picks': entry,
         }
         all_picks.append(current)
