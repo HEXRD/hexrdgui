@@ -1641,9 +1641,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         cur_val = self.config['instrument']
 
         if path[0] == 'beam' and self.has_multi_xrs:
-            # There's going to be one more layer to the path
-            path = path.copy()
-            path.insert(1, self.active_beam_name)
+            if path[1] not in self.beam_names:
+                # There's going to be one more layer to the path
+                path = path.copy()
+                path.insert(1, self.active_beam_name)
 
         # Special case for distortion:
         # If no distortion is specified, return 'None'
