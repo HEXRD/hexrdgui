@@ -420,7 +420,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('show_all_colormaps', False),
             ('limited_cmaps_list', constants.DEFAULT_LIMITED_CMAPS),
             ('default_cmap', constants.DEFAULT_CMAP),
-            ('custom_polar_tth_distortion_object_serialized', None),
             ('_previous_structureless_calibration_picks_data', None),
             ('sample_tilt', [0, 0, 0]),
             ('azimuthal_offset', 0.0),
@@ -428,6 +427,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
             ('physics_package_dictified', None),
+            ('custom_polar_tth_distortion_object_serialized', None),
             ('detector_coatings_dictified', {}),
             ('overlays_dictified', []),
         ]
@@ -2421,9 +2421,20 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def custom_polar_tth_distortion_object_serialized(self, v):
         obj = None
         if v is not None:
-            from hexrdgui.polar_distortion_object import PolarDistortionObject
+            if self.physics_package is None:
+                # This requires a physics package to deserialize
+                self.create_default_physics_package()
+
             active = v['active']
-            obj = PolarDistortionObject.deserialize(v['serialized'])
+            d = v['serialized']
+            if d.get('pinhole_distortion_type') == 'SampleLayerDistortion':
+                # We added pinhole_radius later. Set a default if it is missing.
+                if 'pinhole_radius' not in d['pinhole_distortion_kwargs']:
+                    radius = self.physics_package.pinhole_radius
+                    d['pinhole_distortion_kwargs']['pinhole_radius'] = radius * 1e-3
+
+            from hexrdgui.polar_distortion_object import PolarDistortionObject
+            obj = PolarDistortionObject.deserialize(d)
 
         if obj and active:
             self.polar_tth_distortion_object = obj
