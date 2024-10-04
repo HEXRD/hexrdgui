@@ -125,11 +125,38 @@ class InstrumentViewer:
     def pad_etas_pvarray(self, eta_grid, polar_img):
         start = np.array([eta_grid[-1] - 360])
         end = np.array([360 + eta_grid[0]])
-        eta_grid = np.concatenate((start, eta_grid, end))
 
-        pstart = np.atleast_2d(polar_img[-1, :])
-        pstop = np.atleast_2d(polar_img[0, :])
-        polar_img = np.vstack((pstart, polar_img, pstop))
+        start_padded = False
+        end_padded = False
+
+        padded = []
+        if not np.isclose(start, eta_grid[0]):
+            padded.append(start)
+            start_padded = True
+
+        padded.append(eta_grid)
+        if not np.isclose(end, eta_grid[-1]):
+            padded.append(end)
+            end_padded = True
+
+        if not start_padded and not end_padded:
+            # No padding. Exit early
+            return eta_grid, polar_img
+
+        eta_grid = np.concatenate(padded)
+
+        p_padded = []
+        if start_padded:
+            pstart = np.atleast_2d(polar_img[-1, :])
+            p_padded.append(pstart)
+
+        p_padded.append(polar_img)
+
+        if end_padded:
+            pstop = np.atleast_2d(polar_img[0, :])
+            p_padded.append(pstop)
+
+        polar_img = np.vstack(p_padded)
         return eta_grid, polar_img
 
     def draw_stereo_from_polar(self):
