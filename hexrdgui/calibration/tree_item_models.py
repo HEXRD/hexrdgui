@@ -30,6 +30,26 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
         # Now set the attribute on the param
         attribute = path[-1].removeprefix('_')
 
+        if attribute == 'value':
+            # Make sure the min/max are shifted to accomodate this value
+            if value < param.min or value > param.max:
+                # Shift the min/max to accomodate, because lmfit won't
+                # let us set the value otherwise.
+                param.min = value - (param.value - param.min)
+                param.max = value + (param.max - param.value)
+                super().set_config_val(path[:-1] + ['_min'], param.min)
+                super().set_config_val(path[:-1] + ['_max'], param.max)
+                self.dict_modified.emit()
+
+                if '_min' in self.COLUMNS.values():
+                    # Get the GUI to update
+                    for name in ('_min', '_max'):
+                        col = list(self.COLUMNS.values()).index(name) + 1
+                        index = self.create_index(path[:-1], col)
+                        item = self.get_item(index)
+                        item.set_data(index.column(), getattr(param, name[1:]))
+                        self.dataChanged.emit(index, index)
+
         setattr(param, attribute, value)
 
 

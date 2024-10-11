@@ -4,9 +4,13 @@ import copy
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog
 
+import lmfit
+
 from hexrd.fitting.calibration.lmfit_param_handling import (
+    create_instr_params,
     update_instrument_from_params,
 )
+from hexrd.instrument import HEDMInstrument
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict
@@ -50,6 +54,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         dialog.edit_picks_clicked.connect(self.on_edit_picks_clicked)
         dialog.save_picks_clicked.connect(self.on_save_picks_clicked)
         dialog.load_picks_clicked.connect(self.on_load_picks_clicked)
+        dialog.relative_constraints_changed.connect(
+            self.on_relative_constraints_changed)
         dialog.engineering_constraints_changed.connect(
             self.on_engineering_constraints_changed)
         dialog.run.connect(self.on_run_clicked)
@@ -112,9 +118,12 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def push_undo_stack(self):
         stack_item = {
+            'relative_constraints': self.calibrator.relative_constraints,
             'engineering_constraints': self.calibrator.engineering_constraints,
             'tth_distortion': self.calibrator.tth_distortion,
             'params': self.calibrator.params,
+            # Create a custom instrument parameters list to use for undo
+            'instr_params': _create_instr_params(self.instr),
             'advanced_options': self.dialog.advanced_options,
         }
         # Make deep copies to ensure originals will not be edited
@@ -127,9 +136,10 @@ class CalibrationDialogCallbacks(ABCQObject):
         stack_item = self.undo_stack.pop(-1)
 
         calibrator_items = [
+            'relative_constraints',
             'engineering_constraints',
             'tth_distortion',
-            # Put this last so it will get set last
+            # Put this later in the list so it will get set later
             'params',
         ]
 
@@ -140,8 +150,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         update_instrument_from_params(
             self.instr,
-            self.calibrator.params,
-            self.euler_convention,
+            stack_item['instr_params'],
         )
         self.update_config_from_instrument()
         self.update_dialog_from_calibrator()
@@ -152,13 +161,18 @@ class CalibrationDialogCallbacks(ABCQObject):
     def update_undo_enable_state(self):
         self.dialog.undo_enabled = bool(self.undo_stack)
 
+    def on_relative_constraints_changed(self, new_constraint):
+        self.calibrator.relative_constraints_type = new_constraint
+        self.on_constraints_changed()
+
     def on_engineering_constraints_changed(self, new_constraint):
         self.calibrator.engineering_constraints = new_constraint
+        self.on_constraints_changed()
 
+    def on_constraints_changed(self):
         # Keep old settings in the dialog if they are present in the new params
         # Remember everything except the name (should be the same) and
-        # the expression (which might be modified from the engineering
-        # constraints).
+        # the expression (which might be modified from the constraints).
         to_remember = [
             'value',
             'vary',
@@ -239,6 +253,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def on_calibration_finished(self):
         self.update_config_from_instrument()
+        self.dialog.params_dict = self.calibrator.params
 
     def update_config_from_instrument(self):
         output_dict = instr_to_internal_dict(self.instr)
@@ -261,14 +276,8 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         self.instrument_updated.emit()
 
-        # Update the tree_view in the GUI with the new refinements
-        self.update_refinements_tree_view()
-
         # Update the drawn picks with their new locations
         self.redraw_picks()
-
-    def update_refinements_tree_view(self):
-        self.dialog.params_dict = self.calibrator.params
 
     def update_tth_distortion_from_dialog(self):
         self.calibrator.tth_distortion = self.dialog.tth_distortion
@@ -321,3 +330,10 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.draw_picks(False)
         # Ensure focus mode is off (even if it wasn't set)
         self.set_focus_mode(False)
+
+
+def _create_instr_params(instr: HEDMInstrument) -> lmfit.Parameters:
+    params = create_instr_params(instr)
+    params_dict = lmfit.Parameters()
+    params_dict.add_many(*params)
+    return params_dict

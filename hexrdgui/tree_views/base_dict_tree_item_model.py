@@ -124,6 +124,23 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return flags
 
+    def create_index(self, path, column=0):
+        # Create an index, given a path
+
+        def recurse(item, cur_path):
+            for i, child_item in enumerate(item.child_items):
+                if child_item.data(KEY_COL) == cur_path[0]:
+                    if len(cur_path) == 1:
+                        return self.createIndex(
+                            child_item.row(),
+                            column,
+                            child_item,
+                        )
+                    else:
+                        return recurse(child_item, cur_path[1:])
+
+        return recurse(self.root_item, path)
+
     def remove_items(self, items):
         for item in items:
             row = item.row()
