@@ -10,6 +10,9 @@ from hexrd.fitting.calibration.lmfit_param_handling import (
     normalize_euler_convention,
     param_names_euler_convention,
 )
+from hexrd.fitting.calibration.relative_constraints import (
+    RelativeConstraintsType,
+)
 
 from hexrdgui import resource_loader
 from hexrdgui.calibration.tree_item_models import (
@@ -38,6 +41,7 @@ class CalibrationDialog(QObject):
     edit_picks_clicked = Signal()
     save_picks_clicked = Signal()
     load_picks_clicked = Signal()
+    relative_constraints_changed = Signal(RelativeConstraintsType)
     engineering_constraints_changed = Signal(str)
 
     pinhole_correction_settings_modified = Signal()
@@ -47,8 +51,10 @@ class CalibrationDialog(QObject):
     finished = Signal()
 
     def __init__(self, instr, params_dict, format_extra_params_func=None,
-                 parent=None, engineering_constraints=None,
-                 window_title='Calibration Dialog', help_url='calibration/'):
+                 parent=None, relative_constraints=None,
+                 engineering_constraints=None,
+                 window_title='Calibration Dialog',
+                 help_url='calibration/'):
         super().__init__(parent)
 
         loader = UiLoader()
@@ -68,10 +74,15 @@ class CalibrationDialog(QObject):
         HexrdConfig().physics_package_modified.connect(
             self.on_pinhole_correction_settings_modified)
 
+        self.populate_relative_constraint_options()
+
         self.instr = instr
         self._params_dict = params_dict
         self.format_extra_params_func = format_extra_params_func
+        self.relative_constraints = relative_constraints
         self.engineering_constraints = engineering_constraints
+
+        self._ignore_next_tree_view_update = False
 
         instr_type = guess_instrument_type(instr.detectors)
         # Use delta boundaries by default for anything other than TARDIS
@@ -98,6 +109,8 @@ class CalibrationDialog(QObject):
             self.on_active_beam_changed)
         self.ui.show_picks_from_all_xray_sources.toggled.connect(
             self.show_picks_from_all_xray_sources_toggled)
+        self.ui.relative_constraints.currentIndexChanged.connect(
+            self.on_relative_constraints_changed)
         self.ui.engineering_constraints.currentIndexChanged.connect(
             self.on_engineering_constraints_changed)
         self.ui.delta_boundaries.toggled.connect(
@@ -127,6 +140,17 @@ class CalibrationDialog(QObject):
 
     def load_settings(self):
         pass
+
+    def populate_relative_constraint_options(self):
+        # We are skipping group constraints until it is actually implemented
+        options = [
+            RelativeConstraintsType.none,
+            RelativeConstraintsType.system,
+        ]
+        w = self.ui.relative_constraints
+        w.clear()
+        for option in options:
+            w.addItem(option.value, option)
 
     def update_edit_picks_enable_state(self):
         is_polar = HexrdConfig().image_mode == ViewType.polar
@@ -309,6 +333,21 @@ class CalibrationDialog(QObject):
         self.ui.undo_run_button.setEnabled(b)
 
     @property
+    def relative_constraints(self) -> RelativeConstraintsType:
+        ret = self.ui.relative_constraints.currentData()
+        return ret if ret is not None else RelativeConstraintsType.none
+
+    @relative_constraints.setter
+    def relative_constraints(self, v: RelativeConstraintsType):
+        v = v if v is not None else RelativeConstraintsType.none
+        w = self.ui.relative_constraints
+        options = [w.itemText(i) for i in range(w.count())]
+        if v.value not in options:
+            raise Exception(f'Invalid relative constraints: {v.value}')
+
+        w.setCurrentText(v.value)
+
+    @property
     def engineering_constraints(self):
         return self.ui.engineering_constraints.currentText()
 
@@ -352,6 +391,20 @@ class CalibrationDialog(QObject):
         # They should all have identical settings. Just take the first one.
         first = next(iter(v.values()))
         self.pinhole_correction_editor.update_from_object(first)
+
+    def on_relative_constraints_changed(self):
+        # If the relative constraints is not None, then the engineering
+        # constraints must be set to None
+        enable = self.relative_constraints == RelativeConstraintsType.none
+        if not enable:
+            self._ignore_next_tree_view_update = True
+            self.engineering_constraints = None
+
+        self.ui.engineering_constraints.setEnabled(enable)
+        self.ui.mirror_constraints_from_first_detector.setEnabled(enable)
+
+        self.relative_constraints_changed.emit(self.relative_constraints)
+        self.reinitialize_tree_view()
 
     def on_engineering_constraints_changed(self):
         self.engineering_constraints_changed.emit(self.engineering_constraints)
@@ -404,6 +457,7 @@ class CalibrationDialog(QObject):
         self.tree_view.reset_gui()
 
     def update_from_calibrator(self, calibrator):
+        self.relative_constraints = calibrator.relative_constraints_type
         self.engineering_constraints = calibrator.engineering_constraints
         self.tth_distortion = calibrator.tth_distortion
         self.params_dict = calibrator.params
@@ -504,6 +558,9 @@ class CalibrationDialog(QObject):
         # Now generate the detectors
         detector_template = template_dict['detectors'].pop('{det}')
 
+        euler_convention = HexrdConfig().euler_angle_convention
+        euler_normalized = normalize_euler_convention(euler_convention)
+
         def recursively_format_det(det, this_config, this_template):
             for k, v in this_template.items():
                 if isinstance(v, dict):
@@ -524,10 +581,11 @@ class CalibrationDialog(QObject):
                         current = template.format(det=det, i=i)
                 elif k == 'tilt':
                     # Special case. Take into account euler angles.
-                    convention = HexrdConfig().euler_angle_convention
-                    normalized = normalize_euler_convention(convention)
-                    param_names = param_names_euler_convention(det, convention)
-                    labels = TILT_LABELS_EULER[normalized]
+                    param_names = param_names_euler_convention(
+                        det,
+                        euler_convention,
+                    )
+                    labels = TILT_LABELS_EULER[euler_normalized]
                     this_dict = this_config.setdefault(k, {})
                     for label, param_name in zip(labels, param_names):
                         param = params_dict[param_name]
@@ -540,14 +598,39 @@ class CalibrationDialog(QObject):
                     if v in params_dict:
                         this_config[k] = create_param_item(params_dict[v])
 
-        det_dict = tree_dict.setdefault('detectors', {})
-        for det_key in self.instr.detectors:
-            this_config = det_dict.setdefault(det_key, {})
-            this_template = copy.deepcopy(detector_template)
+        if self.relative_constraints == RelativeConstraintsType.none:
+            det_dict = tree_dict.setdefault('detectors', {})
+            for det_key in self.instr.detectors:
+                this_config = det_dict.setdefault(det_key, {})
+                this_template = copy.deepcopy(detector_template)
 
-            # For the parameters, we need to convert dashes to underscores
-            det = det_key.replace('-', '_')
-            recursively_format_det(det, this_config, this_template)
+                # For the parameters, we need to convert dashes to underscores
+                det = det_key.replace('-', '_')
+                recursively_format_det(det, this_config, this_template)
+        elif self.relative_constraints == RelativeConstraintsType.group:
+            raise NotImplementedError(self.relative_constraints)
+        elif self.relative_constraints == RelativeConstraintsType.system:
+            det_dict = tree_dict.setdefault('detector system', {})
+
+            tvec_names = [
+                'system_tvec_x',
+                'system_tvec_y',
+                'system_tvec_z',
+            ]
+            tilt_names = param_names_euler_convention(
+                'system', euler_convention)
+
+            this_config = det_dict.setdefault('translation', {})
+            tvec_keys = ['X', 'Y', 'Z']
+            for key, name in zip(tvec_keys, tvec_names):
+                this_config[key] = create_param_item(params_dict[name])
+
+            this_config = det_dict.setdefault('tilt', {})
+            tilt_keys = TILT_LABELS_EULER[euler_normalized]
+            for key, name in zip(tilt_keys, tilt_names):
+                this_config[key] = create_param_item(params_dict[name])
+        else:
+            raise NotImplementedError(self.relative_constraints)
 
         if self.format_extra_params_func is not None:
             self.format_extra_params_func(params_dict, tree_dict,
@@ -597,6 +680,12 @@ class CalibrationDialog(QObject):
         self.tree_view.verticalScrollBar().setValue(scroll_value)
 
     def update_tree_view(self):
+        if self._ignore_next_tree_view_update:
+            # Sometimes this is necessary when updating multiple
+            # parameters at once.
+            self._ignore_next_tree_view_update = False
+            return
+
         tree_dict = self.tree_view_dict_of_params
         self.tree_view.model().config = tree_dict
         self.tree_view.reset_gui()
