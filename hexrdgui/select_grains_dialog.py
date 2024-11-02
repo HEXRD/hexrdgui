@@ -17,7 +17,7 @@ class SelectGrainsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, num_requested_grains=1, parent=None):
+    def __init__(self, num_requested_grains: int | None = 1, parent=None):
         super().__init__(parent)
         self.ignore_errors = False
 
@@ -26,7 +26,10 @@ class SelectGrainsDialog(QObject):
 
         self.num_requested_grains = num_requested_grains
 
-        if num_requested_grains >= 1:
+        if num_requested_grains is None:
+            # None means any number of grains
+            self.ui.setWindowTitle('Please select grains')
+        elif num_requested_grains >= 1:
             suffix = 's' if num_requested_grains > 1 else ''
             title = f'Please select {num_requested_grains} grain{suffix}'
             self.ui.setWindowTitle(title)
@@ -168,7 +171,10 @@ class SelectGrainsDialog(QObject):
 
         # If the number of rows is equal to the number of requested grains,
         # select all rows automatically for convenience.
-        if len(v) == self.num_requested_grains:
+        if (
+            self.num_requested_grains is not None and
+            len(v) == self.num_requested_grains
+        ):
             selection_model = view.selectionModel()
             command = QItemSelectionModel.Select | QItemSelectionModel.Rows
             for i in range(len(v)):
@@ -231,7 +237,10 @@ class SelectGrainsDialog(QObject):
         button_box = self.ui.button_box
         ok_button = button_box.button(QDialogButtonBox.Ok)
         if ok_button:
-            enable = self.num_selected_grains == self.num_requested_grains
+            enable = (
+                self.num_requested_grains is None or
+                self.num_selected_grains == self.num_requested_grains
+            )
             ok_button.setEnabled(enable)
 
         grains_loaded = self.num_grains_loaded > 0

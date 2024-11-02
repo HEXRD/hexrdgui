@@ -29,6 +29,7 @@ class RefinementsEditor:
 
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
+        self._hide_bottom_buttons = False
         self.iconfig_values_modified = False
         self.material_values_modified = False
 
@@ -42,6 +43,17 @@ class RefinementsEditor:
         self.ui.button_box.accepted.connect(self.update_config)
         self.ui.button_box.accepted.connect(self.ui.accept)
         self.ui.button_box.rejected.connect(self.ui.reject)
+
+    @property
+    def hide_bottom_buttons(self):
+        return self._hide_bottom_buttons
+
+    @hide_bottom_buttons.setter
+    def hide_bottom_buttons(self, b):
+        self._hide_bottom_buttons = b
+
+        self.ui.reset.setVisible(not b)
+        self.ui.button_box.setVisible(not b)
 
     def reset_dict(self):
         config = {}
@@ -65,7 +77,7 @@ class RefinementsEditor:
         # Recurse through it, setting all status keys and renaming them to
         # "_refinable".
         blacklisted = ['saturation_level', 'buffer', 'pixels', 'id',
-                       'source_distance']
+                       'source_distance', 'detector_type']
 
         def recurse(cur, idict):
             if 'status' in cur:
@@ -98,7 +110,7 @@ class RefinementsEditor:
 
     def create_materials_dict(self):
         mdict = {}
-        for overlay in self.overlays:
+        for overlay in self.visible_overlays:
             name = overlay.name
             values = refinement_values(overlay)
             if not values:
@@ -152,7 +164,7 @@ class RefinementsEditor:
 
     def update_materials_config(self):
         mdict = self.dict['materials']
-        for overlay in self.overlays:
+        for overlay in self.visible_overlays:
             name = overlay.name
             refinements = []
             values = []
@@ -168,6 +180,10 @@ class RefinementsEditor:
     def overlays(self):
         return HexrdConfig().overlays
 
+    @property
+    def visible_overlays(self):
+        return [x for x in self.overlays if x.visible]
+
     def setup_actions(self):
         labels = list(self.actions.keys())
         self.ui.action.clear()
@@ -180,6 +196,7 @@ class RefinementsEditor:
 
         # Update the tree view
         self.update_tree_view()
+        self.tree_view.dict_modified.emit()
 
     @property
     def actions(self):
@@ -238,7 +255,7 @@ def refinement_values(overlay):
         return ret
 
     def laue_values():
-        params = overlay.crystal_params
+        params = copy.deepcopy(overlay.crystal_params)
         # These params should be in the same order as the refinements
         params[:3] = to_convention(params[:3])
         for i, label in enumerate(overlay.refinement_labels):

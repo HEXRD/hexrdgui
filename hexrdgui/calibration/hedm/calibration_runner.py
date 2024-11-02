@@ -47,19 +47,15 @@ class HEDMCalibrationRunner(QObject):
     def run(self):
         self.clear()
         self.pre_validate()
-        self.synchronize_omega_period()
 
         # Create the grains table
-        shape = (self.num_active_overlays, 21)
-        self.grains_table = np.empty(shape, dtype=np.float64)
-
-        gw = instrument.GrainDataWriter(array=self.grains_table)
-        for i, overlay in enumerate(self.active_overlays):
-            gw.dump_grain(i, 1, 0, overlay.crystal_params)
+        if self.num_active_overlays > 0:
+            material = self.material
+        else:
+            material = HexrdConfig().active_material
 
         kwargs = {
-            'material': self.material,
-            'grains_table': self.grains_table,
+            'material': material,
             'parent': self.parent,
         }
         dialog = HEDMCalibrationOptionsDialog(**kwargs)
@@ -70,13 +66,16 @@ class HEDMCalibrationRunner(QObject):
     def on_options_dialog_accepted(self):
         dialog = self.options_dialog
 
+        shape = (self.num_active_overlays, 21)
+        self.grains_table = np.empty(shape, dtype=np.float64)
+        gw = instrument.GrainDataWriter(array=self.grains_table)
+        for i, overlay in enumerate(self.active_overlays):
+            gw.dump_grain(i, 1, 0, overlay.crystal_params)
+
+        self.synchronize_omega_period()
+
         # Grab some selections from the dialog
         self.do_refit = dialog.do_refit
-        self.clobber_strain = dialog.clobber_strain
-        self.clobber_centroid = dialog.clobber_centroid
-        self.clobber_grain_Y = dialog.clobber_grain_Y
-
-        self.clobber_refinements()
         self.run_calibration()
 
     def run_calibration(self):
@@ -99,9 +98,6 @@ class HEDMCalibrationRunner(QObject):
 
         # User selected these from the dialog
         do_refit = self.do_refit
-        clobber_strain = self.clobber_strain
-        clobber_centroid = self.clobber_centroid
-        clobber_grain_Y = self.clobber_grain_Y
 
         # Our grains table only contains the grains that the user
         # selected.
@@ -118,15 +114,6 @@ class HEDMCalibrationRunner(QObject):
         ome_period = self.ome_period
 
         grain_parameters = grain_parameters.copy()
-        if clobber_strain:
-            for grain in grain_parameters:
-                grain[6:] = cnst.identity_6x1
-        if clobber_centroid:
-            for grain in grain_parameters:
-                grain[3:6] = cnst.zeros_3
-        if clobber_grain_Y:
-            for grain in grain_parameters:
-                grain[4] = 0.
         ngrains = len(grain_parameters)
 
         # The styles we will use for plotting points
@@ -472,28 +459,6 @@ class HEDMCalibrationRunner(QObject):
     def active_overlay_refinements(self):
         return [x.refinements for x in self.active_overlays]
 
-    def clobber_refinements(self):
-        any_clobbering = (
-            self.clobber_strain or
-            self.clobber_centroid or
-            self.clobber_grain_Y
-        )
-        if not any_clobbering:
-            return
-
-        for overlay in self.active_overlays:
-            refinements = overlay.refinements
-            if self.clobber_strain:
-                for i in range(6, len(refinements)):
-                    refinements[i] = False
-            if self.clobber_centroid:
-                for i in range(3, 6):
-                    refinements[i] = False
-            if self.clobber_grain_Y:
-                refinements[4] = False
-
-        HexrdConfig().update_overlay_editor.emit()
-
     def synchronize_material(self):
         # This material is used for creating the indexing config.
         # Make sure it matches the material we are using.
@@ -509,8 +474,8 @@ class HEDMCalibrationRunner(QObject):
     def pre_validate(self):
         # Validation to perform before we do anything else
         if not self.active_overlays:
-            msg = 'There must be at least one visible rotation series overlay'
-            raise Exception(msg)
+            # No more validation needed.
+            return
 
         ome_periods = []
         for overlay in self.active_overlays:
@@ -537,10 +502,6 @@ class HEDMCalibrationRunner(QObject):
                 'All visible rotation series overlays must have the same '
                 'material'
             )
-            raise Exception(msg)
-
-        if not np.any(self.all_flags):
-            msg = 'There are no refinable parameters'
             raise Exception(msg)
 
         # Make sure the material is updated in the indexing config
