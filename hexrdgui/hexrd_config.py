@@ -194,8 +194,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Indicate that the state was loaded..."""
     state_loaded = Signal()
 
+    """Indicate that the overlay manager should update its table"""
+    update_overlay_manager = Signal()
+
     """Indicate that the overlay editor should update its GUI"""
     update_overlay_editor = Signal()
+
+    """Indicate that the main window should update it's instrument toolbox"""
+    update_instrument_toolbox = Signal()
 
     """Indicate that the beam marker has been modified"""
     beam_marker_modified = Signal()

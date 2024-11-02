@@ -332,6 +332,8 @@ class MainWindow(QObject):
             self.update_drawn_mask_line_picker_canvas)
         HexrdConfig().tab_images_changed.connect(
             self.update_mask_region_canvas)
+        HexrdConfig().update_instrument_toolbox.connect(
+            self.update_config_gui)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)

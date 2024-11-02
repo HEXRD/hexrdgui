@@ -894,7 +894,7 @@ class ImageCanvas(FigureCanvas):
             # Right now, hexrd doesn't want this to be inf.
             # Maybe that will change in the future...
             self.iviewer.instr.source_distance = (
-                beam_config['source_distance']['value'],
+                beam_config['source_distance']['value']
             )
 
         self.update_overlays()

@@ -20,9 +20,10 @@ class RotationSeriesOverlay(Overlay):
 
     def __init__(self, material_name, crystal_params=None, eta_ranges=None,
                  ome_ranges=None, ome_period=None, aggregated=True,
-                 ome_width=np.radians(5.0).item(), tth_width=None,
-                 eta_width=None, sync_ome_period=True, sync_ome_ranges=True,
-                 **overlay_kwargs):
+                 ome_width=np.radians(1.5).item(),
+                 tth_width=np.radians(0.25).item(),
+                 eta_width=np.radians(1.0).item(),
+                 sync_ome_period=True, sync_ome_ranges=True, **overlay_kwargs):
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:

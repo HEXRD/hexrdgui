@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal, QModelIndex, Qt
+from PySide6.QtCore import Signal, QModelIndex, Qt, QTimer
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QCheckBox, QDialog, QItemEditorFactory, QMenu, QStyledItemDelegate,
@@ -237,8 +237,13 @@ class MultiColumnDictTreeView(BaseDictTreeView):
         self.open_persistent_editors()
         self.expand_rows()
 
-        # Restore the vertical scroll bar position
-        sb.setValue(prev_pos)
+        def restore_vertical_bar():
+            # Restore the vertical scroll bar position
+            sb.setValue(prev_pos)
+
+        # Do this in the next iteration of the event loop, because
+        # it may require the GUI to finish updating.
+        QTimer.singleShot(0, restore_vertical_bar)
 
 
 class MultiColumnDictTreeViewDialog(QDialog):

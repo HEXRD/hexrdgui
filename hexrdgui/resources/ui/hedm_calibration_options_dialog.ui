@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>479</width>
-    <height>558</height>
+    <width>606</width>
+    <height>850</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,14 @@
    <item>
     <widget class="QPushButton" name="view_grains_table">
      <property name="text">
-      <string>View Grains Table</string>
+      <string>Select Grains for Calibration Refinement</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="view_refinements">
+     <property name="text">
+      <string>View Refinements</string>
      </property>
     </widget>
    </item>
@@ -40,52 +47,20 @@
    <item>
     <layout class="QGridLayout" name="grid_layout">
      <item row="4" column="1" colspan="2">
-      <widget class="QGroupBox" name="clobbering_group">
-       <property name="title">
-        <string>Clobbering</string>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>η and ω ranges can be edited within the &quot;Overlay Manager&quot;</string>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QCheckBox" name="clobber_strain">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the stretch matrix to identity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Clobber strain?</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="clobber_centroid">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the grain position to the origin: (0, 0, 0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Clobber centroid?</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="clobber_grain_Y">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets and fixes the grain Y to zero.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Clobber grain Y?</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="2" column="1">
       <widget class="QLabel" name="num_hkls_selected">
        <property name="text">
         <string>Number of hkls selected:</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="1" colspan="2">
+     <item row="7" column="1" colspan="2">
       <widget class="QGroupBox" name="refitting_group">
        <property name="title">
         <string>Refitting</string>
@@ -96,6 +71,9 @@
           <property name="enabled">
            <bool>false</bool>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Refit pixel scale</string>
           </property>
@@ -103,8 +81,14 @@
         </item>
         <item row="0" column="0">
          <widget class="QCheckBox" name="do_refit">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Do refit?</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -112,6 +96,9 @@
          <widget class="QLabel" name="refit_ome_step_scale_label">
           <property name="enabled">
            <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Refit ome step scale</string>
@@ -128,6 +115,9 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -148,6 +138,9 @@
           <property name="enabled">
            <bool>false</bool>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
@@ -165,10 +158,180 @@
        </layout>
       </widget>
      </item>
-     <item row="1" column="2">
+     <item row="2" column="2">
       <widget class="QPushButton" name="choose_hkls">
        <property name="text">
         <string>Choose HKLs</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="1" colspan="2">
+      <widget class="QGroupBox" name="refinements_group">
+       <property name="title">
+        <string>Refinement Choices</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0" colspan="2">
+         <widget class="QCheckBox" name="fix_strain">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets all calibration grains' stretch tensors to identity and holds them fixed during refinement.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Assume calibration grains strain-free</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="refinement_choice_label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a preset refinement choice. Here are descriptions of each:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fix origin based on current sample/detector position&lt;/span&gt; - Holds detectors fixed along the Y axis during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset origin to grain centroid position&lt;/span&gt; - Set first calibration grain's centroid to [0,0,0] and holds it fixed during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset Y axis origin to grain's Y position&lt;/span&gt; - Sets the first calibration grain's Y position to zero and holds it fixed in Y during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Custom refinement parameters&lt;/span&gt; - Uses current parameter refinement choices.  Check refinements tab to see current selection.  &lt;span style=&quot; font-weight:600;&quot;&gt;Warning&lt;/span&gt;: Incompatible choices can be made without proper consideration of the system's degrees of freedom&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Choice: </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="refinement_choice">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a preset refinement choice. Here are descriptions of each:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fix origin based on current sample/detector position&lt;/span&gt; - Holds detectors fixed along the Y axis during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset origin to grain centroid position&lt;/span&gt; - Set first calibration grain's centroid to [0,0,0] and holds it fixed during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset Y axis origin to grain's Y position&lt;/span&gt; - Sets the first calibration grain's Y position to zero and holds it fixed in Y during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Custom refinement parameters&lt;/span&gt; - Uses current parameter refinement choices.  Check refinements tab to see current selection.  &lt;span style=&quot; font-weight:600;&quot;&gt;Warning&lt;/span&gt;: Incompatible choices can be made without proper consideration of the system's degrees of freedom&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="npdiv_label">
+       <property name="text">
+        <string>Number of Polar Subdivisions:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="num_grains_selected">
+       <property name="text">
+        <string>Number of grains to be refined:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="QSpinBox" name="npdiv">
+       <property name="minimum">
+        <number>0</number>
+       </property>
+       <property name="maximum">
+        <number>100000</number>
+       </property>
+       <property name="value">
+        <number>4</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="material_label">
+       <property name="text">
+        <string>Selected Material:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QComboBox" name="material"/>
+     </item>
+     <item row="3" column="1" colspan="2">
+      <widget class="QGroupBox" name="tolerances_group">
+       <property name="title">
+        <string>Tolerances</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="QLabel" name="tolerances_selected_grain_label">
+          <property name="text">
+           <string>Selected Grain:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="tolerances_selected_grain"/>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QTableWidget" name="tolerances_table">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>100</height>
+           </size>
+          </property>
+          <attribute name="horizontalHeaderDefaultSectionSize">
+           <number>175</number>
+          </attribute>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <row>
+           <property name="text">
+            <string>New Row</string>
+           </property>
+          </row>
+          <column>
+           <property name="text">
+            <string>2θ</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>η</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ω</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="threshold_label">
+       <property name="text">
+        <string>Threshold:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="ScientificDoubleSpinBox" name="threshold">
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>10000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>25.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -210,7 +373,19 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>view_grains_table</tabstop>
+  <tabstop>view_refinements</tabstop>
+  <tabstop>material</tabstop>
   <tabstop>choose_hkls</tabstop>
+  <tabstop>tolerances_selected_grain</tabstop>
+  <tabstop>tolerances_table</tabstop>
+  <tabstop>npdiv</tabstop>
+  <tabstop>threshold</tabstop>
+  <tabstop>do_refit</tabstop>
+  <tabstop>refit_pixel_scale</tabstop>
+  <tabstop>refit_ome_step_scale</tabstop>
+  <tabstop>fix_strain</tabstop>
+  <tabstop>refinement_choice</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -221,8 +396,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>259</x>
+     <y>546</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -237,8 +412,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>327</x>
+     <y>546</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -253,12 +428,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>354</x>
-     <y>218</y>
+     <x>235</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
-     <x>123</x>
-     <y>253</y>
+     <x>149</x>
+     <y>426</y>
     </hint>
    </hints>
   </connection>
@@ -269,12 +444,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>354</x>
-     <y>218</y>
+     <x>235</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
-     <x>354</x>
-     <y>253</y>
+     <x>452</x>
+     <y>426</y>
     </hint>
    </hints>
   </connection>
@@ -285,12 +460,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>354</x>
-     <y>218</y>
+     <x>235</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
-     <x>123</x>
-     <y>290</y>
+     <x>149</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -301,12 +476,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>354</x>
-     <y>218</y>
+     <x>235</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
-     <x>354</x>
-     <y>290</y>
+     <x>452</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>

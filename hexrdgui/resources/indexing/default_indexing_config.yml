@@ -147,7 +147,7 @@ fit_grains:
 
 # Some custom ones we have added for the GUI
 _hedm_calibration:
-  do_refit: false
-  clobber_strain: false
+  do_refit: true
+  clobber_strain: true
+  clobber_grain_Y: true
   clobber_centroid: false
-  clobber_grain_Y: false
