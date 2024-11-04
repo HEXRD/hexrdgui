@@ -1064,7 +1064,7 @@ class ImageCanvas(FigureCanvas):
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
-                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=14, family='serif')
+                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=15, family='serif')
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1084,7 +1084,7 @@ class ImageCanvas(FigureCanvas):
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Average', fontsize=14, family='serif')
+                axis.set_ylabel(r'Azimuthal Average', fontsize=15, family='serif')
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
@@ -1124,7 +1124,7 @@ class ImageCanvas(FigureCanvas):
                 axis = self.azimuthal_integral_axis
 
             # Update the xlabel in case it was modified (via tth distortion)
-            axis.set_xlabel(self.polar_xlabel, fontsize=14, family='serif')
+            axis.set_xlabel(self.polar_xlabel, fontsize=15, family='serif')
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -1136,13 +1136,13 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=14, family='serif')
+                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=15, family='serif')
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
             # Update the xlabel in case it was modified (via tth distortion)
-            self.axis.set_xlabel(self.polar_xlabel, fontsize=14, family='serif')
+            self.axis.set_xlabel(self.polar_xlabel, fontsize=15, family='serif')
 
         if rescale_image:
             self.axis.relim()
@@ -1243,7 +1243,7 @@ class ImageCanvas(FigureCanvas):
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
         self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel,
-            fontsize=14, family='serif')
+            fontsize=15, family='serif')
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
