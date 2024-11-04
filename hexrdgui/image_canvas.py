@@ -1058,13 +1058,16 @@ class ImageCanvas(FigureCanvas):
                 kwargs['length'] = 2
                 self.axis.tick_params(**kwargs)
 
-                self.axis.tick_params(bottom=True, top=True, which='major', length=8)
-                self.axis.tick_params(bottom=True, top=True, which='minor', length=2)
+                self.axis.tick_params(
+                   bottom=True, top=True, which='major', length=8)
+                self.axis.tick_params(
+                    bottom=True, top=True, which='minor', length=2)
 
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
-                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=15, family='serif')
+                self.axis.set_ylabel(
+                    r'$\phi$ [deg]', fontsize=15, family='serif')
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1143,6 +1146,7 @@ class ImageCanvas(FigureCanvas):
 
             # Update the xlabel in case it was modified (via tth distortion)
             self.axis.set_xlabel(self.polar_xlabel, fontsize=15, family='serif')
+
 
         if rescale_image:
             self.axis.relim()
@@ -1237,13 +1241,14 @@ class ImageCanvas(FigureCanvas):
         self.iviewer.instr.beam_energy = HexrdConfig().beam_energy
 
     @property
-    def polar_x_axis_type(self):
+   def polar_x_axis_type(self):
         return HexrdConfig().polar_x_axis_type
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
         self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel,
-            fontsize=15, family='serif')
+                                                fontsize=15, family='serif')
+
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
