@@ -35,6 +35,8 @@ from hexrdgui.utils.conversions import (
 )
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
+FONTSIZE_LABEL=15
+FONTSIZE_TICKS=15
 
 class ImageCanvas(FigureCanvas):
 
@@ -1050,7 +1052,7 @@ class ImageCanvas(FigureCanvas):
                     'which': 'major',
                     'length': 10,
                     'labelfontfamily': 'serif',
-                    'labelsize': 14
+                    'labelsize': FONTSIZE_TICKS,
                 }
                 self.axis.tick_params(**kwargs)
 
@@ -1067,7 +1069,7 @@ class ImageCanvas(FigureCanvas):
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
                 self.axis.set_ylabel(
-                    r'$\phi$ [deg]', fontsize=15, family='serif')
+                    r'$\phi$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1087,7 +1089,7 @@ class ImageCanvas(FigureCanvas):
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Average', fontsize=15, family='serif')
+                axis.set_ylabel(r'Azimuthal Average', fontsize=FONTSIZE_LABEL, family='serif')
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
@@ -1103,6 +1105,7 @@ class ImageCanvas(FigureCanvas):
                 axis.xaxis.set_major_locator(AutoLocator())
                 axis.xaxis.set_minor_locator(AutoMinorLocator())
 
+                # change property of ticks
                 kwargs = {
                     'left': True,
                     'right': True,
@@ -1111,13 +1114,41 @@ class ImageCanvas(FigureCanvas):
                     'which': 'major',
                     'length': 10,
                     'labelfontfamily': 'serif',
-                    'labelsize': 14
+                    'labelsize': FONTSIZE_TICKS,
                 }
                 axis.tick_params(**kwargs)
 
                 kwargs['which'] = 'minor'
                 kwargs['length'] = 2
                 axis.tick_params(**kwargs)
+
+                # add grid lines parallel to x-axis in azimuthal average
+                kwargs = {
+                    'visible': True,
+                    'which': 'major',
+                    'axis': 'y',
+                    'linewidth': 0.25,
+                    'linestyle': '-',
+                    'color': 'k',
+                    'alpha': 0.75,
+                }
+                axis.grid(**kwargs)
+
+                kwargs = {
+                    'visible': True,
+                    'which': 'minor',
+                    'axis': 'y',
+                    'linewidth': 0.075,
+                    'linestyle': '--',
+                    'color': 'k',
+                    'alpha': 0.9,
+                }
+                axis.grid(**kwargs)
+
+                # add grid lines parallel to y-axis
+                kwargs['which'] = 'both'
+                kwargs['axis'] = 'x'
+                axis.grid(**kwargs)
 
                 # Set our custom tick locators as well
                 # self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
@@ -1127,7 +1158,7 @@ class ImageCanvas(FigureCanvas):
                 axis = self.azimuthal_integral_axis
 
             # Update the xlabel in case it was modified (via tth distortion)
-            axis.set_xlabel(self.polar_xlabel, fontsize=15, family='serif')
+            axis.set_xlabel(self.polar_xlabel, fontsize=FONTSIZE_LABEL, family='serif')
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -1139,13 +1170,13 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=15, family='serif')
+                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
             # Update the xlabel in case it was modified (via tth distortion)
-            self.axis.set_xlabel(self.polar_xlabel, fontsize=15, family='serif')
+            self.axis.set_xlabel(self.polar_xlabel, fontsize=FONTSIZE_LABEL, family='serif')
 
 
         if rescale_image:
@@ -1247,7 +1278,7 @@ class ImageCanvas(FigureCanvas):
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
         self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel,
-                                        fontsize=15, family='serif')
+                                        fontsize=FONTSIZE_LABEL, family='serif')
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
