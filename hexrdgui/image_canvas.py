@@ -1241,14 +1241,13 @@ class ImageCanvas(FigureCanvas):
         self.iviewer.instr.beam_energy = HexrdConfig().beam_energy
 
     @property
-   def polar_x_axis_type(self):
+    def polar_x_axis_type(self):
         return HexrdConfig().polar_x_axis_type
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
         self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel,
-                                                fontsize=15, family='serif')
-
+                                        fontsize=15, family='serif')
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
