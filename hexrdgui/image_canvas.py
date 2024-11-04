@@ -8,7 +8,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle
-from matplotlib.ticker import AutoLocator, FuncFormatter
+from matplotlib.ticker import AutoLocator, AutoMinorLocator, FuncFormatter
 
 import matplotlib.pyplot as plt
 import matplotlib.transforms as tx
@@ -1004,6 +1004,7 @@ class ImageCanvas(FigureCanvas):
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_polar(self, iviewer):
+
         if self.mode != ViewType.polar:
             # Image mode was switched during generation. Ignore this.
             return
@@ -1034,10 +1035,36 @@ class ImageCanvas(FigureCanvas):
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
                 self.axis.axis('auto')
+
+                self.axis.yaxis.set_major_locator(AutoLocator())
+                self.axis.yaxis.set_minor_locator(AutoMinorLocator())
+
+                self.axis.xaxis.set_major_locator(AutoLocator())
+                self.axis.xaxis.set_minor_locator(AutoMinorLocator())
+
+                kwargs = {
+                    'left': True,
+                    'right': True,
+                    'bottom': True,
+                    'top': True,
+                    'which': 'major',
+                    'length': 10,
+                    'labelfontfamily': 'serif',
+                    'labelsize': 14
+                }
+                self.axis.tick_params(**kwargs)
+
+                kwargs['which'] = 'minor'
+                kwargs['length'] = 2
+                self.axis.tick_params(**kwargs)
+
+                self.axis.tick_params(bottom=True, top=True, which='major', length=8)
+                self.axis.tick_params(bottom=True, top=True, which='minor', length=2)
+
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
-                self.axis.set_ylabel(r'$\eta$ [deg]')
+                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=14, family='serif')
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1053,11 +1080,11 @@ class ImageCanvas(FigureCanvas):
                 axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
                 data = (tth, self.compute_azimuthal_integral_sum())
                 unscaled = (tth, self.compute_azimuthal_integral_sum(False))
-                self.azimuthal_line_artist, = axis.plot(*data)
+                self.azimuthal_line_artist, = axis.plot(*data, '-k', lw=2.5)
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Average')
+                axis.set_ylabel(r'Azimuthal Average', fontsize=14, family='serif')
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
@@ -1067,15 +1094,37 @@ class ImageCanvas(FigureCanvas):
                 formatter = PolarXAxisFormatter(default_formatter, f)
                 axis.xaxis.set_major_formatter(formatter)
 
+                axis.yaxis.set_major_locator(AutoLocator())
+                axis.yaxis.set_minor_locator(AutoMinorLocator())
+
+                axis.xaxis.set_major_locator(AutoLocator())
+                axis.xaxis.set_minor_locator(AutoMinorLocator())
+
+                kwargs = {
+                    'left': True,
+                    'right': True,
+                    'bottom': True,
+                    'top': True,
+                    'which': 'major',
+                    'length': 10,
+                    'labelfontfamily': 'serif',
+                    'labelsize': 14
+                }
+                axis.tick_params(**kwargs)
+
+                kwargs['which'] = 'minor'
+                kwargs['length'] = 2
+                axis.tick_params(**kwargs)
+
                 # Set our custom tick locators as well
-                self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
-                axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+                # self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+                # axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
 
             # Update the xlabel in case it was modified (via tth distortion)
-            axis.set_xlabel(self.polar_xlabel)
+            axis.set_xlabel(self.polar_xlabel, fontsize=14, family='serif')
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -1087,13 +1136,13 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\eta$ [deg]')
+                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=14, family='serif')
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
             # Update the xlabel in case it was modified (via tth distortion)
-            self.axis.set_xlabel(self.polar_xlabel)
+            self.axis.set_xlabel(self.polar_xlabel, fontsize=14, family='serif')
 
         if rescale_image:
             self.axis.relim()
@@ -1193,7 +1242,8 @@ class ImageCanvas(FigureCanvas):
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
-        self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel)
+        self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel,
+            fontsize=14, family='serif')
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
