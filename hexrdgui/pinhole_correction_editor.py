@@ -144,7 +144,7 @@ class PinholeCorrectionEditor(QObject):
             }
             if self.rygg_absorption_length_visible:
                 # Only return an absorption length if it is visible
-                output['absorption_length'] = HexrdConfig().absorption_length()
+                output['absorption_length'] = HexrdConfig().absorption_length() * 1e-3
             return output
 
         raise Exception(f'Not implemented for: {dtype}')
