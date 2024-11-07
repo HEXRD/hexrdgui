@@ -154,14 +154,15 @@ class PinholeCorrectionEditor(QObject):
         if v is None:
             return
 
+        vp = v.copy()
         # These units are in mm, but we display in micrometers
         for key, value in v.items():
-            if key in ('num_phi_elements', 'absorption_length'):
+            if key in ('num_phi_elements'):
                 multiplier = 1
             else:
                 multiplier = 1e3
 
-            v[key] = value * multiplier
+            vp[key] = value * multiplier
 
         physics = HexrdConfig().physics_package
         if physics is None:
@@ -201,7 +202,7 @@ class PinholeCorrectionEditor(QObject):
         for w_name, (key, value) in values.items():
             if w_name.startswith(widget_prefix):
                 # Extract the value from the dict
-                value = v.get(key, value)
+                value = vp.get(key, value)
 
             w = getattr(self.ui, w_name)
             w.setValue(value)
