@@ -144,7 +144,7 @@ class PinholeCorrectionEditor(QObject):
             }
             if self.rygg_absorption_length_visible:
                 # Only return an absorption length if it is visible
-                output['absorption_length'] = HexrdConfig().absorption_length() * 1e-3
+                output['absorption_length'] = HexrdConfig().absorption_length()
             return output
 
         raise Exception(f'Not implemented for: {dtype}')
@@ -157,7 +157,7 @@ class PinholeCorrectionEditor(QObject):
         vp = v.copy()
         # These units are in mm, but we display in micrometers
         for key, value in v.items():
-            if key in ('num_phi_elements'):
+            if key in ('num_phi_elements', 'absorption_length'):
                 multiplier = 1
             else:
                 multiplier = 1e3
