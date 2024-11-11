@@ -71,7 +71,19 @@ class LLNLImportToolDialog(QObject):
             self.ui.finalize,
             self.ui.outline_appearance,
             self.ui.template_instructions,
+            self.ui.simple_raw_image,
         enabled=False)
+
+        # We have different needs for different instruments. Hide optional
+        # widgets until the instrument is selected.
+        self.set_widget_visibility(
+            self.ui.raw_image,
+            self.ui.template_instructions,
+            self.ui.outline_appearance,
+            self.ui.simple_raw_image,
+        visible=False)
+        self.ui.setMinimumHeight(315)
+        self.ui.adjustSize()
 
         self.update_config_settings()
 
@@ -103,6 +115,11 @@ class LLNLImportToolDialog(QObject):
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
             w.setEnabled(enabled)
+
+    def set_widget_visibility(self, *widgets, visible):
+        for w in widgets:
+            w.setVisible(visible)
+            w.setEnabled(visible)
 
     def set_default_color(self):
         self.outline_color = '#00ffff'
@@ -170,7 +187,8 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults()
 
     def instrument_selected(self, idx):
-        instruments = {1: 'TARDIS', 2: 'PXRDIP'}
+        self.ui.setMinimumHeight(315)
+        instruments = {1: 'TARDIS', 2: 'PXRDIP', 3: 'FIDDLE'}
         self.instrument = instruments.get(idx, None)
 
         if HexrdConfig().show_beam_marker:
@@ -184,22 +202,38 @@ class LLNLImportToolDialog(QObject):
         if self.instrument is None:
             HexrdConfig().enable_canvas_toolbar.emit(True)
             self.update_config_settings()
+            self.set_widget_visibility(
+                self.ui.raw_image,
+                self.ui.template_instructions,
+                self.ui.outline_appearance,
+                self.ui.simple_raw_image,
+            visible=False)
         else:
+            is_fiddle = self.instrument == 'FIDDLE'
+            self.set_widget_visibility(
+                self.ui.raw_image,
+                self.ui.template_instructions,
+                self.ui.outline_appearance,
+            visible=(not is_fiddle))
+            self.set_widget_visibility(
+                self.ui.simple_raw_image,
+            visible=is_fiddle)
             self.import_in_progress = True
             HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
             HexrdConfig().enable_image_mode_widget.emit(False)
             self.load_instrument_config()
-            self.enable_widgets(self.ui.raw_image, self.ui.config,
-                                self.ui.file_selection, self.ui.finalize,
-                                enabled=True)
             HexrdConfig().enable_canvas_toolbar.emit(False)
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
-            self.update_config_selection(self.ui.config_selection.currentIndex())
+            self.update_config_selection(
+                self.ui.config_selection.currentIndex())
+            self.enable_widgets(self.ui.config, self.ui.finalize, enabled=True)
             self.ui.bbox.setToolTip('')
             if self.instrument == 'TARDIS':
                 self.ui.bbox.setToolTip('The bounding box editors are not ' +
                                         'available for the TARDIS instrument')
+
+        self.ui.adjustSize()
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
