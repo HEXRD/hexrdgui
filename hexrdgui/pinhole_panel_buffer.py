@@ -14,7 +14,7 @@ def generate_pinhole_panel_buffer(instr):
     try:
         for det_key, det in instr.detectors.items():
             crit_angle = np.arctan(
-                physics_package.pinhole_radius /
+                2.0 * physics_package.pinhole_radius /
                 physics_package.pinhole_thickness)
             ptth, peta = det.pixel_angles()
             ph_buffer[det_key] = ptth < crit_angle
