@@ -1041,7 +1041,7 @@ class ImageCanvas(FigureCanvas):
                 self.axis.yaxis.set_major_locator(AutoLocator())
                 self.axis.yaxis.set_minor_locator(AutoMinorLocator())
 
-                self.axis.xaxis.set_major_locator(AutoLocator())
+                self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
                 self.axis.xaxis.set_minor_locator(AutoMinorLocator())
 
                 kwargs = {
@@ -1102,7 +1102,7 @@ class ImageCanvas(FigureCanvas):
                 axis.yaxis.set_major_locator(AutoLocator())
                 axis.yaxis.set_minor_locator(AutoMinorLocator())
 
-                axis.xaxis.set_major_locator(AutoLocator())
+                axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
                 axis.xaxis.set_minor_locator(AutoMinorLocator())
 
                 # change property of ticks
@@ -1149,10 +1149,6 @@ class ImageCanvas(FigureCanvas):
                 kwargs['which'] = 'both'
                 kwargs['axis'] = 'x'
                 axis.grid(**kwargs)
-
-                # Set our custom tick locators as well
-                # self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
-                # axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
