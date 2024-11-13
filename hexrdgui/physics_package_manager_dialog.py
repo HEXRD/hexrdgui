@@ -142,7 +142,7 @@ class PhysicsPackageManagerDialog:
         self.ui.pinhole_density.setValue(physics.pinhole_density)
         if self.instrument_type == 'PXRDIP':
             self.ui.pinhole_thickness.setValue(70)
-            self.ui.pinhole_diameter.setValue(130)
+            self.ui.pinhole_diameter.setValue(300)
         else:
             self.ui.pinhole_thickness.setValue(physics.pinhole_thickness)
             self.ui.pinhole_diameter.setValue(physics.pinhole_diameter)
