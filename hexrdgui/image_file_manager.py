@@ -95,7 +95,9 @@ class ImageFileManager(metaclass=Singleton):
                 ims = imageseries.open(
                     f, 'hdf5', path=self.path[0], dataname=self.path[1])
         elif ext == '.npz':
-            ims = imageseries.open(f, 'frame-cache')
+            ims = imageseries.open(f, 'frame-cache', style='npz')
+        elif ext == '.fch5':
+            ims = imageseries.open(f, 'frame-cache', style='fch5')
         elif ext == '.yml':
             data = yaml.load(open(f))
             form = next(iter(data))
