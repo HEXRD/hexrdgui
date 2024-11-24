@@ -1071,7 +1071,7 @@ class ImageCanvas(FigureCanvas):
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
                 self.axis.set_ylabel(
-                    r'$\phi$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
+                    r'$\eta$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1168,7 +1168,7 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\phi$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
+                self.axis.set_ylabel(r'$\eta$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
