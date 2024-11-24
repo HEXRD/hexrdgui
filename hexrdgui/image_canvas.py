@@ -37,8 +37,11 @@ from hexrdgui.utils.conversions import (
 )
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
-FONTSIZE_LABEL=15
-FONTSIZE_TICKS=15
+# Increase these font sizes (compared to the global font) by the specified
+# amounts.
+FONTSIZE_LABEL_INCREASE = 4
+FONTSIZE_TICKS_INCREASE = 4
+
 
 class ImageCanvas(FigureCanvas):
 
@@ -117,6 +120,42 @@ class ImageCanvas(FigureCanvas):
     @property
     def thread_pool(self):
         return QThreadPool.globalInstance()
+
+    @property
+    def fontsize_label(self):
+        return HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE
+
+    @property
+    def fontsize_ticks(self):
+        return HexrdConfig().font_size + FONTSIZE_TICKS_INCREASE
+
+    @property
+    def label_kwargs(self):
+        return {
+            'fontsize': self.fontsize_label,
+            'family': 'serif',
+        }
+
+    @property
+    def major_tick_kwargs(self):
+        return {
+            'left': True,
+            'right': True,
+            'bottom': True,
+            'top': True,
+            'which': 'major',
+            'length': 10,
+            'labelfontfamily': 'serif',
+            'labelsize': self.fontsize_ticks,
+        }
+
+    @property
+    def minor_tick_kwargs(self):
+        return {
+            **self.major_tick_kwargs,
+            'which': 'minor',
+            'length': 2,
+        }
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -1044,34 +1083,16 @@ class ImageCanvas(FigureCanvas):
                 self.axis.yaxis.set_minor_locator(AutoMinorLocator())
 
                 self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
-                self.axis.xaxis.set_minor_locator(PolarXAxisMinorTickLocator(self))
-
-                kwargs = {
-                    'left': True,
-                    'right': True,
-                    'bottom': True,
-                    'top': True,
-                    'which': 'major',
-                    'length': 10,
-                    'labelfontfamily': 'serif',
-                    'labelsize': FONTSIZE_TICKS,
-                }
-                self.axis.tick_params(**kwargs)
-
-                kwargs['which'] = 'minor'
-                kwargs['length'] = 2
-                self.axis.tick_params(**kwargs)
-
-                self.axis.tick_params(
-                   bottom=True, top=True, which='major', length=8)
-                self.axis.tick_params(
-                    bottom=True, top=True, which='minor', length=2)
+                self.axis.xaxis.set_minor_locator(
+                    PolarXAxisMinorTickLocator(self)
+                )
+                self.axis.tick_params(**self.major_tick_kwargs)
+                self.axis.tick_params(**self.minor_tick_kwargs)
 
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
-                self.axis.set_ylabel(
-                    r'$\eta$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
+                self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs)
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1091,7 +1112,7 @@ class ImageCanvas(FigureCanvas):
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Average', fontsize=FONTSIZE_LABEL, family='serif')
+                axis.set_ylabel(r'Azimuthal Average', **self.label_kwargs)
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
@@ -1105,24 +1126,13 @@ class ImageCanvas(FigureCanvas):
                 axis.yaxis.set_minor_locator(AutoMinorLocator())
 
                 axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
-                self.axis.xaxis.set_minor_locator(PolarXAxisMinorTickLocator(self))
+                self.axis.xaxis.set_minor_locator(
+                    PolarXAxisMinorTickLocator(self)
+                )
 
                 # change property of ticks
-                kwargs = {
-                    'left': True,
-                    'right': True,
-                    'bottom': True,
-                    'top': True,
-                    'which': 'major',
-                    'length': 10,
-                    'labelfontfamily': 'serif',
-                    'labelsize': FONTSIZE_TICKS,
-                }
-                axis.tick_params(**kwargs)
-
-                kwargs['which'] = 'minor'
-                kwargs['length'] = 2
-                axis.tick_params(**kwargs)
+                axis.tick_params(**self.major_tick_kwargs)
+                axis.tick_params(**self.minor_tick_kwargs)
 
                 # add grid lines parallel to x-axis in azimuthal average
                 kwargs = {
@@ -1156,7 +1166,7 @@ class ImageCanvas(FigureCanvas):
                 axis = self.azimuthal_integral_axis
 
             # Update the xlabel in case it was modified (via tth distortion)
-            axis.set_xlabel(self.polar_xlabel, fontsize=FONTSIZE_LABEL, family='serif')
+            axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -1168,14 +1178,13 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\eta$ [deg]', fontsize=FONTSIZE_LABEL, family='serif')
+                self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs)
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
             # Update the xlabel in case it was modified (via tth distortion)
-            self.axis.set_xlabel(self.polar_xlabel, fontsize=FONTSIZE_LABEL, family='serif')
-
+            self.axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
 
         if rescale_image:
             self.axis.relim()
@@ -1275,8 +1284,8 @@ class ImageCanvas(FigureCanvas):
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
-        self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel,
-                                        fontsize=FONTSIZE_LABEL, family='serif')
+        self.azimuthal_integral_axis.set_xlabel(
+            self.polar_xlabel, **self.label_kwargs)
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
@@ -1784,7 +1793,12 @@ class ImageCanvas(FigureCanvas):
                         delta_eta_est = np.nanmedian(eta_diff)
                         tolerance = delta_eta_est * 10
                         big_gaps, = np.nonzero(eta_diff > tolerance)
-                        verts[i] = np.insert(vert, big_gaps + 1, np.nan, axis=0)
+                        verts[i] = np.insert(
+                            vert,
+                            big_gaps + 1,
+                            np.nan,
+                            axis=0,
+                        )
 
                 if self.mode == ViewType.stereo:
                     # Now convert from polar to stereo
@@ -1838,13 +1852,15 @@ class PolarXAxisTickLocator(AutoLocator):
         # Convert back to tth
         return canvas.polar_x_type_to_tth(values)
 
+
 class PolarXAxisMinorTickLocator(AutoMinorLocator):
     """Subclass the tick locator so we can modify its behavior
 
     We will modify any value ranges provided so that the current x-axis type
     provides nice looking ticks.
 
-    For instance, for Q, we want to space minor ticks non-linearly between major ticks
+    For instance, for Q, we want to space minor ticks non-linearly between
+    major ticks
     """
     def __init__(self, canvas, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1853,14 +1869,15 @@ class PolarXAxisMinorTickLocator(AutoMinorLocator):
     def __call__(self):
         canvas = self._hexrdgui_canvas
         if self.axis.get_scale() == 'log':
-            logging.warning('PolarXAxisMinorTickLocator does not work on logarithmic scales')
+            logging.warning(
+                'PolarXAxisMinorTickLocator does not work on logarithmic '
+                'scales'
+            )
             return []
 
         majorlocs = np.unique(self.axis.get_majorticklocs())
         if len(majorlocs) < 2:
             # Need at least two major ticks to find minor tick locations.
-            # TODO: Figure out a way to still be able to display minor ticks with less
-            # than two major ticks visible. For now, just display no ticks at all.
             return []
 
         # Convert to our current x type
@@ -1874,7 +1891,10 @@ class PolarXAxisMinorTickLocator(AutoMinorLocator):
 
         if self.ndivs == 'auto':
             majorstep_mantissa = 10 ** (np.log10(majorstep) % 1)
-            ndivs = 5 if np.isclose(majorstep_mantissa, [1, 2.5, 5, 10]).any() else 4
+            if np.isclose(majorstep_mantissa, [1, 2.5, 5, 10]).any():
+                ndivs = 5
+            else:
+                ndivs = 4
         else:
             ndivs = self.ndivs
 
