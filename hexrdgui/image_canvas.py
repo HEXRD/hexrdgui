@@ -1,5 +1,6 @@
 import copy
 import math
+import logging
 
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
@@ -8,8 +9,9 @@ from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle
-from matplotlib.ticker import AutoLocator, FuncFormatter
+from matplotlib.ticker import AutoLocator, AutoMinorLocator, FuncFormatter
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.transforms as tx
 
@@ -34,6 +36,11 @@ from hexrdgui.utils.conversions import (
     angles_to_stereo, cart_to_angles, cart_to_pixels, q_to_tth, tth_to_q,
 )
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
+
+# Increase these font sizes (compared to the global font) by the specified
+# amounts.
+FONTSIZE_LABEL_INCREASE = 4
+FONTSIZE_TICKS_INCREASE = 4
 
 
 class ImageCanvas(FigureCanvas):
@@ -113,6 +120,42 @@ class ImageCanvas(FigureCanvas):
     @property
     def thread_pool(self):
         return QThreadPool.globalInstance()
+
+    @property
+    def fontsize_label(self):
+        return HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE
+
+    @property
+    def fontsize_ticks(self):
+        return HexrdConfig().font_size + FONTSIZE_TICKS_INCREASE
+
+    @property
+    def label_kwargs(self):
+        return {
+            'fontsize': self.fontsize_label,
+            'family': 'serif',
+        }
+
+    @property
+    def major_tick_kwargs(self):
+        return {
+            'left': True,
+            'right': True,
+            'bottom': True,
+            'top': True,
+            'which': 'major',
+            'length': 10,
+            'labelfontfamily': 'serif',
+            'labelsize': self.fontsize_ticks,
+        }
+
+    @property
+    def minor_tick_kwargs(self):
+        return {
+            **self.major_tick_kwargs,
+            'which': 'minor',
+            'length': 2,
+        }
 
     def __del__(self):
         # This is so that the figure can be cleaned up
@@ -1004,6 +1047,7 @@ class ImageCanvas(FigureCanvas):
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_polar(self, iviewer):
+
         if self.mode != ViewType.polar:
             # Image mode was switched during generation. Ignore this.
             return
@@ -1034,10 +1078,21 @@ class ImageCanvas(FigureCanvas):
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
                 self.axis.axis('auto')
+
+                self.axis.yaxis.set_major_locator(AutoLocator())
+                self.axis.yaxis.set_minor_locator(AutoMinorLocator())
+
+                self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+                self.axis.xaxis.set_minor_locator(
+                    PolarXAxisMinorTickLocator(self)
+                )
+                self.axis.tick_params(**self.major_tick_kwargs)
+                self.axis.tick_params(**self.minor_tick_kwargs)
+
                 # Do not allow the axis to autoscale, which could happen if
                 # overlays are drawn out-of-bounds
                 self.axis.autoscale(False)
-                self.axis.set_ylabel(r'$\eta$ [deg]')
+                self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs)
                 self.axis.label_outer()
             else:
                 rescale_image = False
@@ -1053,11 +1108,11 @@ class ImageCanvas(FigureCanvas):
                 axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
                 data = (tth, self.compute_azimuthal_integral_sum())
                 unscaled = (tth, self.compute_azimuthal_integral_sum(False))
-                self.azimuthal_line_artist, = axis.plot(*data)
+                self.azimuthal_line_artist, = axis.plot(*data, '-k', lw=2.5)
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Average')
+                axis.set_ylabel(r'Azimuthal Average', **self.label_kwargs)
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
@@ -1067,15 +1122,51 @@ class ImageCanvas(FigureCanvas):
                 formatter = PolarXAxisFormatter(default_formatter, f)
                 axis.xaxis.set_major_formatter(formatter)
 
-                # Set our custom tick locators as well
-                self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+                axis.yaxis.set_major_locator(AutoLocator())
+                axis.yaxis.set_minor_locator(AutoMinorLocator())
+
                 axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+                self.axis.xaxis.set_minor_locator(
+                    PolarXAxisMinorTickLocator(self)
+                )
+
+                # change property of ticks
+                axis.tick_params(**self.major_tick_kwargs)
+                axis.tick_params(**self.minor_tick_kwargs)
+
+                # add grid lines parallel to x-axis in azimuthal average
+                kwargs = {
+                    'visible': True,
+                    'which': 'major',
+                    'axis': 'y',
+                    'linewidth': 0.25,
+                    'linestyle': '-',
+                    'color': 'k',
+                    'alpha': 0.75,
+                }
+                axis.grid(**kwargs)
+
+                kwargs = {
+                    'visible': True,
+                    'which': 'minor',
+                    'axis': 'y',
+                    'linewidth': 0.075,
+                    'linestyle': '--',
+                    'color': 'k',
+                    'alpha': 0.9,
+                }
+                axis.grid(**kwargs)
+
+                # add grid lines parallel to y-axis
+                kwargs['which'] = 'both'
+                kwargs['axis'] = 'x'
+                axis.grid(**kwargs)
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
 
             # Update the xlabel in case it was modified (via tth distortion)
-            axis.set_xlabel(self.polar_xlabel)
+            axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -1087,13 +1178,13 @@ class ImageCanvas(FigureCanvas):
                     'interpolation': 'none',
                 }
                 self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\eta$ [deg]')
+                self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs)
             else:
                 rescale_image = False
                 self.axes_images[0].set_data(img)
 
             # Update the xlabel in case it was modified (via tth distortion)
-            self.axis.set_xlabel(self.polar_xlabel)
+            self.axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
 
         if rescale_image:
             self.axis.relim()
@@ -1193,7 +1284,8 @@ class ImageCanvas(FigureCanvas):
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
-        self.azimuthal_integral_axis.set_xlabel(self.polar_xlabel)
+        self.azimuthal_integral_axis.set_xlabel(
+            self.polar_xlabel, **self.label_kwargs)
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
@@ -1701,7 +1793,12 @@ class ImageCanvas(FigureCanvas):
                         delta_eta_est = np.nanmedian(eta_diff)
                         tolerance = delta_eta_est * 10
                         big_gaps, = np.nonzero(eta_diff > tolerance)
-                        verts[i] = np.insert(vert, big_gaps + 1, np.nan, axis=0)
+                        verts[i] = np.insert(
+                            vert,
+                            big_gaps + 1,
+                            np.nan,
+                            axis=0,
+                        )
 
                 if self.mode == ViewType.stereo:
                     # Now convert from polar to stereo
@@ -1754,6 +1851,67 @@ class PolarXAxisTickLocator(AutoLocator):
         values = super().tick_values(vmin, vmax)
         # Convert back to tth
         return canvas.polar_x_type_to_tth(values)
+
+
+class PolarXAxisMinorTickLocator(AutoMinorLocator):
+    """Subclass the tick locator so we can modify its behavior
+
+    We will modify any value ranges provided so that the current x-axis type
+    provides nice looking ticks.
+
+    For instance, for Q, we want to space minor ticks non-linearly between
+    major ticks
+    """
+    def __init__(self, canvas, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._hexrdgui_canvas = canvas
+
+    def __call__(self):
+        canvas = self._hexrdgui_canvas
+        if self.axis.get_scale() == 'log':
+            logging.warning(
+                'PolarXAxisMinorTickLocator does not work on logarithmic '
+                'scales'
+            )
+            return []
+
+        majorlocs = np.unique(self.axis.get_majorticklocs())
+        if len(majorlocs) < 2:
+            # Need at least two major ticks to find minor tick locations.
+            return []
+
+        # Convert to our current x type
+        majorlocs = canvas.polar_tth_to_x_type(majorlocs)
+        majorstep = majorlocs[1] - majorlocs[0]
+
+        if self.ndivs is None:
+            self.ndivs = mpl.rcParams[
+                'ytick.minor.ndivs' if self.axis.axis_name == 'y'
+                else 'xtick.minor.ndivs']  # for x and z axis
+
+        if self.ndivs == 'auto':
+            majorstep_mantissa = 10 ** (np.log10(majorstep) % 1)
+            if np.isclose(majorstep_mantissa, [1, 2.5, 5, 10]).any():
+                ndivs = 5
+            else:
+                ndivs = 4
+        else:
+            ndivs = self.ndivs
+
+        minorstep = majorstep / ndivs
+
+        vmin, vmax = sorted(self.axis.get_view_interval())
+        # Convert to our current x type
+        vmin, vmax = canvas.polar_tth_to_x_type([vmin, vmax])
+        t0 = majorlocs[0]
+        tmin = round((vmin - t0) / minorstep)
+        tmax = round((vmax - t0) / minorstep) + 1
+        locs = (np.arange(tmin, tmax) * minorstep) + t0
+
+        # Convert back to tth
+        locs = canvas.polar_x_type_to_tth(locs)
+
+        return self.raise_if_exceeds(locs)
 
 
 class PolarXAxisFormatter(FuncFormatter):
