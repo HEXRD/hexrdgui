@@ -1,4 +1,6 @@
+import glob
 import os
+import re
 import numpy as np
 import yaml
 import tempfile
@@ -6,7 +8,9 @@ import h5py
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Qt
-from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox
+from PySide6.QtWidgets import (
+    QColorDialog, QFileDialog, QMessageBox, QTableWidgetItem
+)
 from PySide6.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
@@ -22,7 +26,7 @@ from hexrdgui import resource_loader
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.constants import (
-    UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
+    UI_DARK_INDEX_FILE, UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
 import hexrdgui.resources.calibration
 
 from hexrdgui.utils import instr_to_internal_dict, block_signals
@@ -94,7 +98,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.instruments.currentIndexChanged.connect(
             self.instrument_selected)
         self.ui.load.clicked.connect(self.load_images)
-        self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
+        self.ui_detectors.currentIndexChanged.connect(self.detector_selected)
         self.ui.add_transform.clicked.connect(self.add_transform)
         self.ui.accept_template.clicked.connect(self.crop_and_mask)
         self.ui.complete.clicked.connect(self.completed)
@@ -111,6 +115,30 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_settings.currentIndexChanged.connect(
             # This will update the instrument defaults to the config settings
             self.get_instrument_defaults)
+        self.ui.simple_load.clicked.connect(self.load_images)
+        self.ui.load_dark.clicked.connect(self.load_dark_images)
+        self.ui.accept_files.clicked.connect(self.load_imageseries)
+
+    @property
+    def ui_detectors(self):
+        if self.instrument == 'FIDDLE':
+            return self.ui.simple_detectors
+        else:
+            return self.ui.detectors
+
+    @property
+    def ui_load(self):
+        if self.instrument == 'FIDDLE':
+            return self.ui.simple_load
+        else:
+            return self.ui.load
+
+    @property
+    def ui_files_label(self):
+        if self.instrument == 'FIDDLE':
+            return self.ui.simple_files_label
+        else:
+            return self.ui.files_label
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -173,8 +201,8 @@ class LLNLImportToolDialog(QObject):
             self.detectors.append(det)
 
         det_list = list(self.detectors)
-        self.ui.detectors.clear()
-        self.ui.detectors.addItems(det_list)
+        self.ui_detectors.clear()
+        self.ui_detectors.addItems(det_list)
 
     def load_config(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -234,6 +262,7 @@ class LLNLImportToolDialog(QObject):
                                         'available for the TARDIS instrument')
 
         self.ui.adjustSize()
+        self.detector_selected(0)
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
@@ -309,13 +338,17 @@ class LLNLImportToolDialog(QObject):
         self.cmap.block_updates(True)
         try:
             self.ui.instrument.setDisabled(selected)
-            self.detector = self.ui.detectors.currentText()
-            self.add_template()
-            if self.instrument == 'TARDIS':
-                self.cancel_workflow.emit()
-                self.enable_widgets(self.ui.accept_template, enabled=False)
+            self.detector = self.ui_detectors.currentText()
+            if self.instrument == 'FIDDLE':
+                self.enable_widgets(self.ui_load, self.ui.load_dark,
+                                    enabled=True)
             else:
-                self.enable_widgets(self.ui.accept_template, enabled=True)
+                self.add_template()
+                if self.instrument == 'TARDIS':
+                    self.cancel_workflow.emit()
+                    self.enable_widgets(self.ui.accept_template, enabled=False)
+                else:
+                    self.enable_widgets(self.ui.accept_template, enabled=True)
         finally:
             self.cmap.block_updates(False)
 
@@ -331,8 +364,12 @@ class LLNLImportToolDialog(QObject):
         scale = 1 - ((w - val) / w)
         self.it.scale_template(sx=scale)
 
-    def _set_transform(self):
-        if self.instrument == 'PXRDIP':
+    def _update_panel_state(self):
+        if self.instrument == 'FIDDLE':
+            dark_sub = [UI_DARK_INDEX_FILE] * len(self.detectors)
+            HexrdConfig().load_panel_state['dark'] = dark_sub
+            return
+        elif self.instrument == 'PXRDIP':
             flip = LLNLTransform.PXRDIP
         elif self.instrument == 'TARDIS':
             if self.detector == 'IMAGE-PLATE-2':
@@ -343,12 +380,58 @@ class LLNLImportToolDialog(QObject):
                 flip = LLNLTransform.IP4
         HexrdConfig().load_panel_state['trans'] = [flip]
 
-    def load_images(self):
-        self._set_transform()
+    def load_imageseries(self):
+        image = self.loaded_images.pop()
+        # Create regex pattern to match data and dark images
+        # ex: TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
+        # -> TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
+        image = re.sub("CAMERA-\d{2}-", "CAMERA-*-", image)
+        data_files = re.sub("-\d{3}.h", "-999.h", image)
+        dark_files = re.sub("-\d{3}.h", "-003.h", image)
+        # Find all dark and data files and update table for review
+        data_matches = sorted(glob.glob(data_files))
+        self.loaded_images.extend(data_matches)
+        dark_matches = sorted(glob.glob(dark_files))
+        HexrdConfig().load_panel_state['dark_files'] = dark_matches
+        self.completed_detectors.append(self.detector)
+        if len(data_matches) == len(dark_matches):
+            self.completed_detectors = self.detectors
+            for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
+                self.ui.files_table.setItem(i, 0, QTableWidgetItem(Path(data).name))
+                self.ui.files_table.setItem(i, 1, QTableWidgetItem(Path(dark).name))
+            # ImageLoadManager().read_data([data_matches], ui_parent=self.ui.parent())
+        self.ui.completed_dets.setText(', '.join(set(self.completed_detectors)))
+        done = all([det in self.completed_detectors for det in self.detectors])
+        self.enable_widgets(self.ui.complete, enabled=done)
 
-        caption = 'Select file(s)'
+    def load_dark_images(self):
+        caption = 'Select dark file'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, caption, dir=HexrdConfig().images_dir)
+
+        if selected_file:
+            files, manual = ImageLoadManager().load_images([selected_file])
+
+            # If it is a hdf5 file allow the user to select the path
+            ext = os.path.splitext(selected_file)[1]
+            if (ImageFileManager().is_hdf(ext) and not
+                    ImageFileManager().hdf_path_exists(selected_file)):
+                path_selected = ImageFileManager().path_prompt(selected_file)
+                if not path_selected:
+                    return
+
+            file_names = [os.path.split(f[0])[1] for f in files]
+            self.ui.dark_files_label.setText(', '.join(file_names))
+            self.enable_widgets(self.ui.accept_files, enabled=True)
+
+    def load_images(self, checked, selected_file=None):
+        self._update_panel_state()
+
+        if selected_file is None:
+            caption = 'Select file'
+            selected_file, selected_filter = QFileDialog.getOpenFileName(
+                self.ui, caption, dir=HexrdConfig().images_dir)
+
         if selected_file:
             self.loaded_images.append(selected_file)
             HexrdConfig().set_images_dir(selected_file)
@@ -378,18 +461,21 @@ class LLNLImportToolDialog(QObject):
             # the QProgressDialog.
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
-            self.it = InteractiveTemplate(
-                self.canvas, self.detector, instrument=self.instrument)
-            # We should be able to immediately interact with the template
-            self.it.static_mode = False
 
             file_names = [os.path.split(f[0])[1] for f in files]
-            self.ui.files_label.setText(', '.join(file_names))
-            self.enable_widgets(self.ui.transform_img, self.ui.finalize,
-                                self.ui.detectors, self.ui.detector_label,
-                                self.ui.accept_template, enabled=True)
-            self.enable_widgets(self.ui.data, enabled=False)
-            self.add_template()
+            self.ui_files_label.setText(', '.join(file_names))
+            if self.instrument == 'FIDDLE':
+                self.enable_widgets(self.ui.accept_files, enabled=True)
+            else:
+                self.it = InteractiveTemplate(
+                    self.canvas, self.detector, instrument=self.instrument)
+                # We should be able to immediately interact with the template
+                self.it.static_mode = False
+                self.enable_widgets(self.ui.transform_img, self.ui.finalize,
+                                    self.ui_detectors, self.ui.detector_label,
+                                    self.ui.accept_template, enabled=True)
+                self.enable_widgets(self.ui.data, enabled=False)
+                self.add_template()
 
     def add_transform(self):
         # Prevent color map reset on transform
@@ -558,7 +644,7 @@ class LLNLImportToolDialog(QObject):
                             self.ui.template_instructions, enabled=False)
 
     def check_for_unsaved_changes(self):
-        if self.it.shape is None and self.detector in self.completed_detectors:
+        if self.it is None or self.it.shape is None and self.detector in self.completed_detectors:
             return
         msg = ('The currently selected detector has changes that have not been'
                + ' accepted. Keep changes?')
@@ -570,8 +656,8 @@ class LLNLImportToolDialog(QObject):
     def reset_panel(self):
         HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
-        self.ui.detectors.setCurrentIndex(0)
-        self.ui.files_label.setText('')
+        self.ui_detectors.setCurrentIndex(0)
+        self.ui_files_label.setText('')
         self.ui.completed_dets.setText('')
         self.edited_images.clear()
         self.enable_widgets(self.ui.raw_image, self.ui.config,
@@ -591,6 +677,7 @@ class LLNLImportToolDialog(QObject):
         self.config_file = None
         self.import_in_progress = False
         self.loaded_images.clear()
+        self.ui.files_list.clear()
 
     def completed(self):
         self.import_in_progress = False
@@ -609,12 +696,14 @@ class LLNLImportToolDialog(QObject):
             panel = instr.detectors[det]
             # first need the zxz Euler angles from the panel rotation matrix.
             *zx, z = angles_from_rmat_zxz(panel.rmat)
+            tilts = [*zx, z]
+            if self.instrument != 'FIDDLE':
+                # !!! JVB verified that the rotation is stored with + as clockwise;
+                #     hence, the modification of z stays as '+'. Our convention has
+                #     '+' as counter-clockwise, but the detector rotation is the
+                #     inverse of the image rotation...  so '+' is already inverted.
+                tilts = [*zx, (z + float(self.edited_images[det]['tilt']))]
             # convert updated zxz angles to rmat
-            # !!! JVB verified that the rotation is stored with + as clockwise;
-            #     hence, the modification of z stays as '+'. Our convention has
-            #     '+' as counter-clockwise, but the detector rotation is the
-            #     inverse of the image rotation...  so '+' is already inverted.
-            tilts = [*zx, (z + float(self.edited_images[det]['tilt']))]
             rmat_updated = make_rmat_euler(tilts, 'zxz', extrinsic=False)
             # convert to angle-axis parameters
             rang, raxs = angleAxisOfRotMat(rmat_updated)
@@ -634,7 +723,9 @@ class LLNLImportToolDialog(QObject):
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
         det_names = HexrdConfig().detector_names
-        files = [[self.edited_images[det]['img']] for det in det_names]
+        files = [[li] for li in self.loaded_images]
+        if self.instrument != 'FIDDLE':
+            files = [[self.edited_images[det]['img']] for det in det_names]
         # The ImageLoadManager parent needs to be set to the main window
         # because when set to the ui (QDockWidget) the dock widget is
         # closed after accepting the image selection. We're not positive
@@ -642,11 +733,12 @@ class LLNLImportToolDialog(QObject):
         # the QProgressDialog.
         ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
 
-        buffer_default = {'status': 0}
-        for det in det_names:
-            det_config = HexrdConfig().config['instrument']['detectors'][det]
-            buffer = det_config.setdefault('buffer', buffer_default)
-            buffer['value'] = self.edited_images[det]['panel_buffer']
+        if self.instrument != 'FIDDLE':
+            buffer_default = {'status': 0}
+            for det in det_names:
+                det_config = HexrdConfig().config['instrument']['detectors'][det]
+                buffer = det_config.setdefault('buffer', buffer_default)
+                buffer['value'] = self.edited_images[det]['panel_buffer']
 
         HexrdConfig().recent_images = self.loaded_images
 
@@ -662,7 +754,7 @@ class LLNLImportToolDialog(QObject):
     def close_widget(self):
         block_list = [
             self.ui.instruments,
-            self.ui.detectors
+            self.ui_detectors
         ]
         with block_signals(*block_list):
             self.ui.instruments.setCurrentIndex(0)
