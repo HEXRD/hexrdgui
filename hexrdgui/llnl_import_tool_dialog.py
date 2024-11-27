@@ -115,7 +115,6 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults)
         self.ui.simple_load.clicked.connect(self.load_images)
         self.ui.load_dark.clicked.connect(self.load_dark_images)
-        self.ui.accept_files.clicked.connect(self.load_imageseries)
 
     @property
     def ui_detectors(self):
@@ -420,7 +419,7 @@ class LLNLImportToolDialog(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.dark_files_label.setText(', '.join(file_names))
-            self.enable_widgets(self.ui.accept_files, enabled=True)
+            self.load_imageseries()
 
     def load_images(self, checked, selected_file=None):
         self._update_panel_state()
@@ -463,7 +462,7 @@ class LLNLImportToolDialog(QObject):
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui_files_label.setText(', '.join(file_names))
             if self.instrument == 'FIDDLE':
-                self.enable_widgets(self.ui.accept_files, enabled=True)
+                self.load_imageseries()
             else:
                 self.it = InteractiveTemplate(
                     self.canvas, self.detector, instrument=self.instrument)
