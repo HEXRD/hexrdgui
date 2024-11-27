@@ -254,12 +254,12 @@
         </widget>
        </item>
        <item row="3" column="4">
-        <widget class="QPushButton" name="accept_files">
+        <widget class="QPushButton" name="save_detector">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Accept</string>
+          <string>Save Detector</string>
          </property>
         </widget>
        </item>

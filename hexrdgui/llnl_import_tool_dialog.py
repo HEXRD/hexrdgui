@@ -96,7 +96,8 @@ class LLNLImportToolDialog(QObject):
         self.ui.instruments.currentIndexChanged.connect(
             self.instrument_selected)
         self.ui.load.clicked.connect(self.load_images)
-        self.ui_detectors.currentIndexChanged.connect(self.detector_selected)
+        self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
+        self.ui.simple_detectors.currentIndexChanged.connect(self.detector_selected)
         self.ui.add_transform.clicked.connect(self.add_transform)
         self.ui.accept_template.clicked.connect(self.crop_and_mask)
         self.ui.complete.clicked.connect(self.completed)
@@ -115,6 +116,7 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults)
         self.ui.simple_load.clicked.connect(self.load_images)
         self.ui.load_dark.clicked.connect(self.load_dark_images)
+        self.ui.save_detector.clicked.connect(self.save_detector_imageseries)
 
     @property
     def ui_detectors(self):
@@ -337,6 +339,8 @@ class LLNLImportToolDialog(QObject):
             self.ui.instrument.setDisabled(selected)
             self.detector = self.ui_detectors.currentText()
             if self.instrument == 'FIDDLE':
+                self.ui_files_label.setText('')
+                self.ui.dark_files_label.setText('')
                 self.enable_widgets(self.ui_load, self.ui.load_dark,
                                     enabled=True)
             else:
@@ -377,12 +381,23 @@ class LLNLImportToolDialog(QObject):
                 flip = LLNLTransform.IP4
         HexrdConfig().load_panel_state['trans'] = [flip]
 
+    def save_detector_imageseries(self):
+        self.completed_detectors.append(self.detector)
+        HexrdConfig().load_panel_state.setdefault('dark_files', [])
+        dark_file = self.ui.dark_files_label.text().rsplit(',', 1)[-1]
+        HexrdConfig().load_panel_state['dark_files'].append([dark_file] * FIDDLE_FRAMES)
+        self.ui.files_list.addItem(self.loaded_images[-1])
+        self.ui.files_list.addItem(dark_file)
+        self.ui.completed_dets.setText(', '.join(set(self.completed_detectors)))
+        done = all([det in self.completed_detectors for det in self.detectors])
+        self.enable_widgets(self.ui.complete, enabled=done)
+
     def load_imageseries(self):
-        image = self.loaded_images.pop()
+        selected = self.loaded_images.pop()
         # Create regex pattern to match data and dark images
         # ex: TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
         # -> TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
-        image = re.sub("CAMERA-\d{2}-", "CAMERA-*-", image)
+        image = re.sub("CAMERA-\d{2}-", "CAMERA-*-", selected)
         data_files = re.sub("-\d{3}.h", "-999.h", image)
         dark_files = re.sub("-\d{3}.h", "-003.h", image)
         # Find all dark and data files and update table for review
@@ -391,13 +406,16 @@ class LLNLImportToolDialog(QObject):
         dark_matches = sorted(glob.glob(dark_files))
         dark_matches = [[dm] * FIDDLE_FRAMES for dm in dark_matches]
         HexrdConfig().load_panel_state['dark_files'] = dark_matches
-        self.completed_detectors.append(self.detector)
-        if len(data_matches) == len(dark_matches):
+        if len(data_matches) == len(dark_matches) == len(self.detectors):
+            self.loaded_images = data_matches
+            self.set_widget_visibility(self.ui.files_list_frame, visible=True)
             self.completed_detectors = self.detectors
             for data, dark in zip(data_matches, dark_matches):
                 self.ui.files_list.addItem(Path(data[0]).name)
                 self.ui.files_list.addItem(Path(dark[0]).name)
-            # ImageLoadManager().read_data([data_matches], ui_parent=self.ui.parent())
+        else:
+            self.loaded_images.append(selected)
+            self.enable_widgets(self.ui.save_detector, enabled=True)
         self.ui.completed_dets.setText(', '.join(set(self.completed_detectors)))
         done = all([det in self.completed_detectors for det in self.detectors])
         self.enable_widgets(self.ui.complete, enabled=done)
@@ -424,7 +442,8 @@ class LLNLImportToolDialog(QObject):
             if self.instrument == 'FIDDLE':
                 files = files * FIDDLE_FRAMES
 
-            self.load_imageseries()
+            if not self.ui.save_detector.isEnabled():
+                self.load_imageseries()
 
     def load_images(self, checked, selected_file=None):
         self._update_panel_state()
@@ -471,7 +490,8 @@ class LLNLImportToolDialog(QObject):
             self.cmap.block_updates(False)
 
             if self.instrument == 'FIDDLE':
-                self.load_imageseries()
+                if not self.ui.save_detector.isEnabled():
+                    self.load_imageseries()
             else:
                 self.it = InteractiveTemplate(
                     self.canvas, self.detector, instrument=self.instrument)
@@ -670,7 +690,8 @@ class LLNLImportToolDialog(QObject):
                             self.ui.transform_img, self.ui.outline_appearance,
                             self.ui.finalize, self.ui.load_config,
                             self.ui.config_file_label,
-                            self.ui.template_instructions, enabled=False)
+                            self.ui.template_instructions, self.ui.save_detector,
+                            enabled=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
         not_default = self.ui.config_selection.currentIndex() != 0
         self.ui.load_config.setEnabled(not_default)
