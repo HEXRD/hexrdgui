@@ -131,3 +131,5 @@ TRANSFORM_OPTIONS = [
     "Rotate 180°",
     "Rotate 270°"
 ]
+
+FIDDLE_FRAMES = 4

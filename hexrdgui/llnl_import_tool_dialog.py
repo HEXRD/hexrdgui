@@ -24,7 +24,7 @@ from hexrdgui import resource_loader
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.constants import (
-    UI_DARK_INDEX_FILE, UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
+    FIDDLE_FRAMES, UI_DARK_INDEX_FILE, UI_TRANS_INDEX_ROTATE_90, YAML_EXTS, LLNLTransform, ViewType)
 import hexrdgui.resources.calibration
 
 from hexrdgui.utils import instr_to_internal_dict, block_signals
@@ -387,13 +387,14 @@ class LLNLImportToolDialog(QObject):
         dark_files = re.sub("-\d{3}.h", "-003.h", image)
         # Find all dark and data files and update table for review
         data_matches = sorted(glob.glob(data_files))
-        self.loaded_images.extend(data_matches)
+        data_matches = [[dm] * FIDDLE_FRAMES for dm in data_matches]
         dark_matches = sorted(glob.glob(dark_files))
+        dark_matches = [[dm] * FIDDLE_FRAMES for dm in dark_matches]
         HexrdConfig().load_panel_state['dark_files'] = dark_matches
         self.completed_detectors.append(self.detector)
         if len(data_matches) == len(dark_matches):
             self.completed_detectors = self.detectors
-            for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
+            for data, dark in zip(data_matches, dark_matches):
                 self.ui.files_list.addItem(Path(data[0]).name)
                 self.ui.files_list.addItem(Path(dark[0]).name)
             # ImageLoadManager().read_data([data_matches], ui_parent=self.ui.parent())
@@ -419,6 +420,10 @@ class LLNLImportToolDialog(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.dark_files_label.setText(', '.join(file_names))
+
+            if self.instrument == 'FIDDLE':
+                files = files * FIDDLE_FRAMES
+
             self.load_imageseries()
 
     def load_images(self, checked, selected_file=None):
@@ -443,6 +448,12 @@ class LLNLImportToolDialog(QObject):
                 if not path_selected:
                     return
 
+            file_names = [os.path.split(f[0])[1] for f in files]
+            self.ui_files_label.setText(', '.join(file_names))
+
+            if self.instrument == 'FIDDLE':
+                files = files * FIDDLE_FRAMES
+
             for raw_axes in self.canvas.raw_axes.values():
                 if not raw_axes.get_autoscale_on():
                     raw_axes.set_autoscale_on(True)
@@ -459,8 +470,6 @@ class LLNLImportToolDialog(QObject):
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
 
-            file_names = [os.path.split(f[0])[1] for f in files]
-            self.ui_files_label.setText(', '.join(file_names))
             if self.instrument == 'FIDDLE':
                 self.load_imageseries()
             else:
@@ -720,7 +729,8 @@ class LLNLImportToolDialog(QObject):
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
         det_names = HexrdConfig().detector_names
-        files = [[li] for li in self.loaded_images]
+        multiplier = FIDDLE_FRAMES if self.instrument == 'FIDDLE' else 1
+        files = [[li] * multiplier for li in self.loaded_images]
         if self.instrument != 'FIDDLE':
             files = [[self.edited_images[det]['img']] for det in det_names]
         # The ImageLoadManager parent needs to be set to the main window
