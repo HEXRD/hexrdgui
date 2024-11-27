@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>565</width>
-    <height>863</height>
+    <height>904</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -177,6 +177,13 @@
        <string>Raw Image</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_6">
+       <item row="0" column="2" colspan="3">
+        <widget class="QComboBox" name="simple_detectors">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="0">
         <widget class="QPushButton" name="simple_load">
          <property name="enabled">
@@ -184,6 +191,32 @@
          </property>
          <property name="text">
           <string>Select Image</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="4">
+        <widget class="QLabel" name="dark_files_label">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="scaledContents">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="simple_detector_label">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Current Detector</string>
          </property>
         </widget>
        </item>
@@ -197,10 +230,19 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="2" colspan="3">
-        <widget class="QComboBox" name="simple_detectors">
-         <property name="enabled">
-          <bool>true</bool>
+       <item row="1" column="1" colspan="4">
+        <widget class="QLabel" name="simple_files_label">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="scaledContents">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -217,42 +259,6 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="1" colspan="4">
-        <widget class="QLabel" name="simple_files_label">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1" colspan="4">
-        <widget class="QLabel" name="dark_files_label">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="2">
-        <widget class="QLabel" name="simple_detector_label">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Current Detector</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="4">
         <widget class="QPushButton" name="save_detector">
          <property name="enabled">
@@ -264,34 +270,53 @@
         </widget>
        </item>
        <item row="4" column="0" colspan="5">
-        <widget class="QListWidget" name="files_list">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
+        <widget class="QFrame" name="files_list_frame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
          </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>50</height>
-          </size>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
          </property>
-         <property name="sizeAdjustPolicy">
-          <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
-         </property>
-         <property name="autoScroll">
-          <bool>true</bool>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::NoEditTriggers</set>
-         </property>
-         <property name="showDropIndicator" stdset="0">
-          <bool>false</bool>
-         </property>
-         <property name="dragDropOverwriteMode">
-          <bool>false</bool>
-         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QLabel" name="files_list_label">
+            <property name="text">
+             <string>Automatically Matched Files</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="files_list">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+            </property>
+            <property name="autoScroll">
+             <bool>true</bool>
+            </property>
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="showDropIndicator" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="dragDropOverwriteMode">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

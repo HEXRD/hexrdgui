@@ -83,6 +83,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.template_instructions,
             self.ui.outline_appearance,
             self.ui.simple_raw_image,
+            self.ui.files_list_frame,
         visible=False)
         self.ui.setMinimumHeight(315)
         self.ui.adjustSize()
@@ -147,6 +148,7 @@ class LLNLImportToolDialog(QObject):
         for w in widgets:
             w.setVisible(visible)
             w.setEnabled(visible)
+        self.ui.adjustSize()
 
     def set_default_color(self):
         self.outline_color = '#00ffff'
@@ -259,8 +261,6 @@ class LLNLImportToolDialog(QObject):
             if self.instrument == 'TARDIS':
                 self.ui.bbox.setToolTip('The bounding box editors are not ' +
                                         'available for the TARDIS instrument')
-
-        self.ui.adjustSize()
         self.detector_selected(0)
 
     def set_convention(self):
@@ -386,8 +386,6 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().load_panel_state.setdefault('dark_files', [])
         dark_file = self.ui.dark_files_label.text().rsplit(',', 1)[-1]
         HexrdConfig().load_panel_state['dark_files'].append([dark_file] * FIDDLE_FRAMES)
-        self.ui.files_list.addItem(self.loaded_images[-1])
-        self.ui.files_list.addItem(dark_file)
         self.ui.completed_dets.setText(', '.join(set(self.completed_detectors)))
         done = all([det in self.completed_detectors for det in self.detectors])
         self.enable_widgets(self.ui.complete, enabled=done)
@@ -692,6 +690,7 @@ class LLNLImportToolDialog(QObject):
                             self.ui.config_file_label,
                             self.ui.template_instructions, self.ui.save_detector,
                             enabled=False)
+        self.set_widget_visibility(self.ui.files_list_frame, visible=False)
         self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
         not_default = self.ui.config_selection.currentIndex() != 0
         self.ui.load_config.setEnabled(not_default)
