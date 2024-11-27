@@ -8,9 +8,7 @@ import h5py
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Qt
-from PySide6.QtWidgets import (
-    QColorDialog, QFileDialog, QMessageBox, QTableWidgetItem
-)
+from PySide6.QtWidgets import  QColorDialog, QFileDialog, QMessageBox
 from PySide6.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
@@ -397,8 +395,8 @@ class LLNLImportToolDialog(QObject):
         if len(data_matches) == len(dark_matches):
             self.completed_detectors = self.detectors
             for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
-                self.ui.files_table.setItem(i, 0, QTableWidgetItem(Path(data).name))
-                self.ui.files_table.setItem(i, 1, QTableWidgetItem(Path(dark).name))
+                self.ui.files_list.addItem(Path(data[0]).name)
+                self.ui.files_list.addItem(Path(dark[0]).name)
             # ImageLoadManager().read_data([data_matches], ui_parent=self.ui.parent())
         self.ui.completed_dets.setText(', '.join(set(self.completed_detectors)))
         done = all([det in self.completed_detectors for det in self.detectors])

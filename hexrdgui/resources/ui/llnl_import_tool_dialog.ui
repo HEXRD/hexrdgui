@@ -264,7 +264,7 @@
         </widget>
        </item>
        <item row="4" column="0" colspan="5">
-        <widget class="QTableWidget" name="files_table">
+        <widget class="QListWidget" name="files_list">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -292,31 +292,6 @@
          <property name="dragDropOverwriteMode">
           <bool>false</bool>
          </property>
-         <property name="sortingEnabled">
-          <bool>true</bool>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-         <attribute name="horizontalHeaderDefaultSectionSize">
-          <number>250</number>
-         </attribute>
-         <attribute name="horizontalHeaderStretchLastSection">
-          <bool>true</bool>
-         </attribute>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string>Data</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Dark</string>
-          </property>
-         </column>
         </widget>
        </item>
       </layout>
