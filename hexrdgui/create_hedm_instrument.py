@@ -3,7 +3,7 @@ from hexrd.instrument import HEDMInstrument
 
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
-
+from numpy import sign
 
 def create_hedm_instrument():
     # Ensure that the panel buffer sizes match the pixel sizes.
@@ -41,13 +41,13 @@ def create_hedm_instrument():
 
     return HEDMInstrument(**kwargs)
 
-
 def create_view_hedm_instrument():
     # Some views use a modified version of the HEDM instrument.
     # This ensures the correct instrument for the view is used.
     instr = create_hedm_instrument()
+    sgn = -sign(instr.beam_vector[2])
     if HexrdConfig().image_mode == ViewType.stereo:
         # Set the beam vector for the VISAR view
-        instr.beam_vector = ct.beam_vec
+        instr.beam_vector = ct.beam_vec * sgn
 
     return instr

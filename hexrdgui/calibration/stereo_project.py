@@ -46,7 +46,8 @@ def stereo_project(instr, raw, stereo_size):
     # copy instruments and set viewing direction
     # to be centered at the VISAR
     instr_cp = copy.deepcopy(instr)
-    instr_cp.beam_vector = constants.beam_vec
+    sgn = -np.sign(instr_cp.beam_vector[2])
+    instr_cp.beam_vector = constants.beam_vec * sgn
 
     rad = (stereo_size - 1) / 2
     x = np.linspace(0, stereo_size - 1, stereo_size)
