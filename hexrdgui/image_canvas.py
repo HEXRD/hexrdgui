@@ -1243,8 +1243,6 @@ class ImageCanvas(FigureCanvas):
                 'norm': self.norm,
                 'picker': True,
                 'interpolation': 'none',
-                # We want to flip the whole stereo image along the x-axis
-                'origin': 'lower',
             }
             self.axes_images.append(self.axis.imshow(**kwargs))
         else:
