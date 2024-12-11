@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>448</width>
-    <height>673</height>
+    <height>781</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -23,7 +23,17 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item row="3" column="0" colspan="2">
+   <item row="9" column="0" colspan="2">
+    <widget class="QPushButton" name="push_reset_config">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset the instrument configuration to the state when the most recent instrument file was loaded, or when the program started.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Reset Configuration</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
     <widget class="QGroupBox" name="translation_group">
      <property name="title">
       <string>Translation</string>
@@ -184,7 +194,10 @@
      </layout>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item row="1" column="1">
+    <widget class="QComboBox" name="detector"/>
+   </item>
+   <item row="8" column="0" colspan="2">
     <widget class="QGroupBox" name="beam_group">
      <property name="title">
       <string>Beam</string>
@@ -355,6 +368,44 @@
     </widget>
    </item>
    <item row="4" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="locked_center_of_rotation_label">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation when tilts are applied.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Center&amp;quot; means the center of the whole instrument if &amp;quot;Instrument Rigid Body&amp;quot; is selected, and it means the center of the selected detector's group if &amp;quot;Group Rigid Body&amp;quot; is selected.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; means [0, 0, 0] (the lab origin).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Center of Rotation:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="locked_center_of_rotation">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation when tilts are applied.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Center&amp;quot; means the center of the whole instrument if &amp;quot;Instrument Rigid Body&amp;quot; is selected, and it means the center of the selected detector's group if &amp;quot;Group Rigid Body&amp;quot; is selected.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; means [0, 0, 0] (the lab origin).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Mean Center</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Origin</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Detector:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="2">
     <widget class="QGroupBox" name="tilt_group">
      <property name="title">
       <string>Tilt</string>
@@ -524,27 +575,7 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Detector:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QPushButton" name="push_reset_config">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset the instrument configuration to the state when the most recent instrument file was loaded, or when the program started.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Reset Configuration</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="detector"/>
-   </item>
-   <item row="7" column="0" colspan="2">
+   <item row="10" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -558,13 +589,30 @@
     </spacer>
    </item>
    <item row="2" column="0" colspan="2">
-    <widget class="QCheckBox" name="roi_lock_group_transforms">
+    <widget class="QCheckBox" name="lock_relative_transforms">
      <property name="toolTip">
-      <string>If checked, when a detector is transformed (translation or tilt), all other detectors in the same group will be transformed in a similar way. For translation, all detectors will be translated by the same amount, and in the same direction. For tilt, all detectors in the same group will be rotated about the mean of the detector centers.</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lock relative transformations between the detectors.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If checked, several additional options will appear that define how the detector transformations will be locked. For example, all detectors in the same instrument or group may be transformed via rigid body constraints. And, the center of rotation when tilts are applied may be specified as well.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Lock ROI Group Transformations</string>
+      <string>Lock relative transformations</string>
      </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QComboBox" name="lock_relative_transforms_setting">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Instrument Rigid Body&amp;quot; means to transform all detectors in the entire instrument in the same way.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Group Rigid Body&amp;quot; means to transform all detectors in the selected detector's group in the same way. This setting requires all detectors to have their &amp;quot;group&amp;quot; specified in the instrument config.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Instrument Rigid Body</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Group Rigid Body</string>
+      </property>
+     </item>
     </widget>
    </item>
   </layout>
@@ -578,7 +626,9 @@
  </customwidgets>
  <tabstops>
   <tabstop>detector</tabstop>
-  <tabstop>roi_lock_group_transforms</tabstop>
+  <tabstop>lock_relative_transforms</tabstop>
+  <tabstop>lock_relative_transforms_setting</tabstop>
+  <tabstop>locked_center_of_rotation</tabstop>
   <tabstop>sb_translation_range</tabstop>
   <tabstop>slider_translation_0</tabstop>
   <tabstop>sb_translation_0</tabstop>
