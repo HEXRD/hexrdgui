@@ -121,6 +121,8 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.accepted.emit()
 
     def on_rejected(self):
+        self.restore_cached_overlay_properties()
+        self.refinements_editor.ui.hide()
         self.rejected.emit()
 
     def validate(self):
@@ -301,6 +303,10 @@ class HEDMCalibrationOptionsDialog(QObject):
         # Trigger an update to the config
         self.refinements_editor.update_config()
 
+        # Restore all cached overlay properties
+        self.restore_cached_overlay_properties()
+        self.update_refinements_editor()
+
     @property
     def selected_material(self) -> str:
         return self.ui.material.currentText()
@@ -451,12 +457,20 @@ class HEDMCalibrationOptionsDialog(QObject):
             HexrdConfig().update_overlay_editor.emit()
             HexrdConfig().update_instrument_toolbox.emit()
 
+        # Before anything else, restore cached properties (in case
+        # they were unchecked).
+        self.restore_cached_overlay_properties()
+
         # First, apply strain settings
         for overlay in self.active_overlays:
             refinements = overlay.refinements
             crystal_params = overlay.crystal_params
             if self.fix_strain:
-                crystal_params[6:] = cnst.identity_6x1
+                if not np.allclose(crystal_params[6:], cnst.identity_6x1):
+                    # Store the strain in case we want to use it again
+                    overlay._cached_strain = crystal_params[6:].copy()
+                    crystal_params[6:] = cnst.identity_6x1
+
                 for i in range(6, len(refinements)):
                     refinements[i] = False
             elif not self.custom_refinements:
@@ -482,11 +496,18 @@ class HEDMCalibrationOptionsDialog(QObject):
             if idx == 0:
                 # First grain may be affected by refinement choices
                 if self.fix_grain_centroid:
-                    crystal_params[3:6] = cnst.zeros_3
+                    if not np.allclose(crystal_params[3:6], cnst.zeros_3):
+                        overlay._cached_pos = crystal_params[3:6].copy()
+                        crystal_params[3:6] = cnst.zeros_3
+
                     for i in range(3, 6):
                         refinements[i] = False
                 elif self.fix_grain_y:
-                    crystal_params[4] = 0
+                    if not np.isclose(crystal_params[4], 0):
+                        # Store the grain y in case we want to use it again
+                        overlay._cached_pos_y = crystal_params[4]
+                        crystal_params[4] = 0
+
                     refinements[4] = False
 
         def recursive_set_refinable(cur, b):
@@ -518,6 +539,39 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         # Now trigger updates everywhere
         perform_updates()
+
+    def restore_cached_overlay_properties(self):
+        for overlay in self.active_overlays:
+            crystal_params = overlay.crystal_params
+            reset_cached_strain = (
+                not self.fix_strain and
+                np.allclose(crystal_params[6:], cnst.identity_6x1) and
+                hasattr(overlay, '_cached_strain')
+            )
+            if reset_cached_strain:
+                # It must have been unchecked. Restore the previous strain.
+                crystal_params[6:] = overlay._cached_strain
+                del overlay._cached_strain
+
+            reset_cached_pos_y = (
+                not self.fix_grain_y and
+                np.isclose(crystal_params[4], 0) and
+                hasattr(overlay, '_cached_pos_y')
+            )
+            if reset_cached_pos_y:
+                # The setting must have been changed. Restore the previous.
+                crystal_params[4] = overlay._cached_pos_y
+                del overlay._cached_pos_y
+
+            reset_cached_pos = (
+                not self.fix_grain_centroid and
+                np.allclose(crystal_params[3:6], cnst.zeros_3) and
+                hasattr(overlay, '_cached_pos')
+            )
+            if reset_cached_pos:
+                # The setting must have been changed. Restore the previous.
+                crystal_params[3:6] = overlay._cached_pos
+                del overlay._cached_pos
 
     def view_refinements(self):
         self.update_refinements_editor()
