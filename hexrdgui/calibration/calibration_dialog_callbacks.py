@@ -44,6 +44,9 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.draw_picks()
         self.setup_connections()
 
+        # Trigger the instrument defaults to be set on the dialog
+        self.dialog.set_instrument_defaults()
+
     def setup_connections(self):
         dialog = self.dialog
 
@@ -56,6 +59,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         dialog.load_picks_clicked.connect(self.on_load_picks_clicked)
         dialog.relative_constraints_changed.connect(
             self.on_relative_constraints_changed)
+        dialog.tilt_center_of_rotation_changed.connect(
+            self.on_tilt_center_of_rotation_changed)
         dialog.engineering_constraints_changed.connect(
             self.on_engineering_constraints_changed)
         dialog.run.connect(self.on_run_clicked)
@@ -163,7 +168,19 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def on_relative_constraints_changed(self, new_constraint):
         self.calibrator.relative_constraints_type = new_constraint
+        # Reset the tilt center of rotation in the dialog
+        self.dialog.tilt_center_of_rotation = (
+            self.calibrator.relative_constraints.rotation_center
+        )
         self.on_constraints_changed()
+
+    def on_tilt_center_of_rotation_changed(self, new_center):
+        relative_constraints = self.calibrator.relative_constraints
+        if relative_constraints.rotation_center != new_center:
+            # Some of the relative constraint types have a fixed getter
+            # for this, and no setter. We should avoid causing an exception
+            # if we are just setting it unnecessarily.
+            relative_constraints.rotation_center = new_center
 
     def on_engineering_constraints_changed(self, new_constraint):
         self.calibrator.engineering_constraints = new_constraint
