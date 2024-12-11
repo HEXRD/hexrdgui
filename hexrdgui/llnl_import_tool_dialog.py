@@ -5,7 +5,7 @@ import tempfile
 import h5py
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtCore import QObject, Signal, Qt, QTimer
 from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox
 from PySide6.QtGui import QColor
 
@@ -70,7 +70,19 @@ class LLNLImportToolDialog(QObject):
             self.ui.finalize,
             self.ui.outline_appearance,
             self.ui.template_instructions,
+            self.ui.simple_raw_image,
         enabled=False)
+
+        # We have different needs for different instruments. Hide optional
+        # widgets until the instrument is selected.
+        self.set_widget_visibility(
+            self.ui.raw_image,
+            self.ui.template_instructions,
+            self.ui.outline_appearance,
+            self.ui.simple_raw_image,
+            self.ui.instr_settings_label,
+            self.ui.instr_settings,
+        visible=False)
 
         self.update_config_settings()
 
@@ -98,10 +110,19 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_settings.currentIndexChanged.connect(
             # This will update the instrument defaults to the config settings
             self.get_instrument_defaults)
+        self.ui.instr_settings.currentIndexChanged.connect(
+            self.instrument_settings_changed)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
             w.setEnabled(enabled)
+
+    def set_widget_visibility(self, *widgets, visible):
+        for w in widgets:
+            w.setVisible(visible)
+            w.setEnabled(visible)
+        self.ui.setMinimumHeight(315)
+        QTimer.singleShot(0, lambda: self.ui.adjustSize())
 
     def set_default_color(self):
         self.outline_color = '#00ffff'
@@ -168,8 +189,16 @@ class LLNLImportToolDialog(QObject):
         if self.ui.instrument.isEnabled():
             self.get_instrument_defaults()
 
+    def instrument_settings_changed(self, index):
+        has_ip = index == 0
+        self.set_widget_visibility(
+            self.ui.raw_image,
+            self.ui.template_instructions,
+            self.ui.outline_appearance,
+        visible=has_ip)
+
     def instrument_selected(self, idx):
-        instruments = {1: 'TARDIS', 2: 'PXRDIP'}
+        instruments = {1: 'TARDIS', 2: 'PXRDIP', 3: 'FIDDLE'}
         self.instrument = instruments.get(idx, None)
 
         if HexrdConfig().show_beam_marker:
@@ -183,18 +212,41 @@ class LLNLImportToolDialog(QObject):
         if self.instrument is None:
             HexrdConfig().enable_canvas_toolbar.emit(True)
             self.update_config_settings()
+            self.set_widget_visibility(
+                self.ui.raw_image,
+                self.ui.template_instructions,
+                self.ui.outline_appearance,
+                self.ui.simple_raw_image,
+            visible=False)
         else:
+            is_fiddle = self.instrument == 'FIDDLE'
+            self.set_widget_visibility(
+                self.ui.simple_raw_image,
+                self.ui.instr_settings_label,
+                self.ui.instr_settings,
+            visible=is_fiddle)
+
+            has_ip = self.ui.instr_settings.currentIndex() == 0
+            needs_mask = not is_fiddle or has_ip
+            self.set_widget_visibility(
+                self.ui.raw_image,
+                self.ui.template_instructions,
+                self.ui.outline_appearance,
+            visible=needs_mask)
+
             self.import_in_progress = True
+
             HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
             HexrdConfig().enable_image_mode_widget.emit(False)
-            self.load_instrument_config()
-            self.enable_widgets(self.ui.raw_image, self.ui.config,
-                                self.ui.file_selection, self.ui.finalize,
-                                enabled=True)
             HexrdConfig().enable_canvas_toolbar.emit(False)
+
+            self.load_instrument_config()
+            self.update_config_selection(
+                self.ui.config_selection.currentIndex())
+            self.enable_widgets(self.ui.config, self.ui.finalize, enabled=True)
+
             self.ui.config_file_label.setToolTip(
                 'Defaults to currently loaded configuration')
-            self.update_config_selection(self.ui.config_selection.currentIndex())
             self.ui.bbox.setToolTip('')
             if self.instrument == 'TARDIS':
                 self.ui.bbox.setToolTip('The bounding box editors are not ' +
@@ -536,15 +588,37 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
         self.ui.detectors.setCurrentIndex(0)
+        self.ui.simple_detectors.setCurrentIndex(0)
         self.ui.files_label.setText('')
+        self.ui.simple_files_label.setText('')
+        self.ui.dark_files_label.setText('')
+        self.ui.simple_files_label.setToolTip('')
+        self.ui.dark_files_label.setToolTip('')
         self.ui.completed_dets.setText('')
         self.edited_images.clear()
-        self.enable_widgets(self.ui.raw_image, self.ui.config,
-                            self.ui.transform_img, self.ui.outline_appearance,
-                            self.ui.finalize, self.ui.load_config,
-                            self.ui.config_file_label,
-                            self.ui.template_instructions, enabled=False)
-        self.enable_widgets(self.ui.data, self.ui.file_selection, enabled=True)
+        self.enable_widgets(
+            self.ui.raw_image,
+            self.ui.config,
+            self.ui.transform_img,
+            self.ui.outline_appearance,
+            self.ui.finalize,
+            self.ui.load_config,
+            self.ui.config_file_label,
+            self.ui.template_instructions,
+            self.ui.accept_detector,
+        enabled=False)
+        self.enable_widgets(
+            self.ui.data,
+            self.ui.file_selection,
+        enabled=True)
+        self.set_widget_visibility(
+            self.ui.raw_image,
+            self.ui.template_instructions,
+            self.ui.outline_appearance,
+            self.ui.simple_raw_image,
+            self.ui.instr_settings_label,
+            self.ui.instr_settings,
+        visible=False)
         not_default = self.ui.config_selection.currentIndex() != 0
         self.ui.load_config.setEnabled(not_default)
         self.ui.config_file_label.setEnabled(not_default)
