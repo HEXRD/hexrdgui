@@ -12,6 +12,7 @@ from hexrd.fitting.calibration.lmfit_param_handling import (
 )
 from hexrd.fitting.calibration.relative_constraints import (
     RelativeConstraintsType,
+    RotationCenter,
 )
 
 from hexrdgui import resource_loader
@@ -42,6 +43,7 @@ class CalibrationDialog(QObject):
     save_picks_clicked = Signal()
     load_picks_clicked = Signal()
     relative_constraints_changed = Signal(RelativeConstraintsType)
+    tilt_center_of_rotation_changed = Signal(RotationCenter)
     engineering_constraints_changed = Signal(str)
 
     pinhole_correction_settings_modified = Signal()
@@ -75,6 +77,7 @@ class CalibrationDialog(QObject):
             self.on_pinhole_correction_settings_modified)
 
         self.populate_relative_constraint_options()
+        self.populate_tilt_rotation_center_options()
 
         self.instr = instr
         self._params_dict = params_dict
@@ -83,12 +86,6 @@ class CalibrationDialog(QObject):
         self.engineering_constraints = engineering_constraints
 
         self._ignore_next_tree_view_update = False
-
-        instr_type = guess_instrument_type(instr.detectors)
-        # Use delta boundaries by default for anything other than TARDIS
-        # and PXRDIP. We might want to change this to a whitelist later.
-        use_delta_boundaries = instr_type not in ('TARDIS', 'PXRDIP')
-        self.delta_boundaries = use_delta_boundaries
 
         self.initialize_advanced_options()
 
@@ -101,6 +98,7 @@ class CalibrationDialog(QObject):
         self.update_visibility_states()
 
         self.load_settings()
+        self.update_relative_constraint_visibilities()
         self.setup_connections()
 
     def setup_connections(self):
@@ -111,6 +109,8 @@ class CalibrationDialog(QObject):
             self.show_picks_from_all_xray_sources_toggled)
         self.ui.relative_constraints.currentIndexChanged.connect(
             self.on_relative_constraints_changed)
+        self.ui.tilt_center_of_rotation.currentIndexChanged.connect(
+            self.on_tilt_center_of_rotation_changed)
         self.ui.engineering_constraints.currentIndexChanged.connect(
             self.on_engineering_constraints_changed)
         self.ui.delta_boundaries.toggled.connect(
@@ -150,7 +150,28 @@ class CalibrationDialog(QObject):
         w = self.ui.relative_constraints
         w.clear()
         for option in options:
-            w.addItem(option.value, option)
+            w.addItem(RELATIVE_CONSTRAINT_LABELS[option], option)
+
+    def populate_tilt_rotation_center_options(self):
+        # We are skipping group constraints until it is actually implemented
+        w = self.ui.tilt_center_of_rotation
+        w.clear()
+        for label in ROTATION_CENTER_LABELS.values():
+            w.addItem(label)
+
+    def set_instrument_defaults(self):
+        # This function should only be called after the Callbacks have been
+        # connected, because the changes here may also affect the Calibrator
+        # classes.
+        instr_type = guess_instrument_type(self.instr.detectors)
+        # Use delta boundaries by default for anything other than TARDIS
+        # and PXRDIP. We might want to change this to a whitelist later.
+        use_delta_boundaries = instr_type not in ('TARDIS', 'PXRDIP')
+        self.delta_boundaries = use_delta_boundaries
+
+        if instr_type == 'FIDDLE':
+            self.relative_constraints = RelativeConstraintsType.system
+            self.tilt_center_of_rotation = RotationCenter.lab_origin
 
     def update_edit_picks_enable_state(self):
         is_polar = HexrdConfig().image_mode == ViewType.polar
@@ -219,6 +240,16 @@ class CalibrationDialog(QObject):
         self.ui.active_beam.setVisible(has_multi_xrs)
         self.ui.active_beam_label.setVisible(has_multi_xrs)
         self.ui.show_picks_from_all_xray_sources.setVisible(has_multi_xrs)
+
+    def update_relative_constraint_visibilities(self):
+        visible = self.relative_constraints != RelativeConstraintsType.none
+
+        tilt_center_widgets = [
+            self.ui.tilt_center_of_rotation,
+            self.ui.tilt_center_of_rotation_label,
+        ]
+        for w in tilt_center_widgets:
+            w.setVisible(visible)
 
     def on_draw_picks_toggled(self, b):
         self.draw_picks_toggled.emit(b)
@@ -347,6 +378,19 @@ class CalibrationDialog(QObject):
 
         w.setCurrentText(v.value)
 
+        self.update_relative_constraint_visibilities()
+
+    @property
+    def tilt_center_of_rotation(self) -> RotationCenter:
+        w = self.ui.tilt_center_of_rotation
+        return ROTATION_CENTER_LABELS_R[w.currentText()]
+
+    @tilt_center_of_rotation.setter
+    def tilt_center_of_rotation(self, v: RotationCenter):
+        w = self.ui.tilt_center_of_rotation
+        text = ROTATION_CENTER_LABELS[v]
+        w.setCurrentText(text)
+
     @property
     def engineering_constraints(self):
         return self.ui.engineering_constraints.currentText()
@@ -405,6 +449,10 @@ class CalibrationDialog(QObject):
 
         self.relative_constraints_changed.emit(self.relative_constraints)
         self.reinitialize_tree_view()
+        self.update_relative_constraint_visibilities()
+
+    def on_tilt_center_of_rotation_changed(self):
+        self.tilt_center_of_rotation_changed.emit(self.tilt_center_of_rotation)
 
     def on_engineering_constraints_changed(self):
         self.engineering_constraints_changed.emit(self.engineering_constraints)
@@ -458,6 +506,9 @@ class CalibrationDialog(QObject):
 
     def update_from_calibrator(self, calibrator):
         self.relative_constraints = calibrator.relative_constraints_type
+        self.tilt_center_of_rotation = (
+            calibrator.relative_constraints.rotation_center
+        )
         self.engineering_constraints = calibrator.engineering_constraints
         self.tth_distortion = calibrator.tth_distortion
         self.params_dict = calibrator.params
@@ -720,6 +771,16 @@ TILT_LABELS_EULER = {
     ('xyz', True): ('X', 'Y', 'Z'),
     ('zxz', False): ('Z', "X'", "Z''"),
 }
+
+RELATIVE_CONSTRAINT_LABELS = {
+    RelativeConstraintsType.none: 'None',
+    RelativeConstraintsType.system: 'Instrument Rigid Body',
+}
+ROTATION_CENTER_LABELS = {
+    RotationCenter.instrument_mean_center: 'Mean Instrument Center',
+    RotationCenter.lab_origin: 'Origin',
+}
+ROTATION_CENTER_LABELS_R = {v: k for k, v in ROTATION_CENTER_LABELS.items()}
 
 
 def guess_engineering_constraints(instr) -> str | None:

@@ -3067,7 +3067,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self._physics_package
 
     def update_physics_package(self, instr_type=None, **kwargs):
-        if instr_type is None:
+        if instr_type not in ('TARDIS', 'PXRDIP'):
             self._physics_package = None
         elif self.physics_package is None:
             all_kwargs = PHYSICS_PACKAGE_DEFAULTS.HED
