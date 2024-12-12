@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>565</width>
-    <height>854</height>
+    <height>1057</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -198,36 +198,6 @@
        <string>Simple Raw Image</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_8">
-       <item row="0" column="0">
-        <widget class="QLabel" name="simple_detector_label">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Current Detector</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="simple_load">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Select Image</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="load_dark">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Select Dark Image</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="0" colspan="2">
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
@@ -251,6 +221,33 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="simple_detector_label">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Current Detector</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1" colspan="2">
+        <widget class="QComboBox" name="simple_detectors">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="simple_load">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Select Image</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="1" colspan="2">
         <widget class="QLabel" name="dark_files_label">
          <property name="text">
@@ -261,6 +258,16 @@
          </property>
          <property name="wordWrap">
           <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="load_dark">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Select Dark Image</string>
          </property>
         </widget>
        </item>
@@ -277,12 +284,8 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1" colspan="2">
-        <widget class="QComboBox" name="simple_detectors">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-        </widget>
+       <item row="4" column="0" colspan="3">
+        <layout class="QVBoxLayout" name="matches_layout"/>
        </item>
       </layout>
      </widget>
@@ -430,13 +433,6 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="transform_label">
-            <property name="text">
-             <string>Transform Image:</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
            <widget class="QComboBox" name="transforms">
             <item>
@@ -474,6 +470,13 @@
               <string>Rotate 270°</string>
              </property>
             </item>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="transform_label">
+            <property name="text">
+             <string>Transform Image:</string>
+            </property>
            </widget>
           </item>
          </layout>
@@ -824,9 +827,14 @@
  </widget>
  <tabstops>
   <tabstop>instruments</tabstop>
+  <tabstop>instr_settings</tabstop>
   <tabstop>config_selection</tabstop>
   <tabstop>config_settings</tabstop>
   <tabstop>load_config</tabstop>
+  <tabstop>simple_detectors</tabstop>
+  <tabstop>simple_load</tabstop>
+  <tabstop>load_dark</tabstop>
+  <tabstop>accept_detector</tabstop>
   <tabstop>detectors</tabstop>
   <tabstop>load</tabstop>
   <tabstop>transforms</tabstop>
@@ -837,8 +845,8 @@
   <tabstop>line_color</tabstop>
   <tabstop>line_style</tabstop>
   <tabstop>line_size</tabstop>
-  <tabstop>cancel</tabstop>
   <tabstop>complete</tabstop>
+  <tabstop>cancel</tabstop>
  </tabstops>
  <resources/>
  <connections/>
