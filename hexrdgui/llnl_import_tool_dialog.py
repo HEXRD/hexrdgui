@@ -8,7 +8,7 @@ import h5py
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Qt, QTimer
-from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox, QLabel
 from PySide6.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
@@ -421,6 +421,19 @@ class LLNLImportToolDialog(QObject):
         if not selected_file:
             return
 
+        self.simple_images.setdefault(self.detector, {})
+        self.simple_images[self.detector].setdefault('data', None)
+        self.simple_images[self.detector].setdefault('dark', None)
+        file_name =  Path(selected_file).stem
+        if file_name.endswith('999'):
+            self.ui.simple_files_label.setText(file_name)
+            self.loaded_images.append(selected_file)
+            self.simple_images[self.detector]['data'] = selected_file
+        elif file_name.endswith('003'):
+            self.ui.dark_files_label.setText(file_name)
+            self.simple_images[self.detector]['dark'] = selected_file
+        sid = self.simple_images[self.detector]
+
         # Create regex pattern to try to match data and dark images
         # ex: TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
         # -> TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
@@ -432,20 +445,35 @@ class LLNLImportToolDialog(QObject):
         dark_matches = sorted(glob.glob(dark_files))
 
         if len(data_matches) == len(dark_matches) == len(self.detectors):
-            # FIXME: Complete all matched pathway
-            return
+            # FIXME: Need a more generalized approach
+            sorted_dets = sorted([d for d in self.detectors if d != 'IP'])
+            original_det = self.detector
+            for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
+                self.detector = sorted_dets[i]
+                self.simple_images.setdefault(self.detector, {})
+                self.simple_images[self.detector]['data'] = data
+                self.simple_images[self.detector]['dark'] = dark
+                # FIXME: Add text to UI to indicate which data and dark files were found
+                self.ui.matches_layout.addWidget(QLabel(self.detector))
+                self.ui.matches_layout.addWidget(QLabel(Path(data).stem))
+                self.ui.matches_layout.addWidget(QLabel(Path(dark).stem))
+                self.accept_detector(data, dark)
+            self.detector = original_det
+            # Update UI to reflect selected & found files
+            self.ui.detector_files_label.setText(
+                Path(self.detector_images[self.detector]['data']).stem
+            )
+            self.ui.dark_files_label.setText(
+                Path(self.detector_images[self.detector]['dark']).stem
+            )
+            self.current_image_selection = self.detector
+            img = self.edited_images[self.detector]['img']
+            HexrdConfig().imageseries_dict['default'] = img
+            ImageLoadManager().read_data(
+                ui_parent=self.ui.parent(),
+                postprocess=True
+            )
         else:
-            self.simple_images.setdefault(self.detector, {})
-            self.simple_images[self.detector].setdefault('data', None)
-            self.simple_images[self.detector].setdefault('dark', None)
-            if Path(selected_file).stem.endswith('999'):
-                self.ui.simple_files_label.setText(Path(selected_file).stem)
-                self.loaded_images.append(selected_file)
-                self.simple_images[self.detector]['data'] = selected_file
-            elif Path(selected_file).stem.endswith('003'):
-                self.ui.dark_files_label.setText(Path(selected_file).stem)
-                self.simple_images[self.detector]['dark'] = selected_file
-            sid = self.simple_images[self.detector]
             self.enable_widgets(
                 self.ui.accept_detector,
             enabled=bool(sid['data'] and sid['dark']))
