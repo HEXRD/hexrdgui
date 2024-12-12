@@ -58,37 +58,39 @@ class LLNLImportToolDialog(QObject):
         self.it = None
         self.instrument = None
         self.edited_images = {}
-        self.completed_detectors = []
+        self.completed = []
         self.canvas = parent.image_tab_widget.image_canvases[0]
-        self.detector_defaults = {}
+        self.ip_and_det_defaults = {}
         self.cmap = cmap
+        self.image_plates = []
         self.detectors = []
+        self.current_image_selection = None
         self.defaults = {}
         self.import_in_progress = False
         self.loaded_images = []
         self.canvas = parent.image_tab_widget.active_canvas
-        self.simple_images = {}
+        self.detector_images = {}
 
         # Disable these by default.
         # If we disable these in Qt Designer, there are some weird bugs
         # that happen in Designer, so just disable them here.
         self.enable_widgets(
-            self.ui.raw_image,
+            self.ui.image_plate_raw_image,
             self.ui.config,
             self.ui.file_selection,
             self.ui.finalize,
             self.ui.outline_appearance,
             self.ui.template_instructions,
-            self.ui.simple_raw_image,
+            self.ui.detector_raw_image,
         enabled=False)
 
         # We have different needs for different instruments. Hide optional
         # widgets until the instrument is selected.
         self.set_widget_visibility(
-            self.ui.raw_image,
+            self.ui.image_plate_raw_image,
             self.ui.template_instructions,
             self.ui.outline_appearance,
-            self.ui.simple_raw_image,
+            self.ui.detector_raw_image,
             self.ui.instr_settings_label,
             self.ui.instr_settings,
         visible=False)
@@ -101,13 +103,13 @@ class LLNLImportToolDialog(QObject):
     def setup_connections(self):
         self.ui.instruments.currentIndexChanged.connect(
             self.instrument_selected)
-        self.ui.load.clicked.connect(self.load_images)
-        self.ui.detectors.currentIndexChanged.connect(self.detector_selected)
-        self.ui.simple_detectors.currentIndexChanged.connect(
-            self.simple_detector_selected)
+        self.ui.image_plate_load.clicked.connect(self.load_images)
+        self.ui.image_plates.currentIndexChanged.connect(self.image_plate_selected)
+        self.ui.detectors.currentIndexChanged.connect(
+            self.detector_selected)
         self.ui.add_transform.clicked.connect(self.add_transform)
-        self.ui.accept_template.clicked.connect(self.complete_current_detector)
-        self.ui.complete.clicked.connect(self.completed)
+        self.ui.accept_template.clicked.connect(self.complete_current_selection)
+        self.ui.complete.clicked.connect(self.import_complete)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
         self.ui.line_style.currentIndexChanged.connect(
@@ -123,9 +125,9 @@ class LLNLImportToolDialog(QObject):
             self.get_instrument_defaults)
         self.ui.instr_settings.currentIndexChanged.connect(
             self.instrument_settings_changed)
-        self.ui.simple_load.clicked.connect(self.load_simple_images)
-        self.ui.load_dark.clicked.connect(self.load_simple_images)
-        self.ui.accept_detector.clicked.connect(self.manually_load_simple_images)
+        self.ui.detector_load.clicked.connect(self.load_detector_images)
+        self.ui.dark_load.clicked.connect(self.load_detector_images)
+        self.ui.accept_detector.clicked.connect(self.manually_load_detector_images)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -145,7 +147,7 @@ class LLNLImportToolDialog(QObject):
             'QPushButton {background-color: cyan}')
 
     def get_instrument_defaults(self):
-        self.detector_defaults.clear()
+        self.ip_and_det_defaults.clear()
         not_default = self.ui.config_selection.currentIndex() != 0
         if self.config_file and not_default:
             if os.path.splitext(self.config_file)[1] in YAML_EXTS:
@@ -180,21 +182,20 @@ class LLNLImportToolDialog(QObject):
 
             text = resource_loader.load_resource(hexrd_resources, fname)
             self.defaults = yaml.safe_load(text)
-        self.detector_defaults['default_config'] = self.defaults
+        self.ip_and_det_defaults['default_config'] = self.defaults
         self.set_detector_options()
 
     def set_detector_options(self):
-        self.detectors.clear()
+        self.image_plates.clear()
         for det, vals in self.defaults['detectors'].items():
-            self.detector_defaults[det] = vals['transform']
-            self.detectors.append(det)
+            self.ip_and_det_defaults[det] = vals['transform']
+            self.image_plates.append(det)
 
-        det_list = list(self.detectors)
-        self.ui.detectors.clear()
-        self.ui.detectors.addItems(det_list)
+        det_list = list(self.image_plates)
+        self.ui.image_plates.clear()
+        self.ui.image_plates.addItems(det_list)
         if self.instrument == 'FIDDLE':
-            # FIXME: Need to differentiate between detectors and image plates
-            self.ui.simple_detectors.addItems(det_list)
+            self.ui.detectors.addItems(det_list)
 
     def load_config(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -209,7 +210,7 @@ class LLNLImportToolDialog(QObject):
     def instrument_settings_changed(self, index):
         has_ip = index == 0
         self.set_widget_visibility(
-            self.ui.raw_image,
+            self.ui.image_plate_raw_image,
             self.ui.template_instructions,
             self.ui.outline_appearance,
         visible=has_ip)
@@ -223,22 +224,22 @@ class LLNLImportToolDialog(QObject):
 
         self.reset_panel()
         HexrdConfig().restore_instrument_config_backup()
-        self.detectors.clear()
-        self.detector_defaults.clear()
+        self.image_plates.clear()
+        self.ip_and_det_defaults.clear()
 
         if self.instrument is None:
             HexrdConfig().enable_canvas_toolbar.emit(True)
             self.update_config_settings()
             self.set_widget_visibility(
-                self.ui.raw_image,
+                self.ui.image_plate_raw_image,
                 self.ui.template_instructions,
                 self.ui.outline_appearance,
-                self.ui.simple_raw_image,
+                self.ui.detector_raw_image,
             visible=False)
         else:
             is_fiddle = self.instrument == 'FIDDLE'
             self.set_widget_visibility(
-                self.ui.simple_raw_image,
+                self.ui.detector_raw_image,
                 self.ui.instr_settings_label,
                 self.ui.instr_settings,
             visible=is_fiddle)
@@ -246,7 +247,7 @@ class LLNLImportToolDialog(QObject):
             has_ip = self.ui.instr_settings.currentIndex() == 0
             needs_mask = not is_fiddle or has_ip
             self.set_widget_visibility(
-                self.ui.raw_image,
+                self.ui.image_plate_raw_image,
                 self.ui.template_instructions,
                 self.ui.outline_appearance,
             visible=needs_mask)
@@ -337,22 +338,24 @@ class LLNLImportToolDialog(QObject):
             return
         self.load_instrument_config()
 
-    def simple_detector_selected(self, selected):
+    def detector_selected(self, selected):
         # Don't allow the color map range to change while changing detectors.
         self.cmap.block_updates(True)
         try:
             self.ui.instrument.setDisabled(selected)
-            self.detector = self.ui.simple_detectors.currentText()
+            self.detector = self.ui.detectors.currentText()
+            self.current_image_selection = self.detector
         finally:
             self.cmap.block_updates(False)
 
-    def detector_selected(self, selected):
+    def image_plate_selected(self, selected):
         # Don't allow the color map range to change while we are changing
-        # detectors. Otherwise, it gets reset to something like "1 - 6".
+        # image plates. Otherwise, it gets reset to something like "1 - 6".
         self.cmap.block_updates(True)
         try:
             self.ui.instrument.setDisabled(selected)
-            self.detector = self.ui.detectors.currentText()
+            self.image_plate = self.ui.image_plates.currentText()
+            self.current_image_selection = self.image_plate
             self.add_template()
             if self.instrument == 'TARDIS':
                 self.cancel_workflow.emit()
@@ -375,14 +378,16 @@ class LLNLImportToolDialog(QObject):
         self.it.scale_template(sx=scale)
 
     def _set_transform(self):
+        if self.instrument == 'FIDDLE':
+            return
         if self.instrument == 'PXRDIP':
             flip = LLNLTransform.PXRDIP
         elif self.instrument == 'TARDIS':
-            if self.detector == 'IMAGE-PLATE-2':
+            if self.image_plate == 'IMAGE-PLATE-2':
                 flip = LLNLTransform.IP2
-            elif self.detector == 'IMAGE-PLATE-3':
+            elif self.image_plate == 'IMAGE-PLATE-3':
                 flip = LLNLTransform.IP3
-            elif self.detector == 'IMAGE-PLATE-4':
+            elif self.image_plate == 'IMAGE-PLATE-4':
                 flip = LLNLTransform.IP4
         HexrdConfig().load_panel_state['trans'] = [flip]
 
@@ -398,12 +403,12 @@ class LLNLImportToolDialog(QObject):
             img[frame] = data_raw - dark_raw
 
         ims = ImageFileManager().open_file(img)
-        self.simple_images[self.detector]['img'] = ims
-        self.complete_current_detector()
+        self.detector_images[self.detector]['img'] = ims
+        self.complete_current_selection()
 
-    def manually_load_simple_images(self):
-        data_file = self.simple_images[self.detector]['data']
-        dark_file = self.simple_images[self.detector]['dark']
+    def manually_load_detector_images(self):
+        data_file = self.detector_images[self.detector]['data']
+        dark_file = self.detector_images[self.detector]['dark']
         self.accept_detector(data_file, dark_file)
         img = self.edited_images[self.detector]['img']
         HexrdConfig().imageseries_dict['default'] = img
@@ -412,7 +417,7 @@ class LLNLImportToolDialog(QObject):
             postprocess=True
         )
 
-    def load_simple_images(self):
+    def load_detector_images(self):
         selected_file, _ = QFileDialog.getOpenFileName(
             self.ui,
             'Select file(s)',
@@ -421,18 +426,19 @@ class LLNLImportToolDialog(QObject):
         if not selected_file:
             return
 
-        self.simple_images.setdefault(self.detector, {})
-        self.simple_images[self.detector].setdefault('data', None)
-        self.simple_images[self.detector].setdefault('dark', None)
+        self.current_image_selection = self.detector
+        self.detector_images.setdefault(self.detector, {})
+        self.detector_images[self.detector].setdefault('data', None)
+        self.detector_images[self.detector].setdefault('dark', None)
         file_name =  Path(selected_file).stem
         if file_name.endswith('999'):
-            self.ui.simple_files_label.setText(file_name)
+            self.ui.detector_files_label.setText(file_name)
             self.loaded_images.append(selected_file)
-            self.simple_images[self.detector]['data'] = selected_file
+            self.detector_images[self.detector]['data'] = selected_file
         elif file_name.endswith('003'):
             self.ui.dark_files_label.setText(file_name)
-            self.simple_images[self.detector]['dark'] = selected_file
-        sid = self.simple_images[self.detector]
+            self.detector_images[self.detector]['dark'] = selected_file
+        sid = self.detector_images[self.detector]
 
         # Create regex pattern to try to match data and dark images
         # ex: TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
@@ -444,19 +450,16 @@ class LLNLImportToolDialog(QObject):
         data_matches = sorted(glob.glob(data_files))
         dark_matches = sorted(glob.glob(dark_files))
 
-        if len(data_matches) == len(dark_matches) == len(self.detectors):
-            # FIXME: Need a more generalized approach
-            sorted_dets = sorted([d for d in self.detectors if d != 'IP'])
+        # FIXME: Need a more generalized approach
+        sorted_dets = sorted([d for d in self.image_plates if d != 'IMAGE-PLATE-1'])
+        if len(data_matches) == len(dark_matches) == len(sorted_dets):
             original_det = self.detector
             for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
                 self.detector = sorted_dets[i]
-                self.simple_images.setdefault(self.detector, {})
-                self.simple_images[self.detector]['data'] = data
-                self.simple_images[self.detector]['dark'] = dark
-                # FIXME: Add text to UI to indicate which data and dark files were found
-                self.ui.matches_layout.addWidget(QLabel(self.detector))
-                self.ui.matches_layout.addWidget(QLabel(Path(data).stem))
-                self.ui.matches_layout.addWidget(QLabel(Path(dark).stem))
+                self.current_image_selection = self.detector
+                self.detector_images.setdefault(self.detector, {})
+                self.detector_images[self.detector]['data'] = data
+                self.detector_images[self.detector]['dark'] = dark
                 self.accept_detector(data, dark)
             self.detector = original_det
             # Update UI to reflect selected & found files
@@ -479,6 +482,7 @@ class LLNLImportToolDialog(QObject):
             enabled=bool(sid['data'] and sid['dark']))
 
     def load_images(self):
+        self.current_image_selection = self.image_plate
         self._set_transform()
 
         caption = 'Select file(s)'
@@ -502,8 +506,8 @@ class LLNLImportToolDialog(QObject):
                 if not raw_axes.get_autoscale_on():
                     raw_axes.set_autoscale_on(True)
 
-            if self.completed_detectors:
-                # Only reset the color map range for first detector processed
+            if self.completed:
+                # Only reset the color map range for first IP/detector is done
                 self.cmap.block_updates(True)
 
             # The ImageLoadManager parent needs to be set to the main window
@@ -514,14 +518,14 @@ class LLNLImportToolDialog(QObject):
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
             self.cmap.block_updates(False)
             self.it = InteractiveTemplate(
-                self.canvas, self.detector, instrument=self.instrument)
+                self.canvas, self.image_plate, instrument=self.instrument)
             # We should be able to immediately interact with the template
             self.it.static_mode = False
 
             file_names = [os.path.split(f[0])[1] for f in files]
-            self.ui.files_label.setText(', '.join(file_names))
+            self.ui.image_plate_files_label.setText(', '.join(file_names))
             self.enable_widgets(self.ui.transform_img, self.ui.finalize,
-                                self.ui.detectors, self.ui.detector_label,
+                                self.ui.image_plates, self.ui.image_plate_label,
                                 self.ui.accept_template, enabled=True)
             self.enable_widgets(self.ui.data, enabled=False)
             self.add_template()
@@ -538,11 +542,11 @@ class LLNLImportToolDialog(QObject):
         self.ui.transforms.setCurrentIndex(0)
 
         img = HexrdConfig().image('default', 0)
-        if self.detector in self.edited_images.keys():
+        if self.image_plate in self.edited_images.keys():
             # This transform is being done post-processing
-            self.edited_images[self.detector]['img'] = img
-            self.edited_images[self.detector]['height'] = img.shape[0]
-            self.edited_images[self.detector]['width'] = img.shape[1]
+            self.edited_images[self.image_plate]['img'] = img
+            self.edited_images[self.image_plate]['height'] = img.shape[0]
+            self.edited_images[self.image_plate]['width'] = img.shape[1]
 
         self.it.toggle_boundaries(show=True)
         if self.it.shape is not None:
@@ -571,19 +575,19 @@ class LLNLImportToolDialog(QObject):
         return verts
 
     def add_template(self):
-        if self.it is None or self.instrument is None or not self.detector:
+        if self.it is None or self.instrument is None or not self.image_plate:
             return
 
         if self.it.complete and self.instrument == 'TARDIS':
             # For the TARDIS use case only one template is applied per image
-            # Only add a new template if the detector has not been completed
+            # Only add a new template if the image plate has not been completed
             # or this is a single image use-case (i.e. PXRDIP, BBXRD)
             return
 
         self.it.clear()
         verts = self.read_in_template_bounds(
             module=hexrd_resources,
-            file_name=f'{self.instrument}_{self.detector}_bnd.txt'
+            file_name=f'{self.instrument}_{self.image_plate}_bnd.txt'
         )
         kwargs = {'fill': False, 'lw': 1, 'linestyle': '-'}
         self.it.create_polygon(verts, **kwargs)
@@ -625,7 +629,7 @@ class LLNLImportToolDialog(QObject):
     def save_boundary_position(self):
         position = {'angle': self.it.rotation, 'translation': self.it.translation}
         HexrdConfig().set_boundary_position(
-            self.instrument, self.detector, position)
+            self.instrument, self.image_plate, position)
         if self.it.shape:
             self.it.save_boundary(self.outline_color)
 
@@ -646,13 +650,13 @@ class LLNLImportToolDialog(QObject):
         self.update_bbox_width(1330)
         self.update_bbox_height(238)
 
-    def complete_current_detector(self):
+    def complete_current_selection(self):
         if self.it is not None:
             self.save_boundary_position()
-            if self.detector == 'IMAGE-PLATE-3':
+            if self.image_plate == 'IMAGE-PLATE-3':
                 self.swap_bounds_for_cropped()
         self.finalize()
-        self.completed_detectors.append(self.detector)
+        self.completed.append(self.current_image_selection)
         self.enable_widgets(
             self.ui.file_selection,
             self.ui.transform_img,
@@ -665,20 +669,21 @@ class LLNLImportToolDialog(QObject):
             self.ui.transform_img,
             self.ui.accept_detector,
         enabled=False)
-        self.ui.completed_dets.setText(
-            ', '.join(set(self.completed_detectors)))
+        self.ui.completed_dets_and_ips.setText(
+            ', '.join(set(self.completed)))
 
     def finalize(self):
-        detectors = self.detector_defaults['default_config'].get(
+        detectors = self.ip_and_det_defaults['default_config'].get(
             'detectors', {})
-        det = detectors.setdefault(self.detector, {})
-        img = self.simple_images[self.detector]['img']
+        det = detectors.setdefault(self.current_image_selection, {})
         width = det.setdefault('pixels', {}).get('columns', 0)
         height = det.setdefault('pixels', {}).get('rows', 0)
         panel_buffer = [0., 0.]
         tilt = 0.
 
-        if self.it is not None:
+        if self.it is None:
+            img = self.detector_images[self.detector]['img']
+        else:
             if self.instrument == 'PXRDIP':
                 # Boundary is currently rotated 90 degrees
                 width, height = height, width
@@ -690,7 +695,7 @@ class LLNLImportToolDialog(QObject):
             tilt = self.it.rotation
             self.it.completed()
 
-        self.edited_images[self.detector] = {
+        self.edited_images[self.current_image_selection] = {
             'img': img,
             'tilt': tilt,
             'panel_buffer': panel_buffer,
@@ -706,27 +711,28 @@ class LLNLImportToolDialog(QObject):
     def check_for_unsaved_changes(self):
         # FIXME: Make sure self.it is always reset to None after completing a templated detector
         # FIXME: Turn self.it == None check into property ("has_template"?)
-        if self.it is None or self.it.shape is None and self.detector in self.completed_detectors:
+        if self.it is None or self.it.shape is None and self.current_image_selection in self.completed:
             return
-        msg = ('The currently selected detector has changes that have not been'
-               + ' accepted. Keep changes?')
+        msg = ('The currently selected image plate has changes that have not'
+               + ' been accepted. Keep changes?')
         response = QMessageBox.question(
             self.ui, 'HEXRD', msg, (QMessageBox.Cancel | QMessageBox.Save))
         if response == QMessageBox.Save:
-            self.complete_current_detector()
+            self.complete_current_selection()
 
     def reset_panel(self):
+        # TODO: Confirm everything is correctly reset
         HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
+        self.ui.image_plates.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
-        self.ui.simple_detectors.setCurrentIndex(0)
-        self.ui.files_label.setText('')
-        self.ui.simple_files_label.setText('')
+        self.ui.image_plate_files_label.setText('')
+        self.ui.detector_files_label.setText('')
         self.ui.dark_files_label.setText('')
-        self.ui.completed_dets.setText('')
+        self.ui.completed_dets_and_ips.setText('')
         self.edited_images.clear()
         self.enable_widgets(
-            self.ui.raw_image,
+            self.ui.image_plate_raw_image,
             self.ui.config,
             self.ui.transform_img,
             self.ui.outline_appearance,
@@ -741,10 +747,10 @@ class LLNLImportToolDialog(QObject):
             self.ui.file_selection,
         enabled=True)
         self.set_widget_visibility(
-            self.ui.raw_image,
+            self.ui.image_plate_raw_image,
             self.ui.template_instructions,
             self.ui.outline_appearance,
-            self.ui.simple_raw_image,
+            self.ui.detector_raw_image,
             self.ui.instr_settings_label,
             self.ui.instr_settings,
         visible=False)
@@ -754,26 +760,26 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_file_label.setText('No File Selected')
         self.ui.config_file_label.setToolTip(
             'Defaults to currently loaded configuration')
-        self.completed_detectors = []
+        self.completed = []
         self.defaults.clear()
         self.config_file = None
         self.import_in_progress = False
         self.loaded_images.clear()
 
-    def completed(self):
+    def import_complete(self):
         self.import_in_progress = False
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
 
-        detectors = self.detector_defaults['default_config'].setdefault(
+        detectors = self.ip_and_det_defaults['default_config'].setdefault(
             'detectors', {})
-        not_set = [d for d in detectors if d not in self.completed_detectors]
+        not_set = [d for d in detectors if d not in self.completed]
         for det in not_set:
-            del(self.detector_defaults['default_config']['detectors'][det])
+            del(self.ip_and_det_defaults['default_config']['detectors'][det])
 
         instr = HEDMInstrument(
-            instrument_config=self.detector_defaults['default_config'])
-        for det in self.completed_detectors:
+            instrument_config=self.ip_and_det_defaults['default_config'])
+        for det in self.completed:
             panel = instr.detectors[det]
             # first need the zxz Euler angles from the panel rotation matrix.
             *zx, z = angles_from_rmat_zxz(panel.rmat)
@@ -800,7 +806,7 @@ class LLNLImportToolDialog(QObject):
         self.set_convention()
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (
-                [UI_TRANS_INDEX_ROTATE_90] * len(self.detectors))
+                [UI_TRANS_INDEX_ROTATE_90] * len(self.image_plates))
         det_names = HexrdConfig().detector_names
         files = [[self.edited_images[det]['img']] for det in det_names]
         # The ImageLoadManager parent needs to be set to the main window
@@ -829,7 +835,7 @@ class LLNLImportToolDialog(QObject):
     def close_widget(self):
         block_list = [
             self.ui.instruments,
-            self.ui.detectors
+            self.ui.image_plates
         ]
         with block_signals(*block_list):
             self.ui.instruments.setCurrentIndex(0)
