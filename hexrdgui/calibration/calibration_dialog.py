@@ -372,11 +372,7 @@ class CalibrationDialog(QObject):
     def relative_constraints(self, v: RelativeConstraintsType):
         v = v if v is not None else RelativeConstraintsType.none
         w = self.ui.relative_constraints
-        options = [w.itemText(i) for i in range(w.count())]
-        if v.value not in options:
-            raise Exception(f'Invalid relative constraints: {v.value}')
-
-        w.setCurrentText(v.value)
+        w.setCurrentText(RELATIVE_CONSTRAINT_LABELS[v])
 
         self.update_relative_constraint_visibilities()
 
