@@ -137,6 +137,7 @@ class LLNLImportToolDialog(QObject):
         for w in widgets:
             w.setVisible(visible)
             w.setEnabled(visible)
+        # Resize on show/hide widgets to prevent large empty spaces
         self.ui.setMinimumHeight(315)
         QTimer.singleShot(0, lambda: self.ui.adjustSize())
 
@@ -396,16 +397,21 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().load_panel_state['trans'] = [flip]
 
     def accept_detector(self, data_file, dark_file):
+        # Custom dark subtraction for the FIDDLE instrument
         img = [[]] * FIDDLE_FRAMES
         first, last = '/'.join(FIDDLE_HDF5_PATH).rsplit('0', 1)
         for frame in range(FIDDLE_FRAMES):
+            # Use known path to find data 0/1/2/3 paths
             path = f'{first}{frame}{last}'
+            # Load in detector data and dark data for this frame
             with h5py.File(data_file) as data:
                 data_raw = np.array(data[path])
             with h5py.File(dark_file) as dark:
                 dark_raw = np.array(dark[path])
+            # Apply dark subtraction for this frame only
             img[frame] = data_raw - dark_raw
 
+        # Create an imageseries from the 4 processed frames
         ims = ImageFileManager().open_file(img)
         self.detector_images[self.detector]['img'] = ims
         self.complete_current_selection()
@@ -413,8 +419,12 @@ class LLNLImportToolDialog(QObject):
     def manually_load_detector_images(self):
         data_file = self.detector_images[self.detector]['data']
         dark_file = self.detector_images[self.detector]['dark']
+
+        # Process each frame and create an imageseries
         self.accept_detector(data_file, dark_file)
         img = self.edited_images[self.detector]['img']
+
+        # Load in the new imageseries
         HexrdConfig().imageseries_dict['default'] = img
         ImageLoadManager().read_data(
             ui_parent=self.ui.parent(),
@@ -430,10 +440,18 @@ class LLNLImportToolDialog(QObject):
         if not selected_file:
             return
 
+        # Needed to identify current image, regardless of image load path
         self.current_image_selection = self.detector
+
+        # Use a custom dict for detector images to track loaded data and dark
+        # files. Needed to make sure files are correctly associated when
+        # manually loading each detector.
         self.detector_images.setdefault(self.detector, {})
         self.detector_images[self.detector].setdefault('data', None)
         self.detector_images[self.detector].setdefault('dark', None)
+
+        # Try to automatically find missing data and dark files for this and
+        # remaining detectors.
         file_name =  Path(selected_file).stem
         if file_name.endswith('999'):
             self.ui.detector_files_label.setText(file_name)
@@ -442,7 +460,7 @@ class LLNLImportToolDialog(QObject):
         elif file_name.endswith('003'):
             self.ui.dark_files_label.setText(file_name)
             self.detector_images[self.detector]['dark'] = selected_file
-        sid = self.detector_images[self.detector]
+        selected = self.detector_images[self.detector]
 
         # Create regex pattern to try to match data and dark images
         # ex: TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
@@ -457,6 +475,7 @@ class LLNLImportToolDialog(QObject):
         # FIXME: Need a more generalized approach
         sorted_dets = sorted([d for d in self.image_plates if d != 'IMAGE-PLATE-1'])
         if len(data_matches) == len(dark_matches) == len(sorted_dets):
+            # All data and dark files have been found for all detectors
             original_det = self.detector
             for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
                 self.detector = sorted_dets[i]
@@ -481,12 +500,16 @@ class LLNLImportToolDialog(QObject):
                 postprocess=True
             )
         else:
+            # We couldn't find all of the matches. Enable manually matching and
+            # loading all files for each detector.
             self.enable_widgets(
                 self.ui.accept_detector,
-            enabled=bool(sid['data'] and sid['dark']))
+            enabled=bool(selected['data'] and selected['dark']))
 
     def load_images(self):
+        # Needed to identify current image, regardless of image load path
         self.current_image_selection = self.image_plate
+
         self._set_transform()
 
         caption = 'Select file(s)'
@@ -723,7 +746,6 @@ class LLNLImportToolDialog(QObject):
             self.complete_current_selection()
 
     def reset_panel(self):
-        # TODO: Confirm everything is correctly reset
         HexrdConfig().enable_image_mode_widget.emit(True)
         self.clear_boundry()
         self.ui.image_plates.setCurrentIndex(0)
