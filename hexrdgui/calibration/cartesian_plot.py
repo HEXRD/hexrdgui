@@ -22,6 +22,8 @@ from .display_plane import DisplayPlane
 def cartesian_viewer():
     return InstrumentViewer()
 
+def get_xray_propagation_sign(instr):
+    return np.sign(instr.beam_vector[2])
 
 class InstrumentViewer:
 
@@ -40,7 +42,8 @@ class InstrumentViewer:
         self.detector_corners = {}
 
         dist = HexrdConfig().cartesian_virtual_plane_distance
-        dplane_tvec = np.array([0., 0., -dist])
+        sgn = get_xray_propagation_sign(self.instr)
+        dplane_tvec = np.array([0., 0., sgn*dist])
 
         rotate_x = HexrdConfig().cartesian_plane_normal_rotate_x
         rotate_y = HexrdConfig().cartesian_plane_normal_rotate_y
