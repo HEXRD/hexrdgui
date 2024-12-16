@@ -296,6 +296,10 @@ class LLNLImportToolDialog(QObject):
             self.ui.config_selection.currentIndex() == 0
         )
 
+    @property
+    def has_template(self):
+        return self.it is not None and self.it.shape is not None
+
     def update_config_settings(self):
         label = self.ui.config_settings_label
         combo = self.ui.config_settings
@@ -549,7 +553,7 @@ class LLNLImportToolDialog(QObject):
             self.edited_images[self.image_plate]['width'] = img.shape[1]
 
         self.it.toggle_boundaries(show=True)
-        if self.it.shape is not None:
+        if self.has_template:
             self.it.update_image(img)
 
     def display_bounds(self):
@@ -575,7 +579,7 @@ class LLNLImportToolDialog(QObject):
         return verts
 
     def add_template(self):
-        if self.it is None or self.instrument is None or not self.image_plate:
+        if not self.has_template or self.instrument is None or not self.image_plate:
             return
 
         if self.it.complete and self.instrument == 'TARDIS':
@@ -618,12 +622,12 @@ class LLNLImportToolDialog(QObject):
             self.update_template_style()
 
     def setup_translate_rotate(self):
-        if self.it.shape is not None:
+        if self.has_template:
             self.it.disconnect()
             self.it.connect_translate_rotate()
 
     def clear_boundry(self):
-        if self.it and self.it.shape is not None:
+        if self.has_template:
             self.it.clear()
 
     def save_boundary_position(self):
@@ -651,7 +655,7 @@ class LLNLImportToolDialog(QObject):
         self.update_bbox_height(238)
 
     def complete_current_selection(self):
-        if self.it is not None:
+        if self.has_template:
             self.save_boundary_position()
             if self.image_plate == 'IMAGE-PLATE-3':
                 self.swap_bounds_for_cropped()
@@ -681,7 +685,7 @@ class LLNLImportToolDialog(QObject):
         panel_buffer = [0., 0.]
         tilt = 0.
 
-        if self.it is None:
+        if not self.has_template:
             img = self.detector_images[self.detector]['img']
         else:
             if self.instrument == 'PXRDIP':
@@ -709,9 +713,7 @@ class LLNLImportToolDialog(QObject):
                             self.ui.template_instructions, enabled=False)
 
     def check_for_unsaved_changes(self):
-        # FIXME: Make sure self.it is always reset to None after completing a templated detector
-        # FIXME: Turn self.it == None check into property ("has_template"?)
-        if self.it is None or self.it.shape is None and self.current_image_selection in self.completed:
+        if not self.has_template and self.current_image_selection in self.completed:
             return
         msg = ('The currently selected image plate has changes that have not'
                + ' been accepted. Keep changes?')
