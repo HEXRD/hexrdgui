@@ -198,15 +198,18 @@ class LLNLImportToolDialog(QObject):
 
     def set_detector_options(self):
         self.image_plates.clear()
+        self.detectors.clear()
         for det, vals in self.defaults['detectors'].items():
             self.ip_and_det_defaults[det] = vals['transform']
-            self.image_plates.append(det)
+            if 'IMAGE-PLATE' in det or self.instrument != 'FIDDLE':
+                self.image_plates.append(det)
+            else:
+                self.detectors.append(det)
 
-        det_list = list(self.image_plates)
         self.ui.image_plates.clear()
-        self.ui.image_plates.addItems(det_list)
-        if self.instrument == 'FIDDLE':
-            self.ui.detectors.addItems(det_list)
+        self.ui.image_plates.addItems(self.image_plates)
+        self.ui.detectors.clear()
+        self.ui.detectors.addItems(self.detectors)
 
     def load_config(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -239,6 +242,7 @@ class LLNLImportToolDialog(QObject):
         self.reset_panel()
         HexrdConfig().restore_instrument_config_backup()
         self.image_plates.clear()
+        self.detectors.clear()
         self.ip_and_det_defaults.clear()
 
         if self.instrument is None:
@@ -487,14 +491,13 @@ class LLNLImportToolDialog(QObject):
         data_matches = sorted(glob.glob(data_files))
         dark_matches = sorted(glob.glob(dark_files))
 
-        # FIXME: Need a more generalized approach
-        sorted_dets = sorted([d for d in self.image_plates if d != 'IMAGE-PLATE-1'])
-        if len(data_matches) == len(dark_matches) == len(sorted_dets):
+        if len(data_matches) == len(dark_matches) == len(self.detectors):
             # All data and dark files have been found for all detectors
             original_det = self.detector
-            for i, (data, dark) in enumerate(zip(data_matches, dark_matches)):
-                self.detector = sorted_dets[i]
-                self.current_image_selection = self.detector
+            for det in self.detectors:
+                data = next((fname for fname in data_matches if det in fname))
+                dark = next((fname for fname in dark_matches if det in fname))
+                self.current_image_selection = self.detector = det
                 self.detector_images.setdefault(self.detector, {})
                 self.detector_images[self.detector]['data'] = data
                 self.detector_images[self.detector]['dark'] = dark
