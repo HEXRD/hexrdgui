@@ -524,7 +524,7 @@ class LLNLImportToolDialog(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.image_plate_files_label.setText(', '.join(file_names))
-            self.enable_widgets(self.ui.transform_img, self.ui.finalize,
+            self.enable_widgets(self.ui.add_transform, self.ui.finalize,
                                 self.ui.image_plates, self.ui.image_plate_label,
                                 self.ui.accept_template, enabled=True)
             self.enable_widgets(self.ui.data, enabled=False)
@@ -659,14 +659,14 @@ class LLNLImportToolDialog(QObject):
         self.completed.append(self.current_image_selection)
         self.enable_widgets(
             self.ui.file_selection,
-            self.ui.transform_img,
+            self.ui.add_transform,
             self.ui.complete,
         enabled=True)
         self.enable_widgets(
             self.ui.outline_appearance,
             self.ui.template_instructions,
             self.ui.accept_template,
-            self.ui.transform_img,
+            self.ui.add_transform,
             self.ui.accept_detector,
         enabled=False)
         self.ui.completed_dets_and_ips.setText(
@@ -704,7 +704,7 @@ class LLNLImportToolDialog(QObject):
     def clear(self):
         self.clear_boundry()
         self.enable_widgets(
-            self.ui.transform_img, self.ui.file_selection, enabled=True)
+            self.ui.add_transform, self.ui.file_selection, enabled=True)
         self.enable_widgets(self.ui.outline_appearance,
                             self.ui.template_instructions, enabled=False)
 
@@ -734,7 +734,7 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(
             self.ui.image_plate_raw_image,
             self.ui.config,
-            self.ui.transform_img,
+            self.ui.add_transform,
             self.ui.outline_appearance,
             self.ui.finalize,
             self.ui.load_config,

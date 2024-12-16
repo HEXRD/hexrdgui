@@ -355,7 +355,7 @@
        <item row="2" column="0">
         <widget class="QFrame" name="transform_img">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
@@ -385,6 +385,9 @@
           </item>
           <item row="0" column="1">
            <widget class="QComboBox" name="transforms">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <item>
              <property name="text">
               <string>None</string>
