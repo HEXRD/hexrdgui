@@ -8,13 +8,14 @@ import h5py
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Qt, QTimer
-from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox, QLabel
+from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox
 from PySide6.QtGui import QColor
 
 from hexrd import resources as hexrd_resources
 from hexrd.instrument import HEDMInstrument
 from hexrd.rotations import (
-    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz)
+    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz
+)
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
@@ -52,8 +53,10 @@ class LLNLImportToolDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/images/#llnl-import-tool')
+        add_help_url(
+            self.ui.button_box,
+            'configuration/images/#llnl-import-tool'
+        )
 
         self.it = None
         self.instrument = None
@@ -104,11 +107,13 @@ class LLNLImportToolDialog(QObject):
         self.ui.instruments.currentIndexChanged.connect(
             self.instrument_selected)
         self.ui.image_plate_load.clicked.connect(self.load_images)
-        self.ui.image_plates.currentIndexChanged.connect(self.image_plate_selected)
+        self.ui.image_plates.currentIndexChanged.connect(
+            self.image_plate_selected)
         self.ui.detectors.currentIndexChanged.connect(
             self.detector_selected)
         self.ui.add_transform.clicked.connect(self.add_transform)
-        self.ui.accept_template.clicked.connect(self.complete_current_selection)
+        self.ui.accept_template.clicked.connect(
+            self.complete_current_selection)
         self.ui.complete.clicked.connect(self.import_complete)
         self.ui.bb_height.valueChanged.connect(self.update_bbox_height)
         self.ui.bb_width.valueChanged.connect(self.update_bbox_width)
@@ -127,7 +132,8 @@ class LLNLImportToolDialog(QObject):
             self.instrument_settings_changed)
         self.ui.detector_load.clicked.connect(self.load_detector_images)
         self.ui.dark_load.clicked.connect(self.load_detector_images)
-        self.ui.accept_detector.clicked.connect(self.manually_load_detector_images)
+        self.ui.accept_detector.clicked.connect(
+            self.manually_load_detector_images)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -157,13 +163,17 @@ class LLNLImportToolDialog(QObject):
 
                 instr = HEDMInstrument(instr_config)
                 self.defaults = instr_to_internal_dict(
-                    instr, convert_tilts=False)
+                                    instr,
+                                    convert_tilts=False
+                                )
             else:
                 try:
                     with h5py.File(self.config_file, 'r') as f:
                         instr = HEDMInstrument(f)
                         self.defaults = instr_to_internal_dict(
-                            instr, convert_tilts=False)
+                                            instr,
+                                            convert_tilts=False
+                                        )
                 except Exception as e:
                     msg = (
                         f'ERROR - Could not read file: \n {e} \n'
@@ -200,8 +210,11 @@ class LLNLImportToolDialog(QObject):
 
     def load_config(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Configuration', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd *.yml)')
+                                            self.ui,
+                                            'Load Configuration',
+                                            HexrdConfig().working_dir,
+                                            'HEXRD files (*.hexrd *.yml)'
+                                        )
         self.config_file = selected_file if selected_file else None
         self.ui.config_file_label.setText(os.path.basename(self.config_file))
         self.ui.config_file_label.setToolTip(self.config_file)
@@ -277,8 +290,10 @@ class LLNLImportToolDialog(QObject):
 
     def update_config_selection(self, idx):
         enable_load = (idx == 2) # Load configuration from file selected
-        self.enable_widgets(self.ui.load_config, self.ui.config_file_label,
-                            enabled=enable_load)
+        self.enable_widgets(
+            self.ui.load_config,
+            self.ui.config_file_label,
+        enabled=enable_load)
 
         self.update_config_settings()
         if self.ui.instrument.isEnabled():
@@ -432,11 +447,11 @@ class LLNLImportToolDialog(QObject):
         )
 
     def load_detector_images(self):
-        selected_file, _ = QFileDialog.getOpenFileName(
-            self.ui,
-            'Select file(s)',
-            dir=HexrdConfig().images_dir
-        )
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+                                            self.ui,
+                                            'Select file(s)',
+                                            dir=HexrdConfig().images_dir
+                                        )
         if not selected_file:
             return
 
@@ -514,7 +529,10 @@ class LLNLImportToolDialog(QObject):
 
         caption = 'Select file(s)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, caption, dir=HexrdConfig().images_dir)
+                                            self.ui,
+                                            caption,
+                                            dir=HexrdConfig().images_dir
+                                        )
         if selected_file:
             self.loaded_images.append(selected_file)
             HexrdConfig().set_images_dir(selected_file)
@@ -551,9 +569,13 @@ class LLNLImportToolDialog(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.image_plate_files_label.setText(', '.join(file_names))
-            self.enable_widgets(self.ui.add_transform, self.ui.finalize,
-                                self.ui.image_plates, self.ui.image_plate_label,
-                                self.ui.accept_template, enabled=True)
+            self.enable_widgets(
+                self.ui.add_transform,
+                self.ui.finalize,
+                self.ui.image_plates,
+                self.ui.image_plate_label,
+                self.ui.accept_template,
+            enabled=True)
             self.enable_widgets(self.ui.data, enabled=False)
             self.add_template()
 
@@ -602,7 +624,11 @@ class LLNLImportToolDialog(QObject):
         return verts
 
     def add_template(self):
-        if not self.has_template or self.instrument is None or not self.image_plate:
+        if (
+            self.it is None or  # InteractiveTemplate was never initialized
+            self.instrument is None or  # No instrument selected
+            not self.image_plate  # No image plate to associate template with
+        ):
             return
 
         if self.it.complete and self.instrument == 'TARDIS':
@@ -622,8 +648,10 @@ class LLNLImportToolDialog(QObject):
         self.update_template_style()
 
         self.display_bounds()
-        self.enable_widgets(self.ui.outline_appearance,
-                            self.ui.template_instructions, enabled=True)
+        self.enable_widgets(
+            self.ui.outline_appearance,
+            self.ui.template_instructions,
+        enabled=True)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
 
@@ -654,9 +682,15 @@ class LLNLImportToolDialog(QObject):
             self.it.clear()
 
     def save_boundary_position(self):
-        position = {'angle': self.it.rotation, 'translation': self.it.translation}
+        position = {
+            'angle': self.it.rotation,
+            'translation': self.it.translation
+        }
         HexrdConfig().set_boundary_position(
-            self.instrument, self.image_plate, position)
+            self.instrument,
+            self.image_plate,
+            position
+        )
         if self.it.shape:
             self.it.save_boundary(self.outline_color)
 
@@ -731,13 +765,21 @@ class LLNLImportToolDialog(QObject):
     def clear(self):
         self.clear_boundry()
         self.enable_widgets(
-            self.ui.add_transform, self.ui.file_selection, enabled=True)
-        self.enable_widgets(self.ui.outline_appearance,
-                            self.ui.template_instructions, enabled=False)
+            self.ui.add_transform,
+            self.ui.file_selection,
+        enabled=True)
+        self.enable_widgets(
+            self.ui.outline_appearance,
+            self.ui.template_instructions,
+        enabled=False)
 
     def check_for_unsaved_changes(self):
-        if not self.has_template and self.current_image_selection in self.completed:
+        if (
+            not self.has_template and
+            self.current_image_selection in self.completed
+        ):
             return
+
         msg = ('The currently selected image plate has changes that have not'
                + ' been accepted. Keep changes?')
         response = QMessageBox.question(
