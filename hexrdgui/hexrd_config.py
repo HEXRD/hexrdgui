@@ -10,6 +10,7 @@ import h5py
 import matplotlib
 import numpy as np
 import yaml
+from scipy.signal import medfilt2d
 
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
@@ -326,6 +327,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._physics_package = None
         self._detector_coatings = {}
         self._instrument_rigid_body_params = {}
+        self._median_filer_correction = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -435,6 +437,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('custom_polar_tth_distortion_object_serialized', None),
             ('detector_coatings_dictified', {}),
             ('overlays_dictified', []),
+            ('apply_median_filter_correction', False),
+            ('median_filter_kernel_size', 7),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -551,6 +555,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.show_all_colormaps = self.show_all_colormaps == 'true'
         if not isinstance(self.apply_absorption_correction, bool):
             self.apply_absorption_correction = self.apply_absorption_correction == 'true'
+        if not isinstance(self.apply_median_filter_correction, bool):
+            self.apply_median_filter_correction = self.apply_median_filter_correction == 'true'
 
         # This is None sometimes. Make sure it is an empty list instead.
         if self.recent_state_files is None:
@@ -1001,6 +1007,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             minimum = min([np.nanmin(x) for x in images_dict.values()])
             for name, img in images_dict.items():
                 images_dict[name] = img - minimum
+
+        if HexrdConfig().apply_median_filter_correction:
+            for name, img in images_dict.items():
+                images_dict[name] = medfilt2d(
+                    img,
+                    kernel_size=HexrdConfig().median_filter_kernel_size
+                )
 
         return images_dict
 
@@ -2674,6 +2687,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'apply_lorentz_correction',
             'intensity_subtract_minimum',
             'apply_absorption_correction',
+            'apply_median_filter_correction',
         ]
 
         return any(getattr(self, x) for x in corrections)
@@ -3190,3 +3204,23 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._set_detector_coatings('phosphor')
         phosphor = self._detector_coatings[det_name]['phosphor']
         phosphor.deserialize(**kwargs)
+
+    @property
+    def apply_median_filter_correction(self):
+        return self._median_filer_correction.get('apply', False)
+
+    @apply_median_filter_correction.setter
+    def apply_median_filter_correction(self, v):
+        if v != self.apply_median_filter_correction:
+            self._median_filer_correction['apply'] = v
+            self.deep_rerender_needed.emit()
+
+    @property
+    def median_filter_kernel_size(self):
+        return self._median_filer_correction.get('kernel', 7)
+
+    @median_filter_kernel_size.setter
+    def median_filter_kernel_size(self, v):
+        if v != self.median_filter_kernel_size:
+            self._median_filer_correction['kernel'] = v
+            self.deep_rerender_needed.emit()
