@@ -635,10 +635,11 @@ class LLNLImportToolDialog(QObject):
         ):
             return
 
-        if self.it.complete and self.instrument == 'TARDIS':
-            # For the TARDIS use case only one template is applied per image
-            # Only add a new template if the image plate has not been completed
-            # or this is a single image use-case (i.e. PXRDIP, BBXRD)
+        if self.it.complete and self.instrument != 'PXRDIP':
+            # For the TARDIS and FIDDLE use case only one template is applied
+            # per image. Only add a new template if the image plate has not
+            # been completed or this is a single image use-case
+            # (i.e. PXRDIP, BBXRD).
             return
 
         self.it.clear()
