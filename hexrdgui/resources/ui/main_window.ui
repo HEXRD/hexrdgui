@@ -212,6 +212,7 @@
      <addaction name="action_apply_polarization_correction"/>
      <addaction name="action_apply_absorption_correction"/>
      <addaction name="action_subtract_minimum"/>
+     <addaction name="action_apply_median_filter"/>
     </widget>
     <widget class="QMenu" name="menu_physics_package">
      <property name="title">
@@ -894,6 +895,14 @@
    </property>
    <property name="text">
     <string>Edit Physics Package</string>
+   </property>
+  </action>
+  <action name="action_apply_median_filter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Apply Median Filter</string>
    </property>
   </action>
  </widget>
