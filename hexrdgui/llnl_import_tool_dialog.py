@@ -472,7 +472,7 @@ class LLNLImportToolDialog(QObject):
 
         # Try to automatically find missing data and dark files for this and
         # remaining detectors.
-        file_name =  Path(selected_file).stem
+        file_name = Path(selected_file).stem
         if file_name.endswith('999'):
             self.ui.detector_files_label.setText(file_name)
             self.loaded_images.append(selected_file)
@@ -483,8 +483,10 @@ class LLNLImportToolDialog(QObject):
         selected = self.detector_images[self.detector]
 
         # Create regex pattern to try to match data and dark images
-        # ex: TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
-        # -> TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
+        # ex:
+        # TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
+        # ->
+        # TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
         image = re.sub("CAMERA-\d{2}-", "CAMERA-*-", selected_file)
         data_files = re.sub("-\d{3}.h", "-999.h", image)
         dark_files = re.sub("-\d{3}.h", "-003.h", image)
@@ -757,7 +759,8 @@ class LLNLImportToolDialog(QObject):
 
             img, panel_buffer = self.it.masked_image
             if self.instrument == 'PXRDIP':
-                panel_buffer = panel_buffer.T[::-1, :]  # !!! need to rotate buffers
+                # !!! need to rotate buffers
+                panel_buffer = panel_buffer.T[::-1, :]
             tilt = self.it.rotation
             self.it.completed()
 
