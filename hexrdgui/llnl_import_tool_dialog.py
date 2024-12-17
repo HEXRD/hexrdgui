@@ -74,6 +74,7 @@ class LLNLImportToolDialog(QObject):
         self.canvas = parent.image_tab_widget.active_canvas
         self.physics_package_manager = physics_package_manager
         self.detector_images = {}
+        self.median_filter_action = parent.action_apply_median_filter
 
         # Disable these by default.
         # If we disable these in Qt Designer, there are some weird bugs
@@ -898,6 +899,10 @@ class LLNLImportToolDialog(QObject):
         self.ui.instrument.setDisabled(False)
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
+
+        # Allow user to change median filter kernel
+        self.median_filter_action.setChecked(True)
+        # Prompt user to update the physics package
         self.physics_package_manager.show()
 
     def show(self):
