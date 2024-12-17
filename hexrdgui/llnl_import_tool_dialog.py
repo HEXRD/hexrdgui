@@ -878,8 +878,14 @@ class LLNLImportToolDialog(QObject):
         if self.instrument == 'PXRDIP':
             HexrdConfig().load_panel_state['trans'] = (
                 [UI_TRANS_INDEX_ROTATE_90] * len(self.image_plates))
+
         det_names = HexrdConfig().detector_names
-        files = [[self.edited_images[det]['img']] for det in det_names]
+        files = []
+        for det in det_names:
+            img = self.edited_images[det]['img']
+            if self.instrument == 'FIDDLE' and det in self.image_plates:
+                img = np.asarray([img] * FIDDLE_FRAMES)
+            files.append([img])
         # The ImageLoadManager parent needs to be set to the main window
         # because when set to the ui (QDockWidget) the dock widget is
         # closed after accepting the image selection. We're not positive
