@@ -37,6 +37,11 @@ import hexrdgui.resources.calibration
 from hexrdgui.utils import instr_to_internal_dict, block_signals
 from hexrdgui.utils.dialog import add_help_url
 
+# FIXME: Confirm everything is correctly reset
+# FIXME: Should slider be available in other views?
+# FIXME: Why so slow?
+# FIXME: Factor out median filter dialog for reusability
+
 
 class LLNLImportToolDialog(QObject):
 
@@ -628,7 +633,7 @@ class LLNLImportToolDialog(QObject):
         panels = create_hedm_instrument().detectors
         verts = panels['default'].cartToPixel(data)
         verts[:, [0, 1]] = verts[:, [1, 0]]
-        return verts
+        return verts * 0.5
 
     def add_template(self):
         if (
