@@ -31,6 +31,10 @@ class InstrumentViewer:
         self.type = ViewType.cartesian
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().images_dict
+
+        # Set invalid pixels to be nan
+        HexrdConfig().apply_panel_buffer_to_images(self.images_dict)
+
         self.img = None
 
         # Perform some checks before proceeding
@@ -283,8 +287,15 @@ class InstrumentViewer:
 
         res = tf.warp(img, tform3,
                       output_shape=(self.dpanel.rows, self.dpanel.cols),
-                      preserve_range=True)
-        self.warp_dict[detector_id] = res
+                      preserve_range=True, cval=np.nan)
+        nan_mask = np.isnan(res)
+
+        self.warp_dict[detector_id] = np.ma.masked_array(
+            res,
+            mask=nan_mask,
+            fill_value=0,
+        )
+
         return res
 
     @property
@@ -293,8 +304,15 @@ class InstrumentViewer:
 
     def generate_image(self):
         img = np.zeros((self.dpanel.rows, self.dpanel.cols))
+        always_nan = np.ones(img.shape, dtype=bool)
         for key in self.images_dict.keys():
-            img += self.warp_dict[key]
+            # Use zeros when summing, but identify pixels that
+            # are nans in all images and set those to nan.
+            warp_img = self.warp_dict[key]
+            img += warp_img.filled(0)
+            always_nan = np.logical_and(always_nan, warp_img.mask)
+
+        img[always_nan] = np.nan
 
         # In case there were any nans...
         nan_mask = np.isnan(img)
