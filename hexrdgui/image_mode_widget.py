@@ -40,6 +40,9 @@ class ImageModeWidget(QObject):
         # Always start with raw tab
         self.ui.tab_widget.setCurrentIndex(0)
 
+        # Don't allow negative distances
+        self.ui.cartesian_virtual_plane_distance.setMinimum(1e-8)
+
         # Hide stereo_project_from_polar for now, as projecting from polar
         # appears to give a better image (lines up better with overlays)
         # than projecting from raw.
