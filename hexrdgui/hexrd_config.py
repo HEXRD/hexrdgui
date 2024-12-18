@@ -19,6 +19,7 @@ from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS, PINHOLE_DEFAULT
 from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
+from hexrd.utils.decorators import memoize
 from hexrd.utils.yaml import NumpyToNativeDumper
 from hexrd.valunits import valWUnit
 
@@ -1010,7 +1011,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if HexrdConfig().apply_median_filter_correction:
             for name, img in images_dict.items():
-                images_dict[name] = medfilt2d(
+                images_dict[name] = medfilt2d_memoized(
                     img,
                     kernel_size=HexrdConfig().median_filter_kernel_size
                 )
@@ -3224,3 +3225,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if v != self.median_filter_kernel_size:
             self._median_filer_correction['kernel'] = v
             self.deep_rerender_needed.emit()
+
+
+# This is set to (num_fiddle_plates * num_time_steps) + num_image_plates
+# This feature is primarily for FIDDLE
+@memoize(maxsize=21)
+def medfilt2d_memoized(img: np.ndarray, kernel_size: int):
+    return medfilt2d(img, kernel_size)
