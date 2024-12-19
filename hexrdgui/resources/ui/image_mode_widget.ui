@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <property name="iconSize">
       <size>
@@ -166,6 +166,9 @@
               </property>
               <property name="decimals">
                <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
               </property>
               <property name="maximum">
                <double>1000000.000000000000000</double>

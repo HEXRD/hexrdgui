@@ -535,6 +535,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 pinhole_settings.pop('pinhole_radius') * 2
             )
 
+        if self.cartesian_virtual_plane_distance < 0:
+            # We used to allow this to be negative, but now must be positive.
+            # Taking the absolute value should correct this adequately.
+            self.cartesian_virtual_plane_distance = abs(
+                self.cartesian_virtual_plane_distance)
+
         # All QSettings come back as strings. So check that we are dealing with
         # a boolean and convert if necessary
         if not isinstance(self.live_update, bool):
@@ -2511,7 +2517,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def _set_cartesian_pixel_size(self, v):
         if v != self.cartesian_pixel_size:
             self.config['image']['cartesian']['pixel_size'] = v
-            self.rerender_needed.emit()
+            if self.image_mode == constants.ViewType.cartesian:
+                self.rerender_needed.emit()
 
     cartesian_pixel_size = property(_cartesian_pixel_size,
                                     _set_cartesian_pixel_size)
@@ -2520,9 +2527,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.config['image']['cartesian']['virtual_plane_distance']
 
     def set_cartesian_virtual_plane_distance(self, v):
+        if v < 0:
+            raise RuntimeError(f'Invalid plane distance: {v}')
+
         if v != self.cartesian_virtual_plane_distance:
             self.config['image']['cartesian']['virtual_plane_distance'] = v
-            self.rerender_needed.emit()
+            if self.image_mode == constants.ViewType.cartesian:
+                self.rerender_needed.emit()
 
     cartesian_virtual_plane_distance = property(
         _cartesian_virtual_plane_distance,
@@ -2534,7 +2545,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def set_cartesian_plane_normal_rotate_x(self, v):
         if v != self.cartesian_plane_normal_rotate_x:
             self.config['image']['cartesian']['plane_normal_rotate_x'] = v
-            self.rerender_needed.emit()
+            if self.image_mode == constants.ViewType.cartesian:
+                self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_x = property(
         _cartesian_plane_normal_rotate_x,
@@ -2546,7 +2558,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def set_cartesian_plane_normal_rotate_y(self, v):
         if v != self.cartesian_plane_normal_rotate_y:
             self.config['image']['cartesian']['plane_normal_rotate_y'] = v
-            self.rerender_needed.emit()
+            if self.image_mode == constants.ViewType.cartesian:
+                self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_y = property(
         _cartesian_plane_normal_rotate_y,
