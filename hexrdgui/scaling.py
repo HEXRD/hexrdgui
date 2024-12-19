@@ -7,19 +7,19 @@ import numpy as np
 #####################
 
 
-def none(x):
+def none(x: np.ndarray) -> np.ndarray:
     return x
 
 
-def sqrt(x):
+def sqrt(x: np.ndarray) -> np.ndarray:
     return np.sqrt(x - np.nanmin(x))
 
 
-def log(x):
+def log(x: np.ndarray) -> np.ndarray:
     return np.log(x - np.nanmin(x) + 1)
 
 
-def log_log_sqrt(x):
+def log_log_sqrt(x: np.ndarray) -> np.ndarray:
     return np.log(np.log(np.sqrt(x - np.nanmin(x)) + 1) + 1)
 
 
@@ -31,9 +31,14 @@ def rescale_to_original(func):
         old_range = (np.nanmin(old), np.nanmax(old))
         return np.interp(new, new_range, old_range)
 
+    def fill_masked(x, fill_value=np.nan):
+        if isinstance(x, np.ma.masked_array):
+            return x.filled(fill_value)
+        return x
+
     @functools.wraps(func)
     def wrapper(old):
-        new = func(old)
+        new = func(fill_masked(old))
         return rescale_to_old(new, old)
 
     return wrapper
