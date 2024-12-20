@@ -326,6 +326,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._apply_absorption_correction = False
         self._physics_package = None
         self._detector_coatings = {}
+        self._instrument_rigid_body_params = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -428,6 +429,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('sample_tilt', [0, 0, 0]),
             ('azimuthal_offset', 0.0),
             ('_active_beam_name', None),
+            ('_instrument_rigid_body_params', {}),
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
             ('physics_package_dictified', None),
@@ -467,6 +469,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'azimuthal_overlays',
             'azimuthal_offset',
             '_recent_images',
+            '_instrument_rigid_body_params',
         ]
 
         state = {}

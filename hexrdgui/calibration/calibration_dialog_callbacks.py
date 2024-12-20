@@ -6,6 +6,9 @@ from PySide6.QtWidgets import QFileDialog
 
 import lmfit
 
+from hexrd.fitting.calibration.relative_constraints import (
+    RelativeConstraintsType,
+)
 from hexrd.fitting.calibration.lmfit_param_handling import (
     create_instr_params,
     update_instrument_from_params,
@@ -15,6 +18,10 @@ from hexrd.instrument import HEDMInstrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict
 from hexrdgui.utils.abc_qobject import ABCQObject
+
+
+# Number of decimal places to round calibration parameters
+ROUND_DECIMALS = 3
 
 
 class CalibrationDialogCallbacks(ABCQObject):
@@ -59,6 +66,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         dialog.load_picks_clicked.connect(self.on_load_picks_clicked)
         dialog.relative_constraints_changed.connect(
             self.on_relative_constraints_changed)
+        dialog.reset_relative_params_to_zero_clicked.connect(
+            self.on_reset_relative_params_to_zero_clicked)
         dialog.tilt_center_of_rotation_changed.connect(
             self.on_tilt_center_of_rotation_changed)
         dialog.engineering_constraints_changed.connect(
@@ -162,17 +171,53 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.dialog.advanced_options = stack_item['advanced_options']
 
         self.update_undo_enable_state()
+        self.save_constraint_params()
 
     def update_undo_enable_state(self):
         self.dialog.undo_enabled = bool(self.undo_stack)
 
     def on_relative_constraints_changed(self, new_constraint):
         self.calibrator.relative_constraints_type = new_constraint
+        self.restore_constraint_params()
         # Reset the tilt center of rotation in the dialog
         self.dialog.tilt_center_of_rotation = (
             self.calibrator.relative_constraints.rotation_center
         )
         self.on_constraints_changed()
+
+    def on_reset_relative_params_to_zero_clicked(self):
+        self.reset_saved_constraint_params()
+
+    def save_constraint_params(self):
+        constraints = self.calibrator.relative_constraints
+        if constraints.type != RelativeConstraintsType.system:
+            # Instead of saving, reset them
+            self.reset_saved_constraint_params()
+            return
+
+        HexrdConfig()._instrument_rigid_body_params = copy.deepcopy(
+            constraints.params)
+
+    def restore_constraint_params(self):
+        constraints = self.calibrator.relative_constraints
+        if constraints.type != RelativeConstraintsType.system:
+            return
+
+        params = copy.deepcopy(HexrdConfig()._instrument_rigid_body_params)
+        if not params:
+            return
+
+        constraints.params.update(**params)
+        self.calibrator.reset_lmfit_params()
+        self.round_param_numbers()
+        self.update_dialog_from_calibrator()
+
+    def reset_saved_constraint_params(self):
+        HexrdConfig()._instrument_rigid_body_params.clear()
+        constraints = self.calibrator.relative_constraints
+        constraints.reset_params()
+        self.calibrator.reset_lmfit_params()
+        self.update_dialog_from_calibrator()
 
     def on_tilt_center_of_rotation_changed(self, new_center):
         relative_constraints = self.calibrator.relative_constraints
@@ -270,6 +315,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def on_calibration_finished(self):
         self.update_config_from_instrument()
+        self.save_constraint_params()
         self.dialog.params_dict = self.calibrator.params
 
     def update_config_from_instrument(self):
@@ -299,7 +345,7 @@ class CalibrationDialogCallbacks(ABCQObject):
     def update_tth_distortion_from_dialog(self):
         self.calibrator.tth_distortion = self.dialog.tth_distortion
 
-    def round_param_numbers(self, decimals=3):
+    def round_param_numbers(self):
         params_dict = self.calibrator.params
 
         attrs = [
@@ -309,7 +355,11 @@ class CalibrationDialogCallbacks(ABCQObject):
         ]
         for param in params_dict.values():
             for attr in attrs:
-                setattr(param, attr, round(getattr(param, attr), 3))
+                setattr(
+                    param,
+                    attr,
+                    round(getattr(param, attr), ROUND_DECIMALS)
+                )
 
     def on_edit_picks_finished(self):
         # Show this again

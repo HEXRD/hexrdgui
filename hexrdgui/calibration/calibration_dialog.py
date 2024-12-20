@@ -45,6 +45,7 @@ class CalibrationDialog(QObject):
     relative_constraints_changed = Signal(RelativeConstraintsType)
     tilt_center_of_rotation_changed = Signal(RotationCenter)
     engineering_constraints_changed = Signal(str)
+    reset_relative_params_to_zero_clicked = Signal()
 
     pinhole_correction_settings_modified = Signal()
 
@@ -107,6 +108,8 @@ class CalibrationDialog(QObject):
             self.on_active_beam_changed)
         self.ui.show_picks_from_all_xray_sources.toggled.connect(
             self.show_picks_from_all_xray_sources_toggled)
+        self.ui.reset_relative_params_to_zero.clicked.connect(
+            self.on_reset_relative_params_to_zero_clicked)
         self.ui.relative_constraints.currentIndexChanged.connect(
             self.on_relative_constraints_changed)
         self.ui.tilt_center_of_rotation.currentIndexChanged.connect(
@@ -245,6 +248,7 @@ class CalibrationDialog(QObject):
         visible = self.relative_constraints != RelativeConstraintsType.none
 
         tilt_center_widgets = [
+            self.ui.reset_relative_params_to_zero,
             self.ui.tilt_center_of_rotation,
             self.ui.tilt_center_of_rotation_label,
         ]
@@ -431,6 +435,9 @@ class CalibrationDialog(QObject):
         # They should all have identical settings. Just take the first one.
         first = next(iter(v.values()))
         self.pinhole_correction_editor.update_from_object(first)
+
+    def on_reset_relative_params_to_zero_clicked(self):
+        self.reset_relative_params_to_zero_clicked.emit()
 
     def on_relative_constraints_changed(self):
         # If the relative constraints is not None, then the engineering
