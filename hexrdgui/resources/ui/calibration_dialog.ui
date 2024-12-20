@@ -20,24 +20,34 @@
       <string>Constraints</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="1" column="0">
-       <widget class="QLabel" name="engineering_constraints_label">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="relative_constraints">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Add engineering constraints for:</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Options to set relative constraints between the detectors.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;None&amp;quot; means no relative constraints.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Instrument Rigid Body&amp;quot; means all detectors in the entire instrument are relatively constrained to one another. In this case, the mean center of the detectors and a mean tilt may be refined.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QCheckBox" name="delta_boundaries">
+       <widget class="QLabel" name="tilt_center_of_rotation_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation to be used for tilt parameters when relative constraints are enabled.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Instrument Center&amp;quot; will cause the panels to be rotated about the mean center of the detectors when the tilt is modified.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; will cause the panels to be rotated about lab origin (i. e., [0, 0, 0]) when the tilt is modified.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
-         <string>Use delta for boundaries</string>
+         <string>Tilt center of rotation:</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="5" column="0" colspan="2">
+       <widget class="QPushButton" name="mirror_constraints_from_first_detector">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If clicked, the &amp;quot;Vary&amp;quot; and &amp;quot;Delta&amp;quot; (if &amp;quot;Use delta for boundaries&amp;quot; is checked) settings of the first detector's tilt/translation parameters will be copied to all other detectors' tilt/translation parameters.&lt;/p&gt;&lt;p&gt;This is helpful if you have many detectors and want to modify all of their &amp;quot;Vary&amp;quot; and &amp;quot;Delta&amp;quot; settings in a similar way.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Mirror Constraints from First Detector</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
        <widget class="QComboBox" name="engineering_constraints">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -54,13 +64,13 @@
         </item>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QPushButton" name="mirror_constraints_from_first_detector">
+      <item row="3" column="0">
+       <widget class="QLabel" name="engineering_constraints_label">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If clicked, the &amp;quot;Vary&amp;quot; and &amp;quot;Delta&amp;quot; (if &amp;quot;Use delta for boundaries&amp;quot; is checked) settings of the first detector's tilt/translation parameters will be copied to all other detectors' tilt/translation parameters.&lt;/p&gt;&lt;p&gt;This is helpful if you have many detectors and want to modify all of their &amp;quot;Vary&amp;quot; and &amp;quot;Delta&amp;quot; settings in a similar way.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add engineering constraints for certain instrument types. This may add extra parameters to the table.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For example, for TARDIS, the distance between IMAGE-PLATE-2 and IMAGE-PLATE-4 must be within a certain range. If TARDIS is selected, a new parameter is added with default values for this distance.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;If the instrument type can be guessed, it will be selected automatically when the dialog first appears. For example, TARDIS is automatically selected if any of the detector names are IMAGE-PLATE-2, IMAGE-PLATE-3, or IMAGE-PLATE-4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Mirror Constraints from First Detector</string>
+         <string>Add engineering constraints for:</string>
         </property>
        </widget>
       </item>
@@ -74,10 +84,24 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="relative_constraints">
+      <item row="2" column="1">
+       <widget class="QComboBox" name="tilt_center_of_rotation">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Options to set relative constraints between the detectors.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;None&amp;quot; means no relative constraints.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;System&amp;quot; means all detectors are relatively constrained to one another. In this case, the mean center of the detectors and a mean tilt may be refined.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation to be used for tilt parameters when relative constraints are enabled.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Instrument Center&amp;quot; will cause the panels to be rotated about the mean center of the detectors when the tilt is modified.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; will cause the panels to be rotated about lab origin (i. e., [0, 0, 0]) when the tilt is modified.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QCheckBox" name="delta_boundaries">
+        <property name="text">
+         <string>Use delta for boundaries</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="reset_relative_params_to_zero">
+        <property name="text">
+         <string>Reset Relative Params to Zero</string>
         </property>
        </widget>
       </item>
@@ -484,6 +508,8 @@ See scipy.optimize.least_squares for more details.</string>
   <tabstop>active_beam</tabstop>
   <tabstop>show_picks_from_all_xray_sources</tabstop>
   <tabstop>relative_constraints</tabstop>
+  <tabstop>reset_relative_params_to_zero</tabstop>
+  <tabstop>tilt_center_of_rotation</tabstop>
   <tabstop>engineering_constraints</tabstop>
   <tabstop>delta_boundaries</tabstop>
   <tabstop>mirror_constraints_from_first_detector</tabstop>

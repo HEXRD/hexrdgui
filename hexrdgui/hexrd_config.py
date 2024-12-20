@@ -284,7 +284,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.live_update = True
         self._show_saturation_level = False
         self._stitch_raw_roi_images = False
-        self._roi_lock_group_transforms = False
         self._tab_images = False
         self.previous_active_material = None
         self.collapsed_state = []
@@ -327,6 +326,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._apply_absorption_correction = False
         self._physics_package = None
         self._detector_coatings = {}
+        self._instrument_rigid_body_params = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -406,7 +406,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('config_indexing', None),
             ('config_image', None),
             ('_stitch_raw_roi_images', False),
-            ('_roi_lock_group_transforms', False),
             ('font_size', 11),
             ('images_dir', None),
             ('working_dir', '.'),
@@ -430,6 +429,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('sample_tilt', [0, 0, 0]),
             ('azimuthal_offset', 0.0),
             ('_active_beam_name', None),
+            ('_instrument_rigid_body_params', {}),
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
             ('physics_package_dictified', None),
@@ -469,6 +469,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'azimuthal_overlays',
             'azimuthal_offset',
             '_recent_images',
+            '_instrument_rigid_body_params',
         ]
 
         state = {}
@@ -2683,15 +2684,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     stitch_raw_roi_images = property(get_stitch_raw_roi_images,
                                      set_stitch_raw_roi_images)
 
-    def get_roi_lock_group_transforms(self):
-        return self._roi_lock_group_transforms and self.instrument_has_roi
-
-    def set_roi_lock_group_transforms(self, v):
-        self._roi_lock_group_transforms = v
-
-    roi_lock_group_transforms = property(get_roi_lock_group_transforms,
-                                         set_roi_lock_group_transforms)
-
     def tab_images(self):
         return self._tab_images
 
@@ -3067,7 +3059,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self._physics_package
 
     def update_physics_package(self, instr_type=None, **kwargs):
-        if instr_type is None:
+        if instr_type not in ('TARDIS', 'PXRDIP'):
             self._physics_package = None
         elif self.physics_package is None:
             all_kwargs = PHYSICS_PACKAGE_DEFAULTS.HED
