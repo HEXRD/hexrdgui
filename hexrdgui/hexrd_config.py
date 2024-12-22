@@ -3223,7 +3223,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @median_filter_kernel_size.setter
     def median_filter_kernel_size(self, v):
         if v != self.median_filter_kernel_size:
-            self._median_filer_correction['kernel'] = v
+            self._median_filer_correction['kernel'] = int(v)
             self.deep_rerender_needed.emit()
 
 
