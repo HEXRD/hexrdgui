@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+from hexrdgui.median_filter_dialog import MedianFilterDialog
 import numpy as np
 import yaml
 import tempfile
@@ -73,7 +74,6 @@ class LLNLImportToolDialog(QObject):
         self.loaded_images = []
         self.canvas = parent.image_tab_widget.active_canvas
         self.detector_images = {}
-        self.median_filter_action = parent.action_apply_median_filter
 
         # Disable these by default.
         # If we disable these in Qt Designer, there are some weird bugs
@@ -909,8 +909,11 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
 
-        # Allow user to change median filter kernel
-        self.median_filter_action.setChecked(True)
+        HexrdConfig().apply_median_filter_correction = True
+        d = MedianFilterDialog(self.ui.parent())
+        if self.instrument == 'FIDDLE':
+            # Allow user to change kernel before applying median filter
+            d.show()
 
     def show(self):
         self.ui.show()
