@@ -799,15 +799,29 @@ class LLNLImportToolDialog(QObject):
             self.complete_current_selection()
 
     def reset_panel(self):
-        HexrdConfig().enable_image_mode_widget.emit(True)
+        # Remove any templates that exist
         self.clear_boundry()
+        # Reset internal state
+        self.completed = []
+        self.defaults.clear()
+        self.config_file = None
+        self.import_in_progress = False
+        self.loaded_images.clear()
+        self.edited_images.clear()
+        # Reset all UI values that are populated during import
         self.ui.image_plates.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
         self.ui.image_plate_files_label.setText('')
         self.ui.detector_files_label.setText('')
         self.ui.dark_files_label.setText('')
         self.ui.completed_dets_and_ips.setText('')
-        self.edited_images.clear()
+        not_default = self.ui.config_selection.currentIndex() != 0
+        self.ui.load_config.setEnabled(not_default)
+        self.ui.config_file_label.setEnabled(not_default)
+        self.ui.config_file_label.setText('No File Selected')
+        self.ui.config_file_label.setToolTip(
+            'Defaults to currently loaded configuration')
+        # Reset widget states - disable/enable/show/hide as appropriate
         self.enable_widgets(
             self.ui.image_plate_raw_image,
             self.ui.config,
@@ -831,17 +845,8 @@ class LLNLImportToolDialog(QObject):
             self.ui.instr_settings_label,
             self.ui.instr_settings,
         visible=False)
-        not_default = self.ui.config_selection.currentIndex() != 0
-        self.ui.load_config.setEnabled(not_default)
-        self.ui.config_file_label.setEnabled(not_default)
-        self.ui.config_file_label.setText('No File Selected')
-        self.ui.config_file_label.setToolTip(
-            'Defaults to currently loaded configuration')
-        self.completed = []
-        self.defaults.clear()
-        self.config_file = None
-        self.import_in_progress = False
-        self.loaded_images.clear()
+        # We're all reset and ready to re-enable the main UI features
+        HexrdConfig().enable_image_mode_widget.emit(True)
 
     def import_complete(self):
         self.import_in_progress = False
