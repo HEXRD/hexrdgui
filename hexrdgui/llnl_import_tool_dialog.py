@@ -407,7 +407,7 @@ class LLNLImportToolDialog(QObject):
 
     def _set_transform(self):
         if self.instrument == 'FIDDLE':
-            return
+            flip = LLNLTransform.FIDDLE
         if self.instrument == 'PXRDIP':
             flip = LLNLTransform.PXRDIP
         elif self.instrument == 'TARDIS':
