@@ -5,6 +5,7 @@ import shutil
 import tempfile
 
 import h5py
+from hexrdgui.median_filter_dialog import MedianFilterDialog
 import numpy as np
 from skimage import measure
 
@@ -14,8 +15,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication, QDockWidget, QFileDialog,
-    QInputDialog, QMainWindow, QMessageBox,
-    QDialog, QVBoxLayout, QDialogButtonBox
+    QInputDialog, QMainWindow, QMessageBox
 )
 
 from hexrdgui.about_dialog import AboutDialog
@@ -58,7 +58,6 @@ from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrdgui.load_images_dialog import LoadImagesDialog
 from hexrdgui.simple_image_series_dialog import SimpleImageSeriesDialog
-from hexrdgui.scientificspinbox import ScientificDoubleSpinBox
 from hexrdgui.pinhole_mask_dialog import PinholeMaskDialog
 from hexrdgui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrdgui.polarization_options_dialog import (
@@ -409,6 +408,7 @@ class MainWindow(QObject):
             'action_apply_absorption_correction':
                 'apply_absorption_correction',
             'action_include_physics_package': 'has_physics_package',
+            'action_apply_median_filter': 'apply_median_filter_correction',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -1724,27 +1724,7 @@ class MainWindow(QObject):
             HexrdConfig().apply_median_filter_correction = b
             return
 
-        # Allow the user to set the kernel size
-        dialog = QDialog(self.ui)
-        layout = QVBoxLayout()
-        dialog.setLayout(layout)
-
-        kernel_input = ScientificDoubleSpinBox(dialog)
-        # Cannot exceed array dimensions
-        img = HexrdConfig().image(HexrdConfig().detector_names[0], 0)
-        upper_bound = min(img.shape[0], img.shape[1])
-        kernel_input.setMinimum(1)
-        kernel_input.setMaximum(upper_bound)
-        kernel_input.setValue(HexrdConfig().median_filter_kernel_size)
-        kernel_input.setSingleStep(2)  # Input must be odd number
-        layout.addWidget(kernel_input)
-
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        button_box = QDialogButtonBox(buttons, dialog)
-        button_box.accepted.connect(dialog.accept)
-        button_box.rejected.connect(dialog.reject)
-        layout.addWidget(button_box)
-
+        dialog = MedianFilterDialog(self.ui)
         if not dialog.exec():
             # User canceled. Uncheck the action.
             action = self.ui.action_apply_median_filter
