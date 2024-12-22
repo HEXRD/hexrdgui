@@ -212,6 +212,7 @@
      <addaction name="action_apply_polarization_correction"/>
      <addaction name="action_apply_absorption_correction"/>
      <addaction name="action_subtract_minimum"/>
+     <addaction name="action_apply_median_filter"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
     <addaction name="action_edit_euler_angle_convention"/>
@@ -876,6 +877,14 @@
   <action name="action_physics_package_editor">
    <property name="text">
     <string>Physics Package</string>
+   </property>
+  </action>
+  <action name="action_apply_median_filter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Apply Median Filter</string>
    </property>
   </action>
  </widget>
