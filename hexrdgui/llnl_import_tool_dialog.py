@@ -272,6 +272,9 @@ class LLNLImportToolDialog(QObject):
             visible=needs_mask)
 
             self.import_in_progress = True
+            # Make sure we're not applying median filter during import
+            self.median_setting = HexrdConfig().apply_median_filter_correction
+            HexrdConfig().apply_median_filter_correction = False
 
             HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
             HexrdConfig().enable_image_mode_widget.emit(False)
@@ -909,7 +912,8 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
 
-        HexrdConfig().apply_median_filter_correction = True
+        use_med = True if self.instrument == 'FIDDLE' else self.median_setting
+        HexrdConfig().apply_median_filter_correction = use_med
         d = MedianFilterDialog(self.ui.parent())
         if self.instrument == 'FIDDLE':
             # Allow user to change kernel before applying median filter
