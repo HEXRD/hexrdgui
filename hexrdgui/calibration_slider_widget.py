@@ -1,4 +1,5 @@
 from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QMessageBox
 
 import numpy as np
 
@@ -38,8 +39,10 @@ class CalibrationSliderWidget(QObject):
 
         self.ui.push_reset_config.pressed.connect(self.reset_config)
 
-        self.ui.roi_lock_group_transforms.toggled.connect(
-            HexrdConfig().set_roi_lock_group_transforms)
+        self.ui.lock_relative_transforms.toggled.connect(
+            self.on_lock_relative_transforms_toggled)
+        self.ui.lock_relative_transforms_setting.currentIndexChanged.connect(
+            self.on_lock_relative_transforms_setting_changed)
 
         HexrdConfig().euler_angle_convention_changed.connect(
             self.update_labels)
@@ -160,16 +163,68 @@ class CalibrationSliderWidget(QObject):
             for widget in self.config_widgets:
                 self.update_widget_value(widget)
 
-        self.ui.roi_lock_group_transforms.setChecked(
-            HexrdConfig().roi_lock_group_transforms)
-
         self.update_ranges()
         self.update_labels()
+        self.validate_relative_transforms_setting()
         self.update_visibility_states()
 
     def update_visibility_states(self):
-        self.ui.roi_lock_group_transforms.setVisible(
-            HexrdConfig().instrument_has_roi)
+        visible = self.lock_relative_transforms
+        widgets = [
+            self.ui.lock_relative_transforms_setting,
+            self.ui.locked_center_of_rotation_label,
+            self.ui.locked_center_of_rotation,
+        ]
+        for w in widgets:
+            w.setVisible(visible)
+
+    def on_lock_relative_transforms_toggled(self):
+        self.update_visibility_states()
+
+    def on_lock_relative_transforms_setting_changed(self):
+        self.validate_relative_transforms_setting()
+
+    def validate_relative_transforms_setting(self):
+        if not self.lock_relative_transforms:
+            return
+
+        if self.transform_group_rigid_body:
+            # If it is set to 'Group Rigid Body', verify that there are
+            # actually groups. Otherwise, print an error message and set it
+            # back to instrument.
+            if not all(
+                HexrdConfig().detector_group(det_key) is not None
+                for det_key in HexrdConfig().detector_names
+            ):
+                msg = (
+                    'To use "Group Rigid Body", all detectors must have '
+                    'assigned groups.\n\nSwitching back to "Instrument Rigid '
+                    'Body"'
+                )
+                QMessageBox.critical(self.ui, 'HEXRD', msg)
+                w = self.ui.lock_relative_transforms_setting
+                w.setCurrentIndex(0)
+                return
+
+    @property
+    def lock_relative_transforms(self) -> bool:
+        return self.ui.lock_relative_transforms.isChecked()
+
+    @property
+    def lock_relative_transforms_setting(self) -> str:
+        return self.ui.lock_relative_transforms_setting.currentText()
+
+    @property
+    def transform_instrument_rigid_body(self) -> bool:
+        return self.lock_relative_transforms_setting == 'Instrument Rigid Body'
+
+    @property
+    def transform_group_rigid_body(self) -> bool:
+        return self.lock_relative_transforms_setting == 'Group Rigid Body'
+
+    @property
+    def locked_center_of_rotation(self) -> str:
+        return self.ui.locked_center_of_rotation.currentText()
 
     def update_detectors_from_config(self):
         widget = self.ui.detector
@@ -212,8 +267,8 @@ class CalibrationSliderWidget(QObject):
                 # Convert to radians, and to the native python type before save
                 val = np.radians(val).item()
 
-            if HexrdConfig().roi_lock_group_transforms:
-                self._transform_locked_group(det, key, ind, val)
+            if self.lock_relative_transforms:
+                self._transform_locked(det, key, ind, val)
             else:
                 det['transform'][key]['value'][ind] = val
 
@@ -235,15 +290,22 @@ class CalibrationSliderWidget(QObject):
                 beam_dict['vector'][key]['value'] = val
                 HexrdConfig().beam_vector_changed.emit()
 
-    def _transform_locked_group(self, det, key, ind, val):
-        group = det.get('group', {}).get('value')
-        if not group:
-            raise Exception(f'Detector does not have a group: {det}')
-
-        group_dets = {}
-        for name in HexrdConfig().detector_names:
-            if HexrdConfig().detector_group(name) == group:
-                group_dets[name] = HexrdConfig().detector(name)
+    def _transform_locked(self, det, key, ind, val):
+        det_names = HexrdConfig().detector_names
+        if self.transform_instrument_rigid_body:
+            # All detectors will be transformed as a group
+            group_dets = {
+                name: HexrdConfig().detector(name)
+                for name in det_names
+            }
+        elif self.transform_group_rigid_body:
+            group = det.get('group', {}).get('value')
+            group_dets = {}
+            for name in HexrdConfig().detector_names:
+                if HexrdConfig().detector_group(name) == group:
+                    group_dets[name] = HexrdConfig().detector(name)
+        else:
+            raise NotImplementedError(self.lock_relative_transforms_setting)
 
         if key == 'translation':
             # Compute the diff
@@ -255,9 +317,16 @@ class CalibrationSliderWidget(QObject):
                 detector['transform']['translation']['value'][ind] += diff
         else:
             # It is tilt. Compute the center of rotation first.
-            detector_centers = np.array([x['transform']['translation']['value']
-                                        for x in group_dets.values()])
-            center_of_rotation = detector_centers.mean(axis=0)
+            if self.locked_center_of_rotation == 'Mean Center':
+                detector_centers = np.array(
+                    [x['transform']['translation']['value']
+                     for x in group_dets.values()]
+                )
+                center_of_rotation = detector_centers.mean(axis=0)
+            elif self.locked_center_of_rotation == 'Origin':
+                center_of_rotation = np.array([0.0, 0.0, 0.0])
+            else:
+                raise NotImplementedError(self.locked_center_of_rotation)
 
             # Gather the old tilt and the new tilt to compute a difference.
             old_tilt = det['transform']['tilt']['value']

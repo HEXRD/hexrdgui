@@ -114,6 +114,13 @@ KNOWN_DETECTOR_NAMES = {
         'IMAGE-PLATE-R',
         'IMAGE-PLATE-U',
     ],
+    'FIDDLE': [
+        'ic2',
+        'ic3',
+        'ic5',
+        'ic7',
+        'ic8',
+    ],
 }
 
 KEY_ROTATE_ANGLE_FINE = 0.00175
