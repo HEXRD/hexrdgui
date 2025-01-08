@@ -84,27 +84,43 @@ class RerunClusteringDialog(QDialog):
         worker = AsyncWorker(runner.run_cluster)
         runner.thread_pool.start(worker)
 
-        def on_finished():
-            # Since this is a QueuedConnection, we need to accept progress here
-            runner.accept_progress()
-            runner.confirm_indexing_results()
-
-            if runner.grains_table is None:
-                # The previous step must have failed. Show again.
-                QTimer.singleShot(0, self.exec)
-
-        def on_rejected():
-            # Since this is a QueuedConnection, we need to accept progress here
-            runner.accept_progress()
-            self.exec()
-
-        worker.signals.result.connect(on_finished, Qt.QueuedConnection)
-        runner.indexing_results_rejected.connect(on_rejected,
-            Qt.QueuedConnection)
+        worker.signals.result.connect(
+            self._on_run_cluster_finished,
+            Qt.QueuedConnection,
+        )
+        runner.indexing_results_rejected.connect(
+            self._on_indexing_results_rejected,
+            Qt.QueuedConnection,
+        )
         worker.signals.error.connect(runner.on_async_error)
         runner.progress_dialog.exec()
 
         super().accept()
+
+    def _on_run_cluster_finished(self):
+        # This function was previously a nested function, but for some reason,
+        # in the latest version of Qt (Qt 6.8.1), a queued connection on a
+        # nested function no longer seems to work (the application freezes).
+        # It appears to work, however, if this is a method on the object.
+        runner = self.indexing_runner
+
+        # Since this is a QueuedConnection, we need to accept progress here
+        runner.accept_progress()
+        runner.confirm_indexing_results()
+
+        if runner.grains_table is None:
+            # The previous step must have failed. Show again.
+            QTimer.singleShot(0, self.exec)
+
+    def _on_indexing_results_rejected(self):
+        # This function was previously a nested function, but for some reason,
+        # in the latest version of Qt (Qt 6.8.1), a queued connection on a
+        # nested function no longer seems to work (the application freezes).
+        # It appears to work, however, if this is a method on the object.
+
+        # Since this is a QueuedConnection, we need to accept progress here
+        self.indexing_runner.accept_progress()
+        self.exec()
 
     def exec(self):
         self.setup_gui()
