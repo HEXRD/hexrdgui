@@ -23,7 +23,9 @@ requirements:
     - python
     - fabio
     - hexrd=={{ hexrd_version }}
-    - matplotlib-base
+    # We have some issue removing artists in matplotlib 3.10
+    # Fix the matplotlib version until that is resolved.
+    - matplotlib-base<3.10
     - Pillow
     - pyhdf
     - pyside6
