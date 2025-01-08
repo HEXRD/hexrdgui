@@ -204,8 +204,8 @@ class ZoomCanvas(FigureCanvas):
             return
 
         vline, hline = self.vhlines
-        vline.set_xdata(event.xdata)
-        hline.set_ydata(event.ydata)
+        vline.set_xdata([event.xdata])
+        hline.set_ydata([event.ydata])
 
     def main_canvas_mouse_moved(self, event):
         if self.disabled:
