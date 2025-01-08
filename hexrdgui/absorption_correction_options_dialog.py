@@ -1,9 +1,5 @@
-import h5py
-
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
-
-from hexrd.material import _angstroms, _kev, Material
 
 
 class AbsorptionCorrectionOptionsDialog:
@@ -65,10 +61,17 @@ class AbsorptionCorrectionOptionsDialog:
             w.insertSeparator(2 + len(custom_mats))
 
         # Set default values
-        filter = HexrdConfig().detector_filter(self.ui.detectors.currentText())
-        coating = HexrdConfig().detector_coating(
-            self.ui.detectors.currentText())
-        phosphor = HexrdConfig().detector_phosphor(self.ui.detectors.currentText())
+        det = self.ui.detectors.currentText()
+        if (filter := HexrdConfig().detector_filter(det)) is None:
+            HexrdConfig().update_detector_filter(det)
+            filter = HexrdConfig().detector_filter(det)
+        if (coating := HexrdConfig().detector_coating(det)) is None:
+            HexrdConfig().update_detector_coating(det)
+            coating = HexrdConfig().detector_coating(det)
+        if (phosphor := HexrdConfig().detector_phosphor(det)) is None:
+            HexrdConfig().update_detector_phosphor(det)
+            phosphor = HexrdConfig().detector_phosphor(det)
+
         # FILTER
         if filter.material not in self.mat_options:
             self.ui.filter_material_input.setText(filter.material)

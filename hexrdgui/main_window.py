@@ -476,12 +476,8 @@ class MainWindow(QObject):
         visible = instr_type in ('TARDIS', 'PXRDIP')
 
         self.ui.action_physics_package_editor.setVisible(visible)
-        self.ui.action_apply_absorption_correction.setVisible(visible)
 
         if not visible:
-            # Turn off absorption correction
-            self.ui.action_apply_absorption_correction.setChecked(False)
-
             # Remove the physics package
             HexrdConfig().physics_package = None
 
@@ -1667,15 +1663,6 @@ class MainWindow(QObject):
         if not b:
             # Just turn it off and return
             HexrdConfig().apply_absorption_correction = b
-            return
-
-        # Make sure the physics package exists first
-        if HexrdConfig().physics_package is None:
-            msg = (
-                'Physics package must be set before absorption correction can be '
-                'applied. See the "Physics Package" editor under the "Edit" menu.'
-            )
-            QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
         # Get the user to first select the absorption correction options
