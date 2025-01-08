@@ -119,7 +119,7 @@ class PhysicsPackageManagerDialog:
                 HexrdConfig().update_detector_filter(
                     det, **FILTER_DEFAULTS.PXRDIP)
         else:
-            HexrdConfig().update_physics_package(instr_type=None)
+            HexrdConfig().physics_package = None
         self.instrument_type = new_instr_type
 
     def setup_form(self):

@@ -3058,24 +3058,31 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def physics_package(self):
         return self._physics_package
 
+    @physics_package.setter
+    def physics_package(self, value):
+        self._physics_package = value
+
     def update_physics_package(self, instr_type=None, **kwargs):
         if instr_type not in ('TARDIS', 'PXRDIP'):
-            self._physics_package = None
-        elif self.physics_package is None:
+            raise ValueError(
+                f'Expected physics package instrument type to be either '
+                f'"TARDIS" or "PXRDIP", got {instr_type} instead.'
+            )
+        if self.physics_package is None:
             all_kwargs = PHYSICS_PACKAGE_DEFAULTS.HED
             all_kwargs.update(**kwargs)
-            self._physics_package = HEDPhysicsPackage(**all_kwargs)
+            self.physics_package = HEDPhysicsPackage(**all_kwargs)
         else:
-            self._physics_package.deserialize(**kwargs)
+            self.physics_package.deserialize(**kwargs)
         self.physics_package_modified.emit()
 
     def create_default_physics_package(self):
-        self._physics_package = HEDPhysicsPackage(
+        self.physics_package = HEDPhysicsPackage(
             **PHYSICS_PACKAGE_DEFAULTS.HED)
         self.physics_package_modified.emit()
 
     def absorption_length(self):
-        if self._physics_package is None:
+        if self.physics_package is None:
             raise ValueError(
                 f'Cannot calculate absorption length without physics package')
         return self.physics_package.pinhole_absorption_length(

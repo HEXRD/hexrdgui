@@ -482,8 +482,8 @@ class MainWindow(QObject):
             # Turn off absorption correction
             self.ui.action_apply_absorption_correction.setChecked(False)
 
-            # Set the physics package to None
-            HexrdConfig().update_physics_package()
+            # Remove the physics package
+            HexrdConfig().physics_package = None
 
             # Turn off all detector coatings
             HexrdConfig().detector_coatings_dictified = {}
