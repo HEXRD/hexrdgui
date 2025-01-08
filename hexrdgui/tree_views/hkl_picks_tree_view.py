@@ -4,6 +4,7 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QMenu
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.overlays import Overlay
 from hexrdgui.tree_views.base_dict_tree_item_model import BaseTreeItemModel
 from hexrdgui.tree_views.generic_picks_tree_view import (
@@ -120,16 +121,51 @@ class HKLPicksTreeView(GenericPicksTreeView):
             else:
                 raise NotImplementedError
 
-            new_item = TreeItem([position, 0., 0.])
-            model.insert_items([new_item], parent_item, position)
+            if not is_hand_pickable:
+                new_item = TreeItem([position, 0., 0.])
+                model.insert_items([new_item], parent_item, position)
 
-            # Select the new item
-            index = model.createIndex(new_item.row(), 0, new_item)
-            self.setCurrentIndex(index)
+                # Select the new item
+                index = model.createIndex(new_item.row(), 0, new_item)
+                self.setCurrentIndex(index)
+                return
 
-            if is_hand_pickable:
-                # Go ahead and get the user to hand pick the point...
-                self.hand_pick_point(new_item, hkl_str)
+            pick_label = f'Inserting points into: {hkl_str}'
+            kwargs = {
+                'canvas': self.canvas,
+                'parent': self,
+            }
+
+            picker = LinePickerDialog(**kwargs)
+            picker.current_pick_label = pick_label
+            picker.ui.setWindowTitle(pick_label)
+            picker.ui.view_picks.setVisible(False)
+            picker.start()
+
+            def on_line_completed():
+                # Just accept it
+                picker.ui.accept()
+
+            def on_accepted():
+                nonlocal position
+                original_position = position
+                new_line = picker.line_data[0]
+                new_items = []
+                for x, y in new_line.tolist():
+                    new_items.append(TreeItem([position, x, y]))
+                    position += 1
+
+                model.insert_items(new_items, parent_item, original_position)
+
+                # Select the last new item
+                last_item = new_items[-1]
+                index = model.createIndex(last_item.row(), 0, last_item)
+                self.setCurrentIndex(index)
+
+            picker.accepted.connect(on_accepted)
+            picker.line_completed.connect(on_line_completed)
+
+            self._current_picker = picker
 
         def hand_pick_item():
             self.hand_pick_point(item, hkl_str)
