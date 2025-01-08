@@ -28,6 +28,7 @@ from hexrdgui import utils
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.singletons import QSingleton
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
+from hexrdgui.utils.physics_package import ask_to_create_physics_package_if_missing
 
 import hexrdgui.resources.calibration
 import hexrdgui.resources.indexing
@@ -3082,7 +3083,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.physics_package_modified.emit()
 
     def absorption_length(self):
-        if self.physics_package is None:
+        if not ask_to_create_physics_package_if_missing():
             raise ValueError(
                 f'Cannot calculate absorption length without physics package')
         return self.physics_package.pinhole_absorption_length(

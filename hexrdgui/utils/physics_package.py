@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QMessageBox
 
-from hexrdgui.hexrd_config import HexrdConfig
-
 
 def ask_to_create_physics_package_if_missing() -> bool:
+    from hexrdgui.hexrd_config import HexrdConfig  # Avoid circular import
+
     if HexrdConfig().physics_package is not None:
         return True
 

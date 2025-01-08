@@ -164,9 +164,9 @@ class PinholeCorrectionEditor(QObject):
 
             vp[key] = value * multiplier
 
-        physics = HexrdConfig().physics_package
-        if physics is None:
+        if not ask_to_create_physics_package_if_missing():
             return
+        physics = HexrdConfig().physics_package
 
         # Values are (key, default)
         values = {
@@ -408,7 +408,7 @@ class PinholeCorrectionEditor(QObject):
         return 0
 
     def on_rygg_absorption_length_selector_changed(self):
-        if HexrdConfig().physics_package is None:
+        if not ask_to_create_physics_package_if_missing():
             # Cannot update
             return
 
