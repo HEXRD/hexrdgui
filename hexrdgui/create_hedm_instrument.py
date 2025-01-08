@@ -22,13 +22,14 @@ def create_hedm_instrument():
     # that expect it
     if HexrdConfig().physics_package is not None:
         iconfig['physics_package'] = HexrdConfig().physics_package
-    for det in HexrdConfig().detector_names:
-        iconfig['detectors'][det]['filter'] = (
-            HexrdConfig().detector_filter(det))
-        iconfig['detectors'][det]['coating'] = (
-            HexrdConfig().detector_coating(det))
-        iconfig['detectors'][det]['phosphor'] = (
-            HexrdConfig().detector_phosphor(det))
+    if HexrdConfig().apply_absorption_correction:
+        for det in HexrdConfig().detector_names:
+            iconfig['detectors'][det]['filter'] = (
+                HexrdConfig().detector_filter(det))
+            iconfig['detectors'][det]['coating'] = (
+                HexrdConfig().detector_coating(det))
+            iconfig['detectors'][det]['phosphor'] = (
+                HexrdConfig().detector_phosphor(det))
 
     kwargs = {
         'instrument_config': iconfig,
