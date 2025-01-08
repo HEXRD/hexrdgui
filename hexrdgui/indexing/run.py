@@ -323,14 +323,20 @@ class IndexingRunner(Runner):
         worker = AsyncWorker(self.run_cluster_functions)
         self.thread_pool.start(worker)
 
-        def on_finished():
-            # Since this is a QueuedConnection, we must accept the progress
-            # before proceeding.
-            self.accept_progress()
-            self.confirm_indexing_results()
-
-        worker.signals.result.connect(on_finished, Qt.QueuedConnection)
+        worker.signals.result.connect(self._on_run_cluster_functions_finished,
+                                      Qt.QueuedConnection)
         worker.signals.error.connect(self.on_async_error)
+
+    def _on_run_cluster_functions_finished(self):
+        # This function was previously a nested function, but for some reason,
+        # in the latest version of Qt (Qt 6.8.1), a queued connection on a
+        # nested function no longer seems to work (the application freezes).
+        # It appears to work, however, if this is a method on the object.
+
+        # Since this is a QueuedConnection, we must accept the progress
+        # before proceeding.
+        self.accept_progress()
+        self.confirm_indexing_results()
 
     @property
     def clustering_needs_min_samples(self):
