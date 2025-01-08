@@ -620,6 +620,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.instrument.setDisabled(False)
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
+        HexrdConfig().use_physics_package = True
         self.physics_package_manager.show()
 
     def show(self):

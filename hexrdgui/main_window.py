@@ -78,7 +78,6 @@ from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
-from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
 )
@@ -170,7 +169,6 @@ class MainWindow(QObject):
         self.setup_connections()
 
         self.update_config_gui()
-        self.update_physics_package_visibilities()
 
         self.update_action_check_states()
 
@@ -306,8 +304,11 @@ class MainWindow(QObject):
             self.on_action_edit_apply_threshold_triggered)
         self.ui.action_open_preconfigured_instrument_file.triggered.connect(
             self.on_action_open_preconfigured_instrument_file_triggered)
-        self.ui.action_physics_package_editor.triggered.connect(
-            self.on_action_physics_package_editor_triggered
+        self.ui.action_edit_physics_package.triggered.connect(
+            self.on_action_edit_physics_package_triggered
+        )
+        self.ui.action_apply_physics_package.toggled.connect(
+            self.on_action_apply_physics_package_toggled
         )
 
         self.image_mode_widget.polar_show_snip1d.connect(
@@ -394,6 +395,7 @@ class MainWindow(QObject):
             'action_show_all_colormaps': 'show_all_colormaps',
             'action_apply_absorption_correction':
                 'apply_absorption_correction',
+            'action_apply_physics_package': 'use_physics_package',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -441,7 +443,6 @@ class MainWindow(QObject):
 
     def on_instrument_config_loaded(self):
         self.update_config_gui()
-        self.update_physics_package_visibilities()
 
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -470,19 +471,6 @@ class MainWindow(QObject):
 
     def on_action_save_config_yaml_triggered(self):
         self._save_config('.yml', 'YAML files (*.yml)')
-
-    def update_physics_package_visibilities(self):
-        instr_type = guess_instrument_type(HexrdConfig().detector_names)
-        visible = instr_type in ('TARDIS', 'PXRDIP')
-
-        self.ui.action_physics_package_editor.setVisible(visible)
-
-        if not visible:
-            # Remove the physics package
-            HexrdConfig().physics_package = None
-
-            # Turn off all detector coatings
-            HexrdConfig().detector_coatings_dictified = {}
 
     def open_grain_fitting_results(self):
         selected_file, _ = QFileDialog.getOpenFileName(
@@ -1656,8 +1644,28 @@ class MainWindow(QObject):
         with resource_loader.resource_path(instrument_templates, fname) as f:
             HexrdConfig().load_instrument_config(Path(f))
 
-    def on_action_physics_package_editor_triggered(self):
+    def on_action_edit_physics_package_triggered(self):
         self.physics_package_manager_dialog.show()
+
+    def on_action_apply_physics_package_toggled(self, b):
+        self.ui.action_edit_physics_package.setEnabled(b)
+        if not b:
+            # Just turn it off and return
+            HexrdConfig().use_physics_package = b
+            return
+
+        # Get the user to select the physics package options
+        dialog = self.physics_package_manager_dialog
+        dialog.show()
+
+        dialog.ui.rejected.connect(
+            # Canceled... uncheck the action.
+            lambda: self.ui.action_apply_physics_package.setChecked(False)
+        )
+
+        # The user should have modified HexrdConfig's physics
+        # package options already. Just apply it now.
+        HexrdConfig().use_physics_package = b
 
     def action_apply_absorption_correction_toggled(self, b):
         if not b:

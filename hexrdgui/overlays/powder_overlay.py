@@ -17,7 +17,9 @@ from hexrdgui.utils import array_index_in_list
 from hexrdgui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
-from hexrdgui.utils.physics_package import ask_to_create_physics_package_if_missing
+from hexrdgui.utils.physics_package import (
+    ask_to_create_physics_package_if_missing
+)
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
