@@ -1,7 +1,7 @@
 import numpy as np
 
 from skimage.filters.edges import binary_erosion
-from skimage.morphology import rectangle
+from skimage.morphology import footprint_rectangle
 from skimage.transform import warp
 
 from hexrd.transforms.xfcapi import mapAngle
@@ -428,10 +428,10 @@ class PolarView:
             #        NOT done inside snip computation!
             if HexrdConfig().polar_apply_erosion:
                 niter = HexrdConfig().polar_snip1d_numiter
-                structure = rectangle(
+                structure = footprint_rectangle((
                     1,
                     int(np.ceil(2.25*niter*snip_width_pixels()))
-                )
+                ))
                 mask = binary_erosion(~self.raw_img.mask, structure)
                 img[~mask] = np.nan
 
