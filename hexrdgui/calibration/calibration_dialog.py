@@ -790,11 +790,10 @@ def guess_engineering_constraints(instr) -> str | None:
     # First guess the instrument type.
     instr_type = guess_instrument_type(instr.detectors)
 
-    # If it matches one of our expected engineering constraints, use it.
-    expected_options = [
-        'TARDIS',
-    ]
-    if instr_type in expected_options:
-        return instr_type
+    if instr_type == 'TARDIS':
+        # Make sure it contains both image plates
+        required_detectors = ['IMAGE-PLATE-2', 'IMAGE-PLATE-4']
+        if all(x in instr.detectors for x in required_detectors):
+            return instr_type
 
     return None
