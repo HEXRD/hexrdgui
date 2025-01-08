@@ -597,7 +597,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         def set_physics_and_coatings():
             pp = state.get('physics_package_dictified', None)
             self.physics_package_dictified = pp if pp is not None else {}
-            dc = state.get('detector_coatings_dictified')
+            dc = state.get('detector_coatings_dictified', None)
             self.detector_coatings_dictified = dc if dc is not None else {}
 
         if 'detector_coatings_dictified' in state:
