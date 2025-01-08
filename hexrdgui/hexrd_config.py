@@ -2215,6 +2215,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         for overlay in self.overlays:
             overlay.update_needed = True
 
+    def reset_overlay_calibration_picks(self):
+        for overlay in self.overlays:
+            overlay.reset_calibration_picks()
+
     def flag_overlay_updates_for_active_material(self):
         self.flag_overlay_updates_for_material(self.active_material_name)
 

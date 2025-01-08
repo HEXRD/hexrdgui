@@ -87,6 +87,7 @@ class CalibrationRunner(QObject):
     def clear_all_overlay_picks(self):
         for overlay in self.active_overlays:
             overlay.reset_calibration_picks()
+            overlay.pad_picks_data()
 
     @property
     def overlays(self):
@@ -152,6 +153,7 @@ class CalibrationRunner(QObject):
     def hand_pick_points(self):
         overlay = self.active_overlay
         overlay.reset_calibration_picks()
+        overlay.pad_picks_data()
 
         title = overlay.name
 
@@ -805,6 +807,7 @@ class CalibrationRunner(QObject):
             raise NotImplementedError(overlay.type)
 
         overlay.reset_calibration_picks()
+        overlay.pad_picks_data()
         return funcs[overlay.type]()
 
     def auto_pick_powder_points(self):

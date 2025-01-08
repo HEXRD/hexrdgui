@@ -507,6 +507,7 @@ class MainWindow(QObject):
             self._fit_grains_results_dialog = dialog
 
     def on_detectors_changed(self):
+        HexrdConfig().reset_overlay_calibration_picks()
         HexrdConfig().clear_overlay_data()
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
