@@ -190,9 +190,9 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def save_constraint_params(self):
         constraints = self.calibrator.relative_constraints
-        if constraints.type != RelativeConstraintsType.system:
-            # Instead of saving, reset them
-            self.reset_saved_constraint_params()
+        if constraints.type == RelativeConstraintsType.none:
+            # Nothing to save... Just make sure the old one is cleared.
+            HexrdConfig()._instrument_rigid_body_params.clear()
             return
 
         HexrdConfig()._instrument_rigid_body_params = copy.deepcopy(
