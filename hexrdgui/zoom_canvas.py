@@ -60,7 +60,7 @@ class ZoomCanvas(FigureCanvas):
 
         # user-specified ROI (from interactors)
         self.zoom_width = 15
-        self.zoom_height = 60
+        self.zoom_height = 150
 
         # Keep track of whether we should skip a render (due to point picking)
         self.skip_next_render = False
