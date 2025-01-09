@@ -3058,8 +3058,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if v != self.use_physics_package:
             self._use_physics_package = v
             self.physics_package_modified.emit()
-        if self.use_physics_package and self.physics_package is None:
-            self.create_default_physics_package()
+            if self.use_physics_package:
+                self.create_default_physics_package()
+            else:
+                self.physics_package = None
 
     @property
     def physics_package_dictified(self):
