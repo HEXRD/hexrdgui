@@ -172,6 +172,8 @@ class MainWindow(QObject):
 
         self.update_action_check_states()
 
+        self.update_action_enable_states()
+
         self.set_live_update(HexrdConfig().live_update)
 
         self.on_action_show_all_colormaps_toggled(HexrdConfig().show_all_colormaps)
@@ -379,6 +381,7 @@ class MainWindow(QObject):
 
     def on_state_loaded(self):
         self.update_action_check_states()
+        self.update_action_enable_states()
         self.materials_panel.update_gui_from_config()
 
     def update_action_check_states(self):
@@ -402,6 +405,16 @@ class MainWindow(QObject):
             cb = getattr(self.ui, cb_name)
             with block_signals(cb):
                 cb.setChecked(getattr(HexrdConfig(), attr_name))
+
+    def update_action_enable_states(self):
+        enabled_to_hexrd_config_mappings = {
+            'action_edit_physics_package': 'use_physics_package',
+        }
+
+        for en_name, attr_name in enabled_to_hexrd_config_mappings.items():
+            action = getattr(self.ui, en_name)
+            with block_signals(action):
+                action.setEnabled(getattr(HexrdConfig(), attr_name))
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
@@ -1658,14 +1671,18 @@ class MainWindow(QObject):
         dialog = self.physics_package_manager_dialog
         dialog.show()
 
-        dialog.ui.rejected.connect(
+        def _cancel():
             # Canceled... uncheck the action.
-            lambda: self.ui.action_apply_physics_package.setChecked(False)
-        )
+            self.ui.action_apply_physics_package.setChecked(False)
+            self.ui.action_edit_physics_package.setEnabled(b)
+            return
+
+        dialog.ui.rejected.connect(_cancel)
 
         # The user should have modified HexrdConfig's physics
         # package options already. Just apply it now.
         HexrdConfig().use_physics_package = b
+
 
     def action_apply_absorption_correction_toggled(self, b):
         if not b:

@@ -3053,7 +3053,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @use_physics_package.setter
     def use_physics_package(self, v):
-        self._use_physics_package = v
+        if v != self.use_physics_package:
+            self._use_physics_package = v
+            self.physics_package_modified.emit()
+        if self.use_physics_package and self.physics_package is None:
+            self.create_default_physics_package()
 
     @property
     def physics_package_dictified(self):
@@ -3072,7 +3076,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @physics_package.setter
     def physics_package(self, value):
         self._physics_package = value
-        self.use_physics_package = bool(value is None)
+        self.use_physics_package = bool(value is not None)
 
     def update_physics_package(self, **kwargs):
         if not self.use_physics_package:
@@ -3084,7 +3088,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.physics_package_modified.emit()
 
     def create_default_physics_package(self):
-        self.use_physics_package = True
         self.physics_package = HEDPhysicsPackage(
             **PHYSICS_PACKAGE_DEFAULTS.HED)
         self.physics_package_modified.emit()
