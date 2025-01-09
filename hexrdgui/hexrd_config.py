@@ -27,7 +27,9 @@ from hexrdgui import resource_loader
 from hexrdgui import utils
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.singletons import QSingleton
-from hexrdgui.utils.physics_package import ask_to_create_physics_package_if_missing
+from hexrdgui.utils.physics_package import (
+    ask_to_create_physics_package_if_missing
+)
 
 import hexrdgui.resources.calibration
 import hexrdgui.resources.indexing

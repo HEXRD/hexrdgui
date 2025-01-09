@@ -75,7 +75,8 @@ class PhysicsPackageManagerDialog:
                 lambda index, k=k: self.material_changed(index, k))
         HexrdConfig().instrument_config_loaded.connect(
             self.update_instrument_type)
-        HexrdConfig().detectors_changed.connect(self.initialize_detector_coatings)
+        HexrdConfig().detectors_changed.connect(
+            self.initialize_detector_coatings)
 
     def initialize_detector_coatings(self):
         # Reset detector coatings to make sure they're in sync w/ current dets
