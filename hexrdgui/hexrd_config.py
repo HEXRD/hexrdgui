@@ -3147,6 +3147,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self._detector_coatings[det_name].get('filter', None)
 
     def update_detector_filter(self, det_name, **kwargs):
+        if det_name not in self.detector_names:
+            return None
         self._set_detector_coatings('filter')
         filter = self._detector_coatings[det_name]['filter']
         filter.deserialize(**kwargs)
@@ -3156,6 +3158,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self._detector_coatings[det_name].get('coating', None)
 
     def update_detector_coating(self, det_name, **kwargs):
+        if det_name not in self.detector_names:
+            return None
         self._set_detector_coatings('coating')
         coating = self._detector_coatings[det_name]['coating']
         coating.deserialize(**kwargs)
@@ -3165,6 +3169,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self._detector_coatings[det_name].get('phosphor', None)
 
     def update_detector_phosphor(self, det_name, **kwargs):
+        if det_name not in self.detector_names:
+            return None
         self._set_detector_coatings('phosphor')
         phosphor = self._detector_coatings[det_name]['phosphor']
         phosphor.deserialize(**kwargs)
