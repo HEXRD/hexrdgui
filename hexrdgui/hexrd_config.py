@@ -3079,12 +3079,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.use_physics_package = bool(value is not None)
 
     def update_physics_package(self, **kwargs):
-        if not self.use_physics_package:
+        if self.physics_package is None:
             all_kwargs = PHYSICS_PACKAGE_DEFAULTS.HED
             all_kwargs.update(**kwargs)
             self.physics_package = HEDPhysicsPackage(**all_kwargs)
-        else:
-            self.physics_package.deserialize(**kwargs)
+        self.physics_package.deserialize(**kwargs)
         self.physics_package_modified.emit()
 
     def create_default_physics_package(self):

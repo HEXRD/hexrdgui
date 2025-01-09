@@ -138,7 +138,6 @@ class MainWindow(QObject):
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
                                         self.color_map_editor,
-                                        self.physics_package_manager_dialog,
                                         self.ui)
         self.image_stack_dialog = ImageStackDialog(
                                     self.ui, self.simple_image_series_dialog)
@@ -1559,7 +1558,12 @@ class MainWindow(QObject):
         self.simple_image_series_dialog.show()
 
     def on_action_llnl_import_tool_triggered(self):
-        self.llnl_import_tool_dialog.show()
+        dialog = self.llnl_import_tool_dialog
+        dialog.show()
+        # Always assume Physics Package is needed for LLNL import
+        dialog.ui.complete.clicked.connect(
+            lambda: self.on_action_apply_physics_package_toggled(True)
+        )
 
     def on_action_image_stack_triggered(self):
         self.image_stack_dialog.show()
@@ -1662,9 +1666,9 @@ class MainWindow(QObject):
 
     def on_action_apply_physics_package_toggled(self, b):
         self.ui.action_edit_physics_package.setEnabled(b)
+        HexrdConfig().use_physics_package = b
         if not b:
             # Just turn it off and return
-            HexrdConfig().use_physics_package = b
             return
 
         # Get the user to select the physics package options
@@ -1674,15 +1678,10 @@ class MainWindow(QObject):
         def _cancel():
             # Canceled... uncheck the action.
             self.ui.action_apply_physics_package.setChecked(False)
-            self.ui.action_edit_physics_package.setEnabled(b)
-            return
+            self.ui.action_edit_physics_package.setEnabled(False)
+            HexrdConfig().use_physics_package = False
 
         dialog.ui.rejected.connect(_cancel)
-
-        # The user should have modified HexrdConfig's physics
-        # package options already. Just apply it now.
-        HexrdConfig().use_physics_package = b
-
 
     def action_apply_absorption_correction_toggled(self, b):
         if not b:
