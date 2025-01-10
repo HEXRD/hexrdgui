@@ -308,8 +308,8 @@ class MainWindow(QObject):
         self.ui.action_edit_physics_package.triggered.connect(
             self.on_action_edit_physics_package_triggered
         )
-        self.ui.action_apply_physics_package.toggled.connect(
-            self.on_action_apply_physics_package_toggled
+        self.ui.action_include_physics_package.toggled.connect(
+            self.on_action_include_physics_package_toggled
         )
 
         self.image_mode_widget.polar_show_snip1d.connect(
@@ -336,6 +336,8 @@ class MainWindow(QObject):
             self.update_mask_region_canvas)
         HexrdConfig().update_instrument_toolbox.connect(
             self.update_config_gui)
+        HexrdConfig().physics_package_modified.connect(
+            self.on_physics_package_modified)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -378,6 +380,11 @@ class MainWindow(QObject):
         HexrdConfig().enable_canvas_focus_mode.connect(
             self.enable_canvas_focus_mode)
 
+        # Always assume Physics Package is needed for LLNL import
+        self.llnl_import_tool_dialog.ui.complete.clicked.connect(
+            lambda: self.on_action_include_physics_package_toggled(True)
+        )
+
     def on_state_loaded(self):
         self.update_action_check_states()
         self.update_action_enable_states()
@@ -397,7 +404,7 @@ class MainWindow(QObject):
             'action_show_all_colormaps': 'show_all_colormaps',
             'action_apply_absorption_correction':
                 'apply_absorption_correction',
-            'action_apply_physics_package': 'use_physics_package',
+            'action_include_physics_package': 'has_physics_package',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -407,7 +414,7 @@ class MainWindow(QObject):
 
     def update_action_enable_states(self):
         enabled_to_hexrd_config_mappings = {
-            'action_edit_physics_package': 'use_physics_package',
+            'action_edit_physics_package': 'has_physics_package',
         }
 
         for en_name, attr_name in enabled_to_hexrd_config_mappings.items():
@@ -1560,10 +1567,6 @@ class MainWindow(QObject):
     def on_action_llnl_import_tool_triggered(self):
         dialog = self.llnl_import_tool_dialog
         dialog.show()
-        # Always assume Physics Package is needed for LLNL import
-        dialog.ui.complete.clicked.connect(
-            lambda: self.on_action_apply_physics_package_toggled(True)
-        )
 
     def on_action_image_stack_triggered(self):
         self.image_stack_dialog.show()
@@ -1664,24 +1667,27 @@ class MainWindow(QObject):
     def on_action_edit_physics_package_triggered(self):
         self.physics_package_manager_dialog.show()
 
-    def on_action_apply_physics_package_toggled(self, b):
+    def on_action_include_physics_package_toggled(self, b):
         self.ui.action_edit_physics_package.setEnabled(b)
-        HexrdConfig().use_physics_package = b
+        if b and not HexrdConfig().has_physics_package:
+            HexrdConfig().create_default_physics_package()
+
         if not b:
             # Just turn it off and return
+            HexrdConfig().physics_package = None
             return
 
         # Get the user to select the physics package options
         dialog = self.physics_package_manager_dialog
-        dialog.show()
+        dialog.show(delete_if_canceled=True)
 
-        def _cancel():
-            # Canceled... uncheck the action.
-            self.ui.action_apply_physics_package.setChecked(False)
-            self.ui.action_edit_physics_package.setEnabled(False)
-            HexrdConfig().use_physics_package = False
+    def on_physics_package_modified(self):
+        enable = HexrdConfig().has_physics_package
+        w = self.ui.action_include_physics_package
+        with block_signals(w):
+            w.setChecked(enable)
 
-        dialog.ui.rejected.connect(_cancel)
+        self.ui.action_edit_physics_package.setEnabled(enable)
 
     def action_apply_absorption_correction_toggled(self, b):
         if not b:

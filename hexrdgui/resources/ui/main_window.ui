@@ -217,7 +217,7 @@
      <property name="title">
       <string>Physics Package</string>
      </property>
-     <addaction name="action_apply_physics_package"/>
+     <addaction name="action_include_physics_package"/>
      <addaction name="action_edit_physics_package"/>
     </widget>
     <addaction name="menu_intensity_corrections"/>
@@ -880,12 +880,12 @@
     <string>Preconfigured</string>
    </property>
   </action>
-  <action name="action_apply_physics_package">
+  <action name="action_include_physics_package">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Apply Physics Package</string>
+    <string>Include Physics Package</string>
    </property>
   </action>
   <action name="action_edit_physics_package">

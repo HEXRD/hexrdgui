@@ -45,6 +45,12 @@ class AbsorptionCorrectionOptionsDialog:
         # FIXME: Update to use defaults once they've been added to HEXRD
         return
 
+    @property
+    def any_detector_filters_applied(self):
+        det_names = HexrdConfig().detector_names
+        all_filters = [HexrdConfig().detector_filter(det) for det in det_names]
+        return any(filter.thickness > 0 for filter in all_filters)
+
     def update_gui(self):
         # Filter info is set per detector
         self.ui.detectors.addItems(HexrdConfig().detector_names)
@@ -79,7 +85,7 @@ class AbsorptionCorrectionOptionsDialog:
             self.ui.filter_material.setCurrentText(filter.material)
         self.ui.filter_density.setValue(filter.density)
         self.ui.filter_thickness.setValue(filter.thickness)
-        self.ui.apply_filters.setChecked(filter.thickness > 0)
+        self.ui.apply_filters.setChecked(self.any_detector_filters_applied)
         # COATING
         if coating.material not in self.mat_options:
             self.ui.coating_material_input.setText(coating.material)

@@ -25,6 +25,7 @@ class PhysicsPackageManagerDialog:
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
         self.additional_materials = {}
         self.instrument_type = None
+        self.delete_if_canceled = False
 
         canvas = FigureCanvas(Figure(tight_layout=True))
         # Get the canvas to take up the majority of the screen most of the time
@@ -36,7 +37,8 @@ class PhysicsPackageManagerDialog:
         self.update_instrument_type()
         self.setup_connections()
 
-    def show(self):
+    def show(self, delete_if_canceled=False):
+        self.delete_if_canceled = delete_if_canceled
         self.setup_form()
         self.ui.show()
 
@@ -77,6 +79,18 @@ class PhysicsPackageManagerDialog:
             self.update_instrument_type)
         HexrdConfig().detectors_changed.connect(
             self.initialize_detector_coatings)
+
+        self.ui.accepted.connect(self.on_accepted)
+        self.ui.rejected.connect(self.on_rejected)
+
+    def on_accepted(self):
+        self.delete_if_canceled = False
+
+    def on_rejected(self):
+        if self.delete_if_canceled:
+            HexrdConfig().physics_package = None
+
+        self.delete_if_canceled = False
 
     def initialize_detector_coatings(self):
         # Reset detector coatings to make sure they're in sync w/ current dets
@@ -133,7 +147,7 @@ class PhysicsPackageManagerDialog:
             w.insertSeparator(2 + len(custom_mats))
 
         # Set default values
-        if not HexrdConfig().use_physics_package:
+        if not HexrdConfig().has_physics_package:
             return
 
         physics = HexrdConfig().physics_package
@@ -180,6 +194,7 @@ class PhysicsPackageManagerDialog:
 
     def material_changed(self, index, category):
         material = self.material_selectors[category].currentText()
+
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
         if category == 'pinhole':
@@ -196,7 +211,7 @@ class PhysicsPackageManagerDialog:
         else:
             self.density_inputs[category].setValue(0.0)
 
-        if HexrdConfig().use_physics_package:
+        if HexrdConfig().has_physics_package:
             self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
 
     def accept_changes(self):

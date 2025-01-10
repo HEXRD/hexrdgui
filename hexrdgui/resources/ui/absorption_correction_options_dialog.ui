@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>347</width>
-    <height>365</height>
+    <height>443</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -355,6 +355,10 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>apply_filters</tabstop>
+  <tabstop>apply_coating</tabstop>
+  <tabstop>apply_phosphor</tabstop>
+  <tabstop>tab_widget</tabstop>
   <tabstop>detectors</tabstop>
   <tabstop>filter_material</tabstop>
   <tabstop>filter_material_input</tabstop>

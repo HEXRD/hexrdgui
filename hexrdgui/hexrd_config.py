@@ -14,7 +14,7 @@ import yaml
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.instrument import HEDMInstrument
-from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS
+from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS, PINHOLE_DEFAULTS
 from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import RotMatEuler
@@ -27,9 +27,6 @@ from hexrdgui import resource_loader
 from hexrdgui import utils
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.singletons import QSingleton
-from hexrdgui.utils.physics_package import (
-    ask_to_create_physics_package_if_missing
-)
 
 import hexrdgui.resources.calibration
 import hexrdgui.resources.indexing
@@ -329,7 +326,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._physics_package = None
         self._detector_coatings = {}
         self._instrument_rigid_body_params = {}
-        self._use_physics_package = False
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -435,7 +431,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('_instrument_rigid_body_params', {}),
             ('recent_state_files', []),
             ('apply_absorption_correction', False),
-            ('use_physics_package', False),
             ('physics_package_dictified', None),
             ('custom_polar_tth_distortion_object_serialized', None),
             ('detector_coatings_dictified', {}),
@@ -556,8 +551,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.show_all_colormaps = self.show_all_colormaps == 'true'
         if not isinstance(self.apply_absorption_correction, bool):
             self.apply_absorption_correction = self.apply_absorption_correction == 'true'
-        if not isinstance(self.use_physics_package, bool):
-            self.use_physics_package = self.use_physics_package == 'true'
 
         # This is None sometimes. Make sure it is an empty list instead.
         if self.recent_state_files is None:
@@ -708,7 +701,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     continue
 
             if overlay_dict.get('tth_distortion_type') is not None:
-                if not self.use_physics_package:
+                if not self.has_physics_package:
                     # We need to create a default physics package
                     # This is for backward compatibility
                     self.create_default_physics_package()
@@ -2440,7 +2433,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def custom_polar_tth_distortion_object_serialized(self, v):
         obj = None
         if v is not None:
-            if not self.use_physics_package:
+            if not self.has_physics_package:
                 # This requires a physics package to deserialize
                 self.create_default_physics_package()
 
@@ -3050,28 +3043,30 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.deep_rerender_needed.emit()
 
     @property
-    def use_physics_package(self):
-        return self._use_physics_package
-
-    @use_physics_package.setter
-    def use_physics_package(self, v):
-        if v != self.use_physics_package:
-            self._use_physics_package = v
-            self.physics_package_modified.emit()
-            if self.use_physics_package:
-                self.create_default_physics_package()
-            else:
-                self.physics_package = None
-
-    @property
     def physics_package_dictified(self):
-        if not self.use_physics_package:
+        if not self.has_physics_package:
             return None
+
         return self.physics_package.serialize()
 
     @physics_package_dictified.setter
-    def physics_package_dictified(self, v):
-        self.update_physics_package(**v)
+    def physics_package_dictified(self, kwargs):
+        if not kwargs:
+            self.physics_package = None
+            return
+
+        # Set defaults if missing
+        kwargs = {
+            **PHYSICS_PACKAGE_DEFAULTS.HED,
+            **kwargs,
+        }
+        self.physics_package = HEDPhysicsPackage(**kwargs)
+
+    def update_physics_package(self, **kwargs):
+        self.physics_package_dictified = {
+            **self.physics_package_dictified,
+            **kwargs,
+        }
 
     @property
     def physics_package(self):
@@ -3079,24 +3074,23 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @physics_package.setter
     def physics_package(self, value):
-        self._physics_package = value
-        self.use_physics_package = bool(value is not None)
+        if value != self._physics_package:
+            self._physics_package = value
+            self.physics_package_modified.emit()
 
-    def update_physics_package(self, **kwargs):
-        if self.physics_package is None:
-            all_kwargs = PHYSICS_PACKAGE_DEFAULTS.HED
-            all_kwargs.update(**kwargs)
-            self.physics_package = HEDPhysicsPackage(**all_kwargs)
-        self.physics_package.deserialize(**kwargs)
-        self.physics_package_modified.emit()
+    @property
+    def has_physics_package(self) -> bool:
+        return self.physics_package is not None
 
     def create_default_physics_package(self):
-        self.physics_package = HEDPhysicsPackage(
-            **PHYSICS_PACKAGE_DEFAULTS.HED)
-        self.physics_package_modified.emit()
+        # Our default will be an HED Physics package with a pinhole
+        self.physics_package_dictified = {
+            **PHYSICS_PACKAGE_DEFAULTS.HED,
+            **PINHOLE_DEFAULTS.TARDIS,
+        }
 
     def absorption_length(self):
-        if not ask_to_create_physics_package_if_missing():
+        if not self.has_physics_package:
             raise ValueError(
                 f'Cannot calculate absorption length without physics package')
         return self.physics_package.pinhole_absorption_length(

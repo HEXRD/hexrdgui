@@ -17,9 +17,6 @@ from hexrdgui.utils import array_index_in_list
 from hexrdgui.utils.conversions import (
     angles_to_cart, angles_to_stereo, cart_to_angles
 )
-from hexrdgui.utils.physics_package import (
-    ask_to_create_physics_package_if_missing
-)
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -86,9 +83,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         from hexrdgui.hexrd_config import HexrdConfig
 
         if self.tth_distortion_type is not None:
-            if not ask_to_create_physics_package_if_missing():
+            if not HexrdConfig().has_physics_package:
                 # This will require a physics package
-                return
+                HexrdConfig().create_default_physics_package()
 
         if self.tth_distortion_type == 'SampleLayerDistortion':
             # We added pinhole_radius later. Set a default if it is missing.

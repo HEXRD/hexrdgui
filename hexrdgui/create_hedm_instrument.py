@@ -20,7 +20,7 @@ def create_hedm_instrument():
 
     # Make sure that the physics package is included for instruments
     # that expect it
-    if HexrdConfig().use_physics_package:
+    if HexrdConfig().has_physics_package:
         iconfig['physics_package'] = HexrdConfig().physics_package
     if HexrdConfig().apply_absorption_correction:
         for det in HexrdConfig().detector_names:
