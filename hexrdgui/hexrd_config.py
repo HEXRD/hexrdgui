@@ -1419,6 +1419,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                         statuses.append(status[i])
                     continue
 
+                if path[0] == 'radius':
+                    # Special case for radius
+                    full_path = ['detectors', name] + path
+                    try:
+                        status = self.get_instrument_config_val(full_path)
+                    except KeyError:
+                        # There must not be a radius. Just skip over it.
+                        pass
+                    else:
+                        statuses.append(status)
+
+                    continue
+
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
 
@@ -1674,7 +1687,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         except KeyError:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
                    str(self.config['instrument']))
-            raise Exception(msg)
+            raise KeyError(msg)
 
         return cur_val
 

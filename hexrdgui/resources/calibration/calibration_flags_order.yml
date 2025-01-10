@@ -8,5 +8,6 @@ instrument: [
 detectors: [
   ['transform', 'tilt', 'status'],
   ['transform', 'translation', 'status'],
-  ['distortion', 'parameters', 'status']
+  ['distortion', 'parameters', 'status'],
+  ['radius', 'status']
 ]
