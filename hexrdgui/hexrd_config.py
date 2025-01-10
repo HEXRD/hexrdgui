@@ -3049,7 +3049,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def physics_package_dictified(self):
         if not self.has_physics_package:
-            return None
+            return {}
 
         return self.physics_package.serialize()
 
