@@ -154,6 +154,11 @@ class PinholeCorrectionEditor(QObject):
         if v is None:
             return
 
+        if not HexrdConfig().has_physics_package:
+            return
+
+        physics = HexrdConfig().physics_package
+
         vp = v.copy()
         # These units are in mm, but we display in micrometers
         for key, value in v.items():
@@ -163,10 +168,6 @@ class PinholeCorrectionEditor(QObject):
                 multiplier = 1e3
 
             vp[key] = value * multiplier
-
-        physics = HexrdConfig().physics_package
-        if physics is None:
-            return
 
         # Values are (key, default)
         values = {
@@ -408,7 +409,7 @@ class PinholeCorrectionEditor(QObject):
         return 0
 
     def on_rygg_absorption_length_selector_changed(self):
-        if HexrdConfig().physics_package is None:
+        if not HexrdConfig().has_physics_package:
             # Cannot update
             return
 

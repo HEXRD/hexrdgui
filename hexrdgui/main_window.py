@@ -78,7 +78,6 @@ from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, unique_name
 from hexrdgui.utils.dialog import add_help_url
-from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
 )
@@ -139,7 +138,6 @@ class MainWindow(QObject):
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
                                         self.color_map_editor,
-                                        self.physics_package_manager_dialog,
                                         self.ui)
         self.image_stack_dialog = ImageStackDialog(
                                     self.ui, self.simple_image_series_dialog)
@@ -170,9 +168,10 @@ class MainWindow(QObject):
         self.setup_connections()
 
         self.update_config_gui()
-        self.update_physics_package_visibilities()
 
         self.update_action_check_states()
+
+        self.update_action_enable_states()
 
         self.set_live_update(HexrdConfig().live_update)
 
@@ -306,8 +305,11 @@ class MainWindow(QObject):
             self.on_action_edit_apply_threshold_triggered)
         self.ui.action_open_preconfigured_instrument_file.triggered.connect(
             self.on_action_open_preconfigured_instrument_file_triggered)
-        self.ui.action_physics_package_editor.triggered.connect(
-            self.on_action_physics_package_editor_triggered
+        self.ui.action_edit_physics_package.triggered.connect(
+            self.on_action_edit_physics_package_triggered
+        )
+        self.ui.action_include_physics_package.toggled.connect(
+            self.on_action_include_physics_package_toggled
         )
 
         self.image_mode_widget.polar_show_snip1d.connect(
@@ -334,6 +336,8 @@ class MainWindow(QObject):
             self.update_mask_region_canvas)
         HexrdConfig().update_instrument_toolbox.connect(
             self.update_config_gui)
+        HexrdConfig().physics_package_modified.connect(
+            self.on_physics_package_modified)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
@@ -376,8 +380,14 @@ class MainWindow(QObject):
         HexrdConfig().enable_canvas_focus_mode.connect(
             self.enable_canvas_focus_mode)
 
+        # Always assume Physics Package is needed for LLNL import
+        self.llnl_import_tool_dialog.ui.complete.clicked.connect(
+            lambda: self.on_action_include_physics_package_toggled(True)
+        )
+
     def on_state_loaded(self):
         self.update_action_check_states()
+        self.update_action_enable_states()
         self.materials_panel.update_gui_from_config()
 
     def update_action_check_states(self):
@@ -394,12 +404,23 @@ class MainWindow(QObject):
             'action_show_all_colormaps': 'show_all_colormaps',
             'action_apply_absorption_correction':
                 'apply_absorption_correction',
+            'action_include_physics_package': 'has_physics_package',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
             cb = getattr(self.ui, cb_name)
             with block_signals(cb):
                 cb.setChecked(getattr(HexrdConfig(), attr_name))
+
+    def update_action_enable_states(self):
+        enabled_to_hexrd_config_mappings = {
+            'action_edit_physics_package': 'has_physics_package',
+        }
+
+        for en_name, attr_name in enabled_to_hexrd_config_mappings.items():
+            action = getattr(self.ui, en_name)
+            with block_signals(action):
+                action.setEnabled(getattr(HexrdConfig(), attr_name))
 
     def set_icon(self, icon):
         self.ui.setWindowIcon(icon)
@@ -441,7 +462,6 @@ class MainWindow(QObject):
 
     def on_instrument_config_loaded(self):
         self.update_config_gui()
-        self.update_physics_package_visibilities()
 
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -470,23 +490,6 @@ class MainWindow(QObject):
 
     def on_action_save_config_yaml_triggered(self):
         self._save_config('.yml', 'YAML files (*.yml)')
-
-    def update_physics_package_visibilities(self):
-        instr_type = guess_instrument_type(HexrdConfig().detector_names)
-        visible = instr_type in ('TARDIS', 'PXRDIP')
-
-        self.ui.action_physics_package_editor.setVisible(visible)
-        self.ui.action_apply_absorption_correction.setVisible(visible)
-
-        if not visible:
-            # Turn off absorption correction
-            self.ui.action_apply_absorption_correction.setChecked(False)
-
-            # Set the physics package to None
-            HexrdConfig().update_physics_package()
-
-            # Turn off all detector coatings
-            HexrdConfig().detector_coatings_dictified = {}
 
     def open_grain_fitting_results(self):
         selected_file, _ = QFileDialog.getOpenFileName(
@@ -1562,7 +1565,8 @@ class MainWindow(QObject):
         self.simple_image_series_dialog.show()
 
     def on_action_llnl_import_tool_triggered(self):
-        self.llnl_import_tool_dialog.show()
+        dialog = self.llnl_import_tool_dialog
+        dialog.show()
 
     def on_action_image_stack_triggered(self):
         self.image_stack_dialog.show()
@@ -1660,22 +1664,35 @@ class MainWindow(QObject):
         with resource_loader.resource_path(instrument_templates, fname) as f:
             HexrdConfig().load_instrument_config(Path(f))
 
-    def on_action_physics_package_editor_triggered(self):
+    def on_action_edit_physics_package_triggered(self):
         self.physics_package_manager_dialog.show()
+
+    def on_action_include_physics_package_toggled(self, b):
+        self.ui.action_edit_physics_package.setEnabled(b)
+        if b and not HexrdConfig().has_physics_package:
+            HexrdConfig().create_default_physics_package()
+
+        if not b:
+            # Just turn it off and return
+            HexrdConfig().physics_package = None
+            return
+
+        # Get the user to select the physics package options
+        dialog = self.physics_package_manager_dialog
+        dialog.show(delete_if_canceled=True)
+
+    def on_physics_package_modified(self):
+        enable = HexrdConfig().has_physics_package
+        w = self.ui.action_include_physics_package
+        with block_signals(w):
+            w.setChecked(enable)
+
+        self.ui.action_edit_physics_package.setEnabled(enable)
 
     def action_apply_absorption_correction_toggled(self, b):
         if not b:
             # Just turn it off and return
             HexrdConfig().apply_absorption_correction = b
-            return
-
-        # Make sure the physics package exists first
-        if HexrdConfig().physics_package is None:
-            msg = (
-                'Physics package must be set before absorption correction can be '
-                'applied. See the "Physics Package" editor under the "Edit" menu.'
-            )
-            QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
         # Get the user to first select the absorption correction options

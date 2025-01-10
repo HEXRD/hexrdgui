@@ -83,7 +83,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         from hexrdgui.hexrd_config import HexrdConfig
 
         if self.tth_distortion_type is not None:
-            if HexrdConfig().physics_package is None:
+            if not HexrdConfig().has_physics_package:
                 # This will require a physics package
                 HexrdConfig().create_default_physics_package()
 

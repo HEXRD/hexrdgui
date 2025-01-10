@@ -4,7 +4,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 
 def ask_to_create_physics_package_if_missing() -> bool:
-    if HexrdConfig().physics_package is not None:
+    if HexrdConfig().has_physics_package:
         return True
 
     msg = (

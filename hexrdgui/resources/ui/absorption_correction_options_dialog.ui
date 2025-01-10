@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>332</height>
+    <width>347</width>
+    <height>443</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,16 +20,46 @@
    <string>Absorption Correction Editor</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+   <item row="1" column="0" alignment="Qt::AlignHCenter">
+    <widget class="QCheckBox" name="apply_filters">
+     <property name="text">
+      <string>Filter</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1" alignment="Qt::AlignHCenter">
+    <widget class="QCheckBox" name="apply_coating">
+     <property name="text">
+      <string>Coating</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" alignment="Qt::AlignLeft">
+    <widget class="QCheckBox" name="apply_phosphor">
+     <property name="text">
+      <string>Phosphor</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="3">
     <layout class="QGridLayout" name="gridLayout_2">
-     <item row="1" column="0">
+     <item row="2" column="0">
       <widget class="QDialogButtonBox" name="button_box">
        <property name="standardButtons">
         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
+     <item row="1" column="0">
       <widget class="QTabWidget" name="tab_widget">
        <property name="tabPosition">
         <enum>QTabWidget::North</enum>
@@ -308,6 +338,13 @@
      </item>
     </layout>
    </item>
+   <item row="0" column="0" colspan="3" alignment="Qt::AlignHCenter">
+    <widget class="QLabel" name="apply_label">
+     <property name="text">
+      <string>Apply:</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -318,6 +355,9 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>apply_filters</tabstop>
+  <tabstop>apply_coating</tabstop>
+  <tabstop>apply_phosphor</tabstop>
   <tabstop>tab_widget</tabstop>
   <tabstop>detectors</tabstop>
   <tabstop>filter_material</tabstop>

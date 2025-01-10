@@ -213,6 +213,13 @@
      <addaction name="action_apply_absorption_correction"/>
      <addaction name="action_subtract_minimum"/>
     </widget>
+    <widget class="QMenu" name="menu_physics_package">
+     <property name="title">
+      <string>Physics Package</string>
+     </property>
+     <addaction name="action_include_physics_package"/>
+     <addaction name="action_edit_physics_package"/>
+    </widget>
     <addaction name="menu_intensity_corrections"/>
     <addaction name="action_edit_euler_angle_convention"/>
     <addaction name="action_edit_reset_instrument_config"/>
@@ -221,7 +228,7 @@
     <addaction name="action_edit_refinements"/>
     <addaction name="action_image_calculator"/>
     <addaction name="action_edit_config"/>
-    <addaction name="action_physics_package_editor"/>
+    <addaction name="menu_physics_package"/>
    </widget>
    <widget class="QMenu" name="menu_run">
     <property name="title">
@@ -873,9 +880,20 @@
     <string>Preconfigured</string>
    </property>
   </action>
-  <action name="action_physics_package_editor">
+  <action name="action_include_physics_package">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
-    <string>Physics Package</string>
+    <string>Include Physics Package</string>
+   </property>
+  </action>
+  <action name="action_edit_physics_package">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Edit Physics Package</string>
    </property>
   </action>
  </widget>

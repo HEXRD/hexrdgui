@@ -25,6 +25,7 @@ class PhysicsPackageManagerDialog:
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
         self.additional_materials = {}
         self.instrument_type = None
+        self.delete_if_canceled = False
 
         canvas = FigureCanvas(Figure(tight_layout=True))
         # Get the canvas to take up the majority of the screen most of the time
@@ -36,7 +37,8 @@ class PhysicsPackageManagerDialog:
         self.update_instrument_type()
         self.setup_connections()
 
-    def show(self):
+    def show(self, delete_if_canceled=False):
+        self.delete_if_canceled = delete_if_canceled
         self.setup_form()
         self.ui.show()
 
@@ -73,9 +75,26 @@ class PhysicsPackageManagerDialog:
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
                 lambda index, k=k: self.material_changed(index, k))
-        HexrdConfig().instrument_config_loaded.connect(self.update_instrument_type)
+        HexrdConfig().instrument_config_loaded.connect(
+            self.update_instrument_type)
+        HexrdConfig().detectors_changed.connect(
+            self.initialize_detector_coatings)
+
+        self.ui.accepted.connect(self.on_accepted)
+        self.ui.rejected.connect(self.on_rejected)
+
+    def on_accepted(self):
+        self.delete_if_canceled = False
+
+    def on_rejected(self):
+        if self.delete_if_canceled:
+            HexrdConfig().physics_package = None
+
+        self.delete_if_canceled = False
 
     def initialize_detector_coatings(self):
+        # Reset detector coatings to make sure they're in sync w/ current dets
+        HexrdConfig().detector_coatings_dictified = {}
         for det in HexrdConfig().detector_names:
             HexrdConfig().update_detector_filter(det)
             HexrdConfig().update_detector_coating(det)
@@ -99,27 +118,22 @@ class PhysicsPackageManagerDialog:
 
     def update_instrument_type(self):
         new_instr_type = guess_instrument_type(HexrdConfig().detector_names)
-        if (
-            new_instr_type == self.instrument_type or
-            new_instr_type not in ('TARDIS', 'PXRDIP')
-        ):
+        if new_instr_type == self.instrument_type:
             return
 
         self.initialize_detector_coatings()
         if new_instr_type == 'TARDIS':
-            HexrdConfig().update_physics_package(
-                new_instr_type, **PINHOLE_DEFAULTS.TARDIS)
+            HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.TARDIS)
             for det in HexrdConfig().detector_names:
                 HexrdConfig().update_detector_filter(
                     det, **FILTER_DEFAULTS.TARDIS)
         elif new_instr_type == 'PXRDIP':
-            HexrdConfig().update_physics_package(
-                new_instr_type, **PINHOLE_DEFAULTS.PXRDIP)
+            HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.PXRDIP)
             for det in HexrdConfig().detector_names:
                 HexrdConfig().update_detector_filter(
                     det, **FILTER_DEFAULTS.PXRDIP)
         else:
-            HexrdConfig().update_physics_package(instr_type=None)
+            HexrdConfig().create_default_physics_package()
         self.instrument_type = new_instr_type
 
     def setup_form(self):
@@ -133,10 +147,10 @@ class PhysicsPackageManagerDialog:
             w.insertSeparator(2 + len(custom_mats))
 
         # Set default values
-        physics = HexrdConfig().physics_package
-        if physics is None:
+        if not HexrdConfig().has_physics_package:
             return
 
+        physics = HexrdConfig().physics_package
         # PINHOLE
         self.ui.pinhole_material.setCurrentText(physics.pinhole_material)
         self.ui.pinhole_density.setValue(physics.pinhole_density)
@@ -180,6 +194,7 @@ class PhysicsPackageManagerDialog:
 
     def material_changed(self, index, category):
         material = self.material_selectors[category].currentText()
+
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
         if category == 'pinhole':
@@ -196,7 +211,7 @@ class PhysicsPackageManagerDialog:
         else:
             self.density_inputs[category].setValue(0.0)
 
-        if HexrdConfig().physics_package is not None:
+        if HexrdConfig().has_physics_package:
             self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
 
     def accept_changes(self):
@@ -219,7 +234,7 @@ class PhysicsPackageManagerDialog:
             'pinhole_thickness': self.ui.pinhole_thickness.value(),
             'pinhole_density': self.ui.pinhole_density.value(),
         }
-        HexrdConfig().update_physics_package(self.instrument_type, **kwargs)
+        HexrdConfig().update_physics_package(**kwargs)
 
         if HexrdConfig().apply_absorption_correction:
             # Make sure changes are reflected
