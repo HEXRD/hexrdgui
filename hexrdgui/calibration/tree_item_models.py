@@ -64,6 +64,7 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
 
     VALUE_IDX = COLUMN_INDICES['Value']
+    VARY_IDX = COLUMN_INDICES['Vary']
     MAX_IDX = COLUMN_INDICES['Maximum']
     MIN_IDX = COLUMN_INDICES['Minimum']
     BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
@@ -85,6 +86,16 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
 
                     if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
                         return QColor('red')
+        if (
+            role == Qt.ForegroundRole and
+            index.column() == self.VALUE_IDX and
+            self.has_uneditable_paths
+        ):
+            # Check if this value is uneditable. If so, gray it out.
+            item = self.get_item(index)
+            path = tuple(self.path_to_item(item) + [index.column()])
+            if path in self.uneditable_paths:
+                return QColor('gray')
 
         return super().data(index, role)
 
@@ -99,6 +110,7 @@ class DeltaCalibrationTreeItemModel(CalibrationTreeItemModel):
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
 
     VALUE_IDX = COLUMN_INDICES['Value']
+    VARY_IDX = COLUMN_INDICES['Vary']
     DELTA_IDX = COLUMN_INDICES['Delta']
     BOUND_INDICES = (VALUE_IDX, DELTA_IDX)
 

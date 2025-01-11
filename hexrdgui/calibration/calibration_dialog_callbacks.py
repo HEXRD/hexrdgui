@@ -243,14 +243,27 @@ class CalibrationDialogCallbacks(ABCQObject):
             'brute_step',
             'user_data',
         ]
+        blacklist_params = []
+
+        if self.has_tardis_constraints:
+            # If TARDIS engineering constraints are on, do not remember
+            # the previous value for the expression.
+            blacklist_params.append('IMAGE_PLATE_4_tvec_y')
 
         for param_key, param in self.dialog.params_dict.items():
+            if param_key in blacklist_params:
+                continue
+
             if param_key in self.calibrator.params:
                 current = self.calibrator.params[param_key]
                 for attr in to_remember:
                     setattr(current, attr, getattr(param, attr))
 
         self.dialog.params_dict = self.calibrator.params
+
+    @property
+    def has_tardis_constraints(self) -> bool:
+        return self.calibrator.engineering_constraints == 'TARDIS'
 
     def on_run_clicked(self):
         self.async_runner.progress_title = 'Running calibration...'
