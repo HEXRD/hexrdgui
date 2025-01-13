@@ -50,7 +50,7 @@ class HKLPicksTreeViewDialog:
 
     def setup_connections(self):
         # Use accepted/rejected so these are called before on_finished()
-        self.ui.accepted.connect(self.on_finished)
+        self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_finished)
 
         self.ui.export_picks.clicked.connect(self.export_picks_clicked)
@@ -63,6 +63,10 @@ class HKLPicksTreeViewDialog:
     def update_gui(self):
         self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
         self.ui.show_all_picks.setChecked(self.tree_view.show_all_picks)
+
+    def on_accepted(self):
+        self.tree_view.on_accepted()
+        self.on_finished()
 
     def on_finished(self):
         self.tree_view.clear_artists()

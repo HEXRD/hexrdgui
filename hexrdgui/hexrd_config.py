@@ -1419,6 +1419,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                         statuses.append(status[i])
                     continue
 
+                if path[0] == 'radius':
+                    # Special case for radius
+                    full_path = ['detectors', name] + path
+                    try:
+                        status = self.get_instrument_config_val(full_path)
+                    except KeyError:
+                        # There must not be a radius. Just skip over it.
+                        pass
+                    else:
+                        statuses.append(status)
+
+                    continue
+
                 full_path = ['detectors', name] + path
                 status = self.get_instrument_config_val(full_path)
 
@@ -1674,7 +1687,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         except KeyError:
             msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
                    str(self.config['instrument']))
-            raise Exception(msg)
+            raise KeyError(msg)
 
         return cur_val
 
@@ -2214,6 +2227,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def clear_overlay_data(self):
         for overlay in self.overlays:
             overlay.update_needed = True
+
+    def reset_overlay_calibration_picks(self):
+        for overlay in self.overlays:
+            overlay.reset_calibration_picks()
 
     def flag_overlay_updates_for_active_material(self):
         self.flag_overlay_updates_for_material(self.active_material_name)
@@ -3045,7 +3062,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def physics_package_dictified(self):
         if not self.has_physics_package:
-            return None
+            return {}
 
         return self.physics_package.serialize()
 

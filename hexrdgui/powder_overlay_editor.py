@@ -375,6 +375,9 @@ class PowderOverlayEditor:
 
     @xray_source_config.setter
     def xray_source_config(self, v: str | None):
+        if self.overlay is None:
+            return
+
         if v is not None and not HexrdConfig().has_multi_xrs:
             raise Exception(v)
 

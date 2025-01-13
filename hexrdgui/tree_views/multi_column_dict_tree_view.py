@@ -22,6 +22,7 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
 
         self.column_labels = list(columns.keys())
         self.column_keys = list(columns.values())
+        self.uneditable_paths = []
 
         self.root_item = TreeItem(['Key'] + self.column_labels)
         self.rebuild_tree()
@@ -42,11 +43,21 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
 
         flags = super().flags(index)
 
+        # Make sure the editable flag is removed. We'll add it later
+        # after some checks.
+        flags = flags & ~Qt.ItemIsEditable
+
         column = index.column()
         item = self.get_item(index)
         if column != KEY_COL and item.data(column) is not None:
-            # All columns after the first that isn't set to None is editable
-            flags = flags | Qt.ItemIsEditable
+            if self.has_uneditable_paths:
+                # Need to check if it is uneditable
+                path = tuple(self.path_to_item(item) + [column])
+                if path not in self.uneditable_paths:
+                    flags = flags | Qt.ItemIsEditable
+            else:
+                # All columns after the first that isn't None is editable
+                flags = flags | Qt.ItemIsEditable
 
         return flags
 
@@ -90,6 +101,9 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
     def path_to_value(self, tree_item, column):
         return self.path_to_item(tree_item) + [self.column_keys[column - 1]]
 
+    def has_uneditable_paths(self) -> bool:
+        return bool(self.uneditable_paths)
+
 
 class MultiColumnDictTreeView(BaseDictTreeView):
 
@@ -102,6 +116,11 @@ class MultiColumnDictTreeView(BaseDictTreeView):
         # Set this to the needed check/uncheck index to allow for context
         # menu actions "Check All" and "Uncheck All"
         self.check_selection_index = None
+
+        # These are tree view paths to editors that should be disabled
+        # Each item in this list is a path tuple (which includes the
+        # column at the end), like so: ('beam', 'XRS1', 'energy', 1)
+        self.disabled_editor_paths = []
 
         self.setModel(model_class(dictionary, columns, parent=self))
 
@@ -245,6 +264,13 @@ class MultiColumnDictTreeView(BaseDictTreeView):
         # it may require the GUI to finish updating.
         QTimer.singleShot(0, restore_vertical_bar)
 
+    @property
+    def has_disabled_editors(self) -> bool:
+        return bool(self.disabled_editor_paths)
+
+    def editor_is_disabled(self, path: list[str] | tuple[str]):
+        return tuple(path) in self.disabled_editor_paths
+
 
 class MultiColumnDictTreeViewDialog(QDialog):
 
@@ -268,14 +294,39 @@ class MultiColumnDictTreeViewDialog(QDialog):
 
 
 class ColumnDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None):
+    def __init__(self, parent: MultiColumnDictTreeView):
         super().__init__(parent)
 
         editor_factory = ColumnEditorFactory(self, parent)
         self.setItemEditorFactory(editor_factory)
 
+    @property
+    def tree_view(self) -> MultiColumnDictTreeView:
+        return self.parent()
+
+    @property
+    def model(self) -> MultiColumnDictTreeItemModel:
+        return self.tree_view.model()
+
     def state_changed(self):
         self.commitData.emit(self.sender())
+
+    def createEditor(self, parent, option, index):
+        editor = super().createEditor(parent, option, index)
+        if self.tree_view.has_disabled_editors:
+            item = self.model.get_item(index)
+            path = self.model.path_to_item(item) + [index.column()]
+            if self.tree_view.editor_is_disabled(path):
+                editor.setEnabled(False)
+
+                if isinstance(editor, QCheckBox):
+                    # For some reason, checkboxes are not being grayed out
+                    # automatically, so we must gray it out here.
+                    editor.setStyleSheet(
+                        'QCheckBox::indicator {background-color: gray}'
+                    )
+
+        return editor
 
 
 class ColumnEditorFactory(QItemEditorFactory):

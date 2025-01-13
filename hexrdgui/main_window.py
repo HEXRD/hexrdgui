@@ -507,6 +507,7 @@ class MainWindow(QObject):
             self._fit_grains_results_dialog = dialog
 
     def on_detectors_changed(self):
+        HexrdConfig().reset_overlay_calibration_picks()
         HexrdConfig().clear_overlay_data()
         HexrdConfig().current_imageseries_idx = 0
         self.load_dummy_images()
@@ -1638,7 +1639,10 @@ class MainWindow(QObject):
     def on_action_open_preconfigured_instrument_file_triggered(self):
         # Should we put this in HEXRD?
         aliases = {
+            'dcs.yml': 'DCS',
             'dual_dexelas.yml': 'Dual Dexelas',
+            'rigaku.yml': 'Rigaku',
+            'varex.yml': 'Varex',
         }
 
         # Create a dict of options for loading an instrument, mapping file
@@ -1651,6 +1655,9 @@ class MainWindow(QObject):
                     name = aliases[name]
 
                 options[name] = f
+
+        # Sort them in alphabetical order
+        options = {k: options[k] for k in sorted(options)}
 
         # Provide simple dialog for selecting instrument to import
         msg = 'Select pre-configured instrument to load'

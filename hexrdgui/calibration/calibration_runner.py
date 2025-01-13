@@ -87,6 +87,7 @@ class CalibrationRunner(QObject):
     def clear_all_overlay_picks(self):
         for overlay in self.active_overlays:
             overlay.reset_calibration_picks()
+            overlay.pad_picks_data()
 
     @property
     def overlays(self):
@@ -152,6 +153,7 @@ class CalibrationRunner(QObject):
     def hand_pick_points(self):
         overlay = self.active_overlay
         overlay.reset_calibration_picks()
+        overlay.pad_picks_data()
 
         title = overlay.name
 
@@ -805,6 +807,7 @@ class CalibrationRunner(QObject):
             raise NotImplementedError(overlay.type)
 
         overlay.reset_calibration_picks()
+        overlay.pad_picks_data()
         return funcs[overlay.type]()
 
     def auto_pick_powder_points(self):
@@ -978,8 +981,11 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
     def on_edit_picks_clicked(self):
         dialog = self.edit_picks_dialog
+        tree_view = dialog.tree_view
+        model = tree_view.model()
+        model.disabled_paths.clear()
+
         dialog.button_box_visible = True
-        dialog.ui.show()
 
         def on_finished():
             self.dialog.show()
@@ -990,6 +996,24 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         self.draw_picks_on_canvas()
         self.dialog.hide()
+
+        # After the tree view is updated, disable paths that
+        # don't match this XRS.
+        if (
+            HexrdConfig().has_multi_xrs and
+            not self.showing_picks_from_all_xray_sources
+        ):
+            # Disable paths that don't match this XRS
+            for item in model.root_item.child_items:
+                overlay_name = item.data(0)
+                overlay = Overlay.from_name(overlay_name)
+
+                if overlay.xray_source != HexrdConfig().active_beam_name:
+                    model.disabled_paths.append((overlay_name,))
+
+            tree_view.collapse_disabled_paths()
+
+        dialog.ui.show()
 
     def save_picks_to_file(self, selected_file):
         # Reuse the same logic from the HKLPicksTreeViewDialog

@@ -327,6 +327,9 @@ class CalibrationDialog(QObject):
         errors = []
         path = []
 
+        has_tardis_constraints = self.has_tardis_constraints
+        tardis_ip4_y_path = self.tardis_ip4_y_path
+
         def recurse(cur):
             for k, v in cur.items():
                 path.append(k)
@@ -341,6 +344,26 @@ class CalibrationDialog(QObject):
                         # from raising an exception.
                         param.min -= 1e-8
                         param.max += 1e-8
+                    elif (
+                        has_tardis_constraints and
+                        tuple(path) == tardis_ip4_y_path
+                    ):
+                        # Don't allow the min/max to invalidate the value,
+                        # because the value is computed, not set.
+                        msg = (
+                            'When TARDIS engineering constraints are set, '
+                            'the Y translation of IMAGE-PLATE-4 is computed. '
+                            'The min must be less than the computed value, '
+                            'and the max must be greater than the computed '
+                            'value.'
+                        )
+                        # We can't use `param.value`, because the min/max might
+                        # affect that. Let's compute the expression instead.
+                        value = param._expr_eval(param._expr)
+                        if param.min > value:
+                            errors.append(msg)
+                        elif param.max < value:
+                            errors.append(msg)
                 elif isinstance(v, dict):
                     recurse(v)
                 path.pop(-1)
@@ -458,7 +481,41 @@ class CalibrationDialog(QObject):
         self.tilt_center_of_rotation_changed.emit(self.tilt_center_of_rotation)
 
     def on_engineering_constraints_changed(self):
+        self.update_disabled_editor_paths()
         self.engineering_constraints_changed.emit(self.engineering_constraints)
+
+    def update_disabled_editor_paths(self):
+        uneditable_paths = self.tree_view.model().uneditable_paths
+        disabled_paths = self.tree_view.disabled_editor_paths
+
+        uneditable_paths.clear()
+        disabled_paths.clear()
+        if self.has_tardis_constraints:
+            value_idx = self.tree_view_model_class.VALUE_IDX
+            vary_idx = self.tree_view_model_class.VARY_IDX
+
+            # The checkbox is disabled
+            disabled_paths.append(self.tardis_ip4_y_path + (vary_idx,))
+
+            # The value is uneditable
+            uneditable_paths.append(self.tardis_ip4_y_path + (value_idx,))
+
+        # A tree view update is necessary after changing the disabled editors
+        self.update_tree_view()
+
+    @property
+    def has_tardis_constraints(self):
+        return self.engineering_constraints == 'TARDIS'
+
+    @property
+    def tardis_ip4_y_path(self) -> tuple[str]:
+        return (
+            'detectors',
+            'IMAGE-PLATE-4',
+            'transform',
+            'translation',
+            'Y',
+        )
 
     def on_delta_boundaries_toggled(self, b):
         # The columns have changed, so we need to reinitialize the tree view
@@ -720,6 +777,8 @@ class CalibrationDialog(QObject):
         # Make the key section a little larger
         self.tree_view.header().resizeSection(0, 300)
 
+        self.update_disabled_editor_paths()
+
     def reinitialize_tree_view(self):
         # Keep the same scroll position
         scrollbar = self.tree_view.verticalScrollBar()
@@ -790,11 +849,10 @@ def guess_engineering_constraints(instr) -> str | None:
     # First guess the instrument type.
     instr_type = guess_instrument_type(instr.detectors)
 
-    # If it matches one of our expected engineering constraints, use it.
-    expected_options = [
-        'TARDIS',
-    ]
-    if instr_type in expected_options:
-        return instr_type
+    if instr_type == 'TARDIS':
+        # Make sure it contains both image plates
+        required_detectors = ['IMAGE-PLATE-2', 'IMAGE-PLATE-4']
+        if all(x in instr.detectors for x in required_detectors):
+            return instr_type
 
     return None

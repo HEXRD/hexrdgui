@@ -4,6 +4,7 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QMenu
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.overlays import Overlay
 from hexrdgui.tree_views.base_dict_tree_item_model import BaseTreeItemModel
 from hexrdgui.tree_views.generic_picks_tree_view import (
@@ -98,6 +99,10 @@ class HKLPicksTreeView(GenericPicksTreeView):
         num_selected = len(selected_items)
         is_hand_pickable = self.is_hand_pickable
 
+        if self.model().is_disabled_path(path):
+            # If it is a disabled path, do not create the context menu
+            return
+
         menu = QMenu(self)
 
         # Helper functions
@@ -120,16 +125,8 @@ class HKLPicksTreeView(GenericPicksTreeView):
             else:
                 raise NotImplementedError
 
-            new_item = TreeItem([position, 0., 0.])
-            model.insert_items([new_item], parent_item, position)
-
-            # Select the new item
-            index = model.createIndex(new_item.row(), 0, new_item)
-            self.setCurrentIndex(index)
-
-            if is_hand_pickable:
-                # Go ahead and get the user to hand pick the point...
-                self.hand_pick_point(new_item, hkl_str)
+            pick_label = f'Inserting points into: {hkl_str}'
+            return self._insert_picks(parent_item, position, pick_label)
 
         def hand_pick_item():
             self.hand_pick_point(item, hkl_str)

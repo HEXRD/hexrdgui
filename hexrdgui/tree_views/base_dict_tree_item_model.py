@@ -22,6 +22,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         # These can be modified anytime
         self.lists_resizable = True
         self._blacklisted_paths = []
+        self.disabled_paths = []
         self.editable = True
 
         self.config = dictionary
@@ -100,6 +101,12 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         flags = super().flags(index)
         item = self.get_item(index)
+
+        if self.has_disabled_paths:
+            path = self.path_to_item(item)
+            if self.is_disabled_path(path):
+                flags = flags & ~Qt.ItemIsEnabled
+                return flags
 
         # Items are selectable if they have no children
         # and none of the data values in the row are `None`.
@@ -246,6 +253,18 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         self._blacklisted_paths = [list(x) for x in v]
         self.rebuild_tree()
 
+    @property
+    def has_disabled_paths(self) -> bool:
+        return bool(self.disabled_paths)
+
+    def is_disabled_path(self, path: list[str] | tuple[str]) -> bool:
+        path = tuple(path)
+        for disabled_path in self.disabled_paths:
+            if path[:len(disabled_path)] == disabled_path:
+                return True
+
+        return False
+
 
 class BaseDictTreeView(QTreeView):
 
@@ -284,6 +303,12 @@ class BaseDictTreeView(QTreeView):
             if self.model().hasChildren(index):
                 self.expand(index)
                 self.expand_rows(index)
+
+    def collapse_disabled_paths(self):
+        model = self.model()
+        for path in model.disabled_paths:
+            index = model.create_index(path)
+            self.collapse(index)
 
     @property
     def lists_resizable(self):

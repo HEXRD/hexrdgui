@@ -190,9 +190,9 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def save_constraint_params(self):
         constraints = self.calibrator.relative_constraints
-        if constraints.type != RelativeConstraintsType.system:
-            # Instead of saving, reset them
-            self.reset_saved_constraint_params()
+        if constraints.type == RelativeConstraintsType.none:
+            # Nothing to save... Just make sure the old one is cleared.
+            HexrdConfig()._instrument_rigid_body_params.clear()
             return
 
         HexrdConfig()._instrument_rigid_body_params = copy.deepcopy(
@@ -243,14 +243,27 @@ class CalibrationDialogCallbacks(ABCQObject):
             'brute_step',
             'user_data',
         ]
+        blacklist_params = []
+
+        if self.has_tardis_constraints:
+            # If TARDIS engineering constraints are on, do not remember
+            # the previous value for the expression.
+            blacklist_params.append('IMAGE_PLATE_4_tvec_y')
 
         for param_key, param in self.dialog.params_dict.items():
+            if param_key in blacklist_params:
+                continue
+
             if param_key in self.calibrator.params:
                 current = self.calibrator.params[param_key]
                 for attr in to_remember:
                     setattr(current, attr, getattr(param, attr))
 
         self.dialog.params_dict = self.calibrator.params
+
+    @property
+    def has_tardis_constraints(self) -> bool:
+        return self.calibrator.engineering_constraints == 'TARDIS'
 
     def on_run_clicked(self):
         self.async_runner.progress_title = 'Running calibration...'

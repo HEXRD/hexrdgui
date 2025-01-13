@@ -60,7 +60,7 @@ class ZoomCanvas(FigureCanvas):
 
         # user-specified ROI (from interactors)
         self.zoom_width = 15
-        self.zoom_height = 60
+        self.zoom_height = 150
 
         # Keep track of whether we should skip a render (due to point picking)
         self.skip_next_render = False
@@ -204,8 +204,8 @@ class ZoomCanvas(FigureCanvas):
             return
 
         vline, hline = self.vhlines
-        vline.set_xdata(event.xdata)
-        hline.set_ydata(event.ydata)
+        vline.set_xdata([event.xdata])
+        hline.set_ydata([event.ydata])
 
     def main_canvas_mouse_moved(self, event):
         if self.disabled:
