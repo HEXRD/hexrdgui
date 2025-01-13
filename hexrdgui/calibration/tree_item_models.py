@@ -52,6 +52,27 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
 
         setattr(param, attribute, value)
 
+    def data(self, index, role):
+        if (
+            role in (Qt.BackgroundRole, Qt.ForegroundRole) and
+            index.column() in (self.VALUE_IDX, self.VARY_IDX) and
+            self.has_uneditable_paths
+        ):
+            # Check if this value is uneditable. If so, gray it out.
+            item = self.get_item(index)
+            path = tuple(self.path_to_item(item) + [self.VALUE_IDX])
+            if path in self.uneditable_paths:
+                color = 'gray'
+                if (
+                    index.column() == self.VALUE_IDX and
+                    role == Qt.ForegroundRole
+                ):
+                    color = 'white'
+
+                return QColor(color)
+
+        return super().data(index, role)
+
 
 class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
     """This model uses minimum/maximum for the boundary constraints"""
@@ -86,16 +107,6 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
 
                     if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
                         return QColor('red')
-        if (
-            role == Qt.ForegroundRole and
-            index.column() == self.VALUE_IDX and
-            self.has_uneditable_paths
-        ):
-            # Check if this value is uneditable. If so, gray it out.
-            item = self.get_item(index)
-            path = tuple(self.path_to_item(item) + [index.column()])
-            if path in self.uneditable_paths:
-                return QColor('gray')
 
         return super().data(index, role)
 

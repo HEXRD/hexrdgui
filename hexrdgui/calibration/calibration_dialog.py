@@ -500,6 +500,9 @@ class CalibrationDialog(QObject):
             # The value is uneditable
             uneditable_paths.append(self.tardis_ip4_y_path + (value_idx,))
 
+        # A tree view update is necessary after changing the disabled editors
+        self.update_tree_view()
+
     @property
     def has_tardis_constraints(self):
         return self.engineering_constraints == 'TARDIS'
