@@ -499,6 +499,7 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
     def on_edit_picks_clicked(self):
         # Convert to polar lines
         data = cart_to_polar_lines(self.calibrator_lines, self.instr)
+        disabled_paths = []
 
         # Now convert to a dictionary for the line labels
         dictionary = {}
@@ -510,6 +511,12 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
                 this_xrs[name] = v.tolist()
             ring_indices[xray_source] = ring_idx
 
+            if (
+                not self.showing_picks_from_all_xray_sources and
+                xray_source != HexrdConfig().active_beam_name
+            ):
+                disabled_paths.append((xray_source,))
+
         def new_line_name_generator(path):
             # Get the x-ray source
             xray_source = path[0]
@@ -519,12 +526,14 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
                                             parent=self.canvas)
         dialog.tree_view.new_line_name_generator = new_line_name_generator
+        dialog.tree_view.model().disabled_paths = disabled_paths
         dialog.accepted.connect(self.on_edit_picks_accepted)
         dialog.finished.connect(self.on_edit_picks_finished)
         dialog.show()
 
         self.edit_picks_dictionary = dictionary
         self.edit_picks_dialog = dialog
+        dialog.tree_view.collapse_disabled_paths()
 
         self.clear_drawn_picks()
         self.dialog.hide()

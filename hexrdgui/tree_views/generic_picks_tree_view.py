@@ -411,6 +411,10 @@ class GenericPicksTreeView(BaseDictTreeView):
         num_selected = len(selected_items)
         is_hand_pickable = self.is_hand_pickable
 
+        if self.model().is_disabled_path(path):
+            # If it is a disabled path, do not create the context menu
+            return
+
         menu = QMenu(self)
 
         # Helper functions
