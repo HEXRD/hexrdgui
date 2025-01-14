@@ -334,6 +334,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._detector_coatings = {}
         self._instrument_rigid_body_params = {}
         self._median_filter_correction = {}
+        self.absorption_corrections_dict = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -968,7 +969,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 factor = panel.lorentz_factor()
                 images_dict[name] = img / factor
 
+        HexrdConfig().absorption_corrections_dict.clear()
         if HexrdConfig().apply_absorption_correction:
+            absorption_corrections = HexrdConfig().absorption_corrections_dict
+
             transmissions = instr.calc_transmission()
             max_transmission = max(
                 [np.nanmax(v) for v in transmissions.values()])
@@ -977,7 +981,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 transmission = transmissions[name]
                 # normalize by maximum of the entire instrument
                 transmission /= max_transmission
-                images_dict[name] = img * (1 / transmission)
+                absorption_corrections[name] = 1 / transmission
+
+            if (
+                HexrdConfig().image_mode not in
+                (constants.ViewType.polar, constants.ViewType.stereo)
+            ):
+                # If it's not polar or stereo, go ahead and apply the
+                # corrections
+                for name, img in images_dict.items():
+                    images_dict[name] = img * absorption_corrections[name]
 
         if HexrdConfig().intensity_subtract_minimum:
             minimum = min([np.nanmin(x) for x in images_dict.values()])

@@ -399,6 +399,10 @@ class PolarView:
     def apply_image_processing(self):
         img = self.raw_img.data
         img = self.apply_snip(img)
+
+        # Always apply absorption correction after snip
+        img = self.apply_absorption_correction(img)
+
         # cache this step so we can just re-apply masks if needed
         self.snipped_img = img
 
@@ -447,6 +451,22 @@ class PolarView:
             self.erosion_mask = None
 
         return img
+
+    def apply_absorption_correction(self, img):
+        if not HexrdConfig().apply_absorption_correction:
+            return img
+
+        # Warp the absorption correction images to the polar view,
+        # sum them, and apply.
+        absorption_corrections = HexrdConfig().absorption_corrections_dict
+
+        output = {}
+        for det_key, panel in self.detectors.items():
+            corrections = absorption_corrections[det_key]
+            output[det_key] = self.warp_image(corrections, panel)
+
+        correction_field = np.ma.sum(np.ma.stack(output.values()), axis=0)
+        return img * correction_field.data
 
     def apply_visible_masks(self, img):
         # Apply user-specified masks if they are present
