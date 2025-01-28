@@ -551,7 +551,12 @@ class CalibrationDialog(QObject):
             for transform, transform_vary in statuses.items():
                 det_transform = detector['transform'][transform]
                 for k, v in transform_vary.items():
-                    det_transform[k]['_param'].vary = v
+                    param = det_transform[k]['_param']
+                    if param.expr is not None:
+                        # Skip over expression parameters
+                        continue
+
+                    param.vary = v
                     det_transform[k]['_vary'] = v
 
             if self.delta_boundaries:
@@ -559,7 +564,8 @@ class CalibrationDialog(QObject):
                 for transform, delta_dict in deltas.items():
                     det_transform = detector['transform'][transform]
                     for k, v in delta_dict.items():
-                        det_transform[k]['_param'].delta = v
+                        param = det_transform[k]['_param']
+                        param.delta = v
                         det_transform[k]['_delta'] = v
 
         self.tree_view.reset_gui()
