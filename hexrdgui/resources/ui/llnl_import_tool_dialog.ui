@@ -301,9 +301,6 @@
           </property>
           <item row="0" column="2">
            <widget class="QPushButton" name="add_transform">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Add Transform</string>
             </property>
@@ -318,9 +315,6 @@
           </item>
           <item row="0" column="1">
            <widget class="QComboBox" name="transforms">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <item>
              <property name="text">
               <string>None</string>
