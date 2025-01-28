@@ -1641,7 +1641,7 @@ class MainWindow(QObject):
         aliases = {
             'dcs.yml': 'DCS',
             'dual_dexelas.yml': 'Dual Dexelas',
-            'rigaku.yml': 'Rigaku',
+            'rigaku.hexrd': 'Rigaku',
             'varex.yml': 'Varex',
         }
 
