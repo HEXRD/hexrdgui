@@ -2814,6 +2814,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return 6
         elif func_name == 'Dexela_2923':
             return 8
+        elif func_name == 'Dexela_2923_quad':
+            return 6
 
         raise Exception('Unknown distortion function: ' + func_name)
 
