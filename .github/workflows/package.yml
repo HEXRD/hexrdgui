@@ -77,8 +77,10 @@ jobs:
 
     - name: Build the package using CPack
       working-directory: hexrdgui/packaging
+      # force tar.bz2 files with '--set conda_build.pkg_format 1'
       run: |
           conda activate hexrdgui-package
+          conda config --set conda_build.pkg_format 1
           mkdir output
 
           # Use libmamba as the solver for all future conda commands
@@ -132,11 +134,9 @@ jobs:
     - name: Upload the package to anaconda channel (only on master)
       if: github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/')
       working-directory: hexrdgui/packaging
-      # force tar.bz2 files with '--set conda_build.pkg_format 1'
       run: |
           conda activate hexrdgui-package
           conda install --override-channels -c conda-forge anaconda-client
-          conda config --set conda_build.pkg_format 1
           anaconda --token ${{ secrets.ANACONDA_TOKEN }} upload --force --user HEXRD --label ${HEXRDGUI_PACKAGE_LABEL} output/**/*.tar.bz2
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
       # command works.
