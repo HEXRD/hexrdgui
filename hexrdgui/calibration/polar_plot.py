@@ -96,8 +96,11 @@ class InstrumentViewer:
             HexrdConfig().last_unscaled_azimuthal_integral_data
         )
 
-        # Fill in masked values with nan
-        azimuthal_integration = np.array((tth, intensities.filled(np.nan)))
+        # Remove any nan values
+        mask = intensities.mask
+        tth = tth[~mask]
+        intensities = intensities.data[~mask]
+        azimuthal_integration = np.array((tth, intensities))
 
         if HexrdConfig().polar_x_axis_type == PolarXAxisType.q:
             # Convert to Q
