@@ -149,6 +149,7 @@ class CalibrationDialog(QObject):
         options = [
             RelativeConstraintsType.none,
             RelativeConstraintsType.system,
+            RelativeConstraintsType.group,
         ]
         w = self.ui.relative_constraints
         w.clear()
@@ -715,6 +716,25 @@ class CalibrationDialog(QObject):
                     if v in params_dict:
                         this_config[k] = create_param_item(params_dict[v])
 
+        def _format_relative_constraints(this_dict: dict, prefix: str):
+            tvec_names = [
+                f'{prefix}_tvec_x',
+                f'{prefix}_tvec_y',
+                f'{prefix}_tvec_z',
+            ]
+            tilt_names = param_names_euler_convention(
+                prefix, euler_convention)
+
+            this_config = this_dict.setdefault('translation', {})
+            tvec_keys = ['X', 'Y', 'Z']
+            for key, name in zip(tvec_keys, tvec_names):
+                this_config[key] = create_param_item(params_dict[name])
+
+            this_config = this_dict.setdefault('tilt', {})
+            tilt_keys = TILT_LABELS_EULER[euler_normalized]
+            for key, name in zip(tilt_keys, tilt_names):
+                this_config[key] = create_param_item(params_dict[name])
+
         if self.relative_constraints == RelativeConstraintsType.none:
             det_dict = tree_dict.setdefault('detectors', {})
             for det_key in self.instr.detectors:
@@ -725,27 +745,15 @@ class CalibrationDialog(QObject):
                 det = det_key.replace('-', '_')
                 recursively_format_det(det, this_config, this_template)
         elif self.relative_constraints == RelativeConstraintsType.group:
-            raise NotImplementedError(self.relative_constraints)
+            group_dict = tree_dict.setdefault('detector panels', {})
+            for group in self.instr.detector_groups:
+                this_dict = group_dict.setdefault(group, {})
+                prefix = group.replace('-', '_')
+                _format_relative_constraints(this_dict, prefix)
         elif self.relative_constraints == RelativeConstraintsType.system:
-            det_dict = tree_dict.setdefault('detector system', {})
-
-            tvec_names = [
-                'system_tvec_x',
-                'system_tvec_y',
-                'system_tvec_z',
-            ]
-            tilt_names = param_names_euler_convention(
-                'system', euler_convention)
-
-            this_config = det_dict.setdefault('translation', {})
-            tvec_keys = ['X', 'Y', 'Z']
-            for key, name in zip(tvec_keys, tvec_names):
-                this_config[key] = create_param_item(params_dict[name])
-
-            this_config = det_dict.setdefault('tilt', {})
-            tilt_keys = TILT_LABELS_EULER[euler_normalized]
-            for key, name in zip(tilt_keys, tilt_names):
-                this_config[key] = create_param_item(params_dict[name])
+            this_dict = tree_dict.setdefault('instrument', {})
+            prefix = 'system'
+            _format_relative_constraints(this_dict, prefix)
         else:
             raise NotImplementedError(self.relative_constraints)
 
@@ -843,9 +851,11 @@ TILT_LABELS_EULER = {
 RELATIVE_CONSTRAINT_LABELS = {
     RelativeConstraintsType.none: 'None',
     RelativeConstraintsType.system: 'Instrument Rigid Body',
+    RelativeConstraintsType.group: 'Detector Rigid Body',
 }
 ROTATION_CENTER_LABELS = {
     RotationCenter.instrument_mean_center: 'Mean Instrument Center',
+    RotationCenter.group_mean_center: 'Detector Center',
     RotationCenter.lab_origin: 'Origin',
 }
 ROTATION_CENTER_LABELS_R = {v: k for k, v in ROTATION_CENTER_LABELS.items()}
