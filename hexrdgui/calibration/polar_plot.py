@@ -92,8 +92,15 @@ class InstrumentViewer:
     def write_image(self, filename='polar_image.npz'):
         filename = Path(filename)
 
-        azimuthal_integration = np.array(
-            HexrdConfig().last_unscaled_azimuthal_integral_data)
+        tth, intensities = (
+            HexrdConfig().last_unscaled_azimuthal_integral_data
+        )
+
+        # Remove any nan values
+        mask = intensities.mask
+        tth = tth[~mask]
+        intensities = intensities.data[~mask]
+        azimuthal_integration = np.array((tth, intensities))
 
         if HexrdConfig().polar_x_axis_type == PolarXAxisType.q:
             # Convert to Q
