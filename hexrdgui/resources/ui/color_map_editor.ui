@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>459</width>
-    <height>143</height>
+    <width>352</width>
+    <height>145</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -61,7 +61,7 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <item row="7" column="1">
+        <item row="8" column="1">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -77,53 +77,7 @@
         <item row="3" column="0">
          <widget class="QLabel" name="label_3">
           <property name="text">
-           <string>Maximum Value: </string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="4">
-         <widget class="QCheckBox" name="reverse">
-          <property name="text">
-           <string>reverse</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="5">
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="3" column="3">
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Minimum Value: </string>
+           <string>Max:</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -146,6 +100,22 @@
           </property>
          </widget>
         </item>
+        <item row="3" column="3">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
         <item row="3" column="1">
          <widget class="ScientificDoubleSpinBox" name="maximum">
           <property name="keyboardTracking">
@@ -162,60 +132,40 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
-         <widget class="QPushButton" name="bc_editor_button">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Brightness and Contrast editor&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>B&amp;&amp;C</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
-           <string>Color Map: </string>
+           <string>Colormap:</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="color_map">
-          <property name="styleSheet">
-           <string notr="true">combobox-popup: 0;</string>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Min:</string>
           </property>
-          <property name="maxVisibleItems">
-           <number>5</number>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
          </widget>
+        </item>
+        <item row="3" column="5">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item row="3" column="4">
-         <widget class="QCheckBox" name="show_over">
-          <property name="toolTip">
-           <string>Color over values as red</string>
-          </property>
-          <property name="text">
-           <string>show over</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="3">
-         <widget class="QLabel" name="scaling_label">
-          <property name="text">
-           <string>Scaling:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="4">
-         <widget class="QComboBox" name="scaling"/>
-        </item>
-        <item row="1" column="4">
          <widget class="QCheckBox" name="show_under">
           <property name="toolTip">
            <string>Color under values as blue</string>
@@ -225,13 +175,66 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="4">
+        <item row="1" column="4">
+         <widget class="QCheckBox" name="reverse">
+          <property name="text">
+           <string>reverse</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="4">
          <widget class="QCheckBox" name="show_invalid">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display invalid (nan) pixels with a specified color.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>show invalid</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="4">
+         <widget class="QCheckBox" name="show_over">
+          <property name="toolTip">
+           <string>Color over values as red</string>
+          </property>
+          <property name="text">
+           <string>show over</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="4">
+         <widget class="QComboBox" name="color_map">
+          <property name="styleSheet">
+           <string notr="true">combobox-popup: 0;</string>
+          </property>
+          <property name="maxVisibleItems">
+           <number>5</number>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="scaling_label">
+          <property name="text">
+           <string>Scaling:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QComboBox" name="scaling"/>
+        </item>
+        <item row="4" column="1">
+         <widget class="QPushButton" name="bc_editor_button">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Brightness and Contrast editor&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>B&amp;&amp;C</string>
           </property>
          </widget>
         </item>
@@ -251,14 +254,8 @@
  </customwidgets>
  <tabstops>
   <tabstop>color_map</tabstop>
-  <tabstop>reverse</tabstop>
   <tabstop>minimum</tabstop>
-  <tabstop>show_under</tabstop>
   <tabstop>maximum</tabstop>
-  <tabstop>show_over</tabstop>
-  <tabstop>show_invalid</tabstop>
-  <tabstop>bc_editor_button</tabstop>
-  <tabstop>scaling</tabstop>
  </tabstops>
  <resources/>
  <connections/>

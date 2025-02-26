@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>843</width>
+    <width>765</width>
     <height>903</height>
    </rect>
   </property>
@@ -307,45 +307,7 @@
            </widget>
            <widget class="QWidget" name="beam_vector_cartesian">
             <layout class="QGridLayout" name="gridLayout_8">
-             <item row="6" column="0">
-              <widget class="QLabel" name="beam_vector_cartesian_x_label">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Xₗ:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="5">
-              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_z">
-               <property name="keyboardTracking">
-                <bool>false</bool>
-               </property>
-               <property name="suffix">
-                <string> mm</string>
-               </property>
-               <property name="decimals">
-                <number>8</number>
-               </property>
-               <property name="minimum">
-                <double>-1000000.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.001000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0" colspan="6">
+             <item row="7" column="0" colspan="4">
               <widget class="QLabel" name="cartesian_beam_vector_normalized_note">
                <property name="styleSheet">
                 <string notr="true">QLabel { font: italic; }</string>
@@ -355,62 +317,14 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="2">
-              <widget class="QLabel" name="beam_vector_cartesian_y_label">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Yₗ:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="3">
-              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_y">
-               <property name="keyboardTracking">
-                <bool>false</bool>
-               </property>
-               <property name="suffix">
-                <string> mm</string>
-               </property>
-               <property name="decimals">
-                <number>8</number>
-               </property>
-               <property name="minimum">
-                <double>-1000000.000000000000000</double>
-               </property>
-               <property name="maximum">
-                <double>1000000.000000000000000</double>
-               </property>
-               <property name="singleStep">
-                <double>0.001000000000000</double>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="4">
-              <widget class="QLabel" name="beam_vector_cartesian_z_label">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Zₗ:</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
              <item row="6" column="1">
               <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_x">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="keyboardTracking">
                 <bool>false</bool>
                </property>
@@ -431,7 +345,7 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="0" colspan="6">
+             <item row="0" column="0" colspan="4">
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
                 <widget class="QLabel" name="beam_vector_convention_label">
@@ -461,6 +375,62 @@
                 </widget>
                </item>
               </layout>
+             </item>
+             <item row="6" column="2">
+              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_y">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1000000.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="3">
+              <widget class="ScientificDoubleSpinBox" name="beam_vector_cartesian_z">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> mm</string>
+               </property>
+               <property name="decimals">
+                <number>8</number>
+               </property>
+               <property name="minimum">
+                <double>-1000000.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1000000.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.001000000000000</double>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -665,7 +635,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_16">
            <property name="text">
-            <string>Rotation Parameters:</string>
+            <string>Rotation:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
