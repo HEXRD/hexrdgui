@@ -480,22 +480,25 @@ class LLNLImportToolDialog(QObject):
             self.ui.detector_files_label.setText(file_name)
             self.loaded_images.append(selected_file)
             self.detector_images[self.detector]['data'] = selected_file
-        elif file_name.endswith('003'):
+        else:
             self.ui.dark_files_label.setText(file_name)
             self.detector_images[self.detector]['dark'] = selected_file
         selected = self.detector_images[self.detector]
 
         # Create regex pattern to try to match data and dark images
         # ex:
-        # TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-003.h5
+        # TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-999.h5
         # ->
         # TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
         image = re.sub("CAMERA-\d{2}-", "CAMERA-*-", selected_file)
-        data_files = re.sub("-\d{3}.h", "-999.h", image)
-        dark_files = re.sub("-\d{3}.h", "-003.h", image)
+        files = re.sub("-\d{3}.h", "-*.h", image)
 
-        data_matches = sorted(glob.glob(data_files))
-        dark_matches = sorted(glob.glob(dark_files))
+        # Sort matched files. We know that those ending in -999 are data files.
+        # Dark files may have different values at the end (-003, -005, etc.) so
+        # we separate as data file (-999) and *not* data (anything else).
+        matches = sorted(glob.glob(files))
+        data_matches = [m for m in matches if m.endswith('-999.h5')]
+        dark_matches = [m for m in matches if m not in data_matches]
 
         if len(data_matches) == len(dark_matches) == len(self.detectors):
             # All data and dark files have been found for all detectors
