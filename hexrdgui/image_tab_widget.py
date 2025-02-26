@@ -7,6 +7,8 @@ from hexrdgui.constants import PAN, ViewType, ZOOM
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_canvas import ImageCanvas
 from hexrdgui.image_series_toolbar import ImageSeriesToolbar, ImageSeriesInfoToolbar
+from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.utils.conversions import (
     angles_to_chi, stereo_to_angles, tth_to_q
@@ -359,7 +361,9 @@ class ImageTabWidget(QTabWidget):
                 # The mouse wasn't hovering over a subpanel
                 self.clear_mouse_position.emit()
                 return
-
+        elif mode == ViewType.raw:
+            # The title is the name of the detector
+            det_key = event.inaxes.get_title()
 
         # TODO: we are currently calculating the pixel intensity
         # mathematically, because I couldn't find any other way
@@ -403,12 +407,8 @@ class ImageTabWidget(QTabWidget):
             if mode in (ViewType.cartesian, ViewType.raw):
                 if mode == ViewType.cartesian:
                     dpanel = iviewer.dpanel
-                elif stitched:
-                    dpanel = instr.detectors[det_key]
                 else:
-                    # The title is the name of the detector
-                    key = event.inaxes.get_title()
-                    dpanel = instr.detectors[key]
+                    dpanel = instr.detectors[det_key]
 
                 xy_data = dpanel.pixelToCart(np.vstack([i, j]).T)
                 ang_data, gvec = dpanel.cart_to_angles(xy_data)
@@ -455,6 +455,40 @@ class ImageTabWidget(QTabWidget):
 
             instr = self.image_canvases[0].iviewer.instr
             info['Q'] = tth_to_q(info['tth'], instr.beam_energy)
+
+        hovered_masks = []
+        if (
+            intensity is not None and
+            mode in (ViewType.raw, ViewType.polar) and
+            not stitched
+        ):
+            for mask in MaskManager().masks.values():
+                if (
+                    mask.type == MaskType.threshold or
+                    (not mask.visible and not mask.show_border)
+                ):
+                    continue
+
+                mask_arr = mask.get_masked_arrays(mode, instr)
+                if mode == ViewType.raw:
+                    mask_arr = [x[1] for x in mask_arr if x[0] == det_key]
+                    if mask_arr:
+                        mask_arr = np.logical_and.reduce(mask_arr)
+                    else:
+                        mask_arr = None
+
+                if mask_arr is not None and not mask_arr[i, j]:
+                    hovered_masks.append(mask.name)
+
+        if hovered_masks:
+            plural = len(hovered_masks) > 1
+            masks_str = ', '.join(hovered_masks)
+            if plural:
+                label = f'masks = ({masks_str})'
+            else:
+                label = f'mask = {masks_str}'
+
+            info['masks_str'] = label
 
         display_detector = (
             intensity is not None and

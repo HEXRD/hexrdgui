@@ -1254,6 +1254,9 @@ class MainWindow(QObject):
         if 'detectors_str' in info:
             labels.append(info['detectors_str'])
 
+        if 'masks_str' in info:
+            labels.append(info['masks_str'])
+
         return labels
 
     def polar_mouse_info_labels(self, info):
@@ -1279,6 +1282,9 @@ class MainWindow(QObject):
 
         if 'detectors_str' in info:
             labels.append(info['detectors_str'])
+
+        if 'masks_str' in info:
+            labels.append(info['masks_str'])
 
         return labels
 
