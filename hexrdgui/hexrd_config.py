@@ -274,7 +274,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.default_config = {}
         self.gui_yaml_dict = None
         self.cached_gui_yaml_dicts = {}
-        self.calibration_flags_order = {}
         self.working_dir = '.'
         self.images_dir = None
         self.imageseries_dict = {}
@@ -359,9 +358,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Load the GUI to yaml maps
         self.load_gui_yaml_dict()
-
-        # Load calibration flag order
-        self.load_calibration_flags_order()
 
         # Load the default materials
         self.load_default_material('CeO2')
@@ -768,11 +764,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         text = resource_loader.load_resource(hexrdgui.resources.calibration,
                                              'yaml_to_gui.yml')
         self.gui_yaml_dict = yaml.load(text, Loader=yaml.FullLoader)
-
-    def load_calibration_flags_order(self):
-        text = resource_loader.load_resource(hexrdgui.resources.calibration,
-                                             'calibration_flags_order.yml')
-        self.calibration_flags_order = yaml.load(text, Loader=yaml.FullLoader)
 
     def load_default_config(self):
         text = resource_loader.load_resource(hexrdgui.resources.calibration,
@@ -1381,140 +1372,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     current[key] = value['value']
                 else:
                     self.remove_status(value, current, key)
-
-    def get_statuses_instrument_format(self):
-        """This gets statuses in the hexrd instrument format"""
-        statuses = []
-
-        iflags_order = self.calibration_flags_order['instrument']
-        dflags_order = self.calibration_flags_order['detectors']
-
-        # Get the instrument flags
-        for path in iflags_order:
-            status = self.get_instrument_config_val(path)
-            # If it is a list, loop through the values
-            if isinstance(status, list):
-                for entry in status:
-                    statuses.append(entry)
-            else:
-                statuses.append(status)
-
-        # Get the detector flags
-        for name in self.detector_names:
-            for path in dflags_order:
-                if path[0] == 'distortion':
-                    # Special case for distortion parameters
-                    func_path = ['detectors', name, 'distortion',
-                                 'function_name', 'value']
-                    func_name = self.get_instrument_config_val(func_path)
-                    if func_name == 'None':
-                        # There is no distortion. Just continue.
-                        continue
-
-                    full_path = ['detectors', name] + path
-                    status = self.get_instrument_config_val(full_path)
-
-                    num_params = self.num_distortion_parameters(func_name)
-                    for i in range(num_params):
-                        statuses.append(status[i])
-                    continue
-
-                if path[0] == 'radius':
-                    # Special case for radius
-                    full_path = ['detectors', name] + path
-                    try:
-                        status = self.get_instrument_config_val(full_path)
-                    except KeyError:
-                        # There must not be a radius. Just skip over it.
-                        pass
-                    else:
-                        statuses.append(status)
-
-                    continue
-
-                full_path = ['detectors', name] + path
-                status = self.get_instrument_config_val(full_path)
-
-                # If it is a list, loop through the values
-                if isinstance(status, list):
-                    for entry in status:
-                        statuses.append(entry)
-                else:
-                    statuses.append(status)
-
-        return np.asarray(statuses, dtype=bool)
-
-    def set_statuses_from_prev_iconfig(self, prev_iconfig):
-        # This function seems to be much faster than
-        # "set_statuses_from_instrument_format"
-        self._recursive_set_statuses(self.config['instrument'], prev_iconfig)
-
-    def _recursive_set_statuses(self, cur, prev):
-        # Only use keys that both of them have
-        keys = set(cur.keys()) & set(prev.keys())
-        for key in keys:
-            if isinstance(cur[key], dict) and isinstance(prev[key], dict):
-                if 'status' in cur[key] and 'status' in prev[key]:
-                    cur[key]['status'] = prev[key]['status']
-                    continue
-
-                self._recursive_set_statuses(cur[key], prev[key])
-
-    def set_statuses_from_instrument_format(self, statuses):
-        """This sets statuses using the hexrd instrument format"""
-        # FIXME: This function is really slow for some reason. We are
-        # currently using "set_statuses_from_prev_iconfig" instead.
-        # If we ever want to use this function again, let's try to make
-        # it much faster.
-
-        cur_ind = 0
-
-        iflags_order = self.calibration_flags_order['instrument']
-        dflags_order = self.calibration_flags_order['detectors']
-
-        # Set the instrument flags
-        for path in iflags_order:
-            prev_val = self.get_instrument_config_val(path)
-            # If it is a list, loop through the values
-            if isinstance(prev_val, list):
-                for i in range(len(prev_val)):
-                    v = statuses[cur_ind]
-                    self.set_instrument_config_val(path + [i], v)
-                    cur_ind += 1
-            else:
-                v = statuses[cur_ind]
-                self.set_instrument_config_val(path, v)
-                cur_ind += 1
-
-        # Set the detector flags
-        for name in self.detector_names:
-            for path in dflags_order:
-                full_path = ['detectors', name] + path
-
-                if path[0] == 'distortion':
-                    # Special case for distortion parameters
-                    func_path = ['detectors', name, 'distortion',
-                                 'function_name', 'value']
-                    func_name = self.get_instrument_config_val(func_path)
-                    num_params = self.num_distortion_parameters(func_name)
-                    for i in range(num_params):
-                        v = statuses[cur_ind]
-                        self.set_instrument_config_val(full_path + [i], v)
-                        cur_ind += 1
-                    continue
-
-                prev_val = self.get_instrument_config_val(full_path)
-
-                # If it is a list, loop through the values
-                if isinstance(prev_val, list):
-                    for i in range(len(prev_val)):
-                        v = statuses[cur_ind]
-                        self.set_instrument_config_val(full_path + [i], v)
-                        cur_ind += 1
-                else:
-                    v = statuses[cur_ind]
-                    self.set_instrument_config_val(full_path, v)
-                    cur_ind += 1
 
     def _search_gui_yaml_dict(self, d, res, cur_path=None):
         """This recursive function gets all yaml paths to GUI variables
