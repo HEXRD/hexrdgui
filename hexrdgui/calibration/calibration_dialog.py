@@ -136,6 +136,7 @@ class CalibrationDialog(QObject):
             self.on_active_beam_switched)
 
     def show(self):
+        self.update_visibility_states()
         self.ui.show()
 
     def hide(self):
@@ -244,6 +245,9 @@ class CalibrationDialog(QObject):
         self.ui.active_beam.setVisible(has_multi_xrs)
         self.ui.active_beam_label.setVisible(has_multi_xrs)
         self.ui.show_picks_from_all_xray_sources.setVisible(has_multi_xrs)
+
+        has_physics_package = HexrdConfig().physics_package is not None
+        self.ui.pinhole_distortion_group.setVisible(has_physics_package)
 
     def update_relative_constraint_visibilities(self):
         visible = self.relative_constraints != RelativeConstraintsType.none

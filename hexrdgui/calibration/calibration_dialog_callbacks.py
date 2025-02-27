@@ -344,12 +344,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         # add in any "None" detector distortions
         HexrdConfig().set_detector_defaults_if_missing()
 
-        # Add status values
-        HexrdConfig().add_status(output_dict)
-
-        # Set the previous statuses to be the current statuses
-        HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
-
         self.instrument_updated.emit()
 
         # Update the drawn picks with their new locations

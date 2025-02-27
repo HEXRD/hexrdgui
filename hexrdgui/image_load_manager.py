@@ -325,8 +325,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
             # Set these directly so no signals get emitted
             det_conf = HexrdConfig().config['instrument']['detectors'][key]
-            det_conf['pixels']['columns']['value'] = ims_dict[key].shape[1]
-            det_conf['pixels']['rows']['value'] = ims_dict[key].shape[0]
+            det_conf['pixels']['columns'] = ims_dict[key].shape[1]
+            det_conf['pixels']['rows'] = ims_dict[key].shape[0]
 
         self.images_transformed.emit()
 

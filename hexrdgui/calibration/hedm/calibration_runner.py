@@ -313,37 +313,8 @@ class HEDMCalibrationRunner(QObject):
     def write_results_message(self):
         msg = ''
 
-        pnames = calibration.generate_parameter_names(self.instr,
-                                                      self.grain_parameters)
-
         # First, show any updates to instrument parameters
-        instr_flags = self.instr.calibration_flags
-        if any(instr_flags):
-            cfg = create_indexing_config()
-            old_instr = cfg.instrument.hedm
-            old_values = old_instr.calibration_parameters[instr_flags]
-            new_values = self.instr.calibration_parameters[instr_flags]
-            refinable = np.where(instr_flags)[0]
-
-            for i, old, new in zip(refinable, old_values, new_values):
-                name = pnames[i]
-                msg += f'\t{name}: {old: 12.8f}  => {new: 12.8f}\n'
-
-        # Next, the overlay parameters
-        pname_start_ind = len(instr_flags)
-        for results, overlay in zip(self.results, self.active_overlays):
-            name = overlay.name
-            refinements = overlay.refinements
-            if any(refinements):
-                old_values = overlay.crystal_params[refinements]
-                new_values = results[refinements]
-                refinable = np.where(refinements)[0]
-
-                for i, old, new in zip(refinable, old_values, new_values):
-                    name = pnames[pname_start_ind + i]
-                    msg += f'\t{name}: {old: 12.8f}  => {new: 12.8f}\n'
-
-            pname_start_ind += len(refinements)
+        # FIXME: write results
 
         self.results_message = msg
 
@@ -378,12 +349,6 @@ class HEDMCalibrationRunner(QObject):
         # add in any "None" detector distortions
         HexrdConfig().set_detector_defaults_if_missing()
 
-        # Add status values
-        HexrdConfig().add_status(output_dict)
-
-        # Set the previous statuses to be the current statuses
-        HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
-
         # Tell GUI that the overlays need to be re-computed
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
 
@@ -408,18 +373,6 @@ class HEDMCalibrationRunner(QObject):
     @property
     def grain_parameters(self):
         return self.grains_table[:, 3:15]
-
-    @property
-    def param_flags(self):
-        return HexrdConfig().get_statuses_instrument_format()
-
-    @property
-    def grain_flags(self):
-        return np.array(self.active_overlay_refinements).flatten()
-
-    @property
-    def all_flags(self):
-        return np.concatenate((self.param_flags, self.grain_flags))
 
     @property
     def overlays(self):

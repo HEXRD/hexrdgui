@@ -412,10 +412,6 @@ class CalibrationRunner(QObject):
         picks = self.generate_picks_results(polar=False)
         materials = self.pick_materials
         instr = create_hedm_instrument()
-        # Set this for the default calibration flags we will use
-        instr.calibration_flags = (
-            HexrdConfig().get_statuses_instrument_format()
-        )
 
         img_dict = HexrdConfig().masked_images_dict
 

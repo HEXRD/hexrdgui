@@ -824,7 +824,7 @@ class ImageCanvas(FigureCanvas):
 
         def compute_saturation_and_size(detector_name):
             detector = HexrdConfig().detector(detector_name)
-            saturation_level = detector['saturation_level']['value']
+            saturation_level = detector['saturation_level']
 
             array = images_dict[detector_name]
 
@@ -932,14 +932,14 @@ class ImageCanvas(FigureCanvas):
         beam_config = HexrdConfig().active_beam
         bvec = beam_config['vector']
         self.iviewer.instr.beam_vector = (
-            bvec['azimuth']['value'],
-            bvec['polar_angle']['value'],
+            bvec['azimuth'],
+            bvec['polar_angle'],
         )
-        if not np.isinf(beam_config['source_distance']['value']):
+        if not np.isinf(beam_config['source_distance']):
             # Right now, hexrd doesn't want this to be inf.
             # Maybe that will change in the future...
             self.iviewer.instr.source_distance = (
-                beam_config['source_distance']['value']
+                beam_config['source_distance']
             )
 
         self.update_overlays()

@@ -342,7 +342,7 @@ class PinholeCorrectionEditor(QObject):
         iconfig = HexrdConfig().config['instrument']
         for det_key, det in instr.detectors.items():
             det_config = iconfig['detectors'][det_key]
-            det_config['buffer']['value'] = det.panel_buffer
+            det_config['buffer'] = det.panel_buffer
 
         msg = 'Pinhole dimensions were applied to the panel buffers'
         QMessageBox.information(self.ui, 'HEXRD', msg)

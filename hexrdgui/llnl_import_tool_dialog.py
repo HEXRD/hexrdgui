@@ -607,11 +607,9 @@ class LLNLImportToolDialog(QObject):
         # the QProgressDialog.
         ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
 
-        buffer_default = {'status': 0}
         for det in det_names:
             det_config = HexrdConfig().config['instrument']['detectors'][det]
-            buffer = det_config.setdefault('buffer', buffer_default)
-            buffer['value'] = self.edited_images[det]['panel_buffer']
+            det_config['buffer'] = self.edited_images[det]['panel_buffer']
 
         HexrdConfig().recent_images = self.loaded_images
 

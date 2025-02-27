@@ -270,7 +270,7 @@ class CalibrationSliderWidget(QObject):
             if self.lock_relative_transforms:
                 self._transform_locked(det, key, ind, val)
             else:
-                det['transform'][key]['value'][ind] = val
+                det['transform'][key][ind] = val
 
                 # Since we modify the value directly instead of letting the
                 # HexrdConfig() do it, let's also emit the signal it would
@@ -281,13 +281,13 @@ class CalibrationSliderWidget(QObject):
         else:
             beam_dict = HexrdConfig().active_beam
             if key == 'energy':
-                beam_dict[key]['value'] = val
+                beam_dict[key] = val
                 HexrdConfig().beam_energy_modified.emit()
             elif key == 'polar':
-                beam_dict['vector']['polar_angle']['value'] = val
+                beam_dict['vector']['polar_angle'] = val
                 HexrdConfig().beam_vector_changed.emit()
             else:
-                beam_dict['vector'][key]['value'] = val
+                beam_dict['vector'][key] = val
                 HexrdConfig().beam_vector_changed.emit()
 
     def _transform_locked(self, det, key, ind, val):
@@ -299,7 +299,7 @@ class CalibrationSliderWidget(QObject):
                 for name in det_names
             }
         elif self.transform_group_rigid_body:
-            group = det.get('group', {}).get('value')
+            group = det.get('group')
             group_dets = {}
             for name in HexrdConfig().detector_names:
                 if HexrdConfig().detector_group(name) == group:
@@ -309,17 +309,17 @@ class CalibrationSliderWidget(QObject):
 
         if key == 'translation':
             # Compute the diff
-            previous = det['transform']['translation']['value'][ind]
+            previous = det['transform']['translation'][ind]
             diff = val - previous
 
             # Translate all detectors in the same group by the same difference
             for detector in group_dets.values():
-                detector['transform']['translation']['value'][ind] += diff
+                detector['transform']['translation'][ind] += diff
         else:
             # It is tilt. Compute the center of rotation first.
             if self.locked_center_of_rotation == 'Mean Center':
                 detector_centers = np.array(
-                    [x['transform']['translation']['value']
+                    [x['transform']['translation']
                      for x in group_dets.values()]
                 )
                 center_of_rotation = detector_centers.mean(axis=0)
@@ -329,7 +329,7 @@ class CalibrationSliderWidget(QObject):
                 raise NotImplementedError(self.locked_center_of_rotation)
 
             # Gather the old tilt and the new tilt to compute a difference.
-            old_tilt = det['transform']['tilt']['value']
+            old_tilt = det['transform']['tilt']
             new_tilt = old_tilt.copy()
             # Apply the changed value
             new_tilt[ind] = val
@@ -346,7 +346,7 @@ class CalibrationSliderWidget(QObject):
                 transform = detector['transform']
 
                 # Compute current rmat
-                rmat = _tilt_to_rmat(transform['tilt']['value'])
+                rmat = _tilt_to_rmat(transform['tilt'])
 
                 # Apply rmat diff
                 new_rmat = rmat_diff @ rmat
@@ -361,16 +361,16 @@ class CalibrationSliderWidget(QObject):
                     # Convert back to tilt (using our convention) and set it
                     tilt = _rmat_to_tilt(new_rmat)
 
-                transform['tilt']['value'] = tilt
+                transform['tilt'] = tilt
 
                 # Compute change in translation
-                translation = np.asarray(transform['translation']['value'])
+                translation = np.asarray(transform['translation'])
 
                 # Translate to center and apply rmat diff
                 translation -= center_of_rotation
                 translation = rmat_diff @ translation + center_of_rotation
 
-                transform['translation']['value'] = translation.tolist()
+                transform['translation'] = translation.tolist()
 
         HexrdConfig().detector_transforms_modified.emit(list(group_dets))
 
@@ -389,15 +389,15 @@ class CalibrationSliderWidget(QObject):
 
         if key in ['tilt', 'translation']:
             det = self.current_detector_dict()
-            val = det['transform'][key]['value'][ind]
+            val = det['transform'][key][ind]
         else:
             beam_dict = HexrdConfig().active_beam
             if key == 'energy':
-                val = beam_dict[key]['value']
+                val = beam_dict[key]
             elif key == 'polar':
-                val = beam_dict['vector']['polar_angle']['value']
+                val = beam_dict['vector']['polar_angle']
             else:
-                val = beam_dict['vector'][key]['value']
+                val = beam_dict['vector'][key]
 
         if key == 'tilt':
             if HexrdConfig().rotation_matrix_euler() is None:

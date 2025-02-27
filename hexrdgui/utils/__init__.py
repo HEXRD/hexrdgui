@@ -33,25 +33,9 @@ def convert_tilt_convention(iconfig, old_convention,
                             new_convention):
     """
     convert the tilt angles from an old convention to a new convention
-
-    This should work for both configs with statuses and without
     """
     if new_convention == old_convention:
         return
-
-    def _get_tilt_array(data):
-        # This works for both a config with statuses, and without
-        if isinstance(data, dict):
-            return data.get('value')
-        return data
-
-    def _set_tilt_array(data, val):
-        # This works for both a config with statuses, and without
-        if isinstance(data, dict):
-            data['value'] = val
-        else:
-            data.clear()
-            data.extend(val)
 
     det_keys = iconfig['detectors'].keys()
     if old_convention is not None:
@@ -59,9 +43,9 @@ def convert_tilt_convention(iconfig, old_convention,
         rme = RotMatEuler(np.zeros(3), **old_convention)
         for key in det_keys:
             tilts = iconfig['detectors'][key]['transform']['tilt']
-            rme.angles = np.array(_get_tilt_array(tilts))
+            rme.angles = np.asarray(tilts)
             phi, n = angleAxisOfRotMat(rme.rmat)
-            _set_tilt_array(tilts, (phi * n.flatten()).tolist())
+            tilts[:] = (phi * n.flatten()).tolist()
 
         if new_convention is None:
             # We are done
@@ -71,10 +55,10 @@ def convert_tilt_convention(iconfig, old_convention,
     rme = RotMatEuler(np.zeros(3), **new_convention)
     for key in det_keys:
         tilts = iconfig['detectors'][key]['transform']['tilt']
-        tilt = np.array(_get_tilt_array(tilts))
+        tilt = np.asarray(tilts)
         rme.rmat = makeRotMatOfExpMap(tilt)
         # Use np.ndarray.tolist() to convert back to native python types
-        _set_tilt_array(tilts, np.array(rme.angles).tolist())
+        tilts[:] = np.asarray(rme.angles).tolist()
 
 
 def convert_angle_convention(angles, old_convention, new_convention):
@@ -166,11 +150,8 @@ def _run_snip1d(img, snip_width, numiter, algorithm):
 def remove_none_distortions(iconfig):
     # This modifies the iconfig in place to remove distortion
     # parameters that are set to None
-    # This also assumes an iconfig without statuses
     for det in iconfig['detectors'].values():
         function_name = det.get('distortion', {}).get('function_name', '')
-        if isinstance(function_name, dict):
-            function_name = function_name['value']
         if function_name.lower() == 'none':
             del det['distortion']
 

@@ -225,7 +225,6 @@
     <addaction name="action_edit_reset_instrument_config"/>
     <addaction name="menu_masks"/>
     <addaction name="action_transform_detectors"/>
-    <addaction name="action_edit_refinements"/>
     <addaction name="action_image_calculator"/>
     <addaction name="action_edit_config"/>
     <addaction name="menu_physics_package"/>
@@ -699,11 +698,6 @@
   <action name="action_save_config_hexrd">
    <property name="text">
     <string>HEXRD</string>
-   </property>
-  </action>
-  <action name="action_edit_refinements">
-   <property name="text">
-    <string>Refinements</string>
    </property>
   </action>
   <action name="action_apply_pixel_solid_angle_correction">

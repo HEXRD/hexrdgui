@@ -10,7 +10,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing.create_config import (
     create_indexing_config, OmegasNotFoundError
 )
-from hexrdgui.refinements_editor import RefinementsEditor
+# from hexrdgui.refinements_editor import RefinementsEditor
 from hexrdgui.reflections_table import ReflectionsTable
 from hexrdgui.select_grains_dialog import SelectGrainsDialog
 from hexrdgui.ui_loader import UiLoader
