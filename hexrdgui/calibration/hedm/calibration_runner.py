@@ -1,21 +1,27 @@
+from functools import partial
+
 import numpy as np
 
 from PySide6.QtCore import QObject, Signal
 
-from hexrd import constants as cnst, instrument
-from hexrd.fitting import calibration
-from hexrd.transforms import xfcapi
+from hexrd import instrument
+from hexrd.fitting.calibration import GrainCalibrator, InstrumentCalibrator
 
 from hexrdgui.calibration.hedm import (
+    compute_xyo,
+    HEDMCalibrationCallbacks,
+    HEDMCalibrationDialog,
     HEDMCalibrationOptionsDialog,
     HEDMCalibrationResultsDialog,
+    parse_spots_data,
+)
+from hexrdgui.calibration.material_calibration_dialog_callbacks import (
+    format_material_params_func,
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing.create_config import (
     create_indexing_config, OmegasNotFoundError
 )
-from hexrdgui.message_box import MessageBox
-from hexrdgui.utils import instr_to_internal_dict
 
 
 class HEDMCalibrationRunner(QObject):
@@ -64,8 +70,6 @@ class HEDMCalibrationRunner(QObject):
         self.options_dialog = dialog
 
     def on_options_dialog_accepted(self):
-        dialog = self.options_dialog
-
         shape = (self.num_active_overlays, 21)
         self.grains_table = np.empty(shape, dtype=np.float64)
         gw = instrument.GrainDataWriter(array=self.grains_table)
@@ -73,9 +77,6 @@ class HEDMCalibrationRunner(QObject):
             gw.dump_grain(i, 1, 0, overlay.crystal_params)
 
         self.synchronize_omega_period()
-
-        # Grab some selections from the dialog
-        self.do_refit = dialog.do_refit
         self.run_calibration()
 
     def run_calibration(self):
@@ -93,48 +94,80 @@ class HEDMCalibrationRunner(QObject):
         # Save to self
         self.instr = instr
 
-        param_flags = self.param_flags
-        grain_flags = self.grain_flags
-
-        # User selected these from the dialog
-        do_refit = self.do_refit
-
         # Our grains table only contains the grains that the user
         # selected.
-        grain_parameters = self.grain_parameters
+        grain_params = self.grain_params
         grain_ids = self.grains_table[:, 0].astype(int)
+        ngrains = len(grain_params)
 
-        # Order the spots data list in the order of the grain ids
-        spots_data = [spots_data_dict[gid] for gid in grain_ids]
+        # Verify the grain IDs are as we expect
+        if not np.array_equal(grain_ids, np.arange(ngrains)):
+            msg = (
+                f'Grain IDs ({grain_ids}) are not as expected: '
+                f'{np.arange(ngrains)}'
+            )
+            raise Exception(msg)
+
+        if not np.array_equal(grain_ids, list(spots_data_dict)):
+            msg = (
+                f'Grain ID order mismatch: "{grain_ids}", '
+                f'"{list(spots_data_dict)}"'
+            )
+            raise Exception(msg)
+
+        spots_data = list(spots_data_dict.values())
 
         # plane data
-        plane_data = cfg.material.plane_data
-        bmat = plane_data.latVecOps['B']
+        material = cfg.material.materials[cfg.material.active]
 
         ome_period = self.ome_period
 
-        grain_parameters = grain_parameters.copy()
-        ngrains = len(grain_parameters)
+        grain_params = grain_params.copy()
+
+        euler_convention = HexrdConfig().euler_angle_convention
 
         # The styles we will use for plotting points
         plot_styles = {
             'xyo_i': 'rx',
             'xyo_det': 'k.',
-            'xyo_f': 'b+',
         }
 
         plot_labels = {
             'xyo_i': 'Initial',
             'xyo_det': 'Measured',
-            'xyo_f': 'Final',
         }
 
-        hkls, xyo_det, idx_0 = parse_spots_data(spots_data, instr, grain_ids)
+        hkls, xyo_det, idx_0 = parse_spots_data(spots_data, instr, grain_ids,
+                                                ome_period)
 
-        xyo_i = calibration.calibrate_instrument_from_sx(
-            instr, grain_parameters, bmat, xyo_det, hkls,
-            ome_period=np.radians(ome_period), sim_only=True
+        calibrators = []
+        for i in grain_ids:
+            data_dict = {
+                'hkls': {},
+                'pick_xys': {},
+            }
+            for det_key in instr.detectors:
+                data_dict['hkls'][det_key] = hkls[det_key][i]
+                data_dict['pick_xys'][det_key] = xyo_det[det_key][i]
+
+            kwargs = {
+                'instr': instr,
+                'material': material,
+                'grain_params': grain_params[i],
+                'ome_period': ome_period,
+                'index': grain_ids[i],
+                'euler_convention': euler_convention,
+            }
+            calibrator = GrainCalibrator(**kwargs)
+            calibrator.data_dict = data_dict
+            calibrators.append(calibrator)
+
+        self.ic = InstrumentCalibrator(
+            *calibrators,
+            euler_convention=euler_convention,
         )
+
+        xyo_i = compute_xyo(calibrators)
 
         data = {
             'xyo_i': xyo_i,
@@ -147,132 +180,65 @@ class HEDMCalibrationRunner(QObject):
             'grain_ids': grain_ids,
             'cfg': cfg,
             'title': 'Initial Guess. Proceed?',
-            'ome_period': ome_period,
+            'ome_period': np.degrees(ome_period),
             'parent': self.parent,
         }
         dialog = HEDMCalibrationResultsDialog(**kwargs)
         if not dialog.exec():
             return
 
-        # Run optimization
-        params, resd, xyo_f = calibration.calibrate_instrument_from_sx(
-            instr, grain_parameters, bmat, xyo_det, hkls,
-            ome_period=np.radians(ome_period),
-            param_flags=param_flags,
-            grain_flags=grain_flags
+        format_extra_params_func = partial(
+            format_material_params_func,
+            overlays=self.active_overlays,
+            calibrators=self.ic.calibrators,
         )
 
-        # update calibration crystal params
-        grain_parameters = params[-grain_parameters.size:].reshape(ngrains, 12)
-
-        if not do_refit:
-            data = {
-                'xyo_i': xyo_i,
-                'xyo_det': xyo_det,
-                'xyo_f': xyo_f,
-            }
-            kwargs = {
-                'data': data,
-                'styles': plot_styles,
-                'labels': plot_labels,
-                'grain_ids': grain_ids,
-                'cfg': cfg,
-                'title': 'Final results. Accept?',
-                'ome_period': ome_period,
-                'parent': self.parent,
-            }
-            dialog = HEDMCalibrationResultsDialog(**kwargs)
-            if not dialog.exec():
-                return
-
-            # All done! Update the results.
-            self.results = grain_parameters
-            self.on_calibration_finished()
-            return
-
-        # load imageseries dict
-        ims_dict = cfg.image_series
-        ims = next(iter(ims_dict.values()))    # grab first member
-        delta_ome = ims.metadata['omega'][:, 1] - ims.metadata['omega'][:, 0]
-        assert np.max(np.abs(np.diff(delta_ome))) < cnst.sqrt_epsf, \
-            "something funky going one with your omegas"
-        delta_ome = delta_ome[0]   # any one member will do
-
-        # refit tolerances
-        if cfg.fit_grains.refit is not None:
-            n_pixels_tol = cfg.fit_grains.refit[0]
-            ome_tol = cfg.fit_grains.refit[1]*delta_ome
-        else:
-            n_pixels_tol = 2
-            ome_tol = 2.*delta_ome
-
-        # define difference vectors for spot fits
-        for det_key, panel in instr.detectors.items():
-            for ig in range(ngrains):
-                x_diff = abs(xyo_det[det_key][ig][:, 0] -
-                             xyo_f[det_key][ig][:, 0])
-                y_diff = abs(xyo_det[det_key][ig][:, 1] -
-                             xyo_f[det_key][ig][:, 1])
-                ome_diff = np.degrees(
-                    xfcapi.angularDifference(
-                        xyo_det[det_key][ig][:, 2],
-                        xyo_f[det_key][ig][:, 2])
-                )
-
-                # filter out reflections with centroids more than
-                # a pixel and delta omega away from predicted value
-                idx_1 = np.logical_and(
-                    x_diff <= n_pixels_tol*panel.pixel_size_col,
-                    np.logical_and(
-                        y_diff <= n_pixels_tol*panel.pixel_size_row,
-                        ome_diff <= ome_tol
-                    )
-                )
-
-                print("INFO: Will keep %d of %d input reflections "
-                      % (sum(idx_1), sum(idx_0[det_key][ig]))
-                      + "on panel %s for re-fit" % det_key)
-
-                idx_new = np.zeros_like(idx_0[det_key][ig], dtype=bool)
-                idx_new[np.where(idx_0[det_key][ig])[0][idx_1]] = True
-                idx_0[det_key][ig] = idx_new
-
-        # reparse data
-        hkls_refit, xyo_det_refit, idx_0 = parse_spots_data(
-            spots_data, instr, grain_ids, refit_idx=idx_0)
-
-        # perform refit
-        params, resd, xyo_f = calibration.calibrate_instrument_from_sx(
-            instr, grain_parameters, bmat, xyo_det_refit, hkls_refit,
-            ome_period=np.radians(ome_period),
-            param_flags=param_flags,
-            grain_flags=grain_flags
-        )
-
-        data = {
-            'xyo_i': xyo_i,
-            'xyo_det': xyo_det,
-            'xyo_f': xyo_f,
-        }
+        # Open up the HEDM calibration dialog with these picks
         kwargs = {
-            'data': data,
-            'styles': plot_styles,
-            'labels': plot_labels,
-            'grain_ids': grain_ids,
-            'cfg': cfg,
-            'title': 'Final results. Accept?',
-            'ome_period': ome_period,
+            'instr': instr,
+            'params_dict': self.ic.params,
+            'format_extra_params_func': format_extra_params_func,
             'parent': self.parent,
+            'engineering_constraints': self.ic.engineering_constraints,
+            'window_title': 'HEDM Calibration',
+            'help_url': 'calibration/rotation_series',
         }
-        dialog = HEDMCalibrationResultsDialog(**kwargs)
-        if not dialog.exec():
-            return
+        dialog = HEDMCalibrationDialog(**kwargs)
 
-        # update calibration crystal params
-        grain_parameters = params[-grain_parameters.size:].reshape(ngrains, 12)
+        # Connect interactions to functions
+        self._dialog_callback_handler = HEDMCalibrationCallbacks(
+            self.active_overlays,
+            spots_data,
+            dialog,
+            self.ic,
+            instr,
+            self.async_runner,
+        )
+        self._dialog_callback_handler.instrument_updated.connect(
+            self.on_calibration_finished)
+        dialog.show()
 
-        self.results = grain_parameters
-        self.on_calibration_finished()
+    def on_calibration_finished(self):
+        overlays = self.active_overlays
+        for overlay, calibrator in zip(overlays, self.ic.calibrators):
+            modified = any(
+                self.ic.params[param_name].vary
+                for param_name in calibrator.param_names
+            )
+            if not modified:
+                # Just skip over it
+                continue
+
+            overlay.crystal_params = calibrator.grain_params
+
+            mat_name = overlay.material_name
+            HexrdConfig().flag_overlay_updates_for_material(mat_name)
+            HexrdConfig().material_modified.emit(mat_name)
+
+        # In case any overlays changed
+        HexrdConfig().overlay_config_changed.emit()
+        HexrdConfig().update_overlay_editor.emit()
+        self.finished.emit()
 
     def run_pull_spots(self):
         cfg = create_indexing_config()
@@ -304,122 +270,9 @@ class HEDMCalibrationRunner(QObject):
 
         return outputs
 
-    def on_calibration_finished(self):
-        self.write_results_message()
-
-        # Update the instrument
-        self.update_config()
-
-    def write_results_message(self):
-        msg = ''
-
-        pnames = calibration.generate_parameter_names(self.instr,
-                                                      self.grain_parameters)
-
-        # First, show any updates to instrument parameters
-        instr_flags = self.instr.calibration_flags
-        if any(instr_flags):
-            cfg = create_indexing_config()
-            old_instr = cfg.instrument.hedm
-            old_values = old_instr.calibration_parameters[instr_flags]
-            new_values = self.instr.calibration_parameters[instr_flags]
-            refinable = np.where(instr_flags)[0]
-
-            for i, old, new in zip(refinable, old_values, new_values):
-                name = pnames[i]
-                msg += f'\t{name}: {old: 12.8f}  => {new: 12.8f}\n'
-
-        # Next, the overlay parameters
-        pname_start_ind = len(instr_flags)
-        for results, overlay in zip(self.results, self.active_overlays):
-            name = overlay.name
-            refinements = overlay.refinements
-            if any(refinements):
-                old_values = overlay.crystal_params[refinements]
-                new_values = results[refinements]
-                refinable = np.where(refinements)[0]
-
-                for i, old, new in zip(refinable, old_values, new_values):
-                    name = pnames[pname_start_ind + i]
-                    msg += f'\t{name}: {old: 12.8f}  => {new: 12.8f}\n'
-
-            pname_start_ind += len(refinements)
-
-        self.results_message = msg
-
-    def update_config(self):
-        # Print the results message first
-        print('Optimization successful!')
-        print(self.results_message)
-
-        kwargs = {
-            'title': 'HEXRD',
-            'message': 'Optimization successful!',
-            'details': self.results_message,
-            'parent': self.parent,
-        }
-        msg_box = MessageBox(**kwargs)
-        msg_box.exec()
-
-        # Update rotation series parameters from the results
-        for results, overlay in zip(self.results, self.active_overlays):
-            overlay.crystal_params[:] = results
-
-        # Update modified instrument parameters
-        output_dict = instr_to_internal_dict(self.instr)
-
-        # Save the previous iconfig to restore the statuses
-        prev_iconfig = HexrdConfig().config['instrument']
-
-        # Update the config
-        HexrdConfig().config['instrument'] = output_dict
-
-        # This adds in any missing keys. In particular, it is going to
-        # add in any "None" detector distortions
-        HexrdConfig().set_detector_defaults_if_missing()
-
-        # Add status values
-        HexrdConfig().add_status(output_dict)
-
-        # Set the previous statuses to be the current statuses
-        HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
-
-        # Tell GUI that the overlays need to be re-computed
-        HexrdConfig().flag_overlay_updates_for_material(self.material.name)
-
-        # update the materials panel
-        if self.material is HexrdConfig().active_material:
-            HexrdConfig().active_material_modified.emit()
-
-        # Update the overlay editor in case it is visible
-        HexrdConfig().update_overlay_editor.emit()
-
-        # redraw updated overlays
-        HexrdConfig().overlay_config_changed.emit()
-
-        # Keep a copy of the output grains table on HexrdConfig
-        grains_table = self.grains_table.copy()
-        grains_table[:, 3:15] = self.results
-        HexrdConfig().hedm_calibration_output_grains_table = grains_table
-
-        # Done!
-        self.finished.emit()
-
     @property
-    def grain_parameters(self):
+    def grain_params(self):
         return self.grains_table[:, 3:15]
-
-    @property
-    def param_flags(self):
-        return HexrdConfig().get_statuses_instrument_format()
-
-    @property
-    def grain_flags(self):
-        return np.array(self.active_overlay_refinements).flatten()
-
-    @property
-    def all_flags(self):
-        return np.concatenate((self.param_flags, self.grain_flags))
 
     @property
     def overlays(self):
@@ -449,7 +302,7 @@ class HEDMCalibrationRunner(QObject):
     @property
     def ome_period(self):
         # These should be the same for all overlays, and it is pre-validated
-        return np.degrees(self.first_active_overlay.ome_period)
+        return self.first_active_overlay.ome_period
 
     @property
     def material(self):
@@ -469,7 +322,9 @@ class HEDMCalibrationRunner(QObject):
         # This omega period is deprecated, but still used in some places.
         # Make sure it is synchronized with our overlays' omega period.
         cfg = HexrdConfig().indexing_config
-        cfg['find_orientations']['omega']['period'] = self.ome_period
+        cfg['find_orientations']['omega']['period'] = np.degrees(
+            self.ome_period
+        )
 
     def pre_validate(self):
         # Validation to perform before we do anything else
@@ -516,34 +371,3 @@ class HEDMCalibrationRunner(QObject):
                 'series using the "Simple Image Series" import tool.'
             )
             raise Exception(msg)
-
-
-def parse_spots_data(spots_data, instr, grain_ids, refit_idx=None):
-    hkls = {}
-    xyo_det = {}
-    idx_0 = {}
-    for det_key, panel in instr.detectors.items():
-        hkls[det_key] = []
-        xyo_det[det_key] = []
-        idx_0[det_key] = []
-
-        for ig, grain_id in enumerate(grain_ids):
-            data = spots_data[grain_id][1][det_key]
-            # Convert to numpy array to make operations easier
-            data = np.array(data, dtype=object)
-            valid_reflections = data[:, 0] >= 0
-            not_saturated = data[:, 4] < panel.saturation_level
-
-            if refit_idx is None:
-                idx = np.logical_and(valid_reflections, not_saturated)
-                idx_0[det_key].append(idx)
-            else:
-                idx = refit_idx[det_key][ig]
-                idx_0[det_key].append(idx)
-
-            hkls[det_key].append(np.vstack(data[idx, 2]))
-            meas_omes = np.vstack(data[idx, 6])[:, 2].reshape(sum(idx), 1)
-            xyo_det[det_key].append(np.hstack([np.vstack(data[idx, 7]),
-                                               meas_omes]))
-
-    return hkls, xyo_det, idx_0

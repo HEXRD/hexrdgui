@@ -3,18 +3,16 @@ import numpy as np
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem
 
-from hexrd import constants as cnst
-
 from hexrdgui.constants import OverlayType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing.create_config import (
     create_indexing_config, OmegasNotFoundError
 )
-from hexrdgui.refinements_editor import RefinementsEditor
 from hexrdgui.reflections_table import ReflectionsTable
 from hexrdgui.select_grains_dialog import SelectGrainsDialog
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
+from hexrdgui.utils.dialog import add_help_url
 
 
 class HEDMCalibrationOptionsDialog(QObject):
@@ -28,22 +26,19 @@ class HEDMCalibrationOptionsDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('hedm_calibration_options_dialog.ui',
                                    parent)
-        self.refinements_editor = RefinementsEditor(self.ui)
-        self.refinements_editor.hide_bottom_buttons = True
+
+        add_help_url(self.ui.button_box, 'calibration/rotation_series')
 
         self.material = material
         self.parent = parent
 
-        self.setup_refinement_options()
         self.setup_table()
         self.update_materials()
         self.update_gui()
-        self.apply_refinement_selections()
         self.setup_connections()
 
     def setup_connections(self):
         self.ui.view_grains_table.clicked.connect(self.edit_grains_table)
-        self.ui.view_refinements.clicked.connect(self.view_refinements)
 
         self.ui.material.currentIndexChanged.connect(self.material_changed)
         self.ui.choose_hkls.pressed.connect(self.choose_hkls)
@@ -54,24 +49,12 @@ class HEDMCalibrationOptionsDialog(QObject):
             self.update_tolerances_table)
         self.ui.tolerances_table.itemChanged.connect(
             self.on_tolerances_changed)
-        self.refinements_editor.tree_view.dict_modified.connect(
-            self.on_refinements_editor_modified)
-        self.ui.fix_strain.toggled.connect(self.apply_refinement_selections)
-        self.ui.refinement_choice.currentIndexChanged.connect(
-            self.apply_refinement_selections)
 
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
     def update_gui(self):
-        config = HexrdConfig().indexing_config['fit_grains']
-        self.refit_pixel_scale = config['refit'][0]
-        self.refit_ome_step_scale = config['refit'][1]
-
         indexing_config = HexrdConfig().indexing_config
-
-        calibration_config = indexing_config['_hedm_calibration']
-        self.do_refit = calibration_config['do_refit']
 
         indexing_config = HexrdConfig().indexing_config
         self.npdiv = indexing_config['fit_grains']['npdiv']
@@ -82,31 +65,16 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.update_num_grains_selected()
 
     def update_config(self):
-        config = HexrdConfig().indexing_config['fit_grains']
-        config['refit'][0] = self.refit_pixel_scale
-        config['refit'][1] = self.refit_ome_step_scale
-
         indexing_config = HexrdConfig().indexing_config
-        calibration_config = indexing_config['_hedm_calibration']
-        calibration_config['do_refit'] = self.do_refit
 
         indexing_config = HexrdConfig().indexing_config
         indexing_config['fit_grains']['npdiv'] = self.npdiv
         indexing_config['fit_grains']['threshold'] = self.threshold
 
-    def setup_refinement_options(self):
-        w = self.ui.refinement_choice
-        w.clear()
-
-        for key, label in REFINEMENT_OPTIONS.items():
-            w.addItem(label, key)
-
     def show(self):
         self.ui.show()
 
     def on_accepted(self):
-        self.apply_refinement_selections()
-
         try:
             self.validate()
         except Exception as e:
@@ -114,15 +82,10 @@ class HEDMCalibrationOptionsDialog(QObject):
             self.show()
             return
 
-        self.refinements_editor.update_config()
-        self.refinements_editor.ui.accept()
-
         self.update_config()
         self.accepted.emit()
 
     def on_rejected(self):
-        self.restore_cached_overlay_properties()
-        self.refinements_editor.ui.hide()
         self.rejected.emit()
 
     def validate(self):
@@ -204,7 +167,6 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.update_num_grains_selected()
         HexrdConfig().overlay_config_changed.emit()
         HexrdConfig().update_overlay_manager.emit()
-        self.update_refinements_editor()
 
     def update_tolerances_grain_options(self):
         w = self.ui.tolerances_selected_grain
@@ -288,25 +250,6 @@ class HEDMCalibrationOptionsDialog(QObject):
         HexrdConfig().overlay_config_changed.emit()
         HexrdConfig().update_overlay_editor.emit()
 
-    def on_refinements_editor_modified(self):
-        # Set it to "custom"
-        idx = list(REFINEMENT_OPTIONS).index('custom')
-
-        w = self.ui.refinement_choice
-        fix_strain_w = self.ui.fix_strain
-        with block_signals(w, fix_strain_w):
-            w.setCurrentIndex(idx)
-
-            # Also disable fixing the strain
-            fix_strain_w.setChecked(False)
-
-        # Trigger an update to the config
-        self.refinements_editor.update_config()
-
-        # Restore all cached overlay properties
-        self.restore_cached_overlay_properties()
-        self.update_refinements_editor()
-
     @property
     def selected_material(self) -> str:
         return self.ui.material.currentText()
@@ -314,30 +257,6 @@ class HEDMCalibrationOptionsDialog(QObject):
     @selected_material.setter
     def selected_material(self, v: str):
         self.ui.material.setCurrentText(v)
-
-    @property
-    def do_refit(self):
-        return self.ui.do_refit.isChecked()
-
-    @do_refit.setter
-    def do_refit(self, b):
-        self.ui.do_refit.setChecked(b)
-
-    @property
-    def refit_pixel_scale(self):
-        return self.ui.refit_pixel_scale.value()
-
-    @refit_pixel_scale.setter
-    def refit_pixel_scale(self, v):
-        self.ui.refit_pixel_scale.setValue(v)
-
-    @property
-    def refit_ome_step_scale(self):
-        return self.ui.refit_ome_step_scale.value()
-
-    @refit_ome_step_scale.setter
-    def refit_ome_step_scale(self, v):
-        self.ui.refit_ome_step_scale.setValue(v)
 
     @property
     def npdiv(self):
@@ -422,163 +341,7 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         self.update_tolerances_grain_options()
         self.update_num_grains_selected()
-        self.apply_refinement_selections()
-        self.update_refinements_editor()
         HexrdConfig().update_overlay_manager.emit()
-
-    @property
-    def fix_strain(self):
-        return self.ui.fix_strain.isChecked()
-
-    @fix_strain.setter
-    def fix_strain(self, b):
-        self.ui.fix_strain.setChecked(b)
-
-    @property
-    def fix_det_y(self):
-        return self.ui.refinement_choice.currentData() == 'fix_det_y'
-
-    @property
-    def fix_grain_centroid(self):
-        return self.ui.refinement_choice.currentData() == 'fix_grain_centroid'
-
-    @property
-    def fix_grain_y(self):
-        return self.ui.refinement_choice.currentData() == 'fix_grain_y'
-
-    @property
-    def custom_refinements(self):
-        return self.ui.refinement_choice.currentData() == 'custom'
-
-    def apply_refinement_selections(self):
-        def perform_updates():
-            self.update_refinements_editor()
-            HexrdConfig().overlay_config_changed.emit()
-            HexrdConfig().update_overlay_editor.emit()
-            HexrdConfig().update_instrument_toolbox.emit()
-
-        # Before anything else, restore cached properties (in case
-        # they were unchecked).
-        self.restore_cached_overlay_properties()
-
-        # First, apply strain settings
-        for overlay in self.active_overlays:
-            refinements = overlay.refinements
-            crystal_params = overlay.crystal_params
-            if self.fix_strain:
-                if not np.allclose(crystal_params[6:], cnst.identity_6x1):
-                    # Store the strain in case we want to use it again
-                    overlay._cached_strain = crystal_params[6:].copy()
-                    crystal_params[6:] = cnst.identity_6x1
-
-                for i in range(6, len(refinements)):
-                    refinements[i] = False
-            elif not self.custom_refinements:
-                # Make all strain parameters refinable, but only
-                # if we are not doing custom refinements.
-                for i in range(6, len(refinements)):
-                    refinements[i] = True
-
-        # If we are doing custom refinements, don't make any more changes
-        if self.custom_refinements:
-            perform_updates()
-            return
-
-        # Set all rotation series orientation/position refinement params
-        for idx, overlay in enumerate(self.active_overlays):
-            refinements = overlay.refinements
-            crystal_params = overlay.crystal_params
-
-            # The position and orientation will be refinable by default
-            for i in range(6):
-                refinements[i] = True
-
-            if idx == 0:
-                # First grain may be affected by refinement choices
-                if self.fix_grain_centroid:
-                    if not np.allclose(crystal_params[3:6], cnst.zeros_3):
-                        overlay._cached_pos = crystal_params[3:6].copy()
-                        crystal_params[3:6] = cnst.zeros_3
-
-                    for i in range(3, 6):
-                        refinements[i] = False
-                elif self.fix_grain_y:
-                    if not np.isclose(crystal_params[4], 0):
-                        # Store the grain y in case we want to use it again
-                        overlay._cached_pos_y = crystal_params[4]
-                        crystal_params[4] = 0
-
-                    refinements[4] = False
-
-        def recursive_set_refinable(cur, b):
-            if 'status' not in cur:
-                for key, value in cur.items():
-                    recursive_set_refinable(value, b)
-                return
-
-            if isinstance(cur['status'], list):
-                for i in range(len(cur['status'])):
-                    cur['status'][i] = b
-            else:
-                cur['status'] = b
-
-        # Now make all detector parameters refinable by default.
-        iconfig = HexrdConfig().config['instrument']
-
-        # Mark everything under "beam" and "oscillation stage" as not refinable
-        recursive_set_refinable(iconfig['beam'], False)
-        recursive_set_refinable(iconfig['oscillation_stage'], False)
-
-        # Mark everything under detectors as refinable
-        recursive_set_refinable(iconfig['detectors'], True)
-
-        if self.fix_det_y:
-            # Fix the detector y translation values
-            for det_key, conf in iconfig['detectors'].items():
-                conf['transform']['translation']['status'][1] = False
-
-        # Now trigger updates everywhere
-        perform_updates()
-
-    def restore_cached_overlay_properties(self):
-        for overlay in self.active_overlays:
-            crystal_params = overlay.crystal_params
-            reset_cached_strain = (
-                not self.fix_strain and
-                np.allclose(crystal_params[6:], cnst.identity_6x1) and
-                hasattr(overlay, '_cached_strain')
-            )
-            if reset_cached_strain:
-                # It must have been unchecked. Restore the previous strain.
-                crystal_params[6:] = overlay._cached_strain
-                del overlay._cached_strain
-
-            reset_cached_pos_y = (
-                not self.fix_grain_y and
-                np.isclose(crystal_params[4], 0) and
-                hasattr(overlay, '_cached_pos_y')
-            )
-            if reset_cached_pos_y:
-                # The setting must have been changed. Restore the previous.
-                crystal_params[4] = overlay._cached_pos_y
-                del overlay._cached_pos_y
-
-            reset_cached_pos = (
-                not self.fix_grain_centroid and
-                np.allclose(crystal_params[3:6], cnst.zeros_3) and
-                hasattr(overlay, '_cached_pos')
-            )
-            if reset_cached_pos:
-                # The setting must have been changed. Restore the previous.
-                crystal_params[3:6] = overlay._cached_pos
-                del overlay._cached_pos
-
-    def view_refinements(self):
-        self.update_refinements_editor()
-        self.refinements_editor.ui.show()
-
-    def update_refinements_editor(self):
-        self.refinements_editor.reset_dict()
 
     @property
     def overlays(self):
@@ -608,11 +371,3 @@ def calc_table_height(table: QTableWidget) -> int:
     if not table.horizontalHeader().isHidden():
         res += table.horizontalHeader().height()
     return res
-
-
-REFINEMENT_OPTIONS = {
-    'fix_det_y': 'Fix origin based on current sample/detector position',
-    'fix_grain_centroid': 'Reset origin to grain centroid position',
-    'fix_grain_y': 'Reset Y axis origin to grain\'s Y position',
-    'custom': 'Custom refinement parameters',
-}

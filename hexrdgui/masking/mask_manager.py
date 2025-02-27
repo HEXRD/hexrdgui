@@ -362,9 +362,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         # We must ensure that we are using raw masks
         for det, mask in HexrdConfig().raw_masks_dict.items():
             detector_config = HexrdConfig().detector(det)
-            buffer_default = {'status': 0}
-            buffer = detector_config.setdefault('buffer', buffer_default)
-            buffer_value = detector_config['buffer'].get('value', None)
+            buffer_value = detector_config.get('buffer', None)
             if isinstance(buffer_value, np.ndarray) and buffer_value.ndim == 2:
                 if selection == 'Logical AND with buffer':
                     # Need to invert so True is invalid
@@ -372,7 +370,7 @@ class MaskManager(QObject, metaclass=QSingleton):
                 elif selection == 'Logical OR with buffer':
                     # Need to invert so True is invalid
                     mask = ~np.logical_or(~mask, ~buffer_value)
-            buffer['value'] = mask
+            detector_config['buffer'] = buffer_value
 
         HexrdConfig().rerender_needed.emit()
 

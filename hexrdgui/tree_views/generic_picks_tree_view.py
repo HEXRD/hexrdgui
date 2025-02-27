@@ -3,7 +3,7 @@ from itertools import cycle
 
 import matplotlib.pyplot as plt
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QModelIndex, Qt, Signal
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
@@ -120,7 +120,7 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
 
 class GenericPicksTreeView(BaseDictTreeView):
 
-    dict_modified = Signal()
+    dict_modified = Signal(QModelIndex)
 
     def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
                  parent=None, model_class=GenericPicksTreeItemModel,
@@ -176,9 +176,9 @@ class GenericPicksTreeView(BaseDictTreeView):
         # Do nothing by default
         pass
 
-    def data_was_modified(self):
+    def data_was_modified(self, index):
         self.draw_picks()
-        self.dict_modified.emit()
+        self.dict_modified.emit(index)
 
     def delete_selected_picks(self):
         self.is_deleting_picks = True

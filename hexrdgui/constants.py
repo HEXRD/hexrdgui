@@ -121,6 +121,14 @@ KNOWN_DETECTOR_NAMES = {
         'ic7',
         'ic8',
     ],
+    'DEXELAS_COMPOSITE': [
+        'ff1_0_0',
+        # There are others, but let's just check the first one
+    ],
+    'EIGER_COMPOSITE': [
+        'eiger_0_0',
+        # There are others, but let's just check the first one
+    ]
 }
 
 KEY_ROTATE_ANGLE_FINE = 0.00175

@@ -150,9 +150,6 @@ def save(h5_file):
         if entry in state:
             del state[entry]
 
-    # Add in the statuses since we skip the instrument config
-    state['__instrument_status_dict'] = HexrdConfig()._instrument_status_dict
-
     # Save the state
     _save_config(h5_file, state)
 
@@ -194,11 +191,6 @@ def load(h5_file):
 
         # Load the instrument config...
         HexrdConfig().load_instrument_config(h5_file)
-
-        key = '__instrument_status_dict'
-        if key in state:
-            # Load the instrument statuses as well
-            HexrdConfig()._instrument_status_dict = state[key]
 
         # Get any connected parts to load state...
         HexrdConfig().load_state.emit(h5_file)
