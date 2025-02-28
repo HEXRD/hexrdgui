@@ -384,7 +384,7 @@ class MainWindow(QObject):
             self.enable_canvas_focus_mode)
 
         # Always assume Physics Package is needed for LLNL import
-        self.llnl_import_tool_dialog.ui.complete.clicked.connect(
+        self.llnl_import_tool_dialog.complete_workflow.connect(
             lambda: self.on_action_include_physics_package_toggled(True)
         )
 
