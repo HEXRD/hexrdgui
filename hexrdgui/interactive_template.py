@@ -69,7 +69,7 @@ class InteractiveTemplate:
     @key_rotation_angle.setter
     def key_rotation_angle(self, angle=None):
         if angle is None:
-            angle = KEY_ROTATE_ANGLE
+            angle = KEY_ROTATE_ANGLE_FINE
         self._key_angle = angle
 
     def update_image(self, img):
