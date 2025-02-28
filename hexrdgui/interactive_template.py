@@ -83,10 +83,15 @@ class InteractiveTemplate:
     def create_polygon(self, verts, **polygon_kwargs):
         self.complete = False
         self.shape = patches.Polygon(verts, **polygon_kwargs)
+        self.outer_polygon = self.shape
         if has_nan(verts):
             # This template contains more than one polygon and the last point
             # should not be connected to the first. See Tardis IP for example.
             self.shape.set_closed(False)
+            # For the sake of checking events we only need the outer polygon
+            nans = np.where(np.isnan(verts))
+            boundary = self.shape.xy[:nans[0][0]]
+            self.outer_polygon = patches.Polygon(boundary)
         self.shape_styles.append(polygon_kwargs)
         self.update_position()
         self.connect_translate_rotate()
@@ -331,7 +336,7 @@ class InteractiveTemplate:
         if event.inaxes != self.shape.axes or self.event_key == 'shift':
             return
 
-        contains, info = self.shape.contains(event)
+        contains, info = self.outer_polygon.contains(event)
         if not contains:
             return
         self.press = self.shape.xy, event.xdata, event.ydata
@@ -366,7 +371,7 @@ class InteractiveTemplate:
         if event.inaxes != self.shape.axes or self.event_key != 'shift':
             return
 
-        contains, info = self.shape.contains(event)
+        contains, info = self.outer_polygon.contains(event)
         if not contains:
             return
         # FIXME: Need to come back to this to understand why we
