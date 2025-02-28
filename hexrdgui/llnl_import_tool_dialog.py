@@ -590,7 +590,11 @@ class LLNLImportToolDialog(QObject):
                 self.ui.image_plate_label,
                 self.ui.accept_template,
             enabled=True)
-            self.enable_widgets(self.ui.data, enabled=False)
+            self.enable_widgets(
+                self.ui.data,
+                self.ui.detector_load,
+                self.ui.dark_load,
+            enabled=False)
             self.add_template()
 
     def add_transform(self):
@@ -737,6 +741,8 @@ class LLNLImportToolDialog(QObject):
             self.ui.file_selection,
             self.ui.add_transform,
             self.ui.complete,
+            self.ui.detector_load,
+            self.ui.dark_load,
         enabled=True)
         self.enable_widgets(
             self.ui.outline_appearance,
