@@ -50,12 +50,13 @@ class AsyncWorker(QRunnable):
     '''
 
     def __init__(self, fn, *args, **kwargs):
-        super(AsyncWorker, self).__init__()
+        super().__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
         self.signals = AsyncWorkerSignals()
+        self.print_error_traceback = True
 
         # If the function signature accepts an 'update_progress'
         # function, set it to emit the progress signal.
@@ -72,7 +73,9 @@ class AsyncWorker(QRunnable):
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
-            traceback.print_exc()
+            if self.print_error_traceback:
+                traceback.print_exc()
+
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:

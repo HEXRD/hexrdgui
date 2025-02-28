@@ -1,6 +1,7 @@
 import copy
 import math
 import logging
+import sys
 
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox
@@ -72,6 +73,7 @@ class ImageCanvas(FigureCanvas):
         self.blit_manager = BlitManager(self)
         self.raw_view_images_dict = {}
         self._mask_boundary_artists = []
+        self._latest_compute_view_worker = None
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -973,13 +975,21 @@ class ImageCanvas(FigureCanvas):
 
         # Run the view generation in a background thread
         worker = AsyncWorker(cartesian_viewer)
+        worker.print_error_traceback = False
+        worker.signals._image_mode = self.mode
         self.thread_pool.start(worker)
+        self._latest_compute_view_worker = worker
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_cartesian)
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_cartesian(self, iviewer):
+        if self.sender() is not self._latest_compute_view_worker.signals:
+            # A new calculation must have been started while this was running.
+            # Forget this one...
+            return
+
         if self.mode != ViewType.cartesian:
             # Image mode was switched during generation. Ignore this.
             return
@@ -1040,13 +1050,20 @@ class ImageCanvas(FigureCanvas):
 
         # Run the view generation in a background thread
         worker = AsyncWorker(polar_viewer)
+        worker.print_error_traceback = False
+        worker.signals._image_mode = self.mode
         self.thread_pool.start(worker)
+        self._latest_compute_view_worker = worker
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_polar)
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_polar(self, iviewer):
+        if self.sender() is not self._latest_compute_view_worker.signals:
+            # A new calculation must have been started while this was running.
+            # Forget this one...
+            return
 
         if self.mode != ViewType.polar:
             # Image mode was switched during generation. Ignore this.
@@ -1219,13 +1236,21 @@ class ImageCanvas(FigureCanvas):
 
         # Run the view generation in a background thread
         worker = AsyncWorker(stereo_viewer)
+        worker.print_error_traceback = False
+        worker.signals._image_mode = self.mode
         self.thread_pool.start(worker)
+        self._latest_compute_view_worker = worker
 
         # Get the results and close the progress dialog when finished
         worker.signals.result.connect(self.finish_show_stereo)
         worker.signals.error.connect(self.async_worker_error)
 
     def finish_show_stereo(self, iviewer):
+        if self.sender() is not self._latest_compute_view_worker.signals:
+            # A new calculation must have been started while this was running.
+            # Forget this one...
+            return
+
         if self.mode != ViewType.stereo:
             # Image mode was switched during generation. Ignore this.
             return
@@ -1390,6 +1415,19 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().polar_masks_reapplied.emit(img)
 
     def async_worker_error(self, error):
+        if self.sender() is not self._latest_compute_view_worker.signals:
+            # A new calculation must have been started while this was running.
+            # This error doesn't matter anymore...
+            return
+
+        if self.sender()._image_mode != self.mode:
+            # We changed modes while this was running, and it doesn't matter
+            # anymore...
+            return
+
+        # We disabled traceback printing in the async worker, so print it
+        # now.
+        print(error[2], file=sys.stderr)
         QMessageBox.critical(self, 'HEXRD', str(error[1]))
         msg = f'{str(self.mode)} view error!'
         HexrdConfig().emit_update_status_bar(msg)
