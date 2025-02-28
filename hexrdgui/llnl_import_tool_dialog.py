@@ -46,6 +46,8 @@ class LLNLImportToolDialog(QObject):
 
     cancel_workflow = Signal()
 
+    complete_workflow = Signal()
+
     def __init__(self, cmap=None, parent=None):
         super().__init__(parent)
 
@@ -920,12 +922,14 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
 
-        use_med = True if self.instrument == 'FIDDLE' else self.median_setting
-        HexrdConfig().apply_median_filter_correction = use_med
-        d = MedianFilterDialog(self.ui.parent())
         if self.instrument == 'FIDDLE':
             # Allow user to change kernel before applying median filter
-            d.show()
+            d = MedianFilterDialog(self.ui.parent())
+            d.ui.finished.connect(lambda: self.complete_workflow.emit())
+            HexrdConfig().apply_median_filter_correction = d.exec()
+        else:
+            HexrdConfig().apply_median_filter_correction = self.median_setting
+            self.complete_workflow.emit()
 
     def show(self):
         self.ui.show()
