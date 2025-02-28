@@ -28,6 +28,7 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.constants import (
     FIDDLE_FRAMES,
     FIDDLE_HDF5_PATH,
+    UI_TRANS_INDEX_NONE,
     UI_TRANS_INDEX_ROTATE_90,
     YAML_EXTS,
     LLNLTransform,
@@ -464,8 +465,11 @@ class LLNLImportToolDialog(QObject):
                                         )
         if not selected_file:
             return
-
         HexrdConfig().set_images_dir(selected_file)
+
+        # Make sure we're not transforming detector images
+        HexrdConfig().load_panel_state['trans'] = [UI_TRANS_INDEX_NONE]
+
         # Needed to identify current image, regardless of image load path
         self.current_image_selection = self.detector
 
