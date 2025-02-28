@@ -565,17 +565,12 @@ class LLNLImportToolDialog(QObject):
                 if not raw_axes.get_autoscale_on():
                     raw_axes.set_autoscale_on(True)
 
-            if self.completed:
-                # Only reset the color map range for first IP/detector is done
-                self.cmap.block_updates(True)
-
             # The ImageLoadManager parent needs to be set to the main window
             # because when set to the ui (QDockWidget) the dock widget is
             # closed after accepting the image selection. We're not positive
             # why this is the case but it may be related to being a parent to
             # the QProgressDialog.
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
-            self.cmap.block_updates(False)
             self.it = InteractiveTemplate(
                 self.canvas, self.image_plate, instrument=self.instrument)
             # We should be able to immediately interact with the template
