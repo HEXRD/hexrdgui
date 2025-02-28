@@ -285,8 +285,8 @@ class CalTreeView(QTreeView):
         self.resizeColumnToContents(VALUE_COL)
         self.resizeColumnToContents(STATUS_COL)
 
-        self.header().resizeSection(KEY_COL, 200)
-        self.header().resizeSection(VALUE_COL, 200)
+        self.header().resizeSection(KEY_COL, 180)
+        self.header().resizeSection(VALUE_COL, 170)
 
         self.setup_connections()
 
