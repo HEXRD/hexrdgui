@@ -465,6 +465,7 @@ class LLNLImportToolDialog(QObject):
         if not selected_file:
             return
 
+        HexrdConfig().set_images_dir(selected_file)
         # Needed to identify current image, regardless of image load path
         self.current_image_selection = self.detector
 
