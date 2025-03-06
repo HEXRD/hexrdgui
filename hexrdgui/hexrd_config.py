@@ -334,7 +334,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._detector_coatings = {}
         self._instrument_rigid_body_params = {}
         self._median_filter_correction = {}
-        self.absorption_corrections_dict = {}
+        self.intensity_corrections_dict = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -929,74 +929,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def intensity_corrected_images_dict(self):
         """Performs intensity corrections, if any, before returning"""
         images_dict = self.raw_images_dict
-
         if not self.any_intensity_corrections:
             # No intensity corrections. Return.
             return images_dict
 
-        # Some methods require an instrument. Go ahead and create one.
-        from hexrdgui.create_hedm_instrument import create_hedm_instrument
-        instr = create_hedm_instrument()
-
-        if HexrdConfig().apply_pixel_solid_angle_correction:
-            sangle = dict.fromkeys(images_dict.keys())
-            mi = np.finfo(np.float64).max # largest floating point number
-            # normalize by minimum of the entire instrument
-            # not each detector individually
-            for name, img in images_dict.items():
-                panel = instr.detectors[name]
-                sangle[name] = panel.pixel_solid_angles
-                mi = np.min((mi, sangle[name].min()))
-            for name, img in images_dict.items():
-                images_dict[name] = mi * img / sangle[name]
-
-        if HexrdConfig().apply_polarization_correction:
-            options = self.config['image']['polarization']
-            kwargs = {
-                'unpolarized': options['unpolarized'],
-                'f_hor': options['f_hor'],
-                'f_vert': options['f_vert'],
-            }
-
-            for name, img in images_dict.items():
-                panel = instr.detectors[name]
-                factor = panel.polarization_factor(**kwargs)
-                images_dict[name] = img / factor
-
-        if HexrdConfig().apply_lorentz_correction:
-            for name, img in images_dict.items():
-                panel = instr.detectors[name]
-                factor = panel.lorentz_factor()
-                images_dict[name] = img / factor
-
-        HexrdConfig().absorption_corrections_dict.clear()
-        if HexrdConfig().apply_absorption_correction:
-            absorption_corrections = HexrdConfig().absorption_corrections_dict
-
-            transmissions = instr.calc_transmission()
-            max_transmission = max(
-                [np.nanmax(v) for v in transmissions.values()])
-
-            for name, img in images_dict.items():
-                transmission = transmissions[name]
-                # normalize by maximum of the entire instrument
-                transmission /= max_transmission
-                absorption_corrections[name] = 1 / transmission
-
-            if (
-                HexrdConfig().image_mode not in
-                (constants.ViewType.polar, constants.ViewType.stereo)
-            ):
-                # If it's not polar or stereo, go ahead and apply the
-                # corrections
-                for name, img in images_dict.items():
-                    images_dict[name] = img * absorption_corrections[name]
-
-        if HexrdConfig().intensity_subtract_minimum:
-            minimum = min([np.nanmin(x) for x in images_dict.values()])
-            for name, img in images_dict.items():
-                images_dict[name] = img - minimum
-
+        # Always apply the median filter to the raw images dict first
+        # Other corrections may be applied after the view is generated
+        # (such as polar or stereo)
         if HexrdConfig().apply_median_filter_correction:
             for name, img in images_dict.items():
                 images_dict[name] = medfilt2d_memoized(
@@ -1004,7 +943,84 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     kernel_size=HexrdConfig().median_filter_kernel_size
                 )
 
+        # Create this corrections dict, even if we don't use it, because
+        # it updates the `intensity_corrections_dict` that may be used
+        # elsewhere.
+        corrections_dict = self.create_intensity_corrections_dict()
+        if (
+            self.image_mode not in
+            (constants.ViewType.polar, constants.ViewType.stereo)
+        ):
+            # If it's not polar or stereo, go ahead and apply the
+            # corrections
+            for name in images_dict:
+                images_dict[name] *= corrections_dict[name]
+
+            # In the polar view, minimum will be subtracted later
+            if self.intensity_subtract_minimum:
+                minimum = min([np.nanmin(x) for x in images_dict.values()])
+                for name in images_dict:
+                    images_dict[name] -= minimum
+
         return images_dict
+
+    def create_intensity_corrections_dict(self) -> dict:
+        # The corrections dict is both stored in `intensity_corrections_dict`
+        # and returned from this function.
+        corrections_dict = self.intensity_corrections_dict
+        corrections_dict.clear()
+
+        # Some methods require an instrument. Go ahead and create one.
+        from hexrdgui.create_hedm_instrument import create_hedm_instrument
+        instr = create_hedm_instrument()
+
+        # Initialize the intensity corrections dict as ones
+        for det_key, panel in instr.detectors.items():
+            corrections_dict[det_key] = np.ones(panel.shape)
+
+        if not self.any_intensity_corrections:
+            return corrections_dict
+
+        if self.apply_pixel_solid_angle_correction:
+            sangle = dict.fromkeys(instr.detectors)
+            mi = np.finfo(np.float64).max # largest floating point number
+            # normalize by minimum of the entire instrument
+            # not each detector individually
+            for name, panel in instr.detectors.items():
+                sangle[name] = panel.pixel_solid_angles
+                mi = np.min((mi, sangle[name].min()))
+
+            for name in sangle:
+                corrections_dict[name] *= mi / sangle[name]
+
+        if self.apply_polarization_correction:
+            options = self.config['image']['polarization']
+            kwargs = {
+                'unpolarized': options['unpolarized'],
+                'f_hor': options['f_hor'],
+                'f_vert': options['f_vert'],
+            }
+
+            for name, panel in instr.detectors.items():
+                factor = panel.polarization_factor(**kwargs)
+                corrections_dict[name] /= factor
+
+        if self.apply_lorentz_correction:
+            for name, panel in instr.detectors.items():
+                factor = panel.lorentz_factor()
+                corrections_dict[name] /= factor
+
+        if self.apply_absorption_correction:
+            transmissions = instr.calc_transmission()
+            max_transmission = max(
+                [np.nanmax(v) for v in transmissions.values()])
+
+            for name, transmission in transmissions.items():
+                # normalize by maximum of the entire instrument
+                transmission /= max_transmission
+                corrections_dict[name] /= transmission
+
+        return corrections_dict
 
     @property
     def images_dict(self):

@@ -5,6 +5,7 @@ from skimage.morphology import footprint_rectangle
 from skimage.transform import warp
 
 from hexrd.transforms.xfcapi import mapAngle
+from hexrd.utils.warnings import ignore_warnings
 
 from hexrd import constants as ct
 from hexrd.xrdutil import (
@@ -55,6 +56,9 @@ class PolarView:
             # Use an image dict with the panel buffers applied.
             # This keeps invalid pixels from bleeding out in the polar view
             self.images_dict = HexrdConfig().images_dict
+
+            # Update the intensity corrections. They'll be used later.
+            self.update_intensity_corrections()
 
         self.warp_dict = {}
 
@@ -400,8 +404,8 @@ class PolarView:
         img = self.raw_img.data
         img = self.apply_snip(img)
 
-        # Always apply absorption correction after snip
-        img = self.apply_absorption_correction(img)
+        # Always apply intensity corrections after snip
+        img = self.apply_intensity_corrections(img)
 
         # cache this step so we can just re-apply masks if needed
         self.snipped_img = img
@@ -452,21 +456,35 @@ class PolarView:
 
         return img
 
-    def apply_absorption_correction(self, img):
-        if not HexrdConfig().apply_absorption_correction:
+    def apply_intensity_corrections(self, img):
+        if not HexrdConfig().any_intensity_corrections:
+            # No corrections
             return img
 
-        # Warp the absorption correction images to the polar view,
-        # sum them, and apply.
-        absorption_corrections = HexrdConfig().absorption_corrections_dict
+        # Warp the intensity corrections to polar, mean them, and apply
+        intensity_corrections = HexrdConfig().intensity_corrections_dict
 
         output = {}
         for det_key, panel in self.detectors.items():
-            corrections = absorption_corrections[det_key]
+            corrections = intensity_corrections[det_key]
             output[det_key] = self.warp_image(corrections, panel)
 
-        correction_field = np.ma.sum(np.ma.stack(output.values()), axis=0)
-        return img * correction_field.data
+        stacked = np.ma.stack(output.values()).filled(np.nan)
+
+        # It's okay to have all nan-slices here, but it produces a warning.
+        # Just ignore the warning.
+        with ignore_warnings(RuntimeWarning):
+            # In case there are overlapping detectors, we do nanmean for
+            # the intensities instead of nansum. This would produce a
+            # somewhat more reasonable intensity.
+            correction_field = np.nanmean(stacked, axis=0)
+
+        img *= correction_field
+
+        if HexrdConfig().intensity_subtract_minimum:
+            img -= np.nanmin(img)
+
+        return img
 
     def apply_visible_masks(self, img):
         # Apply user-specified masks if they are present
@@ -538,16 +556,16 @@ class PolarView:
         # Generate the final image
         self.generate_image()
 
-    def update_images_dict(self):
+    def update_intensity_corrections(self):
         if HexrdConfig().any_intensity_corrections:
-            self.images_dict = HexrdConfig().images_dict
+            HexrdConfig().create_intensity_corrections_dict()
 
     def update_detectors(self, detectors):
         self.reset_cached_distortion_fields()
 
         # If there are intensity corrections and the detector transform
-        # has been modified, we need to update the images dict.
-        self.update_images_dict()
+        # has been modified, we need to update the intensity corrections.
+        self.update_intensity_corrections()
 
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
