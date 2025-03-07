@@ -165,7 +165,7 @@ class MaskManagerDialog(QObject):
         show_dialog = False
         selection = 'Replace buffer'
         for det in HexrdConfig().detectors.values():
-            buff_val = det.get('buffer', {}).get('value', None)
+            buff_val = det.get('buffer', None)
             if isinstance(buff_val, np.ndarray) and buff_val.ndim == 2:
                 show_dialog = True
                 break

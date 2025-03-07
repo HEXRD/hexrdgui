@@ -39,7 +39,10 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
                 param.max = value + (param.max - param.value)
                 super().set_config_val(path[:-1] + ['_min'], param.min)
                 super().set_config_val(path[:-1] + ['_max'], param.max)
-                self.dict_modified.emit()
+
+                col = list(self.COLUMNS.values()).index(path[-1]) + 1
+                index = self.create_index(path[:-1], col)
+                self.dict_modified.emit(index)
 
                 if '_min' in self.COLUMNS.values():
                     # Get the GUI to update

@@ -144,7 +144,7 @@ class PanelBufferDialog(QObject):
 
     @property
     def current_saved_buffer_value(self):
-        return self.detector_config.get('buffer', self.default_buffer)['value']
+        return self.detector_config.get('buffer', self.default_buffer)
 
     @property
     def detector_config(self):
@@ -153,7 +153,7 @@ class PanelBufferDialog(QObject):
     @property
     def detector_shape(self):
         pixels = self.detector_config['pixels']
-        return (pixels['rows']['value'], pixels['columns']['value'])
+        return (pixels['rows'], pixels['columns'])
 
     def update_config(self):
         # Set the new config options on the internal config
@@ -161,15 +161,14 @@ class PanelBufferDialog(QObject):
         if value is None:
             return False
 
-        buffer = self.detector_config.setdefault('buffer', self.default_buffer)
-        buffer['value'] = value
+        self.detector_config['buffer'] = value
 
         return True
 
     def update_gui(self):
         with block_signals(*self.widgets):
             if 'buffer' in self.detector_config:
-                buffer = np.asarray(self.detector_config['buffer']['value'])
+                buffer = np.asarray(self.detector_config['buffer'])
 
                 if buffer.size in (1, 2):
                     self.mode = CONFIG_MODE_BORDER
@@ -220,10 +219,7 @@ class PanelBufferDialog(QObject):
 
     @property
     def default_buffer(self):
-        return {
-            'status': 0,
-            'value': [0., 0.],
-        }
+        return [0., 0.]
 
     def show_panel_buffer(self):
         buffer = np.asarray(self.current_editing_buffer_value)

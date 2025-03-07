@@ -268,9 +268,9 @@ class ImageModeWidget(QObject):
         # This function does not invoke a re-render.
         detectors = list(HexrdConfig().detectors.values())
         distances = [
-            x['transform']['translation']['value'][2] for x in detectors
+            x['transform']['translation'][2] for x in detectors
         ]
-        sizes = [x['pixels']['size']['value'] for x in detectors]
+        sizes = [x['pixels']['size'] for x in detectors]
 
         average_dist = sum(distances) / len(distances)
         average_size = sum([x[0] + x[1] for x in sizes]) / (2 * len(sizes))

@@ -107,7 +107,7 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
 
 class MultiColumnDictTreeView(BaseDictTreeView):
 
-    dict_modified = Signal()
+    dict_modified = Signal(QModelIndex)
 
     def __init__(self, dictionary, columns, parent=None,
                  model_class=MultiColumnDictTreeItemModel):
@@ -244,7 +244,10 @@ class MultiColumnDictTreeView(BaseDictTreeView):
                 self.open_persistent_editors(key_index)
 
     def setup_connections(self):
-        self.model().dict_modified.connect(self.dict_modified.emit)
+        self.model().dict_modified.connect(self.on_dict_modified)
+
+    def on_dict_modified(self, index: QModelIndex):
+        self.dict_modified.emit(index)
 
     def reset_gui(self):
         # Save the vertical scroll bar position if we can

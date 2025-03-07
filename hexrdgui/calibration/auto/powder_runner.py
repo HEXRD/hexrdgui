@@ -59,10 +59,6 @@ class PowderRunner(QObject):
         # The options they chose are saved here
         options = HexrdConfig().config['calibration']['powder']
         self.instr = create_hedm_instrument()
-        # Set this for the default calibration flags we will use
-        self.instr.calibration_flags = (
-            HexrdConfig().get_statuses_instrument_format()
-        )
 
         if options['auto_guess_initial_fwhm']:
             fwhm_estimate = None

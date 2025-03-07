@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>hedm_calibration_custom_widgets</class>
+ <widget class="QWidget" name="hedm_calibration_custom_widgets">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>606</width>
+    <height>350</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QCheckBox" name="show_refinements">
+     <property name="text">
+      <string>Show Refinements</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="refinements_group">
+     <property name="title">
+      <string>Refinement Choices</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0" colspan="2">
+       <widget class="QCheckBox" name="fix_strain">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets all calibration grains' stretch tensors to identity and holds them fixed during refinement.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Assume calibration grains strain-free</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="refinement_choice_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a preset refinement choice. Here are descriptions of each:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fix origin based on current sample/detector position&lt;/span&gt; - Holds detectors fixed along the Y axis during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset origin to grain centroid position&lt;/span&gt; - Set first calibration grain's centroid to [0,0,0] and holds it fixed during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset Y axis origin to grain's Y position&lt;/span&gt; - Sets the first calibration grain's Y position to zero and holds it fixed in Y during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Custom refinement parameters&lt;/span&gt; - Uses current parameter refinement choices.  Check refinements tab to see current selection.  &lt;span style=&quot; font-weight:600;&quot;&gt;Warning&lt;/span&gt;: Incompatible choices can be made without proper consideration of the system's degrees of freedom&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Choice: </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="refinement_choice">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a preset refinement choice. Here are descriptions of each:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Fix origin based on current sample/detector position&lt;/span&gt; - Holds detectors fixed along the Y axis during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset origin to grain centroid position&lt;/span&gt; - Set first calibration grain's centroid to [0,0,0] and holds it fixed during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Reset Y axis origin to grain's Y position&lt;/span&gt; - Sets the first calibration grain's Y position to zero and holds it fixed in Y during refinement&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Custom refinement parameters&lt;/span&gt; - Uses current parameter refinement choices.  Check refinements tab to see current selection.  &lt;span style=&quot; font-weight:600;&quot;&gt;Warning&lt;/span&gt;: Incompatible choices can be made without proper consideration of the system's degrees of freedom&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="refitting_group">
+     <property name="title">
+      <string>Refitting</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="0">
+       <widget class="QLabel" name="refit_pixel_scale_label">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Refit pixel scale</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="do_refit">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Do refit?</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="refit_ome_step_scale_label">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Refit ome step scale</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="ScientificDoubleSpinBox" name="refit_pixel_scale">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>2.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="ScientificDoubleSpinBox" name="refit_ome_step_scale">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is not checked: The grain and instrument parameters will be refined once.&lt;/p&gt;&lt;p&gt;If &amp;quot;Do refit?&amp;quot; is checked: The grain and instrument parameters will first be refined. Afterwards, a filtering step will filter out reflections that are too far away in x, y, or omega from the predicted values, and then the grain and instrument parameters will be refined again.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit pixel scale&amp;quot; is the maximum distance (in pixels) in x or y before the reflection is filtered out.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Refit omega step scale&amp;quot; is the maximum distance in omega steps before the reflection is filtered out. For example, if the omega step size is 0.25 degrees, and the &amp;quot;Refit omega step scale&amp;quot; is 2, then the maximum allowable difference in omega is 2 * 0.25 degrees = 0.5 degrees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ScientificDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>scientificspinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>do_refit</tabstop>
+  <tabstop>refit_pixel_scale</tabstop>
+  <tabstop>refit_ome_step_scale</tabstop>
+  <tabstop>fix_strain</tabstop>
+  <tabstop>refinement_choice</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>do_refit</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>refit_ome_step_scale_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>235</x>
+     <y>385</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>149</x>
+     <y>467</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>do_refit</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>refit_ome_step_scale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>235</x>
+     <y>385</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>452</x>
+     <y>467</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>do_refit</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>refit_pixel_scale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>235</x>
+     <y>385</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>452</x>
+     <y>426</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>do_refit</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>refit_pixel_scale_label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>235</x>
+     <y>385</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>149</x>
+     <y>426</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

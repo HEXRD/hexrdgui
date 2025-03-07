@@ -13,20 +13,15 @@ from hexrdgui.tree_views.value_column_delegate import ValueColumnDelegate
 from hexrdgui import constants
 from hexrdgui.utils import is_int
 
-# Global constants
-FIXED = 0
-REFINABLE = 1
-
 KEY_COL = BaseTreeItemModel.KEY_COL
 VALUE_COL = KEY_COL + 1
-STATUS_COL = VALUE_COL + 1
 
 
 class CalTreeItemModel(BaseTreeItemModel):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.root_item = TreeItem(['key', 'value', 'refinable'])
+        self.root_item = TreeItem(['key', 'value'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
 
@@ -40,12 +35,6 @@ class CalTreeItemModel(BaseTreeItemModel):
         item = self.get_item(index)
 
         value = item.data(index.column())
-        if index.column() == STATUS_COL:
-            if role == Qt.EditRole:
-                return value
-            if role == Qt.DisplayRole:
-                return None
-
         if isinstance(value, np.generic):
             # Get a native python type for display. Otherwise,
             # it won't display anything...
@@ -84,17 +73,17 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         if item.child_count() == 0:
             parent = item.parent_item.data(KEY_COL)
-            chi_path = ['oscillation_stage', 'chi', 'value']
+            chi_path = ['oscillation_stage', 'chi']
             if path == chi_path:
                 # Convert to radians before saving
                 value = np.radians(value).item()
             if (parent == 'tilt' and
                     HexrdConfig().rotation_matrix_euler() is not None and
-                    len(path) > 1 and path[-2] == 'value'):
+                    len(path) > 1):
                 # Convert tilt values to radians before saving
                 value = np.radians(value).item()
             self.cfg.set_instrument_config_val(path, value)
-            dist_func_path = ['distortion', 'function_name', 'value']
+            dist_func_path = ['distortion', 'function_name']
             if len(path) > 4 and path[2:5] == dist_func_path:
                 # Rebuild the tree if the distortion function changed
                 QObject.parent(self).rebuild_tree()
@@ -120,11 +109,10 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         # The second and third columns with no children are editable
         editable = (
-            index.column() == STATUS_COL or
-            (index.column() == VALUE_COL and
-             item.child_count() == 0 and
-             item.data(KEY_COL) not in non_editable_keys and
-             item.parent_item.data(KEY_COL) not in non_editable_parent_keys)
+            index.column() == VALUE_COL and
+            item.child_count() == 0 and
+            item.data(KEY_COL) not in non_editable_keys and
+            item.parent_item.data(KEY_COL) not in non_editable_parent_keys
         )
 
         if editable:
@@ -132,13 +120,13 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         return flags
 
-    def add_tree_item(self, key, value, status, parent):
+    def add_tree_item(self, key, value, parent):
         # In the case of the panel buffer we don't want to added children
         # The editor will take care of this.
         if parent.data(KEY_COL) == constants.BUFFER_KEY:
             return
 
-        data = [key, value, status]
+        data = [key, value]
         tree_item = TreeItem(data, parent)
         return tree_item
 
@@ -146,11 +134,9 @@ class CalTreeItemModel(BaseTreeItemModel):
         # Rebuild the tree from scratch
         self.clear()
         for key in self.cfg.internal_instrument_config.keys():
-            tree_item = self.add_tree_item(key, None, REFINABLE,
-                                           self.root_item)
+            tree_item = self.add_tree_item(key, None, self.root_item)
             self.recursive_add_tree_items(
                 self.cfg.internal_instrument_config[key], tree_item)
-            self.update_parent_status(tree_item)
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         if isinstance(cur_config, dict):
@@ -158,14 +144,14 @@ class CalTreeItemModel(BaseTreeItemModel):
         elif isinstance(cur_config, list):
             keys = range(len(cur_config))
         else:
-            # This must be a value. Set it.
-            cur_tree_item.set_data(STATUS_COL, cur_config)
+            # Must be a root-level value. Just set it.
+            cur_tree_item.set_data(VALUE_COL, cur_config)
             return
 
         blacklisted_keys = []
 
         if ('source_distance' in keys and
-                cur_config['source_distance']['value'] == np.inf):
+                cur_config['source_distance'] == np.inf):
             # Hide the source distance if it is infinite, as the infinite
             # value does not get displayed correctly by Qt
             # (maybe we need to register it as a custom type?)
@@ -174,37 +160,32 @@ class CalTreeItemModel(BaseTreeItemModel):
         for key in keys:
             if key in blacklisted_keys:
                 continue
-            elif key == 'value':
-                name = cur_tree_item.data(KEY_COL)
-                data = cur_config[key]
-                path = self.path_to_value(cur_tree_item, VALUE_COL)
 
-                chi_path = ['oscillation_stage', 'chi', 'value']
-                if path == chi_path:
-                    data = np.degrees(data).item()
-                elif (name == 'tilt' and
-                      HexrdConfig().rotation_matrix_euler() is not None):
-                    data = [np.degrees(rad).item() for rad in cur_config[key]]
-                self.set_value(key, data, cur_tree_item)
-                continue
-            elif key == 'status':
-                tree_item = cur_tree_item
-            else:
-                tree_item = self.add_tree_item(key, None, REFINABLE,
-                                               cur_tree_item)
-            if tree_item is not None:
+            tree_item = self.add_tree_item(key, None, cur_tree_item)
+            data = cur_config[key]
+            if isinstance(data, dict):
                 self.recursive_add_tree_items(cur_config[key], tree_item)
+                continue
 
-    def update_parent_status(self, parent):
-        children = parent.child_items
-        for child in children:
-            if child.child_count() > 0:
-                self.update_parent_status(child)
-            if child.data(STATUS_COL):
-                parent.set_data(STATUS_COL, FIXED)
+            if isinstance(data, list):
+                for i in range(len(data)):
+                    self.add_tree_item(i, None, tree_item)
+
+            # Must be a value. Set it.
+            name = tree_item.data(KEY_COL)
+            path = self.path_to_value(tree_item, VALUE_COL)
+
+            chi_path = ['oscillation_stage', 'chi']
+            if path == chi_path:
+                data = np.degrees(data).item()
+            elif (name == 'tilt' and
+                  HexrdConfig().rotation_matrix_euler() is not None):
+                data = [np.degrees(rad).item() for rad in cur_config[key]]
+
+            self.set_value(key, data, tree_item)
 
     def path_to_value(self, tree_item, column):
-        path = ['value'] if column == VALUE_COL else ['status']
+        path = []
         cur_tree_item = tree_item
         while True:
             text = cur_tree_item.data(KEY_COL)
@@ -226,47 +207,6 @@ class CalTreeItemModel(BaseTreeItemModel):
                 child.set_data(VALUE_COL, value)
         else:
             cur_tree_item.set_data(VALUE_COL, cur_config)
-        return
-
-
-class CheckBoxDelegate(QStyledItemDelegate):
-
-    def __init__(self, parent=None):
-        super(CheckBoxDelegate, self).__init__(parent)
-
-    def createEditor(self, parent, option, index):
-        check = QCheckBox(parent)
-
-        # Only indicate the status has changed on user interaction
-        check.clicked.connect(self.statusChanged)
-
-        return check
-
-    def statusChanged(self):
-        self.commitData.emit(self.sender())
-
-    def setModelData(self, check, model, index):
-        item = self.parent().model().get_item(index)
-        if item.child_count() > 0:
-            self.setChildData(item, int(check.isChecked()))
-        model.setData(index, int(check.isChecked()), Qt.DisplayRole)
-        self.updateModel(index)
-
-    def setChildData(self, parent, value):
-        children = parent.child_items
-        for child in children:
-            child.set_data(STATUS_COL, value)
-            if child.child_count() == 0:
-                path = self.parent().model().path_to_value(child, STATUS_COL)
-                self.parent().model().cfg.set_instrument_config_val(path,
-                                                                    value)
-            else:
-                self.setChildData(child, value)
-
-    def updateModel(self, index):
-        end = self.parent().model().index(
-            -1, STATUS_COL, self.parent().model().parent(index))
-        self.parent().model().dataChanged.emit(index, end)
 
 
 class CalTreeView(QTreeView):
@@ -276,14 +216,11 @@ class CalTreeView(QTreeView):
         self.setModel(CalTreeItemModel(self))
         self.setItemDelegateForColumn(
             VALUE_COL, ValueColumnDelegate(self))
-        self.setItemDelegateForColumn(
-            STATUS_COL, CheckBoxDelegate(self))
 
         self.expand_all_rows()
 
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)
-        self.resizeColumnToContents(STATUS_COL)
 
         self.header().resizeSection(KEY_COL, 180)
         self.header().resizeSection(VALUE_COL, 170)
@@ -307,22 +244,12 @@ class CalTreeView(QTreeView):
             uncheck = None
             if children:
                 menu.addSeparator()
-                check = menu.addAction('Check All')
-                uncheck = menu.addAction('Uncheck All')
             action = menu.exec(QCursor.pos())
 
             if action == collapse:
                 self.collapse_selection(item, index)
             elif action == expand:
                 self.expand_selection(item, index)
-            elif action == check:
-                self.itemDelegateForColumn(STATUS_COL).setChildData(
-                    item, True)
-                self.itemDelegateForColumn(STATUS_COL).updateModel(index)
-            elif action == uncheck:
-                self.itemDelegateForColumn(STATUS_COL).setChildData(
-                    item, False)
-                self.itemDelegateForColumn(STATUS_COL).updateModel(index)
 
     def rebuild_tree(self):
         # We rebuild it from scratch every time it is shown in case
@@ -360,8 +287,6 @@ class CalTreeView(QTreeView):
             if collapsed_state and path in collapsed_state:
                 self.collapse(index)
 
-            self.display_status_checkbox(i, parent)
-
             self.fix_row_states(index)
 
     def expand_selection(self, parent, index):
@@ -383,35 +308,3 @@ class CalTreeView(QTreeView):
         path = self.model().path_to_value(item, KEY_COL)
 
         HexrdConfig().update_collapsed_state(path)
-
-    # Display status checkbox for the row if the requirements are met
-    def display_status_checkbox(self, row, parent=QModelIndex()):
-
-        index = self.model().index(row, KEY_COL, parent)
-        item = self.model().get_item(index)
-
-        # If it has children, return
-        if item.child_count() != 0:
-            return
-
-        # If the data is a string, return
-        if isinstance(item.data(VALUE_COL), str):
-            return
-
-        # If the key is blacklisted, return
-        blacklisted_keys = ['saturation_level', 'buffer', 'source_distance']
-        if item.data(KEY_COL) in blacklisted_keys:
-            return
-
-        # If one of the parents of the item is blacklisted, return
-        blacklisted_parents = ['pixels']
-        parent_item = item.parent_item
-        while parent_item is not None:
-            if parent_item.data(KEY_COL) in blacklisted_parents:
-                return
-
-            parent_item = parent_item.parent_item
-
-        # Show the checkbox
-        editor_idx = self.model().index(row, STATUS_COL, parent)
-        self.openPersistentEditor(editor_idx)

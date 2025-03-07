@@ -14,7 +14,7 @@ KEY_COL = BaseTreeItemModel.KEY_COL
 
 class BaseDictTreeItemModel(BaseTreeItemModel):
 
-    dict_modified = Signal()
+    dict_modified = Signal(QModelIndex)
 
     def __init__(self, dictionary, parent=None):
         super().__init__(parent)
@@ -59,7 +59,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
         item.set_data(index.column(), value)
 
         self.set_config_val(path, value)
-        self.dict_modified.emit()
+        self.dict_modified.emit(index)
 
         return True
 

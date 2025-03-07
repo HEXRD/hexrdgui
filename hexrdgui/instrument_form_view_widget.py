@@ -249,16 +249,13 @@ class InstrumentFormViewWidget(QObject):
                     continue
 
                 config_val = self.cfg.get_instrument_config_val(path)
-                chi_path = ['oscillation_stage', 'chi', 'value']
+                chi_path = ['oscillation_stage', 'chi']
                 if path == chi_path:
                     # Display chi in degrees
                     config_val = np.degrees(config_val).item()
 
-                path[path.index('value')] = 'status'
-                status_val = self.cfg.get_instrument_config_val(path)
-
                 gui_var = getattr(self.ui, var)
-                self._set_gui_value(gui_var, config_val, status_val)
+                self._set_gui_value(gui_var, config_val)
         finally:
             self.unblock_all_signals(previously_blocked)
 
@@ -297,7 +294,7 @@ class InstrumentFormViewWidget(QObject):
             gui_yaml_paths = self.cfg.get_gui_yaml_paths(['detectors',
                                                           'detector_name'])
 
-            tilt_path = ['transform', 'tilt', 'value']
+            tilt_path = ['transform', 'tilt']
             dist_params_path = ['distortion', 'parameters']
             for var, path in gui_yaml_paths:
                 if len(path) > 1 and path[:2] == dist_params_path:
@@ -310,8 +307,6 @@ class InstrumentFormViewWidget(QObject):
                 gui_var = getattr(self.ui, var)
                 full_path = ['detectors', cur_detector] + path
                 config_val = self.cfg.get_instrument_config_val(full_path)
-                full_path[full_path.index('value')] = 'status'
-                status_val = self.cfg.get_instrument_config_val(full_path)
 
                 if path[:-1] == tilt_path:
                     # Special treatment for tilt widgets
@@ -321,7 +316,7 @@ class InstrumentFormViewWidget(QObject):
                         gui_var.setSuffix('°')
                         config_val = np.degrees(config_val).item()
 
-                self._set_gui_value(gui_var, config_val, status_val)
+                self._set_gui_value(gui_var, config_val)
 
             combo_items = []
             for i in range(combo_widget.count()):
@@ -369,7 +364,7 @@ class InstrumentFormViewWidget(QObject):
         for block, widget in zip(previously_blocked, all_widgets):
             widget.blockSignals(block)
 
-    def _set_gui_value(self, gui_object, value, flag=None):
+    def _set_gui_value(self, gui_object, value):
         """This is for calling various set methods for GUI variables
 
         For instance, QComboBox will call "setCurrentText", while
@@ -378,11 +373,6 @@ class InstrumentFormViewWidget(QObject):
         if isinstance(gui_object, QComboBox):
             gui_object.setCurrentText(value)
         else:
-            if flag == 0 and not gui_object.styleSheet():
-                s = 'QSpinBox, QDoubleSpinBox { background-color: lightgray; }'
-                gui_object.setStyleSheet(s)
-            elif gui_object.styleSheet() and flag != 0:
-                gui_object.setStyleSheet("")
             # If it is anything else, just assume setValue()
             gui_object.setValue(value)
 
@@ -472,16 +462,14 @@ class InstrumentFormViewWidget(QObject):
 
     @property
     def active_beam(self):
-        # We need to use this instead of HexrdConfig().active_beam
-        # because we want to use the config without statuses.
         return HexrdConfig().active_beam
 
     @property
     def polar_beam_vector(self):
         beam_vector = self.active_beam['vector']
         return (
-            beam_vector['azimuth']['value'],
-            beam_vector['polar_angle']['value'],
+            beam_vector['azimuth'],
+            beam_vector['polar_angle'],
         )
 
     @polar_beam_vector.setter
@@ -490,12 +478,12 @@ class InstrumentFormViewWidget(QObject):
 
         any_modified = False
 
-        if beam_vector['azimuth']['value'] != v[0]:
-            beam_vector['azimuth']['value'] = v[0]
+        if beam_vector['azimuth'] != v[0]:
+            beam_vector['azimuth'] = v[0]
             any_modified = True
 
-        if beam_vector['polar_angle']['value'] != v[1]:
-            beam_vector['polar_angle']['value'] = v[1]
+        if beam_vector['polar_angle'] != v[1]:
+            beam_vector['polar_angle'] = v[1]
             any_modified = True
 
         self.update_gui_from_config()
@@ -513,7 +501,6 @@ class InstrumentFormViewWidget(QObject):
         self.cartesian_beam_vector = calc_beam_vec(*self.polar_beam_vector)
         self.update_cartesian_beam_vector_from_magnitude()
         self.update_cartesian_beam_vector_normalized_note()
-        self.update_cartesian_beam_vector_styles()
 
     def update_cartesian_beam_vector_normalized_note(self):
         w = self.ui.cartesian_beam_vector_normalized_note
@@ -544,23 +531,6 @@ class InstrumentFormViewWidget(QObject):
         values_str = ', '.join([f'{x * sign:0.3f}' for x in unit_vec])
         text = f'Note: normalized to ({values_str})'
         w.setText(text)
-
-    def update_cartesian_beam_vector_styles(self):
-        # Set highlighting to reflect whether they are refinable
-        beam_vector = self.active_beam['vector']
-        az_fixed = not beam_vector['azimuth']['status']
-        po_fixed = not beam_vector['polar_angle']['status']
-
-        fixed = 'QSpinBox, QDoubleSpinBox { background-color: lightgray; }'
-        is_fixed = {
-            'x': az_fixed and po_fixed,
-            'y': po_fixed,
-            'z': az_fixed and po_fixed,
-        }
-
-        for ax, is_fixed in is_fixed.items():
-            w = getattr(self.ui, f'beam_vector_cartesian_{ax}')
-            w.setStyleSheet(fixed if is_fixed else '')
 
     @property
     def cartesian_beam_vector(self):
@@ -615,8 +585,8 @@ class InstrumentFormViewWidget(QObject):
         # Update the config
         v = self.beam_vector_magnitude
         beam_config = self.active_beam
-        if beam_config['source_distance']['value'] != v:
-            beam_config['source_distance']['value'] = v
+        if beam_config['source_distance'] != v:
+            beam_config['source_distance'] = v
             HexrdConfig().beam_vector_changed.emit()
 
         if self.ui.beam_vector_input_type.currentText() == 'Cartesian':
@@ -648,8 +618,8 @@ class InstrumentFormViewWidget(QObject):
 
         # Update the config
         beam_config = self.active_beam
-        if beam_config['source_distance']['value'] != v:
-            beam_config['source_distance']['value'] = v
+        if beam_config['source_distance'] != v:
+            beam_config['source_distance'] = v
             HexrdConfig().beam_vector_changed.emit()
 
         # Update the cartesian vector
@@ -657,7 +627,7 @@ class InstrumentFormViewWidget(QObject):
 
     def update_beam_vector_magnitude_from_config(self):
         beam_config = self.active_beam
-        self.beam_vector_magnitude = beam_config['source_distance']['value']
+        self.beam_vector_magnitude = beam_config['source_distance']
 
     @property
     def cartesian_beam_vector_convention(self):

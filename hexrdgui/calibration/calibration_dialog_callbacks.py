@@ -147,6 +147,11 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.update_undo_enable_state()
 
     def pop_undo_stack(self):
+        if not self.undo_stack:
+            # Sometimes, this gets called faster than we can update.
+            # Just ignore invalid calls.
+            return
+
         stack_item = self.undo_stack.pop(-1)
 
         calibrator_items = [
@@ -162,10 +167,14 @@ class CalibrationDialogCallbacks(ABCQObject):
             v = stack_item[k]
             setattr(self.calibrator, k, v)
 
+        # Update instrument and calibrators
         update_instrument_from_params(
             self.instr,
             stack_item['instr_params'],
         )
+        for calibrator in self.calibrator.calibrators:
+            calibrator.update_from_lmfit_params(stack_item['params'])
+
         self.update_config_from_instrument()
         self.update_dialog_from_calibrator()
         self.dialog.advanced_options = stack_item['advanced_options']
@@ -304,7 +313,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.push_undo_stack()
 
         odict = copy.deepcopy(self.dialog.advanced_options)
-
         x0 = self.calibrator.params.valuesdict()
         result = self.calibrator.run_calibration(odict=odict, **extra_kwargs)
 
@@ -343,12 +351,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         # This adds in any missing keys. In particular, it is going to
         # add in any "None" detector distortions
         HexrdConfig().set_detector_defaults_if_missing()
-
-        # Add status values
-        HexrdConfig().add_status(output_dict)
-
-        # Set the previous statuses to be the current statuses
-        HexrdConfig().set_statuses_from_prev_iconfig(prev_iconfig)
 
         self.instrument_updated.emit()
 

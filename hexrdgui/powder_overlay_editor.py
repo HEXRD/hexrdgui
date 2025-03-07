@@ -150,8 +150,9 @@ class PowderOverlayEditor:
         self.clip_with_panel_buffer_config = self.clip_with_panel_buffer_gui
         self.xray_source_config = self.xray_source_gui
 
-        self.overlay.update_needed = True
-        HexrdConfig().overlay_config_changed.emit()
+        if self.overlay is not None:
+            self.overlay.update_needed = True
+            HexrdConfig().overlay_config_changed.emit()
 
     @property
     def material(self):
