@@ -953,7 +953,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         ):
             # If it's not polar or stereo, go ahead and apply the
             # corrections
-            for name in images_dict:
+            for name, img in images_dict.items():
+                if not np.issubdtype(img.dtype, np.floating):
+                    # It needs to be a float to apply corrections
+                    images_dict[name] = img.astype(float)
+
                 images_dict[name] *= corrections_dict[name]
 
             # In the polar view, minimum will be subtracted later
