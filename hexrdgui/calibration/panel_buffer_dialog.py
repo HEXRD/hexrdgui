@@ -29,6 +29,8 @@ class PanelBufferDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('panel_buffer_dialog.ui')
 
+        self.ui.setWindowTitle(f'Configure panel buffer for {detector}')
+
         # Keep the dialog in front
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)

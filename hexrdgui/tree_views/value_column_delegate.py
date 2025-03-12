@@ -4,13 +4,12 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate,
 )
 
-from PySide6.QtCore import QEvent, Qt
+from PySide6.QtCore import Qt
 
 from hexrdgui.scientificspinbox import ScientificDoubleSpinBox
 from hexrdgui.calibration.panel_buffer_dialog import PanelBufferDialog
 from hexrdgui.tree_views.base_tree_item_model import BaseTreeItemModel
 from hexrdgui import constants
-from hexrdgui.utils import EventBlocker
 
 BUTTON_LABEL = 'Configure Panel Buffer'
 
@@ -33,26 +32,24 @@ class ValueColumnDelegate(QStyledItemDelegate):
                 'border-radius: 5px; background-color: gray;'
             )
 
+            # Disable focus. Otherwise, when the button is clicked,
+            # it gains focus, and then when it loses focus, `setData()`
+            # gets called with the new focus! This is highly unexpected.
+            edit_btn.setFocusPolicy(Qt.NoFocus)
+
+            dialog = None
+
             def _clicked():
-                def _set_enable(enabled):
-                    # We need to block the event here, otherwise setData(...)
-                    # gets called with the buttons boolean value!
-                    with EventBlocker(edit_btn, QEvent.FocusOut):
-                        edit_btn.setEnabled(enabled)
-                # Disable to prevent creating multiple dialogs
-                _set_enable(False)
+                nonlocal dialog
+                if dialog is not None:
+                    dialog.ui.hide()
+                    dialog = None
 
                 # Extract out the detector, so we can update the right config
                 path = model.path_to_value(item, index.column())
                 detector = path[path.index('detectors') + 1]
                 dialog = PanelBufferDialog(detector, self)
                 dialog.show()
-
-                def _enable(_):
-                    _set_enable(True)
-
-                # Re-enable the edit button
-                dialog.finished.connect(_enable)
 
             edit_btn.clicked.connect(_clicked)
 
