@@ -108,10 +108,13 @@ class MaskManagerDialog(QObject):
         MaskManager().masks_changed()
 
     def remove_mask(self, row, name):
+        scrollbar = self.ui.masks_table.verticalScrollBar()
+        scroll_value = scrollbar.value()
         MaskManager().remove_mask(name)
         self.ui.masks_table.removeRow(row)
         self.update_table()
         MaskManager().masks_changed()
+        self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
 
     def update_mask_name(self, row):
         old_name = MaskManager().mask_names[row]
