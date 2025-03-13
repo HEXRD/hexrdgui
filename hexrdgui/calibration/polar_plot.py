@@ -40,8 +40,8 @@ class InstrumentViewer:
         return self.pv.raw_img
 
     @property
-    def raw_mask(self):
-        return self.pv.raw_mask
+    def warp_mask(self):
+        return self.pv.warp_mask
 
     @property
     def snipped_img(self):
@@ -58,6 +58,10 @@ class InstrumentViewer:
     @property
     def snip_background(self):
         return self.pv.snip_background
+
+    @property
+    def erosion_mask(self):
+        return self.pv.erosion_mask
 
     def update_angular_grid(self):
         self.pv.update_angular_grid()
@@ -126,31 +130,48 @@ class InstrumentViewer:
             np.savetxt(filename, azimuthal_integration, delimiter=delimiter)
             return
 
-        intensities = self.raw_img.data
-        intensities[self.raw_mask] = np.nan
+        intensities = self.img.filled(np.nan)
+        raw_intensities = self.raw_img.filled(np.nan)
 
         eta, tth = np.degrees(self.angular_grid)
 
         # Prepare the data to write out
         data = {
-            'tth_coordinates': tth,
-            'eta_coordinates': eta,
-            'q_coordinates': tth_to_q(tth, self.instr.beam_energy),
             'intensities': intensities,
-            'extent': self._extent,
             'azimuthal_integration': azimuthal_integration,
+            'extent': self._extent,
+            'eta_coordinates': eta,
+            'tth_coordinates': tth,
+            'q_coordinates': tth_to_q(tth, self.instr.beam_energy),
+            'raw_intensities': raw_intensities,
+            'warp_mask': self.warp_mask,
+            # FIXME: add intensity corrections too later
         }
 
         if self.snip_background is not None:
             # Add the snip background if it was used
             data['snip_background'] = self.snip_background
+            if self.erosion_mask is not None:
+                # Also add the erosion mask if it was used
+                data['erosion_mask'] = self.erosion_mask
 
-        # Add visible polar mask data if we have any
+        if HexrdConfig().polar_tth_distortion:
+            # Add the tth distortion correction field
+            data['tth_corr_field'] = self.pv.create_corr_field_polar()
+
+        # Add polar mask data if we have any
         for name, mask in MaskManager().masks.items():
-            if mask.type == MaskType.threshold or not mask.visible:
+            if mask.type == MaskType.threshold:
                 continue
 
-            data[f'mask_{name}'] = mask.get_masked_arrays(self.type)
+            if mask.visible:
+                data[f'visible_mask_{name}'] = mask.get_masked_arrays(
+                    self.type,
+                )
+            elif mask.show_border:
+                data[f'border_mask_{name}'] = mask.get_masked_arrays(
+                    self.type,
+                )
 
         # Delete the file if it already exists
         if filename.exists():

@@ -70,6 +70,7 @@ class PolarView:
         self._corr_field_polar_cached = None
 
         self.snip_background = None
+        self.erosion_mask = None
 
         self.update_angular_grid()
 
@@ -388,7 +389,7 @@ class PolarView:
         self.apply_image_processing()
 
     @property
-    def raw_mask(self):
+    def warp_mask(self):
         return self.raw_img.mask
 
     def apply_image_processing(self):
@@ -418,7 +419,7 @@ class PolarView:
             no_nan_methods = [SnipAlgorithmType.Fast_SNIP_1D]
 
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[self.raw_mask] = np.nan
+                img[self.warp_mask] = np.nan
 
             # Perform the background subtraction
             self.snip_background = run_snip1d(img)
@@ -434,9 +435,12 @@ class PolarView:
                 ))
                 mask = binary_erosion(~self.raw_img.mask, structure)
                 img[~mask] = np.nan
-
+                self.erosion_mask = mask
+            else:
+                self.erosion_mask = None
         else:
             self.snip_background = None
+            self.erosion_mask = None
 
         return img
 
@@ -444,7 +448,7 @@ class PolarView:
         # Apply user-specified masks if they are present
         from hexrdgui.masking.mask_manager import MaskManager
         img = img.copy()
-        total_mask = self.raw_mask
+        total_mask = self.warp_mask
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
@@ -464,7 +468,7 @@ class PolarView:
         # Apply user-specified masks if they are present
         from hexrdgui.masking.mask_manager import MaskManager
         img = img.copy()
-        total_mask = self.raw_mask
+        total_mask = self.warp_mask
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.show_border:
                 continue

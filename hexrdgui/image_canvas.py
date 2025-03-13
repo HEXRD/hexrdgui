@@ -1773,7 +1773,7 @@ class ImageCanvas(FigureCanvas):
 
             no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[self.iviewer.raw_mask] = np.nan
+                img[self.iviewer.warp_mask] = np.nan
 
             background = utils.run_snip1d(img)
 
