@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication
 from hexrdgui import resource_loader
 from hexrdgui.argument_parser import ArgumentParser
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.macos_fix_app_name import macos_fix_app_name
 from hexrdgui.main_window import MainWindow
 import hexrdgui.resources.icons
 
@@ -27,6 +28,10 @@ def main():
     QCoreApplication.setApplicationName('hexrd')
 
     app = QApplication(sys.argv)
+
+    if sys.platform.startswith('darwin'):
+        # Fix some osx-specific stuff
+        macos_fix_app_name()
 
     # Apply parsed arguments to the HexrdConfig() object
     apply_parsed_args_to_hexrd_config(parsed_args)

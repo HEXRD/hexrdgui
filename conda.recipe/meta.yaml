@@ -28,6 +28,8 @@ requirements:
     - matplotlib-base<3.10
     - Pillow
     - pyhdf
+    # This next one is needed to fix the app name on Mac
+    - pyobjc-framework-cocoa  # [osx]
     - pyside6
     - pyyaml
     - silx-base

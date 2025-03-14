@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import platform
 from setuptools import setup, find_packages, Extension
 
 install_reqs = [
@@ -15,6 +16,10 @@ install_reqs = [
     'pyyaml',
     'silx',
 ]
+
+if platform.system() == 'Darwin':
+    # This is needed to fix the application name on Mac
+    install_reqs.append('pyobjc-framework-cocoa')
 
 setup(
     name='hexrdgui',
