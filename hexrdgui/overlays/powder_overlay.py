@@ -435,6 +435,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     tvec_c=self.tvec
                 )
 
+                # !!! distortion
+                if panel.distortion is not None:
+                    xys_full = panel.distortion.apply_inverse(xys_full)
+
             # skip if ring not on panel
             if len(xys_full) == 0:
                 skipped_tth.append(i)
@@ -588,10 +592,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
 
                 if display_mode == ViewType.raw:
-                    # !!! distortion
-                    if panel.distortion is not None:
-                        xys = panel.distortion.apply_inverse(xys)
-
                     # Convert to pixel coordinates and swap columns
                     xys = panel.cartToPixel(xys)[:, [1, 0]]
 

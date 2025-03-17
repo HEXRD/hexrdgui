@@ -78,6 +78,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when the oscillation stage changes"""
     oscillation_stage_changed = Signal()
 
+    """Emitted when a panel's distortion is modified
+
+    The key is the name of the panel that was modified
+    """
+    panel_distortion_modified = Signal(str)
+
     """Emitted when the option to show the saturation level is changed"""
     show_saturation_level_changed = Signal()
 
@@ -1381,7 +1387,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # If it is None, remove the distortion dict
         # If it is not None, then create the distortion dict if not present
         dist_func_path = ['distortion', 'function_name']
-        if len(path) > 4 and path[2:5] == dist_func_path:
+        if len(path) > 3 and path[2:4] == dist_func_path:
             cur_val = cur_val[path[0]][path[1]]
             if value == 'None' and 'distortion' in cur_val:
                 del cur_val['distortion']
@@ -1392,6 +1398,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                         [0.] * self.num_distortion_parameters(value)
                     )
                 }
+
+            self.panel_distortion_modified.emit(path[1])
             return
 
         try:
@@ -1446,6 +1454,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # Overlays need to update their instrument objects when
             # the oscillation stage changes.
             self.oscillation_stage_changed.emit()
+            return
+
+        if path[2:4] == ['distortion', 'parameters']:
+            self.panel_distortion_modified.emit(path[1])
             return
 
         # Otherwise, assume we need to re-render the whole image

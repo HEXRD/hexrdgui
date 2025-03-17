@@ -18,6 +18,8 @@ import matplotlib.transforms as tx
 
 import numpy as np
 
+from hexrd import distortion as distortion_pkg
+
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.blit_manager import BlitManager
 from hexrdgui.calibration.cartesian_plot import cartesian_viewer
@@ -118,6 +120,8 @@ class ImageCanvas(FigureCanvas):
             self.on_polar_x_axis_type_changed)
         HexrdConfig().beam_energy_modified.connect(
             self.on_beam_energy_modified)
+        HexrdConfig().panel_distortion_modified.connect(
+            self.on_panel_distortion_changed)
 
     @property
     def thread_pool(self):
@@ -953,6 +957,26 @@ class ImageCanvas(FigureCanvas):
         os_conf = HexrdConfig().instrument_config['oscillation_stage']
         self.iviewer.instr.chi = os_conf['chi']
         self.iviewer.instr.tvec = os_conf['translation']
+
+        # Re-draw all overlays from scratch
+        HexrdConfig().clear_overlay_data()
+        self.update_overlays()
+
+    def on_panel_distortion_changed(self, det_name):
+        if not self.iviewer or not hasattr(self.iviewer, 'instr'):
+            return
+
+        panel = self.iviewer.instr.detectors[det_name]
+        conf = HexrdConfig().instrument_config['detectors'][det_name]
+
+        distortion = None
+        distortion_cfg = conf.get('distortion', {})
+        func_name = distortion_cfg.get('function_name')
+        if func_name is not None and func_name.lower() != 'none':
+            params = distortion_cfg['parameters']
+            distortion = distortion_pkg.get_mapping(func_name, params)
+
+        panel.distortion = distortion
 
         # Re-draw all overlays from scratch
         HexrdConfig().clear_overlay_data()

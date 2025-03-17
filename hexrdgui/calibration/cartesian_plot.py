@@ -22,8 +22,10 @@ from .display_plane import DisplayPlane
 def cartesian_viewer():
     return InstrumentViewer()
 
+
 def get_xray_propagation_sign(instr):
     return np.sign(instr.beam_vector[2])
+
 
 class InstrumentViewer:
 
@@ -115,6 +117,7 @@ class InstrumentViewer:
                                                 self.pixel_size,
                                                 self.instr.beam_vector)
         self.dpanel.name = 'dpanel'
+        self.dpanel._distortion = FakeDistortionObject(self.dpanel, self.instr)
 
     @property
     def extent(self):
@@ -381,3 +384,67 @@ class InstrumentViewer:
             with h5py.File(filename, 'w') as f:
                 for key, value in data.items():
                     f.create_dataset(key, data=value)
+
+
+class FakeDistortionObject:
+    """A fake distortion object for our fake instrument
+
+    This maps the xys to the correct panel and applies the distortion
+    """
+    def __init__(self, dpanel, instr):
+        self.dpanel = dpanel
+        self.instr = instr
+
+    def apply(self, xys):
+        if all(x.distortion is None for x in self.instr.detectors.values()):
+            # No changes
+            return xys
+
+        # First, convert to angles
+        xys = xys.copy()
+        angs, _ = self.dpanel.cart_to_angles(xys)
+
+        # Project these angles on the instrument panels
+        for panel in self.instr.detectors.values():
+            if panel.distortion is None:
+                continue
+
+            # Convert to real panel cartesian
+            these_xys = panel.angles_to_cart(angs)
+            these_xys, valid = panel.clip_to_panel(these_xys)
+
+            # Apply the distortion
+            these_xys = panel.distortion.apply(these_xys)
+
+            # Push back to angles, and then xys on the fake dpanel
+            these_angs, _ = panel.cart_to_angles(these_xys)
+            xys[valid] = self.dpanel.angles_to_cart(these_angs)
+
+        return xys
+
+    def apply_inverse(self, xys):
+        if all(x.distortion is None for x in self.instr.detectors.values()):
+            # No changes
+            return xys
+
+        # First, convert to angles
+        xys = xys.copy()
+        angs, _ = self.dpanel.cart_to_angles(xys)
+
+        # Project these angles on the instrument panels
+        for panel in self.instr.detectors.values():
+            if panel.distortion is None:
+                continue
+
+            # Convert to real panel cartesian
+            these_xys = panel.angles_to_cart(angs)
+            these_xys, valid = panel.clip_to_panel(these_xys)
+
+            # Apply the distortion
+            these_xys = panel.distortion.apply_inverse(these_xys)
+
+            # Push back to angles, and then xys on the fake dpanel
+            these_angs, _ = panel.cart_to_angles(these_xys)
+            xys[valid] = self.dpanel.angles_to_cart(these_angs)
+
+        return xys
