@@ -56,33 +56,46 @@ class SaveImagesDialog:
         dets = HexrdConfig().detector_names
         if self.ui.single_detector.isChecked():
             dets = [self.ui.detectors.currentText()]
+
+        selected_format = self.ui.format.currentText().lower()
+        if selected_format.startswith('hdf5'):
+            selected_format = 'hdf5'
+            style = None
+            ext = 'h5'
+        elif selected_format.startswith('npz'):
+            selected_format = 'frame-cache'
+            style = 'npz'
+            ext = 'npz'
+        else:
+            selected_format = 'frame-cache'
+            style = 'fch5'
+            ext = 'fch5'
+
+        if selected_format == 'frame-cache':
+            # Get the user to pick a threshold
+            threshold, ok = QInputDialog.getDouble(self.ui, 'HEXRD',
+                                                   'Choose Threshold',
+                                                   10, 0, 1e12, 3)
+            if not ok:
+                # User canceled...
+                return
+
         for det in dets:
-            selected_format = self.ui.format.currentText().lower()
-            filename = f'{self.ui.file_stem.text()}_{det}.{selected_format}'
+            filename = f'{self.ui.file_stem.text()}_{det}.{ext}'
             path = f'{self.parent_dir}/{filename}'
-            if selected_format.startswith('hdf5'):
-                selected_format = 'hdf5'
-            elif selected_format.startswith('npz'):
-                selected_format = 'frame-cache'
 
             kwargs = {}
             if selected_format == 'hdf5':
                 # A path must be specified. Set it ourselves for now.
                 kwargs['path'] = 'imageseries'
             elif selected_format == 'frame-cache':
-                # Get the user to pick a threshold
-                result, ok = QInputDialog.getDouble(self.ui, 'HEXRD',
-                                                    'Choose Threshold',
-                                                    10, 0, 1e12, 3)
-                if not ok:
-                    # User canceled...
-                    return
+                kwargs['threshold'] = threshold
+                kwargs['style'] = style
 
-                kwargs['threshold'] = result
-
-                # This needs to be specified, but I think it just needs
-                # to be the same as the file name...
-                kwargs['cache_file'] = path
+                if style == 'npz':
+                    # This needs to be specified, but I think it just needs
+                    # to be the same as the file name...
+                    kwargs['cache_file'] = path
 
             worker = AsyncWorker(
                 HexrdConfig().save_imageseries,
