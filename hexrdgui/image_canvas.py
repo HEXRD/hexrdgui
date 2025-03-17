@@ -68,7 +68,7 @@ class ImageCanvas(FigureCanvas):
         self.wppf_plot = None
         self.auto_picked_data_artists = []
         self.beam_marker_artists = []
-        self.transform = lambda x: x
+        self._transform = lambda x: x
         self._last_stereo_size = None
         self.stereo_border_artists = []
         self.azimuthal_overlay_artists = []
@@ -206,15 +206,11 @@ class ImageCanvas(FigureCanvas):
             # number of images, or there are masks to apply. Clear and re-draw.
             self.clear()
             self.mode = ViewType.raw
-            images_dict = self.scaled_display_image_dict
 
             # This will be used for drawing the rings
             self.iviewer = raw_iviewer()
 
-            if HexrdConfig().stitch_raw_roi_images:
-                # The image_names is actually a list of group names
-                images_dict = self.iviewer.raw_images_to_stitched(
-                    image_names, images_dict)
+            images_dict = self.create_raw_view_images(image_names)
 
             cols = 1
             if len(image_names) > 1:
@@ -238,12 +234,7 @@ class ImageCanvas(FigureCanvas):
 
             self.figure.tight_layout()
         else:
-            images_dict = self.scaled_display_image_dict
-            if HexrdConfig().stitch_raw_roi_images:
-                # The image_names is actually a list of group names
-                images_dict = self.iviewer.raw_images_to_stitched(
-                    image_names, images_dict)
-
+            images_dict = self.create_raw_view_images(image_names)
             for i, name in enumerate(image_names):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
@@ -278,6 +269,19 @@ class ImageCanvas(FigureCanvas):
 
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    def create_raw_view_images(self, image_names):
+        images_dict = self.scaled_display_image_dict
+        if HexrdConfig().stitch_raw_roi_images:
+            # The image_names is actually a list of group names
+            images_dict = self.iviewer.raw_images_to_stitched(
+                image_names, images_dict)
+
+            # We also apply the scaling manually here
+            for k, img in images_dict.items():
+                images_dict[k] = self._transform(img)
+
+        return images_dict
 
     def create_image_dict(self, display=False):
         # Returns a dict of the unscaled computation images
@@ -1459,11 +1463,27 @@ class ImageCanvas(FigureCanvas):
         self.clear_figure()
         self.draw_idle()
 
+    def transform(self, img):
+        if self.mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
+            # We actually perform the transformation manually later.
+            # Don't do it now.
+            return img
+
+        return self._transform(img)
+
     def set_scaling(self, transform):
         # Apply the scaling, and set the data
-        self.transform = transform
-        for axes_img, img in zip(self.axes_images, self.scaled_display_images):
-            axes_img.set_data(img)
+        self._transform = transform
+        if self.mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
+            # Apply the transformation by loading the images
+            image_names = list(self.raw_axes)
+            self.load_images(image_names)
+        else:
+            for axes_img, img in zip(
+                self.axes_images,
+                self.scaled_display_images,
+            ):
+                axes_img.set_data(img)
 
         self.update_azimuthal_integral_plot()
         self.draw_idle()
