@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>373</width>
-    <height>136</height>
+    <width>424</width>
+    <height>159</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,12 +79,17 @@
     <widget class="QComboBox" name="format">
      <item>
       <property name="text">
-       <string>hdf5</string>
+       <string>fch5</string>
       </property>
      </item>
      <item>
       <property name="text">
        <string>npz</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>hdf5</string>
       </property>
      </item>
     </widget>
