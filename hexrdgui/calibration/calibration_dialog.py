@@ -1,4 +1,5 @@
 import copy
+import traceback
 
 import yaml
 
@@ -296,6 +297,7 @@ class CalibrationDialog(QObject):
         try:
             self.validate_parameters()
         except Exception as e:
+            traceback.print_exc()
             msg = 'Parameter settings are invalid!\n\n' + str(e)
             print(msg)
             QMessageBox.critical(self.parent(), 'Invalid Parameters', msg)
@@ -531,12 +533,18 @@ class CalibrationDialog(QObject):
         self.reinitialize_tree_view()
 
     def mirror_constraints_from_first_detector(self):
+        instr = self.instr
         config = self.tree_view.model().config
         detector_iterator = iter(config['detectors'])
         first_detector_name = next(detector_iterator)
         first_detector = config['detectors'][first_detector_name]
         tilts = first_detector['transform']['tilt']
         translations = first_detector['transform']['translation']
+        first_distortion = first_detector.get('distortion parameters')
+        first_distortion_obj = instr.detectors[first_detector_name].distortion
+        first_distortion_type = (
+            first_distortion_obj.maptype if first_distortion else None
+        )
 
         statuses = {
             'tilt': {k: v['_param'].vary for k, v in tilts.items()},
@@ -576,6 +584,31 @@ class CalibrationDialog(QObject):
                         param = det_transform[k]['_param']
                         param.delta = v
                         det_transform[k]['_delta'] = v
+
+            # Check if we should copy distortion parameters too
+            distortion = detector.get('distortion parameters')
+            distortion_obj = instr.detectors[det_name].distortion
+            distortion_type = (
+                distortion_obj.maptype if distortion else None
+            )
+            copy_distortion = (
+                distortion_type and
+                distortion_type == first_distortion_type
+            )
+            if copy_distortion:
+                # Copy all parameters if the distortion function matches
+                for k, v in first_distortion.items():
+                    first_param = v['_param']
+                    param = distortion[k]['_param']
+                    if param.expr is None:
+                        # Only copy "vary" for non expression parameters
+                        param.vary = first_param.vary
+                        distortion[k]['_vary'] = first_param.vary
+
+                    if self.delta_boundaries:
+                        # Copy the deltas too
+                        param.delta = v['_delta']
+                        distortion[k]['_delta'] = v['_delta']
 
         self.tree_view.reset_gui()
 

@@ -5,6 +5,7 @@ from PySide6.QtCore import Signal
 
 from hexrd import rotations
 import hexrd.constants as cnst
+from hexrd.fitting.calibration.calibrator import Calibrator
 from hexrd.fitting.calibration.lmfit_param_handling import fix_detector_y
 from hexrd.transforms import xfcapi
 
@@ -554,13 +555,22 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         raise NotImplementedError
 
 
-def compute_xyo(calibrators) -> dict[str, list]:
+def compute_xyo(calibrators: list[Calibrator]) -> dict[str, list]:
+    instr = calibrators[0].instr
     xyo = {}
     for calibrator in calibrators:
         results = calibrator.model()
         for det_key, values in results.items():
+            panel = instr.detectors[det_key]
             xyo.setdefault(det_key, [])
-            xyo[det_key].append(values[0])
+
+            values = values[0]
+            if panel.distortion is not None:
+                # The model results are not distorted
+                # Apply the distortion for the visualization
+                values[:, :2] = panel.distortion.apply_inverse(values[:, :2])
+
+            xyo[det_key].append(values)
 
     return xyo
 
