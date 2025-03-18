@@ -585,7 +585,7 @@ class InstrumentFormViewWidget(QObject):
         # Update the config
         v = self.beam_vector_magnitude
         beam_config = self.active_beam
-        if beam_config['source_distance'] != v:
+        if beam_config.get('source_distance', np.inf) != v:
             beam_config['source_distance'] = v
             HexrdConfig().beam_vector_changed.emit()
 
@@ -618,7 +618,7 @@ class InstrumentFormViewWidget(QObject):
 
         # Update the config
         beam_config = self.active_beam
-        if beam_config['source_distance'] != v:
+        if beam_config.get('source_distance', np.inf) != v:
             beam_config['source_distance'] = v
             HexrdConfig().beam_vector_changed.emit()
 
@@ -627,7 +627,9 @@ class InstrumentFormViewWidget(QObject):
 
     def update_beam_vector_magnitude_from_config(self):
         beam_config = self.active_beam
-        self.beam_vector_magnitude = beam_config['source_distance']
+        dist = beam_config.get('source_distance', np.inf)
+        if self.beam_vector_magnitude != dist:
+            self.beam_vector_magnitude = dist
 
     @property
     def cartesian_beam_vector_convention(self):
