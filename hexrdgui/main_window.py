@@ -314,6 +314,8 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.polar_show_snip1d)
         self.image_mode_widget.raw_show_zoom_dialog.connect(
             self.on_show_raw_zoom_dialog)
+        self.image_mode_widget.create_waterfall_plot.connect(
+            self.ui.image_tab_widget.create_waterfall_plot)
 
         self.ui.action_open_images.triggered.connect(
             self.open_image_files)

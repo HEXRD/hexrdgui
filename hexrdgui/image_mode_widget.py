@@ -29,6 +29,9 @@ class ImageModeWidget(QObject):
     # Tell the image canvas to show the snip1d
     polar_show_snip1d = Signal()
 
+    # Tell the image canvas to create a waterfall plot
+    create_waterfall_plot = Signal()
+
     raw_show_zoom_dialog = Signal()
 
     def __init__(self, parent=None):
@@ -97,6 +100,8 @@ class ImageModeWidget(QObject):
             self.on_polar_x_axis_type_changed)
         self.ui.polar_active_beam.currentIndexChanged.connect(
             self.on_active_beam_changed)
+        self.ui.create_waterfall_plot.clicked.connect(
+            self.on_create_waterfall_plot_clicked)
 
         HexrdConfig().instrument_config_loaded.connect(
             self.on_instrument_config_load)
@@ -255,6 +260,16 @@ class ImageModeWidget(QObject):
         has_multi_xrs = HexrdConfig().has_multi_xrs
         self.ui.polar_active_beam.setVisible(has_multi_xrs)
         self.ui.polar_active_beam_label.setVisible(has_multi_xrs)
+
+        # We can only make a waterfall plot if there is more than one
+        # frame in the imageseries.
+        # If there are more than 10, that's too many, and let's just ignore
+        # it as well. All of the cases we know of currently should have
+        # no more than 5 frames in the imageseries.
+        can_make_waterfall_plot = (
+            1 < HexrdConfig().imageseries_length <= 10
+        )
+        self.ui.create_waterfall_plot.setVisible(can_make_waterfall_plot)
 
     def auto_generate_cartesian_params(self):
         if HexrdConfig().loading_state:
@@ -479,6 +494,9 @@ class ImageModeWidget(QObject):
 
     def on_active_beam_changed(self):
         HexrdConfig().active_beam_name = self.ui.polar_active_beam.currentText()
+
+    def on_create_waterfall_plot_clicked(self):
+        self.create_waterfall_plot.emit()
 
 
 POLAR_X_AXIS_LABELS_TO_VALUES = {
