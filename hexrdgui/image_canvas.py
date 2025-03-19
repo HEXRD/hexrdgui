@@ -4,8 +4,9 @@ import logging
 import sys
 
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
 
+from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
@@ -20,6 +21,7 @@ import numpy as np
 
 from hexrd import distortion as distortion_pkg
 
+from hexrdgui import utils
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.blit_manager import BlitManager
 from hexrdgui.calibration.cartesian_plot import cartesian_viewer
@@ -33,7 +35,7 @@ from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
-from hexrdgui import utils
+from hexrdgui.waterfall_plot import WaterfallPlotDialog
 from hexrdgui.utils.array import split_array
 from hexrdgui.utils.conversions import (
     angles_to_stereo, cart_to_angles, cart_to_pixels, q_to_tth, tth_to_q,
@@ -76,6 +78,7 @@ class ImageCanvas(FigureCanvas):
         self.raw_view_images_dict = {}
         self._mask_boundary_artists = []
         self._latest_compute_view_worker = None
+        self._waterfall_plot_dialog = None
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -1157,55 +1160,10 @@ class ImageCanvas(FigureCanvas):
                 HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
 
                 self.azimuthal_integral_axis = axis
-                axis.set_ylabel(r'Azimuthal Average', **self.label_kwargs)
                 self.update_azimuthal_plot_overlays()
                 self.update_wppf_plot()
 
-                # Set up formatting for the x-axis
-                default_formatter = axis.xaxis.get_major_formatter()
-                f = self.format_polar_x_major_ticks
-                formatter = PolarXAxisFormatter(default_formatter, f)
-                axis.xaxis.set_major_formatter(formatter)
-
-                axis.yaxis.set_major_locator(AutoLocator())
-                axis.yaxis.set_minor_locator(AutoMinorLocator())
-
-                axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
-                self.axis.xaxis.set_minor_locator(
-                    PolarXAxisMinorTickLocator(self)
-                )
-
-                # change property of ticks
-                axis.tick_params(**self.major_tick_kwargs)
-                axis.tick_params(**self.minor_tick_kwargs)
-
-                # add grid lines parallel to x-axis in azimuthal average
-                kwargs = {
-                    'visible': True,
-                    'which': 'major',
-                    'axis': 'y',
-                    'linewidth': 0.25,
-                    'linestyle': '-',
-                    'color': 'k',
-                    'alpha': 0.75,
-                }
-                axis.grid(**kwargs)
-
-                kwargs = {
-                    'visible': True,
-                    'which': 'minor',
-                    'axis': 'y',
-                    'linewidth': 0.075,
-                    'linestyle': '--',
-                    'color': 'k',
-                    'alpha': 0.9,
-                }
-                axis.grid(**kwargs)
-
-                # add grid lines parallel to y-axis
-                kwargs['which'] = 'both'
-                kwargs['axis'] = 'x'
-                axis.grid(**kwargs)
+                self._setup_azimuthal_axis(axis)
             else:
                 self.update_azimuthal_integral_plot()
                 axis = self.azimuthal_integral_axis
@@ -1330,6 +1288,65 @@ class ImageCanvas(FigureCanvas):
 
         # Update the beam energy on the instrument
         self.iviewer.instr.beam_energy = HexrdConfig().beam_energy
+
+    def _setup_azimuthal_axis(self, axis: Axes):
+        # Set the labels
+        axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
+        axis.set_ylabel(r'Azimuthal Average', **self.label_kwargs)
+
+        # Set up formatting for the x-axis
+        # This is important in case "Q" is on the x axis instead
+        # of two theta.
+        default_formatter = axis.xaxis.get_major_formatter()
+        f = self.format_polar_x_major_ticks
+        formatter = PolarXAxisFormatter(default_formatter, f)
+        axis.xaxis.set_major_formatter(formatter)
+
+        axis.yaxis.set_major_locator(AutoLocator())
+        axis.yaxis.set_minor_locator(AutoMinorLocator())
+
+        axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+        self.axis.xaxis.set_minor_locator(
+            PolarXAxisMinorTickLocator(self)
+        )
+
+        # change property of ticks
+        axis.tick_params(**self.major_tick_kwargs)
+        axis.tick_params(**self.minor_tick_kwargs)
+
+        # Set up the grids
+        # These are default kwargs for the grids.
+        default_kwargs = {
+            'visible': True,
+            'linewidth': 0.075,
+            'linestyle': '--',
+            'color': 'k',
+            'alpha': 0.9,
+        }
+
+        # Grid for minor y tickers
+        axis.grid(**{
+            **default_kwargs,
+            'which': 'minor',
+            'axis': 'y',
+            'linewidth': 0.25,
+            'linestyle': '-',
+            'alpha': 0.75,
+        })
+
+        # Grid for major y tickers
+        axis.grid(**{
+            **default_kwargs,
+            'which': 'major',
+            'axis': 'y',
+        })
+
+        # Grid for all x tickers
+        axis.grid(**{
+            **default_kwargs,
+            'which': 'both',
+            'axis': 'x',
+        })
 
     @property
     def polar_x_axis_type(self):
@@ -1510,10 +1527,14 @@ class ImageCanvas(FigureCanvas):
             pimg = self.scaled_images[0]
         else:
             pimg = self.unscaled_images[0]
+
+        return self._compute_azimuthal_integral_sum(pimg)
+
+    def _compute_azimuthal_integral_sum(self, pimg: np.ndarray) -> np.ndarray:
         # !!! NOTE: visible polar masks have already been applied
         #           in polarview.py
-        masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         offset = HexrdConfig().azimuthal_offset
+        masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0) + offset
 
     def clear_azimuthal_overlay_artists(self):
@@ -1766,6 +1787,126 @@ class ImageCanvas(FigureCanvas):
             raise Exception('No iviewer. Cannot export')
 
         self.iviewer.write_image(filename)
+
+    def create_waterfall_plot(self):
+        if self.mode != ViewType.polar:
+            msg = 'Cannot create waterfall plot if we are not in polar mode'
+            raise Exception(msg)
+
+        if not self.iviewer:
+            msg = 'Cannot create waterfall plot without an iviewer'
+            raise Exception(msg)
+
+        if self._waterfall_plot_dialog is not None:
+            self._waterfall_plot_dialog.hide()
+            self._waterfall_plot_dialog = None
+
+        # Determine the number of lineouts
+        num_lineouts = HexrdConfig().imageseries_length
+
+        # Display a progress dialog indicating that we are
+        # generating intensities...
+        progress = QProgressDialog(
+            'Generating azimuthal lineouts...',
+            None,
+            0,
+            num_lineouts,
+            self,
+        )
+        progress.setWindowTitle('HEXRD')
+        progress.setValue(1)
+
+        # No close button in the corner
+        flags = progress.windowFlags()
+        progress.setWindowFlags(
+            (flags | Qt.CustomizeWindowHint) &
+            ~Qt.WindowCloseButtonHint
+        )
+
+        self._create_waterfall_progress = progress
+
+        # Compute azimuthal lineouts in a background thread
+        worker = AsyncWorker(self._create_waterfall_lineouts)
+        self.thread_pool.start(worker)
+        self._latest_compute_view_worker = worker
+
+        def on_finished():
+            progress.reject()
+
+        # Get the results and close the progress dialog when finished
+        worker.signals.result.connect(self._finish_create_waterfall)
+        worker.signals.finished.connect(on_finished)
+
+        progress.exec()
+
+    def _create_waterfall_lineouts(self) -> list[np.ndarray]:
+        progress = self._create_waterfall_progress
+
+        # Determine the number of lineouts
+        num_lineouts = HexrdConfig().imageseries_length
+        lineouts = [None] * num_lineouts
+
+        # We can already compute the lineout for the current frame
+        current_idx = HexrdConfig().current_imageseries_idx
+        lineouts[current_idx] = self.compute_azimuthal_integral_sum()
+
+        # Make a deep copy of the iviewer, since we will modify it
+        iviewer = copy.deepcopy(self.iviewer)
+
+        # Now generate the lineouts for the other frames
+        for i in range(num_lineouts):
+            if i == current_idx:
+                # We already generated this one
+                continue
+
+            # Create the new imageseries dict
+            HexrdConfig().current_imageseries_idx = i
+            try:
+                new_images_dict = HexrdConfig().images_dict
+            finally:
+                # Always restore the previous index
+                HexrdConfig().current_imageseries_idx = current_idx
+
+            # Now force the image dict to change
+            iviewer.pv.images_dict = new_images_dict
+
+            # Generate the new image
+            iviewer.pv.warp_all_images()
+
+            # Grab the new image
+            polar_img = iviewer.img
+            if HexrdConfig().polar_apply_scaling_to_lineout:
+                # Apply the transform
+                polar_img = self.transform(polar_img)
+
+            # Compute the integration
+            lineouts[i] = self._compute_azimuthal_integral_sum(polar_img)
+
+            progress.setValue(progress.value() + 1)
+
+        return lineouts
+
+    def _finish_create_waterfall(self, lineouts: list[np.ndarray]):
+        # Now create the waterfall plot dialog with the lineouts
+        # Create a matplotlib figure and set up everything
+        figure = plt.figure()
+        ax = figure.add_subplot()
+
+        # Grab tth
+        angular_grid = self.iviewer.angular_grid
+        tth = np.degrees(angular_grid[1][0])
+        line_data = [(tth, lineout.filled(np.nan)) for lineout in lineouts]
+
+        # Set up the same azimuthal axes parameters as the polar view
+        self._setup_azimuthal_axis(ax)
+
+        # Disable the tick labels
+        ax.set_yticklabels([])
+
+        # Now create and show the waterfall plot
+        dialog = WaterfallPlotDialog(ax, line_data)
+        dialog.show()
+        self._waterfall_plot_dialog = dialog
 
     def export_to_maud(self, filename):
         if self.mode != ViewType.polar:

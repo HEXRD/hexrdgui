@@ -884,6 +884,16 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
+               <widget class="QPushButton" name="create_waterfall_plot">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a waterfall plot using the images in the image series.&lt;/p&gt;&lt;p&gt;This will first generate a polar view image for every index in the image series (which can be time-consuming depending on the polar resolution settings). Each polar view images is then used to create an azimuthal lineout.&lt;/p&gt;&lt;p&gt;The azimuthal lineouts for each of the polar view images is then plotted together in a waterfall plot dialog. This dialog allows plots to be adjusted as needed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Waterfall Plot</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <spacer name="horizontalSpacer">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
@@ -1051,8 +1061,26 @@
   <tabstop>cartesian_plane_normal_rotate_x</tabstop>
   <tabstop>cartesian_virtual_plane_distance</tabstop>
   <tabstop>cartesian_plane_normal_rotate_y</tabstop>
+  <tabstop>polar_active_beam</tabstop>
+  <tabstop>polar_pixel_size_tth</tabstop>
+  <tabstop>polar_pixel_size_eta</tabstop>
+  <tabstop>polar_res_tth_min</tabstop>
+  <tabstop>polar_res_tth_max</tabstop>
+  <tabstop>polar_res_eta_min</tabstop>
+  <tabstop>polar_res_eta_max</tabstop>
+  <tabstop>polar_apply_snip1d</tabstop>
+  <tabstop>polar_snip1d_width</tabstop>
+  <tabstop>polar_snip1d_algorithm</tabstop>
+  <tabstop>polar_snip1d_numiter</tabstop>
+  <tabstop>polar_show_snip1d</tabstop>
+  <tabstop>polar_apply_erosion</tabstop>
+  <tabstop>polar_apply_tth_distortion</tabstop>
+  <tabstop>polar_tth_distortion_overlay</tabstop>
   <tabstop>polar_azimuthal_overlays</tabstop>
   <tabstop>azimuthal_offset</tabstop>
+  <tabstop>polar_x_axis_type</tabstop>
+  <tabstop>create_waterfall_plot</tabstop>
+  <tabstop>polar_apply_scaling_to_lineout</tabstop>
   <tabstop>stereo_size</tabstop>
   <tabstop>stereo_show_border</tabstop>
   <tabstop>stereo_project_from_polar</tabstop>
