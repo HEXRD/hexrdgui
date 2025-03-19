@@ -130,8 +130,13 @@ class InstrumentViewer:
             np.savetxt(filename, azimuthal_integration, delimiter=delimiter)
             return
 
-        intensities = self.img.filled(np.nan)
-        raw_intensities = self.raw_img.filled(np.nan)
+        intensities = self.img
+        if np.ma.is_masked(intensities):
+            intensities = intensities.filled(np.nan)
+
+        raw_intensities = self.raw_img
+        if np.ma.is_masked(raw_intensities):
+            raw_intensities = raw_intensities.filled(np.nan)
 
         eta, tth = np.degrees(self.angular_grid)
 
