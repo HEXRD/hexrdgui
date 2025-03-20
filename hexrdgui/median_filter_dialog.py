@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QMessageBox
+
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 
@@ -39,4 +41,11 @@ class MedianFilterDialog:
 
     def accept_changes(self):
         value = self.ui.kernel_size.value()
+        if value % 2 == 0:
+            value -= 1
+            msg = (
+                f'Value must be odd. Kernel size has been reset to {value}'
+            )
+            QMessageBox.warning(self.ui.parent(), 'WARNING', msg)
+
         HexrdConfig().median_filter_kernel_size = value
