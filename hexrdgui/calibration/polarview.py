@@ -55,9 +55,6 @@ class PolarView:
             # Use an image dict with the panel buffers applied.
             # This keeps invalid pixels from bleeding out in the polar view
             self.images_dict = HexrdConfig().images_dict
-            # 0 is a better fill value because it results in fewer nans in
-            # the final image.
-            HexrdConfig().apply_panel_buffer_to_images(self.images_dict, 0)
 
         self.warp_dict = {}
 
@@ -176,7 +173,15 @@ class PolarView:
 
     @images_dict.setter
     def images_dict(self, v):
+        # This images_dict sometimes gets modified by external callers,
+        # such as when a waterfall plot is created. So we need to make
+        # sure that everything that needs to be updated gets updated
+        # here.
         self._images_dict = v
+
+        # 0 is a better fill value because it results in fewer nans in
+        # the final image.
+        HexrdConfig().apply_panel_buffer_to_images(self._images_dict, 0)
 
         # Cache the image min and max for later use
         self.min = min(x.min() for x in v.values())
@@ -240,13 +245,12 @@ class PolarView:
     @property
     def all_detector_borders(self):
         borders = {}
-        for key in self.images_dict.keys():
+        for key in self.detectors:
             borders[key] = self.detector_borders(key)
 
         return borders
 
     def create_warp_image(self, det):
-        # lcount = 0
         img = self.images_dict[det]
         panel = self.detectors[det]
 
@@ -508,7 +512,7 @@ class PolarView:
         self.reset_cached_distortion_fields()
 
         # Create the warped image for each detector
-        for det in self.images_dict.keys():
+        for det in self.detectors:
             self.create_warp_image(det)
 
         # Generate the final image
@@ -540,6 +544,9 @@ class PolarView:
         self.generate_image()
 
     def reset_cached_distortion_fields(self):
+        # These are only reset so that other parts of the code
+        # will not use them while we are generating new ones.
+        # They are actually still cached elsewhere.
         HexrdConfig().polar_corr_field_polar = None
         HexrdConfig().polar_angular_grid = None
 
