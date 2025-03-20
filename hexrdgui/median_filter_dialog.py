@@ -17,9 +17,11 @@ class MedianFilterDialog:
         self.setup_connections()
 
     def update_gui(self):
-        # Cannot exceed array dimensions
-        img = HexrdConfig().image(HexrdConfig().detector_names[0], 0)
-        upper_bound = min(img.shape[0], img.shape[1])
+        # Cannot exceed array dimensions and must be odd
+        imgs = HexrdConfig().raw_images_dict.values()
+        upper_bound = min([min(*img.shape) for img in imgs])
+        if upper_bound % 2 == 0:
+            upper_bound -= 1
         self.ui.kernel_size.setMaximum(upper_bound)
 
     def setup_connections(self):
