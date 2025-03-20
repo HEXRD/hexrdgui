@@ -88,7 +88,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.outline_appearance,
             self.ui.template_instructions,
             self.ui.detector_raw_image,
-        enabled=False)
+            enabled=False)
 
         # We have different needs for different instruments. Hide optional
         # widgets until the instrument is selected.
@@ -99,7 +99,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.detector_raw_image,
             self.ui.instr_settings_label,
             self.ui.instr_settings,
-        visible=False)
+            visible=False)
 
         self.update_config_settings()
 
@@ -233,7 +233,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.image_plate_raw_image,
             self.ui.template_instructions,
             self.ui.outline_appearance,
-        visible=has_ip)
+            visible=has_ip)
 
     def instrument_selected(self, idx):
         instruments = {1: 'TARDIS', 2: 'PXRDIP', 3: 'FIDDLE'}
@@ -256,14 +256,14 @@ class LLNLImportToolDialog(QObject):
                 self.ui.template_instructions,
                 self.ui.outline_appearance,
                 self.ui.detector_raw_image,
-            visible=False)
+                visible=False)
         else:
             is_fiddle = self.instrument == 'FIDDLE'
             self.set_widget_visibility(
                 self.ui.detector_raw_image,
                 self.ui.instr_settings_label,
                 self.ui.instr_settings,
-            visible=is_fiddle)
+                visible=is_fiddle)
 
             has_ip = self.ui.instr_settings.currentIndex() == 0
             needs_mask = not is_fiddle or has_ip
@@ -271,7 +271,7 @@ class LLNLImportToolDialog(QObject):
                 self.ui.image_plate_raw_image,
                 self.ui.template_instructions,
                 self.ui.outline_appearance,
-            visible=needs_mask)
+                visible=needs_mask)
 
             self.import_in_progress = True
             # Make sure we're not applying median filter during import
@@ -303,7 +303,7 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(
             self.ui.load_config,
             self.ui.config_file_label,
-        enabled=enable_load)
+            enabled=enable_load)
 
         self.update_config_settings()
         if self.ui.instrument.isEnabled():
@@ -537,7 +537,7 @@ class LLNLImportToolDialog(QObject):
             # loading all files for each detector.
             self.enable_widgets(
                 self.ui.accept_detector,
-            enabled=bool(selected['data'] and selected['dark']))
+                enabled=bool(selected['data'] and selected['dark']))
 
     def load_images(self):
         # Needed to identify current image, regardless of image load path
@@ -588,12 +588,12 @@ class LLNLImportToolDialog(QObject):
                 self.ui.image_plates,
                 self.ui.image_plate_label,
                 self.ui.accept_template,
-            enabled=True)
+                enabled=True)
             self.enable_widgets(
                 self.ui.data,
                 self.ui.detector_load,
                 self.ui.dark_load,
-            enabled=False)
+                enabled=False)
             self.add_template()
 
     def add_transform(self):
@@ -669,7 +669,7 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(
             self.ui.outline_appearance,
             self.ui.template_instructions,
-        enabled=True)
+            enabled=True)
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
 
@@ -742,14 +742,14 @@ class LLNLImportToolDialog(QObject):
             self.ui.complete,
             self.ui.detector_load,
             self.ui.dark_load,
-        enabled=True)
+            enabled=True)
         self.enable_widgets(
             self.ui.outline_appearance,
             self.ui.template_instructions,
             self.ui.accept_template,
             self.ui.add_transform,
             self.ui.accept_detector,
-        enabled=False)
+            enabled=False)
         self.ui.completed_dets_and_ips.setText(
             ', '.join(set(self.completed)))
 
@@ -788,11 +788,11 @@ class LLNLImportToolDialog(QObject):
         self.enable_widgets(
             self.ui.add_transform,
             self.ui.file_selection,
-        enabled=True)
+            enabled=True)
         self.enable_widgets(
             self.ui.outline_appearance,
             self.ui.template_instructions,
-        enabled=False)
+            enabled=False)
 
     def check_for_unsaved_changes(self):
         if (
@@ -842,11 +842,11 @@ class LLNLImportToolDialog(QObject):
             self.ui.config_file_label,
             self.ui.template_instructions,
             self.ui.accept_detector,
-        enabled=False)
+            enabled=False)
         self.enable_widgets(
             self.ui.data,
             self.ui.file_selection,
-        enabled=True)
+            enabled=True)
         self.set_widget_visibility(
             self.ui.image_plate_raw_image,
             self.ui.template_instructions,
@@ -854,7 +854,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.detector_raw_image,
             self.ui.instr_settings_label,
             self.ui.instr_settings,
-        visible=False)
+            visible=False)
         # We're all reset and ready to re-enable the main UI features
         HexrdConfig().enable_image_mode_widget.emit(True)
 
