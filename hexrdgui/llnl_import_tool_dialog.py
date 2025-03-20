@@ -1,7 +1,6 @@
 import glob
 import os
 import re
-from hexrdgui.median_filter_dialog import MedianFilterDialog
 import numpy as np
 import yaml
 import tempfile
@@ -18,13 +17,7 @@ from hexrd.rotations import (
     angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz
 )
 
-from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.image_file_manager import ImageFileManager
-from hexrdgui.image_load_manager import ImageLoadManager
-from hexrdgui.interactive_template import InteractiveTemplate
-from hexrdgui import resource_loader
-from hexrdgui.create_hedm_instrument import create_hedm_instrument
-from hexrdgui.ui_loader import UiLoader
+import hexrdgui.resources.calibration
 from hexrdgui.constants import (
     FIDDLE_FRAMES,
     FIDDLE_HDF5_PATH,
@@ -34,8 +27,14 @@ from hexrdgui.constants import (
     LLNLTransform,
     ViewType
 )
-import hexrdgui.resources.calibration
-
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
+from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.image_file_manager import ImageFileManager
+from hexrdgui.image_load_manager import ImageLoadManager
+from hexrdgui.interactive_template import InteractiveTemplate
+from hexrdgui.median_filter_dialog import MedianFilterDialog
+from hexrdgui import resource_loader
+from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import instr_to_internal_dict, block_signals
 from hexrdgui.utils.dialog import add_help_url
 

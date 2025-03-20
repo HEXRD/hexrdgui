@@ -9,8 +9,8 @@ from PySide6.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
 import h5py
 import matplotlib
 import numpy as np
-import yaml
 from scipy.signal import medfilt2d
+import yaml
 
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader

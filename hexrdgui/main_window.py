@@ -5,7 +5,6 @@ import shutil
 import tempfile
 
 import h5py
-from hexrdgui.median_filter_dialog import MedianFilterDialog
 import numpy as np
 from skimage import measure
 
@@ -31,6 +30,7 @@ from hexrdgui.config_dialog import ConfigDialog
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.mask_manager import MaskManager
+from hexrdgui.median_filter_dialog import MedianFilterDialog
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.cal_tree_view import CalTreeView
 from hexrdgui.masking.hand_drawn_mask_dialog import HandDrawnMaskDialog
