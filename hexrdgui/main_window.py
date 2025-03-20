@@ -30,6 +30,7 @@ from hexrdgui.config_dialog import ConfigDialog
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.mask_manager import MaskManager
+from hexrdgui.median_filter_dialog import MedianFilterDialog
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.cal_tree_view import CalTreeView
 from hexrdgui.masking.hand_drawn_mask_dialog import HandDrawnMaskDialog
@@ -357,6 +358,8 @@ class MainWindow(QObject):
             HexrdConfig().set_intensity_subtract_minimum)
         self.ui.action_apply_absorption_correction.toggled.connect(
             self.action_apply_absorption_correction_toggled)
+        self.ui.action_apply_median_filter.toggled.connect(
+            self.action_apply_median_filter_toggled)
         HexrdConfig().instrument_config_loaded.connect(
             self.on_instrument_config_loaded)
         HexrdConfig().active_beam_switched.connect(self.update_config_gui)
@@ -378,7 +381,7 @@ class MainWindow(QObject):
             self.enable_canvas_focus_mode)
 
         # Always assume Physics Package is needed for LLNL import
-        self.llnl_import_tool_dialog.ui.complete.clicked.connect(
+        self.llnl_import_tool_dialog.complete_workflow.connect(
             lambda: self.on_action_include_physics_package_toggled(True)
         )
 
@@ -402,6 +405,7 @@ class MainWindow(QObject):
             'action_apply_absorption_correction':
                 'apply_absorption_correction',
             'action_include_physics_package': 'has_physics_package',
+            'action_apply_median_filter': 'apply_median_filter_correction',
         }
 
         for cb_name, attr_name in checkbox_to_hexrd_config_mappings.items():
@@ -1700,3 +1704,20 @@ class MainWindow(QObject):
         # The dialog should have modified HexrdConfig's absorption
         # correction options already. Just apply it now.
         HexrdConfig().apply_absorption_correction = b
+
+    def action_apply_median_filter_toggled(self, b):
+        if not b:
+            # Just turn it off and return
+            HexrdConfig().apply_median_filter_correction = b
+            return
+
+        dialog = MedianFilterDialog(self.ui)
+        if not dialog.exec():
+            # User canceled. Uncheck the action.
+            action = self.ui.action_apply_median_filter
+            action.setChecked(False)
+            return
+
+        # The dialog should have modified HexrdConfig's median filter options
+        # already. Just apply it now.
+        HexrdConfig().apply_median_filter_correction = b

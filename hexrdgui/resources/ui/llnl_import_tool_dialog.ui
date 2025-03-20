@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>565</width>
-    <height>814</height>
+    <height>854</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,8 +23,8 @@
       <property name="title">
        <string>Instrument</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
+      <layout class="QGridLayout" name="gridLayout_7">
+       <item row="0" column="0">
         <widget class="QFrame" name="instrument">
          <property name="enabled">
           <bool>true</bool>
@@ -35,18 +35,18 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QFormLayout" name="formLayout_2">
+         <layout class="QGridLayout" name="gridLayout_6">
           <property name="leftMargin">
-           <number>0</number>
+           <number>9</number>
           </property>
           <property name="topMargin">
-           <number>0</number>
+           <number>9</number>
           </property>
           <property name="rightMargin">
-           <number>0</number>
+           <number>9</number>
           </property>
           <property name="bottomMargin">
-           <number>0</number>
+           <number>9</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="instrument_label">
@@ -81,12 +81,38 @@
               <string>PXRDIP</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>FIDDLE</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="instr_settings_label">
+            <property name="text">
+             <string>Instrument Settings</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="instr_settings">
+            <item>
+             <property name="text">
+              <string>With Image Plate</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Without Image Plate</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-       <item>
+       <item row="1" column="0">
         <widget class="QFrame" name="config">
          <property name="enabled">
           <bool>true</bool>
@@ -164,61 +190,112 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="raw_image">
+     <widget class="QGroupBox" name="detector_raw_image">
       <property name="enabled">
        <bool>true</bool>
       </property>
       <property name="title">
-       <string>Raw Image</string>
+       <string>Detector Raw Image</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_5">
+      <layout class="QGridLayout" name="gridLayout_8">
+       <item row="3" column="0" colspan="2">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="3" column="2">
+        <widget class="QPushButton" name="accept_detector">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Accept Detector</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
-        <widget class="QFrame" name="frame">
+        <widget class="QLabel" name="detector_label">
          <property name="enabled">
           <bool>true</bool>
          </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
+         <property name="text">
+          <string>Current Detector</string>
          </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="detector_label">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>Current Detector</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="detectors">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </widget>
        </item>
+       <item row="0" column="1" colspan="2">
+        <widget class="QComboBox" name="detectors">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="detector_load">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Select Image</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="2">
+        <widget class="QLabel" name="dark_files_label">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="dark_load">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Select Dark Image</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" colspan="2">
+        <widget class="QLabel" name="detector_files_label">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="image_plate_raw_image">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="title">
+       <string>Image Plate Raw Image</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
        <item row="1" column="0">
         <widget class="QFrame" name="file_selection">
          <property name="enabled">
@@ -250,7 +327,7 @@
            <number>0</number>
           </property>
           <item row="0" column="0">
-           <widget class="QPushButton" name="load">
+           <widget class="QPushButton" name="image_plate_load">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -260,7 +337,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLabel" name="files_label">
+           <widget class="QLabel" name="image_plate_files_label">
             <property name="text">
              <string>(None Selected)</string>
             </property>
@@ -278,7 +355,7 @@
        <item row="2" column="0">
         <widget class="QFrame" name="transform_img">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
@@ -306,15 +383,11 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="transform_label">
-            <property name="text">
-             <string>Transform Image:</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
            <widget class="QComboBox" name="transforms">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
             <item>
              <property name="text">
               <string>None</string>
@@ -352,6 +425,13 @@
             </item>
            </widget>
           </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="transform_label">
+            <property name="text">
+             <string>Transform Image:</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -361,8 +441,55 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>Save detector boundary</string>
+          <string>Save image plate boundary</string>
          </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QFrame" name="frame">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="image_plate_label">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>Current Image Plate</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="image_plates">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>
@@ -640,7 +767,7 @@
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QLabel" name="completed_dets">
+        <widget class="QLabel" name="completed_dets_and_ips">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -700,11 +827,16 @@
  </widget>
  <tabstops>
   <tabstop>instruments</tabstop>
+  <tabstop>instr_settings</tabstop>
   <tabstop>config_selection</tabstop>
   <tabstop>config_settings</tabstop>
   <tabstop>load_config</tabstop>
   <tabstop>detectors</tabstop>
-  <tabstop>load</tabstop>
+  <tabstop>detector_load</tabstop>
+  <tabstop>dark_load</tabstop>
+  <tabstop>accept_detector</tabstop>
+  <tabstop>image_plates</tabstop>
+  <tabstop>image_plate_load</tabstop>
   <tabstop>transforms</tabstop>
   <tabstop>add_transform</tabstop>
   <tabstop>accept_template</tabstop>
