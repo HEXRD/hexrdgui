@@ -380,10 +380,8 @@ class MainWindow(QObject):
         HexrdConfig().enable_canvas_focus_mode.connect(
             self.enable_canvas_focus_mode)
 
-        # Always assume Physics Package is needed for LLNL import
         self.llnl_import_tool_dialog.complete_workflow.connect(
-            lambda: self.on_action_include_physics_package_toggled(True)
-        )
+            self.on_llnl_import_completed)
 
     def on_state_loaded(self):
         self.update_action_check_states()
@@ -1555,6 +1553,17 @@ class MainWindow(QObject):
 
     def on_action_hedm_import_tool_triggered(self):
         self.simple_image_series_dialog.show()
+
+    def on_llnl_import_completed(self, is_fiddle_instrument):
+        if is_fiddle_instrument:
+            if self.ui.action_apply_median_filter.isChecked():
+                # Un-check the median filter if already checked - this ensures we
+                # always trigger the callback for the FIDDLE instrument and the
+                # kernel setting dialog is always shown
+                self.ui.action_apply_median_filter.setChecked(False)
+            self.ui.action_apply_median_filter.setChecked(True)
+        # Always assume Physics Package is needed for LLNL import
+        self.on_action_include_physics_package_toggled(True)
 
     def on_action_llnl_import_tool_triggered(self):
         dialog = self.llnl_import_tool_dialog
