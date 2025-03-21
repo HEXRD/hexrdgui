@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>565</width>
-    <height>854</height>
+    <height>883</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,94 @@
        <string>Instrument</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_7">
+       <item row="1" column="0">
+        <widget class="QFrame" name="config">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Select Configuration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" colspan="2">
+           <widget class="QComboBox" name="config_settings"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="load_atlas">
+            <property name="text">
+             <string>Load ATLAS Coordinates</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="2">
+           <widget class="QComboBox" name="config_selection">
+            <item>
+             <property name="text">
+              <string>Default configuration</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Currently loaded configuration</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Load configuration from file</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="load_config">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Load Instrument Config</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="config_settings_label">
+            <property name="text">
+             <string>Configuration Settings:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="2">
+           <widget class="QLabel" name="config_file_label">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string extracomment="Defaults to currently loaded configuration"/>
+            </property>
+            <property name="text">
+             <string>No File Selected</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" colspan="2">
+           <widget class="QLabel" name="atlas_label">
+            <property name="text">
+             <string>No File Selected</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QFrame" name="instrument">
          <property name="enabled">
@@ -108,80 +196,6 @@
              </property>
             </item>
            </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QFrame" name="config">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_3">
-          <item row="0" column="1" colspan="2">
-           <widget class="QComboBox" name="config_selection">
-            <item>
-             <property name="text">
-              <string>Default configuration</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Currently loaded configuration</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Load configuration from file</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QPushButton" name="load_config">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Load Instrument Config</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Select Configuration</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" colspan="2">
-           <widget class="QLabel" name="config_file_label">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string extracomment="Defaults to currently loaded configuration"/>
-            </property>
-            <property name="text">
-             <string>No File Selected</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="config_settings_label">
-            <property name="text">
-             <string>Configuration Settings:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1" colspan="2">
-           <widget class="QComboBox" name="config_settings"/>
           </item>
          </layout>
         </widget>
