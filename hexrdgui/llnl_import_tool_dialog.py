@@ -46,7 +46,8 @@ class LLNLImportToolDialog(QObject):
 
     cancel_workflow = Signal()
 
-    complete_workflow = Signal()
+    # The boolean flag indicates whether this is a FIDDLE instrument or not
+    complete_workflow = Signal(bool)
 
     def __init__(self, cmap=None, parent=None):
         super().__init__(parent)
@@ -925,14 +926,12 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
 
-        if self.instrument == 'FIDDLE':
-            # Allow user to change kernel before applying median filter
-            d = MedianFilterDialog(self.ui.parent())
-            d.ui.finished.connect(lambda: self.complete_workflow.emit())
-            HexrdConfig().apply_median_filter_correction = d.exec()
-        else:
+        if self.instrument != 'FIDDLE':
+            # Re-enable median filter correction if it was set
             HexrdConfig().apply_median_filter_correction = self.median_setting
-            self.complete_workflow.emit()
+        # If this is a FIDDLE instrument users will be prompted to set (or not)
+        # the median filter after the import is complete
+        self.complete_workflow.emit(self.instrument == 'FIDDLE')
 
     def show(self):
         self.ui.show()
