@@ -2,14 +2,15 @@ import math
 import os
 import numpy as np
 import h5py
+from itertools import groupby
+from operator import attrgetter
 
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
     QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout, QColorDialog
 )
-from PySide6.QtGui import QCursor, QColor
-
+from PySide6.QtGui import QCursor, QColor, QFont
 
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
@@ -62,37 +63,61 @@ class MaskManagerDialog(QObject):
         self.ui.apply_changes.clicked.connect(self.apply_changes)
 
     def update_table(self):
+        # Sort masks by creation view mode
+        sorted_masks = sorted(
+            MaskManager().masks.values(),
+            key=attrgetter('creation_view_mode')
+        )
         with block_signals(self.ui.masks_table):
             self.ui.masks_table.setRowCount(0)
-            for i, key in enumerate(MaskManager().mask_names):
-                # Add label
-                self.ui.masks_table.insertRow(i)
-                self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
+            # Group masks by creation view mode
+            for mode, masks in groupby(sorted_masks,
+                                       key=attrgetter('creation_view_mode')):
+                # Create header item based on the mode the masks were created in
+                row = self.ui.masks_table.rowCount()
+                self.ui.masks_table.insertRow(row)
+                text = f'{mode.capitalize()} Mode Masks'
+                mode_item = self.create_header_item(text)
+                self.ui.masks_table.setItem(row, 0, mode_item)
+                self.ui.masks_table.setSpan(row, 0, 1, 3)
 
-                # Add combo box to select mask presentation
-                mask_type = MaskManager().masks[key].type
-                presentation_combo = QComboBox()
-                presentation_combo.addItem('None')
-                presentation_combo.addItem('Visible')
-                idx = MaskStatus.none
-                if key in MaskManager().visible_masks:
-                    idx = MaskStatus.visible
-                if (mask_type == MaskType.region or
-                        mask_type == MaskType.polygon or
-                        mask_type == MaskType.pinhole):
-                    presentation_combo.addItem('Boundary Only')
-                    presentation_combo.addItem('Visible + Boundary')
-                    if key in MaskManager().visible_boundaries:
-                        idx += MaskStatus.boundary
-                presentation_combo.setCurrentIndex(idx)
-                self.ui.masks_table.setCellWidget(i, 1, presentation_combo)
-                presentation_combo.currentIndexChanged.connect(
-                    lambda i, k=key: self.track_mask_presentation_change(i, k))
+                for mask in masks:
+                    row = self.ui.masks_table.rowCount()
+                    # Add label
+                    self.ui.masks_table.insertRow(row)
+                    self.ui.masks_table.setItem(row, 0, QTableWidgetItem(mask.name))
 
-                # Add push button to remove mask
-                pb = QPushButton('Remove Mask')
-                self.ui.masks_table.setCellWidget(i, 2, pb)
-                pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
+                    # Add combo box to select mask presentation
+                    mask_type = MaskManager().masks[mask.name].type
+                    presentation_combo = QComboBox()
+                    presentation_combo.addItem('None')
+                    presentation_combo.addItem('Visible')
+                    idx = MaskStatus.none
+                    if mask.name in MaskManager().visible_masks:
+                        idx = MaskStatus.visible
+                    if (mask_type == MaskType.region or
+                            mask_type == MaskType.polygon or
+                            mask_type == MaskType.pinhole):
+                        presentation_combo.addItem('Boundary Only')
+                        presentation_combo.addItem('Visible + Boundary')
+                        if mask.name in MaskManager().visible_boundaries:
+                            idx += MaskStatus.boundary
+                    presentation_combo.setCurrentIndex(idx)
+                    self.ui.masks_table.setCellWidget(row, 1, presentation_combo)
+                    presentation_combo.currentIndexChanged.connect(
+                        lambda i, k=mask.name: self.track_mask_presentation_change(i, k))
+
+                    # Add push button to remove mask
+                    pb = QPushButton('Remove Mask')
+                    self.ui.masks_table.setCellWidget(row, 2, pb)
+                    pb.clicked.connect(lambda i=row, k=mask.name: self.remove_mask(i, k))
+
+    def create_header_item(self, text):
+        item = QTableWidgetItem(text)
+        item.setTextAlignment(Qt.AlignCenter)
+        item.setFlags(Qt.ItemIsEnabled)  # Keep enabled but prevent editing
+        item.setFont(QFont(item.font().family(), item.font().pointSize(), QFont.Bold))
+        return item
 
     def track_mask_presentation_change(self, index, name):
         self.changed_masks[name] = index
