@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>mask_manager</class>
  <widget class="QDialog" name="mask_manager">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,6 +17,37 @@
    <string>Mask Management</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="1" colspan="2">
+    <widget class="QPushButton" name="view_masks">
+     <property name="text">
+      <string>View Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1" colspan="2">
+    <widget class="QPushButton" name="show_all_masks">
+     <property name="text">
+      <string>Show All Masks</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="1" rowspan="2" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::NoButton</set>
+     </property>
+     <property name="centerButtons">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1" colspan="2">
+    <widget class="QPushButton" name="hide_all_boundaries">
+     <property name="text">
+      <string>Hide All Boundaries</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="1" colspan="2">
     <widget class="QPushButton" name="export_masks">
      <property name="text">
@@ -21,14 +55,21 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QPushButton" name="hide_all_masks">
+   <item row="8" column="1" colspan="2">
+    <widget class="QPushButton" name="border_color">
      <property name="text">
-      <string>Hide All Masks</string>
+      <string>Border Color</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0" rowspan="11">
+   <item row="2" column="1" colspan="2">
+    <widget class="QPushButton" name="panel_buffer">
+     <property name="text">
+      <string>Masks to Panel Buffer</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" rowspan="12">
     <widget class="QTableWidget" name="masks_table">
      <property name="minimumSize">
       <size>
@@ -90,13 +131,6 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QPushButton" name="panel_buffer">
-     <property name="text">
-      <string>Masks to Panel Buffer</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1" colspan="2">
     <widget class="QPushButton" name="import_masks">
      <property name="text">
@@ -104,41 +138,20 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1" colspan="2">
-    <widget class="QPushButton" name="show_all_masks">
+   <item row="4" column="1" colspan="2">
+    <widget class="QPushButton" name="hide_all_masks">
      <property name="text">
-      <string>Show All Masks</string>
+      <string>Hide All Masks</string>
      </property>
     </widget>
    </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QPushButton" name="view_masks">
+   <item row="9" column="1" colspan="2">
+    <widget class="QPushButton" name="apply_changes">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
-      <string>View Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="1" rowspan="2" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::NoButton</set>
-     </property>
-     <property name="centerButtons">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1" colspan="2">
-    <widget class="QPushButton" name="hide_all_boundaries">
-     <property name="text">
-      <string>Hide All Boundaries</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1" colspan="2">
-    <widget class="QPushButton" name="border_color">
-     <property name="text">
-      <string>Border Color</string>
+      <string>Apply Changes</string>
      </property>
     </widget>
    </item>
