@@ -32,6 +32,8 @@ class MaskManagerDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
+        self.changed_masks = {}
+
         add_help_url(self.ui.button_box,
                      'configuration/masking/#managing-masks')
 
@@ -57,6 +59,7 @@ class MaskManagerDialog(QObject):
         MaskManager().mask_mgr_dialog_update.connect(self.update_table)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
         self.ui.border_color.clicked.connect(self.set_boundary_color)
+        self.ui.apply_changes.clicked.connect(self.apply_changes)
 
     def update_table(self):
         with block_signals(self.ui.masks_table):
@@ -84,12 +87,17 @@ class MaskManagerDialog(QObject):
                 presentation_combo.setCurrentIndex(idx)
                 self.ui.masks_table.setCellWidget(i, 1, presentation_combo)
                 presentation_combo.currentIndexChanged.connect(
-                    lambda i, k=key: self.change_mask_presentation(i, k))
+                    lambda i, k=key: self.track_mask_presentation_change(i, k))
 
                 # Add push button to remove mask
                 pb = QPushButton('Remove Mask')
                 self.ui.masks_table.setCellWidget(i, 2, pb)
                 pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
+
+    def track_mask_presentation_change(self, index, name):
+        self.changed_masks[name] = index
+        if not self.ui.apply_changes.isEnabled():
+            self.ui.apply_changes.setEnabled(True)
 
     def change_mask_presentation(self, index, name):
         match index:
@@ -255,3 +263,9 @@ class MaskManagerDialog(QObject):
         if dialog.exec():
             MaskManager().boundary_color = dialog.selectedColor().name()
             MaskManager().masks_changed()
+
+    def apply_changes(self):
+        for name, index in self.changed_masks.items():
+            self.change_mask_presentation(index, name)
+        self.changed_masks = {}
+        self.ui.apply_changes.setEnabled(False)
