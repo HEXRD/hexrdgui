@@ -30,6 +30,7 @@ class Mask(ABC):
         self.show_border = show_border
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
+        self.creation_view_mode = ViewType.raw
 
     def get_masked_arrays(self):
         if self.masked_arrays is None:
@@ -69,12 +70,13 @@ class Mask(ABC):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             show_border=data.get('border', False),
+            mode=data.get('creation_view_mode', ViewType.raw),
         )
 
 
 class RegionMask(Mask):
-    def __init__(self, name='', mtype='', visible=True, show_border=False):
-        super().__init__(name, mtype, visible, show_border)
+    def __init__(self, name='', mtype='', visible=True, show_border=False, mode=ViewType.raw):
+        super().__init__(name, mtype, visible, show_border, mode)
         self._raw = None
 
     @property
@@ -118,6 +120,7 @@ class RegionMask(Mask):
             'mtype': self.type,
             'visible': self.visible,
             'border': self.show_border,
+            'creation_view_mode': self.creation_view_mode,
             'data': {},
         }
         for i, (det, values) in enumerate(self._raw):
@@ -131,6 +134,7 @@ class RegionMask(Mask):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             show_border=data.get('border', False),
+            mode=data.get('creation_view_mode', ViewType.raw),
         )
         raw_data = []
         for det in HexrdConfig().detector_names:
@@ -142,8 +146,8 @@ class RegionMask(Mask):
 
 
 class ThresholdMask(Mask):
-    def __init__(self, name='', mtype='', visible=True):
-        super().__init__(name, mtype, visible)
+    def __init__(self, name='', mtype='', visible=True, mode=ViewType.raw):
+        super().__init__(name, mtype, visible, mode=mode)
         self.min_val = -math.inf
         self.max_val = math.inf
 
@@ -172,6 +176,7 @@ class ThresholdMask(Mask):
             'mtype': self.type,
             'visible': self.visible,
             'border': self.show_border,
+            'creation_view_mode': self.creation_view_mode,
         }
 
     @classmethod
@@ -180,6 +185,7 @@ class ThresholdMask(Mask):
             name=data['name'],
             mtype=data['mtype'],
             visible=data.get('visible', True),
+            mode=data.get('creation_view_mode', ViewType.raw),
         )
         new_cls.data = [data['min_val'], data['max_val']]
         return new_cls
@@ -260,9 +266,9 @@ class MaskManager(QObject, metaclass=QSingleton):
         # Enforce name uniqueness
         name = unique_name(self.mask_names, name)
         if mtype == MaskType.threshold:
-            new_mask = ThresholdMask(name, mtype, visible)
+            new_mask = ThresholdMask(name, mtype, visible, mode=self.view_mode)
         else:
-            new_mask = RegionMask(name, mtype, visible)
+            new_mask = RegionMask(name, mtype, visible, mode=self.view_mode)
         new_mask.data = data
         self.masks[name] = new_mask
         self.mask_mgr_dialog_update.emit()
