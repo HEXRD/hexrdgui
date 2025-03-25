@@ -280,7 +280,7 @@ class MaskRegionsDialog(QObject):
                 coords = [data]
             elif self.image_mode == 'polar':
                 coords = convert_polar_to_raw(data)
-            mask = MaskManager().add_mask(name, coords, MaskType.region)
+            MaskManager().add_mask(name, coords, MaskType.region)
 
         masks_changed_signal = {
             'raw': MaskManager().raw_masks_changed,
