@@ -63,18 +63,22 @@ class MaskManagerDialog(QObject):
         self.ui.apply_changes.clicked.connect(self.apply_changes)
 
     def update_tree(self):
-        # Sort masks by creation view mode
+        # Sort masks by creation view mode and xray source
         sorted_masks = sorted(
             MaskManager().masks.values(),
-            key=attrgetter('creation_view_mode')
+            key=attrgetter('creation_view_mode', 'xray_source')
         )
         with block_signals(self.ui.masks_tree):
             self.ui.masks_tree.clear()
-            # Group masks by creation view mode
-            for mode, masks in groupby(sorted_masks,
-                                       key=attrgetter('creation_view_mode')):
-                # Create header item based on the mode the masks were created in
-                mode_item = QTreeWidgetItem([f'{mode.capitalize()} Mode Masks'])
+            # Group masks by creation view mode and xray source
+            for (mode, source), masks in groupby(sorted_masks,
+                                               key=attrgetter('creation_view_mode', 'xray_source')):
+                # Create header item based on the mode and source
+                mode_str = f'{mode.capitalize()} Mode'
+                source_str = f' - {source} Source' if source else ''
+                mode_item = QTreeWidgetItem([f'{mode_str}{source_str}'])
+                mode_item.setFlags(Qt.ItemIsEnabled)  # Keep enabled but prevent editing
+                mode_item.setFont(0, QFont(mode_item.font(0).family(), mode_item.font(0).pointSize(), QFont.Bold))
                 self.ui.masks_tree.addTopLevelItem(mode_item)
 
                 for mask in masks:

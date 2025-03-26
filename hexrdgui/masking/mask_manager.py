@@ -23,14 +23,18 @@ from abc import ABC, abstractmethod
 
 
 class Mask(ABC):
-    def __init__(self, name='', mtype='', visible=True, show_border=False):
+    def __init__(self, name=None, mtype='', visible=True, show_border=False, mode=ViewType.raw, xray_source=None):
         self.type = mtype
         self.name = name
         self.visible = visible
         self.show_border = show_border
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
-        self.creation_view_mode = ViewType.raw
+        self.creation_view_mode = mode
+        self.xray_source = xray_source
+        if mode == ViewType.polar and HexrdConfig().has_multi_xrs and xray_source is None:
+            # The x-ray source is only relevant for polar masks
+            self.xray_source = HexrdConfig().active_beam_name
 
     def get_masked_arrays(self):
         if self.masked_arrays is None:
@@ -71,12 +75,13 @@ class Mask(ABC):
             visible=data.get('visible', True),
             show_border=data.get('border', False),
             mode=data.get('creation_view_mode', ViewType.raw),
+            xray_source=data.get('xray_source', None),
         )
 
 
 class RegionMask(Mask):
-    def __init__(self, name='', mtype='', visible=True, show_border=False, mode=ViewType.raw):
-        super().__init__(name, mtype, visible, show_border, mode)
+    def __init__(self, name='', mtype='', visible=True, show_border=False, mode=ViewType.raw, xray_source=None):
+        super().__init__(name, mtype, visible, show_border, mode, xray_source)
         self._raw = None
 
     @property
@@ -121,6 +126,7 @@ class RegionMask(Mask):
             'visible': self.visible,
             'border': self.show_border,
             'creation_view_mode': self.creation_view_mode,
+            'xray_source': self.xray_source,
             'data': {},
         }
         for i, (det, values) in enumerate(self._raw):
@@ -135,6 +141,7 @@ class RegionMask(Mask):
             visible=data.get('visible', True),
             show_border=data.get('border', False),
             mode=data.get('creation_view_mode', ViewType.raw),
+            xray_source=data.get('xray_source', None),
         )
         raw_data = []
         for det in HexrdConfig().detector_names:
@@ -146,8 +153,8 @@ class RegionMask(Mask):
 
 
 class ThresholdMask(Mask):
-    def __init__(self, name='', mtype='', visible=True, mode=ViewType.raw):
-        super().__init__(name, mtype, visible, mode=mode)
+    def __init__(self, name='', mtype='', visible=True, mode=ViewType.raw, xray_source=None):
+        super().__init__(name, mtype, visible, mode=mode, xray_source=xray_source)
         self.min_val = -math.inf
         self.max_val = math.inf
 
@@ -177,6 +184,7 @@ class ThresholdMask(Mask):
             'visible': self.visible,
             'border': self.show_border,
             'creation_view_mode': self.creation_view_mode,
+            'xray_source': self.xray_source,
         }
 
     @classmethod
@@ -186,6 +194,7 @@ class ThresholdMask(Mask):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             mode=data.get('creation_view_mode', ViewType.raw),
+            xray_source=data.get('xray_source', None),
         )
         new_cls.data = [data['min_val'], data['max_val']]
         return new_cls
