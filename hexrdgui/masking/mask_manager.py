@@ -223,7 +223,7 @@ class MaskManager(QObject, metaclass=QSingleton):
     def __init__(self):
         super().__init__(None)
         self.masks = {}
-        self.view_mode = ViewType.raw
+        self.view_mode = None
         self.boundary_color = '#000'  # Default to black
 
         self.setup_connections()
@@ -256,6 +256,27 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def view_mode_changed(self, mode):
         self.view_mode = mode
+        # Update MaskManagerDialog based on current view mode
+        xrs = HexrdConfig().active_beam_name
+        for mask in self.masks.values():
+            # If mask's mode or source doesn't match current, hide it
+            if mask.creation_view_mode != mode or mask.xray_source != xrs:
+                if not hasattr(mask, '_original_visible'):
+                    # Remember original states so we can toggle back
+                    mask._original_visible = mask.visible
+                    mask._original_show_border = mask.show_border
+                self.update_mask_visibility(mask.name, False)
+                self.update_border_visibility(mask.name, False)
+            else:
+                # Restore original states if they exist
+                if hasattr(mask, '_original_visible'):
+                    self.update_mask_visibility(mask.name, mask._original_visible)
+                    self.update_border_visibility(mask.name, mask._original_show_border)
+                    # Clear the stored states
+                    delattr(mask, '_original_visible')
+                    delattr(mask, '_original_show_border')
+        self.mask_mgr_dialog_update.emit()
+        self.masks_changed()
 
     def masks_changed(self):
         if self.view_mode in (ViewType.polar, ViewType.stereo):
@@ -339,6 +360,8 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.masks = {}
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
+        if self.view_mode is None:
+            self.view_mode_changed(ViewType.raw)
         self.mask_mgr_dialog_update.emit()
 
     def update_view_mode(self, mode):
