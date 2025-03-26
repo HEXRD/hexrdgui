@@ -342,7 +342,7 @@ class MainWindow(QObject):
         ImageLoadManager().state_updated.connect(
             self.simple_image_series_dialog.setup_gui)
 
-        self.new_mask_added.connect(self.mask_manager_dialog.update_table)
+        self.new_mask_added.connect(self.mask_manager_dialog.update_tree)
         self.image_mode_widget.tab_changed.connect(
             MaskManager().view_mode_changed)
 
