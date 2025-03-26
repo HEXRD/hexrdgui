@@ -80,7 +80,10 @@ class MaskManagerDialog(QObject):
                 for mask in masks:
                     # Create mask item
                     mask_item = QTreeWidgetItem([mask.name])
+                    mask_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
                     mode_item.addChild(mask_item)
+                    # Store the original mask name in the item's data
+                    mask_item.setData(0, Qt.UserRole, mask.name)
 
                     # Add combo box to select mask presentation
                     mask_type = MaskManager().masks[mask.name].type
@@ -138,16 +141,27 @@ class MaskManagerDialog(QObject):
         MaskManager().masks_changed()
         self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
 
-    def update_mask_name(self, row):
-        old_name = MaskManager().mask_names[row]
-        new_name = self.ui.masks_table.item(row, 0).text()
-        if old_name != new_name:
-            if new_name in MaskManager().mask_names:
-                self.ui.masks_table.item(row, 0).setText(old_name)
-                return
-            MaskManager().update_name(old_name, new_name)
+    def update_mask_name(self, item, column):
+        if column != 0:
+            # Only handle name changes (column 0)
+            return
 
-        self.update_table()
+        if item.parent() is None:
+            # This is a mode item, don't allow editing
+            return
+
+        new_name = item.text(0)
+        # Get the old name from the mask item's data
+        old_name = item.data(0, Qt.UserRole)
+        if old_name != new_name:
+            if not new_name or new_name in MaskManager().mask_names:
+                # Prevent empty or duplicate mask names
+                item.setText(0, old_name)
+                return
+            # Store the new name before updating the manager
+            item.setData(0, Qt.UserRole, new_name)
+            MaskManager().update_name(old_name, new_name)
+            MaskManager().mask_mgr_dialog_update.emit()
 
     def context_menu_event(self, event):
         item = self.ui.masks_tree.itemAt(event)
