@@ -70,7 +70,7 @@
     </widget>
    </item>
    <item row="0" column="0" rowspan="12">
-    <widget class="QTableWidget" name="masks_table">
+    <widget class="QTreeWidget" name="masks_tree">
      <property name="minimumSize">
       <size>
        <width>500</width>
@@ -92,18 +92,6 @@
      <property name="sortingEnabled">
       <bool>false</bool>
      </property>
-     <attribute name="horizontalHeaderCascadingSectionResizes">
-      <bool>false</bool>
-     </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>52</number>
-     </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>150</number>
-     </attribute>
-     <attribute name="horizontalHeaderStretchLastSection">
-      <bool>true</bool>
-     </attribute>
      <column>
       <property name="text">
        <string>Name</string>
@@ -158,7 +146,7 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>masks_table</tabstop>
+  <tabstop>masks_tree</tabstop>
   <tabstop>panel_buffer</tabstop>
   <tabstop>import_masks</tabstop>
   <tabstop>export_masks</tabstop>
