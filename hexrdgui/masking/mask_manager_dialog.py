@@ -8,7 +8,7 @@ from operator import attrgetter
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
-    QMessageBox, QPushButton, QTableWidgetItem, QVBoxLayout, QColorDialog
+    QMessageBox, QPushButton, QTreeWidgetItem, QVBoxLayout, QColorDialog
 )
 from PySide6.QtGui import QCursor, QColor, QFont
 
@@ -41,12 +41,12 @@ class MaskManagerDialog(QObject):
         self.setup_connections()
 
     def show(self):
-        self.update_table()
+        self.update_tree()
         self.ui.show()
 
     def setup_connections(self):
-        self.ui.masks_table.cellChanged.connect(self.update_mask_name)
-        self.ui.masks_table.customContextMenuRequested.connect(
+        self.ui.masks_tree.itemChanged.connect(self.update_mask_name)
+        self.ui.masks_tree.customContextMenuRequested.connect(
             self.context_menu_event)
         self.ui.export_masks.clicked.connect(MaskManager().write_all_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
@@ -54,38 +54,33 @@ class MaskManagerDialog(QObject):
         self.ui.view_masks.clicked.connect(self.show_masks)
         self.ui.hide_all_masks.clicked.connect(self.hide_all_masks)
         self.ui.show_all_masks.clicked.connect(self.show_all_masks)
-        MaskManager().mask_mgr_dialog_update.connect(self.update_table)
+        MaskManager().mask_mgr_dialog_update.connect(self.update_tree)
         self.ui.hide_all_boundaries.clicked.connect(self.hide_all_boundaries)
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
-        MaskManager().mask_mgr_dialog_update.connect(self.update_table)
+        MaskManager().mask_mgr_dialog_update.connect(self.update_tree)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
         self.ui.border_color.clicked.connect(self.set_boundary_color)
         self.ui.apply_changes.clicked.connect(self.apply_changes)
 
-    def update_table(self):
+    def update_tree(self):
         # Sort masks by creation view mode
         sorted_masks = sorted(
             MaskManager().masks.values(),
             key=attrgetter('creation_view_mode')
         )
-        with block_signals(self.ui.masks_table):
-            self.ui.masks_table.setRowCount(0)
+        with block_signals(self.ui.masks_tree):
+            self.ui.masks_tree.clear()
             # Group masks by creation view mode
             for mode, masks in groupby(sorted_masks,
                                        key=attrgetter('creation_view_mode')):
                 # Create header item based on the mode the masks were created in
-                row = self.ui.masks_table.rowCount()
-                self.ui.masks_table.insertRow(row)
-                text = f'{mode.capitalize()} Mode Masks'
-                mode_item = self.create_header_item(text)
-                self.ui.masks_table.setItem(row, 0, mode_item)
-                self.ui.masks_table.setSpan(row, 0, 1, 3)
+                mode_item = QTreeWidgetItem([f'{mode.capitalize()} Mode Masks'])
+                self.ui.masks_tree.addTopLevelItem(mode_item)
 
                 for mask in masks:
-                    row = self.ui.masks_table.rowCount()
-                    # Add label
-                    self.ui.masks_table.insertRow(row)
-                    self.ui.masks_table.setItem(row, 0, QTableWidgetItem(mask.name))
+                    # Create mask item
+                    mask_item = QTreeWidgetItem([mask.name])
+                    mode_item.addChild(mask_item)
 
                     # Add combo box to select mask presentation
                     mask_type = MaskManager().masks[mask.name].type
@@ -103,21 +98,16 @@ class MaskManagerDialog(QObject):
                         if mask.name in MaskManager().visible_boundaries:
                             idx += MaskStatus.boundary
                     presentation_combo.setCurrentIndex(idx)
-                    self.ui.masks_table.setCellWidget(row, 1, presentation_combo)
+                    self.ui.masks_tree.setItemWidget(mask_item, 1, presentation_combo)
                     presentation_combo.currentIndexChanged.connect(
                         lambda i, k=mask.name: self.track_mask_presentation_change(i, k))
 
                     # Add push button to remove mask
                     pb = QPushButton('Remove Mask')
-                    self.ui.masks_table.setCellWidget(row, 2, pb)
-                    pb.clicked.connect(lambda i=row, k=mask.name: self.remove_mask(i, k))
+                    self.ui.masks_tree.setItemWidget(mask_item, 2, pb)
+                    pb.clicked.connect(lambda checked, k=mask.name: self.remove_mask(k))
 
-    def create_header_item(self, text):
-        item = QTableWidgetItem(text)
-        item.setTextAlignment(Qt.AlignCenter)
-        item.setFlags(Qt.ItemIsEnabled)  # Keep enabled but prevent editing
-        item.setFont(QFont(item.font().family(), item.font().pointSize(), QFont.Bold))
-        return item
+            self.ui.masks_tree.expandAll()
 
     def track_mask_presentation_change(self, index, name):
         self.changed_masks[name] = index
@@ -140,12 +130,11 @@ class MaskManagerDialog(QObject):
                 MaskManager().update_border_visibility(name, False)
         MaskManager().masks_changed()
 
-    def remove_mask(self, row, name):
+    def remove_mask(self, name):
         scrollbar = self.ui.masks_table.verticalScrollBar()
         scroll_value = scrollbar.value()
         MaskManager().remove_mask(name)
-        self.ui.masks_table.removeRow(row)
-        self.update_table()
+        self.update_tree()
         MaskManager().masks_changed()
         self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
 
@@ -161,13 +150,13 @@ class MaskManagerDialog(QObject):
         self.update_table()
 
     def context_menu_event(self, event):
-        index = self.ui.masks_table.indexAt(event)
-        if index.row() >= 0:
-            menu = QMenu(self.ui.masks_table)
+        item = self.ui.masks_tree.itemAt(event)
+        if item and item.parent():  # Only for mask items, not mode items
+            menu = QMenu(self.ui.masks_tree)
             export = menu.addAction('Export Mask')
             action = menu.exec(QCursor.pos())
             if action == export:
-                selection = self.ui.masks_table.item(index.row(), 0).text()
+                selection = item.text(0)
                 MaskManager().write_single_mask(selection)
 
     def export_masks_to_file(self, data):
@@ -248,16 +237,20 @@ class MaskManagerDialog(QObject):
         fig.show()
 
     def update_presentation_selector(self):
-        with block_signals(self.ui.masks_table):
-            for i, key in enumerate(MaskManager().mask_names):
-                cb = self.ui.masks_table.cellWidget(i, 1)
-                idx = MaskStatus.none
-                if key in MaskManager().visible_masks:
-                    idx += MaskStatus.visible
-                if key in MaskManager().visible_boundaries:
-                    idx += MaskStatus.boundary
-                with block_signals(cb):
-                    cb.setCurrentIndex(idx)
+        with block_signals(self.ui.masks_tree):
+            for i in range(self.ui.masks_tree.topLevelItemCount()):
+                mode_item = self.ui.masks_tree.topLevelItem(i)
+                for j in range(mode_item.childCount()):
+                    mask_item = mode_item.child(j)
+                    name = mask_item.text(0)
+                    cb = self.ui.masks_tree.itemWidget(mask_item, 1)
+                    idx = MaskStatus.none
+                    if name in MaskManager().visible_masks:
+                        idx += MaskStatus.visible
+                    if name in MaskManager().visible_boundaries:
+                        idx += MaskStatus.boundary
+                    with block_signals(cb):
+                        cb.setCurrentIndex(idx)
 
     def hide_all_masks(self):
         for name in MaskManager().mask_names:
