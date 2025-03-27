@@ -66,7 +66,7 @@ class MaskManagerDialog(QObject):
 
     def create_mode_source_string(self, mode, source):
         mode_str = f'{mode.capitalize()} Mode'
-        source_str = f' - {source} Source' if source else ''
+        source_str = f' - {source}' if source else ''
         return f'{mode_str}{source_str}'
 
     def update_presentation_combo(self, item, mask):
@@ -90,6 +90,7 @@ class MaskManagerDialog(QObject):
                                     QFont.Bold))
         self.ui.masks_tree.addTopLevelItem(mode_item)
         self.mask_tree_items[mode_item.text(0)] = mode_item
+        self.ui.masks_tree.expandItem(mode_item)
         return mode_item
 
     def create_mask_item(self, parent_item, mask):
