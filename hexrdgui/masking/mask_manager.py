@@ -25,7 +25,6 @@ from abc import ABC, abstractmethod
 class Mask(ABC):
     def __init__(self, name=None, mtype='', visible=True, show_border=False, mode=ViewType.raw, xray_source=None):
         self.type = mtype
-        self.name = name
         self.visible = visible
         self.show_border = show_border
         self.masked_arrays = None
@@ -35,6 +34,15 @@ class Mask(ABC):
         if mode == ViewType.polar and HexrdConfig().has_multi_xrs and xray_source is None:
             # The x-ray source is only relevant for polar masks
             self.xray_source = HexrdConfig().active_beam_name
+        self.name = name
+        if name is None:
+            prefix = self.type
+            if self.xray_source is not None:
+                prefix = f'{self.xray_source}_{prefix}'
+            else:
+                prefix = f'{mode}_{prefix}'
+            # Enforce name uniqueness
+            self.name = unique_name(MaskManager().mask_names, f'{prefix}_mask')
 
     def get_masked_arrays(self):
         if self.masked_arrays is None:
@@ -295,15 +303,13 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.masks_changed()
         self.mask_mgr_dialog_update.emit()
 
-    def add_mask(self, name, data, mtype, visible=True):
-        # Enforce name uniqueness
-        name = unique_name(self.mask_names, name)
+    def add_mask(self, data, mtype, name=None, visible=True):
         if mtype == MaskType.threshold:
             new_mask = ThresholdMask(name, mtype, visible, mode=self.view_mode)
         else:
             new_mask = RegionMask(name, mtype, visible, mode=self.view_mode)
         new_mask.data = data
-        self.masks[name] = new_mask
+        self.masks[new_mask.name] = new_mask
         self.mask_mgr_dialog_update.emit()
         return new_mask
 
@@ -390,7 +396,7 @@ class MaskManager(QObject, metaclass=QSingleton):
             self.remove_mask(self.threshold_mask.name)
         else:
             self.add_mask(
-                'threshold', [-math.inf, math.inf], MaskType.threshold)
+                [-math.inf, math.inf], MaskType.threshold, name='threshold')
         self.mask_mgr_dialog_update.emit()
 
     def update_name(self, old_name, new_name):
