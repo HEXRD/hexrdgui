@@ -190,6 +190,8 @@ class MaskManagerDialog(QObject):
                 for mask in masks:
                     self.create_mask_item(mode_item, mask)
         self.ui.masks_tree.expandAll()
+        self.ui.masks_tree.resizeColumnToContents(0)
+        self.ui.masks_tree.resizeColumnToContents(1)
 
     def track_mask_presentation_change(self, index, mask):
         self.changed_masks[mask.name] = index
