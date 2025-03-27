@@ -345,6 +345,8 @@ class MainWindow(QObject):
         self.new_mask_added.connect(self.mask_manager_dialog.update_tree)
         self.image_mode_widget.tab_changed.connect(
             MaskManager().view_mode_changed)
+        self.image_mode_widget.tab_changed.connect(
+            self.mask_manager_dialog.update_collapsed)
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)

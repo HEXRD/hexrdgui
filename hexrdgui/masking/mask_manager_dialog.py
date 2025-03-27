@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QCursor, QColor, QFont
 
+from hexrdgui.constants import ViewType
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType, MaskStatus
@@ -61,6 +62,7 @@ class MaskManagerDialog(QObject):
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
         self.ui.border_color.clicked.connect(self.set_boundary_color)
         self.ui.apply_changes.clicked.connect(self.apply_changes)
+        HexrdConfig().active_beam_switched.connect(self.update_collapsed)
 
     def create_mode_source_string(self, mode, source):
         mode_str = f'{mode.capitalize()} Mode'
@@ -233,6 +235,24 @@ class MaskManagerDialog(QObject):
             if old_name in self.changed_masks:
                 self.changed_masks[new_name] = self.changed_masks.pop(old_name)
             self.mask_tree_items[new_name] = self.mask_tree_items.pop(old_name)
+
+    def update_collapsed(self):
+        mode = MaskManager().view_mode
+        if not HexrdConfig().has_multi_xrs:
+            return
+
+        if mode != ViewType.polar:
+            return
+
+        for beam_name in HexrdConfig().beam_names:
+            parent = self.create_mode_source_string(mode, beam_name)
+            item = self.mask_tree_items.get(parent, None)
+            if item is None:
+                continue
+            if beam_name == HexrdConfig().active_beam_name:
+                self.ui.masks_tree.expandItem(item)
+            else:
+                self.ui.masks_tree.collapseItem(item)
 
     def context_menu_event(self, event):
         item = self.ui.masks_tree.itemAt(event)

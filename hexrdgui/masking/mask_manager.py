@@ -253,14 +253,13 @@ class MaskManager(QObject, metaclass=QSingleton):
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().detectors_changed.connect(self.clear_all)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
+        HexrdConfig().active_beam_switched.connect(self.update_masks_for_active_beam)
 
-    def view_mode_changed(self, mode):
-        self.view_mode = mode
-        # Update MaskManagerDialog based on current view mode
+    def update_masks_for_active_beam(self):
         xrs = HexrdConfig().active_beam_name
         for mask in self.masks.values():
             # If mask's mode or source doesn't match current, hide it
-            if mask.creation_view_mode != mode or mask.xray_source != xrs:
+            if mask.creation_view_mode == ViewType.polar and mask.xray_source != xrs:
                 if not hasattr(mask, '_original_visible'):
                     # Remember original states so we can toggle back
                     mask._original_visible = mask.visible
@@ -277,6 +276,10 @@ class MaskManager(QObject, metaclass=QSingleton):
                     delattr(mask, '_original_show_border')
         self.mask_mgr_dialog_update.emit()
         self.masks_changed()
+
+    def view_mode_changed(self, mode):
+        self.view_mode = mode
+        self.update_masks_for_active_beam()
 
     def masks_changed(self):
         if self.view_mode in (ViewType.polar, ViewType.stereo):
