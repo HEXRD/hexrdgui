@@ -34,14 +34,15 @@ class MaskManagerDialog(QObject):
         self.ui.setWindowFlags(flags | Qt.Tool)
 
         self.changed_masks = {}
+        self.mask_tree_items = {}
 
         add_help_url(self.ui.button_box,
                      'configuration/masking/#managing-masks')
 
+        self.create_tree()
         self.setup_connections()
 
     def show(self):
-        self.update_tree()
         self.ui.show()
 
     def setup_connections(self):
@@ -57,67 +58,138 @@ class MaskManagerDialog(QObject):
         MaskManager().mask_mgr_dialog_update.connect(self.update_tree)
         self.ui.hide_all_boundaries.clicked.connect(self.hide_all_boundaries)
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
-        MaskManager().mask_mgr_dialog_update.connect(self.update_tree)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
         self.ui.border_color.clicked.connect(self.set_boundary_color)
         self.ui.apply_changes.clicked.connect(self.apply_changes)
 
+    def create_mode_source_string(self, mode, source):
+        mode_str = f'{mode.capitalize()} Mode'
+        source_str = f' - {source} Source' if source else ''
+        return f'{mode_str}{source_str}'
+
+    def update_presentation_combo(self, item, mask):
+        mask_type = MaskManager().masks[mask.name].type
+        idx = MaskStatus.none
+        if mask.name in MaskManager().visible_masks:
+            idx = MaskStatus.visible
+        if (mask_type == MaskType.region or
+                mask_type == MaskType.polygon or
+                mask_type == MaskType.pinhole):
+            if mask.name in MaskManager().visible_boundaries:
+                idx += MaskStatus.boundary
+        self.ui.masks_tree.itemWidget(item, 1).setCurrentIndex(idx)
+
+    def create_mode_item(self, mode, source):
+        text = self.create_mode_source_string(mode, source)
+        mode_item = QTreeWidgetItem([text])
+        mode_item.setFlags(Qt.ItemIsEnabled)
+        mode_item.setFont(0, QFont(mode_item.font(0).family(),
+                                    mode_item.font(0).pointSize(),
+                                    QFont.Bold))
+        self.ui.masks_tree.addTopLevelItem(mode_item)
+        self.mask_tree_items[mode_item.text(0)] = mode_item
+        return mode_item
+
+    def create_mask_item(self, parent_item, mask):
+        mask_item = QTreeWidgetItem([mask.name])
+        mask_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
+        # Store the original mask name in the item's data for use when name is changed
+        mask_item.setData(0, Qt.UserRole, mask.name)
+        parent_item.addChild(mask_item)
+        self.mask_tree_items[mask.name] = mask_item
+
+        # Add combo box to select mask presentation
+        presentation_combo = QComboBox()
+        presentation_combo.addItem('None')
+        presentation_combo.addItem('Visible')
+        mask_type = MaskManager().masks[mask.name].type
+        if (mask_type == MaskType.region or
+                mask_type == MaskType.polygon or
+                mask_type == MaskType.pinhole):
+            presentation_combo.addItem('Boundary Only')
+            presentation_combo.addItem('Visible + Boundary')
+        self.ui.masks_tree.setItemWidget(mask_item, 1, presentation_combo)
+        self.update_presentation_combo(mask_item, mask)
+        presentation_combo.currentIndexChanged.connect(
+            lambda i, k=mask: self.track_mask_presentation_change(i, k))
+
+        # Add push button to remove mask
+        pb = QPushButton('Remove Mask')
+        self.ui.masks_tree.setItemWidget(mask_item, 2, pb)
+        pb.clicked.connect(lambda checked, k=mask.name: self.remove_mask_item(k))
+
+    def update_mask_item(self, mask):
+        item = self.mask_tree_items[mask.name]
+        item.setText(0, mask.name)
+        self.update_presentation_combo(item, mask)
+
+    def remove_mask_item(self, name):
+        if name not in MaskManager().mask_names:
+            # Make sure it is a mask and not a mode item
+            return
+
+        scrollbar = self.ui.masks_table.verticalScrollBar()
+        scroll_value = scrollbar.value()
+        item = self.mask_tree_items.pop(name)
+        parent = item.parent()
+        parent.removeChild(item)
+        MaskManager().remove_mask(name)
+        # If parent has no more children, remove it too
+        if parent.childCount() == 0:
+            self.ui.masks_tree.takeTopLevelItem(
+                self.ui.masks_tree.indexOfTopLevelItem(parent))
+            self.mask_tree_items.pop(parent.text(0))
+        MaskManager().masks_changed()
+        self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
+
     def update_tree(self):
-        # Sort masks by creation view mode and xray source
-        sorted_masks = sorted(
-            MaskManager().masks.values(),
-            key=attrgetter('creation_view_mode', 'xray_source')
-        )
+        if self.ui.masks_tree.topLevelItemCount() == 0:
+            self.create_tree()
+            return
+
+        with block_signals(self.ui.masks_tree):
+            # Remove items for deleted masks
+            current_masks = set(MaskManager().masks.keys())
+            existing_items = set(self.mask_tree_items.keys())
+            removed_masks = existing_items - current_masks
+            for name in removed_masks:
+                self.remove_mask_item(name)
+
+            # Add new items and update existing ones
+            for mask in MaskManager().masks.values():
+                mode, source = [mask.creation_view_mode, mask.xray_source]
+                if mask.name not in self.mask_tree_items:
+                    # Create new mask item
+                    parent = self.create_mode_source_string(mode, source)
+                    if parent not in self.mask_tree_items:
+                        self.create_mode_item(mode, source)
+                    self.create_mask_item(self.mask_tree_items[parent], mask)
+                else:
+                    # Update existing mask item
+                    self.update_mask_item(mask)
+
+    def create_tree(self):
         with block_signals(self.ui.masks_tree):
             self.ui.masks_tree.clear()
+            # Sort masks by creation view mode and xray source
+            sorted_masks = sorted(
+                MaskManager().masks.values(),
+                key=attrgetter('creation_view_mode', 'xray_source')
+            )
+
             # Group masks by creation view mode and xray source
             for (mode, source), masks in groupby(sorted_masks,
                                                key=attrgetter('creation_view_mode', 'xray_source')):
-                # Create header item based on the mode and source
-                mode_str = f'{mode.capitalize()} Mode'
-                source_str = f' - {source} Source' if source else ''
-                mode_item = QTreeWidgetItem([f'{mode_str}{source_str}'])
-                mode_item.setFlags(Qt.ItemIsEnabled)  # Keep enabled but prevent editing
-                mode_item.setFont(0, QFont(mode_item.font(0).family(), mode_item.font(0).pointSize(), QFont.Bold))
-                self.ui.masks_tree.addTopLevelItem(mode_item)
+                # Create mode item
+                mode_item = self.create_mode_item(mode, source)
 
+                # Create items for each mask
                 for mask in masks:
-                    # Create mask item
-                    mask_item = QTreeWidgetItem([mask.name])
-                    mask_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
-                    mode_item.addChild(mask_item)
-                    # Store the original mask name in the item's data
-                    mask_item.setData(0, Qt.UserRole, mask.name)
+                    self.create_mask_item(mode_item, mask)
+        self.ui.masks_tree.expandAll()
 
-                    # Add combo box to select mask presentation
-                    mask_type = MaskManager().masks[mask.name].type
-                    presentation_combo = QComboBox()
-                    presentation_combo.addItem('None')
-                    presentation_combo.addItem('Visible')
-                    idx = MaskStatus.none
-                    if mask.name in MaskManager().visible_masks:
-                        idx = MaskStatus.visible
-                    if (mask_type == MaskType.region or
-                            mask_type == MaskType.polygon or
-                            mask_type == MaskType.pinhole):
-                        presentation_combo.addItem('Boundary Only')
-                        presentation_combo.addItem('Visible + Boundary')
-                        if mask.name in MaskManager().visible_boundaries:
-                            idx += MaskStatus.boundary
-                    presentation_combo.setCurrentIndex(idx)
-                    self.ui.masks_tree.setItemWidget(mask_item, 1, presentation_combo)
-                    presentation_combo.currentIndexChanged.connect(
-                        lambda i, k=mask.name: self.track_mask_presentation_change(i, k))
-
-                    # Add push button to remove mask
-                    pb = QPushButton('Remove Mask')
-                    self.ui.masks_tree.setItemWidget(mask_item, 2, pb)
-                    pb.clicked.connect(lambda checked, k=mask.name: self.remove_mask(k))
-
-            self.ui.masks_tree.expandAll()
-
-    def track_mask_presentation_change(self, index, name):
-        self.changed_masks[name] = index
+    def track_mask_presentation_change(self, index, mask):
+        self.changed_masks[mask.name] = index
         if not self.ui.apply_changes.isEnabled():
             self.ui.apply_changes.setEnabled(True)
 
@@ -136,14 +208,6 @@ class MaskManagerDialog(QObject):
                 MaskManager().update_mask_visibility(name, False)
                 MaskManager().update_border_visibility(name, False)
         MaskManager().masks_changed()
-
-    def remove_mask(self, name):
-        scrollbar = self.ui.masks_table.verticalScrollBar()
-        scroll_value = scrollbar.value()
-        MaskManager().remove_mask(name)
-        self.update_tree()
-        MaskManager().masks_changed()
-        self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
 
     def update_mask_name(self, item, column):
         if column != 0:
@@ -165,7 +229,10 @@ class MaskManagerDialog(QObject):
             # Store the new name before updating the manager
             item.setData(0, Qt.UserRole, new_name)
             MaskManager().update_name(old_name, new_name)
-            MaskManager().mask_mgr_dialog_update.emit()
+            # Update our tracking dictionaries
+            if old_name in self.changed_masks:
+                self.changed_masks[new_name] = self.changed_masks.pop(old_name)
+            self.mask_tree_items[new_name] = self.mask_tree_items.pop(old_name)
 
     def context_menu_event(self, event):
         item = self.ui.masks_tree.itemAt(event)
