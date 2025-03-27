@@ -274,13 +274,11 @@ class MaskRegionsDialog(QObject):
 
     def create_masks(self):
         for data in self.raw_mask_coords:
-            name = unique_name(
-                MaskManager().mask_names, f'{self.image_mode}_mask_0')
             if self.image_mode == 'raw':
                 coords = [data]
             elif self.image_mode == 'polar':
                 coords = convert_polar_to_raw(data)
-            MaskManager().add_mask(name, coords, MaskType.region)
+            MaskManager().add_mask(coords, MaskType.region)
 
         masks_changed_signal = {
             'raw': MaskManager().raw_masks_changed,

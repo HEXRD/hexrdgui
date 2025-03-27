@@ -818,15 +818,12 @@ class MainWindow(QObject):
     def run_apply_hand_drawn_mask(self, dets, line_data):
         if self.image_mode == ViewType.polar:
             for line in line_data:
-                name = unique_name(MaskManager().mask_names, 'polar_mask_0')
                 raw_line = convert_polar_to_raw([line])
-                MaskManager().add_mask(name, raw_line, MaskType.polygon)
+                MaskManager().add_mask(raw_line, MaskType.polygon)
             MaskManager().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
-                name = unique_name(MaskManager().mask_names, 'raw_mask_0')
-                MaskManager().add_mask(
-                    name, [(det, line.copy())], MaskType.polygon)
+                MaskManager().add_mask([(det, line.copy())], MaskType.polygon)
             MaskManager().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
@@ -854,9 +851,8 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        name = unique_name(MaskManager().mask_names, 'laue_mask')
         raw_data = convert_polar_to_raw(data)
-        MaskManager().add_mask(name, raw_data, MaskType.laue)
+        MaskManager().add_mask(raw_data, MaskType.laue)
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
@@ -909,9 +905,8 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        name = unique_name(MaskManager().mask_names, 'powder_mask')
         raw_data = convert_polar_to_raw(data)
-        MaskManager().add_mask(name, raw_data, MaskType.powder)
+        MaskManager().add_mask(raw_data, MaskType.powder)
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
@@ -974,7 +969,7 @@ class MainWindow(QObject):
         if name in MaskManager().mask_names:
             MaskManager().masks[name].data = ph_masks
         else:
-            MaskManager().add_mask(name, ph_masks, MaskType.pinhole)
+            MaskManager().add_mask(ph_masks, MaskType.pinhole, name=name)
         MaskManager().raw_masks_changed.emit()
 
         self.new_mask_added.emit(self.image_mode)
