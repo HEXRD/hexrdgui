@@ -23,7 +23,15 @@ from abc import ABC, abstractmethod
 
 
 class Mask(ABC):
-    def __init__(self, name=None, mtype='', visible=True, show_border=False, mode=ViewType.raw, xray_source=None):
+    def __init__(
+        self,
+        name=None,
+        mtype='',
+        visible=True,
+        show_border=False,
+        mode=ViewType.raw,
+        xray_source=None
+    ):
         self.type = mtype
         self.visible = visible
         self.show_border = show_border
@@ -31,7 +39,10 @@ class Mask(ABC):
         self.masked_arrays_view_mode = ViewType.raw
         self.creation_view_mode = mode
         self.xray_source = xray_source
-        if mode == ViewType.polar and HexrdConfig().has_multi_xrs and xray_source is None:
+        if (
+            mode == ViewType.polar and
+            HexrdConfig().has_multi_xrs and xray_source is None
+        ):
             # The x-ray source is only relevant for polar masks
             self.xray_source = HexrdConfig().active_beam_name
         self.name = name
@@ -88,7 +99,15 @@ class Mask(ABC):
 
 
 class RegionMask(Mask):
-    def __init__(self, name='', mtype='', visible=True, show_border=False, mode=ViewType.raw, xray_source=None):
+    def __init__(
+        self,
+        name='',
+        mtype='',
+        visible=True,
+        show_border=False,
+        mode=ViewType.raw,
+        xray_source=None
+    ):
         super().__init__(name, mtype, visible, show_border, mode, xray_source)
         self._raw = None
 
@@ -115,7 +134,10 @@ class RegionMask(Mask):
             )
 
     def get_masked_arrays(self, image_mode=ViewType.raw, instr=None):
-        if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
+        if (
+            self.masked_arrays is None or
+            self.masked_arrays_view_mode != image_mode
+        ):
             self.update_masked_arrays(image_mode, instr)
 
         return self.masked_arrays
@@ -161,8 +183,15 @@ class RegionMask(Mask):
 
 
 class ThresholdMask(Mask):
-    def __init__(self, name='', mtype='', visible=True, mode=ViewType.raw, xray_source=None):
-        super().__init__(name, mtype, visible, mode=mode, xray_source=xray_source)
+    def __init__(
+        self,
+        name='',
+        mtype='',
+        visible=True,
+        mode=ViewType.raw,
+        xray_source=None
+    ):
+        super().__init__(name, mtype, visible, mode, xray_source)
         self.min_val = -math.inf
         self.max_val = math.inf
 
@@ -261,13 +290,17 @@ class MaskManager(QObject, metaclass=QSingleton):
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().detectors_changed.connect(self.clear_all)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
-        HexrdConfig().active_beam_switched.connect(self.update_masks_for_active_beam)
+        HexrdConfig().active_beam_switched.connect(
+            self.update_masks_for_active_beam)
 
     def update_masks_for_active_beam(self):
         xrs = HexrdConfig().active_beam_name
         for mask in self.masks.values():
             # If mask's mode or source doesn't match current, hide it
-            if mask.creation_view_mode == ViewType.polar and mask.xray_source != xrs:
+            if (
+                mask.creation_view_mode == ViewType.polar and
+                mask.xray_source != xrs
+            ):
                 if not hasattr(mask, '_original_visible'):
                     # Remember original states so we can toggle back
                     mask._original_visible = mask.visible
@@ -277,8 +310,10 @@ class MaskManager(QObject, metaclass=QSingleton):
             else:
                 # Restore original states if they exist
                 if hasattr(mask, '_original_visible'):
-                    self.update_mask_visibility(mask.name, mask._original_visible)
-                    self.update_border_visibility(mask.name, mask._original_show_border)
+                    self.update_mask_visibility(
+                        mask.name, mask._original_visible)
+                    self.update_border_visibility(
+                        mask.name, mask._original_show_border)
                     # Clear the stored states
                     delattr(mask, '_original_visible')
                     delattr(mask, '_original_show_border')

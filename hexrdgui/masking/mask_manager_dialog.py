@@ -85,9 +85,11 @@ class MaskManagerDialog(QObject):
         text = self.create_mode_source_string(mode, source)
         mode_item = QTreeWidgetItem([text])
         mode_item.setFlags(Qt.ItemIsEnabled)
-        mode_item.setFont(0, QFont(mode_item.font(0).family(),
-                                    mode_item.font(0).pointSize(),
-                                    QFont.Bold))
+        mode_item.setFont(0, QFont(
+            mode_item.font(0).family(),
+            mode_item.font(0).pointSize(),
+            QFont.Bold
+        ))
         self.ui.masks_tree.addTopLevelItem(mode_item)
         self.mask_tree_items[mode_item.text(0)] = mode_item
         self.ui.masks_tree.expandItem(mode_item)
@@ -95,8 +97,9 @@ class MaskManagerDialog(QObject):
 
     def create_mask_item(self, parent_item, mask):
         mask_item = QTreeWidgetItem([mask.name])
-        mask_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
-        # Store the original mask name in the item's data for use when name is changed
+        mask_item.setFlags(
+            Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
+        # Store the original mask name in the item's data
         mask_item.setData(0, Qt.UserRole, mask.name)
         parent_item.addChild(mask_item)
         self.mask_tree_items[mask.name] = mask_item
@@ -119,7 +122,8 @@ class MaskManagerDialog(QObject):
         # Add push button to remove mask
         pb = QPushButton('Remove Mask')
         self.ui.masks_tree.setItemWidget(mask_item, 2, pb)
-        pb.clicked.connect(lambda checked, k=mask.name: self.remove_mask_item(k))
+        pb.clicked.connect(
+            lambda checked, k=mask.name: self.remove_mask_item(k))
 
     def update_mask_item(self, mask):
         item = self.mask_tree_items[mask.name]
@@ -181,8 +185,11 @@ class MaskManagerDialog(QObject):
             )
 
             # Group masks by creation view mode and xray source
-            for (mode, source), masks in groupby(sorted_masks,
-                                               key=attrgetter('creation_view_mode', 'xray_source')):
+            grouped = groupby(
+                sorted_masks,
+                key=attrgetter('creation_view_mode', 'xray_source')
+            )
+            for (mode, source), masks in grouped:
                 # Create mode item
                 mode_item = self.create_mode_item(mode, source)
 

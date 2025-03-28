@@ -2,7 +2,6 @@ from PySide6.QtCore import QObject, Signal, Qt
 
 from hexrdgui.masking.create_raw_mask import convert_polar_to_raw
 from hexrdgui.interactive_template import InteractiveTemplate
-from hexrdgui.utils import unique_name
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.mask_manager import MaskManager

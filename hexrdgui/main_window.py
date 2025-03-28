@@ -76,7 +76,7 @@ from hexrdgui.indexing.fit_grains_tree_view_dialog import (
 )
 from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals, unique_name
+from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
