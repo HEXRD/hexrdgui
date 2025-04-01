@@ -40,15 +40,15 @@ elseif(WIN32)
     )
 
   set(CPACK_WIX_PRODUCT_ICON
-    "@CMAKE_CURRENT_LIST_DIR@/hexrd.ico"
+    "${CMAKE_CURRENT_LIST_DIR}/hexrd.ico"
     )
 
   set(CPACK_WIX_UI_BANNER
-    "@CMAKE_CURRENT_LIST_DIR@/hexrd_wix_ui_banner.png"
+    "${CMAKE_CURRENT_LIST_DIR}/hexrd_wix_ui_banner.png"
     )
 
   set(CPACK_WIX_UI_DIALOG
-    "@CMAKE_CURRENT_LIST_DIR@/hexrd_wix_ui_dialog.png"
+    "${CMAKE_CURRENT_LIST_DIR}/hexrd_wix_ui_dialog.png"
     )
 
   set(CPACK_WIX_UPGRADE_GUID "5F369ED0-05D7-4CBA-B533-D1A1B3F445C3")
