@@ -1,11 +1,14 @@
 from pathlib import Path
 from PySide6.QtCore import QCoreApplication, Qt
-from PySide6.QtWidgets import QGridLayout, QLabel, QSlider, QSpinBox, QWidget
+from PySide6.QtWidgets import (
+    QGridLayout, QLabel, QLineEdit, QPushButton, QSlider, QWidget
+)
 from PySide6.QtGui import QFontMetrics, QPixmap
 from hexrdgui import resource_loader
 
 import hexrdgui.resources.icons
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.utils import block_signals
 
 
 class ImageSeriesInfoToolbar(QWidget):
@@ -62,6 +65,8 @@ class ImageSeriesToolbar(QWidget):
         self.ims = ims
         self.slider = None
         self.frame = None
+        self.back_button = None
+        self.forward_button = None
         self.layout = None
         self.widget = None
 
@@ -74,14 +79,19 @@ class ImageSeriesToolbar(QWidget):
 
     def setup_connections(self):
         self.slider.valueChanged.connect(self.val_changed)
-        self.slider.valueChanged.connect(self.frame.setValue)
-        self.frame.valueChanged.connect(
-            self.slider.setSliderPosition)
+        self.slider.valueChanged.connect(lambda i: self.frame.setText(str(i)))
+        self.frame.textChanged.connect(
+            lambda i: self.slider.setSliderPosition(int(i)))
+        self.back_button.clicked.connect(lambda: self.change_frame(-1))
+        self.forward_button.clicked.connect(lambda: self.change_frame(1))
 
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
-        self.frame = QSpinBox(self.parent())
-        self.frame.setKeyboardTracking(False)
+        self.frame = QLineEdit(self.parent())
+        self.back_button = QPushButton('<<')
+        self.back_button.setFixedSize(35, 22)
+        self.forward_button = QPushButton('>>')
+        self.forward_button.setFixedSize(35, 22)
 
         self.widget = QWidget(self.parent())
         self.omega_label = QLabel(self.parent())
@@ -95,10 +105,15 @@ class ImageSeriesToolbar(QWidget):
         example_label_text = omega_label_text(359.999, 359.999)
         text_width = metrics.boundingRect(example_label_text).width()
         self.omega_label.setFixedWidth(text_width)
+        frame_text_width = metrics.boundingRect('9999').width()
+        self.frame.setFixedWidth(frame_text_width)
+        self.frame.setAlignment(Qt.AlignCenter)
 
         self.layout = QGridLayout(self.widget)
-        self.layout.addWidget(self.slider, 0, 0, 1, 9)
-        self.layout.addWidget(self.frame, 0, 9, 1, 1)
+        self.layout.addWidget(self.slider, 0, 0, 1, 7)
+        self.layout.addWidget(self.back_button, 0, 7, 1, 1)
+        self.layout.addWidget(self.frame, 0, 8, 1, 1)
+        self.layout.addWidget(self.forward_button, 0, 9, 1, 1)
         self.layout.addWidget(self.omega_label, 0, 10, 1, 1)
 
         self.widget.setLayout(self.layout)
@@ -119,11 +134,11 @@ class ImageSeriesToolbar(QWidget):
                 self.slider.setMinimumWidth(self.parent().width()//2)
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
-                self.frame.setMaximum(size)
                 self.frame.setToolTip(f'Max: {size}')
                 self.slider.setToolTip(f'Max: {size}')
                 self.slider.setValue(0)
-                self.frame.setValue(self.slider.value())
+                self.frame.setText(str(self.slider.value()))
+                self.back_button.setEnabled(False)
         else:
             self.show = False
             self.widget.setVisible(self.show)
@@ -148,6 +163,7 @@ class ImageSeriesToolbar(QWidget):
 
     def val_changed(self, pos):
         self.parent().change_ims_image(pos)
+        self.update_back_forward_buttons(pos)
         self.update_omega_label_text()
 
     def update_omega_label_text(self):
@@ -160,6 +176,17 @@ class ImageSeriesToolbar(QWidget):
             return
 
         self.omega_label.setText(omega_label_text(*ome_range))
+
+    def update_back_forward_buttons(self, val):
+        self.back_button.setEnabled(self.slider.minimum() != val)
+        self.forward_button.setEnabled(self.slider.maximum() != val)
+
+    def change_frame(self, value):
+        with block_signals(self.frame, self.slider):
+            new_frame = int(self.frame.text()) + value
+            self.frame.setText(str(new_frame))
+            self.slider.setSliderPosition(new_frame)
+        self.val_changed(new_frame)
 
 
 def omega_label_text(ome_min, ome_max):
