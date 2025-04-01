@@ -172,8 +172,11 @@ class CalibrationDialogCallbacks(ABCQObject):
             self.instr,
             stack_item['instr_params'],
         )
-        for calibrator in self.calibrator.calibrators:
-            calibrator.update_from_lmfit_params(stack_item['params'])
+        if hasattr(self.calibrator, 'calibrators'):
+            # The instrument calibrator will have a list of calibrators
+            # The structureless calibrator will not
+            for calibrator in self.calibrator.calibrators:
+                calibrator.update_from_lmfit_params(stack_item['params'])
 
         self.update_config_from_instrument()
         self.update_dialog_from_calibrator()
