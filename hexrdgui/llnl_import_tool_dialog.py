@@ -133,7 +133,7 @@ class LLNLImportToolDialog(QObject):
         self.current_image_selection = None
         self.defaults = {}
         self.import_in_progress = False
-        self.loaded_images = []
+        self.loaded_images = {}
         self.canvas = parent.image_tab_widget.active_canvas
         self.detector_images = {}
         self.atlas_coords = None
@@ -162,6 +162,7 @@ class LLNLImportToolDialog(QObject):
             self.ui.instr_settings,
             self.ui.load_atlas,
             self.ui.atlas_label,
+            self.ui.completed_dets_and_ips,
             visible=False)
 
         self.update_config_settings()
@@ -210,9 +211,6 @@ class LLNLImportToolDialog(QObject):
         for w in widgets:
             w.setVisible(visible)
             w.setEnabled(visible)
-        # Resize on show/hide widgets to prevent large empty spaces
-        self.ui.setMinimumHeight(315)
-        QTimer.singleShot(0, lambda: self.ui.adjustSize())
 
     def set_default_color(self):
         self.outline_color = '#00ffff'
@@ -560,10 +558,11 @@ class LLNLImportToolDialog(QObject):
         file_name = Path(selected_file).stem
         if file_name.endswith('999'):
             self.ui.detector_files_label.setText(file_name)
-            self.loaded_images.append(selected_file)
+            self.ui.detector_files_label.setToolTip(file_name)
             self.detector_images[self.detector]['data'] = selected_file
         else:
             self.ui.dark_files_label.setText(file_name)
+            self.ui.dark_files_label.setToolTip(file_name)
             self.detector_images[self.detector]['dark'] = selected_file
         selected = self.detector_images[self.detector]
 
@@ -592,13 +591,21 @@ class LLNLImportToolDialog(QObject):
                 self.detector_images.setdefault(self.detector, {})
                 self.detector_images[self.detector]['data'] = data
                 self.detector_images[self.detector]['dark'] = dark
+                self.loaded_images[f'{self.detector} data'] = data
+                self.loaded_images[f'{self.detector} dark'] = dark
                 self.accept_detector(data, dark)
             self.detector = original_det
             # Update UI to reflect selected & found files
             self.ui.detector_files_label.setText(
                 Path(self.detector_images[self.detector]['data']).stem
             )
+            self.ui.detector_files_label.setToolTip(
+                Path(self.detector_images[self.detector]['data']).stem
+            )
             self.ui.dark_files_label.setText(
+                Path(self.detector_images[self.detector]['dark']).stem
+            )
+            self.ui.dark_files_label.setToolTip(
                 Path(self.detector_images[self.detector]['dark']).stem
             )
             self.current_image_selection = self.detector
@@ -628,7 +635,7 @@ class LLNLImportToolDialog(QObject):
                                             dir=HexrdConfig().images_dir
                                         )
         if selected_file:
-            self.loaded_images.append(selected_file)
+            self.loaded_images[self.image_plate] = selected_file
             HexrdConfig().set_images_dir(selected_file)
 
             files, manual = ImageLoadManager().load_images([selected_file])
@@ -658,6 +665,7 @@ class LLNLImportToolDialog(QObject):
 
             file_names = [os.path.split(f[0])[1] for f in files]
             self.ui.image_plate_files_label.setText(', '.join(file_names))
+            self.ui.image_plate_files_label.setToolTip(', '.join(file_names))
             self.enable_widgets(
                 self.ui.add_transform,
                 self.ui.finalize,
@@ -826,8 +834,19 @@ class LLNLImportToolDialog(QObject):
             self.ui.add_transform,
             self.ui.accept_detector,
             enabled=False)
-        self.ui.completed_dets_and_ips.setText(
-            ', '.join(set(self.completed)))
+        self.set_widget_visibility(
+            self.ui.completed_dets_and_ips,
+            visible=True)
+        if self.instrument == 'PXRDIP':
+            shared_file = next(iter(self.loaded_images.values()))
+            self.loaded_images[self.current_image_selection] = shared_file
+        loaded = [
+            f'{d}: {Path(self.loaded_images[d]).stem}'
+            for d in sorted(self.loaded_images)
+        ]
+        text = '\n'.join(set(loaded))
+        self.ui.completed_text.setText(text)
+        self.ui.completed_text.setToolTip(text)
 
     def finalize(self):
         detectors = self.ip_and_det_defaults['default_config'].get(
@@ -899,9 +918,13 @@ class LLNLImportToolDialog(QObject):
         self.ui.image_plates.setCurrentIndex(0)
         self.ui.detectors.setCurrentIndex(0)
         self.ui.image_plate_files_label.setText('')
+        self.ui.image_plate_files_label.setToolTip('')
         self.ui.detector_files_label.setText('')
+        self.ui.detector_files_label.setToolTip('')
         self.ui.dark_files_label.setText('')
-        self.ui.completed_dets_and_ips.setText('')
+        self.ui.dark_files_label.setToolTip('')
+        self.ui.completed_text.setText('')
+        self.ui.completed_text.setToolTip('')
         not_default = self.ui.config_selection.currentIndex() != 0
         self.ui.load_config.setEnabled(not_default)
         self.ui.config_file_label.setEnabled(not_default)
@@ -1004,7 +1027,7 @@ class LLNLImportToolDialog(QObject):
             det_config = HexrdConfig().config['instrument']['detectors'][det]
             det_config['buffer'] = self.edited_images[det]['panel_buffer']
 
-        HexrdConfig().recent_images = self.loaded_images
+        HexrdConfig().recent_images = list(self.loaded_images.values())
 
         self.close_widget()
         self.ui.instrument.setDisabled(False)

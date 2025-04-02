@@ -6,9 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>565</width>
+    <width>429</width>
     <height>883</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>450</width>
+    <height>524287</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>LLNL Import Tool</string>
@@ -770,30 +782,7 @@
        <string>Finalize Instrument</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="0" column="0" colspan="2">
-        <widget class="QLabel" name="completed_label">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string>Completed Detectors:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="completed_dets_and_ips">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QPushButton" name="cancel">
          <property name="enabled">
           <bool>true</bool>
@@ -803,7 +792,17 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="2" column="2">
+        <widget class="QPushButton" name="complete">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Complete and Reload Instrument</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -816,14 +815,58 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="complete">
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="completed_label">
          <property name="enabled">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="text">
-          <string>Complete and Reload Instrument</string>
+          <string>Completed Detectors:</string>
          </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="3">
+        <widget class="QScrollArea" name="completed_dets_and_ips">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="completed_dets_and_ips_content">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>385</width>
+            <height>68</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QLabel" name="completed_text">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="wordWrap">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
