@@ -26,7 +26,9 @@ from hexrdgui.calibration.cartesian_plot import cartesian_viewer
 from hexrdgui.calibration.polar_plot import polar_viewer
 from hexrdgui.calibration.raw_iviewer import raw_iviewer
 from hexrdgui.calibration.stereo_plot import stereo_viewer
-from hexrdgui.constants import OverlayType, PolarXAxisType, ViewType
+from hexrdgui.constants import (
+    SCROLL_ZOOM_FACTOR, OverlayType, PolarXAxisType, ViewType
+)
 from hexrdgui.create_hedm_instrument import create_view_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
@@ -76,6 +78,7 @@ class ImageCanvas(FigureCanvas):
         self.raw_view_images_dict = {}
         self._mask_boundary_artists = []
         self._latest_compute_view_worker = None
+        self.original_lims = {}
 
         # Track the current mode so that we can more lazily clear on change.
         self.mode = None
@@ -122,6 +125,7 @@ class ImageCanvas(FigureCanvas):
             self.on_beam_energy_modified)
         HexrdConfig().panel_distortion_modified.connect(
             self.on_panel_distortion_changed)
+        self.mpl_connect('scroll_event', self.on_scroll)
 
     @property
     def thread_pool(self):
@@ -180,6 +184,7 @@ class ImageCanvas(FigureCanvas):
         self.remove_all_overlay_artists()
         self.clear_azimuthal_integral_axis()
         self.mode = None
+        self.original_lims.clear()
 
     def clear_azimuthal_integral_axis(self):
         self.clear_wppf_plot()
@@ -1911,6 +1916,65 @@ class ImageCanvas(FigureCanvas):
             *np.vstack(all_verts).T,
             **kwargs,
         )
+
+    def on_scroll(self, event):
+        if event.inaxes is None:
+            return
+
+        # Get the current axis
+        ax = event.inaxes
+        # Remember the original limits so we can't zoom out too far
+        key = self.mode if ax.title.get_text() == '' else ax.title.get_text()
+        if key not in self.original_lims:
+            self.original_lims[key] = [ax.get_xlim(), ax.get_ylim()]
+
+        # Get the current x and y limits
+        cur_xlim = ax.get_xlim()
+        cur_ylim = ax.get_ylim()
+
+        # Get the cursor position
+        xdata = event.xdata
+        ydata = event.ydata
+
+        if event.button == 'up':
+            scale_factor = 1/SCROLL_ZOOM_FACTOR  # zoom in
+        else:
+            scale_factor = SCROLL_ZOOM_FACTOR  # zoom out
+
+        # Set new shape
+        new_width = (cur_xlim[1] - cur_xlim[0]) * scale_factor
+        new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
+
+        # Calculate new limits while keeping cursor position fixed
+        relx = (cur_xlim[1] - xdata)/(cur_xlim[1] - cur_xlim[0])
+        rely = (cur_ylim[1] - ydata)/(cur_ylim[1] - cur_ylim[0])
+        new_xlim_left = xdata - new_width * (1-relx)
+        new_xlim_right = xdata + new_width * relx
+        new_ylim_bottom = ydata - new_height * (1-rely)
+        new_ylim_top = ydata + new_height * rely
+
+        # Set the new limits
+        original_xlim, original_ylim = self.original_lims[key]
+        orig_xlim_left, orig_xlim_right = original_xlim
+        orig_ylim_bottom, orig_ylim_top = original_ylim
+        ax.set_xlim([
+            max(orig_xlim_left, new_xlim_left),
+            min(orig_xlim_right, new_xlim_right)
+        ])
+        if self.mode == ViewType.raw or self.mode == ViewType.polar:
+            # y-axis is reversed
+            ax.set_ylim([
+                min(orig_ylim_bottom, new_ylim_bottom),
+                max(orig_ylim_top, new_ylim_top)
+            ])
+        else:
+            ax.set_ylim([
+                max(orig_ylim_bottom, new_ylim_bottom),
+                min(orig_ylim_top, new_ylim_top)
+            ])
+
+        # Redraw the canvas
+        self.draw_idle()
 
 
 class PolarXAxisTickLocator(AutoLocator):
