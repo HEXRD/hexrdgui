@@ -541,12 +541,13 @@ class MainWindow(QObject):
 
         return selected_file
 
-    def open_image_files(self):
-        # Get the most recent images dir
-        images_dir = HexrdConfig().images_dir
+    def open_image_files(self, checked=False, selected_files=None):
+        if selected_files is None:
+            # Get the most recent images dir
+            images_dir = HexrdConfig().images_dir
 
-        selected_files, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, dir=images_dir)
+            selected_files, selected_filter = QFileDialog.getOpenFileNames(
+                self.ui, dir=images_dir)
 
         if selected_files:
             # Save the chosen dir
@@ -1044,15 +1045,19 @@ class MainWindow(QObject):
         self.config_loaded.emit()
 
     def eventFilter(self, target, event):
-        if type(target) == QMainWindow and event.type() == QEvent.Close:
-            if self.confirm_application_close:
-                msg = 'Are you sure you want to quit?'
-                response = QMessageBox.question(self.ui, 'HEXRD', msg)
-                if response == QMessageBox.No:
-                    event.ignore()
-                    return True
-            # If the main window is closing, save the config settings
-            HexrdConfig().save_settings()
+        if type(target) == QMainWindow:
+            if event.type() == QEvent.Close:
+                if self.confirm_application_close:
+                    msg = 'Are you sure you want to quit?'
+                    response = QMessageBox.question(self.ui, 'HEXRD', msg)
+                    if response == QMessageBox.No:
+                        event.ignore()
+                        return True
+                # If the main window is closing, save the config settings
+                HexrdConfig().save_settings()
+            elif event.type() == QEvent.DragEnter or event.type() == QEvent.Drop:
+                self.validateDragDropEvent(event)
+                return True
 
         if not hasattr(self, '_first_paint_occurred'):
             if type(target) == QMainWindow and event.type() == QEvent.Paint:
@@ -1729,3 +1734,55 @@ class MainWindow(QObject):
         # The dialog should have modified HexrdConfig's median filter options
         # already. Just apply it now.
         HexrdConfig().apply_median_filter_correction = b
+
+    def validateDragDropEvent(self, event):
+        mime_data = event.mimeData()
+        if not mime_data.hasUrls():
+            event.ignore()
+            return
+
+        # Make sure the selction(s) are files with a supported file extensions
+        paths = [url.toLocalFile() for url in mime_data.urls()]
+        supported_extensions = [
+            '.hexrd',
+            '.yml', '.yaml',
+            '.h5', '.hdf5',
+            '.tif', '.tiff',
+            '.png',
+            '.jpg', '.jpeg'
+        ]
+        exts = [Path(path).suffix.lower() for path in paths]
+        if any(ext not in supported_extensions for ext in exts):
+            event.ignore()
+            return
+
+        if event.type() == QEvent.Drop:
+            self.dropEvent(paths)
+        else:
+            event.acceptProposedAction()
+
+    def dropEvent(self, paths):
+        ext = Path(paths[0]).suffix.lower()
+        if len(paths) == 1:
+            try:
+                # if hdf5 try as state, then materials, then images
+                if ext in ('.h5', '.hdf5'):
+                    try:
+                        # Try loading it as a state file first
+                        self.load_state_file(paths[0])
+                    except:
+                        # If that fails, try loading it as a materials file
+                        HexrdConfig().load_materials(paths[0])
+                elif ext in ('.hexrd', '.yml', '.yaml'):
+                    try:
+                        # Try loading it as an instrument config first
+                        HexrdConfig().load_instrument_config(paths[0])
+                    except:
+                        # If that fails, try loading it as an image file
+                        self.open_image_files(selected_files=paths)
+            except:
+                # If everything else fails, try loading as images
+                self.open_image_files(selected_files=paths)
+        else:
+            # If there are multiple files, try loading as images
+            self.open_image_files(selected_files=paths)
