@@ -449,6 +449,19 @@ class LLNLImportToolDialog(QObject):
             self.ui.instrument.setDisabled(selected)
             self.detector = self.ui.detectors.currentText()
             self.current_image_selection = self.detector
+            # If we have already loaded this detector's image, reload it
+            if self.detector in self.completed:
+                self.current_image_selection = self.detector
+                # Find the data and dark files for this detector
+                data_file = self.loaded_images[f'{self.detector} data']
+                dark_file = self.loaded_images[f'{self.detector} dark']
+                # Update the label text and tooltip
+                self.ui.detector_files_label.setText(Path(data_file).stem)
+                self.ui.detector_files_label.setToolTip(Path(data_file).stem)
+                self.ui.dark_files_label.setText(Path(dark_file).stem)
+                self.ui.dark_files_label.setToolTip(Path(dark_file).stem)
+                # Reload the image
+                self.manually_load_detector_images()
         finally:
             self.cmap.block_updates(False)
 
@@ -460,12 +473,27 @@ class LLNLImportToolDialog(QObject):
             self.ui.instrument.setDisabled(selected)
             self.image_plate = self.ui.image_plates.currentText()
             self.current_image_selection = self.image_plate
-            self.add_template()
-            if self.instrument == 'TARDIS':
-                self.cancel_workflow.emit()
-                self.enable_widgets(self.ui.accept_template, enabled=False)
+            # If we have already loaded this image plate's image, reload it
+            if self.image_plate in self.edited_images:
+                # Find the image plate file
+                ip_file = self.loaded_images[self.image_plate]
+                # Update the label text and tooltip
+                if self.image_plate in self.loaded_images:
+                    file_name = Path(self.loaded_images[self.image_plate]).stem
+                    self.ui.image_plate_files_label.setText(file_name)
+                    self.ui.image_plate_files_label.setToolTip(file_name)
+                # Reload the image
+                self.load_images(selected_file=ip_file)
+                # Re-add the template with the saved position and mark complete
+                self.add_template()
+                self.complete_current_selection()
             else:
-                self.enable_widgets(self.ui.accept_template, enabled=True)
+                self.add_template()
+                if self.instrument == 'TARDIS':
+                    self.cancel_workflow.emit()
+                    self.enable_widgets(self.ui.accept_template, enabled=False)
+                else:
+                    self.enable_widgets(self.ui.accept_template, enabled=True)
         finally:
             self.cmap.block_updates(False)
 
@@ -622,18 +650,20 @@ class LLNLImportToolDialog(QObject):
                 self.ui.accept_detector,
                 enabled=bool(selected['data'] and selected['dark']))
 
-    def load_images(self):
+    def load_images(self, checked=False, selected_file=None):
         # Needed to identify current image, regardless of image load path
         self.current_image_selection = self.image_plate
 
         self._set_transform()
 
-        caption = 'Select file(s)'
-        selected_file, selected_filter = QFileDialog.getOpenFileName(
-                                            self.ui,
-                                            caption,
-                                            dir=HexrdConfig().images_dir
-                                        )
+        if selected_file is None:
+            caption = 'Select file(s)'
+            selected_file, selected_filter = QFileDialog.getOpenFileName(
+                                                self.ui,
+                                                caption,
+                                                dir=HexrdConfig().images_dir
+                                            )
+
         if selected_file:
             self.loaded_images[self.image_plate] = selected_file
             HexrdConfig().set_images_dir(selected_file)
