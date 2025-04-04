@@ -54,6 +54,8 @@ class ImageCanvas(FigureCanvas):
     norm_modified = Signal()
     transform_modified = Signal()
 
+    _update_waterfall_plot_progress = Signal()
+
     def __init__(self, parent=None, image_names=None):
         self.figure = Figure(tight_layout=True)
         super().__init__(self.figure)
@@ -125,6 +127,11 @@ class ImageCanvas(FigureCanvas):
             self.on_beam_energy_modified)
         HexrdConfig().panel_distortion_modified.connect(
             self.on_panel_distortion_changed)
+
+        self._update_waterfall_plot_progress.connect(
+            self._update_waterfall_plot_progress_slot,
+            Qt.QueuedConnection,
+        )
 
     @property
     def thread_pool(self):
@@ -1839,9 +1846,14 @@ class ImageCanvas(FigureCanvas):
 
         progress.exec()
 
-    def _create_waterfall_lineouts(self) -> list[np.ndarray]:
+    def _update_waterfall_plot_progress_slot(self):
         progress = self._create_waterfall_progress
+        if progress is None:
+            return
 
+        progress.setValue(progress.value() + 1)
+
+    def _create_waterfall_lineouts(self) -> list[np.ndarray]:
         # Determine the number of lineouts
         num_lineouts = HexrdConfig().imageseries_length
         lineouts = [None] * num_lineouts
@@ -1882,7 +1894,7 @@ class ImageCanvas(FigureCanvas):
             # Compute the integration
             lineouts[i] = self._compute_azimuthal_integral_sum(polar_img)
 
-            progress.setValue(progress.value() + 1)
+            self._update_waterfall_plot_progress.emit()
 
         return lineouts
 
