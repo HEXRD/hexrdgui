@@ -529,6 +529,9 @@ class ImageTabWidget(QTabWidget):
     def polar_show_snip1d(self):
         self.image_canvases[0].polar_show_snip1d()
 
+    def create_waterfall_plot(self):
+        self.image_canvases[0].create_waterfall_plot()
+
     def export_to_maud(self, filename):
         self.image_canvases[0].export_to_maud(filename)
 
