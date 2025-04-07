@@ -8,6 +8,7 @@ from hexrdgui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrdgui.constants import PolarXAxisType, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 
@@ -145,6 +146,9 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_stereo_show_border)
         self.ui.stereo_project_from_polar.toggled.connect(
             HexrdConfig().set_stereo_project_from_polar)
+
+        ImageLoadManager().new_images_loaded.connect(
+            self.update_visibility_states)
 
     def enable_image_mode_widget(self, b):
         self.ui.tab_widget.setEnabled(b)

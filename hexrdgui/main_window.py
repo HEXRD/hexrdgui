@@ -90,9 +90,6 @@ from hexrd.resources import instrument_templates
 
 class MainWindow(QObject):
 
-    # Emitted when new images are loaded
-    new_images_loaded = Signal()
-
     # Emitted when a new mask is added
     new_mask_added = Signal(str)
 
@@ -273,7 +270,6 @@ class MainWindow(QObject):
         self.ui.action_run_fit_grains.triggered.connect(
             self.on_action_run_fit_grains_triggered)
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
-        self.new_images_loaded.connect(self.images_loaded)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
         self.ui.image_tab_widget.new_mouse_position.connect(
             self.new_mouse_position)
@@ -340,7 +336,7 @@ class MainWindow(QObject):
             self.on_physics_package_modified)
 
         ImageLoadManager().update_needed.connect(self.update_all)
-        ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
+        ImageLoadManager().new_images_loaded.connect(self.images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.set_live_update)
         ImageLoadManager().state_updated.connect(
@@ -529,7 +525,8 @@ class MainWindow(QObject):
         ImageFileManager().load_dummy_images()
         self.update_all(clear_canvases=True)
         self.ui.action_transform_detectors.setEnabled(False)
-        self.new_images_loaded.emit()
+        # Manually indicate that new images were loaded
+        ImageLoadManager().new_images_loaded.emit()
 
     def open_image_file(self):
         images_dir = HexrdConfig().images_dir
