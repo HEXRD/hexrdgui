@@ -507,9 +507,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
                 # Compute and apply offset
                 for ic, ang_crd in enumerate(raw_ang_crds):
-                    i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
-                    j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
-                    ang_crds[ic, 0] += polar_field[j, i]
+                    ii = np.argmin(np.abs(ang_crd[0] - first_tth_row))
+                    jj = np.argmin(np.abs(ang_crd[1] - first_eta_col))
+                    ang_crds[ic, 0] += polar_field[jj, ii]
 
             if apply_distortion or offset_distortion:
                 if display_mode in (ViewType.raw, ViewType.cartesian):
