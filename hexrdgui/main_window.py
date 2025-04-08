@@ -1760,12 +1760,8 @@ class MainWindow(QObject):
                         # If that fails, try loading it as a materials file
                         HexrdConfig().load_materials(paths[0])
                 elif ext in ('.hexrd', '.yml', '.yaml'):
-                    try:
-                        # Try loading it as an instrument config first
-                        HexrdConfig().load_instrument_config(paths[0])
-                    except:
-                        # If that fails, try loading it as an image file
-                        self.open_image_files(selected_files=paths)
+                    # Try loading it as an instrument config
+                    HexrdConfig().load_instrument_config(paths[0])
             except:
                 # If everything else fails, try loading as images
                 self.open_image_files(selected_files=paths)
