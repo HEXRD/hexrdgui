@@ -1741,21 +1741,7 @@ class MainWindow(QObject):
             event.ignore()
             return
 
-        # Make sure the selction(s) are files with a supported file extensions
         paths = [url.toLocalFile() for url in mime_data.urls()]
-        supported_extensions = [
-            '.hexrd',
-            '.yml', '.yaml',
-            '.h5', '.hdf5',
-            '.tif', '.tiff',
-            '.png',
-            '.jpg', '.jpeg'
-        ]
-        exts = [Path(path).suffix.lower() for path in paths]
-        if any(ext not in supported_extensions for ext in exts):
-            event.ignore()
-            return
-
         if event.type() == QEvent.Drop:
             self.dropEvent(paths)
         else:
