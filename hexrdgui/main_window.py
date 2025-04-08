@@ -1055,7 +1055,7 @@ class MainWindow(QObject):
                         return True
                 # If the main window is closing, save the config settings
                 HexrdConfig().save_settings()
-            elif event.type() == QEvent.DragEnter or event.type() == QEvent.Drop:
+            elif event.type() in (QEvent.DragEnter, QEvent.Drop):
                 self.validateDragDropEvent(event)
                 return True
 
