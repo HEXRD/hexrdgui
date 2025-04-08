@@ -1750,21 +1750,31 @@ class MainWindow(QObject):
     def dropEvent(self, paths):
         ext = Path(paths[0]).suffix.lower()
         if len(paths) == 1:
-            try:
-                # if hdf5 try as state, then materials, then images
-                if ext in ('.h5', '.hdf5'):
+            # For single file try to guess loader based on extension
+            if ext in ('.h5', '.hdf5'):
+                try:
+                    # Try loading it as a state file first
+                    self.load_state_file(paths[0])
+                    return
+                except:
                     try:
-                        # Try loading it as a state file first
-                        self.load_state_file(paths[0])
-                    except:
                         # If that fails, try loading it as a materials file
                         HexrdConfig().load_materials(paths[0])
-                elif ext in ('.hexrd', '.yml', '.yaml'):
+                        return
+                    except:
+                        # If that fails, continue on to try to load as image
+                        pass
+            elif ext in ('.hexrd', '.yml', '.yaml'):
+                try:
                     # Try loading it as an instrument config
                     HexrdConfig().load_instrument_config(paths[0])
-            except:
-                # If everything else fails, try loading as images
-                self.open_image_files(selected_files=paths)
-        else:
-            # If there are multiple files, try loading as images
+                    return
+                except:
+                    # If that fails, continue on to try to load as image
+                    pass
+        try:
+            # Fall back to trying to load as image if no loader succeeds or
+            # extension is not in known list
             self.open_image_files(selected_files=paths)
+        except Exception as e:
+            print(f'Error loading images: {e}')
