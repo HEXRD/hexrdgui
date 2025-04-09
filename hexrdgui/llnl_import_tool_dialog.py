@@ -14,7 +14,7 @@ from PySide6.QtGui import QColor
 from hexrd import resources as hexrd_resources
 from hexrd.instrument import HEDMInstrument
 from hexrd.rotations import (
-    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz
+    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz, rotMatOfExpMap
 )
 
 import hexrdgui.resources.calibration
@@ -37,6 +37,65 @@ from hexrdgui import resource_loader
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import instr_to_internal_dict, block_signals
 from hexrdgui.utils.dialog import add_help_url
+
+
+class AtlasConfig:
+    def __init__(self, atlas_coords, instr):
+        self.coords = atlas_coords
+        self.instr = instr
+
+    def _get_orientation(self, crds, det):
+        """vertex in 4x3 matrix of the
+        4 vertices. we return the normal
+        using a cross product
+        """
+        vertex = self._get_vertices(crds)
+        if det == 'CAMERA-05':
+            xhat = -vertex[1, :] + vertex[0, :]
+            yhat = vertex[3, :] - vertex[0, :]
+        else:
+            xhat = vertex[3, :] - vertex[0, :]
+            yhat = vertex[1, :] - vertex[0, :]
+
+        xhat = xhat/np.linalg.norm(xhat)
+        yhat = yhat/np.linalg.norm(yhat)
+
+        zhat = np.cross(xhat, yhat)
+        zhat = zhat/np.linalg.norm(zhat)
+
+        xhat = np.cross(yhat, zhat)
+        xhat = xhat/np.linalg.norm(xhat)
+
+        rmat = np.vstack((-xhat, yhat, -zhat)).T
+
+        RMAT_Z_180 = rotMatOfExpMap(np.pi*zhat)
+        if det in ['CAMERA-02', 'CAMERA-03']:
+            return np.dot(RMAT_Z_180, rmat)
+        return rmat
+
+    def _get_center(self, vertex):
+        """return center of detector given
+        the four vertex
+        """
+        return np.mean(vertex, axis=0)
+
+    def _get_vertices(self, crds):
+        # by default we will look up from TCC, so there is
+        # flip in the x-component sign
+        return crds[0:4, :]
+
+    def update_instrument(self, detector):
+        v = self._get_vertices(self.coords[detector])
+        # tvec sample is the position of the sample in NIF
+        # chamber coordinates. the position of each detector
+        # is measured from this point, so we need to take this
+        # off
+        tvec_sample= np.array([0, 0, 9.8])
+        tvec = self._get_center(v) - tvec_sample
+        rmat = self._get_orientation(self.coords[detector], detector)
+        ang, ax = angleAxisOfRotMat(rmat)
+        self.instr.detectors[detector].tvec = tvec
+        self.instr.detectors[detector].tilt = ang * ax
 
 
 class LLNLImportToolDialog(QObject):
@@ -77,6 +136,7 @@ class LLNLImportToolDialog(QObject):
         self.loaded_images = []
         self.canvas = parent.image_tab_widget.active_canvas
         self.detector_images = {}
+        self.atlas_coords = None
 
         # Disable these by default.
         # If we disable these in Qt Designer, there are some weird bugs
@@ -100,6 +160,8 @@ class LLNLImportToolDialog(QObject):
             self.ui.detector_raw_image,
             self.ui.instr_settings_label,
             self.ui.instr_settings,
+            self.ui.load_atlas,
+            self.ui.atlas_label,
             visible=False)
 
         self.update_config_settings()
@@ -138,6 +200,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.dark_load.clicked.connect(self.load_detector_images)
         self.ui.accept_detector.clicked.connect(
             self.manually_load_detector_images)
+        self.ui.load_atlas.clicked.connect(self.load_atlas_coords)
 
     def enable_widgets(self, *widgets, enabled):
         for w in widgets:
@@ -264,6 +327,8 @@ class LLNLImportToolDialog(QObject):
                 self.ui.detector_raw_image,
                 self.ui.instr_settings_label,
                 self.ui.instr_settings,
+                self.ui.load_atlas,
+                self.ui.atlas_label,
                 visible=is_fiddle)
 
             has_ip = self.ui.instr_settings.currentIndex() == 0
@@ -352,6 +417,16 @@ class LLNLImportToolDialog(QObject):
             combo.addItems(options)
             if prev:
                 combo.setCurrentText(prev)
+
+    def load_atlas_coords(self):
+        file, filter = QFileDialog.getOpenFileName(
+            self.ui, 'Select coordinates file', dir=HexrdConfig().working_dir)
+        if not file:
+            return
+        with open(file, 'r') as f:
+            coords = yaml.safe_load(f)
+        self.atlas_coords = {d: np.array(c) for d, c in coords.items()}
+        self.ui.atlas_label.setText(Path(file).name)
 
     def load_instrument_config(self):
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
@@ -814,6 +889,7 @@ class LLNLImportToolDialog(QObject):
         self.clear_boundry()
         # Reset internal state
         self.completed = []
+        self.atlas_coords = None
         self.defaults.clear()
         self.config_file = None
         self.import_in_progress = False
@@ -832,6 +908,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.config_file_label.setText('No File Selected')
         self.ui.config_file_label.setToolTip(
             'Defaults to currently loaded configuration')
+        self.ui.atlas_label.setText('No File Selected')
         # Reset widget states - disable/enable/show/hide as appropriate
         self.enable_widgets(
             self.ui.image_plate_raw_image,
@@ -855,6 +932,8 @@ class LLNLImportToolDialog(QObject):
             self.ui.detector_raw_image,
             self.ui.instr_settings_label,
             self.ui.instr_settings,
+            self.ui.load_atlas,
+            self.ui.atlas_label,
             visible=False)
         # We're all reset and ready to re-enable the main UI features
         HexrdConfig().enable_image_mode_widget.emit(True)
@@ -872,6 +951,12 @@ class LLNLImportToolDialog(QObject):
 
         instr = HEDMInstrument(
             instrument_config=self.ip_and_det_defaults['default_config'])
+
+        if self.atlas_coords is not None:
+            atlas_config = AtlasConfig(self.atlas_coords, instr)
+            for detector in self.detectors:
+                atlas_config.update_instrument(detector)
+
         for det in self.completed:
             panel = instr.detectors[det]
             # first need the zxz Euler angles from the panel rotation matrix.
