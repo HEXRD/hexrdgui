@@ -477,6 +477,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'custom_polar_tth_distortion_object_serialized',
             'physics_package_dictified',
             'detector_coatings_dictified',
+            'apply_median_filter_correction'
         ]
 
         state = {}
