@@ -1,6 +1,7 @@
+import copy
+
 from PySide6.QtCore import QTimer
 
-import copy
 import h5py
 import numpy as np
 import yaml
