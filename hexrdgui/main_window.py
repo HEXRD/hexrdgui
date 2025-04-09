@@ -1778,4 +1778,8 @@ class MainWindow(QObject):
             # extension is not in known list
             self.open_image_files(selected_files=paths)
         except Exception as e:
-            print(f'Error loading images: {e}')
+            error_message = (
+                'Unable to guess file type (state, instrument, materials, or '
+                'image). Please use File menu to load.'
+            )
+            QMessageBox.critical(self.ui, 'Error', error_message)
