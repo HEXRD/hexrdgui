@@ -333,7 +333,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._physics_package = None
         self._detector_coatings = {}
         self._instrument_rigid_body_params = {}
-        self._median_filer_correction = {}
+        self._median_filter_correction = {}
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -477,7 +477,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'custom_polar_tth_distortion_object_serialized',
             'physics_package_dictified',
             'detector_coatings_dictified',
-            'apply_median_filter_correction'
+            'apply_median_filter_correction',
+            'median_filter_kernel_size'
         ]
 
         state = {}
@@ -3011,22 +3012,22 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def apply_median_filter_correction(self):
-        return self._median_filer_correction.get('apply', False)
+        return self._median_filter_correction.get('apply', False)
 
     @apply_median_filter_correction.setter
     def apply_median_filter_correction(self, v):
         if v != self.apply_median_filter_correction:
-            self._median_filer_correction['apply'] = v
+            self._median_filter_correction['apply'] = v
             self.deep_rerender_needed.emit()
 
     @property
     def median_filter_kernel_size(self):
-        return self._median_filer_correction.get('kernel', 7)
+        return self._median_filter_correction.get('kernel', 7)
 
     @median_filter_kernel_size.setter
     def median_filter_kernel_size(self, v):
         if v != self.median_filter_kernel_size:
-            self._median_filer_correction['kernel'] = int(v)
+            self._median_filter_correction['kernel'] = int(v)
             self.deep_rerender_needed.emit()
 
 
