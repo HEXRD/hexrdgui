@@ -1,5 +1,6 @@
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils import block_signals
 
 
 class AbsorptionCorrectionOptionsDialog:
@@ -10,7 +11,14 @@ class AbsorptionCorrectionOptionsDialog:
                                    parent)
 
         self.additional_materials = {}
-        self.filters = {n: {} for n in HexrdConfig().detector_names}
+        self.filters = {
+            det: {
+                'material': HexrdConfig().detector_filter(det).material,
+                'density': HexrdConfig().detector_filter(det).density,
+                'thickness': HexrdConfig().detector_filter(det).thickness
+            }
+            for det in HexrdConfig().detector_names
+        }
         self.mat_options = []
 
         self.load_additional_materials()
@@ -137,34 +145,39 @@ class AbsorptionCorrectionOptionsDialog:
             self.density_inputs[category].setValue(density)
             if category == 'filter':
                 det_name = self.ui.detectors.currentText()
-                self.filters.setdefault(det_name, {})
-                self.filters[det_name]['material'] = material
+                self.filters[det_name]['material'] = material.name
         else:
             self.density_inputs[category].setValue(0.0)
 
     def filter_info_changed(self, new_value=None, det_name=None):
         if det_name is None:
             det_name = self.ui.detectors.currentText()
-        self.filters.setdefault(det_name, {})
         self.filters[det_name]['density'] = self.ui.filter_density.value()
         self.filters[det_name]['thickness'] = self.ui.filter_thickness.value()
 
     def detector_changed(self, new_det):
-        filter = HexrdConfig().detector_filter(new_det)
-        if filter is None:
-            # Make sure the filter exists
-            HexrdConfig().update_detector_filter(new_det)
-            filter = HexrdConfig().detector_filter(new_det)
+        filter_widgets = [
+            self.ui.filter_material,
+            self.ui.filter_material_input,
+            self.ui.filter_density,
+            self.ui.filter_thickness
+        ]
 
-        mat = self.filters[new_det].get('material', filter.material)
-        if filter.material not in self.mat_options:
-            self.ui.filter_material_input.setText(mat)
-        else:
-            self.ui.filter_material.setCurrentText(mat)
-        density = self.filters[new_det].get('density', filter.density)
-        self.ui.filter_density.setValue(density)
-        thickness = self.filters[new_det].get('thickness', filter.thickness)
-        self.ui.filter_thickness.setValue(thickness)
+        with block_signals(*filter_widgets):
+            # Update material inputs
+            mat = self.filters[new_det]['material']
+            custom_mat = mat not in self.mat_options
+            self.ui.filter_material.setCurrentText(
+                mat if not custom_mat else 'Enter Manually'
+            )
+            self.ui.filter_material_input.setText(mat if custom_mat else '')
+            self.ui.filter_material_input.setEnabled(custom_mat)
+            self.ui.filter_density.setEnabled(custom_mat)
+            # Update filter inputs
+            self.ui.filter_density.setValue(self.filters[new_det]['density'])
+            self.ui.filter_thickness.setValue(
+                self.filters[new_det]['thickness']
+            )
 
     def accept_changes(self):
         materials = {}
