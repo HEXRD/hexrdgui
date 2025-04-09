@@ -1,5 +1,6 @@
 from PySide6.QtCore import QTimer
 
+import copy
 import h5py
 import numpy as np
 import yaml
@@ -182,10 +183,13 @@ def load(h5_file):
 
         # Rename the state variables to the attribute names...
         renamed_state = {}
-        for name, _ in HexrdConfig()._attributes_to_persist():
+        for name, default in HexrdConfig()._attributes_to_persist():
             old_name = HexrdConfig()._attribute_to_settings_key(name)
             if old_name in state:
                 renamed_state[name] = state.pop(old_name)
+            if name != 'config_instrument' and name not in renamed_state:
+                # If the attribute is not in the state, set it to the default
+                renamed_state[name] = copy.deepcopy(default)
 
         HexrdConfig().load_from_state(renamed_state)
 
