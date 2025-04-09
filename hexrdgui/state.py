@@ -1,3 +1,5 @@
+import copy
+
 from PySide6.QtCore import QTimer
 
 import h5py
@@ -180,12 +182,28 @@ def load(h5_file):
         # Now, load the state
         state = _load_config(h5_file)
 
+        # Don't set these defaults if they are missing.
+        # Not sure why they are missing, but they cause issues if we
+        # apply them.
+        defaults_to_skip = [
+            'config_instrument',
+            'config_calibration',
+            'config_indexing',
+            'config_images',
+        ]
+
         # Rename the state variables to the attribute names...
         renamed_state = {}
-        for name, _ in HexrdConfig()._attributes_to_persist():
+        for name, default in HexrdConfig()._attributes_to_persist():
             old_name = HexrdConfig()._attribute_to_settings_key(name)
             if old_name in state:
                 renamed_state[name] = state.pop(old_name)
+
+            # Also set defaults if missing
+            if name not in renamed_state and name not in defaults_to_skip:
+                # If the attribute is not in the state, set it to the default
+                # A deep copy is needed for mutable defaults
+                renamed_state[name] = copy.deepcopy(default)
 
         HexrdConfig().load_from_state(renamed_state)
 
