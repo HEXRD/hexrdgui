@@ -35,12 +35,12 @@ from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
-from hexrdgui.waterfall_plot import WaterfallPlotDialog
 from hexrdgui.utils.array import split_array
 from hexrdgui.utils.conversions import (
     angles_to_stereo, cart_to_angles, cart_to_pixels, q_to_tth, tth_to_q,
 )
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
+from hexrdgui.waterfall_plot import WaterfallPlotDialog
 
 # Increase these font sizes (compared to the global font) by the specified
 # amounts.
@@ -128,6 +128,9 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().panel_distortion_modified.connect(
             self.on_panel_distortion_changed)
 
+        # This *must* be a queued connection, because Mac requires the
+        # progress to be updated on the GUI thread. Otherwise, it will
+        # crash the application on Mac.
         self._update_waterfall_plot_progress.connect(
             self._update_waterfall_plot_progress_slot,
             Qt.QueuedConnection,
@@ -1894,6 +1897,8 @@ class ImageCanvas(FigureCanvas):
             # Compute the integration
             lineouts[i] = self._compute_azimuthal_integral_sum(polar_img)
 
+            # The progress must be updated in the GUI thread. Otherwise,
+            # it will crash on Mac.
             self._update_waterfall_plot_progress.emit()
 
         return lineouts

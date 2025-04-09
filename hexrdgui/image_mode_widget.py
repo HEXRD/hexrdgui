@@ -267,11 +267,11 @@ class ImageModeWidget(QObject):
 
         # We can only make a waterfall plot if there is more than one
         # frame in the imageseries.
-        # If there are more than 10, that's too many, and let's just ignore
+        # If there are more than 20, that's too many, and let's just ignore
         # it as well. All of the cases we know of currently should have
-        # no more than 5 frames in the imageseries.
+        # no more than 15 frames in the imageseries.
         can_make_waterfall_plot = (
-            1 < HexrdConfig().imageseries_length <= 10
+            1 < HexrdConfig().imageseries_length <= 20
         )
         self.ui.create_waterfall_plot.setVisible(can_make_waterfall_plot)
 
