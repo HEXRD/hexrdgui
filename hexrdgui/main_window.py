@@ -1768,8 +1768,7 @@ class MainWindow(QObject):
         if ext in ('.h5', '.hdf5', '.cif'):
             try:
                 # Try loading as materials file(s)
-                for path in paths:
-                    HexrdConfig().load_materials(path)
+                HexrdConfig().import_materials(paths)
                 return
             except:
                 # If that fails, continue on to try a different loader
