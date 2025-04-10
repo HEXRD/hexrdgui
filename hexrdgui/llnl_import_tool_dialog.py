@@ -874,7 +874,7 @@ class LLNLImportToolDialog(QObject):
             f'{d}: {Path(self.loaded_images[d]).stem}'
             for d in sorted(self.loaded_images)
         ]
-        text = '\n'.join(set(loaded))
+        text = '\n'.join(loaded)
         self.ui.completed_text.setText(text)
         self.ui.completed_text.setToolTip(text)
 
