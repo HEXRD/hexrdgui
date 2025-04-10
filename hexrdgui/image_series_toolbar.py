@@ -82,8 +82,8 @@ class ImageSeriesToolbar(QWidget):
         self.slider.valueChanged.connect(lambda i: self.frame.setText(str(i)))
         self.frame.textChanged.connect(
             lambda i: self.slider.setSliderPosition(int(i)))
-        self.back_button.clicked.connect(lambda: self.change_frame(-1))
-        self.forward_button.clicked.connect(lambda: self.change_frame(1))
+        self.back_button.clicked.connect(lambda: self.shift_frame(-1))
+        self.forward_button.clicked.connect(lambda: self.shift_frame(1))
 
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
@@ -181,7 +181,7 @@ class ImageSeriesToolbar(QWidget):
         self.back_button.setEnabled(self.slider.minimum() != val)
         self.forward_button.setEnabled(self.slider.maximum() != val)
 
-    def change_frame(self, value):
+    def shift_frame(self, value):
         with block_signals(self.frame, self.slider):
             new_frame = int(self.frame.text()) + value
             self.frame.setText(str(new_frame))
