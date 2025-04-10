@@ -314,7 +314,7 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.create_waterfall_plot)
 
         self.ui.action_open_images.triggered.connect(
-            self.open_image_files)
+            self.open_image_files_triggered)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
@@ -541,12 +541,20 @@ class MainWindow(QObject):
 
         return selected_file
 
-    def open_image_files(self):
-        # Get the most recent images dir
-        images_dir = HexrdConfig().images_dir
+    def open_image_files_triggered(self):
+        try:
+            self.open_image_files()
+        except Exception as e:
+            QMessageBox.warning(self.ui, 'HEXRD', str(e))
+            return
 
-        selected_files, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, dir=images_dir)
+    def open_image_files(self, selected_files=None):
+        if selected_files is None:
+            # Get the most recent images dir
+            images_dir = HexrdConfig().images_dir
+
+            selected_files, selected_filter = QFileDialog.getOpenFileNames(
+                self.ui, dir=images_dir)
 
         if selected_files:
             # Save the chosen dir
@@ -560,8 +568,7 @@ class MainWindow(QObject):
                     or len(files) < len(HexrdConfig().detector_names)):
                 msg = ('Number of files must match number of detectors: ' +
                        str(len(HexrdConfig().detector_names)))
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                return
+                raise Exception(msg)
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_files[0])[1]
@@ -1044,15 +1051,19 @@ class MainWindow(QObject):
         self.config_loaded.emit()
 
     def eventFilter(self, target, event):
-        if type(target) == QMainWindow and event.type() == QEvent.Close:
-            if self.confirm_application_close:
-                msg = 'Are you sure you want to quit?'
-                response = QMessageBox.question(self.ui, 'HEXRD', msg)
-                if response == QMessageBox.No:
-                    event.ignore()
-                    return True
-            # If the main window is closing, save the config settings
-            HexrdConfig().save_settings()
+        if type(target) == QMainWindow:
+            if event.type() == QEvent.Close:
+                if self.confirm_application_close:
+                    msg = 'Are you sure you want to quit?'
+                    response = QMessageBox.question(self.ui, 'HEXRD', msg)
+                    if response == QMessageBox.No:
+                        event.ignore()
+                        return True
+                # If the main window is closing, save the config settings
+                HexrdConfig().save_settings()
+            elif event.type() in (QEvent.DragEnter, QEvent.Drop):
+                self.validateDragDropEvent(event)
+                return True
 
         if not hasattr(self, '_first_paint_occurred'):
             if type(target) == QMainWindow and event.type() == QEvent.Paint:
@@ -1729,3 +1740,52 @@ class MainWindow(QObject):
         # The dialog should have modified HexrdConfig's median filter options
         # already. Just apply it now.
         HexrdConfig().apply_median_filter_correction = b
+
+    def validateDragDropEvent(self, event):
+        mime_data = event.mimeData()
+        if not mime_data.hasUrls():
+            event.ignore()
+            return
+
+        paths = [url.toLocalFile() for url in mime_data.urls()]
+        if event.type() == QEvent.Drop:
+            self.dropEvent(paths)
+        else:
+            event.acceptProposedAction()
+
+    def dropEvent(self, paths):
+        ext = Path(paths[0]).suffix.lower()
+        if len(paths) == 1 and ext in ('.h5', '.hdf5'):
+            try:
+                # Try loading it as a state file
+                self.load_state_file(paths[0])
+                return
+            except:
+                # If that fails, continue on to try a different loader
+                pass
+        if len(paths) == 1 and ext in ('.hexrd', '.yml', '.yaml'):
+            try:
+                # Try loading it as an instrument config
+                HexrdConfig().load_instrument_config(paths[0])
+                return
+            except:
+                # If that fails, continue on to try a different loader
+                pass
+        if ext in ('.h5', '.hdf5', '.cif'):
+            try:
+                # Try loading as materials file(s)
+                HexrdConfig().import_materials(paths)
+                return
+            except:
+                # If that fails, continue on to try a different loader
+                pass
+        try:
+            # Fall back to trying to load as image if no loader succeeds or
+            # extension is not in known list
+            self.open_image_files(selected_files=paths)
+        except Exception as e:
+            error_message = (
+                'Unable to guess file type (state, instrument, materials, or '
+                'image). Please use File menu to load.'
+            )
+            QMessageBox.critical(self.ui, 'Error', error_message)

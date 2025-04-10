@@ -1203,6 +1203,24 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def save_materials(self, f, path=None):
         save_materials_hdf5(f, self.materials, path)
 
+    def import_materials(self, file_paths: list[Path | str]):
+        """Import materials from a list of files
+
+        This accepts cif and HDF5 files. All imported materials will be
+        added to `self.materials`.
+        """
+        beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
+        for path in file_paths:
+            ext = Path(path).suffix.lower()
+            if ext == '.cif':
+                # Import it as a cif file
+                self.import_material(path)
+            else:
+                # Try to import the materials from an HDF5 file
+                materials = load_materials_hdf5(path, kev=beam_energy)
+                for name, material in materials.items():
+                    self.add_material(name, material)
+
     def import_material(self, f):
         beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
         name = os.path.splitext(os.path.basename(f))[0]
@@ -1640,10 +1658,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.add_materials([name], [material])
 
     def add_materials(self, names, materials):
-        if any(x in self.materials for x in names):
-            mats = list(self.materials.keys())
-            msg = f'Some names {names} are already in materials list {mats}!'
-            raise Exception(msg)
+        # Rename any materials that already exist by appending _1
+        for material in self.materials:
+            if material in names:
+                names[names.index(material)] = f'{material}_1'
+                HexrdConfig().logger.warning(
+                    f'Material {material} already exists, '
+                    f'renaming to {material}_1'
+                )
 
         if len(names) != len(materials):
             msg = f'{len(names)=} does not match {len(materials)=}!'
