@@ -314,7 +314,7 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.create_waterfall_plot)
 
         self.ui.action_open_images.triggered.connect(
-            self.open_image_files)
+            self.open_image_files_triggered)
         HexrdConfig().update_status_bar.connect(
             self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(
@@ -541,7 +541,16 @@ class MainWindow(QObject):
 
         return selected_file
 
-    def open_image_files(self, checked=False, selected_files=None):
+    def open_image_files_triggered(self):
+        try:
+            self.open_image_files()
+        except Exception as e:
+            msg = ('Number of files must match number of detectors: ' +
+                   str(len(HexrdConfig().detector_names)))
+            QMessageBox.warning(self.ui, 'HEXRD', f'{e}')
+            return
+
+    def open_image_files(self, selected_files=None):
         if selected_files is None:
             # Get the most recent images dir
             images_dir = HexrdConfig().images_dir
@@ -561,8 +570,7 @@ class MainWindow(QObject):
                     or len(files) < len(HexrdConfig().detector_names)):
                 msg = ('Number of files must match number of detectors: ' +
                        str(len(HexrdConfig().detector_names)))
-                QMessageBox.warning(self.ui, 'HEXRD', msg)
-                return
+                raise Exception(msg)
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_files[0])[1]
