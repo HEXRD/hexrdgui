@@ -84,6 +84,10 @@ class ImageSeriesToolbar(QWidget):
         self.back_button.clicked.connect(lambda: self.shift_frame(-1))
         self.forward_button.clicked.connect(lambda: self.shift_frame(1))
 
+    def text_width(self, text):
+        metrics = QFontMetrics(QCoreApplication.instance().font())
+        return metrics.boundingRect(text).width()
+
     def create_widget(self):
         self.slider = QSlider(Qt.Horizontal, self.parent())
         self.frame = QLineEdit(self.parent())
@@ -100,12 +104,9 @@ class ImageSeriesToolbar(QWidget):
         # with the current font, and set the label width to be fixed at
         # this width. This will prevent the slider from shifting around
         # while we are sliding.
-        metrics = QFontMetrics(QCoreApplication.instance().font())
         example_label_text = omega_label_text(359.999, 359.999)
-        text_width = metrics.boundingRect(example_label_text).width()
+        text_width = self.text_width(example_label_text)
         self.omega_label.setFixedWidth(text_width)
-        frame_text_width = metrics.boundingRect('9999').width()
-        self.frame.setFixedWidth(frame_text_width)
         self.frame.setAlignment(Qt.AlignCenter)
 
         self.layout = QGridLayout(self.widget)
@@ -124,6 +125,10 @@ class ImageSeriesToolbar(QWidget):
     def set_range(self, current_tab=False):
         if self.ims:
             size = len(self.ims) - 1
+            # Compute the text width for the maximum size label based on the
+            # maximum number of frames. Multiply by 100 to add a little padding
+            frame_text_width = self.text_width(str(size * 100))
+            self.frame.setFixedWidth(frame_text_width)
             if (not size or not current_tab) and self.show:
                 self.show = False
             elif size and not self.show and current_tab:
