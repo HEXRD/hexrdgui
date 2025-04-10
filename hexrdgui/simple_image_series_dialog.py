@@ -87,7 +87,7 @@ class SimpleImageSeriesDialog(QObject):
 
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.config_changed)
-        HexrdConfig().load_panel_state_reset.connect(self.config_changed)
+        HexrdConfig().load_panel_state_modified.connect(self.config_changed)
 
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.select_dark.clicked.connect(self.select_dark_img)
