@@ -545,9 +545,7 @@ class MainWindow(QObject):
         try:
             self.open_image_files()
         except Exception as e:
-            msg = ('Number of files must match number of detectors: ' +
-                   str(len(HexrdConfig().detector_names)))
-            QMessageBox.warning(self.ui, 'HEXRD', f'{e}')
+            QMessageBox.warning(self.ui, 'HEXRD', str(e))
             return
 
     def open_image_files(self, selected_files=None):
