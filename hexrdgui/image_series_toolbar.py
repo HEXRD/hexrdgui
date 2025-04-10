@@ -80,8 +80,7 @@ class ImageSeriesToolbar(QWidget):
     def setup_connections(self):
         self.slider.valueChanged.connect(self.val_changed)
         self.slider.valueChanged.connect(lambda i: self.frame.setText(str(i)))
-        self.frame.textChanged.connect(
-            lambda i: self.slider.setSliderPosition(int(i)))
+        self.frame.editingFinished.connect(self.on_frame_edited)
         self.back_button.clicked.connect(lambda: self.shift_frame(-1))
         self.forward_button.clicked.connect(lambda: self.shift_frame(1))
 
@@ -188,6 +187,23 @@ class ImageSeriesToolbar(QWidget):
             self.slider.setSliderPosition(new_frame)
         self.val_changed(new_frame)
 
+    def on_frame_edited(self):
+        try:
+            val = int(self.frame.text())
+        except ValueError:
+            # Not a valid integer. Restore the previous value.
+            val = self.slider.value()
+
+        # Clip the value to the min/max range
+        val = max(self.slider.minimum(), val)
+        val = min(self.slider.maximum(), val)
+
+        # Set the frame text to the new value
+        with block_signals(self.frame, self.slider):
+            self.frame.setText(str(val))
+
+        # Set the slider position to the new value
+        self.slider.setSliderPosition(val)
 
 def omega_label_text(ome_min, ome_max):
     # We will display 6 digits at most, because omegas go up to 360
