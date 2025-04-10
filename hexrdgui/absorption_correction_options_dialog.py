@@ -1,6 +1,9 @@
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
+
+
 
 
 class AbsorptionCorrectionOptionsDialog:
@@ -11,16 +14,9 @@ class AbsorptionCorrectionOptionsDialog:
                                    parent)
 
         self.additional_materials = {}
-        self.filters = {
-            det: {
-                'material': HexrdConfig().detector_filter(det).material,
-                'density': HexrdConfig().detector_filter(det).density,
-                'thickness': HexrdConfig().detector_filter(det).thickness
-            }
-            for det in HexrdConfig().detector_names
-        }
         self.mat_options = []
 
+        self.get_initial_filter_values()
         self.load_additional_materials()
         self.setup_connections()
         self.update_gui()
@@ -234,3 +230,19 @@ class AbsorptionCorrectionOptionsDialog:
         self.ui.phosphor_thickness.setEnabled(checked)
         self.ui.phosphor_readout_length.setEnabled(checked)
         self.ui.phosphor_pre_U0.setEnabled(checked)
+
+    def get_initial_filter_values(self):
+        # Use the current value, or if none, use the default
+        self.filters = {}
+        instr = create_hedm_instrument()
+        for det in HexrdConfig().detector_names:
+            filter = HexrdConfig().detector_filter(det)
+            print(f'config filter {det}: {filter.material} {filter.density} {filter.thickness}')
+            if filter is None:
+                filter = instr.detectors[det].filter
+                print(f'default filter {det}: {filter.material} {filter.density} {filter.thickness}')
+            self.filters[det] = {
+                'material': filter.material,
+                'density': filter.density,
+                'thickness': filter.thickness
+            }
