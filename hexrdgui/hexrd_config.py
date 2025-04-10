@@ -869,17 +869,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return len(next(iter(self.imageseries_dict.values())))
 
     @property
-    def has_dummy_images(self):
+    def has_all_dummy_images(self):
         if not self.imageseries_dict:
             return False
 
-        first_ims = next(iter(self.imageseries_dict.values()))
-        return getattr(first_ims, 'is_dummy', False)
+        return all(
+            getattr(ims, 'is_dummy', False)
+            for ims in self.imageseries_dict.values()
+        )
 
     @property
     def has_images(self):
         # There are images, and they are not dummy images
-        return bool(self.imageseries_dict and not self.has_dummy_images)
+        return bool(self.imageseries_dict and not self.has_all_dummy_images)
 
     @property
     def omega_imageseries_dict(self):
