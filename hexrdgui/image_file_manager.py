@@ -77,13 +77,14 @@ class ImageFileManager(metaclass=Singleton):
                 s = load_panel_state
                 # Need this index for some load panel state items
                 ims_idx = list(ims_dict).index(det_key)
-                load_panel_modified = True
                 for list_key in ('trans', 'dark', 'dark_files'):
                     if len(s.get(list_key, [])) > ims_idx:
                         s[list_key].pop(ims_idx)
+                        load_panel_modified = True
 
                 if det_key in s.get('rect', {}):
                     s['rect'].pop(det_key)
+                    load_panel_modified = True
 
             # This image will not be kept
             ims_dict.pop(det_key)
