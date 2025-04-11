@@ -122,11 +122,11 @@ KNOWN_DETECTOR_NAMES = {
         'IMAGE-PLATE-U',
     ],
     'FIDDLE': [
-        'ic2',
-        'ic3',
-        'ic5',
-        'ic7',
-        'ic8',
+        'CAMERA-02',
+        'CAMERA-03',
+        'CAMERA-05',
+        'CAMERA-07',
+        'CAMERA-08',
     ],
     'DEXELAS_COMPOSITE': [
         'ff1_0_0',
