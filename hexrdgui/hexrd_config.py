@@ -147,8 +147,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     update_status_bar = Signal(str)
 
-    """Emitted when the load_panel_state has been cleared"""
-    load_panel_state_reset = Signal()
+    """Emitted when the load_panel_state has been modified"""
+    load_panel_state_modified = Signal()
 
     """Emitted when the Euler angle convention changes"""
     euler_angle_convention_changed = Signal()
@@ -869,17 +869,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return len(next(iter(self.imageseries_dict.values())))
 
     @property
-    def has_dummy_images(self):
+    def has_all_dummy_images(self):
         if not self.imageseries_dict:
             return False
 
-        first_ims = next(iter(self.imageseries_dict.values()))
-        return getattr(first_ims, 'is_dummy', False)
+        return all(
+            getattr(ims, 'is_dummy', False)
+            for ims in self.imageseries_dict.values()
+        )
 
     @property
     def has_images(self):
         # There are images, and they are not dummy images
-        return bool(self.imageseries_dict and not self.has_dummy_images)
+        return bool(self.imageseries_dict and not self.has_all_dummy_images)
 
     @property
     def omega_imageseries_dict(self):
@@ -1099,15 +1101,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                          **kwargs):
         hexrd.imageseries.save.write(ims, write_file, selected_format,
                                      **kwargs)
-
-    def clear_images(self, initial_load=False):
-        self.reset_unagg_imgs()
-        self.imageseries_dict.clear()
-        # Set this instead of clearing so the signal gets emitted
-        self.recent_images = {}
-        if self.load_panel_state is not None and not initial_load:
-            self.load_panel_state.clear()
-            self.load_panel_state_reset.emit()
 
     def load_instrument_config(self, path, import_raw=False):
         old_detectors = self.detector_names

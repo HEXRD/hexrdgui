@@ -87,7 +87,7 @@ class SimpleImageSeriesDialog(QObject):
 
     def setup_connections(self):
         HexrdConfig().detectors_changed.connect(self.config_changed)
-        HexrdConfig().load_panel_state_reset.connect(self.config_changed)
+        HexrdConfig().load_panel_state_modified.connect(self.config_changed)
 
         self.ui.image_files.clicked.connect(self.select_images)
         self.ui.select_dark.clicked.connect(self.select_dark_img)
@@ -116,12 +116,19 @@ class SimpleImageSeriesDialog(QObject):
         self.state = HexrdConfig().load_panel_state
         self.num_dets = len(HexrdConfig().detector_names)
         self.state.setdefault('agg', UI_AGG_INDEX_NONE)
-        self.state.setdefault(
-            'trans', [UI_TRANS_INDEX_NONE for x in range(self.num_dets)])
-        self.state.setdefault(
-            'dark', [UI_DARK_INDEX_NONE for x in range(self.num_dets)])
-        self.state.setdefault(
-            'dark_files', [None for x in range(self.num_dets)])
+
+        list_defaults = {
+            'trans': UI_TRANS_INDEX_NONE,
+            'dark': UI_DARK_INDEX_NONE,
+            'dark_files': None,
+        }
+
+        for k, default in list_defaults.items():
+            if k not in self.state:
+                self.state[k] = []
+
+            while len(self.state[k]) < self.num_dets:
+                self.state[k].append(default)
 
     def state_loaded(self):
         self.update_config_variables()

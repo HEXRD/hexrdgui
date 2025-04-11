@@ -239,7 +239,8 @@ def load_imageseries_dict(h5_file):
 
     root = 'images'
     for det, ims in list(h5_file[root].items()):
-        imsd[det] = imageseries.open(h5_file, 'hdf5', path=f'{root}/{det}')
+        imsd[det] = imageseries.open(h5_file, 'hdf5', path=f'{root}/{det}',
+                                     close_when_finished=False)
 
     HexrdConfig().reset_unagg_imgs(new_imgs=True)
 

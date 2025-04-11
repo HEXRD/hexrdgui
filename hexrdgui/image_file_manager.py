@@ -2,7 +2,6 @@ import glob
 import os
 import numpy as np
 import tempfile
-import traceback
 import yaml
 import h5py
 
@@ -28,21 +27,100 @@ class ImageFileManager(metaclass=Singleton):
         self.path = []
 
     def load_dummy_images(self, initial=False):
-        HexrdConfig().clear_images(initial)
-        detectors = HexrdConfig().detector_names
+        detector_names = HexrdConfig().detector_names
         iconfig = HexrdConfig().instrument_config
-        for det in detectors:
-            cols = iconfig['detectors'][det]['pixels']['columns']
-            rows = iconfig['detectors'][det]['pixels']['rows']
-            shape = (rows, cols)
+
+        ims_dict = HexrdConfig().imageseries_dict
+        unagg_dict = HexrdConfig().unaggregated_images
+        recent_images = HexrdConfig().recent_images
+        load_panel_state = HexrdConfig().load_panel_state
+
+        recent_images_modified = False
+        load_panel_modified = False
+
+        def get_shape(det_key: str) -> tuple[int, int]:
+            # Get the shape of a specific detector
+            cols = iconfig['detectors'][det_key]['pixels']['columns']
+            rows = iconfig['detectors'][det_key]['pixels']['rows']
+            return (rows, cols)
+
+        def make_dummy_ims(shape: tuple[int, int]) -> imageseries.ImageSeries:
+            # Make a dummy imageseries
             data = np.ones(shape, dtype=np.uint8)
             ims = imageseries.open(None, 'array', data=data)
 
             # Set a flag on these image series indicating that they are
             # dummies.
             ims.is_dummy = True
+            return ims
 
-            HexrdConfig().imageseries_dict[det] = ims
+        # Check if we will keep any images. If so, we will make
+        # the dummy images the same length as the kept images.
+        ims_length = 1
+        unagg_length = None
+
+        # First, remove any images that no longer belong,
+        # or whose shape does not match.
+        for det_key, ims in list(ims_dict.items()):
+            keep = (
+                det_key in detector_names and
+                ims.shape == get_shape(det_key)
+            )
+            if keep:
+                # Record the imageseries length and unagg length
+                ims_length = len(ims)
+                if unagg_dict:
+                    unagg_length = len(unagg_dict[det_key])
+                continue
+
+            if load_panel_state and not initial:
+                s = load_panel_state
+                # Need this index for some load panel state items
+                ims_idx = list(ims_dict).index(det_key)
+                for list_key in ('trans', 'dark', 'dark_files'):
+                    if len(s.get(list_key, [])) > ims_idx:
+                        s[list_key].pop(ims_idx)
+                        load_panel_modified = True
+
+                if det_key in s.get('rect', {}):
+                    s['rect'].pop(det_key)
+                    load_panel_modified = True
+
+            # This image will not be kept
+            ims_dict.pop(det_key)
+            if unagg_dict and det_key in unagg_dict:
+                unagg_dict.pop(det_key)
+
+            if det_key in recent_images:
+                recent_images.pop(det_key)
+                recent_images_modified = True
+
+        # Now make dummy images for missing ones
+        for det_key in detector_names:
+            if det_key in ims_dict:
+                # Already have an imageseries here
+                continue
+
+            det_shape = get_shape(det_key)
+
+            # Make a dummy image
+            shape = (ims_length, *det_shape)
+            ims_dict[det_key] = make_dummy_ims(shape)
+
+            if unagg_length is not None:
+                shape = (unagg_length, *det_shape)
+                unagg_dict[det_key] = make_dummy_ims(shape)
+
+        # In case the imageseries length was shorted, truncate
+        # the current imageseries index
+        if HexrdConfig().current_imageseries_idx >= ims_length:
+            HexrdConfig().current_imageseries_idx = ims_length - 1
+
+        if recent_images_modified:
+            HexrdConfig().recent_images_changed.emit()
+
+        if load_panel_modified:
+            HexrdConfig().load_panel_state_modified.emit()
 
     def load_images(self, detectors, file_names, options=None):
         HexrdConfig().imageseries_dict.clear()
