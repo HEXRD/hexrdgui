@@ -43,7 +43,7 @@ class DisplayPlane:
 
         return (del_x, del_y)
 
-    def display_panel(self, sizes, mps, bvec=None):
+    def display_panel(self, sizes, mps, bvec=None, xrs_dist=None):
 
         del_x = sizes[0]
         del_y = sizes[1]
@@ -55,6 +55,7 @@ class DisplayPlane:
             rows=nrows_map, cols=ncols_map,
             pixel_size=(mps, mps),
             tvec=self.tvec, tilt=self.tilt,
-            bvec=bvec)
+            bvec=bvec,
+            xrs_dist=xrs_dist)
 
         return display_panel

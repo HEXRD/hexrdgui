@@ -115,7 +115,8 @@ class InstrumentViewer:
     def make_dpanel(self):
         self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
                                                 self.pixel_size,
-                                                self.instr.beam_vector)
+                                                self.instr.beam_vector,
+                                                self.instr.source_distance)
         self.dpanel.name = 'dpanel'
         self.dpanel._distortion = FakeDistortionObject(self.dpanel, self.instr)
 
