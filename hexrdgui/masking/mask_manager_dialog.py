@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from itertools import groupby
 from operator import attrgetter
+import re
 
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
@@ -44,6 +45,7 @@ class MaskManagerDialog(QObject):
         self.setup_connections()
 
     def show(self):
+        self.create_tree()
         self.ui.show()
 
     def setup_connections(self):
@@ -149,6 +151,15 @@ class MaskManagerDialog(QObject):
         MaskManager().masks_changed()
         self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
 
+
+    def _alphanumeric_sort(self, value):
+        # Split the string into text and number parts so that we
+        # sort by string value lexicographically and the number
+        # value numerically
+        vals = re.split('([0-9]+)', value)
+        print([int(v) if v.isdigit() else v.lower() for v in vals])
+        return [int(v) if v.isdigit() else v.lower() for v in vals]
+
     def update_tree(self):
         if self.ui.masks_tree.topLevelItemCount() == 0:
             self.create_tree()
@@ -193,9 +204,11 @@ class MaskManagerDialog(QObject):
                 # Create mode item
                 mode_item = self.create_mode_item(mode, source)
 
-                # Create items for each mask
-                for mask in masks:
+                # Create items for each mask, sorted naturally by name
+                for mask in sorted(masks,
+                                   key=lambda x: self._alphanumeric_sort(x.name)):
                     self.create_mask_item(mode_item, mask)
+
         self.ui.masks_tree.expandAll()
         self.ui.masks_tree.resizeColumnToContents(0)
         self.ui.masks_tree.resizeColumnToContents(1)
