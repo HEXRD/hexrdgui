@@ -1,7 +1,11 @@
+from pathlib import Path
+
 import numpy as np
 
 from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QFileDialog, QMessageBox, QTableWidget, QTableWidgetItem
+)
 
 from hexrdgui.constants import OverlayType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -35,6 +39,8 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.setup_table()
         self.update_materials()
         self.update_gui()
+        self.update_visibility_states()
+
         self.setup_connections()
 
     def setup_connections(self):
@@ -50,8 +56,22 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.ui.tolerances_table.itemChanged.connect(
             self.on_tolerances_changed)
 
+        self.ui.use_spots_data_file.toggled.connect(
+            self.update_visibility_states)
+        self.ui.select_spots_data_file.clicked.connect(
+            self.select_spots_data_file)
+
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
+
+    def update_visibility_states(self):
+        visible = self.use_spots_data_file
+        for w in (
+            self.ui.spots_data_file_label,
+            self.ui.spots_data_file,
+            self.ui.select_spots_data_file,
+        ):
+            w.setVisible(visible)
 
     def update_gui(self):
         indexing_config = HexrdConfig().indexing_config
@@ -59,6 +79,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         indexing_config = HexrdConfig().indexing_config
         self.npdiv = indexing_config['fit_grains']['npdiv']
         self.threshold = indexing_config['fit_grains']['threshold']
+        self.spots_data_file = indexing_config['fit_grains']['spots_data_file']
 
         self.update_tolerances_grain_options()
         self.update_num_hkls()
@@ -70,6 +91,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         indexing_config = HexrdConfig().indexing_config
         indexing_config['fit_grains']['npdiv'] = self.npdiv
         indexing_config['fit_grains']['threshold'] = self.threshold
+        indexing_config['fit_grains']['spots_data_file'] = self.spots_data_file
 
     def show(self):
         self.ui.show()
@@ -250,6 +272,16 @@ class HEDMCalibrationOptionsDialog(QObject):
         HexrdConfig().overlay_config_changed.emit()
         HexrdConfig().update_overlay_editor.emit()
 
+    def select_spots_data_file(self):
+        selected_file, _ = QFileDialog.getOpenFileName(
+            self.ui, 'Select Spots Data File', HexrdConfig().working_dir,
+            'HDF5 files (*.h5)')
+
+        if not selected_file:
+            return
+
+        self.spots_data_file = str(Path(selected_file).resolve())
+
     @property
     def selected_material(self) -> str:
         return self.ui.material.currentText()
@@ -273,6 +305,27 @@ class HEDMCalibrationOptionsDialog(QObject):
     @threshold.setter
     def threshold(self, v):
         self.ui.threshold.setValue(v)
+
+    @property
+    def use_spots_data_file(self) -> bool:
+        return self.ui.use_spots_data_file.isChecked()
+
+    @use_spots_data_file.setter
+    def use_spots_data_file(self, b: bool):
+        return self.ui.use_spots_data_file.setChecked(b)
+
+    @property
+    def spots_data_file(self) -> str | None:
+        if not self.use_spots_data_file:
+            return None
+
+        return self.ui.spots_data_file.text()
+
+    @spots_data_file.setter
+    def spots_data_file(self, v: str | None):
+        self.use_spots_data_file = v is not None
+        v = v if v is not None else ''
+        self.ui.spots_data_file.setText(v)
 
     def choose_hkls(self):
         kwargs = {

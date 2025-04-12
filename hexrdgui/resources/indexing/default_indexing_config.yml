@@ -104,6 +104,8 @@ fit_grains:
 
   tth_max: false # true, false, or a non-negative value, defaults to true
 
+  # Spots data file to use instead of `pull_spots()`, if available
+  spots_data_file: null
 
 
 ####################################################

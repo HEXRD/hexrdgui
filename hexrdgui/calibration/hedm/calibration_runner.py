@@ -6,6 +6,10 @@ from PySide6.QtCore import QObject, Signal
 
 from hexrd import instrument
 from hexrd.fitting.calibration import GrainCalibrator, InstrumentCalibrator
+from hexrd.spot_tracking.measure_spots import (
+    create_measure_spots_params,
+    measure_spots_from_params,
+)
 
 from hexrdgui.calibration.hedm import (
     compute_xyo,
@@ -77,15 +81,15 @@ class HEDMCalibrationRunner(QObject):
             gw.dump_grain(i, 1, 0, overlay.crystal_params)
 
         self.synchronize_omega_period()
-        self.run_calibration()
+        self.measure_spots()
 
-    def run_calibration(self):
-        # First, run pull_spots() to get the spots data
-        self.async_runner.progress_title = 'Running pull spots...'
-        self.async_runner.success_callback = self.on_pull_spots_finished
-        self.async_runner.run(self.run_pull_spots)
+    def measure_spots(self):
+        # First, run measure_spots() to get the spots data
+        self.async_runner.progress_title = 'Measuring spots...'
+        self.async_runner.success_callback = self.on_measure_spots_finished
+        self.async_runner.run(self.run_measure_spots)
 
-    def on_pull_spots_finished(self, spots_data_dict):
+    def on_measure_spots_finished(self, spots_data_dict):
         cfg = create_indexing_config()
 
         # grab instrument
@@ -240,33 +244,42 @@ class HEDMCalibrationRunner(QObject):
         HexrdConfig().update_overlay_editor.emit()
         self.finished.emit()
 
-    def run_pull_spots(self):
+    def run_measure_spots(self):
         cfg = create_indexing_config()
 
-        instr = cfg.instrument.hedm
-        imsd = cfg.image_series
+        # We'll overwrite it in case there's a mismatch
+        cfg._plane_data = self.material.planeData
+
+        first_overlay = self.first_active_overlay
+
+        params = create_measure_spots_params(
+            cfg.instrument.hedm,
+            self.grains_table,
+            cfg.image_series,
+            cfg,
+            cfg.fit_grains.threshold,
+            first_overlay.eta_ranges,
+            first_overlay.ome_period,
+        )
 
         outputs = {}
         for i, overlay in enumerate(self.active_overlays):
+            # Update eta ranges and omega period if needed.
+            params['eta_ranges'] = overlay.eta_ranges
+            params['ome_period'] = overlay.ome_period
+
+            # Create tolerances
+            tols = [
+                np.degrees(overlay.tth_width),
+                np.degrees(overlay.eta_width),
+                np.degrees(overlay.ome_width),
+            ]
             kwargs = {
-                'plane_data': self.material.planeData,
-                'grain_params': overlay.crystal_params,
-                'tth_tol': np.degrees(overlay.tth_width),
-                'eta_tol': np.degrees(overlay.eta_width),
-                'ome_tol': np.degrees(overlay.ome_width),
-                'imgser_dict': imsd,
-                'npdiv': cfg.fit_grains.npdiv,
-                'threshold': cfg.fit_grains.threshold,
-                'eta_ranges': overlay.eta_ranges,
-                'ome_period': overlay.ome_period,
-                'dirname': cfg.analysis_dir,
-                'filename': None,
-                'return_spot_list': False,
-                'quiet': True,
-                'check_only': False,
-                'interp': 'nearest',
+                'grain_id': i,
+                'tols': tols,
+                'params': params,
             }
-            outputs[i] = instr.pull_spots(**kwargs)
+            outputs[i] = measure_spots_from_params(**kwargs)
 
         return outputs
 

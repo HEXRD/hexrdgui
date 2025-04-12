@@ -586,7 +586,7 @@ def parse_spots_data(spots_data, instr, grain_ids, ome_period=None,
         idx_0[det_key] = []
 
         for ig, grain_id in enumerate(grain_ids):
-            data = spots_data[grain_id][1][det_key]
+            data = spots_data[grain_id][det_key]
             # Convert to numpy array to make operations easier
             data = np.array(data, dtype=object)
 

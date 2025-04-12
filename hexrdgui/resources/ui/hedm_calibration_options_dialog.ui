@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>606</width>
-    <height>529</height>
+    <height>557</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,8 +39,26 @@
    </item>
    <item>
     <layout class="QGridLayout" name="grid_layout">
-     <item row="1" column="2">
-      <widget class="QComboBox" name="material"/>
+     <item row="5" column="1">
+      <widget class="QLabel" name="npdiv_label">
+       <property name="text">
+        <string>Number of Polar Subdivisions:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="num_grains_selected">
+       <property name="text">
+        <string>Number of grains to be refined:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1" colspan="2">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>η and ω ranges can be edited within the &quot;Overlay Manager&quot;</string>
+       </property>
+      </widget>
      </item>
      <item row="3" column="1" colspan="2">
       <widget class="QGroupBox" name="tolerances_group">
@@ -106,27 +124,6 @@
        </layout>
       </widget>
      </item>
-     <item row="6" column="1">
-      <widget class="QLabel" name="threshold_label">
-       <property name="text">
-        <string>Threshold:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLabel" name="num_hkls_selected">
-       <property name="text">
-        <string>Number of hkls selected:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLabel" name="npdiv_label">
-       <property name="text">
-        <string>Number of Polar Subdivisions:</string>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="2">
       <widget class="ScientificDoubleSpinBox" name="threshold">
        <property name="decimals">
@@ -140,10 +137,34 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1" colspan="2">
-      <widget class="QLabel" name="label">
+     <item row="7" column="1">
+      <widget class="QCheckBox" name="use_spots_data_file">
        <property name="text">
-        <string>η and ω ranges can be edited within the &quot;Overlay Manager&quot;</string>
+        <string>Use Spots Data File</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QLabel" name="threshold_label">
+       <property name="text">
+        <string>Threshold:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QComboBox" name="material"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="material_label">
+       <property name="text">
+        <string>Selected Material:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="num_hkls_selected">
+       <property name="text">
+        <string>Number of hkls selected:</string>
        </property>
       </widget>
      </item>
@@ -160,13 +181,6 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="material_label">
-       <property name="text">
-        <string>Selected Material:</string>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="2">
       <widget class="QPushButton" name="choose_hkls">
        <property name="text">
@@ -174,12 +188,26 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="num_grains_selected">
-       <property name="text">
-        <string>Number of grains to be refined:</string>
-       </property>
-      </widget>
+     <item row="8" column="1" colspan="2">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="spots_data_file_label">
+         <property name="text">
+          <string>Spots data file:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="spots_data_file"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="select_spots_data_file">
+         <property name="text">
+          <string>Select File</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
@@ -226,6 +254,9 @@
   <tabstop>tolerances_table</tabstop>
   <tabstop>npdiv</tabstop>
   <tabstop>threshold</tabstop>
+  <tabstop>use_spots_data_file</tabstop>
+  <tabstop>spots_data_file</tabstop>
+  <tabstop>select_spots_data_file</tabstop>
  </tabstops>
  <resources/>
  <connections>
