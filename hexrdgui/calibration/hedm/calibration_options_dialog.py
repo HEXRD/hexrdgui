@@ -65,13 +65,24 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.ui.rejected.connect(self.on_rejected)
 
     def update_visibility_states(self):
-        visible = self.use_spots_data_file
+        using_spots_file = self.use_spots_data_file
+
+        # Show relevant widgets if we are using spots file
         for w in (
             self.ui.spots_data_file_label,
             self.ui.spots_data_file,
             self.ui.select_spots_data_file,
         ):
-            w.setVisible(visible)
+            w.setVisible(using_spots_file)
+
+        # Hide irrelevant widgets if we are using spots file
+        for w in (
+            self.ui.npdiv_label,
+            self.ui.npdiv,
+            self.ui.threshold_label,
+            self.ui.threshold,
+        ):
+            w.setVisible(not using_spots_file)
 
     def update_gui(self):
         indexing_config = HexrdConfig().indexing_config
