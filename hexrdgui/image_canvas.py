@@ -517,6 +517,15 @@ class ImageCanvas(FigureCanvas):
         plot(h_ranges, 'h_ranges', highlight_style['ranges'])
 
     def draw_azimuthal_powder_lines(self, overlay):
+        if (
+            HexrdConfig().has_multi_xrs and
+            overlay.xray_source is not None and
+            HexrdConfig().active_beam_name != overlay.xray_source
+        ):
+            # This overlay's x-ray source does not match the active one.
+            # Skip it.
+            return
+
         az_axis = self.azimuthal_integral_axis
         if az_axis is None or not overlay.hkl_means:
             # Can't draw
