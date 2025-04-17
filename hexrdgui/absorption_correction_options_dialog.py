@@ -112,7 +112,10 @@ class AbsorptionCorrectionOptionsDialog:
     def setup_connections(self):
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
-                lambda index, k=k: self.material_changed(index, k))
+                lambda index, k=k: self.material_changed(k, index=index))
+        for k, w in self.material_inputs.items():
+            w.textChanged.connect(
+                lambda text, k=k: self.material_changed(k, text=text))
         self.ui.filter_density.valueChanged.connect(self.filter_info_changed)
         self.ui.filter_thickness.valueChanged.connect(self.filter_info_changed)
         self.ui.detectors.currentTextChanged.connect(self.detector_changed)
@@ -126,7 +129,7 @@ class AbsorptionCorrectionOptionsDialog:
     def exec(self):
         return self.ui.exec()
 
-    def material_changed(self, index, category):
+    def material_changed(self, category, index=0, text=None):
         selected = self.material_selectors[category].currentText()
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
@@ -144,6 +147,9 @@ class AbsorptionCorrectionOptionsDialog:
                 self.filters[det_name]['material'] = material.name
         else:
             self.density_inputs[category].setValue(0.0)
+        if category == 'filter':
+            det_name = self.ui.detectors.currentText()
+            self.filters[det_name]['material'] = material.name if index > 0 else text
 
     def filter_info_changed(self, new_value=None, det_name=None):
         if det_name is None:
