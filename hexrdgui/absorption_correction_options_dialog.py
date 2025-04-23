@@ -243,10 +243,9 @@ class AbsorptionCorrectionOptionsDialog:
         instr = create_hedm_instrument()
         for det in HexrdConfig().detector_names:
             filter = HexrdConfig().detector_filter(det)
-            print(f'config filter {det}: {filter.material} {filter.density} {filter.thickness}')
             if filter is None:
                 filter = instr.detectors[det].filter
-                print(f'default filter {det}: {filter.material} {filter.density} {filter.thickness}')
+
             self.filters[det] = {
                 'material': filter.material,
                 'density': filter.density,
