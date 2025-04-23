@@ -149,7 +149,14 @@ class AbsorptionCorrectionOptionsDialog:
             self.density_inputs[category].setValue(0.0)
         if category == 'filter':
             det_name = self.ui.detectors.currentText()
-            self.filters[det_name]['material'] = material.name if index > 0 else text
+
+            mat_name = text
+            if index > 0:
+                mat_name = material.name
+
+            if mat_name is not None:
+                # If the mat name is None, then we aren't updating it
+                self.filters[det_name]['material'] = mat_name
 
     def filter_info_changed(self, new_value=None, det_name=None):
         if det_name is None:
