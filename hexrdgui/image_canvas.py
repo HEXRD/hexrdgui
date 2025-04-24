@@ -6,6 +6,7 @@ import sys
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
 
+from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
@@ -232,10 +233,10 @@ class ImageCanvas(FigureCanvas):
         self.clear_figure()
 
     def clear_figure(self):
+        self.remove_all_overlay_artists()
         self.figure.clear()
         self.raw_axes.clear()
         self.axes_images.clear()
-        self.remove_all_overlay_artists()
         self.clear_azimuthal_integral_axis()
         self.mode = None
 
@@ -851,7 +852,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_detector_borders(self):
         while self.cached_detector_borders:
-            self.cached_detector_borders.pop(0).remove()
+            _safe_remove_artist(self.cached_detector_borders.pop(0))
 
         self.draw_idle()
 
@@ -875,7 +876,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_stereo_border_artists(self):
         while self.stereo_border_artists:
-            self.stereo_border_artists.pop(0).remove()
+            _safe_remove_artist(self.stereo_border_artists.pop(0))
 
         self.draw_idle()
 
@@ -2549,3 +2550,14 @@ def transform_from_plain_cartesian_func(mode):
         raise Exception(f'Unknown mode: {mode}')
 
     return funcs[mode]
+
+
+def _safe_remove_artist(artist: Artist):
+    # Starting in matplotlib 3.10, we cannot remove artists from a figure
+    # that has already been cleared. I don't know of any easy way to check
+    # if the axis has been cleared, though, so for now, we just try to
+    # remove the artist and ignore the relevant exception if it occurs.
+    try:
+        artist.remove()
+    except NotImplementedError:
+        pass
