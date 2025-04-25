@@ -33,6 +33,22 @@ class ListEditor(QObject):
 
         self.ui = UiLoader().load_file('list_editor.ui', parent)
 
+        # I have no idea why, but for *this* specific UI file, the table's
+        # selection model's model starts out in an invalid state.
+        # I haven't seen it be invalid for other uses of QTableWidget. But
+        # if we call `self.ui.table.selectionModel().model()`, which we
+        # must do in some functions, we get the following error:
+        #     RuntimeError: Internal C++ object (PySide6.QtCore.QAbstractTableModel) already deleted.
+
+        # I tried resetting all QTableWidget settings to default in the ui
+        # file, but the model still starts out in an invalid state! So I
+        # have no idea why it is happening.
+        # But one fix I found is that if we set the table's selection model
+        # on the table (which you'd think wouldn't change anything), the
+        # model on the selection model gets fixed. So we are doing that.
+        # FIXME: see if we can figure out why this is an issue.
+        self.ui.table.setSelectionModel(self.selection_model)
+
         # Make sure there are no duplicates in the items
         items = list(dict.fromkeys(items))
 
@@ -86,7 +102,7 @@ class ListEditor(QObject):
         return len(self.items)
 
     def clear_selection(self):
-        self.selection_model.clear()
+        self.selection_model.clearSelection()
 
     def select_row(self, i):
         model_index = self.selection_model.model().index(i, 0)
@@ -192,7 +208,7 @@ class ListEditor(QObject):
     def update_table(self):
         table = self.ui.table
 
-        with block_signals(table):
+        with block_signals(table, self.selection_model):
             table.clearContents()
 
             table.setRowCount(self.num_items)
