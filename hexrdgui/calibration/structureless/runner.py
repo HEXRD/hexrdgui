@@ -512,6 +512,7 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
             ring_indices[xray_source] = ring_idx
 
             if (
+                HexrdConfig().has_multi_xrs and
                 not self.showing_picks_from_all_xray_sources and
                 xray_source != HexrdConfig().active_beam_name
             ):
