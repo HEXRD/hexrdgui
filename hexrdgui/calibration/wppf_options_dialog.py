@@ -283,7 +283,7 @@ class WppfOptionsDialog(QObject):
         return generate_params(**kwargs)
 
     def reset_params(self):
-        self.params.param_dict = self.generate_params()
+        self.params.param_dict = self.generate_params().param_dict
         self.update_tree_view()
 
     def update_params(self):
