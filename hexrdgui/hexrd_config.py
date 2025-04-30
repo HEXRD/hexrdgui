@@ -1087,6 +1087,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 # Convert to float. This is especially important
                 # for nan, since it is a float...
                 img = img.astype(float)
+            elif not img.flags.writeable:
+                # Need to make a copy
+                img = img.copy()
+                images_dict[det_key] = img
 
             img[~panel.panel_buffer] = fill_value
             images_dict[det_key] = img
@@ -1121,6 +1125,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if (np.issubdtype(type(fill_value), np.floating) and
                     not np.issubdtype(img.dtype, np.floating)):
                 img = img.astype(float)
+                images_dict[det] = img
+            elif not img.flags.writeable:
+                # Need to make a copy
+                img = img.copy()
                 images_dict[det] = img
 
             img[~mask] = fill_value
