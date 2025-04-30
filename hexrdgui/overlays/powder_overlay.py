@@ -88,6 +88,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 HexrdConfig().create_default_physics_package()
 
         if self.tth_distortion_type == 'SampleLayerDistortion':
+            # Rename to the new name
+            self.tth_distortion_type = 'LayerDistortion'
+
+        if self.tth_distortion_type == 'LayerDistortion':
             # We added pinhole_radius later. Set a default if it is missing.
             if 'pinhole_radius' not in self.tth_distortion_kwargs:
                 radius = HexrdConfig().physics_package.pinhole_radius
@@ -457,10 +461,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             if has_pinhole_distortion or (
                 (polar_distortion_with_self or offset_distortion) and
                 distortion_object and
-                distortion_object.pinhole_distortion_type == 'SampleLayerDistortion'
+                distortion_object.pinhole_distortion_type == 'LayerDistortion'
             ):
                 # If this overlay has a pinhole distortion of any kind, or
-                # if a sample layer distortion is being applied to the polar
+                # if a layer distortion is being applied to the polar
                 # view, we need to cut off all values past critical beta.
                 # Their correction will be very incorrect.
                 if has_pinhole_distortion:

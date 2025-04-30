@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>815</width>
-    <height>309</height>
+    <height>310</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -42,27 +42,58 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="none_tab">
       <attribute name="title">
        <string>None</string>
       </attribute>
      </widget>
-     <widget class="QWidget" name="sample_layer_tab">
+     <widget class="QWidget" name="layer_tab">
       <attribute name="title">
-       <string>Sample Layer</string>
+       <string>Layer</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="2" column="2">
-        <widget class="QLabel" name="label">
+       <item row="0" column="2">
+        <widget class="QLabel" name="layer_pinhole_thickness_label">
          <property name="text">
-          <string>Pinhole Diameter</string>
+          <string>Pinhole Thickness</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="ScientificDoubleSpinBox" name="sample_layer_standoff">
+       <item row="3" column="2">
+        <widget class="ScientificDoubleSpinBox" name="layer_pinhole_diameter">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>30</height>
+          </size>
+         </property>
+         <property name="keyboardTracking">
+          <bool>false</bool>
+         </property>
+         <property name="suffix">
+          <string> μm</string>
+         </property>
+         <property name="decimals">
+          <number>8</number>
+         </property>
+         <property name="maximum">
+          <double>100000000.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="value">
+          <double>200.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="ScientificDoubleSpinBox" name="layer_thickness">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -82,7 +113,7 @@
           <number>8</number>
          </property>
          <property name="minimum">
-          <double>0.100000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
           <double>10000000.000000000000000</double>
@@ -91,12 +122,33 @@
           <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>150.000000000000000</double>
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="layer_thickness_label">
+         <property name="text">
+          <string>Layer Thickness</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="layer_type_label">
+         <property name="text">
+          <string>Layer Type</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLabel" name="layer_pinhole_diameter_label">
+         <property name="text">
+          <string>Pinhole Diameter</string>
          </property>
         </widget>
        </item>
        <item row="1" column="2">
-        <widget class="ScientificDoubleSpinBox" name="sample_pinhole_thickness">
+        <widget class="ScientificDoubleSpinBox" name="layer_pinhole_thickness">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -129,8 +181,40 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="QComboBox" name="layer_type">
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <item>
+          <property name="text">
+           <string>Window</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Sample</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Pusher</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Heatshield</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Ablator</string>
+          </property>
+         </item>
+        </widget>
+       </item>
        <item row="1" column="1">
-        <widget class="ScientificDoubleSpinBox" name="sample_layer_thickness">
+        <widget class="ScientificDoubleSpinBox" name="layer_standoff">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -150,7 +234,7 @@
           <number>8</number>
          </property>
          <property name="minimum">
-          <double>0.100000000000000</double>
+          <double>0.000000000000000</double>
          </property>
          <property name="maximum">
           <double>10000000.000000000000000</double>
@@ -159,59 +243,7 @@
           <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>5.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="sample_layer_standoff_label">
-         <property name="text">
-          <string>Layer Standoff</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="sample_layer_thickness_label">
-         <property name="text">
-          <string>Layer Thickness</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="sample_pinhole_thickness_label">
-         <property name="text">
-          <string>Pinhole Thickness</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="ScientificDoubleSpinBox" name="sample_pinhole_diameter">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="suffix">
-          <string> μm</string>
-         </property>
-         <property name="decimals">
-          <number>8</number>
-         </property>
-         <property name="maximum">
-          <double>100000000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.010000000000000</double>
-         </property>
-         <property name="value">
-          <double>200.000000000000000</double>
+          <double>150.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -227,6 +259,13 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="layer_standoff_label">
+         <property name="text">
+          <string>Layer Standoff</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -533,7 +572,7 @@
      </item>
      <item>
       <property name="text">
-       <string>Sample Layer</string>
+       <string>Layer</string>
       </property>
      </item>
      <item>
@@ -591,10 +630,8 @@ This will override any overlays that are currently being used for polar distorti
  <tabstops>
   <tabstop>correction_type</tabstop>
   <tabstop>tab_widget</tabstop>
-  <tabstop>sample_layer_standoff</tabstop>
-  <tabstop>sample_layer_thickness</tabstop>
-  <tabstop>sample_pinhole_thickness</tabstop>
-  <tabstop>sample_pinhole_diameter</tabstop>
+  <tabstop>layer_pinhole_thickness</tabstop>
+  <tabstop>layer_pinhole_diameter</tabstop>
   <tabstop>rygg_diameter</tabstop>
   <tabstop>rygg_thickness</tabstop>
   <tabstop>rygg_num_phi_elements</tabstop>
