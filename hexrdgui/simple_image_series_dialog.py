@@ -273,7 +273,14 @@ class SimpleImageSeriesDialog(QObject):
             return
 
         enable = True
-        total_frames = np.sum(self.total_frames) / len(self.dets)
+        if HexrdConfig().instrument_has_roi:
+            # Images might be used multiple times
+            # Just use the "super panels" instead of the "subpanels"
+            num_panels = len(HexrdConfig().detector_group_names)
+        else:
+            num_panels = len(self.dets)
+
+        total_frames = np.sum(self.total_frames) / num_panels
         if total_frames - self.empty_frames < 2:
             enable = False
         self.ui.aggregation.setEnabled(enable)
