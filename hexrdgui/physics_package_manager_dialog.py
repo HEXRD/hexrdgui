@@ -54,6 +54,7 @@ class PhysicsPackageManagerDialog:
             'ablator',
             'heatshield',
             'pusher',
+            'reflective',
             'window',
             'pinhole',
         ]
@@ -294,14 +295,17 @@ class PhysicsPackageDiagram:
                             edgecolor=(0, 0, 0)),
         'sample': Rectangle((0.38, 0.2), 0.03, 0.6, facecolor=(0, 0, 1, 0.4),
                             edgecolor=(0, 0, 0)),
+        'reflective': Rectangle((0.41, 0.2), 0.03, 0.6,
+                                facecolor=(1, 0.6, 0, 0.4),
+                                edgecolor=(0, 0, 0)),
         'VISAR': Polygon(
-            [(0.41, 0.4), (0.41, 0.6), (0.91, 0.65), (0.91, 0.35)],
+            [(0.44, 0.4), (0.44, 0.6), (0.91, 0.65), (0.91, 0.35)],
             facecolor=(1, 0, 0, 0.3)),
-        'window': Rectangle((0.4, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8),
+        'window': Rectangle((0.43, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8),
                             edgecolor=(0, 0, 0)),
         'pinhole': Polygon(
-            [(0.6, 0.2), (0.6, 0.8), (0.8, 0.8), (0.75, 0.6), (0.6, 0.6),
-             (0.6, 0.4), (0.75, 0.4), (0.75, 0.6), (0.75, 0.4), (0.8, 0.2)],
+            [(0.63, 0.2), (0.63, 0.8), (0.83, 0.8), (0.78, 0.6), (0.63, 0.6),
+             (0.63, 0.4), (0.78, 0.4), (0.78, 0.6), (0.78, 0.4), (0.83, 0.2)],
             facecolor=(0.5, 0.5, 0.5, 0.6), edgecolor=(0, 0, 0))
 
     }
@@ -335,6 +339,9 @@ class PhysicsPackageDiagram:
         self.clear()
         count = 0
         offset = 0
+        rename_text = {
+            'reflective': 'reflective coating',
+        }
         for key, patch in self.patches.items():
             p = copy.deepcopy(patch)
             if not show_dict.get(key, True):
@@ -355,6 +362,7 @@ class PhysicsPackageDiagram:
                 p.set_x(p.xy[0] + offset + count * 0.01)
 
             self.ax.add_patch(p)
-            self.add_text(p, key)
+            label = rename_text.get(key, key)
+            self.add_text(p, label)
             count += 1
         self.fig.canvas.draw_idle()

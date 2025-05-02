@@ -184,33 +184,8 @@
        <item row="1" column="0">
         <widget class="QComboBox" name="layer_type">
          <property name="currentIndex">
-          <number>1</number>
+          <number>-1</number>
          </property>
-         <item>
-          <property name="text">
-           <string>Window</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Sample</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Pusher</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Heatshield</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Ablator</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="1" column="1">
