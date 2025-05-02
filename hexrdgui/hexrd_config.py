@@ -697,7 +697,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 if not self.has_physics_package:
                     # We need to create a default physics package
                     # This is for backward compatibility
-                    self.create_default_physics_package()
+                    module = utils.physics_package
+                    module.make_physics_package_from_old_overlay_config(v)
 
             self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
