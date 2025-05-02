@@ -42,6 +42,8 @@ class PinholeCorrectionEditor(QObject):
         self.ui.correction_type.setCurrentIndex(0)
         self.correction_type_changed()
 
+        self.setup_layer_options()
+
         self.load_pinhole_materials()
         self.populate_rygg_absorption_length_options()
         self.on_rygg_absorption_length_selector_changed()
@@ -76,6 +78,10 @@ class PinholeCorrectionEditor(QObject):
 
         self.ui.apply_to_polar_view.toggled.connect(
             self.on_apply_to_polar_view_toggled)
+
+    def setup_layer_options(self):
+        labels = list(REVERSED_LAYER_TYPES)
+        self.ui.layer_type.addItems(labels)
 
     def synchronize_values(self):
         with block_signals(*self.all_widgets):
@@ -133,7 +139,7 @@ class PinholeCorrectionEditor(QObject):
         if dtype is None:
             return None
         elif dtype == 'LayerDistortion':
-            layer_type = self.ui.layer_type.currentText().lower()
+            layer_type = REVERSED_LAYER_TYPES[self.ui.layer_type.currentText()]
             return {
                 'layer_type': layer_type,
                 'layer_standoff': physics.layer_standoff(layer_type) * 1e-3,
@@ -215,6 +221,10 @@ class PinholeCorrectionEditor(QObject):
                 value = vp.get(key, value)
 
             w = getattr(self.ui, w_name)
+
+            if key == 'layer_type':
+                # Map it to the combobox name
+                value = LAYER_TYPES[value]
 
             if isinstance(w, QComboBox):
                 f = w.setCurrentText
@@ -585,3 +595,13 @@ TYPE_MAP = {
     'RyggPinholeDistortion': RyggPinholeDistortion,
 }
 REVERSED_TYPE_MAP = {v: k for k, v in TYPE_MAP.items()}
+
+LAYER_TYPES = {
+    'ablator': 'Ablator',
+    'heatshield': 'Heatshield',
+    'pusher': 'Pusher',
+    'sample': 'Sample',
+    'reflective': 'Reflective Coating',
+    'window': 'Window',
+}
+REVERSED_LAYER_TYPES = {v: k for k, v in LAYER_TYPES.items()}

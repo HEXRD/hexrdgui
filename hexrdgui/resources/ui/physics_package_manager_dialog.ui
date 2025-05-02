@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1243</width>
-    <height>524</height>
+    <width>1298</width>
+    <height>527</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -114,6 +114,16 @@
          <widget class="QCheckBox" name="show_pusher">
           <property name="text">
            <string>Pusher</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_reflective">
+          <property name="text">
+           <string>Reflective</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -550,6 +560,86 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="reflective_tab">
+         <attribute name="title">
+          <string>Reflective</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="1" column="0" colspan="6">
+           <widget class="QLineEdit" name="reflective_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="reflective_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_density</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="reflective_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_thickness</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="reflective_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_material</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="reflective_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="3" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="reflective_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="reflective_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="5">
+           <widget class="QComboBox" name="reflective_material"/>
+          </item>
+         </layout>
+        </widget>
         <widget class="QWidget" name="window_tab">
          <attribute name="title">
           <string>Window</string>
@@ -762,6 +852,7 @@
   <tabstop>show_ablator</tabstop>
   <tabstop>show_heatshield</tabstop>
   <tabstop>show_pusher</tabstop>
+  <tabstop>show_reflective</tabstop>
   <tabstop>show_window</tabstop>
   <tabstop>show_pinhole</tabstop>
   <tabstop>comboBox</tabstop>
@@ -782,6 +873,10 @@
   <tabstop>sample_material_input</tabstop>
   <tabstop>sample_density</tabstop>
   <tabstop>sample_thickness</tabstop>
+  <tabstop>reflective_material</tabstop>
+  <tabstop>reflective_material_input</tabstop>
+  <tabstop>reflective_density</tabstop>
+  <tabstop>reflective_thickness</tabstop>
   <tabstop>window_material</tabstop>
   <tabstop>window_material_input</tabstop>
   <tabstop>window_density</tabstop>
