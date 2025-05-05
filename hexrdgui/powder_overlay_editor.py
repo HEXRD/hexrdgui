@@ -414,8 +414,8 @@ class PowderOverlayEditor:
                 return
 
             if self.pinhole_correction_type is None:
-                # Since we hide None, let's switch to sample layer offset
-                self.pinhole_correction_type = 'SampleLayerDistortion'
+                # Since we hide None, let's switch to layer distortion
+                self.pinhole_correction_type = 'LayerDistortion'
 
         self.update_config()
 

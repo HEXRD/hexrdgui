@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 import hexrd.resources
 from hexrd.material import _angstroms, _kev, Material
 from hexrd.xrdutil.phutil import (
-    JHEPinholeDistortion, RyggPinholeDistortion, SampleLayerDistortion,
+    JHEPinholeDistortion, RyggPinholeDistortion, LayerDistortion,
 )
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -42,12 +42,16 @@ class PinholeCorrectionEditor(QObject):
         self.ui.correction_type.setCurrentIndex(0)
         self.correction_type_changed()
 
+        self.setup_layer_options()
+
         self.load_pinhole_materials()
         self.populate_rygg_absorption_length_options()
         self.on_rygg_absorption_length_selector_changed()
         self.setup_connections()
 
     def setup_connections(self):
+        self.ui.layer_type.currentIndexChanged.connect(self.update_gui)
+
         for w in self.all_widgets:
             if isinstance(w, (QDoubleSpinBox, QSpinBox)):
                 w.valueChanged.connect(self.on_settings_modified)
@@ -75,6 +79,10 @@ class PinholeCorrectionEditor(QObject):
         self.ui.apply_to_polar_view.toggled.connect(
             self.on_apply_to_polar_view_toggled)
 
+    def setup_layer_options(self):
+        labels = list(REVERSED_LAYER_TYPES)
+        self.ui.layer_type.addItems(labels)
+
     def synchronize_values(self):
         with block_signals(*self.all_widgets):
             self.correction_kwargs = {}
@@ -98,7 +106,7 @@ class PinholeCorrectionEditor(QObject):
             'None': None,
             'Pinhole (JHE)': 'JHEPinholeDistortion',
             'Pinhole (Rygg)': 'RyggPinholeDistortion',
-            'Sample Layer': 'SampleLayerDistortion',
+            'Layer': 'LayerDistortion',
         }
         if v in conversions:
             v = conversions[v]
@@ -111,12 +119,18 @@ class PinholeCorrectionEditor(QObject):
             None: 'None',
             'JHEPinholeDistortion': 'Pinhole (JHE)',
             'RyggPinholeDistortion': 'Pinhole (Rygg)',
-            'SampleLayerDistortion': 'Sample Layer',
+            'LayerDistortion': 'Layer',
         }
         if v in conversions:
             v = conversions[v]
 
         self.ui.correction_type.setCurrentText(v)
+
+    def update_gui(self):
+        # This will trigger any needed updates
+        # The getter grabs values from the physics package, while
+        # the setter sets values in the UI.
+        self.correction_kwargs = self.correction_kwargs
 
     @property
     def correction_kwargs(self):
@@ -124,10 +138,12 @@ class PinholeCorrectionEditor(QObject):
         physics = HexrdConfig().physics_package
         if dtype is None:
             return None
-        elif dtype == 'SampleLayerDistortion':
+        elif dtype == 'LayerDistortion':
+            layer_type = REVERSED_LAYER_TYPES[self.ui.layer_type.currentText()]
             return {
-                'layer_standoff': physics.window_thickness * 1e-3,
-                'layer_thickness': physics.sample_thickness * 1e-3,
+                'layer_type': layer_type,
+                'layer_standoff': physics.layer_standoff(layer_type) * 1e-3,
+                'layer_thickness': physics.layer_thickness(layer_type) * 1e-3,
                 'pinhole_thickness': physics.pinhole_thickness * 1e-3,
                 'pinhole_radius': physics.pinhole_radius * 1e-3,
             }
@@ -162,7 +178,7 @@ class PinholeCorrectionEditor(QObject):
         vp = v.copy()
         # These units are in mm, but we display in micrometers
         for key, value in v.items():
-            if key in ('num_phi_elements', 'absorption_length'):
+            if key in ('num_phi_elements', 'absorption_length', 'layer_type'):
                 multiplier = 1
             else:
                 multiplier = 1e3
@@ -171,14 +187,13 @@ class PinholeCorrectionEditor(QObject):
 
         # Values are (key, default)
         values = {
-            'sample_layer_standoff': ('layer_standoff',
-                                      physics.window_thickness),
-            'sample_layer_thickness': ('layer_thickness',
-                                       physics.sample_thickness),
-            'sample_pinhole_thickness': ('pinhole_thickness',
-                                         physics.pinhole_thickness),
-            'sample_pinhole_diameter': ('pinhole_diameter',
-                                        physics.pinhole_diameter),
+            'layer_type': ('layer_type', 'sample'),
+            'layer_standoff': ('layer_standoff', physics.window_thickness),
+            'layer_thickness': ('layer_thickness', physics.sample_thickness),
+            'layer_pinhole_thickness': ('layer_pinhole_thickness',
+                                        physics.pinhole_thickness),
+            'layer_pinhole_diameter': ('layer_pinhole_diameter',
+                                       physics.pinhole_diameter),
             'rygg_diameter': ('pinhole_diameter', physics.pinhole_diameter),
             'rygg_thickness': ('pinhole_thickness', physics.pinhole_thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 30),
@@ -189,8 +204,8 @@ class PinholeCorrectionEditor(QObject):
         }
 
         dtype = self.correction_type
-        if dtype == 'SampleLayerDistortion':
-            widget_prefix = 'sample_'
+        if dtype == 'LayerDistortion':
+            widget_prefix = 'layer_'
         elif dtype == 'RyggPinholeDistortion':
             widget_prefix = 'rygg_'
         elif dtype == 'JHEPinholeDistortion':
@@ -206,18 +221,28 @@ class PinholeCorrectionEditor(QObject):
                 value = vp.get(key, value)
 
             w = getattr(self.ui, w_name)
-            w.setValue(value)
+
+            if key == 'layer_type':
+                # Map it to the combobox name
+                value = LAYER_TYPES[value]
+
+            if isinstance(w, QComboBox):
+                f = w.setCurrentText
+            else:
+                f = w.setValue
+            f(value)
 
         if dtype == 'RyggPinholeDistortion':
             self.auto_select_rygg_absorption_length()
 
     @property
-    def sample_layer_widgets(self):
+    def layer_widgets(self):
         return [
-            self.ui.sample_layer_standoff,
-            self.ui.sample_layer_thickness,
-            self.ui.sample_pinhole_thickness,
-            self.ui.sample_pinhole_diameter,
+            self.ui.layer_type,
+            self.ui.layer_standoff,
+            self.ui.layer_thickness,
+            self.ui.layer_pinhole_thickness,
+            self.ui.layer_pinhole_diameter,
         ]
 
     @property
@@ -254,7 +279,7 @@ class PinholeCorrectionEditor(QObject):
     def all_widgets(self):
         # Except for the correction type
         return [
-            *self.sample_layer_widgets,
+            *self.layer_widgets,
             *self.jhe_widgets,
             *self.rygg_widgets,
             *self.apply_panel_buffer_buttons,
@@ -295,7 +320,7 @@ class PinholeCorrectionEditor(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
 
         source_distance_needed_types = (
-            'SampleLayerDistortion',
+            'LayerDistortion',
             'RyggPinholeDistortion',
         )
         if self.correction_type in source_distance_needed_types:
@@ -565,8 +590,18 @@ class PinholeCorrectionEditor(QObject):
 
 
 TYPE_MAP = {
-    'SampleLayerDistortion': SampleLayerDistortion,
+    'LayerDistortion': LayerDistortion,
     'JHEPinholeDistortion': JHEPinholeDistortion,
     'RyggPinholeDistortion': RyggPinholeDistortion,
 }
 REVERSED_TYPE_MAP = {v: k for k, v in TYPE_MAP.items()}
+
+LAYER_TYPES = {
+    'ablator': 'Ablator',
+    'heatshield': 'Heatshield',
+    'pusher': 'Pusher',
+    'sample': 'Sample',
+    'reflective': 'Reflective Coating',
+    'window': 'Window',
+}
+REVERSED_LAYER_TYPES = {v: k for k, v in LAYER_TYPES.items()}

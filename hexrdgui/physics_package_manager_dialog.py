@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle, Polygon
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 
-from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
@@ -40,35 +40,51 @@ class PhysicsPackageManagerDialog:
     def show(self, delete_if_canceled=False):
         self.delete_if_canceled = delete_if_canceled
         self.setup_form()
+        self.draw_diagram()
         self.ui.show()
 
     @property
-    def material_selectors(self):
+    def layer_names(self) -> list[str]:
+        return self.non_sample_layer_names + ['sample']
+
+    @property
+    def non_sample_layer_names(self) -> list[str]:
+        # All layer names excluding the sample
+        return [
+            'ablator',
+            'heatshield',
+            'pusher',
+            'reflective',
+            'window',
+            'pinhole',
+        ]
+
+    @property
+    def material_selectors(self) -> dict[str, QWidget]:
         return {
-            'sample': self.ui.sample_material,
-            'pinhole': self.ui.pinhole_material,
-            'window': self.ui.window_material
+            k: getattr(self.ui, f'{k}_material')
+            for k in self.layer_names
         }
 
     @property
-    def material_inputs(self):
+    def material_inputs(self) -> dict[str, QWidget]:
         return {
-            'sample': self.ui.sample_material_input,
-            'pinhole': self.ui.pinhole_material_input,
-            'window': self.ui.window_material_input
+            k: getattr(self.ui, f'{k}_material_input')
+            for k in self.layer_names
         }
 
     @property
     def density_inputs(self):
         return {
-            'sample': self.ui.sample_density,
-            'pinhole': self.ui.pinhole_density,
-            'window': self.ui.window_density
+            k: getattr(self.ui, f'{k}_density')
+            for k in self.layer_names
         }
 
     def setup_connections(self):
-        self.ui.show_pinhole.toggled.connect(self.toggle_pinhole)
-        self.ui.show_window.toggled.connect(self.toggle_window)
+        for k in self.non_sample_layer_names:
+            w = getattr(self.ui, f'show_{k}')
+            w.toggled.connect(lambda b, k=k: self.toggle_layer(b, k))
+
         self.ui.button_box.accepted.connect(self.accept_changes)
         self.ui.button_box.accepted.connect(self.ui.accept)
         self.ui.button_box.rejected.connect(self.ui.reject)
@@ -138,9 +154,11 @@ class PhysicsPackageManagerDialog:
 
     def setup_form(self):
         mat_names = list(HexrdConfig().materials.keys())
+        all_options = {}
         for key, w in self.material_selectors.items():
             custom_mats = list(self.additional_materials.get(key, {}))
             options = ['Enter Manually', *custom_mats, *mat_names]
+            all_options[key] = options
             w.clear()
             w.addItems(options)
             w.insertSeparator(1)
@@ -160,37 +178,61 @@ class PhysicsPackageManagerDialog:
         else:
             self.ui.pinhole_thickness.setValue(physics.pinhole_thickness)
             self.ui.pinhole_diameter.setValue(physics.pinhole_diameter)
-        # WINDOW
-        if physics.window_material not in options:
-            self.ui.window_material_input.setText(
-                physics.window_material)
-        else:
-            self.ui.window_material.setCurrentText(
-                physics.window_material)
-        self.ui.window_density.setValue(physics.window_density)
-        self.ui.window_thickness.setValue(physics.window_thickness)
-        # SAMPLE
-        if physics.sample_material not in options:
-            self.ui.sample_material_input.setText(
-                physics.sample_material)
-        else:
-            self.ui.sample_material.setCurrentText(
-                physics.sample_material)
-        self.ui.sample_density.setValue(physics.sample_density)
-        self.ui.sample_thickness.setValue(physics.sample_thickness)
+
+        # THE REST
+        layer_names = self.layer_names
+        # Remove pinhole, cause we did that manually
+        layer_names.remove('pinhole')
+
+        material_selectors = self.material_selectors
+        material_inputs = self.material_inputs
+        for name in layer_names:
+            material = getattr(physics, f'{name}_material')
+            if material not in all_options[name]:
+                w = material_inputs[name]
+                w.setText(material)
+            else:
+                w = material_selectors[name]
+                w.setCurrentText(material)
+
+            for key in ('density', 'thickness'):
+                attr = f'{name}_{key}'
+                w = getattr(self.ui, attr)
+                w.setValue(getattr(physics, attr))
+
+        self.update_layer_enable_states()
 
     def draw_diagram(self):
-        window = self.ui.show_window.isChecked()
-        pinhole = self.ui.show_pinhole.isChecked()
-        self.diagram.update_diagram(window, pinhole)
+        show_dict = {
+            k: getattr(self.ui, f'show_{k}').isChecked()
+            for k in self.non_sample_layer_names
+        }
+        self.diagram.update_diagram(show_dict)
 
-    def toggle_window(self, enabled):
-        self.ui.window_tab.setEnabled(enabled)
+    def toggle_layer(self, enabled: bool, name: str):
+        w = getattr(self.ui, f'{name}_tab')
+        w.setEnabled(enabled)
         self.draw_diagram()
 
-    def toggle_pinhole(self, enabled):
-        self.ui.pinhole_tab.setEnabled(enabled)
-        self.draw_diagram()
+    def update_layer_enable_states(self):
+        for name in self.non_sample_layer_names:
+            enable = self.layer_thickness(name) != 0.0
+            self.set_layer_enabled(name, enable)
+
+    def set_layer_enabled(self, name: str, enable: bool):
+        w = getattr(self.ui, f'show_{name}')
+        w.setChecked(enable)
+
+    def layer_enabled(self, name: str) -> bool:
+        w = getattr(self.ui, f'{name}_tab')
+        return w.isEnabled()
+
+    def layer_thickness(self, name: str) -> float:
+        if not self.layer_enabled(name):
+            return 0.0
+
+        w = getattr(self.ui, f'{name}_thickness')
+        return w.value()
 
     def material_changed(self, index, category):
         material = self.material_selectors[category].currentText()
@@ -212,7 +254,8 @@ class PhysicsPackageManagerDialog:
             self.density_inputs[category].setValue(0.0)
 
         if HexrdConfig().has_physics_package:
-            self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
+            self.ui.absorption_length.setValue(
+                HexrdConfig().absorption_length())
 
     def accept_changes(self):
         materials = {}
@@ -223,17 +266,14 @@ class PhysicsPackageManagerDialog:
                 materials[key] = selector.currentText()
 
         kwargs = {
-            'sample_material': materials['sample'],
-            'sample_density': self.ui.sample_density.value(),
-            'sample_thickness': self.ui.sample_thickness.value(),
-            'window_material': materials['window'],
-            'window_density': self.ui.window_density.value(),
-            'window_thickness': self.ui.window_thickness.value(),
-            'pinhole_material': materials['pinhole'],
             'pinhole_diameter': self.ui.pinhole_diameter.value(),
-            'pinhole_thickness': self.ui.pinhole_thickness.value(),
-            'pinhole_density': self.ui.pinhole_density.value(),
         }
+        for name in self.layer_names:
+            kwargs[f'{name}_material'] = materials[name]
+            for key in ('density', 'thickness'):
+                attr = f'{name}_{key}'
+                kwargs[attr] = getattr(self.ui, attr).value()
+
         HexrdConfig().update_physics_package(**kwargs)
 
         if HexrdConfig().apply_absorption_correction:
@@ -243,7 +283,6 @@ class PhysicsPackageManagerDialog:
 
 class PhysicsPackageDiagram:
 
-    offset = 0.20
     patches = {
         'laser drive': Polygon(
             [(0.05, 0.2), (0.05, 0.8), (0.2, 0.75), (0.2, 0.25)],
@@ -256,14 +295,17 @@ class PhysicsPackageDiagram:
                             edgecolor=(0, 0, 0)),
         'sample': Rectangle((0.38, 0.2), 0.03, 0.6, facecolor=(0, 0, 1, 0.4),
                             edgecolor=(0, 0, 0)),
+        'reflective': Rectangle((0.41, 0.2), 0.03, 0.6,
+                                facecolor=(1, 0.6, 0, 0.4),
+                                edgecolor=(0, 0, 0)),
         'VISAR': Polygon(
-            [(0.41, 0.4), (0.41, 0.6), (0.91, 0.65), (0.91, 0.35)],
+            [(0.44, 0.4), (0.44, 0.6), (0.91, 0.65), (0.91, 0.35)],
             facecolor=(1, 0, 0, 0.3)),
-        'window': Rectangle((0.4, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8),
+        'window': Rectangle((0.43, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8),
                             edgecolor=(0, 0, 0)),
         'pinhole': Polygon(
-            [(0.6, 0.2), (0.6, 0.8), (0.8, 0.8), (0.75, 0.6), (0.6, 0.6),
-             (0.6, 0.4), (0.75, 0.4), (0.75, 0.6), (0.75, 0.4), (0.8, 0.2)],
+            [(0.63, 0.2), (0.63, 0.8), (0.83, 0.8), (0.78, 0.6), (0.63, 0.6),
+             (0.63, 0.4), (0.78, 0.4), (0.78, 0.6), (0.78, 0.4), (0.83, 0.2)],
             facecolor=(0.5, 0.5, 0.5, 0.6), edgecolor=(0, 0, 0))
 
     }
@@ -273,7 +315,6 @@ class PhysicsPackageDiagram:
         self.ax = self.fig.add_subplot()
         self.ax.set_axis_off()
         self.ax.set_aspect(1)
-        self.update_diagram()
 
     def clear(self):
         for text, patch in zip(self.ax.texts, self.ax.patches):
@@ -294,25 +335,34 @@ class PhysicsPackageDiagram:
         self.ax.text(x, y, label, ha='center', va='center',
                      rotation=90, fontsize='small')
 
-    def update_diagram(self, show_window=True, show_pinhole=True):
+    def update_diagram(self, show_dict: dict[str, bool]):
         self.clear()
         count = 0
+        offset = 0
+        rename_text = {
+            'reflective': 'reflective coating',
+        }
         for key, patch in self.patches.items():
             p = copy.deepcopy(patch)
-            if key == 'window' and not show_window:
+            if not show_dict.get(key, True):
+                # Compute width of the patch and adjust the offset
+                if isinstance(p, Polygon):
+                    xy = p.get_xy()
+                    width = xy[:, 0].max() - xy[:, 0].min()
+                else:
+                    width = p.get_width()
+
+                offset -= width
                 continue
-            if key == 'pinhole':
-                if not show_pinhole:
-                    continue
-                if not show_window:
-                    # Shift the pinhole over since no window is present
-                    p.xy[:, 0] -= self.offset
-            # Add some spacing between each layer
+
+            # Apply offset, and add some spacing between each layer
             if isinstance(p, Polygon):
-                p.xy[:, 0] += count * 0.01
+                p.xy[:, 0] += (offset + count * 0.01)
             elif isinstance(p, Rectangle):
-                p.set_x(p.xy[0] + count * 0.01)
+                p.set_x(p.xy[0] + offset + count * 0.01)
+
             self.ax.add_patch(p)
-            self.add_text(p, key)
+            label = rename_text.get(key, key)
+            self.add_text(p, label)
             count += 1
         self.fig.canvas.draw_idle()

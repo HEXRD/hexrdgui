@@ -601,6 +601,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.set_euler_angle_convention(conv, convert_config=False)
 
+        def set_physics_and_coatings():
+            pp = state.get('physics_package_dictified', None)
+            self.physics_package_dictified = pp if pp is not None else {}
+            dc = state.get('detector_coatings_dictified', None)
+            self.detector_coatings_dictified = dc if dc is not None else {}
+
+        if 'detector_coatings_dictified' in state:
+            # Physics package and detector coatings need a fully constructed
+            # HexrdConfig object to set their values because they need the
+            # correct detector names. Set the objects later.
+            # This must be set *before* the overlays, because old state files
+            # may trigger a default physics package to be made, and we don't
+            # want to overwrite that.
+            QTimer.singleShot(0, set_physics_and_coatings)
+
         def set_overlays():
             v = state.get('overlays_dictified')
             self.overlays_dictified = v if v is not None else {}
@@ -613,18 +628,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if '_recent_images' not in state:
             self._recent_images.clear()
-
-        def set_physics_and_coatings():
-            pp = state.get('physics_package_dictified', None)
-            self.physics_package_dictified = pp if pp is not None else {}
-            dc = state.get('detector_coatings_dictified', None)
-            self.detector_coatings_dictified = dc if dc is not None else {}
-
-        if 'detector_coatings_dictified' in state:
-            # Physics package and detector coatings need a fully constructed
-            # HexrdConfig object to set their values because they need the
-            # correct detector names. Set the objects later.
-            QTimer.singleShot(0, set_physics_and_coatings)
 
         self.recent_images_changed.emit()
 
@@ -694,7 +697,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 if not self.has_physics_package:
                     # We need to create a default physics package
                     # This is for backward compatibility
-                    self.create_default_physics_package()
+                    module = utils.physics_package
+                    module.make_physics_package_from_old_overlay_config(v)
 
             self.update_material_energy(self.materials[material_name])
             self.overlays.append(overlays.from_dict(overlay_dict))
@@ -2334,6 +2338,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             active = v['active']
             d = v['serialized']
             if d.get('pinhole_distortion_type') == 'SampleLayerDistortion':
+                # Change this to the new 'LayerDistortion'
+                d['pinhole_distortion_type'] = 'LayerDistortion'
+
+            if d.get('pinhole_distortion_type') == 'LayerDistortion':
                 # We added pinhole_radius later. Set a default if it is missing.
                 if 'pinhole_radius' not in d['pinhole_distortion_kwargs']:
                     radius = self.physics_package.pinhole_radius

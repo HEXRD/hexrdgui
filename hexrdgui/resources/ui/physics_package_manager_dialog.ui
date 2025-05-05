@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>793</width>
-    <height>438</height>
+    <width>1298</width>
+    <height>527</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -91,9 +91,39 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="show_pinhole">
+         <widget class="QCheckBox" name="show_ablator">
           <property name="text">
-           <string>Pinhole</string>
+           <string>Ablator</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_heatshield">
+          <property name="text">
+           <string>Heatshield</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_pusher">
+          <property name="text">
+           <string>Pusher</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_reflective">
+          <property name="text">
+           <string>Reflective</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -104,6 +134,16 @@
          <widget class="QCheckBox" name="show_window">
           <property name="text">
            <string>Window</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_pinhole">
+          <property name="text">
+           <string>Pinhole</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -152,6 +192,9 @@
           <property name="text">
            <string>Package Type</string>
           </property>
+          <property name="buddy">
+           <cstring>comboBox</cstring>
+          </property>
          </widget>
         </item>
         <item>
@@ -195,8 +238,248 @@
          <enum>QTabWidget::North</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>3</number>
         </property>
+        <widget class="QWidget" name="ablator_tab">
+         <attribute name="title">
+          <string>Ablator</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="2" column="0">
+           <widget class="QLabel" name="ablator_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>ablator_density</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="ablator_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>160</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="ablator_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>ablator_material</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="6">
+           <widget class="QLineEdit" name="ablator_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="ablator_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+            <property name="buddy">
+             <cstring>ablator_thickness</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="ablator_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="ablator_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="5">
+           <widget class="QComboBox" name="ablator_material"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="heatshield_tab">
+         <attribute name="title">
+          <string>Heatshield</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="0" column="0">
+           <widget class="QLabel" name="heatshield_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>heatshield_material</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="heatshield_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>160</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0" colspan="6">
+           <widget class="QLineEdit" name="heatshield_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="heatshield_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+            <property name="buddy">
+             <cstring>heatshield_thickness</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="heatshield_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>heatshield_density</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="heatshield_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="heatshield_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="5">
+           <widget class="QComboBox" name="heatshield_material"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="pusher_tab">
+         <attribute name="title">
+          <string>Pusher</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="0" column="0">
+           <widget class="QLabel" name="pusher_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_material</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="pusher_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>160</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0" colspan="6">
+           <widget class="QLineEdit" name="pusher_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="pusher_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_density</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="pusher_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_thickness</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="pusher_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="pusher_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="5">
+           <widget class="QComboBox" name="pusher_material"/>
+          </item>
+         </layout>
+        </widget>
         <widget class="QWidget" name="sample_tab">
          <attribute name="title">
           <string>Sample</string>
@@ -206,6 +489,9 @@
            <widget class="QLabel" name="sample_density_label">
             <property name="text">
              <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>sample_density</cstring>
             </property>
            </widget>
           </item>
@@ -241,12 +527,18 @@
             <property name="text">
              <string>Thickness</string>
             </property>
+            <property name="buddy">
+             <cstring>sample_thickness</cstring>
+            </property>
            </widget>
           </item>
           <item row="0" column="0">
            <widget class="QLabel" name="sample_material_label">
             <property name="text">
              <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>sample_material</cstring>
             </property>
            </widget>
           </item>
@@ -255,6 +547,166 @@
           </item>
           <item row="5" column="0">
            <spacer name="sample_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="reflective_tab">
+         <attribute name="title">
+          <string>Reflective</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="1" column="0" colspan="6">
+           <widget class="QLineEdit" name="reflective_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="reflective_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_density</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="reflective_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_thickness</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="reflective_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>pusher_material</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="reflective_vertical_spacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="3" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="reflective_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="5">
+           <widget class="ScientificDoubleSpinBox" name="reflective_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="5">
+           <widget class="QComboBox" name="reflective_material"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="window_tab">
+         <attribute name="title">
+          <string>Window</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="3" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="window_thickness">
+            <property name="suffix">
+             <string> μm</string>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="window_material_label">
+            <property name="text">
+             <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>window_material</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" colspan="3">
+           <widget class="QComboBox" name="window_material"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="window_density_label">
+            <property name="text">
+             <string>Density</string>
+            </property>
+            <property name="buddy">
+             <cstring>window_density</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="window_thickness_label">
+            <property name="text">
+             <string>Thickness</string>
+            </property>
+            <property name="buddy">
+             <cstring>window_thickness</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" colspan="3">
+           <widget class="ScientificDoubleSpinBox" name="window_density">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="suffix">
+             <string> g/cc</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="4">
+           <widget class="QLineEdit" name="window_material_input">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <spacer name="window_vertical_spacer">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
@@ -277,6 +729,9 @@
            <widget class="QLabel" name="pinhole_material_label">
             <property name="text">
              <string>Material</string>
+            </property>
+            <property name="buddy">
+             <cstring>pinhole_material</cstring>
             </property>
            </widget>
           </item>
@@ -321,12 +776,18 @@
             <property name="text">
              <string>Thickness</string>
             </property>
+            <property name="buddy">
+             <cstring>pinhole_thickness</cstring>
+            </property>
            </widget>
           </item>
           <item row="4" column="0">
            <widget class="QLabel" name="pinhole_diameter_label">
             <property name="text">
              <string>Diameter</string>
+            </property>
+            <property name="buddy">
+             <cstring>pinhole_diameter</cstring>
             </property>
            </widget>
           </item>
@@ -342,6 +803,9 @@
             <property name="text">
              <string>Density</string>
             </property>
+            <property name="buddy">
+             <cstring>pinhole_density</cstring>
+            </property>
            </widget>
           </item>
           <item row="4" column="1" colspan="3">
@@ -356,6 +820,9 @@
             <property name="text">
              <string>Absorption Length</string>
             </property>
+            <property name="buddy">
+             <cstring>absorption_length</cstring>
+            </property>
            </widget>
           </item>
           <item row="5" column="1" colspan="3">
@@ -364,77 +831,6 @@
              <double>0.100000000000000</double>
             </property>
            </widget>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="window_tab">
-         <attribute name="title">
-          <string>Window</string>
-         </attribute>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="3" column="1" colspan="3">
-           <widget class="ScientificDoubleSpinBox" name="window_thickness">
-            <property name="suffix">
-             <string> μm</string>
-            </property>
-            <property name="singleStep">
-             <double>0.100000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="window_material_label">
-            <property name="text">
-             <string>Material</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" colspan="3">
-           <widget class="QComboBox" name="window_material"/>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="window_density_label">
-            <property name="text">
-             <string>Density</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="window_thickness_label">
-            <property name="text">
-             <string>Thickness</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" colspan="3">
-           <widget class="ScientificDoubleSpinBox" name="window_density">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="suffix">
-             <string> g/cc</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0" colspan="4">
-           <widget class="QLineEdit" name="window_material_input">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <spacer name="window_vertical_spacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </widget>
@@ -453,33 +849,44 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>show_ablator</tabstop>
+  <tabstop>show_heatshield</tabstop>
+  <tabstop>show_pusher</tabstop>
+  <tabstop>show_reflective</tabstop>
+  <tabstop>show_window</tabstop>
+  <tabstop>show_pinhole</tabstop>
+  <tabstop>comboBox</tabstop>
   <tabstop>tab_widget</tabstop>
+  <tabstop>ablator_material</tabstop>
+  <tabstop>ablator_material_input</tabstop>
+  <tabstop>ablator_density</tabstop>
+  <tabstop>ablator_thickness</tabstop>
+  <tabstop>heatshield_material</tabstop>
+  <tabstop>heatshield_material_input</tabstop>
+  <tabstop>heatshield_density</tabstop>
+  <tabstop>heatshield_thickness</tabstop>
+  <tabstop>pusher_material</tabstop>
+  <tabstop>pusher_material_input</tabstop>
+  <tabstop>pusher_density</tabstop>
+  <tabstop>pusher_thickness</tabstop>
   <tabstop>sample_material</tabstop>
   <tabstop>sample_material_input</tabstop>
   <tabstop>sample_density</tabstop>
   <tabstop>sample_thickness</tabstop>
+  <tabstop>reflective_material</tabstop>
+  <tabstop>reflective_material_input</tabstop>
+  <tabstop>reflective_density</tabstop>
+  <tabstop>reflective_thickness</tabstop>
+  <tabstop>window_material</tabstop>
+  <tabstop>window_material_input</tabstop>
+  <tabstop>window_density</tabstop>
+  <tabstop>window_thickness</tabstop>
   <tabstop>pinhole_material</tabstop>
   <tabstop>pinhole_material_input</tabstop>
   <tabstop>pinhole_density</tabstop>
   <tabstop>pinhole_thickness</tabstop>
   <tabstop>pinhole_diameter</tabstop>
-  <tabstop>window_material</tabstop>
-  <tabstop>window_material_input</tabstop>
-  <tabstop>window_density</tabstop>
-  <tabstop>window_thickness</tabstop>
-  <tabstop>sample_material</tabstop>
-  <tabstop>sample_density</tabstop>
-  <tabstop>pinhole_material</tabstop>
-  <tabstop>pinhole_material_input</tabstop>
-  <tabstop>pinhole_density</tabstop>
-  <tabstop>pinhole_thickness</tabstop>
-  <tabstop>pinhole_diameter</tabstop>
-  <tabstop>window_material</tabstop>
-  <tabstop>window_material_input</tabstop>
-  <tabstop>window_density</tabstop>
-  <tabstop>window_thickness</tabstop>
-  <tabstop>sample_thickness</tabstop>
-  <tabstop>sample_material_input</tabstop>
+  <tabstop>absorption_length</tabstop>
  </tabstops>
  <resources/>
  <connections/>

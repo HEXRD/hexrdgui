@@ -794,7 +794,7 @@
                  <bool>true</bool>
                 </property>
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply 2θ distortion from an overlay to the polar view.&lt;/p&gt;&lt;p&gt;2θ distortion may only be applied using an overlay that has Sample Layer Distortion enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply 2θ distortion from an overlay to the polar view.&lt;/p&gt;&lt;p&gt;2θ distortion may only be applied using an overlay that has Pinhole Camera Distortion enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Apply 2θ distortion?</string>
@@ -807,7 +807,7 @@
                  <bool>false</bool>
                 </property>
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply 2θ distortion from an overlay to the polar view.&lt;/p&gt;&lt;p&gt;2θ distortion may only be applied using an overlay that has Sample Layer Distortion enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply 2θ distortion from an overlay to the polar view.&lt;/p&gt;&lt;p&gt;2θ distortion may only be applied using an overlay that has Pinhole Camera Distortion enabled.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>

@@ -1,7 +1,7 @@
 from hexrd.xrdutil.phutil import (
     polar_tth_corr_map_rygg_pinhole, JHEPinholeDistortion,
-    RyggPinholeDistortion, SampleLayerDistortion, tth_corr_map_pinhole,
-    tth_corr_map_rygg_pinhole, tth_corr_map_sample_layer,
+    RyggPinholeDistortion, LayerDistortion, tth_corr_map_pinhole,
+    tth_corr_map_rygg_pinhole, tth_corr_map_layer,
 )
 
 
@@ -33,7 +33,7 @@ class PolarDistortionObject:
             None: False,
             'JHEPinholeDistortion': False,
             'RyggPinholeDistortion': True,
-            'SampleLayerDistortion': False,
+            'LayerDistortion': False,
         }
 
         if self.pinhole_distortion_type not in rets:
@@ -54,7 +54,7 @@ class PolarDistortionObject:
         funcs = {
             'JHEPinholeDistortion': tth_corr_map_pinhole,
             'RyggPinholeDistortion': tth_corr_map_rygg_pinhole,
-            'SampleLayerDistortion': tth_corr_map_sample_layer,
+            'LayerDistortion': tth_corr_map_layer,
         }
 
         if self.pinhole_distortion_type not in funcs:
@@ -66,6 +66,9 @@ class PolarDistortionObject:
             **self.pinhole_distortion_kwargs,
             'instrument': instr,
         }
+        if 'layer_type' in kwargs:
+            # The tth_corr_map functions don't take this
+            kwargs.pop('layer_type')
 
         return f(**kwargs)
 
@@ -105,17 +108,18 @@ class PolarDistortionObject:
             }
             return RyggPinholeDistortion(**kwargs)
 
-        def tth_sample_layer_distortion(panel):
+        def tth_layer_distortion(panel):
             kwargs = {
                 **self.pinhole_distortion_kwargs,
                 'panel': panel,
             }
-            return SampleLayerDistortion(**kwargs)
+            kwargs.setdefault('layer_type', 'sample')
+            return LayerDistortion(**kwargs)
 
         known_types = {
             'JHEPinholeDistortion': tth_jhe_pinhole_distortion,
             'RyggPinholeDistortion': tth_rygg_pinhole_distortion,
-            'SampleLayerDistortion': tth_sample_layer_distortion,
+            'LayerDistortion': tth_layer_distortion,
         }
 
         if self.pinhole_distortion_type not in known_types:
