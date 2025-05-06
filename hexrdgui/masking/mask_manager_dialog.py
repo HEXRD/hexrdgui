@@ -157,7 +157,6 @@ class MaskManagerDialog(QObject):
         # sort by string value lexicographically and the number
         # value numerically
         vals = re.split('([0-9]+)', value)
-        print([int(v) if v.isdigit() else v.lower() for v in vals])
         return [int(v) if v.isdigit() else v.lower() for v in vals]
 
     def update_tree(self):
