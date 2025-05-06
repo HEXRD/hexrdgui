@@ -137,7 +137,7 @@ class MaskManagerDialog(QObject):
             # Make sure it is a mask and not a mode item
             return
 
-        scrollbar = self.ui.masks_table.verticalScrollBar()
+        scrollbar = self.ui.masks_tree.verticalScrollBar()
         scroll_value = scrollbar.value()
         item = self.mask_tree_items.pop(name)
         parent = item.parent()
@@ -149,7 +149,7 @@ class MaskManagerDialog(QObject):
                 self.ui.masks_tree.indexOfTopLevelItem(parent))
             self.mask_tree_items.pop(parent.text(0))
         MaskManager().masks_changed()
-        self.ui.masks_table.verticalScrollBar().setValue(scroll_value)
+        self.ui.masks_tree.verticalScrollBar().setValue(scroll_value)
 
 
     def _alphanumeric_sort(self, value):
