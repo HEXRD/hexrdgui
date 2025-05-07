@@ -67,6 +67,8 @@ class MaskManagerDialog(QObject):
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
 
     def create_mode_source_string(self, mode, source):
+        if mode is None:
+            return 'Global'
         mode_str = f'{mode.capitalize()} Mode'
         source_str = f' - {source}' if source else ''
         return f'{mode_str}{source_str}'
@@ -191,7 +193,10 @@ class MaskManagerDialog(QObject):
             # Sort masks by creation view mode and xray source
             sorted_masks = sorted(
                 MaskManager().masks.values(),
-                key=attrgetter('creation_view_mode', 'xray_source')
+                key=lambda mask: (
+                    mask.creation_view_mode or '',
+                    mask.xray_source or ''
+                )
             )
 
             # Group masks by creation view mode and xray source

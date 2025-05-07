@@ -29,7 +29,7 @@ class Mask(ABC):
         mtype='',
         visible=True,
         show_border=False,
-        mode=ViewType.raw,
+        mode=None,
         xray_source=None
     ):
         self.type = mtype
@@ -93,7 +93,7 @@ class Mask(ABC):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             show_border=data.get('border', False),
-            mode=data.get('creation_view_mode', ViewType.raw),
+            mode=data.get('creation_view_mode', None),
             xray_source=data.get('xray_source', None),
         )
 
@@ -105,7 +105,7 @@ class RegionMask(Mask):
         mtype='',
         visible=True,
         show_border=False,
-        mode=ViewType.raw,
+        mode=None,
         xray_source=None
     ):
         super().__init__(name, mtype, visible, show_border, mode, xray_source)
@@ -170,7 +170,7 @@ class RegionMask(Mask):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             show_border=data.get('border', False),
-            mode=data.get('creation_view_mode', ViewType.raw),
+            mode=data.get('creation_view_mode', None),
             xray_source=data.get('xray_source', None),
         )
         raw_data = []
@@ -188,7 +188,7 @@ class ThresholdMask(Mask):
         name='',
         mtype='',
         visible=True,
-        mode=ViewType.raw,
+        mode=None,
         xray_source=None
     ):
         super().__init__(name, mtype, visible, mode, xray_source)
@@ -230,7 +230,7 @@ class ThresholdMask(Mask):
             name=data['name'],
             mtype=data['mtype'],
             visible=data.get('visible', True),
-            mode=data.get('creation_view_mode', ViewType.raw),
+            mode=data.get('creation_view_mode', None),
             xray_source=data.get('xray_source', None),
         )
         new_cls.data = [data['min_val'], data['max_val']]
@@ -340,9 +340,10 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def add_mask(self, data, mtype, name=None, visible=True):
         if mtype == MaskType.threshold:
-            new_mask = ThresholdMask(name, mtype, visible, mode=self.view_mode)
+            new_mask = ThresholdMask(name, mtype, visible)
         else:
-            new_mask = RegionMask(name, mtype, visible, mode=self.view_mode)
+            mode = None if mtype == MaskType.pinhole else self.view_mode
+            new_mask = RegionMask(name, mtype, visible, mode=mode)
         new_mask.data = data
         self.masks[new_mask.name] = new_mask
         self.mask_mgr_dialog_update.emit()
