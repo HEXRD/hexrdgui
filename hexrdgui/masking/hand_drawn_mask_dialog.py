@@ -230,10 +230,6 @@ class LineBuilder(QObject):
                   'masks.')
             return
 
-        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-              ('double' if event.dblclick else 'single', event.button,
-               event.x, event.y, event.xdata, event.ydata))
-
         if event.inaxes != self.line.axes:
             return
 

@@ -76,7 +76,7 @@ from hexrdgui.indexing.fit_grains_tree_view_dialog import (
 )
 from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals, unique_name
+from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
@@ -342,9 +342,11 @@ class MainWindow(QObject):
         ImageLoadManager().state_updated.connect(
             self.simple_image_series_dialog.setup_gui)
 
-        self.new_mask_added.connect(self.mask_manager_dialog.update_table)
+        self.new_mask_added.connect(self.mask_manager_dialog.update_tree)
         self.image_mode_widget.tab_changed.connect(
             MaskManager().view_mode_changed)
+        self.image_mode_widget.tab_changed.connect(
+            self.mask_manager_dialog.update_collapsed)
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
             HexrdConfig().set_apply_pixel_solid_angle_correction)
@@ -816,15 +818,12 @@ class MainWindow(QObject):
     def run_apply_hand_drawn_mask(self, dets, line_data):
         if self.image_mode == ViewType.polar:
             for line in line_data:
-                name = unique_name(MaskManager().mask_names, 'polar_mask_0')
                 raw_line = convert_polar_to_raw([line])
-                MaskManager().add_mask(name, raw_line, MaskType.polygon)
+                MaskManager().add_mask(raw_line, MaskType.polygon)
             MaskManager().polar_masks_changed.emit()
         elif self.image_mode == ViewType.raw:
             for det, line in zip(dets, line_data):
-                name = unique_name(MaskManager().mask_names, 'raw_mask_0')
-                MaskManager().add_mask(
-                    name, [(det, line.copy())], MaskType.polygon)
+                MaskManager().add_mask([(det, line.copy())], MaskType.polygon)
             MaskManager().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
@@ -852,9 +851,8 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        name = unique_name(MaskManager().mask_names, 'laue_mask')
         raw_data = convert_polar_to_raw(data)
-        MaskManager().add_mask(name, raw_data, MaskType.laue)
+        MaskManager().add_mask(raw_data, MaskType.laue)
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
@@ -907,9 +905,8 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
-        name = unique_name(MaskManager().mask_names, 'powder_mask')
         raw_data = convert_polar_to_raw(data)
-        MaskManager().add_mask(name, raw_data, MaskType.powder)
+        MaskManager().add_mask(raw_data, MaskType.powder)
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
@@ -972,7 +969,7 @@ class MainWindow(QObject):
         if name in MaskManager().mask_names:
             MaskManager().masks[name].data = ph_masks
         else:
-            MaskManager().add_mask(name, ph_masks, MaskType.pinhole)
+            MaskManager().add_mask(ph_masks, MaskType.pinhole, name=name)
         MaskManager().raw_masks_changed.emit()
 
         self.new_mask_added.emit(self.image_mode)
