@@ -262,7 +262,8 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.masks = {}
         self.view_mode = None
         self.boundary_color = '#000'  # Default to black
-
+        self.boundary_style = 'dashed'
+        self.boundary_width = 1
         self.setup_connections()
 
     @property
@@ -361,12 +362,18 @@ class MaskManager(QObject, metaclass=QSingleton):
     def write_single_mask(self, name):
         d = {
             name: self.masks[name].serialize(),
-            '__boundary_color': self.boundary_color
+            '__boundary_color': self.boundary_color,
+            '__boundary_style': self.boundary_style,
+            '__boundary_width': self.boundary_width,
         }
         self.export_masks_to_file.emit(d)
 
     def write_all_masks(self, h5py_group=None):
-        d = {'__boundary_color': self.boundary_color}
+        d = {
+            '__boundary_color': self.boundary_color,
+            '__boundary_style': self.boundary_style,
+            '__boundary_width': self.boundary_width,
+        }
         for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
         if h5py_group:
@@ -385,8 +392,8 @@ class MaskManager(QObject, metaclass=QSingleton):
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
         for key, data in items.items():
-            if key == '__boundary_color':
-                self.boundary_color = data
+            if key.startswith('__boundary_'):
+                setattr(self, key.split('__', 1)[1], data)
                 continue
             elif data['mtype'] == MaskType.threshold:
                 new_mask = ThresholdMask.deserialize(data)
