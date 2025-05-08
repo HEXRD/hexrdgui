@@ -53,7 +53,7 @@ class MaskManagerDialog(QObject):
         self.ui.masks_tree.itemChanged.connect(self.update_mask_name)
         self.ui.masks_tree.customContextMenuRequested.connect(
             self.context_menu_event)
-        self.ui.export_masks.clicked.connect(MaskManager().write_all_masks)
+        self.ui.export_masks.clicked.connect(MaskManager().write_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
         self.ui.view_masks.clicked.connect(self.show_masks)
@@ -286,11 +286,11 @@ class MaskManagerDialog(QObject):
         item = self.ui.masks_tree.itemAt(event)
         if item and item.parent():  # Only for mask items, not mode items
             menu = QMenu(self.ui.masks_tree)
-            export = menu.addAction('Export Mask')
+            export = menu.addAction('Export Selected Masks')
             action = menu.exec(QCursor.pos())
             if action == export:
-                selection = item.text(0)
-                MaskManager().write_single_mask(selection)
+                selections = self.ui.masks_tree.selectedItems()
+                MaskManager().write_masks([i.text(0) for i in selections])
 
     def export_masks_to_file(self, data):
         output_file, _ = QFileDialog.getSaveFileName(
