@@ -368,7 +368,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         }
         self.export_masks_to_file.emit(d)
 
-    def write_all_masks(self, h5py_group=None):
+    def write_masks(self, h5py_group=None):
         d = {
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
@@ -385,7 +385,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         if 'masks' not in h5py_group:
             h5py_group.create_group('masks')
 
-        self.write_all_masks(h5py_group['masks'])
+        self.write_masks(h5py_group['masks'])
 
     def load_masks(self, h5py_group):
         items = load_masks(h5py_group)
