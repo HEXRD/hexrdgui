@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QCursor, QColor
 
 
+from hexrdgui.masking.mask_border_style_picker import MaskBorderStylePicker
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType, MaskStatus
@@ -56,7 +57,7 @@ class MaskManagerDialog(QObject):
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
         MaskManager().mask_mgr_dialog_update.connect(self.update_table)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
-        self.ui.border_color.clicked.connect(self.set_boundary_color)
+        self.ui.border_style.clicked.connect(self.edit_style)
 
     def update_table(self):
         with block_signals(self.ui.masks_table):
@@ -250,8 +251,15 @@ class MaskManagerDialog(QObject):
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def set_boundary_color(self):
-        dialog = QColorDialog(QColor(MaskManager().boundary_color), self.ui)
-        if dialog.exec():
-            MaskManager().boundary_color = dialog.selectedColor().name()
-            MaskManager().masks_changed()
+    def edit_style(self):
+        dialog = MaskBorderStylePicker(
+            MaskManager().boundary_color,
+            MaskManager().boundary_style,
+            MaskManager().boundary_width
+        )
+        dialog.exec()
+        color, style, width = dialog.result()
+        MaskManager().boundary_color = color
+        MaskManager().boundary_style = style
+        MaskManager().boundary_width = width
+        MaskManager().masks_changed()
