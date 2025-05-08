@@ -358,17 +358,13 @@ class MaskManager(QObject, metaclass=QSingleton):
         h5py_group.attrs['_version'] = CURRENT_MASK_VERSION
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
-    def write_single_mask(self, name):
-        d = {
-            name: self.masks[name].serialize(),
-            '__boundary_color': self.boundary_color
-        }
-        self.export_masks_to_file.emit(d)
-
-    def write_all_masks(self, h5py_group=None):
+    def write_masks(self, names=None, h5py_group=None):
+        if not names:
+            # If no masks are specified, export all masks
+            names = self.masks.keys()
         d = {'__boundary_color': self.boundary_color}
-        for name, mask_info in self.masks.items():
-            d[name] = mask_info.serialize()
+        for name in names:
+            d[name] = self.masks[name].serialize()
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
         else:
@@ -378,7 +374,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         if 'masks' not in h5py_group:
             h5py_group.create_group('masks')
 
-        self.write_all_masks(h5py_group['masks'])
+        self.write_masks(h5py_group['masks'])
 
     def load_masks(self, h5py_group):
         items = load_masks(h5py_group)
