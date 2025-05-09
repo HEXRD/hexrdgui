@@ -68,6 +68,7 @@ class MaskManagerDialog(QObject):
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
         self.ui.masks_tree.itemSelectionChanged.connect(self.selected_changed)
         self.ui.presentation_selector.currentTextChanged.connect(self.change_presentation_for_selected)
+        self.ui.export_selected.clicked.connect(self.export_selected)
 
     def create_mode_source_string(self, mode, source):
         if mode is None:
@@ -462,3 +463,7 @@ class MaskManagerDialog(QObject):
         else:
             self.change_mask_visibility(mask_names, False)
         MaskManager().masks_changed()
+
+    def export_selected(self):
+        mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
+        MaskManager().write_masks(mask_names)
