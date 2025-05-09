@@ -4,8 +4,6 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 
 
-
-
 class AbsorptionCorrectionOptionsDialog:
 
     def __init__(self, parent=None):
@@ -44,6 +42,18 @@ class AbsorptionCorrectionOptionsDialog:
             'coating': self.ui.coating_density,
             'phosphor': self.ui.phosphor_density
         }
+
+    def chemical_formula(self, material_name: str) -> str | None:
+        to_try = [
+            HexrdConfig().materials,
+            # Just try every possible additional material
+            *self.additional_materials.values(),
+        ]
+        for d in to_try:
+            if material_name in d:
+                return d[material_name].chemical_formula
+
+        return None
 
     def load_additional_materials(self):
         # FIXME: Update to use defaults once they've been added to HEXRD
@@ -197,19 +207,25 @@ class AbsorptionCorrectionOptionsDialog:
                 materials[key] = selector.currentText()
 
         for det_name in HexrdConfig().detector_names:
+            material = self.filters[det_name]['material']
             HexrdConfig().update_detector_filter(
-                det_name, **self.filters[det_name])
+                det_name,
+                **self.filters[det_name],
+                formula=self.chemical_formula(material),
+            )
             HexrdConfig().update_detector_coating(
                 det_name,
                 material=materials['coating'],
                 density=self.ui.coating_density.value(),
-                thickness=self.ui.coating_thickness.value()
+                thickness=self.ui.coating_thickness.value(),
+                formula=self.chemical_formula(materials['coating']),
             )
             HexrdConfig().update_detector_phosphor(
                 det_name,
                 material=materials['phosphor'],
                 density=self.ui.phosphor_density.value(),
-                thickness=self.ui.phosphor_thickness.value()
+                thickness=self.ui.phosphor_thickness.value(),
+                formula=self.chemical_formula(materials['phosphor']),
             )
 
     def toggle_apply_filters(self, checked):

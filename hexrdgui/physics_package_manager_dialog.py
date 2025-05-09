@@ -202,6 +202,24 @@ class PhysicsPackageManagerDialog:
 
         self.update_layer_enable_states()
 
+    def chemical_formula(self, layer_name: str) -> str | None:
+        selector = self.material_selectors[layer_name]
+        if selector.currentIndex() == 0:
+            # Can't infer the chemical formula for materials entered manually
+            return None
+
+        material_name = selector.currentText()
+
+        to_try = [
+            HexrdConfig().materials,
+            self.additional_materials.get(layer_name, {}),
+        ]
+        for d in to_try:
+            if material_name in d:
+                return d[material_name].chemical_formula
+
+        return None
+
     def draw_diagram(self):
         show_dict = {
             k: getattr(self.ui, f'show_{k}').isChecked()
@@ -273,6 +291,7 @@ class PhysicsPackageManagerDialog:
             for key in ('density', 'thickness'):
                 attr = f'{name}_{key}'
                 kwargs[attr] = getattr(self.ui, attr).value()
+            kwargs[f'{name}_formula'] = self.chemical_formula(name)
 
         HexrdConfig().update_physics_package(**kwargs)
 
