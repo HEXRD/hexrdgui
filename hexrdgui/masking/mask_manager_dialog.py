@@ -67,8 +67,10 @@ class MaskManagerDialog(QObject):
         self.ui.apply_changes.clicked.connect(self.apply_changes)
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
         self.ui.masks_tree.itemSelectionChanged.connect(self.selected_changed)
-        self.ui.presentation_selector.currentTextChanged.connect(self.change_presentation_for_selected)
+        self.ui.presentation_selector.currentTextChanged.connect(
+            self.change_presentation_for_selected)
         self.ui.export_selected.clicked.connect(self.export_selected)
+        self.ui.remove_selected.clicked.connect(self.remove_selected_masks)
 
     def create_mode_source_string(self, mode, source):
         if mode is None:
@@ -156,7 +158,6 @@ class MaskManagerDialog(QObject):
             self.mask_tree_items.pop(parent.text(0))
         MaskManager().masks_changed()
         self.ui.masks_tree.verticalScrollBar().setValue(scroll_value)
-
 
     def _alphanumeric_sort(self, value):
         # Split the string into text and number parts so that we
@@ -391,27 +392,29 @@ class MaskManagerDialog(QObject):
     def change_mask_visibility(self, mask_names, visible):
         for name in mask_names:
             MaskManager().update_mask_visibility(name, visible)
-        self.update_presentation_selector()
 
     def hide_all_masks(self):
         self.change_mask_visibility(MaskManager().mask_names, False)
+        self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def show_all_masks(self):
         self.change_mask_visibility(MaskManager().mask_names, True)
+        self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def change_mask_boundaries(self, mask_names, visible):
         for name in mask_names:
             MaskManager().update_border_visibility(name, visible)
-        self.update_presentation_selector()
 
     def hide_all_boundaries(self):
         self.change_mask_boundaries(MaskManager().mask_names, False)
+        self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def show_all_boundaries(self):
         self.change_mask_boundaries(MaskManager().mask_names, True)
+        self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def edit_style(self):
@@ -437,7 +440,7 @@ class MaskManagerDialog(QObject):
         selected = self.ui.masks_tree.selectedItems()
         self.ui.presentation_selector.setEnabled(len(selected) > 1)
         self.ui.export_selected.setEnabled(len(selected) > 1)
-
+        self.ui.remove_selected.setEnabled(len(selected) > 1)
         if len(selected) == 0:
             return
 
@@ -452,6 +455,9 @@ class MaskManagerDialog(QObject):
             self.ui.presentation_selector.addItem('Visible + Boundary')
 
     def change_presentation_for_selected(self, text):
+        if len(self.ui.masks_tree.selectedItems()) <= 1:
+            return
+
         mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
         if 'Boundary' in text:
             self.change_mask_boundaries(mask_names, True)
@@ -462,8 +468,16 @@ class MaskManagerDialog(QObject):
             self.change_mask_visibility(mask_names, True)
         else:
             self.change_mask_visibility(mask_names, False)
+
+        self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def export_selected(self):
         mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
         MaskManager().write_masks(mask_names)
+
+    def remove_selected_masks(self):
+        with block_signals(self.ui.masks_tree):
+            mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
+            for name in mask_names:
+                self.remove_mask_item(name)
