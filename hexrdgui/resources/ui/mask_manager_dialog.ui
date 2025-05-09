@@ -9,138 +9,113 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>662</width>
-    <height>322</height>
+    <width>670</width>
+    <height>296</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Mask Management</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" rowspan="11">
-    <widget class="QTreeWidget" name="masks_tree">
-     <property name="minimumSize">
-      <size>
-       <width>500</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="contextMenuPolicy">
-      <enum>Qt::CustomContextMenu</enum>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::DoubleClicked</set>
-     </property>
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <property name="sortingEnabled">
-      <bool>false</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Presentation</string>
-      </property>
-      <property name="textAlignment">
-       <set>AlignCenter</set>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Remove</string>
-      </property>
-     </column>
-    </widget>
+   <item row="1" column="1" rowspan="2">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
+      <widget class="QLabel" name="controls_label">
+       <property name="text">
+        <string>CONTROLS</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="hide_all_masks">
+       <property name="text">
+        <string>Hide All Masks</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="show_all_masks">
+       <property name="text">
+        <string>Show All Masks</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="hide_all_boundaries">
+       <property name="text">
+        <string>Hide All Boundaries</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="show_all_boundaries">
+       <property name="text">
+        <string>Show All Boundaries</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="border_color">
+       <property name="text">
+        <string>Border Color</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="presentaion_selection">
+       <item>
+        <property name="text">
+         <string>Presentation</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Visible</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Border</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Visible + Border</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="export_selected">
+       <property name="text">
+        <string>Export Selected Masks</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
-   <item row="0" column="1">
-    <widget class="QPushButton" name="import_masks">
-     <property name="text">
-      <string>Import Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QPushButton" name="export_masks">
-     <property name="text">
-      <string>Export Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QPushButton" name="panel_buffer">
-     <property name="text">
-      <string>Masks to Panel Buffer</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QPushButton" name="view_masks">
-     <property name="text">
-      <string>View Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QPushButton" name="hide_all_masks">
-     <property name="text">
-      <string>Hide All Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1">
-    <widget class="QPushButton" name="show_all_masks">
-     <property name="text">
-      <string>Show All Masks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="1">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1">
-    <widget class="QPushButton" name="hide_all_boundaries">
-     <property name="text">
-      <string>Hide All Boundaries</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="1">
-    <widget class="QPushButton" name="show_all_boundaries">
-     <property name="text">
-      <string>Show All Boundaries</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1" colspan="2">
-    <widget class="QPushButton" name="border_style">
-     <property name="text">
-      <string>Border Style</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="0" colspan="2">
+   <item row="3" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QDialogButtonBox" name="button_box">
@@ -189,19 +164,100 @@
      </item>
     </layout>
    </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="import_masks">
+       <property name="text">
+        <string>Import Masks</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="export_masks">
+       <property name="text">
+        <string>Export Masks</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="panel_buffer">
+       <property name="text">
+        <string>Masks to Panel Buffer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="view_masks">
+       <property name="text">
+        <string>View Masks</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <widget class="QTreeWidget" name="masks_tree">
+     <property name="minimumSize">
+      <size>
+       <width>500</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::DoubleClicked</set>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <property name="sortingEnabled">
+      <bool>false</bool>
+     </property>
+     <column>
+      <property name="text">
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Presentation</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignCenter</set>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Remove</string>
+      </property>
+     </column>
+    </widget>
+   </item>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>masks_tree</tabstop>
   <tabstop>import_masks</tabstop>
   <tabstop>export_masks</tabstop>
   <tabstop>panel_buffer</tabstop>
   <tabstop>view_masks</tabstop>
+  <tabstop>masks_tree</tabstop>
+  <tabstop>apply_changes</tabstop>
   <tabstop>hide_all_masks</tabstop>
   <tabstop>show_all_masks</tabstop>
   <tabstop>hide_all_boundaries</tabstop>
   <tabstop>show_all_boundaries</tabstop>
-  <tabstop>apply_changes</tabstop>
+  <tabstop>border_color</tabstop>
+  <tabstop>presentaion_selection</tabstop>
+  <tabstop>export_selected</tabstop>
  </tabstops>
  <resources/>
  <connections/>
