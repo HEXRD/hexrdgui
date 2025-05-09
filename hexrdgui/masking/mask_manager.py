@@ -481,3 +481,6 @@ class MaskManager(QObject, metaclass=QSingleton):
             # This is the same as the panel buffer, which is why we are
             # doing a `np.logical_and()`.
             panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
+
+    def get_mask_by_name(self, name):
+        return self.masks[name]
