@@ -2012,6 +2012,7 @@ class ImageCanvas(FigureCanvas):
         all_verts = []
         for name in MaskManager().visible_boundaries:
             mask = MaskManager().masks[name]
+            verts = None
             if self.mode == ViewType.raw:
                 if HexrdConfig().stitch_raw_roi_images:
                     # Find masks to keep
@@ -2027,40 +2028,44 @@ class ImageCanvas(FigureCanvas):
                         ij, _ = self.iviewer.raw_to_stitched(v[:, [1, 0]], k)
                         verts.append(ij[:, [1, 0]])
                 else:
-                    verts = [v for k, v in mask.data if k == det]
+                    # Do not try to draw boundaries for threshold masks
+                    if mask.type != MaskType.threshold:
+                        verts = [v for k, v in mask.data if k == det]
             elif self.mode == ViewType.polar or self.mode == ViewType.stereo:
-                # Do not apply tth distortion for the pinhole mask
-                apply_tth_distortion = mask.type != MaskType.pinhole
-                verts = create_polar_line_data_from_raw(
-                    instr,
-                    mask.data,
-                    apply_tth_distortion=apply_tth_distortion,
-                )
-                if self.mode == ViewType.polar:
-                    # Check for any major jumps in eta. That probably means
-                    # the border is wrapping around.
-                    for i, vert in enumerate(verts):
-                        # If there are two points far away, assume there
-                        # is a gap in the eta range.
-                        eta_diff = np.abs(np.diff(vert[:, 1]))
-                        delta_eta_est = np.nanmedian(eta_diff)
-                        tolerance = delta_eta_est * 10
-                        big_gaps, = np.nonzero(eta_diff > tolerance)
-                        verts[i] = np.insert(
-                            vert,
-                            big_gaps + 1,
-                            np.nan,
-                            axis=0,
-                        )
+                # Do not try to draw boundaries for threshold masks
+                if mask.type != MaskType.threshold:
+                    # Do not apply tth distortion for the pinhole mask
+                    apply_tth_distortion = mask.type != MaskType.pinhole
+                    verts = create_polar_line_data_from_raw(
+                        instr,
+                        mask.data,
+                        apply_tth_distortion=apply_tth_distortion,
+                    )
+                    if self.mode == ViewType.polar:
+                        # Check for any major jumps in eta. That probably means
+                        # the border is wrapping around.
+                        for i, vert in enumerate(verts):
+                            # If there are two points far away, assume there
+                            # is a gap in the eta range.
+                            eta_diff = np.abs(np.diff(vert[:, 1]))
+                            delta_eta_est = np.nanmedian(eta_diff)
+                            tolerance = delta_eta_est * 10
+                            big_gaps, = np.nonzero(eta_diff > tolerance)
+                            verts[i] = np.insert(
+                                vert,
+                                big_gaps + 1,
+                                np.nan,
+                                axis=0,
+                            )
 
-                if self.mode == ViewType.stereo:
-                    # Now convert from polar to stereo
-                    for i, vert in enumerate(verts):
-                        verts[i] = angles_to_stereo(
-                            np.radians(vert),
-                            self.iviewer.instr_pv,
-                            HexrdConfig().stereo_size,
-                        )
+                    if self.mode == ViewType.stereo:
+                        # Now convert from polar to stereo
+                        for i, vert in enumerate(verts):
+                            verts[i] = angles_to_stereo(
+                                np.radians(vert),
+                                self.iviewer.instr_pv,
+                                HexrdConfig().stereo_size,
+                            )
 
             if not verts:
                 continue

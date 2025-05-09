@@ -23,13 +23,37 @@ from abc import ABC, abstractmethod
 
 
 class Mask(ABC):
-    def __init__(self, name='', mtype='', visible=True, show_border=False):
+    def __init__(
+        self,
+        name=None,
+        mtype='',
+        visible=True,
+        show_border=False,
+        mode=None,
+        xray_source=None
+    ):
         self.type = mtype
-        self.name = name
         self.visible = visible
         self.show_border = show_border
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
+        self.creation_view_mode = mode
+        self.xray_source = xray_source
+        if (
+            mode == ViewType.polar and
+            HexrdConfig().has_multi_xrs and xray_source is None
+        ):
+            # The x-ray source is only relevant for polar masks
+            self.xray_source = HexrdConfig().active_beam_name
+        self.name = name
+        if name is None:
+            prefix = self.type
+            if self.xray_source is not None:
+                prefix = f'{self.xray_source}_{prefix}'
+            else:
+                prefix = f'{mode}_{prefix}'
+            # Enforce name uniqueness
+            self.name = unique_name(MaskManager().mask_names, f'{prefix}_mask')
 
     def get_masked_arrays(self):
         if self.masked_arrays is None:
@@ -69,12 +93,22 @@ class Mask(ABC):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             show_border=data.get('border', False),
+            mode=data.get('creation_view_mode', None),
+            xray_source=data.get('xray_source', None),
         )
 
 
 class RegionMask(Mask):
-    def __init__(self, name='', mtype='', visible=True, show_border=False):
-        super().__init__(name, mtype, visible, show_border)
+    def __init__(
+        self,
+        name='',
+        mtype='',
+        visible=True,
+        show_border=False,
+        mode=ViewType.raw,
+        xray_source=None
+    ):
+        super().__init__(name, mtype, visible, show_border, mode, xray_source)
         self._raw = None
 
     @property
@@ -100,7 +134,10 @@ class RegionMask(Mask):
             )
 
     def get_masked_arrays(self, image_mode=ViewType.raw, instr=None):
-        if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
+        if (
+            self.masked_arrays is None or
+            self.masked_arrays_view_mode != image_mode
+        ):
             self.update_masked_arrays(image_mode, instr)
 
         return self.masked_arrays
@@ -118,6 +155,8 @@ class RegionMask(Mask):
             'mtype': self.type,
             'visible': self.visible,
             'border': self.show_border,
+            'creation_view_mode': self.creation_view_mode,
+            'xray_source': self.xray_source,
             'data': {},
         }
         for i, (det, values) in enumerate(self._raw):
@@ -131,6 +170,8 @@ class RegionMask(Mask):
             mtype=data['mtype'],
             visible=data.get('visible', True),
             show_border=data.get('border', False),
+            mode=data.get('creation_view_mode', None),
+            xray_source=data.get('xray_source', None),
         )
         raw_data = []
         for det in HexrdConfig().detector_names:
@@ -142,8 +183,15 @@ class RegionMask(Mask):
 
 
 class ThresholdMask(Mask):
-    def __init__(self, name='', mtype='', visible=True):
-        super().__init__(name, mtype, visible)
+    def __init__(
+        self,
+        name='',
+        mtype='',
+        visible=True,
+        mode=None,
+        xray_source=None
+    ):
+        super().__init__(name, mtype, visible, mode, xray_source)
         self.min_val = -math.inf
         self.max_val = math.inf
 
@@ -172,6 +220,8 @@ class ThresholdMask(Mask):
             'mtype': self.type,
             'visible': self.visible,
             'border': self.show_border,
+            'creation_view_mode': self.creation_view_mode,
+            'xray_source': self.xray_source,
         }
 
     @classmethod
@@ -180,6 +230,8 @@ class ThresholdMask(Mask):
             name=data['name'],
             mtype=data['mtype'],
             visible=data.get('visible', True),
+            mode=data.get('creation_view_mode', ViewType.raw),
+            xray_source=data.get('xray_source', None),
         )
         new_cls.data = [data['min_val'], data['max_val']]
         return new_cls
@@ -208,7 +260,7 @@ class MaskManager(QObject, metaclass=QSingleton):
     def __init__(self):
         super().__init__(None)
         self.masks = {}
-        self.view_mode = ViewType.raw
+        self.view_mode = None
         self.boundary_color = '#000'  # Default to black
 
         self.setup_connections()
@@ -238,9 +290,39 @@ class MaskManager(QObject, metaclass=QSingleton):
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().detectors_changed.connect(self.clear_all)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
+        HexrdConfig().active_beam_switched.connect(
+            self.update_masks_for_active_beam)
+
+    def update_masks_for_active_beam(self):
+        xrs = HexrdConfig().active_beam_name
+        for mask in self.masks.values():
+            # If mask's mode or source doesn't match current, hide it
+            if (
+                mask.creation_view_mode == ViewType.polar and
+                mask.xray_source != xrs
+            ):
+                if not hasattr(mask, '_original_visible'):
+                    # Remember original states so we can toggle back
+                    mask._original_visible = mask.visible
+                    mask._original_show_border = mask.show_border
+                self.update_mask_visibility(mask.name, False)
+                self.update_border_visibility(mask.name, False)
+            else:
+                # Restore original states if they exist
+                if hasattr(mask, '_original_visible'):
+                    self.update_mask_visibility(
+                        mask.name, mask._original_visible)
+                    self.update_border_visibility(
+                        mask.name, mask._original_show_border)
+                    # Clear the stored states
+                    delattr(mask, '_original_visible')
+                    delattr(mask, '_original_show_border')
+        self.mask_mgr_dialog_update.emit()
+        self.masks_changed()
 
     def view_mode_changed(self, mode):
         self.view_mode = mode
+        self.update_masks_for_active_beam()
 
     def masks_changed(self):
         if self.view_mode in (ViewType.polar, ViewType.stereo):
@@ -256,15 +338,14 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.masks_changed()
         self.mask_mgr_dialog_update.emit()
 
-    def add_mask(self, name, data, mtype, visible=True):
-        # Enforce name uniqueness
-        name = unique_name(self.mask_names, name)
+    def add_mask(self, data, mtype, name=None, visible=True):
         if mtype == MaskType.threshold:
             new_mask = ThresholdMask(name, mtype, visible)
         else:
-            new_mask = RegionMask(name, mtype, visible)
+            mode = None if mtype == MaskType.pinhole else self.view_mode
+            new_mask = RegionMask(name, mtype, visible, mode=mode)
         new_mask.data = data
-        self.masks[name] = new_mask
+        self.masks[new_mask.name] = new_mask
         self.mask_mgr_dialog_update.emit()
         return new_mask
 
@@ -277,17 +358,13 @@ class MaskManager(QObject, metaclass=QSingleton):
         h5py_group.attrs['_version'] = CURRENT_MASK_VERSION
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
-    def write_single_mask(self, name):
-        d = {
-            name: self.masks[name].serialize(),
-            '__boundary_color': self.boundary_color
-        }
-        self.export_masks_to_file.emit(d)
-
-    def write_all_masks(self, h5py_group=None):
+    def write_masks(self, names=None, h5py_group=None):
+        if not names:
+            # If no masks are specified, export all masks
+            names = self.masks.keys()
         d = {'__boundary_color': self.boundary_color}
-        for name, mask_info in self.masks.items():
-            d[name] = mask_info.serialize()
+        for name in names:
+            d[name] = self.masks[name].serialize()
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
         else:
@@ -297,7 +374,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         if 'masks' not in h5py_group:
             h5py_group.create_group('masks')
 
-        self.write_all_masks(h5py_group['masks'])
+        self.write_masks(h5py_group['masks'])
 
     def load_masks(self, h5py_group):
         items = load_masks(h5py_group)
@@ -324,6 +401,8 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.masks = {}
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
+        if self.view_mode is None:
+            self.view_mode_changed(ViewType.raw)
         self.mask_mgr_dialog_update.emit()
 
     def update_view_mode(self, mode):
@@ -349,7 +428,7 @@ class MaskManager(QObject, metaclass=QSingleton):
             self.remove_mask(self.threshold_mask.name)
         else:
             self.add_mask(
-                'threshold', [-math.inf, math.inf], MaskType.threshold)
+                [-math.inf, math.inf], MaskType.threshold, name='threshold')
         self.mask_mgr_dialog_update.emit()
 
     def update_name(self, old_name, new_name):
@@ -390,3 +469,6 @@ class MaskManager(QObject, metaclass=QSingleton):
             # This is the same as the panel buffer, which is why we are
             # doing a `np.logical_and()`.
             panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
+
+    def get_mask_by_name(self, name):
+        return self.masks[name]
