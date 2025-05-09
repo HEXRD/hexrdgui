@@ -212,7 +212,7 @@ class PhysicsPackageManagerDialog:
 
         to_try = [
             HexrdConfig().materials,
-            self.additional_materials[layer_name],
+            self.additional_materials.get(layer_name, {}),
         ]
         for d in to_try:
             if material_name in d:
