@@ -65,7 +65,7 @@ class ThresholdMaskDialog(QObject):
         self.gather_input()
         if MaskManager().threshold_mask is None:
             MaskManager().add_mask(
-                'threshold', self.values, MaskType.threshold)
+                self.values, MaskType.threshold, name='threshold')
         else:
             MaskManager().threshold_mask.data = self.values
         self.mask_applied.emit()
