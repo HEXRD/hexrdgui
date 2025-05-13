@@ -268,12 +268,12 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>masks_tree</tabstop>
+  <tabstop>apply_changes</tabstop>
   <tabstop>import_masks</tabstop>
   <tabstop>export_masks</tabstop>
   <tabstop>panel_buffer</tabstop>
   <tabstop>view_masks</tabstop>
-  <tabstop>masks_tree</tabstop>
-  <tabstop>apply_changes</tabstop>
   <tabstop>hide_all_masks</tabstop>
   <tabstop>show_all_masks</tabstop>
   <tabstop>hide_all_boundaries</tabstop>
@@ -281,6 +281,7 @@
   <tabstop>border_color</tabstop>
   <tabstop>presentation_selector</tabstop>
   <tabstop>export_selected</tabstop>
+  <tabstop>remove_selected</tabstop>
  </tabstops>
  <resources/>
  <connections/>
