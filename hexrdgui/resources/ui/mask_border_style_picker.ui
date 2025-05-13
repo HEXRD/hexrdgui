@@ -129,7 +129,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>border_color</tabstop>
+  <tabstop>border_style</tabstop>
   <tabstop>border_style</tabstop>
   <tabstop>border_size</tabstop>
  </tabstops>

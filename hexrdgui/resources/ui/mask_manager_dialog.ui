@@ -190,9 +190,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="border_color">
+      <widget class="QPushButton" name="border_style">
        <property name="text">
-        <string>Border Color</string>
+        <string>Border Style</string>
        </property>
       </widget>
      </item>
@@ -278,7 +278,7 @@
   <tabstop>show_all_masks</tabstop>
   <tabstop>hide_all_boundaries</tabstop>
   <tabstop>show_all_boundaries</tabstop>
-  <tabstop>border_color</tabstop>
+  <tabstop>border_style</tabstop>
   <tabstop>presentation_selector</tabstop>
   <tabstop>export_selected</tabstop>
   <tabstop>remove_selected</tabstop>
