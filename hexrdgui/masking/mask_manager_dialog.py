@@ -180,8 +180,8 @@ class MaskManagerDialog(QObject):
 
             options = QComboBox(dialog)
             options.addItem('Replace buffer')
-            options.addItem('Logical AND with buffer')
-            options.addItem('Logical OR with buffer')
+            options.addItem('Union of panel buffer and current masks')
+            options.addItem('Intersection of panel buffer and current masks')
             layout.addWidget(options)
 
             buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
