@@ -233,6 +233,6 @@ class PanelBufferDialog(QObject):
         fig.canvas.manager.set_window_title(f'{self.detector}')
         ax.set_title('Panel Buffer')
 
-        ax.imshow(buffer)
+        ax.imshow(buffer, vmin=0, vmax=1)
         fig.canvas.draw_idle()
         fig.show()

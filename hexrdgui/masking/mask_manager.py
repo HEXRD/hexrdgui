@@ -364,13 +364,14 @@ class MaskManager(QObject, metaclass=QSingleton):
             detector_config = HexrdConfig().detector(det)
             buffer_value = detector_config.get('buffer', None)
             if isinstance(buffer_value, np.ndarray) and buffer_value.ndim == 2:
-                if selection == 'Logical AND with buffer':
-                    # Need to invert so True is invalid
-                    mask = ~np.logical_and(~mask, ~buffer_value)
-                elif selection == 'Logical OR with buffer':
-                    # Need to invert so True is invalid
-                    mask = ~np.logical_or(~mask, ~buffer_value)
-            detector_config['buffer'] = buffer_value
+                # NOTE: The `logical_and` and `logical_or` here are being
+                # applied to the *masks*, not the un-masked regions. This is
+                # why they are inverted.
+                if selection == 'Union of panel buffer and current masks':
+                    mask = np.logical_and(mask, buffer_value)
+                elif selection == 'Intersection of panel buffer and current masks':
+                    mask = np.logical_or(mask, buffer_value)
+            detector_config['buffer'] = mask
 
         HexrdConfig().rerender_needed.emit()
 
