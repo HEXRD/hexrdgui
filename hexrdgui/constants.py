@@ -172,7 +172,7 @@ FIDDLE_SMR_CMM = np.array([
 
 '''corners of the icarus sensors
 '''
-FIDDLE_ICARUS_CORNERS = np.array([
+FIDDLE_ICARUS_CORNERS_CMM = np.array([
 # CAMERA-2
 [31.937,  5.6820002,   -8.5372839],
 [57.692001,   5.5879998,   -8.6448994],

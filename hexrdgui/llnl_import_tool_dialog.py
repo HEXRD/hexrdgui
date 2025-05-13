@@ -14,7 +14,9 @@ from PySide6.QtGui import QColor
 from hexrd import resources as hexrd_resources
 from hexrd.instrument import HEDMInstrument
 from hexrd.rotations import (
-    angleAxisOfRotMat, make_rmat_euler, angles_from_rmat_zxz, rotMatOfExpMap
+    angleAxisOfRotMat, make_rmat_euler,
+    angles_from_rmat_zxz, rotMatOfExpMap,
+    angles_from_rmat_xyz
 )
 
 import hexrdgui.resources.calibration
@@ -25,7 +27,10 @@ from hexrdgui.constants import (
     UI_TRANS_INDEX_ROTATE_90,
     YAML_EXTS,
     LLNLTransform,
-    ViewType
+    ViewType,
+    FIDDLE_SMR_CMM,
+    FIDDLE_ICARUS_CORNERS_CMM,
+    KNOWN_DETECTOR_NAMES
 )
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
@@ -38,11 +43,79 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import instr_to_internal_dict, block_signals
 from hexrdgui.utils.dialog import add_help_url
 
+from lmfit import Parameters, Minimizer
 
 class AtlasConfig:
     def __init__(self, atlas_coords, instr):
-        self.coords = atlas_coords
+
         self.instr = instr
+        self.atlas_coords = atlas_coords
+        self.get_coords() # sets self.coords
+
+    def _determine_coordinate_transform(self, start, finish):
+
+        def optimization_function(params, start, finish):
+            alpha = params['alpha'].value
+            beta  = params['beta'].value
+            gamma = params['gamma'].value
+
+            tilt = np.radians([alpha, beta, gamma])
+
+            rmat = make_rmat_euler(tilt, 'xyz', extrinsic=True)
+
+            trans = np.atleast_2d(
+                np.array([params['tvec_x'].value,
+                params['tvec_y'].value,
+                params['tvec_z'].value]))
+
+            trans_start = (np.dot(rmat, start.T).T + 
+                          np.repeat(trans, start.shape[0], axis=0))
+
+            residual = trans_start-finish
+            return residual.flatten()
+
+        params = Parameters()
+        params.add(name='alpha', value=0, vary=True)
+        params.add(name='beta',  value=0, vary=True)
+        params.add(name='gamma', value=0, vary=True)
+
+        # tvec = np.mean(finish, axis=0) - np.mean(start, axis=0)
+
+        params.add(name='tvec_x', value=0, vary=True)
+        params.add(name='tvec_y', value=0, vary=True)
+        params.add(name='tvec_z', value=0, vary=True)
+
+        args = (start, finish)
+
+        res = Minimizer(optimization_function, params, fcn_args=args)
+
+        result = res.minimize(method='least_squares', params=params)
+
+        if result.chisqr > 1:
+            '''please include a message box here with this message
+            '''
+            msg = (f'least-squares did not find a good solution. '
+                    f'Double check data to make sure input is in order.')
+            print(msg)
+
+        self.result = result
+
+    def _transform_coordinates(self, pts):
+        return (np.dot(self.rmat, pts.T).T + 
+            np.repeat(self.tvec, pts.shape[0], axis=0))
+
+    def _get_icarus_corners_in_TCC(self):
+        IC_TCC = self._transform_coordinates(FIDDLE_ICARUS_CORNERS_CMM)
+        '''check shape of IC_TCC. should be 20x3
+        '''
+        if IC_TCC.shape != (20, 3):
+            msg = (f'shape of the icarus corner coordinates '
+                f'is incorrect.\nShape should be (20, 3). '
+                f'Input shape is {IC_TCC.shape}')
+            raise RuntimeError(msg)
+        self.coords = dict.fromkeys(KNOWN_DETECTOR_NAMES['FIDDLE'])
+        for ii, k in enumerate(self.coords.keys()):
+            self.coords[k] = IC_TCC[ii*4:(ii+1)*4, :]
 
     def _get_orientation(self, crds, det):
         """vertex in 4x3 matrix of the
@@ -86,16 +159,49 @@ class AtlasConfig:
 
     def update_instrument(self, detector):
         v = self._get_vertices(self.coords[detector])
+
         # tvec sample is the position of the sample in NIF
         # chamber coordinates. the position of each detector
         # is measured from this point, so we need to take this
         # off
-        tvec_sample= np.array([0, 0, 9.8])
+        tvec_sample= np.array([0, 0, 9.85])
         tvec = self._get_center(v) - tvec_sample
         rmat = self._get_orientation(self.coords[detector], detector)
         ang, ax = angleAxisOfRotMat(rmat)
         self.instr.detectors[detector].tvec = tvec
         self.instr.detectors[detector].tilt = ang * ax
+
+    def get_coords(self):
+        # get the coordinat transform connecting SMR in CMM
+        # to the TCC frame
+        self._determine_coordinate_transform(FIDDLE_SMR_CMM, 
+                                            self.atlas_coords)
+        self._get_icarus_corners_in_TCC()
+
+    @property
+    def rmat(self):
+        if hasattr(self, 'result'):
+            params = self.result.params
+            alpha = params['alpha'].value
+            beta  = params['beta'].value
+            gamma = params['gamma'].value
+            tilt = np.radians([alpha, beta, gamma])
+            return make_rmat_euler(tilt, 'xyz', extrinsic=True)
+
+        else:
+            return np.eye(3)
+
+    @property
+    def tvec(self):
+        if hasattr(self, 'result'):
+            params = self.result.params
+            trans = np.atleast_2d(
+            np.array([params['tvec_x'].value,
+            params['tvec_y'].value,
+            params['tvec_z'].value]))
+            return trans
+        else:
+            return np.zeros([3,])
 
 
 class LLNLImportToolDialog(QObject):
