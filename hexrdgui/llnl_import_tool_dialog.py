@@ -175,7 +175,7 @@ class AtlasConfig:
         # get the coordinat transform connecting SMR in CMM
         # to the TCC frame
         self._determine_coordinate_transform(FIDDLE_SMR_CMM, 
-                                            self.atlas_coords)
+                                            self.atlas_coords_array)
         self._get_icarus_corners_in_TCC()
 
     @property
@@ -202,6 +202,15 @@ class AtlasConfig:
             return trans
         else:
             return np.zeros([3,])
+
+    @property
+    def atlas_coords_array(self):
+        '''return atlas coordinates as array
+        '''
+        atlas_coords_array = []
+        for k,v in self.atlas_coords.items():
+            atlas_coords_array.append(v)
+        return np.array(atlas_coords_array)
 
 
 class LLNLImportToolDialog(QObject):
