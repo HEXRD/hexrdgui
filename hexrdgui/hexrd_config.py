@@ -727,6 +727,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.config['instrument'])
         self.instrument_config_backup_eac = copy.deepcopy(
             self.euler_angle_convention)
+        self._instrument_rigid_body_params_backup = copy.deepcopy(
+            self._instrument_rigid_body_params)
 
     def restore_instrument_config_backup(self):
         old_detectors = self.detector_names
@@ -753,6 +755,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.deep_rerender_needed.emit()
 
         self.update_visible_material_energies()
+
+        self._instrument_rigid_body_params = copy.deepcopy(
+            self._instrument_rigid_body_params_backup)
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
