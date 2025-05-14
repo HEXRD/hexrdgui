@@ -15,8 +15,7 @@ from hexrd import resources as hexrd_resources
 from hexrd.instrument import HEDMInstrument
 from hexrd.rotations import (
     angleAxisOfRotMat, make_rmat_euler,
-    angles_from_rmat_zxz, rotMatOfExpMap,
-    angles_from_rmat_xyz
+    angles_from_rmat_zxz, rotMatOfExpMap
 )
 
 import hexrdgui.resources.calibration
@@ -64,12 +63,14 @@ class AtlasConfig:
             rmat = make_rmat_euler(tilt, 'xyz', extrinsic=True)
 
             trans = np.atleast_2d(
-                np.array([params['tvec_x'].value,
-                params['tvec_y'].value,
-                params['tvec_z'].value]))
+                np.array([
+                    params['tvec_x'].value,
+                    params['tvec_y'].value,
+                    params['tvec_z'].value]
+                ))
 
             trans_start = (np.dot(rmat, start.T).T + 
-                          np.repeat(trans, start.shape[0], axis=0))
+                           np.repeat(trans, start.shape[0], axis=0))
 
             residual = trans_start-finish
             return residual.flatten()
@@ -78,8 +79,6 @@ class AtlasConfig:
         params.add(name='alpha', value=0, vary=True)
         params.add(name='beta',  value=0, vary=True)
         params.add(name='gamma', value=0, vary=True)
-
-        # tvec = np.mean(finish, axis=0) - np.mean(start, axis=0)
 
         params.add(name='tvec_x', value=0, vary=True)
         params.add(name='tvec_y', value=0, vary=True)
@@ -102,26 +101,24 @@ class AtlasConfig:
 
     def _transform_coordinates(self, pts):
         return (np.dot(self.rmat, pts.T).T + 
-            np.repeat(self.tvec, pts.shape[0], axis=0))
+                np.repeat(self.tvec, pts.shape[0], axis=0))
 
     def _get_icarus_corners_in_TCC(self):
         IC_TCC = self._transform_coordinates(FIDDLE_ICARUS_CORNERS_CMM)
-        '''check shape of IC_TCC. should be 20x3
-        '''
+        # Check shape of IC_TCC. Should be 20 x 3
         if IC_TCC.shape != (20, 3):
-            msg = (f'shape of the icarus corner coordinates '
-                f'is incorrect.\nShape should be (20, 3). '
-                f'Input shape is {IC_TCC.shape}')
+            msg = (
+                f'shape of the icarus corner coordinates is incorrect. Shape '
+                f'should be (20, 3). Input shape is {IC_TCC.shape}'
+            )
             raise RuntimeError(msg)
         self.coords = dict.fromkeys(KNOWN_DETECTOR_NAMES['FIDDLE'])
         for ii, k in enumerate(self.coords.keys()):
-            self.coords[k] = IC_TCC[ii*4:(ii+1)*4, :]
+            self.coords[k] = IC_TCC[ii*4 : (ii+1)*4, :]
 
     def _get_orientation(self, crds, det):
-        """vertex in 4x3 matrix of the
-        4 vertices. we return the normal
-        using a cross product
-        """
+        # Vertex in 4x3 matrix of the 4 vertices.
+        # We return the normal using a cross product
         vertex = self._get_vertices(crds)
         if det == 'CAMERA-05':
             xhat = -vertex[1, :] + vertex[0, :]
@@ -130,31 +127,29 @@ class AtlasConfig:
             xhat = vertex[3, :] - vertex[0, :]
             yhat = vertex[1, :] - vertex[0, :]
 
-        xhat = xhat/np.linalg.norm(xhat)
-        yhat = yhat/np.linalg.norm(yhat)
+        xhat = xhat / np.linalg.norm(xhat)
+        yhat = yhat / np.linalg.norm(yhat)
 
         zhat = np.cross(xhat, yhat)
-        zhat = zhat/np.linalg.norm(zhat)
+        zhat = zhat / np.linalg.norm(zhat)
 
         xhat = np.cross(yhat, zhat)
-        xhat = xhat/np.linalg.norm(xhat)
+        xhat = xhat / np.linalg.norm(xhat)
 
         rmat = np.vstack((-xhat, yhat, -zhat)).T
 
-        RMAT_Z_180 = rotMatOfExpMap(np.pi*zhat)
+        RMAT_Z_180 = rotMatOfExpMap(np.pi * zhat)
         if det in ['CAMERA-02', 'CAMERA-03']:
             return np.dot(RMAT_Z_180, rmat)
         return rmat
 
     def _get_center(self, vertex):
-        """return center of detector given
-        the four vertex
-        """
+        # Return center of detector given the four vertices
         return np.mean(vertex, axis=0)
 
     def _get_vertices(self, crds):
-        # by default we will look up from TCC, so there is
-        # flip in the x-component sign
+        # By default we will look up from TCC, so
+        # there is a flip in the x-component sign
         return crds[0:4, :]
 
     def update_instrument(self, detector):
@@ -187,7 +182,6 @@ class AtlasConfig:
             gamma = params['gamma'].value
             tilt = np.radians([alpha, beta, gamma])
             return make_rmat_euler(tilt, 'xyz', extrinsic=True)
-
         else:
             return np.eye(3)
 
@@ -195,20 +189,19 @@ class AtlasConfig:
     def tvec(self):
         if hasattr(self, 'result'):
             params = self.result.params
-            trans = np.atleast_2d(
-            np.array([params['tvec_x'].value,
-            params['tvec_y'].value,
-            params['tvec_z'].value]))
-            return trans
+            return np.atleast_2d(np.array([
+                params['tvec_x'].value,
+                params['tvec_y'].value,
+                params['tvec_z'].value
+            ]))
         else:
             return np.zeros([3,])
 
     @property
     def atlas_coords_array(self):
-        '''return atlas coordinates as array
-        '''
+        # Return atlas coordinates as array
         atlas_coords_array = []
-        for k,v in self.atlas_coords.items():
+        for k, v in self.atlas_coords.items():
             atlas_coords_array.append(v)
         return np.array(atlas_coords_array)
 
