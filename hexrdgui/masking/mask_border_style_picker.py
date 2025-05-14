@@ -15,14 +15,11 @@ class MaskBorderStylePicker(QObject):
         self.original_color = original_color
         self.original_style = original_style
         self.original_width = original_width
-        self.color = original_color
-        self.style = original_style
-        self.width = original_width
 
-        self.setup_ui()
+        self.reset_ui()
         self.setup_connections()
 
-    def setup_ui(self):
+    def reset_ui(self):
         self.ui.border_color.setText(self.original_color)
         self.ui.border_color.setStyleSheet('QPushButton {background-color: %s}' % self.original_color)
         self.ui.border_style.setCurrentText(self.original_style)
@@ -34,27 +31,29 @@ class MaskBorderStylePicker(QObject):
 
     def setup_connections(self):
         self.ui.border_color.clicked.connect(self.pick_color)
-        self.ui.border_style.currentIndexChanged.connect(self.update_style)
-        self.ui.border_size.valueChanged.connect(self.update_width)
         self.ui.button_box.rejected.connect(self.reject)
+
+    @property
+    def color(self):
+        return self.ui.border_color.text()
+
+    @property
+    def style(self):
+        return self.ui.border_style.currentText()
+
+    @property
+    def width(self):
+        return self.ui.border_size.value()
 
     def pick_color(self):
         dialog = QColorDialog(QColor(self.original_color), self.ui)
         if dialog.exec():
-            self.color = dialog.selectedColor().name()
-            self.ui.border_color.setText(self.color)
-            self.ui.border_color.setStyleSheet('QPushButton {background-color: %s}' % self.color)
-
-    def update_style(self):
-        self.style = self.ui.border_style.currentText()
-
-    def update_width(self):
-        self.width = self.ui.border_size.value()
+            color = dialog.selectedColor().name()
+            self.ui.border_color.setText(color)
+            self.ui.border_color.setStyleSheet('QPushButton {background-color: %s}' % color)
 
     def reject(self):
-        self.color = self.original_color
-        self.style = self.original_style
-        self.width = self.original_width
+        self.reset_ui()
 
     def result(self):
         return self.color, self.style, self.width
