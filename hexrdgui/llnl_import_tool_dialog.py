@@ -45,11 +45,11 @@ from hexrdgui.utils.dialog import add_help_url
 from lmfit import Parameters, Minimizer
 
 class AtlasConfig:
-    def __init__(self, atlas_coords, instr):
+    def __init__(self, raw_data, instr):
 
         self.instr = instr
-        self.atlas_coords = atlas_coords
-        self.result, self.coords = self.get_coords()
+        self.raw_data = raw_data
+        self.compute_result_and_coords()
 
     def _determine_coordinate_transform(self, start, finish):
 
@@ -88,16 +88,16 @@ class AtlasConfig:
 
         res = Minimizer(optimization_function, params, fcn_args=args)
 
-        result = res.minimize(method='least_squares', params=params)
+        minimizer_result = res.minimize(method='least_squares', params=params)
 
-        if result.chisqr > 1:
+        if minimizer_result.chisqr > 1:
             '''please include a message box here with this message
             '''
             msg = (f'least-squares did not find a good solution. '
                     f'Double check data to make sure input is in order.')
             print(msg)
 
-        return result
+        return minimizer_result
 
     def _transform_coordinates(self, pts):
         return (np.dot(self.rmat, pts.T).T + 
@@ -167,9 +167,9 @@ class AtlasConfig:
         self.instr.detectors[detector].tvec = tvec
         self.instr.detectors[detector].tilt = ang * ax
 
-    def get_coords(self):
+    def compute_result_and_coords(self):
         # get the coordinate transform connecting SMR in CMM to the TCC frame
-        self.result = self._determine_coordinate_transform(
+        self.minimizer_result = self._determine_coordinate_transform(
             FIDDLE_SMR_CMM,
             self.atlas_coords_array
         )
@@ -177,8 +177,8 @@ class AtlasConfig:
 
     @property
     def rmat(self):
-        if hasattr(self, 'result'):
-            params = self.result.params
+        if hasattr(self, 'minimizer_result'):
+            params = self.minimizer_result.params
             alpha = params['alpha'].value
             beta  = params['beta'].value
             gamma = params['gamma'].value
@@ -189,8 +189,8 @@ class AtlasConfig:
 
     @property
     def tvec(self):
-        if hasattr(self, 'result'):
-            params = self.result.params
+        if hasattr(self, 'minimizer_result'):
+            params = self.minimizer_result.params
             return np.atleast_2d(np.array([
                 params['tvec_x'].value,
                 params['tvec_y'].value,
@@ -203,7 +203,7 @@ class AtlasConfig:
     def atlas_coords_array(self):
         # Return atlas coordinates as array
         atlas_coords_array = []
-        for k, v in self.atlas_coords.items():
+        for k, v in self.raw_data.items():
             atlas_coords_array.append(v)
         return np.array(atlas_coords_array)
 
