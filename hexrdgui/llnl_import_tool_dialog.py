@@ -7,7 +7,7 @@ import tempfile
 import h5py
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Qt, QTimer
+from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtWidgets import QColorDialog, QFileDialog, QMessageBox
 from PySide6.QtGui import QColor
 
@@ -36,7 +36,6 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.interactive_template import InteractiveTemplate
-from hexrdgui.median_filter_dialog import MedianFilterDialog
 from hexrdgui import resource_loader
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import instr_to_internal_dict, block_signals
