@@ -49,7 +49,7 @@ class AtlasConfig:
 
         self.instr = instr
         self.atlas_coords = atlas_coords
-        self.get_coords() # sets self.coords
+        self.result, self.coords = self.get_coords()
 
     def _determine_coordinate_transform(self, start, finish):
 
@@ -97,7 +97,7 @@ class AtlasConfig:
                     f'Double check data to make sure input is in order.')
             print(msg)
 
-        self.result = result
+        return result
 
     def _transform_coordinates(self, pts):
         return (np.dot(self.rmat, pts.T).T + 
@@ -112,9 +112,10 @@ class AtlasConfig:
                 f'should be (20, 3). Input shape is {IC_TCC.shape}'
             )
             raise RuntimeError(msg)
-        self.coords = dict.fromkeys(KNOWN_DETECTOR_NAMES['FIDDLE'])
-        for ii, k in enumerate(self.coords.keys()):
-            self.coords[k] = IC_TCC[ii*4 : (ii+1)*4, :]
+        coords = dict.fromkeys(KNOWN_DETECTOR_NAMES['FIDDLE'])
+        for ii, k in enumerate(coords.keys()):
+            coords[k] = IC_TCC[ii*4 : (ii+1)*4, :]
+        return coords
 
     def _get_orientation(self, crds, det):
         # Vertex in 4x3 matrix of the 4 vertices.
@@ -167,11 +168,12 @@ class AtlasConfig:
         self.instr.detectors[detector].tilt = ang * ax
 
     def get_coords(self):
-        # get the coordinat transform connecting SMR in CMM
-        # to the TCC frame
-        self._determine_coordinate_transform(FIDDLE_SMR_CMM, 
-                                            self.atlas_coords_array)
-        self._get_icarus_corners_in_TCC()
+        # get the coordinate transform connecting SMR in CMM to the TCC frame
+        self.result = self._determine_coordinate_transform(
+            FIDDLE_SMR_CMM,
+            self.atlas_coords_array
+        )
+        self.coords = self._get_icarus_corners_in_TCC()
 
     @property
     def rmat(self):
