@@ -2079,8 +2079,8 @@ class ImageCanvas(FigureCanvas):
             return
 
         kwargs = {
-            'lw': 1,
-            'linestyle': '--',
+            'lw': MaskManager().boundary_width,
+            'ls': MaskManager().boundary_style,
             'color': MaskManager().boundary_color
         }
         self._mask_boundary_artists += axis.plot(

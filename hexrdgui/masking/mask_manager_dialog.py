@@ -17,6 +17,7 @@ from hexrdgui.constants import ViewType
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType, MaskStatus
+from hexrdgui.masking.mask_border_style_picker import MaskBorderStylePicker
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
@@ -62,7 +63,7 @@ class MaskManagerDialog(QObject):
         self.ui.hide_all_boundaries.clicked.connect(self.hide_all_boundaries)
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
-        self.ui.border_color.clicked.connect(self.set_boundary_color)
+        self.ui.border_style.clicked.connect(self.edit_style)
         self.ui.apply_changes.clicked.connect(self.apply_changes)
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
 
@@ -408,10 +409,17 @@ class MaskManagerDialog(QObject):
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def set_boundary_color(self):
-        dialog = QColorDialog(QColor(MaskManager().boundary_color), self.ui)
+    def edit_style(self):
+        dialog = MaskBorderStylePicker(
+            MaskManager().boundary_color,
+            MaskManager().boundary_style,
+            MaskManager().boundary_width
+        )
         if dialog.exec():
-            MaskManager().boundary_color = dialog.selectedColor().name()
+            color, style, width = dialog.result()
+            MaskManager().boundary_color = color
+            MaskManager().boundary_style = style
+            MaskManager().boundary_width = width
             MaskManager().masks_changed()
 
     def apply_changes(self):

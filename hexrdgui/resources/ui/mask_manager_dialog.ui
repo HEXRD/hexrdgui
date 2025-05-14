@@ -130,10 +130,10 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="1">
-    <widget class="QPushButton" name="border_color">
+   <item row="8" column="1" colspan="2">
+    <widget class="QPushButton" name="border_style">
      <property name="text">
-      <string>Border Color</string>
+      <string>Border Style</string>
      </property>
     </widget>
    </item>
