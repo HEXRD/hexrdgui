@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import sys
 import numpy as np
 import yaml
 import tempfile
@@ -90,11 +91,12 @@ class AtlasConfig:
         minimizer_result = res.minimize(method='least_squares', params=params)
 
         if minimizer_result.chisqr > 1:
-            '''please include a message box here with this message
-            '''
-            msg = (f'least-squares did not find a good solution. '
-                    f'Double check data to make sure input is in order.')
-            print(msg)
+            msg = (
+                f'least-squares did not find a good solution. '
+                f'Double check data to make sure input is in order.'
+            )
+            print(msg, file=sys.stderr)
+            QMessageBox.warning(None, 'HEXRD', msg)
 
         return minimizer_result
 
