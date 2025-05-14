@@ -415,12 +415,12 @@ class MaskManagerDialog(QObject):
             MaskManager().boundary_style,
             MaskManager().boundary_width
         )
-        dialog.exec()
-        color, style, width = dialog.result()
-        MaskManager().boundary_color = color
-        MaskManager().boundary_style = style
-        MaskManager().boundary_width = width
-        MaskManager().masks_changed()
+        if dialog.exec():
+            color, style, width = dialog.result()
+            MaskManager().boundary_color = color
+            MaskManager().boundary_style = style
+            MaskManager().boundary_width = width
+            MaskManager().masks_changed()
 
     def apply_changes(self):
         for name, index in self.changed_masks.items():
