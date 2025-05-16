@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>524</width>
-    <height>720</height>
+    <width>532</width>
+    <height>732</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -882,6 +882,13 @@
              </layout>
             </item>
             <item>
+             <widget class="QPushButton" name="select_detectors_for_lineout">
+              <property name="text">
+               <string>Select Detectors for Lineout</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
                <widget class="QPushButton" name="create_waterfall_plot">
@@ -1079,6 +1086,7 @@
   <tabstop>polar_azimuthal_overlays</tabstop>
   <tabstop>azimuthal_offset</tabstop>
   <tabstop>polar_x_axis_type</tabstop>
+  <tabstop>select_detectors_for_lineout</tabstop>
   <tabstop>create_waterfall_plot</tabstop>
   <tabstop>polar_apply_scaling_to_lineout</tabstop>
   <tabstop>stereo_size</tabstop>

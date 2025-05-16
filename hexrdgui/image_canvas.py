@@ -127,6 +127,8 @@ class ImageCanvas(FigureCanvas):
             self.on_beam_energy_modified)
         HexrdConfig().panel_distortion_modified.connect(
             self.on_panel_distortion_changed)
+        HexrdConfig().azimuthal_lineout_detectors_modified.connect(
+            self.update_azimuthal_integral_plot)
 
         # This *must* be a queued connection, because Mac requires the
         # progress to be updated on the GUI thread. Otherwise, it will
@@ -1007,6 +1009,15 @@ class ImageCanvas(FigureCanvas):
         # Re-draw all overlays from scratch
         HexrdConfig().clear_overlay_data()
         self.update_overlays()
+
+    @property
+    def azimuthal_lineout_detectors(self) -> list[str]:
+        names = HexrdConfig().azimuthal_lineout_detectors
+        if names is None:
+            # `None` here means all detectors
+            names = HexrdConfig().detector_names
+
+        return names
 
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
