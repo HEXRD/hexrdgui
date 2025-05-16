@@ -206,7 +206,7 @@ class PolarView:
 
         # Convert each border to angles
         for i, border in enumerate(borders):
-            angles, _ = panel.cart_to_angles(border)
+            angles, _ = panel.cart_to_angles(border, tvec_s=self.instr.tvec)
             angles = angles.T
             angles[1:, :] = mapAngle(
                 angles[1:, :], np.radians(self.eta_period), units='radians'

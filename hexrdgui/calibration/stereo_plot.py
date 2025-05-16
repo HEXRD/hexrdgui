@@ -79,7 +79,12 @@ class InstrumentViewer:
 
         # Convert each border to angles, then stereo
         for i, border in enumerate(borders):
-            angles = np.radians(cart_to_angles(border, panel, self.eta_period))
+            angles = np.radians(cart_to_angles(
+                border,
+                panel,
+                self.eta_period,
+                tvec_s=self.instr_pv.tvec,
+            ))
             borders[i] = angles_to_stereo(angles, self.instr_pv,
                                           self.stereo_size).T
 
