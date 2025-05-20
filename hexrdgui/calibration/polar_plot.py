@@ -178,6 +178,14 @@ class InstrumentViewer:
                     self.type,
                 )
 
+        keep_detectors = HexrdConfig().azimuthal_lineout_detectors
+        if (
+            keep_detectors is not None and
+            keep_detectors != HexrdConfig().detector_names
+        ):
+            keep_str = '; '.join(keep_detectors)
+            data['detectors_used_in_azimuthal_integration'] = keep_str
+
         # Delete the file if it already exists
         if filename.exists():
             filename.unlink()
