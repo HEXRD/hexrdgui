@@ -243,6 +243,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when an azimuthal overlay gets modified"""
     azimuthal_plot_save_requested = Signal()
 
+    """Emitted when detectors used for azimuthal lineout are modified"""
+    azimuthal_lineout_detectors_modified = Signal()
+
     """Emitted when material parameters are modified"""
     material_modified = Signal(str)
 
@@ -335,6 +338,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._instrument_rigid_body_params = {}
         self._median_filter_correction = {}
         self.intensity_corrections_dict = {}
+        self._azimuthal_lineout_detectors = None
 
         # Make sure that the matplotlib font size matches the application
         self.font_size = self.font_size
@@ -397,6 +401,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.beam_energy_modified.connect(
             self.update_visible_material_energies)
 
+        self.detectors_changed.connect(self.on_detectors_changed)
+
     # Returns a list of tuples contain the names of attributes and their
     # default values that should be persisted as part of the configuration
     # state.
@@ -440,6 +446,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('overlays_dictified', []),
             ('apply_median_filter_correction', False),
             ('median_filter_kernel_size', 7),
+            ('_azimuthal_lineout_detectors', None),
         ]
 
     # Provide a mapping from attribute names to the keys used in our state
@@ -470,16 +477,17 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # These need to be saved in state files, but we do not want them
         # to persist in between regular sessions.
         skip = [
-            'azimuthal_overlays',
-            'azimuthal_offset',
-            '_recent_images',
+            '_azimuthal_lineout_detectors',
             '_instrument_rigid_body_params',
             '_polar_tth_distortion_overlay_name',
-            'custom_polar_tth_distortion_object_serialized',
-            'physics_package_dictified',
-            'detector_coatings_dictified',
+            '_recent_images',
             'apply_median_filter_correction',
-            'median_filter_kernel_size'
+            'azimuthal_offset',
+            'azimuthal_overlays',
+            'custom_polar_tth_distortion_object_serialized',
+            'detector_coatings_dictified',
+            'median_filter_kernel_size',
+            'physics_package_dictified',
         ]
 
         state = {}
@@ -708,6 +716,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def emit_update_status_bar(self, msg):
         """Convenience signal to update the main window's status bar"""
         self.update_status_bar.emit(msg)
+
+    def on_detectors_changed(self):
+        # Reset azimuthal lineout detectors
+        self._azimuthal_lineout_detectors = None
 
     @property
     def indexing_config(self):
@@ -3093,6 +3105,30 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if v != self.median_filter_kernel_size:
             self._median_filter_correction['kernel'] = int(v)
             self.deep_rerender_needed.emit()
+
+    def reset_azimuthal_lineout_detectors(self):
+        """Reset the azimuthal lineout detectors to all of them"""
+        self.azimuthal_lineout_detectors = None
+
+    @property
+    def azimuthal_lineout_detectors(self) -> list[str] | None:
+        """The detectors to use for azimuthal lineout generation.
+
+        "None" means to use all detectors. A list means to only use those
+        whose names match in the list.
+        """
+        return self._azimuthal_lineout_detectors
+
+    @azimuthal_lineout_detectors.setter
+    def azimuthal_lineout_detectors(self, v: list[str] | None):
+        """The detectors to use for azimuthal lineout generation.
+
+        "None" means to use all detectors. A list means to only use those
+        whose names match in the list.
+        """
+        if v != self._azimuthal_lineout_detectors:
+            self._azimuthal_lineout_detectors = v
+            self.azimuthal_lineout_detectors_modified.emit()
 
 
 # This is set to (num_fiddle_plates * num_time_steps) + num_image_plates

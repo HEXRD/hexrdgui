@@ -9,6 +9,7 @@ from hexrdgui.constants import PolarXAxisType, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_load_manager import ImageLoadManager
+from hexrdgui.select_items_dialog import SelectItemsDialog
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 
@@ -103,6 +104,8 @@ class ImageModeWidget(QObject):
             self.on_active_beam_changed)
         self.ui.create_waterfall_plot.clicked.connect(
             self.on_create_waterfall_plot_clicked)
+        self.ui.select_detectors_for_lineout.clicked.connect(
+            self.on_select_detectors_for_lineout_clicked)
 
         HexrdConfig().instrument_config_loaded.connect(
             self.on_instrument_config_load)
@@ -501,6 +504,24 @@ class ImageModeWidget(QObject):
 
     def on_create_waterfall_plot_clicked(self):
         self.create_waterfall_plot.emit()
+
+    def on_select_detectors_for_lineout_clicked(self):
+        detector_names = HexrdConfig().detector_names
+        selected = HexrdConfig().azimuthal_lineout_detectors
+        if selected is None:
+            selected = detector_names
+
+        items = [(name, name in selected) for name in detector_names]
+        dialog = SelectItemsDialog(
+            items,
+            'Select Detectors for Lineout',
+            self.ui,
+        )
+        QTimer.singleShot(0, dialog.adjustSize)
+        if not dialog.exec():
+            return
+
+        HexrdConfig().azimuthal_lineout_detectors = dialog.selected_items
 
 
 POLAR_X_AXIS_LABELS_TO_VALUES = {

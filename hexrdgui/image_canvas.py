@@ -127,6 +127,8 @@ class ImageCanvas(FigureCanvas):
             self.on_beam_energy_modified)
         HexrdConfig().panel_distortion_modified.connect(
             self.on_panel_distortion_changed)
+        HexrdConfig().azimuthal_lineout_detectors_modified.connect(
+            self.on_azimuthal_lineout_detectors_modified)
 
         # This *must* be a queued connection, because Mac requires the
         # progress to be updated on the GUI thread. Otherwise, it will
@@ -1008,6 +1010,19 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().clear_overlay_data()
         self.update_overlays()
 
+    def on_azimuthal_lineout_detectors_modified(self):
+        self.update_azimuthal_integral_plot()
+        self.update_azimuthal_axis_xlabel()
+
+    @property
+    def azimuthal_lineout_detectors(self) -> list[str]:
+        names = HexrdConfig().azimuthal_lineout_detectors
+        if names is None:
+            # `None` here means all detectors
+            names = HexrdConfig().detector_names
+
+        return names
+
     def show_cartesian(self):
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
         if self.mode != ViewType.cartesian:
@@ -1188,7 +1203,7 @@ class ImageCanvas(FigureCanvas):
                 axis = self.azimuthal_integral_axis
 
             # Update the xlabel in case it was modified (via tth distortion)
-            axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
+            self.update_azimuthal_axis_xlabel()
         else:
             if len(self.axes_images) == 0:
                 self.axis = self.figure.add_subplot(111)
@@ -1373,8 +1388,7 @@ class ImageCanvas(FigureCanvas):
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
-        self.azimuthal_integral_axis.set_xlabel(
-            self.polar_xlabel, **self.label_kwargs)
+        self.update_azimuthal_axis_xlabel()
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
@@ -1446,14 +1460,28 @@ class ImageCanvas(FigureCanvas):
     def polar_xlabel(self):
         subscript = self.polar_xlabel_subscript
         suffix = self.polar_xlabel_suffix
+        post_suffix = ''
+
+        keep_detectors = HexrdConfig().azimuthal_lineout_detectors
+        if (
+            keep_detectors is not None and
+            keep_detectors != HexrdConfig().detector_names
+        ):
+            post_suffix = ' (panel subset)'
 
         x_axis_type = self.polar_x_axis_type
         if x_axis_type == PolarXAxisType.tth:
-            return rf'2$\theta_{{{subscript}}}${suffix} [deg]'
+            return rf'2$\theta_{{{subscript}}}${suffix} [deg]' + post_suffix
         elif x_axis_type == PolarXAxisType.q:
-            return rf'$Q_{{{subscript}}}${suffix} [$\AA^{{-1}}$]'
+            return rf'$Q_{{{subscript}}}${suffix} [$\AA^{{-1}}$]' + post_suffix
 
         raise NotImplementedError(x_axis_type)
+
+    def update_azimuthal_axis_xlabel(self):
+        self.azimuthal_integral_axis.set_xlabel(
+            self.polar_xlabel,
+            **self.label_kwargs,
+        )
 
     @property
     def is_stereo_from_polar(self):
@@ -1551,7 +1579,30 @@ class ImageCanvas(FigureCanvas):
         else:
             pimg = self.unscaled_images[0]
 
+        pimg = self._invalidate_skipped_detectors(pimg)
         return self._compute_azimuthal_integral_sum(pimg)
+
+    def _invalidate_skipped_detectors(self, pimg: np.ndarray) -> np.ndarray:
+        # If the user has selected a subset of detectors to use for the
+        # azimuthal lineout, invalidate any polar view pixels that were
+        # affected by unselected detectors by setting them to nan
+        keep_detectors = HexrdConfig().azimuthal_lineout_detectors
+        if (
+            keep_detectors is None or
+            keep_detectors == HexrdConfig().detector_names or
+            self.iviewer is None or
+            self.mode != ViewType.polar
+        ):
+            return pimg
+
+        pimg = pimg.copy()
+        panel_has_data = self.iviewer.pv.panel_has_data
+
+        for det_key in self.iviewer.instr.detectors:
+            if det_key not in keep_detectors:
+                pimg[panel_has_data[det_key]] = np.nan
+
+        return pimg
 
     def _compute_azimuthal_integral_sum(self, pimg: np.ndarray) -> np.ndarray:
         # !!! NOTE: visible polar masks have already been applied
@@ -1906,6 +1957,9 @@ class ImageCanvas(FigureCanvas):
             if HexrdConfig().polar_apply_scaling_to_lineout:
                 # Apply the transform
                 polar_img = self.transform(polar_img)
+
+            # Invalidate any skipped detectors
+            polar_img = self._invalidate_skipped_detectors(polar_img)
 
             # Compute the integration
             lineouts[i] = self._compute_azimuthal_integral_sum(polar_img)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>524</width>
-    <height>720</height>
+    <width>532</width>
+    <height>732</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>3</number>
      </property>
      <property name="iconSize">
       <size>
@@ -814,6 +814,13 @@
              </layout>
             </item>
             <item>
+             <widget class="QPushButton" name="select_detectors_for_lineout">
+              <property name="text">
+               <string>Select Detectors for Lineout</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QPushButton" name="polar_azimuthal_overlays">
               <property name="text">
                <string>Azimuthal Overlays</string>
@@ -1076,6 +1083,7 @@
   <tabstop>polar_apply_erosion</tabstop>
   <tabstop>polar_apply_tth_distortion</tabstop>
   <tabstop>polar_tth_distortion_overlay</tabstop>
+  <tabstop>select_detectors_for_lineout</tabstop>
   <tabstop>polar_azimuthal_overlays</tabstop>
   <tabstop>azimuthal_offset</tabstop>
   <tabstop>polar_x_axis_type</tabstop>
