@@ -5,6 +5,7 @@ from skimage.morphology import footprint_rectangle
 from skimage.transform import warp
 
 from hexrd.transforms.xfcapi import mapAngle
+from hexrd.utils.decorators import memoize
 from hexrd.utils.warnings import ignore_warnings
 
 from hexrd import constants as ct
@@ -592,7 +593,7 @@ class PolarView:
 # `_project_on_detector_plane()` is one of the functions that takes the
 # longest when generating the polar view.
 # Memoize this so we can regenerate the polar view faster
-# @memoize(maxsize=16)
+@memoize(maxsize=16)
 def project_on_detector(angular_grid,
                         ntth, neta,
                         func_projection,
