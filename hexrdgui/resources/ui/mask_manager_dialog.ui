@@ -198,7 +198,6 @@
   <tabstop>show_all_masks</tabstop>
   <tabstop>hide_all_boundaries</tabstop>
   <tabstop>show_all_boundaries</tabstop>
-  <tabstop>border_color</tabstop>
   <tabstop>apply_changes</tabstop>
  </tabstops>
  <resources/>
