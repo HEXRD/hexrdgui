@@ -493,7 +493,7 @@ class FitGrainsRunner(Runner):
     def view_fit_grains_options(self):
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         quaternion_method = find_orientations.get('_quaternion_method')
-        ensure_hkl_seeds_not_excluded = (
+        ensure_active_hkls_not_excluded = (
             self.started_from_indexing and
             quaternion_method == 'seed_search'
         )
@@ -501,7 +501,7 @@ class FitGrainsRunner(Runner):
         # Run dialog for user options
         kwargs = {
             'grains_table': self.grains_table,
-            'ensure_seed_hkls_not_excluded': ensure_hkl_seeds_not_excluded,
+            'ensure_active_hkls_not_excluded': ensure_active_hkls_not_excluded,
             'parent': self.parent,
         }
         dialog = FitGrainsOptionsDialog(**kwargs)

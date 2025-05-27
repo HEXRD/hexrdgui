@@ -1216,7 +1216,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return self.config['instrument']
 
-    def save_instrument_config(self, output_file):
+    def save_instrument_config(self, output_file, remove_rois=False):
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
 
         styles = {
@@ -1232,6 +1232,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 raise Exception(f'Unknown output extension: {ext}')
 
         instr = create_hedm_instrument()
+        if remove_rois:
+            for panel in instr.detectors.values():
+                panel._roi = None
+
         instr.write_config(output_file, style=styles[ext])
 
     def load_materials(self, f):
@@ -1337,15 +1341,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 # This is a master list. Save the active hkls as the more human
                 # readable (h, k, l) tuples instead.
                 active_hkls = plane_data.getHKLs(*active_hkls).tolist()
-
-            # Do not save all active hkls, but only the ones used in the seed
-            # search. Those are the only ones we need.
-            seed_search = cfg['find_orientations']['seed_search']
-            active_hkls = [active_hkls[i] for i in seed_search['hkl_seeds']]
-
-            # Renumber the hkl_seeds from 0 to len(hkl_seeds)
-            num_hkl_seeds = len(seed_search['hkl_seeds'])
-            seed_search['hkl_seeds'] = list(range(num_hkl_seeds))
 
             omaps['active_hkls'] = active_hkls
         else:
