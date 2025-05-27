@@ -39,16 +39,31 @@ class PolarView:
 
     The distortion instrument is the instrument to use for tth distortion.
     It defaults to the instrument.
+
+    eta_min and eta_max are in radians. If not provided, the ones on
+    HexrdConfig() are used.
     """
 
-    def __init__(self, instrument, distortion_instrument=None):
-
-        self.instr = instrument
+    def __init__(self,
+                 instrument,
+                 distortion_instrument=None,
+                 eta_min: float | None = None,
+                 eta_max: float | None = None,
+    ):
 
         if distortion_instrument is None:
             distortion_instrument = instrument
 
+        if eta_min is None:
+            eta_min = np.radians(HexrdConfig().polar_res_eta_min)
+
+        if eta_max is None:
+            eta_max = np.radians(HexrdConfig().polar_res_eta_max)
+
+        self.instr = instrument
         self.distortion_instr = distortion_instrument
+        self.eta_min = eta_min
+        self.eta_max = eta_max
 
         if instrument is None:
             # This is a dummy polar view
@@ -114,14 +129,6 @@ class PolarView:
         convert two-theta value to pixel value (float) along two-theta axis
         """
         return np.degrees(tth - self.tth_min) / self.tth_pixel_size
-
-    @property
-    def eta_min(self):
-        return np.radians(HexrdConfig().polar_res_eta_min)
-
-    @property
-    def eta_max(self):
-        return np.radians(HexrdConfig().polar_res_eta_max)
 
     @property
     def eta_range(self):

@@ -196,7 +196,13 @@ class InstrumentViewer:
         })
 
     def draw_polar(self):
-        self.pv = PolarView(self.instr_pv, distortion_instrument=self.instr)
+        self.pv = PolarView(
+            self.instr_pv,
+            distortion_instrument=self.instr,
+            # Always use full eta range for the stereo view
+            eta_min=0,
+            eta_max=np.pi * 2,
+        )
         self.pv.warp_all_images()
 
     def reapply_masks(self):
