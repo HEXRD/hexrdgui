@@ -2,7 +2,7 @@ from functools import partial
 import multiprocessing
 import numpy as np
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QTimer, Signal
 
 from hexrdgui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrdgui.constants import PolarXAxisType, ViewType
@@ -57,6 +57,7 @@ class ImageModeWidget(QObject):
         self.update_gui_from_config()
 
     def setup_connections(self):
+        self.ui.installEventFilter(self)
         self.ui.raw_tabbed_view.toggled.connect(HexrdConfig().set_tab_images)
         self.ui.raw_show_saturation.toggled.connect(
             HexrdConfig().set_show_saturation_level)
@@ -149,6 +150,21 @@ class ImageModeWidget(QObject):
 
         ImageLoadManager().new_images_loaded.connect(
             self.update_visibility_states)
+
+    def eventFilter(self, target, event):
+        if target is self.ui and event.type() == QEvent.Resize:
+            # Don't allow the polar scroll area to get resized below
+            # its minimum width, because we don't allow horizontal
+            # scrolling.
+            size = self.ui.polar_scroll_area_contents.minimumSizeHint()
+            # Include the vertical bar width in this minimum width
+            vert_bar = self.ui.polar_scroll_area.verticalScrollBar()
+            size.setWidth(size.width() + vert_bar.sizeHint().width())
+            # 3/4 is kind of arbitrary, but it looks nice on Mac...
+            size.setHeight(size.height() * 3 // 4)
+            self.ui.setMinimumSize(size)
+
+        return False
 
     def enable_image_mode_widget(self, b):
         self.ui.tab_widget.setEnabled(b)
