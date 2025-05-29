@@ -437,22 +437,23 @@ class MaskManagerDialog(QObject):
         self.ui.apply_changes.setEnabled(False)
 
     def selected_changed(self):
-        selected = self.ui.masks_tree.selectedItems()
-        self.ui.presentation_selector.setEnabled(len(selected) > 1)
-        self.ui.export_selected.setEnabled(len(selected) > 1)
-        self.ui.remove_selected.setEnabled(len(selected) > 1)
-        if len(selected) == 0:
-            return
+        with block_signals(self.ui.presentation_selector):
+            selected = self.ui.masks_tree.selectedItems()
+            self.ui.presentation_selector.setEnabled(len(selected) > 1)
+            self.ui.export_selected.setEnabled(len(selected) > 1)
+            self.ui.remove_selected.setEnabled(len(selected) > 1)
+            if len(selected) == 0:
+                return
 
-        boundary_masks = [MaskType.region, MaskType.polygon, MaskType.pinhole]
-        masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
-        vis_only = any(mask.type not in boundary_masks for mask in masks_from_names)
-        self.ui.presentation_selector.clear()
-        self.ui.presentation_selector.addItem('None')
-        self.ui.presentation_selector.addItem('Visible')
-        if not vis_only:
-            self.ui.presentation_selector.addItem('Boundary Only')
-            self.ui.presentation_selector.addItem('Visible + Boundary')
+            boundary_masks = [MaskType.region, MaskType.polygon, MaskType.pinhole]
+            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
+            vis_only = any(mask.type not in boundary_masks for mask in masks_from_names)
+            self.ui.presentation_selector.clear()
+            self.ui.presentation_selector.addItem('None')
+            self.ui.presentation_selector.addItem('Visible')
+            if not vis_only:
+                self.ui.presentation_selector.addItem('Boundary Only')
+                self.ui.presentation_selector.addItem('Visible + Boundary')
 
     def change_presentation_for_selected(self, text):
         if len(self.ui.masks_tree.selectedItems()) <= 1:
