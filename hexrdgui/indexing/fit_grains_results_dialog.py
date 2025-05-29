@@ -706,7 +706,11 @@ class FitGrainsResultsDialog(QObject):
 
         HexrdConfig().save_indexing_config(full_path('workflow.yml'))
         HexrdConfig().save_materials(full_path('materials.h5'))
-        HexrdConfig().save_instrument_config(full_path('instrument.hexrd'))
+        HexrdConfig().save_instrument_config(
+            full_path('instrument.hexrd'),
+            # Remove ROIs, since we are saving the imageseries without them
+            remove_rois=True,
+        )
 
         ims_dict = HexrdConfig().unagg_images
         for det in HexrdConfig().detector_names:

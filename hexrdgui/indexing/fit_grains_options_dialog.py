@@ -26,12 +26,12 @@ class FitGrainsOptionsDialog(QObject):
     rejected = Signal()
     grains_table_modified = Signal()
 
-    def __init__(self, grains_table, ensure_seed_hkls_not_excluded=True,
+    def __init__(self, grains_table, ensure_active_hkls_not_excluded=True,
                  parent=None):
         super().__init__(parent)
 
         self.grains_table = grains_table
-        self.ensure_seed_hkls_not_excluded = ensure_seed_hkls_not_excluded
+        self.ensure_active_hkls_not_excluded = ensure_active_hkls_not_excluded
 
         config = HexrdConfig().indexing_config['fit_grains']
         if config.get('do_fit') is False:
@@ -138,25 +138,36 @@ class FitGrainsOptionsDialog(QObject):
         self.accepted.emit()
 
     def validate(self):
-        if self.ensure_seed_hkls_not_excluded:
-            # Verify that the seed hkls are not excluded
+        if self.ensure_active_hkls_not_excluded:
+            # Verify that the active hkls are not excluded
             indexing_config = HexrdConfig().indexing_config
             omaps = indexing_config['find_orientations']['orientation_maps']
             active_hkls = omaps.get('active_hkls', [])
-            seed_search = indexing_config['find_orientations']['seed_search']
-            hkl_seeds = [active_hkls[i] for i in seed_search['hkl_seeds']]
 
             hkl_list = self.material.planeData.getHKLs()
-            missing = hkls_missing_in_list(hkl_seeds, hkl_list)
+            missing = hkls_missing_in_list(active_hkls, hkl_list)
             if missing:
                 msg = (
-                    'Seed HKLs used in indexing must not be excluded. '
-                    'Missing seed HKLs are:\n\n'
+                    'Active HKLs used in indexing must not be excluded. '
+                    'Missing active HKLs are:\n\n'
                 )
                 msg += '\n'.join([str(x) for x in missing])
+                msg += '\n\nThese will now be automatically enabled.\n'
                 print(msg)
-                QMessageBox.critical(self.parent(), 'Error', msg)
-                return False
+                QMessageBox.critical(self.parent(), 'Warning', msg)
+
+                pd = self.material.planeData
+                new_exclusions = pd.exclusions
+                for i, hkl_dict in enumerate(pd.hklDataList):
+                    for missing_hkl in missing:
+                        if np.array_equal(hkl_dict['hkl'], missing_hkl):
+                            new_exclusions[i] = False
+
+                pd.exclusions = new_exclusions
+
+                HexrdConfig().flag_overlay_updates_for_material(
+                    self.material.name)
+                HexrdConfig().overlay_config_changed.emit()
 
         return True
 
