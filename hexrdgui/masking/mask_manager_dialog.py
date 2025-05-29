@@ -129,12 +129,6 @@ class MaskManagerDialog(QObject):
         presentation_combo.currentIndexChanged.connect(
             lambda i, k=mask: self.track_mask_presentation_change(i, k))
 
-        # Add push button to remove mask
-        pb = QPushButton('Remove Mask')
-        self.ui.masks_tree.setItemWidget(mask_item, 2, pb)
-        pb.clicked.connect(
-            lambda checked, k=mask.name: self.remove_mask_item(k))
-
     def update_mask_item(self, mask):
         item = self.mask_tree_items[mask.name]
         item.setText(0, mask.name)
