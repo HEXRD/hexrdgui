@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import re
 import sys
 
 from PySide6.QtCore import QObject, Qt, Signal
@@ -12,6 +13,9 @@ from hexrdgui.ui_loader import UiLoader
 
 STDOUT_COLOR = 'green'
 STDERR_COLOR = 'red'
+
+# QTextEdit can't handle ansi escapes, so we can remove them
+ANSI_ESCAPE_REGEX = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 class MessagesWidget(QObject):
@@ -86,6 +90,10 @@ class MessagesWidget(QObject):
         HexrdConfig().logging_stderr_stream = sys.stderr
 
     def insert_text(self, text):
+        # First, remove any ansi escapes, because we currently don't
+        # have a way to handle them in QTextEdit.
+        text = ANSI_ESCAPE_REGEX.sub('', text)
+
         # Remove trailing returns so there isn't extra white
         # space that always exists at the bottom of the text edit.
         if self._holding_return:
