@@ -79,6 +79,9 @@
       <property name="text">
        <string>Name</string>
       </property>
+      <property name="textAlignment">
+       <set>AlignCenter</set>
+      </property>
      </column>
      <column>
       <property name="text">
@@ -86,11 +89,6 @@
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Remove</string>
       </property>
      </column>
     </widget>
