@@ -178,12 +178,12 @@ class CalibrationDialogCallbacks(ABCQObject):
             for calibrator in self.calibrator.calibrators:
                 calibrator.update_from_lmfit_params(stack_item['params'])
 
+        self.save_constraint_params()
         self.update_config_from_instrument()
         self.update_dialog_from_calibrator()
         self.dialog.advanced_options = stack_item['advanced_options']
 
         self.update_undo_enable_state()
-        self.save_constraint_params()
 
     def update_undo_enable_state(self):
         self.dialog.undo_enabled = bool(self.undo_stack)
@@ -338,8 +338,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.results_message = results_message
 
     def on_calibration_finished(self):
-        self.update_config_from_instrument()
         self.save_constraint_params()
+        self.update_config_from_instrument()
         self.dialog.params_dict = self.calibrator.params
 
     def update_config_from_instrument(self):
