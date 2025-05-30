@@ -36,7 +36,6 @@ class MaskManagerDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.changed_masks = {}
         self.mask_tree_items = {}
         self.selected_masks = []
 
@@ -65,7 +64,6 @@ class MaskManagerDialog(QObject):
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
         self.ui.border_style.clicked.connect(self.edit_style)
-        self.ui.apply_changes.clicked.connect(self.apply_changes)
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
         self.ui.masks_tree.itemSelectionChanged.connect(self.selected_changed)
         self.ui.presentation_selector.currentTextChanged.connect(
@@ -211,11 +209,6 @@ class MaskManagerDialog(QObject):
         header.resizeSection(1, size_hint)
         header.resizeSection(0, header.width() - size_hint)
 
-    def track_mask_presentation_change(self, index, mask):
-        self.changed_masks[mask.name] = index
-        if not self.ui.apply_changes.isEnabled():
-            self.ui.apply_changes.setEnabled(True)
-
     def change_mask_presentation(self, index, name):
         match index:
             case MaskStatus.visible:
@@ -252,9 +245,6 @@ class MaskManagerDialog(QObject):
             # Store the new name before updating the manager
             item.setData(0, Qt.UserRole, new_name)
             MaskManager().update_name(old_name, new_name)
-            # Update our tracking dictionaries
-            if old_name in self.changed_masks:
-                self.changed_masks[new_name] = self.changed_masks.pop(old_name)
             self.mask_tree_items[new_name] = self.mask_tree_items.pop(old_name)
 
     def update_collapsed(self):
@@ -421,12 +411,6 @@ class MaskManagerDialog(QObject):
             MaskManager().highlight_color = highlight
             MaskManager().highlight_opacity = opacity
             MaskManager().masks_changed()
-
-    def apply_changes(self):
-        for name, index in self.changed_masks.items():
-            self.change_mask_presentation(index, name)
-        self.changed_masks = {}
-        self.ui.apply_changes.setEnabled(False)
 
     def selected_changed(self):
         with block_signals(self.ui.presentation_selector):
