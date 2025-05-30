@@ -409,13 +409,17 @@ class MaskManagerDialog(QObject):
         dialog = MaskBorderStylePicker(
             MaskManager().boundary_color,
             MaskManager().boundary_style,
-            MaskManager().boundary_width
+            MaskManager().boundary_width,
+            MaskManager().highlight_color,
+            MaskManager().highlight_opacity
         )
         if dialog.exec():
-            color, style, width = dialog.result()
+            color, style, width, highlight, opacity = dialog.result()
             MaskManager().boundary_color = color
             MaskManager().boundary_style = style
             MaskManager().boundary_width = width
+            MaskManager().highlight_color = highlight
+            MaskManager().highlight_opacity = opacity
             MaskManager().masks_changed()
 
     def apply_changes(self):
