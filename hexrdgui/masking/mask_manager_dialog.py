@@ -38,6 +38,7 @@ class MaskManagerDialog(QObject):
 
         self.changed_masks = {}
         self.mask_tree_items = {}
+        self.selected_masks = []
 
         add_help_url(self.ui.button_box,
                      'configuration/masking/#managing-masks')
@@ -429,11 +430,20 @@ class MaskManagerDialog(QObject):
             self.ui.presentation_selector.setEnabled(len(selected) > 1)
             self.ui.export_selected.setEnabled(len(selected) > 1)
             self.ui.remove_selected.setEnabled(len(selected) > 1)
+
+            # Update highlight states for masks
+            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
+            for mask in self.selected_masks:
+                mask.highlight = False
+            for mask in masks_from_names:
+                mask.highlight = True
+            self.selected_masks = masks_from_names
+            MaskManager().masks_changed()
+
             if len(selected) == 0:
                 return
 
             boundary_masks = [MaskType.region, MaskType.polygon, MaskType.pinhole]
-            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
             vis_only = any(mask.type not in boundary_masks for mask in masks_from_names)
             self.ui.presentation_selector.clear()
             self.ui.presentation_selector.addItem('None')
