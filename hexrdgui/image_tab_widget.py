@@ -465,7 +465,7 @@ class ImageTabWidget(QTabWidget):
             for mask in MaskManager().masks.values():
                 if (
                     mask.type == MaskType.threshold or
-                    (not mask.visible and not mask.show_border)
+                    (not mask.visible and not mask.show_border and not mask.highlight)
                 ):
                     continue
 
