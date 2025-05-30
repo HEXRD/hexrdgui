@@ -9,9 +9,9 @@ import re
 from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
-    QMessageBox, QPushButton, QTreeWidgetItem, QVBoxLayout, QColorDialog
+    QMessageBox, QTreeWidgetItem, QVBoxLayout
 )
-from PySide6.QtGui import QCursor, QColor, QFont
+from PySide6.QtGui import QCursor, QFont
 
 from hexrdgui.constants import ViewType
 from hexrdgui.utils import block_signals
@@ -79,17 +79,19 @@ class MaskManagerDialog(QObject):
         source_str = f' - {source}' if source else ''
         return f'{mode_str}{source_str}'
 
-    def update_presentation_combo(self, item, mask):
+    def update_presentation_label(self, item, mask):
         mask_type = MaskManager().masks[mask.name].type
-        idx = MaskStatus.none
+        status = []
         if mask.name in MaskManager().visible_masks:
-            idx = MaskStatus.visible
+            status.append('Visible')
         if (mask_type == MaskType.region or
                 mask_type == MaskType.polygon or
                 mask_type == MaskType.pinhole):
             if mask.name in MaskManager().visible_boundaries:
-                idx += MaskStatus.boundary
-        self.ui.masks_tree.itemWidget(item, 1).setCurrentIndex(idx)
+                status.append('Boundary')
+        status_str = ' + '.join(status) if status else 'None'
+        item.setText(1, status_str)
+        item.setTextAlignment(1, Qt.AlignCenter)
 
     def create_mode_item(self, mode, source):
         text = self.create_mode_source_string(mode, source)
@@ -114,25 +116,13 @@ class MaskManagerDialog(QObject):
         parent_item.addChild(mask_item)
         self.mask_tree_items[mask.name] = mask_item
 
-        # Add combo box to select mask presentation
-        presentation_combo = QComboBox()
-        presentation_combo.addItem('None')
-        presentation_combo.addItem('Visible')
-        mask_type = MaskManager().masks[mask.name].type
-        if (mask_type == MaskType.region or
-                mask_type == MaskType.polygon or
-                mask_type == MaskType.pinhole):
-            presentation_combo.addItem('Boundary Only')
-            presentation_combo.addItem('Visible + Boundary')
-        self.ui.masks_tree.setItemWidget(mask_item, 1, presentation_combo)
-        self.update_presentation_combo(mask_item, mask)
-        presentation_combo.currentIndexChanged.connect(
-            lambda i, k=mask: self.track_mask_presentation_change(i, k))
+        # Add label to indicate current mask presentation
+        self.update_presentation_label(mask_item, mask)
 
     def update_mask_item(self, mask):
         item = self.mask_tree_items[mask.name]
         item.setText(0, mask.name)
-        self.update_presentation_combo(item, mask)
+        self.update_presentation_label(item, mask)
 
     def remove_mask_item(self, name):
         if name not in MaskManager().mask_names:
@@ -215,6 +205,10 @@ class MaskManagerDialog(QObject):
         self.ui.masks_tree.expandAll()
         self.ui.masks_tree.resizeColumnToContents(0)
         self.ui.masks_tree.resizeColumnToContents(1)
+        size_hint = 200
+        header = self.ui.masks_tree.header()
+        header.resizeSection(1, size_hint)
+        header.resizeSection(0, header.width() - size_hint)
 
     def track_mask_presentation_change(self, index, mask):
         self.changed_masks[mask.name] = index
@@ -374,14 +368,13 @@ class MaskManagerDialog(QObject):
                 for j in range(mode_item.childCount()):
                     mask_item = mode_item.child(j)
                     name = mask_item.text(0)
-                    cb = self.ui.masks_tree.itemWidget(mask_item, 1)
-                    idx = MaskStatus.none
+                    status = []
                     if name in MaskManager().visible_masks:
-                        idx += MaskStatus.visible
+                        status.append('Visible')
                     if name in MaskManager().visible_boundaries:
-                        idx += MaskStatus.boundary
-                    with block_signals(cb):
-                        cb.setCurrentIndex(idx)
+                        status.append('Boundary')
+                    status_str = ' + '.join(status) if status else 'None'
+                    mask_item.setText(1, status_str)
 
     def change_mask_visibility(self, mask_names, visible):
         for name in mask_names:
