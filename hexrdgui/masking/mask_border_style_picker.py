@@ -7,7 +7,15 @@ from hexrdgui.ui_loader import UiLoader
 
 class MaskBorderStylePicker(QObject):
 
-    def __init__(self, original_color, original_style, original_width, parent=None):
+    def __init__(
+        self,
+        original_color,
+        original_style,
+        original_width,
+        original_highlight,
+        original_highlight_opacity,
+        parent=None
+    ):
         super().__init__(parent)
 
         loader = UiLoader()
