@@ -30,11 +30,13 @@ class Mask(ABC):
         visible=True,
         show_border=False,
         mode=None,
-        xray_source=None
+        xray_source=None,
+        highlight=False
     ):
         self.type = mtype
         self.visible = visible
         self.show_border = show_border
+        self.highlight = highlight
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
         self.creation_view_mode = mode
@@ -106,9 +108,10 @@ class RegionMask(Mask):
         visible=True,
         show_border=False,
         mode=None,
-        xray_source=None
+        xray_source=None,
+        highlight=False
     ):
-        super().__init__(name, mtype, visible, show_border, mode, xray_source)
+        super().__init__(name, mtype, visible, show_border, mode, xray_source, highlight)
         self._raw = None
 
     @property
@@ -262,6 +265,8 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.masks = {}
         self.view_mode = None
         self.boundary_color = '#000'  # Default to black
+        self.highlight_color = '#FF0'  # Default to yellow
+        self.highlight_opacity = 0.5
         self.boundary_style = 'dashed'
         self.boundary_width = 1
         self.setup_connections()
@@ -273,6 +278,10 @@ class MaskManager(QObject, metaclass=QSingleton):
     @property
     def visible_boundaries(self):
         return [k for k, v in self.masks.items() if v.show_border]
+
+    @property
+    def visible_highlights(self):
+        return [k for k, v in self.masks.items() if v.highlight]
 
     @property
     def threshold_mask(self):
@@ -365,14 +374,18 @@ class MaskManager(QObject, metaclass=QSingleton):
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
             '__boundary_width': self.boundary_width,
+            '__highlight_color': self.highlight_color,
+            '__highlight_opacity': self.highlight_opacity,
         }
         self.export_masks_to_file.emit(d)
 
-    def write_all_masks(self, h5py_group=None):
+    def write_masks(self, h5py_group=None):
         d = {
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
             '__boundary_width': self.boundary_width,
+            '__highlight_color': self.highlight_color,
+            '__highlight_opacity': self.highlight_opacity,
         }
         for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
@@ -385,7 +398,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         if 'masks' not in h5py_group:
             h5py_group.create_group('masks')
 
-        self.write_all_masks(h5py_group['masks'])
+        self.write_masks(h5py_group['masks'])
 
     def load_masks(self, h5py_group):
         items = load_masks(h5py_group)
@@ -481,3 +494,6 @@ class MaskManager(QObject, metaclass=QSingleton):
             # This is the same as the panel buffer, which is why we are
             # doing a `np.logical_and()`.
             panel.panel_buffer = np.logical_and(mask, panel.panel_buffer)
+
+    def get_mask_by_name(self, name):
+        return self.masks[name]
