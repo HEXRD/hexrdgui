@@ -53,7 +53,7 @@ class MaskManagerDialog(QObject):
         self.ui.masks_tree.itemChanged.connect(self.update_mask_name)
         self.ui.masks_tree.customContextMenuRequested.connect(
             self.context_menu_event)
-        self.ui.export_masks.clicked.connect(MaskManager().write_all_masks)
+        self.ui.export_masks.clicked.connect(MaskManager().write_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
         self.ui.view_masks.clicked.connect(self.show_masks)
@@ -66,6 +66,11 @@ class MaskManagerDialog(QObject):
         self.ui.border_style.clicked.connect(self.edit_style)
         self.ui.apply_changes.clicked.connect(self.apply_changes)
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
+        self.ui.masks_tree.itemSelectionChanged.connect(self.selected_changed)
+        self.ui.presentation_selector.currentTextChanged.connect(
+            self.change_presentation_for_selected)
+        self.ui.export_selected.clicked.connect(self.export_selected)
+        self.ui.remove_selected.clicked.connect(self.remove_selected_masks)
 
     def create_mode_source_string(self, mode, source):
         if mode is None:
@@ -153,7 +158,6 @@ class MaskManagerDialog(QObject):
             self.mask_tree_items.pop(parent.text(0))
         MaskManager().masks_changed()
         self.ui.masks_tree.verticalScrollBar().setValue(scroll_value)
-
 
     def _alphanumeric_sort(self, value):
         # Split the string into text and number parts so that we
@@ -286,11 +290,11 @@ class MaskManagerDialog(QObject):
         item = self.ui.masks_tree.itemAt(event)
         if item and item.parent():  # Only for mask items, not mode items
             menu = QMenu(self.ui.masks_tree)
-            export = menu.addAction('Export Mask')
+            export = menu.addAction('Export Selected Masks')
             action = menu.exec(QCursor.pos())
             if action == export:
-                selection = item.text(0)
-                MaskManager().write_single_mask(selection)
+                selections = self.ui.masks_tree.selectedItems()
+                MaskManager().write_masks([i.text(0) for i in selections])
 
     def export_masks_to_file(self, data):
         output_file, _ = QFileDialog.getSaveFileName(
@@ -385,27 +389,31 @@ class MaskManagerDialog(QObject):
                     with block_signals(cb):
                         cb.setCurrentIndex(idx)
 
+    def change_mask_visibility(self, mask_names, visible):
+        for name in mask_names:
+            MaskManager().update_mask_visibility(name, visible)
+
     def hide_all_masks(self):
-        for name in MaskManager().mask_names:
-            MaskManager().update_mask_visibility(name, False)
+        self.change_mask_visibility(MaskManager().mask_names, False)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def show_all_masks(self):
-        for name in MaskManager().mask_names:
-            MaskManager().update_mask_visibility(name, True)
+        self.change_mask_visibility(MaskManager().mask_names, True)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
+    def change_mask_boundaries(self, mask_names, visible):
+        for name in mask_names:
+            MaskManager().update_border_visibility(name, visible)
+
     def hide_all_boundaries(self):
-        for name in MaskManager().mask_names:
-            MaskManager().update_border_visibility(name, False)
+        self.change_mask_boundaries(MaskManager().mask_names, False)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
     def show_all_boundaries(self):
-        for name in MaskManager().mask_names:
-            MaskManager().update_border_visibility(name, True)
+        self.change_mask_boundaries(MaskManager().mask_names, True)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
@@ -427,3 +435,50 @@ class MaskManagerDialog(QObject):
             self.change_mask_presentation(index, name)
         self.changed_masks = {}
         self.ui.apply_changes.setEnabled(False)
+
+    def selected_changed(self):
+        with block_signals(self.ui.presentation_selector):
+            selected = self.ui.masks_tree.selectedItems()
+            self.ui.presentation_selector.setEnabled(len(selected) > 1)
+            self.ui.export_selected.setEnabled(len(selected) > 1)
+            self.ui.remove_selected.setEnabled(len(selected) > 1)
+            if len(selected) == 0:
+                return
+
+            boundary_masks = [MaskType.region, MaskType.polygon, MaskType.pinhole]
+            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
+            vis_only = any(mask.type not in boundary_masks for mask in masks_from_names)
+            self.ui.presentation_selector.clear()
+            self.ui.presentation_selector.addItem('None')
+            self.ui.presentation_selector.addItem('Visible')
+            if not vis_only:
+                self.ui.presentation_selector.addItem('Boundary Only')
+                self.ui.presentation_selector.addItem('Visible + Boundary')
+
+    def change_presentation_for_selected(self, text):
+        if len(self.ui.masks_tree.selectedItems()) <= 1:
+            return
+
+        mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
+        if 'Boundary' in text:
+            self.change_mask_boundaries(mask_names, True)
+        else:
+            self.change_mask_boundaries(mask_names, False)
+
+        if 'Visible' in text:
+            self.change_mask_visibility(mask_names, True)
+        else:
+            self.change_mask_visibility(mask_names, False)
+
+        self.update_presentation_selector()
+        MaskManager().masks_changed()
+
+    def export_selected(self):
+        mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
+        MaskManager().write_masks(mask_names)
+
+    def remove_selected_masks(self):
+        with block_signals(self.ui.masks_tree):
+            mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
+            for name in mask_names:
+                self.remove_mask_item(name)
