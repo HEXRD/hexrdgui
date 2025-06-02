@@ -23,7 +23,10 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item row="9" column="0" colspan="2">
+   <item row="1" column="1">
+    <widget class="QComboBox" name="detector"/>
+   </item>
+   <item row="8" column="0" colspan="2">
     <widget class="QPushButton" name="push_reset_config">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset the instrument configuration to the state when the most recent instrument file was loaded, or when the program started.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -33,379 +36,31 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QGroupBox" name="translation_group">
-     <property name="title">
-      <string>Translation</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_translation_1">
-        <property name="text">
-         <string>Y:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_translation_1">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_translation_2">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QSlider" name="slider_translation_1">
-        <property name="minimum">
-         <number>-100000</number>
-        </property>
-        <property name="maximum">
-         <number>100000</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_translation_0">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSlider" name="slider_translation_0">
-        <property name="minimum">
-         <number>-100000</number>
-        </property>
-        <property name="maximum">
-         <number>100000</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_translation_0">
-        <property name="text">
-         <string>X:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_translation_2">
-        <property name="text">
-         <string>Z:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QSlider" name="slider_translation_2">
-        <property name="minimum">
-         <number>-100000</number>
-        </property>
-        <property name="maximum">
-         <number>100000</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_translation_range">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="value">
-         <double>300.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label_translation_range">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Slider Range:</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="detector"/>
-   </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QGroupBox" name="beam_group">
-     <property name="title">
-      <string>Beam</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_azimuth_0">
-        <property name="text">
-         <string>Azimuth:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_azimuth_0">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string>°</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_polar_0">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string>°</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QSlider" name="slider_azimuth_0">
-        <property name="minimum">
-         <number>-100000</number>
-        </property>
-        <property name="maximum">
-         <number>100000</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_energy_0">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="suffix">
-         <string> keV</string>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSlider" name="slider_energy_0">
-        <property name="minimum">
-         <number>-100000</number>
-        </property>
-        <property name="maximum">
-         <number>100000</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_energy_0">
-        <property name="text">
-         <string>Energy:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_polar_0">
-        <property name="text">
-         <string>Polar:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QSlider" name="slider_polar_0">
-        <property name="minimum">
-         <number>-100000</number>
-        </property>
-        <property name="maximum">
-         <number>100000</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="ScientificDoubleSpinBox" name="sb_beam_range">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="minimum">
-         <double>-1000000.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1000000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="value">
-         <double>30.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label_beam_range">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Slider Range:</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QLabel" name="locked_center_of_rotation_label">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation when tilts are applied.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Center&amp;quot; means the center of the whole instrument if &amp;quot;Instrument Rigid Body&amp;quot; is selected, and it means the center of the selected detector's group if &amp;quot;Group Rigid Body&amp;quot; is selected.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; means [0, 0, 0] (the lab origin).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Center of Rotation:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="locked_center_of_rotation">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation when tilts are applied.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Center&amp;quot; means the center of the whole instrument if &amp;quot;Instrument Rigid Body&amp;quot; is selected, and it means the center of the selected detector's group if &amp;quot;Group Rigid Body&amp;quot; is selected.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; means [0, 0, 0] (the lab origin).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <item>
-        <property name="text">
-         <string>Mean Center</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Origin</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-    </layout>
-   </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="detector_label">
      <property name="text">
       <string>Detector:</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
+   <item row="3" column="0" colspan="2">
+    <widget class="QComboBox" name="lock_relative_transforms_setting">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Instrument Rigid Body&amp;quot; means to transform all detectors in the entire instrument in the same way. If this is set, the translation/tilt parameters are arbitrary and the changes are applied to all detectors. Their settings will match those used in the calibration workflows.&lt;/p&gt;&lt;p&gt;&amp;quot;Group Rigid Body&amp;quot; means to transform all detectors in the selected detector's group in the same way. This setting requires all detectors to have their &amp;quot;group&amp;quot; specified in the instrument config.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Instrument Rigid Body</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Group Rigid Body</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
     <widget class="QGroupBox" name="tilt_group">
      <property name="title">
       <string>Tilt</string>
@@ -575,7 +230,338 @@
      </layout>
     </widget>
    </item>
-   <item row="10" column="0" colspan="2">
+   <item row="7" column="0" colspan="2">
+    <widget class="QGroupBox" name="beam_group">
+     <property name="title">
+      <string>Beam</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_azimuth_0">
+        <property name="text">
+         <string>Azimuth:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_azimuth_0">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_polar_0">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string>°</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSlider" name="slider_azimuth_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_energy_0">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> keV</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSlider" name="slider_energy_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_energy_0">
+        <property name="text">
+         <string>Energy:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_polar_0">
+        <property name="text">
+         <string>Polar:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSlider" name="slider_polar_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_beam_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>30.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_beam_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Slider Range:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QGroupBox" name="translation_group">
+     <property name="title">
+      <string>Translation</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_translation_1">
+        <property name="text">
+         <string>Y:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_1">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_2">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSlider" name="slider_translation_1">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_0">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSlider" name="slider_translation_0">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_translation_0">
+        <property name="text">
+         <string>X:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_translation_2">
+        <property name="text">
+         <string>Z:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSlider" name="slider_translation_2">
+        <property name="minimum">
+         <number>-100000</number>
+        </property>
+        <property name="maximum">
+         <number>100000</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="ScientificDoubleSpinBox" name="sb_translation_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>300.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="label_translation_range">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Modify the sensitivity of the sliders by setting the ranges that the sliders cover.&lt;/p&gt;&lt;p&gt;When the ranges are modified, the current slider values will be centered, and the min and max will be set to &amp;quot;current_value - range / 2&amp;quot; and &amp;quot;current_value + range / 2&amp;quot;, respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Slider Range:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -598,22 +584,36 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QComboBox" name="lock_relative_transforms_setting">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Instrument Rigid Body&amp;quot; means to transform all detectors in the entire instrument in the same way.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Group Rigid Body&amp;quot; means to transform all detectors in the selected detector's group in the same way. This setting requires all detectors to have their &amp;quot;group&amp;quot; specified in the instrument config.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
+   <item row="4" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <property name="text">
-       <string>Instrument Rigid Body</string>
-      </property>
+      <widget class="QLabel" name="locked_center_of_rotation_label">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation when tilts are applied.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Center&amp;quot; means the center of the whole instrument if &amp;quot;Instrument Rigid Body&amp;quot; is selected, and it means the center of the selected detector's group if &amp;quot;Group Rigid Body&amp;quot; is selected.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; means [0, 0, 0] (the lab origin).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Center of Rotation:</string>
+       </property>
+      </widget>
      </item>
      <item>
-      <property name="text">
-       <string>Group Rigid Body</string>
-      </property>
+      <widget class="QComboBox" name="locked_center_of_rotation">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The center of rotation when tilts are applied.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Mean Center&amp;quot; means the center of the whole instrument if &amp;quot;Instrument Rigid Body&amp;quot; is selected, and it means the center of the selected detector's group if &amp;quot;Group Rigid Body&amp;quot; is selected.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&amp;quot;Origin&amp;quot; means [0, 0, 0] (the lab origin).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Mean Center</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Origin</string>
+        </property>
+       </item>
+      </widget>
      </item>
-    </widget>
+    </layout>
    </item>
   </layout>
  </widget>
