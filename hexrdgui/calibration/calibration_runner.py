@@ -71,8 +71,34 @@ class CalibrationRunner(QObject):
         if not active_overlays:
             raise Exception('No visible overlays')
 
-        if not all(x.has_widths for x in active_overlays):
-            raise Exception('All visible overlays must have widths')
+        any_updates = False
+        for overlay in active_overlays:
+            if overlay.has_widths:
+                continue
+
+            any_updates = True
+            if overlay.type == OverlayType.powder:
+                default = 0.125
+                default_str = f'{default}°'
+                overlay.material.planeData.tThWidth = np.radians(default)
+                mat_name = overlay.material_name
+                HexrdConfig().material_tth_width_modified.emit(mat_name)
+                HexrdConfig().flag_overlay_updates_for_material(mat_name)
+            else:
+                defaults = (5, 5)
+                default_str = f'{defaults[0]}° 2θ, {defaults[1]}° η'
+                overlay.tth_width = np.radians(defaults[0])
+                overlay.eta_width = np.radians(defaults[1])
+                overlay.update_needed = True
+
+            msg = (
+                'Visible overlays must have widths enabled for calibration.'
+                f'\n\nSetting "{overlay.name}" widths to: {default_str}'
+            )
+            QMessageBox.warning(self.parent, 'HEXRD', msg)
+
+        if any_updates:
+            HexrdConfig().overlay_config_changed.emit()
 
     def enable_focus_mode(self, b):
         # FIXME: We must avoid using focus mode until we can be sure
