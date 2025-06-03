@@ -63,6 +63,9 @@ class PolarView:
 
         self.warp_dict = {}
 
+        # Keep track of which polar view pixels are affected by each detector
+        self.panel_has_data = {}
+
         self.raw_img = None
         self.snipped_img = None
         self.computation_img = None
@@ -387,6 +390,10 @@ class PolarView:
 
     def generate_image(self):
         self.reset_cached_distortion_fields()
+
+        self.panel_has_data.clear()
+        for det_key, array in self.warp_dict.items():
+            self.panel_has_data[det_key] = ~array.mask
 
         # sum masked images in self.warp_dict using np.ma ufuncs
         #
