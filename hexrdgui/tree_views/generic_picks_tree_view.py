@@ -622,7 +622,7 @@ class GenericPicksTreeView(BaseDictTreeView):
 
 class GenericPicksTreeViewDialog(QDialog):
 
-    dict_modified = Signal()
+    dict_modified = Signal(QModelIndex)
 
     def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
                  parent=None):

@@ -277,7 +277,7 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
 class MultiColumnDictTreeViewDialog(QDialog):
 
-    dict_modified = Signal()
+    dict_modified = Signal(QModelIndex)
 
     def __init__(self, dictionary, columns, parent=None):
         super().__init__(parent)
