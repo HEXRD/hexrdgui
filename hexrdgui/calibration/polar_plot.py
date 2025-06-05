@@ -177,6 +177,10 @@ class InstrumentViewer:
                 data[f'border_mask_{name}'] = mask.get_masked_arrays(
                     self.type,
                 )
+            elif mask.highlight:
+                data[f'highlight_mask_{name}'] = mask.get_masked_arrays(
+                    self.type,
+                )
 
         keep_detectors = HexrdConfig().azimuthal_lineout_detectors
         if (
