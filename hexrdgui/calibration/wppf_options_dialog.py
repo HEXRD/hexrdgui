@@ -22,6 +22,7 @@ from hexrd.wppf.wppfsupport import (
 )
 
 from hexrdgui.calibration.tree_item_models import (
+    _tree_columns_to_indices,
     DefaultCalibrationTreeItemModel,
     DeltaCalibrationTreeItemModel,
 )
@@ -698,6 +699,13 @@ class WppfOptionsDialog(QObject):
     def tree_view_dict_of_params(self):
         params_dict = self.params.param_dict
 
+        stderr_values = {}
+        if hasattr(self, '_wppf_object'):
+            obj = self._wppf_object
+            if getattr(obj, 'res', None):
+                res = obj.res
+                stderr_values = {k: v.stderr for k, v in res.params.items()}
+
         tree_dict = {}
         template_dict = self.tree_view_mapping
 
@@ -710,6 +718,7 @@ class WppfOptionsDialog(QObject):
                 '_param': param,
                 '_value': param.value,
                 '_vary': bool(param.vary),
+                '_stderr': stderr_values.get(param.name, '--'),
             }
             if self.delta_boundaries:
                 if not hasattr(param, 'delta'):
@@ -727,6 +736,7 @@ class WppfOptionsDialog(QObject):
                     '_min': param.min,
                     '_max': param.max,
                 })
+
             return d
 
         # Treat these root keys specially
@@ -867,9 +877,9 @@ class WppfOptionsDialog(QObject):
     @property
     def tree_view_model_class(self):
         if self.delta_boundaries:
-            return DeltaCalibrationTreeItemModel
+            return DeltaWPPFTreeItemModel
         else:
-            return DefaultCalibrationTreeItemModel
+            return DefaultWPPFTreeItemModel
 
     @property
     def delta_boundaries(self):
@@ -1170,6 +1180,24 @@ def load_yaml_dict(module, filename):
         LOADED_YAML_DICTS[key] = yaml.safe_load(text)
 
     return copy.deepcopy(LOADED_YAML_DICTS[key])
+
+
+class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
+    COLUMNS = {
+        **DefaultCalibrationTreeItemModel.COLUMNS,
+        'Uncertainty': '_stderr',
+    }
+    COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
+    UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
+
+
+class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
+    COLUMNS = {
+        **DeltaCalibrationTreeItemModel.COLUMNS,
+        'Uncertainty': '_stderr',
+    }
+    COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
+    UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
 
 
 if __name__ == '__main__':
