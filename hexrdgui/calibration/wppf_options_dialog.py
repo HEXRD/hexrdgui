@@ -699,12 +699,8 @@ class WppfOptionsDialog(QObject):
     def tree_view_dict_of_params(self):
         params_dict = self.params.param_dict
 
-        stderr_values = {}
-        if hasattr(self, '_wppf_object'):
-            obj = self._wppf_object
-            if getattr(obj, 'res', None):
-                res = obj.res
-                stderr_values = {k: v.stderr for k, v in res.params.items()}
+        # Store stderr values so we can use them later
+        stderr_values = self._get_stderr_values()
 
         tree_dict = {}
         template_dict = self.tree_view_mapping
@@ -914,6 +910,18 @@ class WppfOptionsDialog(QObject):
 
         recurse(self.tree_view.model().config)
 
+    def _get_stderr_values(self) -> dict[str, float]:
+        # Get stderr values from the results object
+        obj = getattr(self, '_wppf_object', None)
+        if obj is None:
+            return {}
+
+        res = getattr(obj, 'res', None)
+        if res is None:
+            return {}
+
+        return {k: v.stderr for k, v in res.params.items()}
+
     @property
     def all_widgets(self):
         names = [
@@ -1029,6 +1037,12 @@ class WppfOptionsDialog(QObject):
 
         param_dict = self.params.param_dict
         export_data = {k: param_to_dict(v) for k, v in param_dict.items()}
+
+        # Also add in any stderr if it exists
+        stderr_values = self._get_stderr_values()
+        for k, v in stderr_values.items():
+            if k in export_data:
+                export_data[k]['stderr'] = v
 
         with h5py.File(filename, 'w') as wf:
             unwrap_dict_to_h5(wf, export_data)
@@ -1167,6 +1181,11 @@ def param_to_dict(param):
 
 
 def dict_to_param(d):
+    # Exclude stderr when converting a dict to a param
+    if 'stderr' in d:
+        d = d.copy()
+        del d['stderr']
+
     return Parameter(**d)
 
 
