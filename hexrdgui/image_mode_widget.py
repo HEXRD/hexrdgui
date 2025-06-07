@@ -2,7 +2,8 @@ from functools import partial
 import multiprocessing
 import numpy as np
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QTimer, Signal
+from PySide6.QtWidgets import QApplication
 
 from hexrdgui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrdgui.constants import PolarXAxisType, ViewType
@@ -58,6 +59,7 @@ class ImageModeWidget(QObject):
         self.update_gui_from_config()
 
     def setup_connections(self):
+        self.ui.installEventFilter(self)
         self.ui.raw_tabbed_view.toggled.connect(HexrdConfig().set_tab_images)
         self.ui.raw_show_saturation.toggled.connect(
             HexrdConfig().set_show_saturation_level)
@@ -152,6 +154,26 @@ class ImageModeWidget(QObject):
 
         ImageLoadManager().new_images_loaded.connect(
             self.update_visibility_states)
+
+    def eventFilter(self, target, event):
+        if target is self.ui and event.type() == QEvent.Resize:
+            size = self.ui.polar_scroll_area_contents.minimumSizeHint()
+
+            # Make the minimum height of the polar scroll area to be
+            # either its size hint or half the display height, whichever
+            # is smaller.
+            display_height = QApplication.primaryScreen().geometry().height()
+            size.setHeight(min(size.height(), int(display_height * 0.5)))
+
+            # Don't allow the polar scroll area to get resized below
+            # its minimum width, because we don't allow horizontal
+            # scrolling.
+            # Include the vertical bar width in this minimum width
+            vert_bar = self.ui.polar_scroll_area.verticalScrollBar()
+            size.setWidth(size.width() + vert_bar.sizeHint().width())
+            self.ui.setMinimumSize(size)
+
+        return False
 
     def enable_image_mode_widget(self, b):
         self.ui.tab_widget.setEnabled(b)
