@@ -22,6 +22,7 @@ from hexrd.wppf.wppfsupport import (
 )
 
 from hexrdgui.calibration.tree_item_models import (
+    _tree_columns_to_indices,
     DefaultCalibrationTreeItemModel,
     DeltaCalibrationTreeItemModel,
 )
@@ -698,6 +699,9 @@ class WppfOptionsDialog(QObject):
     def tree_view_dict_of_params(self):
         params_dict = self.params.param_dict
 
+        # Store stderr values so we can use them later
+        stderr_values = self._get_stderr_values()
+
         tree_dict = {}
         template_dict = self.tree_view_mapping
 
@@ -710,6 +714,7 @@ class WppfOptionsDialog(QObject):
                 '_param': param,
                 '_value': param.value,
                 '_vary': bool(param.vary),
+                '_stderr': stderr_values.get(param.name, '--'),
             }
             if self.delta_boundaries:
                 if not hasattr(param, 'delta'):
@@ -727,6 +732,7 @@ class WppfOptionsDialog(QObject):
                     '_min': param.min,
                     '_max': param.max,
                 })
+
             return d
 
         # Treat these root keys specially
@@ -867,9 +873,9 @@ class WppfOptionsDialog(QObject):
     @property
     def tree_view_model_class(self):
         if self.delta_boundaries:
-            return DeltaCalibrationTreeItemModel
+            return DeltaWPPFTreeItemModel
         else:
-            return DefaultCalibrationTreeItemModel
+            return DefaultWPPFTreeItemModel
 
     @property
     def delta_boundaries(self):
@@ -903,6 +909,18 @@ class WppfOptionsDialog(QObject):
                     recurse(v)
 
         recurse(self.tree_view.model().config)
+
+    def _get_stderr_values(self) -> dict[str, float]:
+        # Get stderr values from the results object
+        obj = getattr(self, '_wppf_object', None)
+        if obj is None:
+            return {}
+
+        res = getattr(obj, 'res', None)
+        if res is None:
+            return {}
+
+        return {k: v.stderr for k, v in res.params.items()}
 
     @property
     def all_widgets(self):
@@ -1019,6 +1037,12 @@ class WppfOptionsDialog(QObject):
 
         param_dict = self.params.param_dict
         export_data = {k: param_to_dict(v) for k, v in param_dict.items()}
+
+        # Also add in any stderr if it exists
+        stderr_values = self._get_stderr_values()
+        for k, v in stderr_values.items():
+            if k in export_data:
+                export_data[k]['stderr'] = v
 
         with h5py.File(filename, 'w') as wf:
             unwrap_dict_to_h5(wf, export_data)
@@ -1157,6 +1181,11 @@ def param_to_dict(param):
 
 
 def dict_to_param(d):
+    # Exclude stderr when converting a dict to a param
+    if 'stderr' in d:
+        d = d.copy()
+        del d['stderr']
+
     return Parameter(**d)
 
 
@@ -1170,6 +1199,24 @@ def load_yaml_dict(module, filename):
         LOADED_YAML_DICTS[key] = yaml.safe_load(text)
 
     return copy.deepcopy(LOADED_YAML_DICTS[key])
+
+
+class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
+    COLUMNS = {
+        **DefaultCalibrationTreeItemModel.COLUMNS,
+        'Uncertainty': '_stderr',
+    }
+    COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
+    UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
+
+
+class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
+    COLUMNS = {
+        **DeltaCalibrationTreeItemModel.COLUMNS,
+        'Uncertainty': '_stderr',
+    }
+    COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
+    UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
 
 
 if __name__ == '__main__':

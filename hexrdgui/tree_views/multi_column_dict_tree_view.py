@@ -17,6 +17,8 @@ KEY_COL = BaseTreeItemModel.KEY_COL
 
 class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
 
+    UNEDITABLE_COLUMN_INDICES = []
+
     def __init__(self, dictionary, columns, parent=None):
         super().__init__(dictionary, parent)
 
@@ -50,13 +52,19 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
         column = index.column()
         item = self.get_item(index)
         if column != KEY_COL and item.data(column) is not None:
+            # All columns after the first that aren't None are editable,
+            # unless explicitly disabled.
+            editable = True
             if self.has_uneditable_paths:
                 # Need to check if it is uneditable
                 path = tuple(self.path_to_item(item) + [column])
-                if path not in self.uneditable_paths:
-                    flags = flags | Qt.ItemIsEditable
-            else:
-                # All columns after the first that isn't None is editable
+                if path in self.uneditable_paths:
+                    editable = False
+
+            if column in self.UNEDITABLE_COLUMN_INDICES:
+                editable = False
+
+            if editable:
                 flags = flags | Qt.ItemIsEditable
 
         return flags

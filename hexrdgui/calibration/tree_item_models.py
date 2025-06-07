@@ -18,6 +18,10 @@ def _tree_columns_to_indices(columns):
 class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
     """Subclass the tree item model so we can customize some behavior"""
 
+    # The tolerance for determining if a value and one of its boundaries are
+    # too close and should be colored red in the UI.
+    RED_COLOR_TOLERANCE = 1e-12
+
     def set_config_val(self, path, value):
         super().set_config_val(path, value)
         # Now set the parameter too
@@ -99,7 +103,7 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
             # value red.
             item = self.get_item(index)
             if not item.child_items and item.data(self.VALUE_IDX) is not None:
-                atol = 1e-3
+                atol = self.RED_COLOR_TOLERANCE
                 pairs = [
                     (self.VALUE_IDX, self.MAX_IDX),
                     (self.VALUE_IDX, self.MIN_IDX),
@@ -133,7 +137,7 @@ class DeltaCalibrationTreeItemModel(CalibrationTreeItemModel):
             # If a delta is zero, color both the delta and the value red.
             item = self.get_item(index)
             if not item.child_items and item.data(self.VALUE_IDX) is not None:
-                atol = 1e-3
+                atol = self.RED_COLOR_TOLERANCE
                 if abs(item.data(self.DELTA_IDX)) < atol:
                     return QColor('red')
 
