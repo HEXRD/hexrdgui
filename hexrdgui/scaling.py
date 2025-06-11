@@ -12,15 +12,15 @@ def none(x: np.ndarray) -> np.ndarray:
 
 
 def sqrt(x: np.ndarray) -> np.ndarray:
-    return np.sqrt(x - np.nanmin(x))
+    return np.sqrt(x + 1)
 
 
 def log(x: np.ndarray) -> np.ndarray:
-    return np.log(x - np.nanmin(x) + 1)
+    return np.log(x + 1)
 
 
 def log_log_sqrt(x: np.ndarray) -> np.ndarray:
-    return np.log(np.log(np.sqrt(x - np.nanmin(x)) + 1) + 1)
+    return np.log(np.log(np.sqrt(x + 1) + 1) + 1)
 
 
 # This decorator automatically rescales the transform output to have
