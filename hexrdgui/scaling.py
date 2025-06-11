@@ -12,16 +12,18 @@ def none(x: np.ndarray) -> np.ndarray:
 
 
 def sqrt(x: np.ndarray) -> np.ndarray:
-    return np.sqrt(x + 1)
+    y = np.sqrt(x + 1)
+    return y - np.nanmin(y)
 
 
 def log(x: np.ndarray) -> np.ndarray:
-    return np.log(x + 1)
+    y = np.log(x + 1)
+    return y - np.nanmin(y)
 
 
 def log_log_sqrt(x: np.ndarray) -> np.ndarray:
-    return np.log(np.log(np.sqrt(x + 1) + 1) + 1)
-
+    y = np.log(np.log(np.sqrt(x + 1) + 1) + 1)
+    return y - np.nanmin(y)
 
 # This decorator automatically rescales the transform output to have
 # the same range as the transform input.
