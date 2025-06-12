@@ -86,6 +86,21 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
                 # Add 0.5 so all coordinates will be positive before rescaling,
                 # then remove that 0.5 again afterward.
                 contour = ((contour[:, [1, 0]] - 1) + 0.5) / res - 0.5
+
+                # Now, if any masks occur along the raw border, extend
+                # them by another half pixel *past* the border.
+                # This helps ensure that the corresponding warped
+                # polar pixels will always be masked out.
+                contour[np.isclose(contour, -0.5)] -= 0.5
+                contour[np.isclose(
+                    contour[:, 1],
+                    panel.shape[0] - 0.5
+                ), 1] += 0.5
+                contour[np.isclose(
+                    contour[:, 0],
+                    panel.shape[1] - 0.5
+                ), 0] += 0.5
+
                 raw_line_data.append((key, contour))
 
     return raw_line_data
