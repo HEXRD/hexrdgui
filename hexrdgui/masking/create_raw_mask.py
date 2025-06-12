@@ -46,10 +46,22 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
         line = add_sample_points(line, 300)
 
         if reverse_tth_distortion:
+            orig = line
             # If we are applying tth distortion in the polar view, we need to
             # convert back to polar coordinates without tth distortion applied
             line = apply_tth_distortion_if_needed(line, in_degrees=True,
                                                   reverse=True)
+
+            # Any points past the critical beta will end up with nan in their
+            # two theta values. Howver, it is essential that we keep points
+            # past the critical beta to catch all of the detector edges in the
+            # mask. So right now, if any points were past the critical beta,
+            # we just restore them to their original values. These aren't as
+            # accurate as the points where the distortion was
+            # "reverse-applied", but they are good enough for catching the
+            # detector edges.
+            row_has_nan = np.isnan(line[:, 0])
+            line[row_has_nan] = orig[row_has_nan]
 
         line_data[i] = line
 
@@ -86,6 +98,21 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
                 # Add 0.5 so all coordinates will be positive before rescaling,
                 # then remove that 0.5 again afterward.
                 contour = ((contour[:, [1, 0]] - 1) + 0.5) / res - 0.5
+
+                # Now, if any masks occur along the raw border, extend
+                # them by another half pixel *past* the border.
+                # This helps ensure that the corresponding warped
+                # polar pixels will always be masked out.
+                contour[np.isclose(contour, -0.5)] -= 0.5
+                contour[np.isclose(
+                    contour[:, 1],
+                    panel.shape[0] - 0.5
+                ), 1] += 0.5
+                contour[np.isclose(
+                    contour[:, 0],
+                    panel.shape[1] - 0.5
+                ), 0] += 0.5
+
                 raw_line_data.append((key, contour))
 
     return raw_line_data
