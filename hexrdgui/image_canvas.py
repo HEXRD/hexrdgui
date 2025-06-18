@@ -10,7 +10,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Polygon
 from matplotlib.ticker import AutoLocator, AutoMinorLocator, FuncFormatter
 
 import matplotlib as mpl
@@ -79,6 +79,7 @@ class ImageCanvas(FigureCanvas):
         self.blit_manager = BlitManager(self)
         self.raw_view_images_dict = {}
         self._mask_boundary_artists = []
+        self._mask_highlight_artists = []
         self._latest_compute_view_worker = None
         self._waterfall_plot_dialog = None
 
@@ -267,8 +268,10 @@ class ImageCanvas(FigureCanvas):
 
         self.raw_view_images_dict = computed_images_dict
         self.clear_mask_boundaries()
+        self.clear_mask_highlights()
         for name, axis in self.raw_axes.items():
             self.draw_mask_boundaries(axis, name)
+            self.highlight_masks(axis, name)
 
         # This will call self.draw_idle()
         self.show_saturation()
@@ -1181,6 +1184,7 @@ class ImageCanvas(FigureCanvas):
                 self.axes_images[0].set_data(img)
 
             self.update_mask_boundaries(self.axis)
+            self.update_mask_highlights(self.axis)
 
             # Get the "tth" vector
             angular_grid = self.iviewer.angular_grid
@@ -1302,6 +1306,7 @@ class ImageCanvas(FigureCanvas):
             self.figure.tight_layout()
 
         self.update_mask_boundaries(self.axis)
+        self.update_mask_highlights(self.axis)
 
         self.draw_stereo_border()
         self.update_auto_picked_data()
@@ -1501,6 +1506,7 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.update_mask_boundaries(self.axis)
+        self.update_mask_highlights(self.axis)
         self.iviewer.reapply_masks()
         img = self.scaled_display_images[0]
         self.axes_images[0].set_data(img)
@@ -2060,11 +2066,26 @@ class ImageCanvas(FigureCanvas):
 
         self._mask_boundary_artists.clear()
 
-    def draw_mask_boundaries(self, axis, det=None):
+    def update_mask_highlights(self, axis):
+        # Update is a clear followed by a draw
+        self.clear_mask_highlights()
+        self.highlight_masks(axis)
+
+    def clear_mask_highlights(self):
+        for artist in self._mask_highlight_artists:
+            artist.remove()
+
+        self._mask_highlight_artists.clear()
+
+    def get_mask_verts(self, visible_attr, det=None):
         # Create an instrument once that we will re-use
         instr = create_view_hedm_instrument()
         all_verts = []
-        for name in MaskManager().visible_boundaries:
+        options = {
+            'boundaries': MaskManager().visible_boundaries,
+            'highlights': MaskManager().visible_highlights
+        }
+        for name in options[visible_attr]:
             mask = MaskManager().masks[name]
             verts = None
             if self.mode == ViewType.raw:
@@ -2129,6 +2150,10 @@ class ImageCanvas(FigureCanvas):
                 [np.vstack((x, (np.nan, np.nan))) for x in verts]
             ))
 
+        return all_verts
+
+    def draw_mask_boundaries(self, axis, det=None):
+        all_verts = self.get_mask_verts('boundaries', det)
         if not all_verts:
             return
 
@@ -2141,6 +2166,21 @@ class ImageCanvas(FigureCanvas):
             *np.vstack(all_verts).T,
             **kwargs,
         )
+
+    def highlight_masks(self, axis, det=None):
+        all_verts = self.get_mask_verts('highlights', det)
+        if not all_verts:
+            return
+
+        kwargs = {
+            'facecolor': MaskManager().highlight_color,
+            'alpha': MaskManager().highlight_opacity,
+            'edgecolor': 'none',
+            'fill': True,
+        }
+        for vert in all_verts:
+            polygon = Polygon(vert, **kwargs)
+            self._mask_highlight_artists.append(axis.add_patch(polygon))
 
 
 class PolarXAxisTickLocator(AutoLocator):
