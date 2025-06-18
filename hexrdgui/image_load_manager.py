@@ -35,6 +35,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     live_update_status = Signal(bool)
     state_updated = Signal()
     enable_transforms = Signal()
+    omegas_updated = Signal()
 
     def __init__(self):
         super().__init__(None)
@@ -378,6 +379,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                         omw.addwedge(start, stop, nsteps)
                 ims_dict[key].metadata['omega'] = omw.omegas
             ims_dict[key] = OmegaImageSeries(ims_dict[key])
+        self.omegas_updated.emit()
 
     def get_range(self, ims):
         start = 0
