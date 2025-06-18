@@ -633,6 +633,7 @@ class SimpleImageSeriesDialog(QObject):
         }
         ImageLoadManager().add_omega_metadata(
             HexrdConfig().imageseries_dict, data)
+        ImageLoadManager().omegas_updated.emit()
 
     def show(self):
         self.ui.show()
