@@ -51,6 +51,8 @@ class SimpleImageSeriesDialog(QObject):
         self.current_progress_step = 0
         self.progress_macro_steps = 0
         self.update_allowed = False
+        self.has_omega = False
+        self.override_omegas = False
 
         self.setup_gui()
         self.detectors_changed()
@@ -300,7 +302,7 @@ class SimpleImageSeriesDialog(QObject):
 
     def load_image_data(self, selected_files):
         self.ext = Path(selected_files[0]).suffix
-        has_omega = False
+        self.has_omega = False
 
         # Select the path if the file(s) are HDF5
         if (ImageFileManager().is_hdf(self.ext) and not
@@ -348,9 +350,9 @@ class SimpleImageSeriesDialog(QObject):
                     self.total_frames = [f-empty for f in self.total_frames]
         else:
             for ims in tmp_ims:
-                has_omega = 'omega' in ims.metadata
+                self.has_omega = 'omega' in ims.metadata
                 self.total_frames.append(len(ims) if len(ims) > 0 else 1)
-                if has_omega:
+                if self.has_omega:
                     self.get_omega_data(ims)
                 else:
                     self.omega_min.append(0)
@@ -535,7 +537,6 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.file_options.blockSignals(True)
 
         curr_val = self.ui.file_options.item(row, column).text()
-        total_frames = self.total_frames[row] - self.empty_frames
         if curr_val != '':
             if column == 1:
                 self.empty_frames = int(curr_val)
@@ -544,10 +545,28 @@ class SimpleImageSeriesDialog(QObject):
                     new_total = str(self.total_frames[r] - self.empty_frames)
                     self.nsteps[r] = int(new_total)
                     self.ui.file_options.item(r, 5).setText(new_total)
-            elif column == 3:
-                self.omega_min[row] = float(curr_val)
-            elif column == 4:
-                self.omega_max[row] = float(curr_val)
+            elif column == 3 or column == 4:
+                options = {3: self.omega_min, 4: self.omega_max}
+                if self.has_omega and not self.override_omegas:
+                    msg = (
+                        'Omega metadata already exists for this detector. '
+                        'Changing the min or max will override the existing '
+                        'metadata. Continue?'
+                    )
+                    response = QMessageBox.question(
+                        self.ui,
+                        'HEXRD',
+                        msg,
+                        (QMessageBox.Yes | QMessageBox.No)
+                    )
+                    if response == QMessageBox.No:
+                        self.ui.file_options.item(row, column).setText(
+                            str(self.omega_min[row]))
+                        self.ui.file_options.blockSignals(False)
+                        return
+                    else:
+                        self.override_omegas = True
+                options[column][row] = float(curr_val)
             self.ui.update_image_data.setEnabled(self.update_allowed)
             self.enable_read()
 
@@ -576,6 +595,7 @@ class SimpleImageSeriesDialog(QObject):
             'total_frames': self.total_frames,
             'reverse_frames': self.ui.reverse_frames.isChecked(),
             'nframes': self.nframes,
+            'override_omegas': self.override_omegas,
         }
         if self.ui.all_detectors.isChecked():
             data['idx'] = self.idx
@@ -612,6 +632,7 @@ class SimpleImageSeriesDialog(QObject):
             'omega_min': self.omega_min,
             'omega_max': self.omega_max,
             'nsteps': self.nsteps,
+            'override_omegas': self.override_omegas,
         }
         ImageLoadManager().add_omega_metadata(
             HexrdConfig().imageseries_dict, data)
