@@ -16,6 +16,7 @@ from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.load_images_dialog import LoadImagesDialog
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
 
 """
@@ -534,43 +535,39 @@ class SimpleImageSeriesDialog(QObject):
 
     def omega_data_changed(self, row, column):
         # Update the values for equivalent files when the data is changed
-        self.ui.file_options.blockSignals(True)
-
-        curr_val = self.ui.file_options.item(row, column).text()
-        if curr_val != '':
-            if column == 1:
-                self.empty_frames = int(curr_val)
-                for r in range(self.ui.file_options.rowCount()):
-                    self.ui.file_options.item(r, column).setText(str(curr_val))
-                    new_total = str(self.total_frames[r] - self.empty_frames)
-                    self.nsteps[r] = int(new_total)
-                    self.ui.file_options.item(r, 5).setText(new_total)
-            elif column == 3 or column == 4:
-                options = {3: self.omega_min, 4: self.omega_max}
-                if self.has_omega and not self.override_omegas:
-                    msg = (
-                        'Omega metadata already exists for this detector. '
-                        'Changing the min or max will override the existing '
-                        'metadata. Continue?'
-                    )
-                    response = QMessageBox.question(
-                        self.ui,
-                        'HEXRD',
-                        msg,
-                        (QMessageBox.Yes | QMessageBox.No)
-                    )
-                    if response == QMessageBox.No:
-                        self.ui.file_options.item(row, column).setText(
-                            str(self.omega_min[row]))
-                        self.ui.file_options.blockSignals(False)
-                        return
-                    else:
-                        self.override_omegas = True
-                options[column][row] = float(curr_val)
-            self.ui.update_image_data.setEnabled(self.update_allowed)
-            self.enable_read()
-
-        self.ui.file_options.blockSignals(False)
+        with block_signals(self.ui.file_options):
+            curr_val = self.ui.file_options.item(row, column).text()
+            if curr_val != '':
+                if column == 1:
+                    self.empty_frames = int(curr_val)
+                    for r in range(self.ui.file_options.rowCount()):
+                        self.ui.file_options.item(r, column).setText(str(curr_val))
+                        new_total = str(self.total_frames[r] - self.empty_frames)
+                        self.nsteps[r] = int(new_total)
+                        self.ui.file_options.item(r, 5).setText(new_total)
+                elif column == 3 or column == 4:
+                    options = {3: self.omega_min, 4: self.omega_max}
+                    if self.has_omega and not self.override_omegas:
+                        msg = (
+                            'Omega metadata already exists for this detector. '
+                            'Changing the min or max will override the existing '
+                            'metadata. Continue?'
+                        )
+                        response = QMessageBox.question(
+                            self.ui,
+                            'HEXRD',
+                            msg,
+                            (QMessageBox.Yes | QMessageBox.No)
+                        )
+                        if response == QMessageBox.No:
+                            self.ui.file_options.item(row, column).setText(
+                                str(options[column][row]))
+                            return
+                        else:
+                            self.override_omegas = True
+                    options[column][row] = float(curr_val)
+                self.ui.update_image_data.setEnabled(self.update_allowed)
+                self.enable_read()
 
     def confirm_omega_range(self):
         files = self.yml_files if self.ext in YAML_EXTS else self.files
