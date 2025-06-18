@@ -119,7 +119,6 @@ class Overlay(ABC):
         from hexrdgui.image_load_manager import ImageLoadManager
 
         ImageLoadManager().new_images_loaded.connect(self.on_new_images_loaded)
-        ImageLoadManager().omegas_updated.connect(self.on_new_images_loaded)
 
     @property
     def plot_data_keys(self):
