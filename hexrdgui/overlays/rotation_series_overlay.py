@@ -51,6 +51,14 @@ class RotationSeriesOverlay(Overlay):
 
         # In case we need to sync up the omegas
         self.sync_omegas()
+        self.setup_connections()
+
+    def setup_connections(self):
+        super().setup_connections()
+
+        from hexrdgui.image_load_manager import ImageLoadManager
+
+        ImageLoadManager().omegas_updated.connect(self.sync_omegas)
 
     @property
     def child_attributes_to_save(self):

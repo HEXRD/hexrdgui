@@ -35,6 +35,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     live_update_status = Signal(bool)
     state_updated = Signal()
     enable_transforms = Signal()
+    omegas_updated = Signal()
 
     def __init__(self):
         super().__init__(None)
@@ -355,22 +356,28 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         data = self.data if data is None else data
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
         for key, ims in ims_dict.items():
-            nframes = data.get('nframes', 0)
-            # If number of frames is 0 we assume that no value was provided
-            # and we should infer that we are using all frames
-            nframes = nframes if nframes > 0 else len(ims)
-            omw = imageseries.omega.OmegaWedges(nframes)
-            if 'wedges' in data:
-                for wedge in data['wedges']:
-                    start, stop, nsteps = wedge
-                    omw.addwedge(start, stop, nsteps)
-            else:
-                for i in range(len(files[0])):
-                    nsteps = data['nsteps'][i]
-                    start = data['omega_min'][i]
-                    stop = data['omega_max'][i]
-                    omw.addwedge(start, stop, nsteps)
-            ims_dict[key].metadata['omega'] = omw.omegas
+            # Only override existing omega metadata if the user has explicitly
+            # requested it
+            if (
+                not len(ims.metadata.get('omega', [])) or
+                data.get('override_omegas', False)
+            ):
+                nframes = data.get('nframes', 0)
+                # If number of frames is 0 we assume that no value was provided
+                # and we should infer that we are using all frames
+                nframes = nframes if nframes > 0 else len(ims)
+                omw = imageseries.omega.OmegaWedges(nframes)
+                if 'wedges' in data:
+                    for wedge in data['wedges']:
+                        start, stop, nsteps = wedge
+                        omw.addwedge(start, stop, nsteps)
+                else:
+                    for i in range(len(files[0])):
+                        nsteps = data['nsteps'][i]
+                        start = data['omega_min'][i]
+                        stop = data['omega_max'][i]
+                        omw.addwedge(start, stop, nsteps)
+                ims_dict[key].metadata['omega'] = omw.omegas
             ims_dict[key] = OmegaImageSeries(ims_dict[key])
 
     def get_range(self, ims):
