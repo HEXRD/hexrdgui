@@ -3,6 +3,9 @@ beam:
   vector:
     azimuth: beam_azimuth
     polar angle: beam_polar
+  energy correction:
+    slope: beam_energy_correction_slope
+    intercept: beam_energy_correction_intercept
 oscillation stage:
   chi: instr_chi
   translation:

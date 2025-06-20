@@ -112,6 +112,8 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_auto_picked_data.connect(
             self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
+        HexrdConfig().beam_energy_correction_changed.connect(
+            self.beam_energy_correction_changed)
         HexrdConfig().beam_marker_modified.connect(self.update_beam_marker)
         HexrdConfig().oscillation_stage_changed.connect(
             self.oscillation_stage_changed)
@@ -976,6 +978,21 @@ class ImageCanvas(FigureCanvas):
 
         self.update_overlays()
         self.update_beam_marker()
+
+    def beam_energy_correction_changed(self):
+        # Only overlay updates are needed
+        if not self.iviewer or not hasattr(self.iviewer, 'instr'):
+            return
+
+        # Re-draw all overlays from scratch
+        # Technically this would only affect rotation series overlays,
+        # but re-creating overlays is cheap...
+        HexrdConfig().clear_overlay_data()
+
+        beam_config = HexrdConfig().active_beam
+        self.iviewer.instr.energy_correction = beam_config['energy_correction']
+
+        self.update_overlays()
 
     def oscillation_stage_changed(self):
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):

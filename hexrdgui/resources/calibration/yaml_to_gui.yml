@@ -4,6 +4,10 @@ beam:
     azimuth: 'cal_vector_azimuth',
     polar_angle: 'cal_vector_polar'
   }
+  energy_correction:
+    intercept: cal_energy_correction_intercept
+    slope: cal_energy_correction_slope
+    axis: cal_energy_correction_axis
 detectors:
   detector_name:
     distortion:

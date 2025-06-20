@@ -8,7 +8,11 @@ import numpy as np
 import yaml
 
 from hexrd.resources import detector_templates
-from hexrd.instrument import calc_angles_from_beam_vec, calc_beam_vec
+from hexrd.instrument import (
+    calc_angles_from_beam_vec,
+    calc_beam_vec,
+    HEDMInstrument,
+)
 from hexrd.transforms import xfcapi
 
 from hexrdgui import constants, resource_loader
@@ -40,6 +44,8 @@ class InstrumentFormViewWidget(QObject):
 
         # Turn off autocomplete for the QComboBox
         self.ui.cal_det_current.setCompleter(None)
+
+        self.on_apply_energy_correction_toggled()
 
         self.setup_connections()
 
@@ -92,6 +98,9 @@ class InstrumentFormViewWidget(QObject):
             self.beam_vector_magnitude_value_changed)
         self.ui.cartesian_beam_vector_convention.currentIndexChanged.connect(
             self.cartesian_beam_vector_convention_changed)
+
+        self.ui.apply_energy_correction.toggled.connect(
+            self.on_apply_energy_correction_toggled)
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -270,6 +279,8 @@ class InstrumentFormViewWidget(QObject):
             # If a cartesian beam vector widget did not trigger this update,
             # then update the cartesian beam vector widgets.
             self.update_cartesian_beam_vector()
+
+        self.update_hedm_energy_correction_checkbox()
 
     def update_detector_from_config(self):
         previously_blocked = self.block_all_signals()
@@ -659,3 +670,36 @@ class InstrumentFormViewWidget(QObject):
                 w.setValue(w.value() * -1)
 
         self.update_cartesian_beam_vector_normalized_note()
+
+    def update_hedm_energy_correction_checkbox(self):
+        checked = self.active_beam.get('energy_correction') is not None
+        self.ui.apply_energy_correction.setChecked(checked)
+
+    @property
+    def energy_correction_widgets(self):
+        return [
+            self.ui.cal_energy_correction_axis,
+            self.ui.energy_correction_axis_label,
+            self.ui.cal_energy_correction_intercept,
+            self.ui.energy_correction_intercept_label,
+            self.ui.cal_energy_correction_slope,
+            self.ui.energy_correction_slope_label,
+        ]
+
+    def on_apply_energy_correction_toggled(self):
+        enabled = self.ui.apply_energy_correction.isChecked()
+
+        for w in self.energy_correction_widgets:
+            w.setVisible(enabled)
+
+        if enabled:
+            d = {
+                'intercept': self.ui.cal_energy_correction_intercept.value(),
+                'slope': self.ui.cal_energy_correction_slope.value(),
+                'axis': self.ui.cal_energy_correction_axis.currentText(),
+            }
+        else:
+            d = None
+
+        self.active_beam['energy_correction'] = d
+        HexrdConfig().beam_energy_correction_changed.emit()

@@ -74,6 +74,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """Emitted when beam vector has changed"""
     beam_vector_changed = Signal()
 
+    """Emitted when beam energy correction is changed"""
+    beam_energy_correction_changed = Signal()
+
     """Emitted when the active beam has switched"""
     active_beam_switched = Signal()
 
@@ -1515,6 +1518,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.beam_vector_changed.emit()
             return
 
+        if path[:2] == beam_path + ['energy_correction']:
+            self.beam_energy_correction_changed.emit()
+            return
+
         if path[0] == 'detectors' and path[2] == 'transform':
             # If a detector transform was modified, send a signal
             # indicating so
@@ -1561,6 +1568,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 # There's going to be one more layer to the path
                 path = path.copy()
                 path.insert(1, self.active_beam_name)
+
+        if (
+            path[:2] == ['beam', 'energy_correction'] and
+            cur_val.get('beam', {}).get('energy_correction') is None
+        ):
+            defaults = HEDMInstrument.create_default_energy_correction()
+            return defaults[path[2]]
 
         # Special case for distortion:
         # If no distortion is specified, return 'None'

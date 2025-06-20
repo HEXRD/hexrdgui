@@ -226,6 +226,27 @@ class HEDMCalibrationDialog(CalibrationDialog):
             for k, v in settings.items():
                 setattr(self, k, v)
 
+    def validate_parameters(self):
+        super().validate_parameters()
+
+        config = self.tree_view.model().config
+        if 'energy correction' in config['beam']:
+            if any(
+                d['_param'].vary for d in
+                config['beam']['energy correction'].values()
+            ):
+                # We are varying energy correction parameters.
+                # Verify we have at least two grains, or this wouldn't
+                # make sense to do.
+                num_grains = sum(
+                    s.endswith('grain_param_0') for s in self.params_dict
+                )
+                if num_grains < 2:
+                    raise Exception(
+                        'Cannot vary beam energy correction parameters with '
+                        'only one grain'
+                    )
+
 
 class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
