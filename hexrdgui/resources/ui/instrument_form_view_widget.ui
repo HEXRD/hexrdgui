@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>765</width>
-    <height>903</height>
+    <height>978</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -27,14 +27,11 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="beam_group">
      <property name="title">
       <string>Beam Properties</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
-      <property name="spacing">
-       <number>0</number>
-      </property>
+     <layout class="QGridLayout" name="gridLayout_9">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -47,7 +44,93 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="energy_correction_intercept_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Intercept:</string>
+        </property>
+        <property name="buddy">
+         <cstring>cal_energy_correction_intercept</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="energy_correction_slope_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Slope:</string>
+        </property>
+        <property name="buddy">
+         <cstring>cal_energy_correction_slope</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QCheckBox" name="apply_energy_correction">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Apply HEDM Energy Correction?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="ScientificDoubleSpinBox" name="cal_energy_correction_slope">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> eV/mm</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="ScientificDoubleSpinBox" name="cal_energy_correction_intercept">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> mm</string>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="4">
        <widget class="QGroupBox" name="groupBox_2">
         <property name="title">
          <string>Energy</string>
@@ -131,7 +214,7 @@
         </layout>
        </widget>
       </item>
-      <item>
+      <item row="1" column="0" colspan="4">
        <widget class="QGroupBox" name="groupBox_3">
         <property name="title">
          <string>Vector</string>
@@ -467,6 +550,36 @@
         </layout>
        </widget>
       </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="energy_correction_axis_label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Axis:</string>
+        </property>
+        <property name="buddy">
+         <cstring>cal_energy_correction_axis</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QComboBox" name="cal_energy_correction_axis">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;Energy Correction&amp;quot; is for applying a small beam energy correction factor to grain positions in an HEDM workflow. The synchrotron beam gradients are sometimes not flat, and an energy correction along the x or y axes can improve the results.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Intercept&amp;quot; is the center of the beam gradient along the specifix axis (where the energy is equal to the beam energy specified in the instrument configuration), in millimeters.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &amp;quot;Slope&amp;quot; is the adjustment in the beam energy as a grain gets farther away from the intercept along the specified axis, in eV/mm.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;These parameters are available to use in the various calibration workflows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>y</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>x</string>
+         </property>
+        </item>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -538,72 +651,6 @@
          <property name="spacing">
           <number>0</number>
          </property>
-         <item row="0" column="2">
-          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_1">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="suffix">
-            <string> mm</string>
-           </property>
-           <property name="decimals">
-            <number>8</number>
-           </property>
-           <property name="minimum">
-            <double>-100000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_15">
-           <property name="text">
-            <string>Translation:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_2">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="suffix">
-            <string> mm</string>
-           </property>
-           <property name="decimals">
-            <number>8</number>
-           </property>
-           <property name="minimum">
-            <double>-100000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="ScientificDoubleSpinBox" name="cal_det_translation_0">
            <property name="alignment">
@@ -617,66 +664,6 @@
            </property>
            <property name="suffix">
             <string> mm</string>
-           </property>
-           <property name="decimals">
-            <number>8</number>
-           </property>
-           <property name="minimum">
-            <double>-100000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_16">
-           <property name="text">
-            <string>Rotation:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_0">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="suffix">
-            <string>°</string>
-           </property>
-           <property name="decimals">
-            <number>8</number>
-           </property>
-           <property name="minimum">
-            <double>-100000.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100000.000000000000000</double>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_1">
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="keyboardTracking">
-            <bool>false</bool>
-           </property>
-           <property name="suffix">
-            <string>°</string>
            </property>
            <property name="decimals">
             <number>8</number>
@@ -714,6 +701,132 @@
            </property>
            <property name="singleStep">
             <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_1">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="suffix">
+            <string> mm</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="minimum">
+            <double>-100000.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_translation_2">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="suffix">
+            <string> mm</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="minimum">
+            <double>-100000.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_0">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="suffix">
+            <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="minimum">
+            <double>-100000.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_16">
+           <property name="text">
+            <string>Rotation:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="ScientificDoubleSpinBox" name="cal_det_tilt_1">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
+           <property name="suffix">
+            <string>°</string>
+           </property>
+           <property name="decimals">
+            <number>8</number>
+           </property>
+           <property name="minimum">
+            <double>-100000.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_15">
+           <property name="text">
+            <string>Translation:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -1410,6 +1523,10 @@
   <tabstop>beam_vector_cartesian_z</tabstop>
   <tabstop>beam_vector_is_finite</tabstop>
   <tabstop>beam_vector_magnitude</tabstop>
+  <tabstop>apply_energy_correction</tabstop>
+  <tabstop>cal_energy_correction_axis</tabstop>
+  <tabstop>cal_energy_correction_slope</tabstop>
+  <tabstop>cal_energy_correction_intercept</tabstop>
   <tabstop>cal_det_current</tabstop>
   <tabstop>cal_det_add</tabstop>
   <tabstop>cal_det_remove</tabstop>
