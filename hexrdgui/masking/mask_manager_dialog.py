@@ -415,9 +415,9 @@ class MaskManagerDialog(QObject):
     def selected_changed(self):
         with block_signals(self.ui.presentation_selector):
             selected = self.ui.masks_tree.selectedItems()
-            self.ui.presentation_selector.setEnabled(len(selected) > 1)
-            self.ui.export_selected.setEnabled(len(selected) > 1)
-            self.ui.remove_selected.setEnabled(len(selected) > 1)
+            self.ui.presentation_selector.setEnabled(len(selected) >= 1)
+            self.ui.export_selected.setEnabled(len(selected) >= 1)
+            self.ui.remove_selected.setEnabled(len(selected) >= 1)
 
             # Update highlight states for masks
             masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
@@ -441,7 +441,7 @@ class MaskManagerDialog(QObject):
                 self.ui.presentation_selector.addItem('Visible + Boundary')
 
     def change_presentation_for_selected(self, text):
-        if len(self.ui.masks_tree.selectedItems()) <= 1:
+        if len(self.ui.masks_tree.selectedItems()) < 1:
             return
 
         mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
