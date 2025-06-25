@@ -6,7 +6,7 @@ from itertools import groupby
 from operator import attrgetter
 import re
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
     QMessageBox, QTreeWidgetItem, QVBoxLayout
@@ -425,8 +425,16 @@ class MaskManagerDialog(QObject):
                 mask.highlight = False
             for mask in masks_from_names:
                 mask.highlight = True
-            self.selected_masks = masks_from_names
-            MaskManager().masks_changed()
+            if set(self.selected_masks) != set(masks_from_names):
+                # Only update the mask highlights if the selected masks have changed
+                # Debounce the update to avoid re-drawing too often
+                self.selected_masks = masks_from_names
+                if not hasattr(self, '_mask_highlight_update_timer'):
+                    timer = QTimer()
+                    timer.setSingleShot(True)
+                    timer.timeout.connect(MaskManager().masks_changed)
+                    self._mask_highlight_update_timer = timer
+                self._mask_highlight_update_timer.start(100)
 
             if len(selected) == 0:
                 return
