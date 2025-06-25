@@ -36,7 +36,7 @@ class Mask(ABC):
         self.type = mtype
         self.visible = visible
         self.show_border = show_border
-        self.highlight = highlight
+        self._highlight = highlight
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
         self.creation_view_mode = mode
@@ -88,6 +88,16 @@ class Mask(ABC):
     def serialize(self):
         pass
 
+    @property
+    @abstractmethod
+    def highlight(self):
+        pass
+
+    @highlight.setter
+    @abstractmethod
+    def highlight(self, value):
+        pass
+
     @classmethod
     def deserialize(cls, data):
         return cls(
@@ -122,6 +132,16 @@ class RegionMask(Mask):
     def data(self, values):
         self._raw = values
         self.invalidate_masked_arrays()
+
+    @property
+    def highlight(self):
+        return self._highlight
+
+    @highlight.setter
+    def highlight(self, value):
+        if self.type == MaskType.powder:
+            return
+        self._highlight = value
 
     def update_masked_arrays(self, view=ViewType.raw, instr=None):
         self.masked_arrays_view_mode = view
@@ -207,6 +227,10 @@ class ThresholdMask(Mask):
         self.min_val = values[0]
         self.max_val = values[1]
         self.invalidate_masked_arrays()
+
+    @property
+    def highlight(self):
+        return False
 
     def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays = recompute_raw_threshold_mask()
