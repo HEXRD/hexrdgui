@@ -82,7 +82,6 @@ class ImageCanvas(FigureCanvas):
         self.blit_manager = BlitManager(self)
         self.raw_view_images_dict = {}
         self._mask_boundary_artists = []
-        self._mask_highlight_artists = []
         self._latest_compute_view_worker = None
         self._waterfall_plot_dialog = None
 
@@ -396,6 +395,10 @@ class ImageCanvas(FigureCanvas):
     @property
     def overlay_artists(self):
         return self.blit_artists.setdefault('overlays', {})
+
+    @property
+    def mask_highlight_artists(self):
+        return self.blit_artists.setdefault('mask_highlights', {})
 
     def remove_all_overlay_artists(self):
         self.blit_manager.remove_artists('overlays')
@@ -2219,10 +2222,7 @@ class ImageCanvas(FigureCanvas):
         self.highlight_masks(axis)
 
     def clear_mask_highlights(self):
-        for artist in self._mask_highlight_artists:
-            artist.remove()
-
-        self._mask_highlight_artists.clear()
+        self.remove_all_mask_highlight_artists()
 
     def get_mask_verts(self, visible_attr, det=None):
         # Create an instrument once that we will re-use
@@ -2325,9 +2325,23 @@ class ImageCanvas(FigureCanvas):
             'edgecolor': 'none',
             'fill': True,
         }
+
+        highlight_artists = self.mask_highlight_artists.setdefault(det or 'default', [])
+
         for vert in all_verts:
             polygon = Polygon(vert, **kwargs)
-            self._mask_highlight_artists.append(axis.add_patch(polygon))
+            polygon.set_animated(True)
+            axis.add_patch(polygon)
+            highlight_artists.append(polygon)
+
+        self.blit_manager.update()
+
+    def remove_all_mask_highlight_artists(self):
+        self.blit_manager.remove_artists('mask_highlights')
+        self.blit_manager.artists['mask_highlights'] = {}
+
+    def remove_mask_highlight_artists(self, key):
+        self.blit_manager.remove_artists('mask_highlights', key)
 
 
 class PolarXAxisTickLocator(AutoLocator):
