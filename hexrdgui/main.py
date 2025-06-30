@@ -1,5 +1,10 @@
+import os
 import signal
 import sys
+
+if sys.platform.startswith('darwin'):
+    # Prevent crashing when using OpenBLAS
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QIcon, QPixmap
