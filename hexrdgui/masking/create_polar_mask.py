@@ -23,8 +23,14 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
     cart = pixels_to_cart(line, panel)
     xys, _ = panel.clip_to_panel(cart, buffer_edges=False)
 
+    if HexrdConfig().image_mode == ViewType.stereo:
+        # We always use 0 to 2*pi for stereo
+        eta_period = np.degrees([0, 2 * np.pi])
+    else:
+        eta_period = HexrdConfig().polar_res_eta_period
+
     kwargs = {
-        'eta_period': HexrdConfig().polar_res_eta_period,
+        'eta_period': eta_period,
         'tvec_s': instr.tvec
     }
     line = cart_to_angles(xys, panel, **kwargs)
