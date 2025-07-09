@@ -19,8 +19,10 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
     line = add_sample_points(line, 500)
 
     panel = instr.detectors[det]
-    cart = pixels_to_cart(line, panel)
-    xys, _ = panel.clip_to_panel(cart, buffer_edges=False)
+    xys = pixels_to_cart(line, panel)
+    # We used to clip_to_panel() here, but we shouldn't do that because
+    # users may have clicked points outside of the detector in the polar view.
+    # xys, _ = panel.clip_to_panel(xys, buffer_edges=False)
 
     kwargs = {
         'eta_period': HexrdConfig().polar_res_eta_period,
