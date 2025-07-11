@@ -295,6 +295,9 @@ class MaskManager(QObject, metaclass=QSingleton):
             self.update_masks_for_active_beam)
 
     def update_masks_for_active_beam(self):
+        if self.view_mode != ViewType.polar:
+            return
+
         xrs = HexrdConfig().active_beam_name
         for mask in self.masks.values():
             # If mask's mode or source doesn't match current, hide it

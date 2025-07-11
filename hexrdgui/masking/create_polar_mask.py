@@ -1,6 +1,7 @@
 import numpy as np
 
 from hexrdgui.calibration.polarview import PolarView
+from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
@@ -24,8 +25,14 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
     # users may have clicked points outside of the detector in the polar view.
     # xys, _ = panel.clip_to_panel(xys, buffer_edges=False)
 
+    if HexrdConfig().image_mode == ViewType.stereo:
+        # We always use 0 to 2*pi for stereo
+        eta_period = np.degrees([0, 2 * np.pi])
+    else:
+        eta_period = HexrdConfig().polar_res_eta_period
+
     kwargs = {
-        'eta_period': HexrdConfig().polar_res_eta_period,
+        'eta_period': eta_period,
         'tvec_s': instr.tvec
     }
     line = cart_to_angles(xys, panel, **kwargs)
@@ -37,9 +44,16 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
 
 
 def create_polar_mask(line_data):
+    from hexrdgui.masking.mask_manager import MaskManager
     # Calculate current image dimensions
     # If we pass `None` to the polar view, it is a dummy polar view
-    pv = PolarView(None)
+    kwargs = {'instrument': None}
+    if MaskManager().view_mode == ViewType.stereo:
+        kwargs.update({
+            'eta_min': 0,
+            'eta_max': np.pi * 2,
+        })
+    pv = PolarView(**kwargs)
     shape = pv.shape
     num_pix_eta = shape[0]
 
