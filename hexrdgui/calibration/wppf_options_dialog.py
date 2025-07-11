@@ -8,12 +8,13 @@ import re
 import yaml
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QWidget
 
 from hexrdgui import resource_loader
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
 from hexrd.wppf import LeBail, Rietveld
+from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
 from hexrd.wppf.parameters import Parameter
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
@@ -59,6 +60,7 @@ class WppfOptionsDialog(QObject):
 
         self.populate_background_methods()
         self.populate_peakshape_methods()
+        self.populate_amorphous_options()
 
         self.dynamic_background_widgets = []
 
@@ -75,6 +77,9 @@ class WppfOptionsDialog(QObject):
         # Default setting for delta boundaries
         self.delta_boundaries = False
 
+        # Trigger logic for changing amorphous setting
+        self.on_include_amorphous_toggled()
+
         self.update_gui()
         self.setup_connections()
 
@@ -84,6 +89,12 @@ class WppfOptionsDialog(QObject):
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
         self.ui.background_method.currentIndexChanged.connect(
             self.update_background_parameters)
+        self.ui.include_amorphous.toggled.connect(
+            self.on_include_amorphous_toggled)
+        self.ui.amorphous_model.currentIndexChanged.connect(
+            self.on_amorphous_model_changed)
+        self.ui.amorphous_experiment_file_select.clicked.connect(
+            self.on_amorphous_experiment_file_select_clicked)
         self.ui.delta_boundaries.toggled.connect(
             self.on_delta_boundaries_toggled)
         self.ui.select_experiment_file_button.pressed.connect(
@@ -126,6 +137,11 @@ class WppfOptionsDialog(QObject):
             'limit_tth_hyphen',
             'min_tth',
             'max_tth',
+            'include_amorphous',
+            'amorphous_model',
+            'amorphous_model_label',
+            'amorphous_experiment_file',
+            'amorphous_experiment_file_select',
         ]
 
         for name in requires_object:
@@ -159,6 +175,19 @@ class WppfOptionsDialog(QObject):
 
         if DEFAULT_PEAK_SHAPE in keys:
             self.ui.peak_shape.setCurrentIndex(keys.index(DEFAULT_PEAK_SHAPE))
+
+    def populate_amorphous_options(self):
+        w = self.ui.amorphous_model
+        prev = w.currentText()
+        all_labels = list(AMORPHOUS_MODEL_TYPES)
+
+        with block_signals(w):
+            w.clear()
+            for label in all_labels:
+                w.addItem(label)
+
+            if prev in all_labels:
+                w.setCurrentIndex(all_labels.index(prev))
 
     def save_plot(self):
         obj = self._wppf_object
@@ -207,6 +236,7 @@ class WppfOptionsDialog(QObject):
     def reset_object(self):
         self._wppf_object = None
         self.update_enable_states()
+        self.update_degree_of_crystallinity()
 
     def preview_spectrum(self):
         had_object = self._wppf_object is not None
@@ -274,13 +304,27 @@ class WppfOptionsDialog(QObject):
             if not points:
                 raise Exception('Points must be chosen to use "spline" method')
 
+        if self.include_amorphous and self.amorphous_model_is_experimental:
+            try:
+                np.loadtxt(self.amorphous_experiment_file)
+            except Exception as e:
+                msg = f'Failed to load amorphous experiment file: {e}'
+                raise Exception(msg)
+
     def generate_params(self):
         kwargs = {
             'method': self.method,
             'materials': self.materials,
             'peak_shape': self.peak_shape_index,
-            'bkgmethod': self.background_method_dict
+            'bkgmethod': self.background_method_dict,
+            'amorphous_model': None,
         }
+        if self.include_amorphous:
+            kwargs['amorphous_model'] = Amorphous(
+                [],
+                **self.amorphous_kwargs,
+            )
+
         return generate_params(**kwargs)
 
     def reset_params(self):
@@ -383,6 +427,11 @@ class WppfOptionsDialog(QObject):
         return load_yaml_dict(tree_view_resources, filename)
 
     @property
+    def amorphous_tree_dict(self):
+        filename = 'amorphous.yml'
+        return load_yaml_dict(tree_view_resources, filename)
+
+    @property
     def peak_shape_index(self):
         return self.ui.peak_shape.currentIndex()
 
@@ -448,6 +497,50 @@ class WppfOptionsDialog(QObject):
         if method == 'chebyshev':
             # We probably need to update the parameters as well
             self.update_params()
+
+    @property
+    def include_amorphous(self) -> bool:
+        return self.ui.include_amorphous.isChecked()
+
+    @include_amorphous.setter
+    def include_amorphous(self, b: bool):
+        self.ui.include_amorphous.setChecked(b)
+
+    @property
+    def amorphous_model(self) -> str:
+        return self.ui.amorphous_model.currentText()
+
+    @amorphous_model.setter
+    def amorphous_model(self, v: str):
+        self.ui.amorphous_model.setCurrentText(v)
+
+    @property
+    def amorphous_model_is_experimental(self) -> bool:
+        return self.amorphous_model == 'Experimental'
+
+    @property
+    def amorphous_experiment_file(self) -> str:
+        return self.ui.amorphous_experiment_file.text()
+
+    @amorphous_experiment_file.setter
+    def amorphous_experiment_file(self, v: str):
+        self.ui.amorphous_experiment_file.setText(v)
+
+    @property
+    def amorphous_kwargs(self) -> dict | None:
+        if not self.include_amorphous:
+            return None
+
+        kwargs = {
+            'model_type': AMORPHOUS_MODEL_TYPES[self.amorphous_model],
+        }
+        if self.amorphous_model_is_experimental:
+            kwargs['model_data'] = {
+                # Currently only support one model
+                'c1': np.loadtxt(self.amorphous_experiment_file),
+            }
+
+        return kwargs
 
     def pick_spline_points(self):
         if self.background_method != 'spline':
@@ -659,6 +752,57 @@ class WppfOptionsDialog(QObject):
         # methods have parameters.
         self.update_params()
 
+    @property
+    def amorphous_experiment_widgets(self) -> list[QWidget]:
+        return [getattr(self.ui, name) for name in (
+            'amorphous_experiment_file',
+            'amorphous_experiment_file_select',
+        )]
+
+    def on_include_amorphous_toggled(self):
+        b = self.include_amorphous
+
+        # Update visibility of amorphous options
+        layout = self.ui.amorphous_options_layout
+        for i in range(layout.count()):
+            w = layout.itemAt(i).widget()
+            if w is not None:
+                w.setVisible(b)
+
+        self.on_amorphous_model_changed()
+
+    def on_amorphous_model_changed(self):
+        is_experiment = (
+            self.include_amorphous and self.amorphous_model_is_experimental
+        )
+        for w in self.amorphous_experiment_widgets:
+            w.setVisible(is_experiment)
+
+        if is_experiment and not self.amorphous_experiment_file:
+            # Trigger selection of experiment file
+            self.on_amorphous_experiment_file_select_clicked()
+
+        self.update_degree_of_crystallinity()
+        self.update_params()
+
+    def on_amorphous_experiment_file_select_clicked(self):
+        selected_file, selected_filter = QFileDialog.getOpenFileName(
+            self.ui, 'Select Amorphous Experiment File',
+            HexrdConfig().working_dir,
+            'XY files (*.xy)',
+        )
+
+        if selected_file:
+            self.amorphous_experiment_file = selected_file
+
+    def update_degree_of_crystallinity(self):
+        w = self.ui.degree_of_crystallinity_label
+
+        obj = self._wppf_object
+        doc = 1 if obj is None else obj.DOC
+
+        w.setText(f'Degree of Crystallinity: {doc:.3g}')
+
     def initialize_tree_view(self):
         if hasattr(self, 'tree_view'):
             # It has already been initialized
@@ -765,6 +909,42 @@ class WppfOptionsDialog(QObject):
         # First, recursively set items (except special cases)
         recursively_set_items(tree_dict, template_dict)
 
+        def recursively_format_amorphous(key, this_config, this_template):
+            any_set = False
+            for k, v in this_template.items():
+                if isinstance(v, dict):
+                    this_config.setdefault(k, {})
+                    b = recursively_format_amorphous(key, this_config[k], v)
+                    if not b:
+                        # No parameters were used. We can eliminate this.
+                        del this_config[k]
+                else:
+                    # Should be a string. Replace {k} with the key
+                    v = v.format(k=key)
+
+                    if v in params_dict:
+                        this_config[k] = create_param_item(params_dict[v])
+                        any_set = True
+
+            return any_set
+
+        if self.include_amorphous:
+            # Add in amorphous parameters
+            # Identify the keys
+            ending = '_amorphous_scale'
+            keys = [
+                name.removesuffix(ending)
+                for name in params_dict if name.endswith(ending)
+            ]
+
+            # Put the amorphous section first
+            tree_dict = {'Amorphous': {}, **tree_dict}
+            amorphous = tree_dict['Amorphous']
+            template = template_dict['Amorphous']
+
+            for k in keys:
+                recursively_format_amorphous(k, amorphous, template)
+
         # If the background method is chebyshev, fill those in
         if self.background_method == 'chebyshev':
             # Put the background first
@@ -863,6 +1043,7 @@ class WppfOptionsDialog(QObject):
         method_dict['Instrumental Parameters']['Peak Parameters'] = (
             self.peak_shape_tree_dict
         )
+        method_dict['Amorphous'] = self.amorphous_tree_dict
 
         return method_dict
 
@@ -939,6 +1120,7 @@ class WppfOptionsDialog(QObject):
         if self._wppf_object is None:
             self._wppf_object = self.create_wppf_object()
             self.update_enable_states()
+            self.update_degree_of_crystallinity()
         else:
             self.update_wppf_object()
 
@@ -995,6 +1177,13 @@ class WppfOptionsDialog(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             raise Exception(msg)
 
+        amorphous_model = None
+        if self.include_amorphous:
+            amorphous_model = Amorphous(
+                tth_list=expt_spectrum[:, 0],
+                **self.amorphous_kwargs,
+            )
+
         return {
             'expt_spectrum': expt_spectrum,
             'params': self.params,
@@ -1004,13 +1193,14 @@ class WppfOptionsDialog(QObject):
             'wavelength': wavelength,
             'bkgmethod': self.background_method_dict,
             'peakshape': self.peak_shape,
+            'amorphous_model': amorphous_model,
         }
 
     def update_wppf_object(self):
         obj = self._wppf_object
         kwargs = self.wppf_object_kwargs
 
-        skip_list = ['expt_spectrum']
+        skip_list = ['expt_spectrum', 'amorphous_model']
 
         for key, val in kwargs.items():
             if key in skip_list:
@@ -1020,6 +1210,8 @@ class WppfOptionsDialog(QObject):
                 raise Exception(f'{obj} does not have attribute: {key}')
 
             setattr(obj, key, val)
+
+        self.update_degree_of_crystallinity()
 
     def export_params(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -1159,7 +1351,7 @@ class WppfOptionsDialog(QObject):
         self.ui.undo_last_run.setEnabled(len(self._undo_stack) > 0)
 
 
-def generate_params(method, materials, peak_shape, bkgmethod):
+def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model):
     func_dict = {
         'LeBail': _generate_default_parameters_LeBail,
         'Rietveld': _generate_default_parameters_Rietveld,
@@ -1167,7 +1359,12 @@ def generate_params(method, materials, peak_shape, bkgmethod):
     if method not in func_dict:
         raise Exception(f'Unknown method: {method}')
 
-    return func_dict[method](materials, peak_shape, bkgmethod)
+    return func_dict[method](
+        materials,
+        peak_shape,
+        bkgmethod,
+        amorphous_model=amorphous_model,
+    )
 
 
 def param_to_dict(param):
