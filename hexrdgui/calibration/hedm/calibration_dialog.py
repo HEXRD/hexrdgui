@@ -614,6 +614,9 @@ def parse_spots_data(spots_data, instr, grain_ids, ome_period=None,
             # FIXME: hexrd is not happy if some detectors end up with no
             # grain data, which sometimes happens with subpanels like Dexelas
             if data.size == 0:
+                idx_0[det_key].append(np.empty((0,)))
+                hkls[det_key].append(np.empty((0, 3)))
+                xyo_det[det_key].append(np.empty((0, 3)))
                 continue
 
             valid_reflections = data[:, 0] >= 0
@@ -625,6 +628,12 @@ def parse_spots_data(spots_data, instr, grain_ids, ome_period=None,
             else:
                 idx = refit_idx[det_key][ig]
                 idx_0[det_key].append(idx)
+
+            if not np.any(idx):
+                idx_0[det_key].append(np.empty((0,)))
+                hkls[det_key].append(np.empty((0, 3)))
+                xyo_det[det_key].append(np.empty((0, 3)))
+                continue
 
             hkls[det_key].append(np.vstack(data[idx, 2]))
             meas_omes = np.vstack(data[idx, 6])[:, 2].reshape(sum(idx), 1)
