@@ -14,145 +14,29 @@
    <string>WPPF Options Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="5" column="0" colspan="3">
-    <widget class="QPushButton" name="pick_spline_points">
+   <item row="3" column="0">
+    <widget class="QLabel" name="peak_shape_label">
      <property name="text">
-      <string>Pick Spline Points</string>
+      <string>Peak shape:</string>
      </property>
     </widget>
    </item>
-   <item row="16" column="0" colspan="3">
-    <widget class="QGroupBox" name="param_settings_group">
-     <property name="title">
-      <string>Parameter Settings</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QPushButton" name="export_params">
-        <property name="text">
-         <string>Export</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="import_params">
-        <property name="text">
-         <string>Import</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="reset_params_to_defaults">
-        <property name="text">
-         <string>Reset to Defaults</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="3">
-    <layout class="QVBoxLayout" name="background_method_parameters_layout"/>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="method_label">
+   <item row="2" column="0">
+    <widget class="QLabel" name="refinement_steps_label">
      <property name="text">
-      <string>WPPF Method:</string>
+      <string>Refinement Steps:</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="1">
-    <widget class="QLineEdit" name="experiment_file">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
+   <item row="4" column="0">
+    <widget class="QLabel" name="background_method_label">
      <property name="text">
-      <string/>
+      <string>Background Method:</string>
      </property>
     </widget>
    </item>
-   <item row="11" column="0" colspan="3">
-    <layout class="QHBoxLayout" name="plot_options_layout">
-     <item>
-      <widget class="QCheckBox" name="display_wppf_plot">
-       <property name="text">
-        <string>Display WPPF plot in polar view?</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="edit_plot_style">
-       <property name="text">
-        <string>Edit Plot Style</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="9" column="0" colspan="3">
-    <layout class="QHBoxLayout" name="limit_tth_layout">
-     <item>
-      <widget class="QCheckBox" name="limit_tth">
-       <property name="text">
-        <string>Limit 2θ?</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="ScientificDoubleSpinBox" name="min_tth">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="suffix">
-        <string>°</string>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>100000.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="limit_tth_hyphen">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>-</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="ScientificDoubleSpinBox" name="max_tth">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="keyboardTracking">
-        <bool>false</bool>
-       </property>
-       <property name="suffix">
-        <string>°</string>
-       </property>
-       <property name="decimals">
-        <number>8</number>
-       </property>
-       <property name="maximum">
-        <double>100000.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="3" column="1" colspan="2">
+    <widget class="QComboBox" name="peak_shape"/>
    </item>
    <item row="1" column="1" colspan="2">
     <widget class="QComboBox" name="method">
@@ -168,54 +52,20 @@
      </item>
     </widget>
    </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QComboBox" name="background_method"/>
-   </item>
-   <item row="8" column="0">
-    <widget class="QCheckBox" name="use_experiment_file">
-     <property name="text">
-      <string>Use Experiment File</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="background_method_label">
-     <property name="text">
-      <string>Background Method:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="3">
-    <widget class="QPushButton" name="select_materials_button">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="text">
-      <string>Select Materials</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QSpinBox" name="refinement_steps">
-     <property name="minimum">
-      <number>1</number>
-     </property>
-     <property name="maximum">
-      <number>10000000</number>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="refinement_steps_label">
-     <property name="text">
-      <string>Refinement Steps:</string>
-     </property>
-    </widget>
-   </item>
    <item row="18" column="0" colspan="3">
+    <layout class="QVBoxLayout" name="tree_view_layout"/>
+   </item>
+   <item row="11" column="1">
+    <widget class="QLineEdit" name="experiment_file">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="21" column="0" colspan="3">
     <layout class="QHBoxLayout" name="button_layout">
      <item>
       <widget class="QPushButton" name="save_plot">
@@ -298,21 +148,140 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="peak_shape_label">
+   <item row="8" column="0" colspan="3">
+    <widget class="QPushButton" name="pick_spline_points">
      <property name="text">
-      <string>Peak shape:</string>
+      <string>Pick Spline Points</string>
      </property>
     </widget>
    </item>
-   <item row="13" column="0">
+   <item row="12" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="limit_tth_layout">
+     <item>
+      <widget class="QCheckBox" name="limit_tth">
+       <property name="text">
+        <string>Limit 2θ?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ScientificDoubleSpinBox" name="min_tth">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string>°</string>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>100000.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="limit_tth_hyphen">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>-</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ScientificDoubleSpinBox" name="max_tth">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
+       <property name="suffix">
+        <string>°</string>
+       </property>
+       <property name="decimals">
+        <number>8</number>
+       </property>
+       <property name="maximum">
+        <double>100000.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="1" colspan="2">
+    <widget class="QSpinBox" name="refinement_steps">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10000000</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1" colspan="2">
+    <widget class="QComboBox" name="background_method"/>
+   </item>
+   <item row="14" column="0" colspan="3">
+    <layout class="QHBoxLayout" name="plot_options_layout">
+     <item>
+      <widget class="QCheckBox" name="display_wppf_plot">
+       <property name="text">
+        <string>Display WPPF plot in polar view?</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="edit_plot_style">
+       <property name="text">
+        <string>Edit Plot Style</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="11" column="0">
+    <widget class="QCheckBox" name="use_experiment_file">
+     <property name="text">
+      <string>Use Experiment File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="3">
+    <layout class="QVBoxLayout" name="background_method_parameters_layout"/>
+   </item>
+   <item row="0" column="0" colspan="3">
+    <widget class="QPushButton" name="select_materials_button">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only materials with powder overlays can be selected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Select Materials</string>
+     </property>
+    </widget>
+   </item>
+   <item row="16" column="0">
     <widget class="QCheckBox" name="delta_boundaries">
      <property name="text">
       <string>Use delta boundaries</string>
      </property>
     </widget>
    </item>
-   <item row="8" column="2">
+   <item row="11" column="2">
     <widget class="QPushButton" name="select_experiment_file_button">
      <property name="enabled">
       <bool>false</bool>
@@ -322,11 +291,99 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="1" colspan="2">
-    <widget class="QComboBox" name="peak_shape"/>
+   <item row="19" column="0" colspan="3">
+    <widget class="QGroupBox" name="param_settings_group">
+     <property name="title">
+      <string>Parameter Settings</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="export_params">
+        <property name="text">
+         <string>Export</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="import_params">
+        <property name="text">
+         <string>Import</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="reset_params_to_defaults">
+        <property name="text">
+         <string>Reset to Defaults</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
-   <item row="15" column="0" colspan="3">
-    <layout class="QVBoxLayout" name="tree_view_layout"/>
+   <item row="1" column="0">
+    <widget class="QLabel" name="method_label">
+     <property name="text">
+      <string>WPPF Method:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="3">
+    <widget class="QGroupBox" name="amorphous_group">
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QLabel" name="degree_of_crystallinity_label">
+        <property name="text">
+         <string>Degree of Crystallinity: 1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="include_amorphous">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If the sample contains some amorphous (such as liquid or glass) phases, check this box to include amorphous parameters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Includes amorphous phases?</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="amorphous_options_layout">
+        <item>
+         <widget class="QLabel" name="amorphous_model_label">
+          <property name="text">
+           <string>Amorphous Model:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="amorphous_model"/>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="amorphous_experiment_file">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Experiment file to be used with the amorphous model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="amorphous_experiment_file_select">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Experiment file to be used with the amorphous model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Select File</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
@@ -343,6 +400,9 @@
   <tabstop>refinement_steps</tabstop>
   <tabstop>peak_shape</tabstop>
   <tabstop>background_method</tabstop>
+  <tabstop>amorphous_model</tabstop>
+  <tabstop>amorphous_experiment_file</tabstop>
+  <tabstop>amorphous_experiment_file_select</tabstop>
   <tabstop>pick_spline_points</tabstop>
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
@@ -359,6 +419,7 @@
   <tabstop>save_plot</tabstop>
   <tabstop>reset_object</tabstop>
   <tabstop>preview_spectrum</tabstop>
+  <tabstop>undo_last_run</tabstop>
   <tabstop>run_button</tabstop>
  </tabstops>
  <resources/>

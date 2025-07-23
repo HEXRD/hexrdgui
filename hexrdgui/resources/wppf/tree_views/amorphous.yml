@@ -1,0 +1,10 @@
+Scale: '{k}_amorphous_scale'
+Shift: '{k}_amorphous_shift'
+Center: '{k}_amorphous_center'
+FWHM:
+  Left: '{k}_amorphous_fwhm_l'
+  Right: '{k}_amorphous_fwhm_r'
+  Left (Gaussian): '{k}_amorphous_fwhm_g_l'
+  Right (Gaussian): '{k}_amorphous_fwhm_g_r'
+  Left (Lorentzian): '{k}_amorphous_fwhm_l_l'
+  Right (Lorentzian): '{k}_amorphous_fwhm_l_r'
