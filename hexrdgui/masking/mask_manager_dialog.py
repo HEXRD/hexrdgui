@@ -70,6 +70,7 @@ class MaskManagerDialog(QObject):
             self.change_presentation_for_selected)
         self.ui.export_selected.clicked.connect(self.export_selected)
         self.ui.remove_selected.clicked.connect(self.remove_selected_masks)
+        self.ui.finished.connect(self.ui.masks_tree.clearSelection)
 
     def create_mode_source_string(self, mode, source):
         if mode is None:
