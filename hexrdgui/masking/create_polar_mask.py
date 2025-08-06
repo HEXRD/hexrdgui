@@ -2,6 +2,7 @@ import numpy as np
 
 from hexrdgui.calibration.polarview import PolarView
 from hexrdgui.constants import ViewType
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.utils import add_sample_points
