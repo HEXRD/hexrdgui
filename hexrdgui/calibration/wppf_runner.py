@@ -61,7 +61,25 @@ class WppfRunner:
         self.update_param_values()
 
     def rerender_wppf(self):
-        HexrdConfig().wppf_data = list(self.wppf_object.spectrum_sim.data)
+        obj = self.wppf_object
+
+        HexrdConfig().wppf_data = list(obj.spectrum_sim.data)
+
+        background = []
+        if obj.background:
+            background = list(obj.background.data)
+
+        HexrdConfig().wppf_background_lineout = background
+
+        amorphous_lineout = []
+        if obj.amorphous_model is not None:
+            amorphous_lineout = [
+                obj.amorphous_model.tth_list,
+                obj.amorphous_model.amorphous_lineout,
+            ]
+
+        HexrdConfig().wppf_amorphous_lineout = amorphous_lineout
+
         HexrdConfig().rerender_wppf.emit()
 
         # Process events to make sure it visually updates.
