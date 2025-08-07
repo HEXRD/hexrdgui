@@ -69,6 +69,18 @@ DEFAULT_WPPF_PLOT_STYLE = {
     'edgecolors': '#ff0000',
 }
 
+DEFAULT_WPPF_BACKGROUND_STYLE = {
+    'c': '#ff0000',
+    'ls': 'dashed',
+    'lw': 1.0,
+}
+
+DEFAULT_WPPF_AMORPHOUS_STYLE = {
+    'c': '#ff0000',
+    'ls': 'solid',
+    'lw': 1.0,
+}
+
 HEXRD_DIRECTORY_SUFFIX = '.hexrd'
 
 BUFFER_KEY = 'buffer'

@@ -303,6 +303,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.backup_tth_maxes = {}
         self.overlays = []
         self.wppf_data = None
+        self.wppf_background_lineout = None
+        self.wppf_amorphous_lineout = None
         self._auto_picked_data = None
         self.last_unscaled_azimuthal_integral_data = None
         self._threshold_data = {}
@@ -2752,21 +2754,42 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.unaggregated_images = copy.copy(self.imageseries_dict)
 
     @property
+    def wppf_settings(self) -> dict:
+        return HexrdConfig().config['calibration'].setdefault('wppf', {})
+
+    @property
     def display_wppf_plot(self):
-        settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
-        return settings.setdefault('display_plot', True)
+        return self.wppf_settings.setdefault('display_plot', True)
 
     @display_wppf_plot.setter
     def display_wppf_plot(self, b):
         if self.display_wppf_plot != b:
-            settings = HexrdConfig().config['calibration']['wppf']
-            settings['display_plot'] = b
+            self.wppf_settings['display_plot'] = b
+            self.rerender_wppf.emit()
+
+    @property
+    def display_wppf_background(self):
+        return self.wppf_settings.setdefault('display_background', False)
+
+    @display_wppf_background.setter
+    def display_wppf_background(self, b):
+        if self.display_wppf_background != b:
+            self.wppf_settings['display_background'] = b
+            self.rerender_wppf.emit()
+
+    @property
+    def display_wppf_amorphous(self):
+        return self.wppf_settings.setdefault('display_amorphous', False)
+
+    @display_wppf_amorphous.setter
+    def display_wppf_amorphous(self, b):
+        if self.display_wppf_amorphous != b:
+            self.wppf_settings['display_amorphous'] = b
             self.rerender_wppf.emit()
 
     @property
     def wppf_plot_style(self):
-        settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
-        settings = settings.setdefault('plot_style', {})
+        settings = self.wppf_settings.setdefault('plot_style', {})
         if not settings:
             settings.update(copy.deepcopy(constants.DEFAULT_WPPF_PLOT_STYLE))
         return settings
@@ -2774,8 +2797,37 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @wppf_plot_style.setter
     def wppf_plot_style(self, s):
         if self.wppf_plot_style != s:
-            settings = HexrdConfig().config['calibration']['wppf']
-            settings['plot_style'] = s
+            self.wppf_settings['plot_style'] = s
+            self.rerender_wppf.emit()
+
+    @property
+    def wppf_background_style(self):
+        settings = self.wppf_settings.setdefault('background_style', {})
+        if not settings:
+            settings.update(
+                copy.deepcopy(constants.DEFAULT_WPPF_BACKGROUND_STYLE)
+            )
+        return settings
+
+    @wppf_background_style.setter
+    def wppf_background_style(self, s):
+        if self.wppf_background_style != s:
+            self.wppf_settings['background_style'] = s
+            self.rerender_wppf.emit()
+
+    @property
+    def wppf_amorphous_style(self):
+        settings = self.wppf_settings.setdefault('amorphous_style', {})
+        if not settings:
+            settings.update(
+                copy.deepcopy(constants.DEFAULT_WPPF_AMORPHOUS_STYLE)
+            )
+        return settings
+
+    @wppf_amorphous_style.setter
+    def wppf_amorphous_style(self, s):
+        if self.wppf_amorphous_style != s:
+            self.wppf_settings['amorphous_style'] = s
             self.rerender_wppf.emit()
 
     @property
