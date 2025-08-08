@@ -75,6 +75,8 @@ class CalibrationDialog(QObject):
         editor.update_gui_from_polar_distortion_object()
         self.ui.pinhole_distortion_layout.addWidget(editor.ui)
         editor.apply_panel_buffer_visible = False
+        editor.settings_modified.connect(
+            self.on_pinhole_correction_settings_modified)
         HexrdConfig().physics_package_modified.connect(
             self.on_pinhole_correction_settings_modified)
 
@@ -613,12 +615,17 @@ class CalibrationDialog(QObject):
         self.tree_view.reset_gui()
 
     def update_from_calibrator(self, calibrator):
+        is_structureless = not hasattr(calibrator, 'calibrators')
+
         self.relative_constraints = calibrator.relative_constraints_type
         self.tilt_center_of_rotation = (
             calibrator.relative_constraints.rotation_center
         )
         self.engineering_constraints = calibrator.engineering_constraints
-        self.tth_distortion = calibrator.tth_distortion
+
+        if is_structureless:
+            self.tth_distortion = calibrator.tth_distortion
+
         self.params_dict = calibrator.params
 
     def load_tree_view_mapping(self):
