@@ -72,6 +72,8 @@ class CalibrationDialogCallbacks(ABCQObject):
             self.on_tilt_center_of_rotation_changed)
         dialog.engineering_constraints_changed.connect(
             self.on_engineering_constraints_changed)
+        dialog.pinhole_correction_settings_modified.connect(
+            self.on_pinhole_correction_settings_modified)
         dialog.run.connect(self.on_run_clicked)
         dialog.undo_run.connect(self.on_undo_run_clicked)
         dialog.finished.connect(self.on_finished)
@@ -114,6 +116,12 @@ class CalibrationDialogCallbacks(ABCQObject):
     def set_picks(self, picks):
         pass
 
+    @property
+    def calibrator_is_structureless(self):
+        # The instrument calibrator will have a list of calibrators
+        # The structureless calibrator will not
+        return not hasattr(self.calibrator, 'calibrators')
+
     def set_focus_mode(self, b):
         # This will disable some widgets in the GUI during focus mode
         # Be very careful to make sure focus mode won't be set permanently
@@ -134,12 +142,16 @@ class CalibrationDialogCallbacks(ABCQObject):
         stack_item = {
             'relative_constraints': self.calibrator.relative_constraints,
             'engineering_constraints': self.calibrator.engineering_constraints,
-            'tth_distortion': self.calibrator.tth_distortion,
             'params': self.calibrator.params,
             # Create a custom instrument parameters list to use for undo
             'instr_params': _create_instr_params(self.instr),
             'advanced_options': self.dialog.advanced_options,
         }
+
+        if self.calibrator_is_structureless:
+            # Only save tth distortion for structureless calibration
+            stack_item['tth_distortion'] = self.calibrator.tth_distortion
+
         # Make deep copies to ensure originals will not be edited
         stack_item = {k: copy.deepcopy(v) for k, v in stack_item.items()}
 
@@ -164,6 +176,11 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         # Params should get set last
         for k in calibrator_items:
+            if k not in stack_item:
+                # This might happen for `tth_distortion` when we are not
+                # doing a structureless calibration.
+                continue
+
             v = stack_item[k]
             setattr(self.calibrator, k, v)
 
@@ -172,9 +189,7 @@ class CalibrationDialogCallbacks(ABCQObject):
             self.instr,
             stack_item['instr_params'],
         )
-        if hasattr(self.calibrator, 'calibrators'):
-            # The instrument calibrator will have a list of calibrators
-            # The structureless calibrator will not
+        if not self.calibrator_is_structureless:
             for calibrator in self.calibrator.calibrators:
                 calibrator.update_from_lmfit_params(stack_item['params'])
 
@@ -277,6 +292,15 @@ class CalibrationDialogCallbacks(ABCQObject):
     def has_tardis_constraints(self) -> bool:
         return self.calibrator.engineering_constraints == 'TARDIS'
 
+    def on_pinhole_correction_settings_modified(self):
+        self.update_tth_distortion_from_dialog()
+
+        if self.dialog.pinhole_correction_editor.apply_to_polar_view:
+            HexrdConfig().rerender_needed.emit()
+
+        if self.calibrator_is_structureless:
+            self.redraw_picks()
+
     def on_run_clicked(self):
         self.async_runner.progress_title = 'Running calibration...'
         self.async_runner.success_callback = self.on_calibration_finished
@@ -361,7 +385,9 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.redraw_picks()
 
     def update_tth_distortion_from_dialog(self):
-        self.calibrator.tth_distortion = self.dialog.tth_distortion
+        if self.calibrator_is_structureless:
+            # Only do this for structureless calibration
+            self.calibrator.tth_distortion = self.dialog.tth_distortion
 
     def round_param_numbers(self):
         params_dict = self.calibrator.params
