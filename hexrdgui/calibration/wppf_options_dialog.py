@@ -960,6 +960,7 @@ class WppfOptionsDialog(QObject):
 
         def recursively_format_site_id(mat, site_id, this_config,
                                        this_template):
+            sanitized_mat = mat.replace('-', '_')
             for k, v in this_template.items():
                 if isinstance(v, dict):
                     this_config.setdefault(k, {})
@@ -968,7 +969,7 @@ class WppfOptionsDialog(QObject):
                     # Should be a string. Replace {mat} and {site_id} if needed
                     kwargs = {}
                     if '{mat}' in v:
-                        kwargs['mat'] = mat
+                        kwargs['mat'] = sanitized_mat
 
                     if '{site_id}' in v:
                         kwargs['site_id'] = site_id
@@ -980,10 +981,11 @@ class WppfOptionsDialog(QObject):
                         this_config[k] = create_param_item(params_dict[v])
 
         def recursively_format_mat(mat, this_config, this_template):
+            sanitized_mat = mat.replace('-', '_')
             for k, v in this_template.items():
                 if k == 'Atomic Site: {site_id}':
                     # Identify all site IDs by regular expression
-                    expr = re.compile(f'^{mat}_(.*)_x$')
+                    expr = re.compile(f'^{sanitized_mat}_(.*)_x$')
                     site_ids = []
                     for name in params_dict:
                         m = expr.match(name)
@@ -1007,7 +1009,7 @@ class WppfOptionsDialog(QObject):
                 else:
                     # Should be a string. Replace {mat} if needed
                     if '{mat}' in v:
-                        v = v.format(mat=mat)
+                        v = v.format(mat=sanitized_mat)
 
                     if v in params_dict:
                         this_config[k] = create_param_item(params_dict[v])
@@ -1016,9 +1018,6 @@ class WppfOptionsDialog(QObject):
         for mat in self.selected_materials:
             this_config = mat_dict.setdefault(mat, {})
             this_template = copy.deepcopy(materials_template)
-
-            # For the parameters, we need to convert dashes to underscores
-            mat = mat.replace('-', '_')
             recursively_format_mat(mat, this_config, this_template)
 
         # Now all keys should have been used. Verify this is true.

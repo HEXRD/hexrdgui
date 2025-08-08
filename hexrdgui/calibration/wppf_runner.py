@@ -2,6 +2,7 @@ import copy
 
 from PySide6.QtCore import QCoreApplication
 
+from hexrd.material import Material
 from hexrd.wppf import Rietveld
 
 from hexrdgui.calibration.wppf_options_dialog import WppfOptionsDialog
@@ -71,7 +72,7 @@ class WppfRunner:
 
     def write_params_to_materials(self):
         for name, wppf_mat in self.wppf_object.phases.phase_dict.items():
-            mat = HexrdConfig().material(name)
+            mat = _material_for_name(name)
 
             # Work around differences in WPPF objects
             if isinstance(self.wppf_object, Rietveld):
@@ -100,7 +101,7 @@ class WppfRunner:
         # Save the previous material parameters
         mat_params = {}
         for name in self.wppf_object.phases.phase_dict:
-            mat = HexrdConfig().material(name)
+            mat = _material_for_name(name)
             mat_params[name] = {
                 'lparms': mat.lparms,
                 'atominfo': mat.atominfo,
@@ -114,7 +115,7 @@ class WppfRunner:
         entry = self.undo_stack.pop()
 
         for name, mat_params in entry.items():
-            mat = HexrdConfig().material(name)
+            mat = _material_for_name(name)
 
             mat.lparms = mat_params['lparms']
             mat.atominfo[:] = mat_params['atominfo']
@@ -141,3 +142,10 @@ class WppfRunner:
     def params(self):
         conf = HexrdConfig().config['calibration']
         return conf.setdefault('wppf', {}).setdefault('params_dict', {})
+
+
+def _material_for_name(name: str) -> Material | None:
+    # Find the matching name
+    for internal_name in HexrdConfig().materials:
+        if internal_name.replace('-', '_') == name:
+            return HexrdConfig().material(internal_name)
