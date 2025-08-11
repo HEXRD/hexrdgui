@@ -70,6 +70,8 @@ class ImageCanvas(FigureCanvas):
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.wppf_plot = None
+        self.wppf_background_plot = None
+        self.wppf_amorphous_plot = None
         self.auto_picked_data_artists = []
         self.beam_marker_artists = []
         self._transform = lambda x: x
@@ -209,6 +211,14 @@ class ImageCanvas(FigureCanvas):
         if self.wppf_plot:
             self.wppf_plot.remove()
             self.wppf_plot = None
+
+        if self.wppf_background_plot:
+            self.wppf_background_plot.remove()
+            self.wppf_background_plot = None
+
+        if self.wppf_amorphous_plot:
+            self.wppf_amorphous_plot.remove()
+            self.wppf_amorphous_plot = None
 
     def clear_auto_picked_data_artists(self):
         while self.auto_picked_data_artists:
@@ -1734,26 +1744,43 @@ class ImageCanvas(FigureCanvas):
     def update_wppf_plot(self):
         self.clear_wppf_plot()
 
-        if not HexrdConfig().display_wppf_plot:
-            return
-
-        wppf_data = HexrdConfig().wppf_data
         axis = self.azimuthal_integral_axis
         line = self.azimuthal_line_artist
-        if any(x is None for x in (wppf_data, axis, line)):
+        if any(x is None for x in (axis, line)):
             return
 
-        style = HexrdConfig().wppf_plot_style
+        if HexrdConfig().display_wppf_plot:
+            wppf_data = HexrdConfig().wppf_data
+            if not wppf_data:
+                return
 
-        if style.get('marker', 'o') not in Line2D.filled_markers:
-            # Marker is unfilled
-            if 'edgecolors' in style:
-                # Unfilled markers can't have edge colors.
-                # Remove this to avoid a matplotlib warning.
-                style = copy.deepcopy(style)
-                del style['edgecolors']
+            style = HexrdConfig().wppf_plot_style
 
-        self.wppf_plot = axis.scatter(*wppf_data, **style)
+            if style.get('marker', 'o') not in Line2D.filled_markers:
+                # Marker is unfilled
+                if 'edgecolors' in style:
+                    # Unfilled markers can't have edge colors.
+                    # Remove this to avoid a matplotlib warning.
+                    style = copy.deepcopy(style)
+                    del style['edgecolors']
+
+            self.wppf_plot = axis.scatter(*wppf_data, **style)
+
+        if HexrdConfig().display_wppf_background:
+            background = HexrdConfig().wppf_background_lineout
+            if not background:
+                return
+
+            style = HexrdConfig().wppf_background_style
+            self.wppf_background_plot, = axis.plot(*background, **style)
+
+        if HexrdConfig().display_wppf_amorphous:
+            amorphous = HexrdConfig().wppf_amorphous_lineout
+            if not amorphous:
+                return
+
+            style = HexrdConfig().wppf_amorphous_style
+            self.wppf_amorphous_plot, = axis.plot(*amorphous, **style)
 
         # Rescale.
         # This actually ignores the scatter plot data when rescaling,

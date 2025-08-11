@@ -101,6 +101,8 @@ class WppfOptionsDialog(QObject):
             self.select_experiment_file)
         self.ui.display_wppf_plot.toggled.connect(
             self.display_wppf_plot_toggled)
+        self.ui.plot_background.toggled.connect(self.plot_background_toggled)
+        self.ui.plot_amorphous.toggled.connect(self.plot_amorphous_toggled)
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
         self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
 
@@ -618,6 +620,22 @@ class WppfOptionsDialog(QObject):
         self.ui.display_wppf_plot.setChecked(v)
 
     @property
+    def plot_background(self) -> bool:
+        return self.ui.plot_background.isChecked()
+
+    @plot_background.setter
+    def plot_background(self, b: bool):
+        self.ui.plot_background.setChecked(b)
+
+    @property
+    def plot_amorphous(self) -> bool:
+        return self.ui.plot_amorphous.isChecked()
+
+    @plot_amorphous.setter
+    def plot_amorphous(self, b: bool):
+        self.ui.plot_amorphous.setChecked(b)
+
+    @property
     def params_dict(self):
         ret = {}
         for key, param in self.params.param_dict.items():
@@ -678,6 +696,8 @@ class WppfOptionsDialog(QObject):
             'use_experiment_file',
             'experiment_file',
             'display_wppf_plot',
+            'plot_background',
+            'plot_amorphous',
             'params_dict',
             'limit_tth',
             'min_tth',
@@ -699,13 +719,30 @@ class WppfOptionsDialog(QObject):
     def display_wppf_plot_toggled(self):
         HexrdConfig().display_wppf_plot = self.display_wppf_plot
 
+    def plot_background_toggled(self):
+        HexrdConfig().display_wppf_background = self.plot_background
+
+    def plot_amorphous_toggled(self):
+        HexrdConfig().display_wppf_amorphous = self.plot_amorphous
+
     def edit_plot_style(self):
-        dialog = WppfStylePicker(self.ui)
-        dialog.ui.exec()
+        dialog = WppfStylePicker(
+            amorphous_visible=self.include_amorphous,
+            parent=self.ui,
+        )
+        dialog.exec()
 
     def update_gui(self):
-        with block_signals(self.ui.display_wppf_plot):
+        to_block = [
+            self.ui.display_wppf_plot,
+            self.ui.plot_background,
+            self.ui.plot_amorphous,
+        ]
+        with block_signals(*to_block):
             self.display_wppf_plot = HexrdConfig().display_wppf_plot
+            self.plot_background = HexrdConfig().display_wppf_background
+            self.plot_amorphous = HexrdConfig().display_wppf_amorphous
+
             self.update_background_parameters()
             self.update_tree_view()
 
@@ -768,6 +805,8 @@ class WppfOptionsDialog(QObject):
             w = layout.itemAt(i).widget()
             if w is not None:
                 w.setVisible(b)
+
+        self.ui.plot_amorphous.setEnabled(b)
 
         self.on_amorphous_model_changed()
 
@@ -1111,6 +1150,8 @@ class WppfOptionsDialog(QObject):
             'background_method',
             'experiment_file',
             'display_wppf_plot',
+            'plot_background',
+            'plot_amorphous',
         ]
         return [getattr(self.ui, x) for x in names]
 
