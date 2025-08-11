@@ -354,17 +354,17 @@
       <string/>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="include_amorphous">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If the sample contains some amorphous (such as liquid or glass) phases, check this box to include amorphous parameters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
+      <item row="1" column="3">
+       <widget class="QLabel" name="degree_of_crystallinity_label">
         <property name="text">
-         <string>Includes amorphous phases?</string>
+         <string>Degree of Crystallinity: 1</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="3">
+      <item row="2" column="0" colspan="4">
        <layout class="QHBoxLayout" name="amorphous_options_layout">
         <item>
          <widget class="QLabel" name="amorphous_model_label">
@@ -377,28 +377,41 @@
          <widget class="QComboBox" name="amorphous_model"/>
         </item>
         <item>
-         <widget class="QLineEdit" name="amorphous_experiment_file">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Experiment file to be used with the amorphous model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <widget class="QLabel" name="num_amorphous_phases_label">
+          <property name="text">
+           <string>Number of amorphous phases:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="amorphous_experiment_file_select">
+         <widget class="QSpinBox" name="num_amorphous_phases">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>100000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="amorphous_select_experiment_files">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Experiment file to be used with the amorphous model.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Select File</string>
+           <string>Select Experiment Files</string>
           </property>
          </widget>
         </item>
        </layout>
       </item>
-      <item row="0" column="1" colspan="2">
-       <widget class="QLabel" name="degree_of_crystallinity_label">
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="include_amorphous">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If the sample contains some amorphous (such as liquid or glass) phases, check this box to include amorphous parameters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
-         <string>Degree of Crystallinity: 1</string>
+         <string>Includes amorphous phases?</string>
         </property>
        </widget>
       </item>
@@ -423,8 +436,8 @@
   <tabstop>pick_spline_points</tabstop>
   <tabstop>include_amorphous</tabstop>
   <tabstop>amorphous_model</tabstop>
-  <tabstop>amorphous_experiment_file</tabstop>
-  <tabstop>amorphous_experiment_file_select</tabstop>
+  <tabstop>num_amorphous_phases</tabstop>
+  <tabstop>amorphous_select_experiment_files</tabstop>
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
   <tabstop>select_experiment_file_button</tabstop>
