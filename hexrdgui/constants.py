@@ -63,9 +63,9 @@ DEFAULT_EULER_ANGLE_CONVENTION = {
 }
 
 DEFAULT_WPPF_PLOT_STYLE = {
-    'marker': 'o',
+    'marker': 'x',
     's': 30,
-    'facecolors': '#ffffff',
+    'facecolors': '#0000ff',
     'edgecolors': '#ff0000',
 }
 
