@@ -377,14 +377,14 @@
          <widget class="QComboBox" name="amorphous_model"/>
         </item>
         <item>
-         <widget class="QLabel" name="num_amorphous_phases_label">
+         <widget class="QLabel" name="num_amorphous_peaks_label">
           <property name="text">
-           <string>Number of amorphous phases:</string>
+           <string>Number of amorphous peaks:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="num_amorphous_phases">
+         <widget class="QSpinBox" name="num_amorphous_peaks">
           <property name="minimum">
            <number>1</number>
           </property>
@@ -436,7 +436,7 @@
   <tabstop>pick_spline_points</tabstop>
   <tabstop>include_amorphous</tabstop>
   <tabstop>amorphous_model</tabstop>
-  <tabstop>num_amorphous_phases</tabstop>
+  <tabstop>num_amorphous_peaks</tabstop>
   <tabstop>amorphous_select_experiment_files</tabstop>
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
