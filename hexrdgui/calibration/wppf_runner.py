@@ -19,6 +19,15 @@ class WppfRunner:
         self.wppf_options_dialog = None
         self.undo_stack.clear()
 
+        self.clear_wppf_plots()
+
+    def clear_wppf_plots(self):
+        HexrdConfig().wppf_data = None
+        HexrdConfig().wppf_background_lineout = None
+        HexrdConfig().wppf_amorphous_lineout = None
+
+        HexrdConfig().rerender_wppf.emit()
+
     def run(self):
         self.validate()
 
@@ -39,6 +48,7 @@ class WppfRunner:
         dialog = WppfOptionsDialog(self.parent)
         dialog.run.connect(self.run_wppf)
         dialog.undo_clicked.connect(self.pop_undo_stack)
+        dialog.object_reset.connect(self.on_object_reset)
         dialog.finished.connect(self.clear)
         dialog.show()
         self.wppf_options_dialog = dialog
@@ -143,6 +153,10 @@ class WppfRunner:
             HexrdConfig().material_modified.emit(name)
 
         HexrdConfig().overlay_config_changed.emit()
+
+    def on_object_reset(self):
+        # Clear the WPPF plots
+        self.clear_wppf_plots()
 
     def update_param_values(self):
         # Update the param values with their new values from the wppf_object

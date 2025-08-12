@@ -49,6 +49,7 @@ class WppfOptionsDialog(QObject):
 
     run = Signal()
     undo_clicked = Signal()
+    object_reset = Signal()
     finished = Signal()
 
     def __init__(self, parent=None):
@@ -244,6 +245,7 @@ class WppfOptionsDialog(QObject):
         self._wppf_object = None
         self.update_enable_states()
         self.update_degree_of_crystallinity()
+        self.object_reset.emit()
 
     def preview_spectrum(self):
         had_object = self._wppf_object is not None
