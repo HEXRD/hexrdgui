@@ -69,6 +69,8 @@ class WppfOptionsDialog(QObject):
         self._prev_background_method = None
         self._undo_stack = []
 
+        self.amorphous_experiment_files = []
+
         self.params = self.generate_params()
         self.initialize_tree_view()
 
@@ -93,8 +95,10 @@ class WppfOptionsDialog(QObject):
             self.on_include_amorphous_toggled)
         self.ui.amorphous_model.currentIndexChanged.connect(
             self.on_amorphous_model_changed)
-        self.ui.amorphous_experiment_file_select.clicked.connect(
-            self.on_amorphous_experiment_file_select_clicked)
+        self.ui.num_amorphous_peaks.valueChanged.connect(
+            self.on_num_amorphous_peaks_value_changed)
+        self.ui.amorphous_select_experiment_files.clicked.connect(
+            self.select_amorphous_experiment_files)
         self.ui.delta_boundaries.toggled.connect(
             self.on_delta_boundaries_toggled)
         self.ui.select_experiment_file_button.pressed.connect(
@@ -142,8 +146,9 @@ class WppfOptionsDialog(QObject):
             'include_amorphous',
             'amorphous_model',
             'amorphous_model_label',
-            'amorphous_experiment_file',
-            'amorphous_experiment_file_select',
+            'num_amorphous_peaks',
+            'num_amorphous_peaks_label',
+            'amorphous_select_experiment_files',
         ]
 
         for name in requires_object:
@@ -273,6 +278,15 @@ class WppfOptionsDialog(QObject):
                 # Force points to be chosen now
                 self.pick_spline_points()
 
+        # Pick experiment files for amorphous if needed
+        if self.include_amorphous and self.amorphous_model_is_experimental:
+            files = self.amorphous_experiment_files
+            if (
+                len(files) < self.num_amorphous_peaks or
+                any(not x for x in files)
+            ):
+                self.select_amorphous_experiment_files()
+
         try:
             self.validate()
         except Exception as e:
@@ -307,11 +321,21 @@ class WppfOptionsDialog(QObject):
                 raise Exception('Points must be chosen to use "spline" method')
 
         if self.include_amorphous and self.amorphous_model_is_experimental:
-            try:
-                np.loadtxt(self.amorphous_experiment_file)
-            except Exception as e:
-                msg = f'Failed to load amorphous experiment file: {e}'
+            num_amorphous = self.num_amorphous_peaks
+            if len(self.amorphous_experiment_files) < num_amorphous:
+                msg = (
+                    'Experiment files must be selected to use the '
+                    'amorphous model: "Experimental"'
+                )
                 raise Exception(msg)
+
+            for i in range(num_amorphous):
+                path = self.amorphous_experiment_files[i]
+                try:
+                    np.loadtxt(path)
+                except Exception as e:
+                    msg = f'Failed to load amorphous experiment file: {e}'
+                    raise Exception(msg)
 
     def generate_params(self):
         kwargs = {
@@ -509,6 +533,14 @@ class WppfOptionsDialog(QObject):
         self.ui.include_amorphous.setChecked(b)
 
     @property
+    def num_amorphous_peaks(self) -> int:
+        return self.ui.num_amorphous_peaks.value()
+
+    @num_amorphous_peaks.setter
+    def num_amorphous_peaks(self, v: int):
+        self.ui.num_amorphous_peaks.setValue(v)
+
+    @property
     def amorphous_model(self) -> str:
         return self.ui.amorphous_model.currentText()
 
@@ -521,25 +553,46 @@ class WppfOptionsDialog(QObject):
         return self.amorphous_model == 'Experimental'
 
     @property
-    def amorphous_experiment_file(self) -> str:
-        return self.ui.amorphous_experiment_file.text()
-
-    @amorphous_experiment_file.setter
-    def amorphous_experiment_file(self, v: str):
-        self.ui.amorphous_experiment_file.setText(v)
+    def amorphous_peak_names(self) -> list[str]:
+        return [f'peak_{i + 1}' for i in range(self.num_amorphous_peaks)]
 
     @property
     def amorphous_kwargs(self) -> dict | None:
         if not self.include_amorphous:
             return None
 
+        # Each amorphous phase will contain these defaults
+        key_names = self.amorphous_peak_names
+        defaults = {
+            'scale': 1.,
+            'shift': 0.,
+            'center': 30.,
+        }
+
+        model_type = AMORPHOUS_MODEL_TYPES[self.amorphous_model]
+        if model_type == 'split_pv':
+            defaults['fwhm'] = np.array([5, 5, 5, 5])
+        else:
+            defaults['fwhm'] = np.array([5, 5])
+
+        # Set the amorphous model type to return.
         kwargs = {
             'model_type': AMORPHOUS_MODEL_TYPES[self.amorphous_model],
         }
+
+        # Set the defaults for every amorphous phase.
+        for name, default_value in defaults.items():
+            # Make a deep copy of the defaults.
+            kwargs[name] = {k: copy.deepcopy(default_value) for k in key_names}
+
+        # Space out the default centers to be 25 between them
+        for i, k in enumerate(key_names):
+            kwargs['center'][k] += (i * 25)
+
         if self.amorphous_model_is_experimental:
             kwargs['model_data'] = {
-                # Currently only support one model
-                'c1': np.loadtxt(self.amorphous_experiment_file),
+                key: np.loadtxt(path) for key, path in
+                zip(key_names, self.amorphous_experiment_files)
             }
 
         return kwargs
@@ -746,6 +799,8 @@ class WppfOptionsDialog(QObject):
             self.update_background_parameters()
             self.update_tree_view()
 
+        self.update_enable_states()
+
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
             # The method did not change. Just return.
@@ -789,13 +844,6 @@ class WppfOptionsDialog(QObject):
         # methods have parameters.
         self.update_params()
 
-    @property
-    def amorphous_experiment_widgets(self) -> list[QWidget]:
-        return [getattr(self.ui, name) for name in (
-            'amorphous_experiment_file',
-            'amorphous_experiment_file_select',
-        )]
-
     def on_include_amorphous_toggled(self):
         b = self.include_amorphous
 
@@ -806,7 +854,20 @@ class WppfOptionsDialog(QObject):
             if w is not None:
                 w.setVisible(b)
 
+        self.ui.degree_of_crystallinity_label.setVisible(b)
+
         self.ui.plot_amorphous.setEnabled(b)
+        self.on_amorphous_model_changed()
+
+    def on_num_amorphous_peaks_value_changed(self):
+        is_experiment = (
+            self.include_amorphous and self.amorphous_model_is_experimental
+        )
+        files = self.amorphous_experiment_files
+        if is_experiment:
+            # Trim off extra experiment files
+            while len(files) > self.num_amorphous_peaks:
+                files.pop()
 
         self.on_amorphous_model_changed()
 
@@ -814,25 +875,37 @@ class WppfOptionsDialog(QObject):
         is_experiment = (
             self.include_amorphous and self.amorphous_model_is_experimental
         )
-        for w in self.amorphous_experiment_widgets:
-            w.setVisible(is_experiment)
+        self.ui.amorphous_select_experiment_files.setVisible(is_experiment)
 
-        if is_experiment and not self.amorphous_experiment_file:
-            # Trigger selection of experiment file
-            self.on_amorphous_experiment_file_select_clicked()
+        if not is_experiment:
+            self.amorphous_experiment_files.clear()
 
         self.update_degree_of_crystallinity()
         self.update_params()
 
-    def on_amorphous_experiment_file_select_clicked(self):
-        selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select Amorphous Experiment File',
-            HexrdConfig().working_dir,
-            'XY files (*.xy)',
-        )
+    def select_amorphous_experiment_files(self):
+        files = self.amorphous_experiment_files
+        for i in range(self.num_amorphous_peaks):
+            if i < len(files) and files[i]:
+                path = files[i]
+            else:
+                path = HexrdConfig().working_dir
 
-        if selected_file:
-            self.amorphous_experiment_file = selected_file
+            selected_file, selected_filter = QFileDialog.getOpenFileName(
+                self.ui,
+                f'Select Amorphous Experiment File (Phase {i + 1})',
+                path,
+                'XY files (*.xy)',
+            )
+
+            if not selected_file:
+                # Just abort the whole thing.
+                break
+
+            if i < len(files):
+                files[i] = selected_file
+            else:
+                files.append(selected_file)
 
     def update_degree_of_crystallinity(self):
         w = self.ui.degree_of_crystallinity_label
@@ -969,20 +1042,20 @@ class WppfOptionsDialog(QObject):
 
         if self.include_amorphous:
             # Add in amorphous parameters
-            # Identify the keys
-            ending = '_amorphous_scale'
-            keys = [
-                name.removesuffix(ending)
-                for name in params_dict if name.endswith(ending)
-            ]
-
             # Put the amorphous section first
             tree_dict = {'Amorphous': {}, **tree_dict}
             amorphous = tree_dict['Amorphous']
             template = template_dict['Amorphous']
 
-            for k in keys:
-                recursively_format_amorphous(k, amorphous, template)
+            names = self.amorphous_peak_names
+            if len(names) == 1:
+                recursively_format_amorphous(names[0], amorphous, template)
+            else:
+                for name in names:
+                    # Reformat the name to make it look nice in the tree view
+                    formatted_name = name.replace('_', ' ').capitalize()
+                    this_config = amorphous.setdefault(formatted_name, {})
+                    recursively_format_amorphous(name, this_config, template)
 
         # If the background method is chebyshev, fill those in
         if self.background_method == 'chebyshev':
@@ -1364,6 +1437,7 @@ class WppfOptionsDialog(QObject):
             'refinement_steps': self.refinement_steps,
             'peak_shape': self.peak_shape,
             'background_method': self.background_method,
+            'amorphous_experiment_files': self.amorphous_experiment_files,
             'selected_materials': self.selected_materials,
             '_wppf_object': self._wppf_object,
             'params': self.params,

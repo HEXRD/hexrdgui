@@ -153,7 +153,6 @@ class WppfRunner:
             v['value'] = new_params[k].value
 
         dialog = self.wppf_options_dialog
-        dialog.load_settings()
         dialog.update_gui()
 
     @property
