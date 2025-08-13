@@ -20,6 +20,7 @@ class WppfRunner:
         self.undo_stack.clear()
 
         self.clear_wppf_plots()
+        HexrdConfig().show_wppf_difference_axis = False
 
     def clear_wppf_plots(self):
         HexrdConfig().wppf_data = None
@@ -72,7 +73,10 @@ class WppfRunner:
         self.update_param_values()
 
     def rerender_wppf(self):
+        self.clear_wppf_plots()
         obj = self.wppf_object
+        if obj is None:
+            return
 
         HexrdConfig().wppf_data = list(obj.spectrum_sim.data)
 
@@ -153,6 +157,12 @@ class WppfRunner:
             HexrdConfig().material_modified.emit(name)
 
         HexrdConfig().overlay_config_changed.emit()
+
+        dialog = self.wppf_options_dialog
+        # Use underscore method so we don't accidentally auto-create one
+        self.wppf_object = dialog._wppf_object
+
+        self.rerender_wppf()
 
     def on_object_reset(self):
         # Clear the WPPF plots

@@ -127,6 +127,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     """
     deep_rerender_needed = Signal()
 
+    """Rerenders entire polar canvas, without re-generating polar data
+
+    This is needed if you are changing the grid of displayed axes, such as
+    showing/hiding the WPPF difference curve.
+    """
+    force_rerender_polar = Signal()
+
     """Emitted when detectors have been added or removed"""
     detectors_changed = Signal()
 
@@ -2785,6 +2792,31 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def display_wppf_amorphous(self, b):
         if self.display_wppf_amorphous != b:
             self.wppf_settings['display_amorphous'] = b
+            self.rerender_wppf.emit()
+
+    @property
+    def show_wppf_difference_axis(self) -> bool:
+        return self.wppf_settings.setdefault('show_difference_axis', False)
+
+    @show_wppf_difference_axis.setter
+    def show_wppf_difference_axis(self, b: bool):
+        if self.show_wppf_difference_axis != b:
+            self.wppf_settings['show_difference_axis'] = b
+            # Do a force rerender of the polar view since we change the
+            # number of axes displayed.
+            self.force_rerender_polar.emit()
+
+    @property
+    def show_wppf_difference_as_percent(self) -> bool:
+        return self.wppf_settings.setdefault(
+            'show_difference_as_percent',
+            False,
+        )
+
+    @show_wppf_difference_as_percent.setter
+    def show_wppf_difference_as_percent(self, b: bool):
+        if self.show_wppf_difference_as_percent != b:
+            self.wppf_settings['show_difference_as_percent'] = b
             self.rerender_wppf.emit()
 
     @property

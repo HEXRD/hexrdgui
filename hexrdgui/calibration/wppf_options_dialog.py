@@ -100,6 +100,10 @@ class WppfOptionsDialog(QObject):
             self.on_num_amorphous_peaks_value_changed)
         self.ui.amorphous_select_experiment_files.clicked.connect(
             self.select_amorphous_experiment_files)
+        self.ui.show_difference_curve.toggled.connect(
+            self.on_show_difference_curve_toggled)
+        self.ui.show_difference_as_percent.toggled.connect(
+            self.on_show_difference_as_percent_toggled)
         self.ui.delta_boundaries.toggled.connect(
             self.on_delta_boundaries_toggled)
         self.ui.select_experiment_file_button.pressed.connect(
@@ -173,6 +177,9 @@ class WppfOptionsDialog(QObject):
             # Also set the value to 1
             self.ui.refinement_steps.setValue(1)
 
+        self.ui.show_difference_as_percent.setVisible(
+            self.show_difference_curve)
+
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
 
@@ -217,11 +224,16 @@ class WppfOptionsDialog(QObject):
         if obj is None:
             raise Exception('No WPPF object!')
 
+        last_lineout = HexrdConfig().last_unscaled_azimuthal_integral_data
+        lineout_intensity = last_lineout[1].filled(np.nan)
+
         # Prepare the data to write out
         two_theta, intensity = obj.spectrum_sim.x, obj.spectrum_sim.y
         data = {
             'two_theta': two_theta,
             'intensity': intensity,
+            'lineout_intensity': lineout_intensity,
+            'difference_curve': intensity - lineout_intensity,
         }
 
         # Delete the file if it already exists
@@ -792,11 +804,20 @@ class WppfOptionsDialog(QObject):
             self.ui.display_wppf_plot,
             self.ui.plot_background,
             self.ui.plot_amorphous,
+            self.ui.show_difference_curve,
+            self.ui.show_difference_as_percent,
         ]
         with block_signals(*to_block):
             self.display_wppf_plot = HexrdConfig().display_wppf_plot
             self.plot_background = HexrdConfig().display_wppf_background
             self.plot_amorphous = HexrdConfig().display_wppf_amorphous
+
+            self.show_difference_curve = (
+                HexrdConfig().show_wppf_difference_axis
+            )
+            self.show_difference_as_percent = (
+                HexrdConfig().show_wppf_difference_as_percent
+            )
 
             self.update_background_parameters()
             self.update_tree_view()
@@ -1172,6 +1193,22 @@ class WppfOptionsDialog(QObject):
             return DefaultWPPFTreeItemModel
 
     @property
+    def show_difference_curve(self) -> bool:
+        return self.ui.show_difference_curve.isChecked()
+
+    @show_difference_curve.setter
+    def show_difference_curve(self, b: bool):
+        return self.ui.show_difference_curve.setChecked(b)
+
+    @property
+    def show_difference_as_percent(self) -> bool:
+        return self.ui.show_difference_as_percent.isChecked()
+
+    @show_difference_as_percent.setter
+    def show_difference_as_percent(self, b: bool):
+        return self.ui.show_difference_as_percent.setChecked(b)
+
+    @property
     def delta_boundaries(self):
         return self.ui.delta_boundaries.isChecked()
 
@@ -1216,6 +1253,17 @@ class WppfOptionsDialog(QObject):
 
         return {k: v.stderr for k, v in res.params.items()}
 
+    def on_show_difference_curve_toggled(self):
+        HexrdConfig().show_wppf_difference_axis = (
+            self.show_difference_curve
+        )
+        self.update_enable_states()
+
+    def on_show_difference_as_percent_toggled(self):
+        HexrdConfig().show_wppf_difference_as_percent = (
+            self.show_difference_as_percent
+        )
+
     @property
     def all_widgets(self):
         names = [
@@ -1225,6 +1273,8 @@ class WppfOptionsDialog(QObject):
             'background_method',
             'experiment_file',
             'display_wppf_plot',
+            'show_difference_curve',
+            'show_difference_as_percent',
             'plot_background',
             'plot_amorphous',
         ]
