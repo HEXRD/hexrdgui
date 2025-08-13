@@ -197,17 +197,7 @@
    </item>
    <item row="15" column="0" colspan="3">
     <layout class="QGridLayout" name="gridLayout_3">
-     <item row="1" column="2">
-      <widget class="QCheckBox" name="plot_amorphous">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of amorphous model (default: red line) in the lineout.&lt;/p&gt;&lt;p&gt;The style of the amorphous model plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string>Plot amorphous model?</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
+     <item row="2" column="1">
       <widget class="QCheckBox" name="plot_background">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of the background (default: red dashed line) in the lineout.&lt;/p&gt;&lt;p&gt;The style of the background plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -217,10 +207,13 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QCheckBox" name="delta_boundaries">
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="plot_amorphous">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of amorphous model (default: red line) in the lineout.&lt;/p&gt;&lt;p&gt;The style of the amorphous model plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
-        <string>Use delta boundaries</string>
+        <string>Plot amorphous model?</string>
        </property>
       </widget>
      </item>
@@ -235,6 +228,27 @@
       <widget class="QPushButton" name="edit_plot_style">
        <property name="text">
         <string>Edit Plot Style</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="delta_boundaries">
+       <property name="text">
+        <string>Use delta boundaries</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QCheckBox" name="show_difference_curve">
+       <property name="text">
+        <string>Show difference curve?</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QCheckBox" name="show_difference_as_percent">
+       <property name="text">
+        <string>Show difference as percent?</string>
        </property>
       </widget>
      </item>
@@ -446,6 +460,8 @@
   <tabstop>max_tth</tabstop>
   <tabstop>display_wppf_plot</tabstop>
   <tabstop>edit_plot_style</tabstop>
+  <tabstop>show_difference_curve</tabstop>
+  <tabstop>show_difference_as_percent</tabstop>
   <tabstop>delta_boundaries</tabstop>
   <tabstop>plot_background</tabstop>
   <tabstop>plot_amorphous</tabstop>

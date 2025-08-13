@@ -72,6 +72,7 @@ class ImageCanvas(FigureCanvas):
         self.wppf_plot = None
         self.wppf_background_plot = None
         self.wppf_amorphous_plot = None
+        self.wppf_difference_plot = None
         self.auto_picked_data_artists = []
         self.beam_marker_artists = []
         self._transform = lambda x: x
@@ -111,6 +112,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().rerender_detector_borders.connect(
             self.draw_detector_borders)
         HexrdConfig().rerender_wppf.connect(self.draw_wppf)
+        HexrdConfig().force_rerender_polar.connect(self.force_rerender_polar)
         HexrdConfig().rerender_auto_picked_data.connect(
             self.draw_auto_picked_data)
         HexrdConfig().beam_vector_changed.connect(self.beam_vector_changed)
@@ -151,6 +153,16 @@ class ImageCanvas(FigureCanvas):
         return HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE
 
     @property
+    def fontsize_label_polar_y(self):
+        # Reduce label fontsize by 2 if we are in polar and have
+        # at least 5 gridspec rows.
+        addend = 0
+        if self.mode == ViewType.polar and self.num_polar_gridpsec_rows > 4:
+            addend = -2
+
+        return HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE + addend
+
+    @property
     def fontsize_ticks(self):
         return HexrdConfig().font_size + FONTSIZE_TICKS_INCREASE
 
@@ -158,6 +170,13 @@ class ImageCanvas(FigureCanvas):
     def label_kwargs(self):
         return {
             'fontsize': self.fontsize_label,
+            'family': 'serif',
+        }
+
+    @property
+    def label_kwargs_polar_y(self):
+        return {
+            'fontsize': self.fontsize_label_polar_y,
             'family': 'serif',
         }
 
@@ -219,6 +238,10 @@ class ImageCanvas(FigureCanvas):
         if self.wppf_amorphous_plot:
             self.wppf_amorphous_plot.remove()
             self.wppf_amorphous_plot = None
+
+        if self.wppf_difference_plot:
+            self.wppf_difference_plot.remove()
+            self.wppf_difference_plot = None
 
     def clear_auto_picked_data_artists(self):
         while self.auto_picked_data_artists:
@@ -1039,7 +1062,7 @@ class ImageCanvas(FigureCanvas):
 
     def on_azimuthal_lineout_detectors_modified(self):
         self.update_azimuthal_integral_plot()
-        self.update_azimuthal_axis_xlabel()
+        self.update_polar_axis_xlabel()
 
     @property
     def azimuthal_lineout_detectors(self) -> list[str]:
@@ -1162,93 +1185,99 @@ class ImageCanvas(FigureCanvas):
             return
 
         self.iviewer = iviewer
+        self.render_polar()
+
+    def render_polar(self):
+        if self.iviewer is None or self.mode != ViewType.polar:
+            # Can't do anything
+            return
+
         img, = self.scaled_display_images
         extent = self.iviewer._extent
 
         rescale_image = True
-        # TODO: maybe make this an option in the UI? Perhaps a checkbox
-        # in the "View" menu?
-        # if HexrdConfig().polar_show_azimuthal_integral
-        if True:
-            # The top image will have 2x the height of the bottom image
-            grid = plt.GridSpec(4, 1)
 
-            # It is important to persist the plot so that we don't reset the
-            # scale.
-            if len(self.axes_images) == 0:
-                self.axis = self.figure.add_subplot(grid[:3, 0])
-                kwargs = {
-                    'X': img,
-                    'extent': extent,
-                    'cmap': self.cmap,
-                    'norm': self.norm,
-                    'picker': True,
-                    'interpolation': 'none',
-                }
-                self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.axis('auto')
+        # The polar image itself will take up 3 rows.
+        # The azimuthal lineout will take up 1 row.
+        # There are other optional plots as well, such as WPPF difference
+        # plot, that may take up more rows after that.
+        grid = plt.GridSpec(self.num_polar_gridpsec_rows, 1)
 
-                self.axis.yaxis.set_major_locator(AutoLocator())
-                self.axis.yaxis.set_minor_locator(AutoMinorLocator())
+        # It is important to persist the plot so that we don't reset the
+        # scale.
+        if len(self.axes_images) == 0:
+            self.axis = self.figure.add_subplot(grid[:3, 0])
+            kwargs = {
+                'X': img,
+                'extent': extent,
+                'cmap': self.cmap,
+                'norm': self.norm,
+                'picker': True,
+                'interpolation': 'none',
+            }
+            self.axes_images.append(self.axis.imshow(**kwargs))
+            self.axis.axis('auto')
 
-                self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
-                self.axis.xaxis.set_minor_locator(
-                    PolarXAxisMinorTickLocator(self)
-                )
-                self.axis.tick_params(**self.major_tick_kwargs)
-                self.axis.tick_params(**self.minor_tick_kwargs)
+            self.axis.yaxis.set_major_locator(AutoLocator())
+            self.axis.yaxis.set_minor_locator(AutoMinorLocator())
 
-                # Do not allow the axis to autoscale, which could happen if
-                # overlays are drawn out-of-bounds
-                self.axis.autoscale(False)
-                self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs)
-                self.axis.label_outer()
-            else:
-                rescale_image = False
-                self.axes_images[0].set_data(img)
+            self.axis.xaxis.set_major_locator(PolarXAxisTickLocator(self))
+            self.axis.xaxis.set_minor_locator(
+                PolarXAxisMinorTickLocator(self)
+            )
+            self.axis.tick_params(**self.major_tick_kwargs)
+            self.axis.tick_params(**self.minor_tick_kwargs)
 
-            self.update_mask_boundaries(self.axis)
-
-            # Get the "tth" vector
-            angular_grid = self.iviewer.angular_grid
-            tth = np.degrees(angular_grid[1][0])
-
-            if self.azimuthal_integral_axis is None:
-                axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
-                data = (tth, self.compute_azimuthal_integral_sum())
-                unscaled = (tth, self.compute_azimuthal_integral_sum(False))
-                self.azimuthal_line_artist, = axis.plot(*data, '-k', lw=2.5)
-                HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
-
-                self.azimuthal_integral_axis = axis
-                self.update_azimuthal_plot_overlays()
-                self.update_wppf_plot()
-
-                self._setup_azimuthal_axis(axis)
-            else:
-                self.update_azimuthal_integral_plot()
-                axis = self.azimuthal_integral_axis
-
-            # Update the xlabel in case it was modified (via tth distortion)
-            self.update_azimuthal_axis_xlabel()
+            # Do not allow the axis to autoscale, which could happen if
+            # overlays are drawn out-of-bounds
+            self.axis.autoscale(False)
+            self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs_polar_y)
+            self.axis.label_outer()
         else:
-            if len(self.axes_images) == 0:
-                self.axis = self.figure.add_subplot(111)
-                kwargs = {
-                    'X': img,
-                    'cmap': self.cmap,
-                    'norm': self.norm,
-                    'picker': True,
-                    'interpolation': 'none',
-                }
-                self.axes_images.append(self.axis.imshow(**kwargs))
-                self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs)
-            else:
-                rescale_image = False
-                self.axes_images[0].set_data(img)
+            rescale_image = False
+            self.axes_images[0].set_data(img)
 
+        self.update_mask_boundaries(self.axis)
+
+        # Get the "tth" vector
+        angular_grid = self.iviewer.angular_grid
+        tth = np.degrees(angular_grid[1][0])
+
+        if self.azimuthal_integral_axis is None:
+            axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
+            data = (tth, self.compute_azimuthal_integral_sum())
+            unscaled = (tth, self.compute_azimuthal_integral_sum(False))
+            self.azimuthal_line_artist, = axis.plot(*data, '-k', lw=2.5)
+            HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
+
+            self.azimuthal_integral_axis = axis
+            self.update_azimuthal_plot_overlays()
+
+            # WPPF difference axis
+            diff_axis = None
+            if HexrdConfig().show_wppf_difference_axis:
+                diff_axis = self.figure.add_subplot(
+                    grid[4, 0],
+                    sharex=self.axis,
+                )
+                self._setup_polar_axis(diff_axis)
+                self.wppf_difference_axis = diff_axis
+                self.update_wppf_difference_labels()
+                # Remove tick values from lineout axis
+                axis.label_outer()
+
+            self.wppf_difference_axis = diff_axis
+
+            self.update_wppf_plot()
+
+            self.update_polar_axis_xlabel()
+            axis.set_ylabel(r'Azimuthal Average', **self.label_kwargs_polar_y)
+            is_bottom = diff_axis is None
+            self._setup_polar_axis(axis, is_bottom=is_bottom)
+        else:
+            self.update_azimuthal_integral_plot()
             # Update the xlabel in case it was modified (via tth distortion)
-            self.axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
+            self.update_polar_axis_xlabel()
 
         if rescale_image:
             self.axis.relim()
@@ -1264,6 +1293,13 @@ class ImageCanvas(FigureCanvas):
 
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
+
+    def force_rerender_polar(self):
+        self.figure.clf()
+        self.azimuthal_integral_axis = None
+        # Clear the axes images so we force re-create the polar figure
+        self.axes_images.clear()
+        self.render_polar()
 
     def show_stereo(self):
         HexrdConfig().emit_update_status_bar('Loading stereo view...')
@@ -1350,18 +1386,15 @@ class ImageCanvas(FigureCanvas):
         # Update the beam energy on the instrument
         self.iviewer.instr.beam_energy = HexrdConfig().beam_energy
 
-    def _setup_azimuthal_axis(self, axis: Axes):
-        # Set the labels
-        axis.set_xlabel(self.polar_xlabel, **self.label_kwargs)
-        axis.set_ylabel(r'Azimuthal Average', **self.label_kwargs)
-
+    def _setup_polar_axis(self, axis: Axes, is_bottom=True):
         # Set up formatting for the x-axis
         # This is important in case "Q" is on the x axis instead
         # of two theta.
-        default_formatter = axis.xaxis.get_major_formatter()
-        f = self.format_polar_x_major_ticks
-        formatter = PolarXAxisFormatter(default_formatter, f)
-        axis.xaxis.set_major_formatter(formatter)
+        if is_bottom:
+            default_formatter = axis.xaxis.get_major_formatter()
+            f = self.format_polar_x_major_ticks
+            formatter = PolarXAxisFormatter(default_formatter, f)
+            axis.xaxis.set_major_formatter(formatter)
 
         axis.yaxis.set_major_locator(AutoLocator())
         axis.yaxis.set_minor_locator(AutoMinorLocator())
@@ -1415,7 +1448,7 @@ class ImageCanvas(FigureCanvas):
 
     def on_polar_x_axis_type_changed(self):
         # Update the x-label
-        self.update_azimuthal_axis_xlabel()
+        self.update_polar_axis_xlabel()
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
@@ -1425,10 +1458,10 @@ class ImageCanvas(FigureCanvas):
             # No need to do anything
             return ''
 
-        xaxis = self.azimuthal_integral_axis.xaxis
         x_axis_type = self.polar_x_axis_type
         if x_axis_type == PolarXAxisType.tth:
             # Use the default formatter.
+            xaxis = self.azimuthal_integral_axis.xaxis
             formatter = xaxis.get_major_formatter()
             return formatter.default_formatter(x, pos)
         elif x_axis_type == PolarXAxisType.q:
@@ -1504,11 +1537,26 @@ class ImageCanvas(FigureCanvas):
 
         raise NotImplementedError(x_axis_type)
 
-    def update_azimuthal_axis_xlabel(self):
-        self.azimuthal_integral_axis.set_xlabel(
+    def update_polar_axis_xlabel(self):
+        self.bottom_polar_axis.set_xlabel(
             self.polar_xlabel,
             **self.label_kwargs,
         )
+
+    @property
+    def bottom_polar_axis(self):
+        if self.wppf_difference_axis:
+            return self.wppf_difference_axis
+
+        return self.azimuthal_integral_axis
+
+    @property
+    def num_polar_gridpsec_rows(self) -> int:
+        # Return 4 by default but 5 if WPPF difference plot is enabled.
+        if HexrdConfig().show_wppf_difference_axis:
+            return 5
+
+        return 4
 
     @property
     def is_stereo_from_polar(self):
@@ -1749,11 +1797,8 @@ class ImageCanvas(FigureCanvas):
         if any(x is None for x in (axis, line)):
             return
 
-        if HexrdConfig().display_wppf_plot:
-            wppf_data = HexrdConfig().wppf_data
-            if not wppf_data:
-                return
-
+        wppf_data = HexrdConfig().wppf_data
+        if HexrdConfig().display_wppf_plot and wppf_data:
             style = HexrdConfig().wppf_plot_style
 
             if style.get('marker', 'o') not in Line2D.filled_markers:
@@ -1766,27 +1811,56 @@ class ImageCanvas(FigureCanvas):
 
             self.wppf_plot = axis.scatter(*wppf_data, **style)
 
-        if HexrdConfig().display_wppf_background:
-            background = HexrdConfig().wppf_background_lineout
-            if not background:
-                return
-
+        background = HexrdConfig().wppf_background_lineout
+        if HexrdConfig().display_wppf_background and background:
             style = HexrdConfig().wppf_background_style
             self.wppf_background_plot, = axis.plot(*background, **style)
 
-        if HexrdConfig().display_wppf_amorphous:
-            amorphous = HexrdConfig().wppf_amorphous_lineout
-            if not amorphous:
-                return
-
+        amorphous = HexrdConfig().wppf_amorphous_lineout
+        if HexrdConfig().display_wppf_amorphous and amorphous:
             style = HexrdConfig().wppf_amorphous_style
             self.wppf_amorphous_plot, = axis.plot(*amorphous, **style)
+
+        last_lineout = HexrdConfig().last_unscaled_azimuthal_integral_data
+        diff_axis = self.wppf_difference_axis
+        if diff_axis and wppf_data and last_lineout:
+            style = {
+                'c': '#000000',
+                'ls': 'solid',
+                'lw': 1.0,
+            }
+            x = wppf_data[0]
+            y = wppf_data[1] - last_lineout[1].filled(np.nan)
+            if HexrdConfig().show_wppf_difference_as_percent:
+                # Express `y` as a percentage instead
+                y *= (100 / last_lineout[1].filled(np.nan))
+
+            self.wppf_difference_plot, = diff_axis.plot(x, y, **style)
+
+            # Rescale
+            diff_axis.relim()
+            diff_axis.autoscale_view(scalex=False)
+
+        # Update the difference label even if there's no data
+        self.update_wppf_difference_labels()
 
         # Rescale.
         # This actually ignores the scatter plot data when rescaling,
         # which is fine. We will stay zoomed in on the line.
         axis.relim()
         axis.autoscale_view(scalex=False)
+
+    def update_wppf_difference_labels(self):
+        axis = self.wppf_difference_axis
+        if not axis:
+            return
+
+        if HexrdConfig().show_wppf_difference_as_percent:
+            label = r'WPPF Diff (%)'
+        else:
+            label = r'WPPF Diff'
+
+        axis.set_ylabel(label, **self.label_kwargs_polar_y)
 
     def detector_axis(self, detector_name):
         if self.mode == ViewType.raw:
@@ -2025,8 +2099,12 @@ class ImageCanvas(FigureCanvas):
         tth = np.degrees(angular_grid[1][0])
         line_data = [(tth, lineout.filled(np.nan)) for lineout in lineouts]
 
+        # Set the labels
+        ax.set_xlabel(self.polar_xlabel, **self.label_kwargs)
+        ax.set_ylabel(r'Azimuthal Average', **self.label_kwargs_polar_y)
+
         # Set up the same azimuthal axes parameters as the polar view
-        self._setup_azimuthal_axis(ax)
+        self._setup_polar_axis(ax)
 
         # Disable the tick labels
         ax.set_yticklabels([])
