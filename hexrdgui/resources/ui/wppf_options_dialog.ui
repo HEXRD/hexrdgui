@@ -447,6 +447,19 @@
             <string/>
            </property>
            <layout class="QGridLayout" name="gridLayout">
+            <item row="4" column="0" colspan="4">
+             <spacer name="verticalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item row="1" column="0">
              <widget class="QCheckBox" name="include_amorphous">
               <property name="toolTip">
@@ -454,6 +467,16 @@
               </property>
               <property name="text">
                <string>Includes amorphous phases?</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="QLabel" name="degree_of_crystallinity_label">
+              <property name="text">
+               <string>Degree of Crystallinity: 1</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
@@ -498,28 +521,25 @@
               </item>
              </layout>
             </item>
-            <item row="1" column="3">
-             <widget class="QLabel" name="degree_of_crystallinity_label">
-              <property name="text">
-               <string>Degree of Crystallinity: 1</string>
+            <item row="3" column="0">
+             <widget class="QLabel" name="amorphous_expt_smoothing_label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For an experimental amorphous model, this is the width of the gaussian kernel smoothing function.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              <property name="text">
+               <string>Experimental Pattern Smoothing:</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="0" colspan="4">
-             <spacer name="verticalSpacer_4">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
+            <item row="3" column="1">
+             <widget class="QSpinBox" name="amorphous_expt_smoothing">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For an experimental amorphous model, this is the width of the gaussian kernel smoothing function.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
+              <property name="maximum">
+               <number>1000000</number>
               </property>
-             </spacer>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -564,6 +584,7 @@
   <tabstop>amorphous_model</tabstop>
   <tabstop>num_amorphous_peaks</tabstop>
   <tabstop>amorphous_select_experiment_files</tabstop>
+  <tabstop>amorphous_expt_smoothing</tabstop>
   <tabstop>export_params</tabstop>
   <tabstop>import_params</tabstop>
   <tabstop>reset_params_to_defaults</tabstop>

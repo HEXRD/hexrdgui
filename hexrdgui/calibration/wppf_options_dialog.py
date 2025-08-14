@@ -90,8 +90,25 @@ class WppfOptionsDialog(QObject):
         self.ui.method.currentIndexChanged.connect(self.on_method_changed)
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
+        self.ui.delta_boundaries.toggled.connect(
+            self.on_delta_boundaries_toggled)
+        self.ui.select_experiment_file_button.pressed.connect(
+            self.select_experiment_file)
+
         self.ui.background_method.currentIndexChanged.connect(
             self.update_background_parameters)
+
+        self.ui.display_wppf_plot.toggled.connect(
+            self.display_wppf_plot_toggled)
+        self.ui.plot_background.toggled.connect(self.plot_background_toggled)
+        self.ui.plot_amorphous.toggled.connect(self.plot_amorphous_toggled)
+        self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
+        self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
+        self.ui.show_difference_curve.toggled.connect(
+            self.on_show_difference_curve_toggled)
+        self.ui.show_difference_as_percent.toggled.connect(
+            self.on_show_difference_as_percent_toggled)
+
         self.ui.include_amorphous.toggled.connect(
             self.on_include_amorphous_toggled)
         self.ui.amorphous_model.currentIndexChanged.connect(
@@ -100,20 +117,6 @@ class WppfOptionsDialog(QObject):
             self.on_num_amorphous_peaks_value_changed)
         self.ui.amorphous_select_experiment_files.clicked.connect(
             self.select_amorphous_experiment_files)
-        self.ui.show_difference_curve.toggled.connect(
-            self.on_show_difference_curve_toggled)
-        self.ui.show_difference_as_percent.toggled.connect(
-            self.on_show_difference_as_percent_toggled)
-        self.ui.delta_boundaries.toggled.connect(
-            self.on_delta_boundaries_toggled)
-        self.ui.select_experiment_file_button.pressed.connect(
-            self.select_experiment_file)
-        self.ui.display_wppf_plot.toggled.connect(
-            self.display_wppf_plot_toggled)
-        self.ui.plot_background.toggled.connect(self.plot_background_toggled)
-        self.ui.plot_amorphous.toggled.connect(self.plot_amorphous_toggled)
-        self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
-        self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
 
         self.ui.export_params.clicked.connect(self.export_params)
         self.ui.import_params.clicked.connect(self.import_params)
@@ -154,6 +157,8 @@ class WppfOptionsDialog(QObject):
             'num_amorphous_peaks',
             'num_amorphous_peaks_label',
             'amorphous_select_experiment_files',
+            'amorphous_expt_smoothing',
+            'amorphous_expt_smoothing_label',
         ]
 
         for name in requires_object:
@@ -547,14 +552,6 @@ class WppfOptionsDialog(QObject):
         self.ui.include_amorphous.setChecked(b)
 
     @property
-    def num_amorphous_peaks(self) -> int:
-        return self.ui.num_amorphous_peaks.value()
-
-    @num_amorphous_peaks.setter
-    def num_amorphous_peaks(self, v: int):
-        self.ui.num_amorphous_peaks.setValue(v)
-
-    @property
     def amorphous_model(self) -> str:
         return self.ui.amorphous_model.currentText()
 
@@ -567,8 +564,24 @@ class WppfOptionsDialog(QObject):
         return self.amorphous_model == 'Experimental'
 
     @property
+    def num_amorphous_peaks(self) -> int:
+        return self.ui.num_amorphous_peaks.value()
+
+    @num_amorphous_peaks.setter
+    def num_amorphous_peaks(self, v: int):
+        self.ui.num_amorphous_peaks.setValue(v)
+
+    @property
     def amorphous_peak_names(self) -> list[str]:
         return [f'peak_{i + 1}' for i in range(self.num_amorphous_peaks)]
+
+    @property
+    def amorphous_expt_smoothing(self) -> int:
+        return self.ui.amorphous_expt_smoothing.value()
+
+    @amorphous_expt_smoothing.setter
+    def amorphous_expt_smoothing(self, v: int):
+        self.ui.amorphous_expt_smoothing.setValue(v)
 
     @property
     def amorphous_kwargs(self) -> dict | None:
@@ -608,6 +621,7 @@ class WppfOptionsDialog(QObject):
                 key: np.loadtxt(path) for key, path in
                 zip(key_names, self.amorphous_experiment_files)
             }
+            kwargs['smoothing'] = self.amorphous_expt_smoothing
 
         return kwargs
 
@@ -898,7 +912,13 @@ class WppfOptionsDialog(QObject):
         is_experiment = (
             self.include_amorphous and self.amorphous_model_is_experimental
         )
-        self.ui.amorphous_select_experiment_files.setVisible(is_experiment)
+        require_expt = [
+            self.ui.amorphous_select_experiment_files,
+            self.ui.amorphous_expt_smoothing,
+            self.ui.amorphous_expt_smoothing_label,
+        ]
+        for w in require_expt:
+            w.setVisible(is_experiment)
 
         if not is_experiment:
             self.amorphous_experiment_files.clear()
