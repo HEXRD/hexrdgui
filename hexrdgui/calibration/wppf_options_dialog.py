@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 
 import h5py
+import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
 import re
@@ -15,7 +16,6 @@ from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
-from hexrd.wppf.parameters import Parameter
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
     background_methods, _generate_default_parameters_LeBail,
@@ -253,7 +253,7 @@ class WppfOptionsDialog(QObject):
             # Save parameters as well
             to_save = ('value',)
             params_group = f.create_group('params')
-            for name, param in self.params.param_dict.items():
+            for name, param in self.params.items():
                 group = params_group.create_group(name)
                 for item in to_save:
                     group.create_dataset(item, data=getattr(param, item))
@@ -330,7 +330,7 @@ class WppfOptionsDialog(QObject):
             raise Exception(f'Experiment file, {self.experiment_file}, '
                             'does not exist')
 
-        if not any(x.vary for x in self.params.param_dict.values()):
+        if not any(x.vary for x in self.params.values()):
             msg = 'All parameters are fixed. Need to vary at least one'
             raise Exception(msg)
 
@@ -373,7 +373,7 @@ class WppfOptionsDialog(QObject):
         return generate_params(**kwargs)
 
     def reset_params(self):
-        self.params.param_dict = self.generate_params().param_dict
+        self.params = self.generate_params()
         self.update_tree_view()
 
     def update_params(self):
@@ -384,14 +384,13 @@ class WppfOptionsDialog(QObject):
         params = self.generate_params()
 
         # Remake the dict to use the ordering of `params`
-        param_dict = {}
-        for key, param in params.param_dict.items():
+        for key, param in params.items():
             if key in self.params:
                 # Preserve previous settings
                 param = self.params[key]
-            param_dict[key] = param
+            params[key] = param
 
-        self.params.param_dict = param_dict
+        self.params = params
         self.update_tree_view()
 
     def show(self):
@@ -719,7 +718,7 @@ class WppfOptionsDialog(QObject):
     @property
     def params_dict(self):
         ret = {}
-        for key, param in self.params.param_dict.items():
+        for key, param in self.params.items():
             ret[key] = param_to_dict(param)
 
         return ret
@@ -756,6 +755,15 @@ class WppfOptionsDialog(QObject):
                     # The older WPPF dialog used a dict. Skip this
                     # as it is no longer compatible.
                     continue
+
+                if k == 'params_dict':
+                    # For backward-compatibility
+                    for d in v.values():
+                        if 'lb' in d:
+                            d['min'] = d.pop('lb')
+
+                        if 'ub' in d:
+                            d['max'] = d.pop('ub')
 
                 if not hasattr(self, k) or k in apply_first_keys:
                     # Skip it...
@@ -996,7 +1004,7 @@ class WppfOptionsDialog(QObject):
 
     @property
     def tree_view_dict_of_params(self):
-        params_dict = self.params.param_dict
+        params = self.params
 
         # Store stderr values so we can use them later
         stderr_values = self._get_stderr_values()
@@ -1054,9 +1062,9 @@ class WppfOptionsDialog(QObject):
                         # Pop this key if no param was set
                         this_config.pop(k)
                 else:
-                    # Assume it is a string. Grab it if in the params dict.
-                    if v in params_dict:
-                        this_config[k] = create_param_item(params_dict[v])
+                    # Assume it is a string. Grab it if in the params.
+                    if v in params:
+                        this_config[k] = create_param_item(params[v])
                         param_set = True
 
             return param_set
@@ -1077,8 +1085,8 @@ class WppfOptionsDialog(QObject):
                     # Should be a string. Replace {k} with the key
                     v = v.format(k=key)
 
-                    if v in params_dict:
-                        this_config[k] = create_param_item(params_dict[v])
+                    if v in params:
+                        this_config[k] = create_param_item(params[v])
                         any_set = True
 
             return any_set
@@ -1106,8 +1114,8 @@ class WppfOptionsDialog(QObject):
             tree_dict = {'Background': {}, **tree_dict}
             background = tree_dict['Background']
             i = 0
-            while f'bkg_{i}' in params_dict:
-                background[i] = create_param_item(params_dict[f'bkg_{i}'])
+            while f'bkg_{i}' in params:
+                background[i] = create_param_item(params[f'bkg_{i}'])
                 i += 1
 
         # Now generate the materials
@@ -1132,8 +1140,8 @@ class WppfOptionsDialog(QObject):
                     if kwargs:
                         v = v.format(**kwargs)
 
-                    if v in params_dict:
-                        this_config[k] = create_param_item(params_dict[v])
+                    if v in params:
+                        this_config[k] = create_param_item(params[v])
 
         def recursively_format_mat(mat, this_config, this_template):
             sanitized_mat = mat.replace('-', '_')
@@ -1142,7 +1150,7 @@ class WppfOptionsDialog(QObject):
                     # Identify all site IDs by regular expression
                     expr = re.compile(f'^{sanitized_mat}_(.*)_x$')
                     site_ids = []
-                    for name in params_dict:
+                    for name in params:
                         m = expr.match(name)
                         if m:
                             site_id = m.group(1)
@@ -1166,8 +1174,8 @@ class WppfOptionsDialog(QObject):
                     if '{mat}' in v:
                         v = v.format(mat=sanitized_mat)
 
-                    if v in params_dict:
-                        this_config[k] = create_param_item(params_dict[v])
+                    if v in params:
+                        this_config[k] = create_param_item(params[v])
 
         mat_dict = tree_dict.setdefault('Materials', {})
         for mat in self.selected_materials:
@@ -1176,12 +1184,12 @@ class WppfOptionsDialog(QObject):
             recursively_format_mat(mat, this_config, this_template)
 
         # Now all keys should have been used. Verify this is true.
-        if sorted(used_params) != sorted(list(params_dict)):
+        if sorted(used_params) != sorted(list(params.keys())):
             used = ', '.join(sorted(used_params))
-            params = ', '.join(sorted(params_dict))
+            params = ', '.join(sorted(params.keys()))
             msg = (
                 f'Internal error: used_params ({used})\n\ndid not match '
-                f'params_dict! ({params})'
+                f'params! ({params})'
             )
             raise Exception(msg)
 
@@ -1412,8 +1420,7 @@ class WppfOptionsDialog(QObject):
         if filename.exists():
             filename.unlink()
 
-        param_dict = self.params.param_dict
-        export_data = {k: param_to_dict(v) for k, v in param_dict.items()}
+        export_data = {k: param_to_dict(v) for k, v in self.params.items()}
 
         # Also add in any stderr if it exists
         stderr_values = self._get_stderr_values()
@@ -1445,29 +1452,26 @@ class WppfOptionsDialog(QObject):
         # No exception means we are valid
         self.validate_import_params(import_params, filename)
 
-        # Unfortunately, hexrd.wppf.parameters.Parameter will not accept
-        # np.bool_ types for Parameter.vary, only native booleans. Let's
-        # do this conversion.
-        def to_native_bools(d):
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    to_native_bools(v)
-                elif isinstance(v, np.bool_):
-                    d[k] = v.item()
-
-        to_native_bools(import_params)
-
         # Keep the ordering the same as the GUI currently has
-        for key in self.params.param_dict.keys():
+        for key in self.params.keys():
             self.params[key] = dict_to_param(import_params[key])
 
         self.update_tree_view()
 
     def validate_import_params(self, import_params, filename):
-        here = self.params.param_dict.keys()
+        here = self.params.keys()
         there = import_params.keys()
         extra = list(set(there) - set(here))
         missing = list(set(here) - set(there))
+
+        # Do a backwards-compatibility conversion
+        for key, entry in import_params.items():
+            if 'lb' in entry:
+                # This is the old format. Convert it to the lmfit one.
+                entry['min'] = entry.pop('lb')
+            if 'ub' in entry:
+                # This is the old format. Convert it to the lmfit one.
+                entry['max'] = entry.pop('ub')
 
         if extra or missing:
             msg = (f'Parameters in {filename} do not match current WPPF '
@@ -1485,7 +1489,7 @@ class WppfOptionsDialog(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             raise Exception(msg)
 
-        req_keys = ['name', 'value', 'lb', 'ub', 'vary']
+        req_keys = ['name', 'value', 'min', 'max', 'vary']
         missing_reqs = []
         for key, entry in import_params.items():
             if any(x not in entry for x in req_keys):
@@ -1557,8 +1561,8 @@ def param_to_dict(param):
     return {
         'name': param.name,
         'value': param.value,
-        'lb': param.lb,
-        'ub': param.ub,
+        'min': param.min,
+        'max': param.max,
         'vary': param.vary,
     }
 
@@ -1569,7 +1573,7 @@ def dict_to_param(d):
         d = d.copy()
         del d['stderr']
 
-    return Parameter(**d)
+    return lmfit.Parameter(**d)
 
 
 LOADED_YAML_DICTS = {}
