@@ -1239,37 +1239,12 @@ class ImageCanvas(FigureCanvas):
             self.axis.autoscale(False)
             self.axis.set_ylabel(r'$\eta$ [deg]', **self.label_kwargs_polar_y)
             self.axis.label_outer()
-
-            self.update_mask_boundaries(self.axis)
-            self.update_mask_highlights(self.axis)
-
-            # Get the "tth" vector
-            angular_grid = self.iviewer.angular_grid
-            tth = np.degrees(angular_grid[1][0])
-
-            if self.azimuthal_integral_axis is None:
-                axis = self.figure.add_subplot(grid[3, 0], sharex=self.axis)
-                data = (tth, self.compute_azimuthal_integral_sum())
-                unscaled = (tth, self.compute_azimuthal_integral_sum(False))
-                self.azimuthal_line_artist, = axis.plot(*data, '-k', lw=2.5)
-                HexrdConfig().last_unscaled_azimuthal_integral_data = unscaled
-
-                self.azimuthal_integral_axis = axis
-                self.update_azimuthal_plot_overlays()
-                self.update_wppf_plot()
-
-                self._setup_azimuthal_axis(axis)
-            else:
-                self.update_azimuthal_integral_plot()
-                axis = self.azimuthal_integral_axis
-
-            # Update the xlabel in case it was modified (via tth distortion)
-            self.update_azimuthal_axis_xlabel()
         else:
             rescale_image = False
             self.axes_images[0].set_data(img)
 
         self.update_mask_boundaries(self.axis)
+        self.update_mask_highlights(self.axis)
 
         # Get the "tth" vector
         angular_grid = self.iviewer.angular_grid
