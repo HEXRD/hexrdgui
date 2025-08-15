@@ -1079,7 +1079,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     # Only apply visible masks for display
                     continue
 
-                if not mask.visible and not mask.show_border:
+                if not mask.visible and not mask.show_border and not mask.highlight:
                     # This mask should not be applied at all.
                     continue
 
