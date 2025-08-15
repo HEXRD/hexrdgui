@@ -881,13 +881,46 @@ class WppfOptionsDialog(QObject):
             if self.background_method == 'chebyshev':
                 # We need to update parameters when the chebyshev options
                 # are modified.
-                w.value_changed.connect(self.update_params)
+                w.value_changed.connect(self.on_chebyshev_num_params_changed)
 
             self.dynamic_background_widgets.append(w)
 
         # We may need to update the parameters as well, since some background
         # methods have parameters.
         self.update_params()
+        self.reset_background_param_values()
+
+    def clear_background_stderr(self):
+        obj = getattr(self, '_wppf_object', None)
+        if obj is None:
+            return
+
+        res = getattr(obj, 'res', None)
+        if res is None:
+            return
+
+        i = 0
+        name = f'bkg_{i}'
+        while name in res.params:
+            res.params[name].stderr = None
+            i += 1
+            name = f'bkg_{i}'
+
+    def reset_background_param_values(self):
+        # The WPPF object will calculate and set new background parameters
+        # during initialization.
+        self.create_wppf_object(reset_background_params=True)
+
+        # Get rid of stderr values for background params
+        self.clear_background_stderr()
+
+        self.update_tree_view()
+
+    def on_chebyshev_num_params_changed(self):
+        # Reset the background parameters
+        self.update_params()
+        self.reset_background_param_values()
+        self.update_tree_view()
 
     def on_include_amorphous_toggled(self):
         b = self.include_amorphous
@@ -1000,6 +1033,7 @@ class WppfOptionsDialog(QObject):
     def update_tree_view(self):
         tree_dict = self.tree_view_dict_of_params
         self.tree_view.model().config = tree_dict
+        self.update_disabled_paths()
         self.tree_view.reset_gui()
 
     @property
@@ -1236,6 +1270,50 @@ class WppfOptionsDialog(QObject):
     def show_difference_as_percent(self, b: bool):
         return self.ui.show_difference_as_percent.setChecked(b)
 
+    def update_disabled_paths(self):
+        uneditable_paths = self.tree_view.model().uneditable_paths
+        disabled_paths = self.tree_view.disabled_editor_paths
+
+        uneditable_paths.clear()
+        disabled_paths.clear()
+
+        # Recurse through all params and find any that have an expression
+        # Those will be disabled.
+        results = []
+        cur_path = []
+        def recurse(d):
+            if isinstance(d, list):
+                for i, v in enumerate(d):
+                    cur_path.append(i)
+                    recurse(v)
+                    cur_path.pop(-1)
+                return
+
+            # Should be a dict
+            if '_param' in d:
+                param = d['_param']
+                if param.expr is not None:
+                    results.append(cur_path.copy())
+                return
+
+            for k, v in d.items():
+                cur_path.append(k)
+                recurse(v)
+                cur_path.pop(-1)
+
+        config = self.tree_view.model().config
+        recurse(config)
+
+        for path in results:
+            value_idx = self.tree_view_model_class.VALUE_IDX
+            vary_idx = self.tree_view_model_class.VARY_IDX
+
+            # The checkbox is disabled
+            disabled_paths.append(tuple(path) + (vary_idx,))
+
+            # The value is uneditable
+            uneditable_paths.append(tuple(path) + (value_idx,))
+
     @property
     def delta_boundaries(self):
         return self.ui.delta_boundaries.isChecked()
@@ -1279,7 +1357,10 @@ class WppfOptionsDialog(QObject):
         if res is None:
             return {}
 
-        return {k: v.stderr for k, v in res.params.items()}
+        return {
+            k: v.stderr for k, v in res.params.items()
+            if v.vary and v.stderr
+        }
 
     def on_show_difference_curve_toggled(self):
         HexrdConfig().show_wppf_difference_axis = (
@@ -1319,7 +1400,7 @@ class WppfOptionsDialog(QObject):
 
         return self._wppf_object
 
-    def create_wppf_object(self):
+    def create_wppf_object(self, reset_background_params=False):
         class_types = {
             'LeBail': LeBail,
             'Rietveld': Rietveld,
@@ -1329,7 +1410,10 @@ class WppfOptionsDialog(QObject):
             raise Exception(f'Unknown method: {self.method}')
 
         class_type = class_types[self.method]
-        return class_type(**self.wppf_object_kwargs)
+        return class_type(
+            **self.wppf_object_kwargs,
+            reset_background_params=reset_background_params,
+        )
 
     @property
     def wppf_object_kwargs(self):
