@@ -115,6 +115,11 @@ class FitGrainsResultsDialog(QObject):
         self.update_ranges_gui()
         self.update_enable_states()
 
+        # FIXME: the stress conversion is not right. Hide the
+        # conversion options until we fix it.
+        self.ui.convert_strain_to_stress.setVisible(False)
+        self.ui.export_stresses.setVisible(False)
+
     @property
     def num_grains(self):
         return self.data.shape[0]
@@ -134,6 +139,9 @@ class FitGrainsResultsDialog(QObject):
                 grain[COORDS_SLICE] = (rho, phi, y)
 
         if tensor_type == 'stress':
+            # FIXME: the below code just isn't right. Raise a
+            # NotImplementedError until we fix it.
+            raise NotImplementedError
             for grain in data:
                 # Convert strain to stress
                 # Multiply last three numbers by factor of 2
