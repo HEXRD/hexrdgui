@@ -31,7 +31,7 @@ class Mask(ABC):
         show_border=False,
         mode=None,
         xray_source=None,
-        highlight=False
+        highlight=False,
     ):
         self.type = mtype
         self.visible = visible
@@ -232,6 +232,11 @@ class ThresholdMask(Mask):
     def highlight(self):
         return False
 
+    @highlight.setter
+    def highlight(self, value):
+        # Threshold masks do not support highlight; ignore assignments
+        pass
+
     def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays = recompute_raw_threshold_mask()
 
@@ -283,6 +288,9 @@ class MaskManager(QObject, metaclass=QSingleton):
     The argument is the dict of data to export to hdf5
     """
     export_masks_to_file = Signal(dict)
+
+    """Emitted when mask highlight states change"""
+    mask_highlights_changed = Signal()
 
     def __init__(self):
         super().__init__(None)
@@ -360,6 +368,9 @@ class MaskManager(QObject, metaclass=QSingleton):
     def view_mode_changed(self, mode):
         self.view_mode = mode
         self.update_masks_for_active_beam()
+
+    def highlights_changed(self):
+        self.mask_highlights_changed.emit()
 
     def masks_changed(self):
         if self.view_mode in (ViewType.polar, ViewType.stereo):

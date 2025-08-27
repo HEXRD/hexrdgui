@@ -430,12 +430,7 @@ class MaskManagerDialog(QObject):
                 # Only update the mask highlights if the selected masks have changed
                 # Debounce the update to avoid re-drawing too often
                 self.selected_masks = masks_from_names
-                if not hasattr(self, '_mask_highlight_update_timer'):
-                    timer = QTimer()
-                    timer.setSingleShot(True)
-                    timer.timeout.connect(MaskManager().masks_changed)
-                    self._mask_highlight_update_timer = timer
-                self._mask_highlight_update_timer.start(100)
+                MaskManager().highlights_changed()
 
             if len(selected) == 0:
                 return

@@ -122,6 +122,10 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().oscillation_stage_changed.connect(
             self.oscillation_stage_changed)
         MaskManager().polar_masks_changed.connect(self.polar_masks_changed)
+        # Update mask highlights without re-running expensive mask logic
+        MaskManager().mask_highlights_changed.connect(
+            self.mask_highlights_changed
+        )
         HexrdConfig().overlay_renamed.connect(self.overlay_renamed)
         HexrdConfig().azimuthal_options_modified.connect(
             self.update_azimuthal_integral_plot)
@@ -1573,6 +1577,19 @@ class ImageCanvas(FigureCanvas):
             self.iviewer and
             self.iviewer.project_from_polar
         )
+
+    def mask_highlights_changed(self):
+        if not self.iviewer:
+            return
+
+        if self.mode == ViewType.raw:
+            self.clear_mask_highlights()
+            for det_name, ax in self.raw_axes.items():
+                self.highlight_masks(ax, det_name)
+            return
+
+        if self.mode in (ViewType.polar, ViewType.stereo):
+            self.update_mask_highlights(self.axis)
 
     def polar_masks_changed(self):
         skip = (
