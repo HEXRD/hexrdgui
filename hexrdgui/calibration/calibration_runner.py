@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import copy
 from functools import partial
 import itertools
@@ -519,9 +520,14 @@ class CalibrationRunner(QObject):
         HexrdConfig().overlay_config_changed.emit()
 
     def set_highlighting(self, highlighting):
-        self.active_overlay.highlights = highlighting
-        HexrdConfig().flag_overlay_updates_for_all_materials()
-        HexrdConfig().overlay_config_changed.emit()
+        # Disable the zoom canvas to prevent the highlight from
+        # strangely switching back and forth (which is just caused
+        # by the fact that we did not re-use the canvas's blit manager
+        # for the zoom box blitting - we probably should).
+        with zoom_canvas_disabled(self.line_picker):
+            self.active_overlay.highlights = highlighting
+            HexrdConfig().flag_overlay_updates_for_all_materials()
+            HexrdConfig().overlay_config_changed.emit()
 
     def remove_all_highlighting(self):
         for overlay in self.overlays:
@@ -1046,3 +1052,16 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         dialog = self.edit_picks_dialog
         dialog.import_picks(selected_file)
         return dialog.dictionary
+
+
+@contextmanager
+def zoom_canvas_disabled(line_picker):
+    if line_picker:
+        prev = line_picker.zoom_canvas.disabled
+        line_picker.zoom_canvas.disabled = True
+
+    try:
+        yield
+    finally:
+        if line_picker:
+            line_picker.zoom_canvas.disabled = prev
