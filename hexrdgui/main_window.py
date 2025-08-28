@@ -277,6 +277,8 @@ class MainWindow(QObject):
             self.ui.status_bar.clearMessage)
         self.llnl_import_tool_dialog.new_config_loaded.connect(
             self.update_config_gui)
+        self.llnl_import_tool_dialog.instrument_was_selected.connect(
+            self.update_action_check_states)
         self.llnl_import_tool_dialog.cancel_workflow.connect(
             self.load_dummy_images)
         self.config_loaded.connect(

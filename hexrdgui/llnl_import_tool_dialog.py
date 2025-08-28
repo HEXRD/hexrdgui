@@ -69,7 +69,7 @@ class AtlasConfig:
                     params['tvec_z'].value]
                 ))
 
-            trans_start = (np.dot(rmat, start.T).T + 
+            trans_start = (np.dot(rmat, start.T).T +
                            np.repeat(trans, start.shape[0], axis=0))
 
             residual = trans_start-finish
@@ -101,7 +101,7 @@ class AtlasConfig:
         return minimizer_result
 
     def _transform_coordinates(self, pts):
-        return (np.dot(self.rmat, pts.T).T + 
+        return (np.dot(self.rmat, pts.T).T +
                 np.repeat(self.tvec, pts.shape[0], axis=0))
 
     def _get_icarus_corners_in_TCC(self):
@@ -214,6 +214,10 @@ class LLNLImportToolDialog(QObject):
     # Emitted when new config is loaded
     new_config_loaded = Signal()
 
+    # Emitted when an instrument was selected
+    instrument_was_selected = Signal()
+
+    # Emitted when the workflow is canceled
     cancel_workflow = Signal()
 
     # The boolean flag indicates whether this is a FIDDLE instrument or not
@@ -449,9 +453,10 @@ class LLNLImportToolDialog(QObject):
                 visible=needs_mask)
 
             self.import_in_progress = True
-            # Make sure we're not applying median filter during import
-            self.median_setting = HexrdConfig().apply_median_filter_correction
-            HexrdConfig().apply_median_filter_correction = False
+
+            # We need to disable all intensity corrections during import.
+            # Users can just re-enable them if they are needed.
+            HexrdConfig().disable_all_intensity_corrections()
 
             HexrdConfig().set_image_mode_widget_tab.emit(ViewType.raw)
             HexrdConfig().enable_image_mode_widget.emit(False)
@@ -468,6 +473,10 @@ class LLNLImportToolDialog(QObject):
             if self.instrument == 'TARDIS':
                 self.ui.bbox.setToolTip('The bounding box editors are not ' +
                                         'available for the TARDIS instrument')
+
+            # Indicate that an instrument was selected so the main window can
+            # update anything it needs to update.
+            self.instrument_was_selected.emit()
 
     def set_convention(self):
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
@@ -1175,9 +1184,6 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().enable_canvas_toolbar.emit(True)
         self.cmap.block_updates(False)
 
-        if self.instrument != 'FIDDLE':
-            # Re-enable median filter correction if it was set
-            HexrdConfig().apply_median_filter_correction = self.median_setting
         # If this is a FIDDLE instrument users will be prompted to set (or not)
         # the median filter after the import is complete
         self.complete_workflow.emit(self.instrument == 'FIDDLE')
