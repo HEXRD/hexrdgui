@@ -182,10 +182,13 @@ class ImageTabWidget(QTabWidget):
             # The new one to add
             idx = len(self.toolbars)
             tb = NavigationToolbar(self.image_canvases[idx], parent, False)
+            tb.setVisible(False)
             # Current detector
             ims = self.ims_for_name(self.image_names[idx])
             sb = ImageSeriesToolbar(ims, self)
             ib = ImageSeriesInfoToolbar(self)
+            sb.set_visible(False)
+            ib.set_visible(False)
 
             # This will put it at the bottom of the central widget
             toolbar = QHBoxLayout()
