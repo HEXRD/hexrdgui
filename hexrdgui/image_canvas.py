@@ -457,18 +457,6 @@ class ImageCanvas(FigureCanvas):
 
         return overlay_funcs[type]
 
-    def get_overlay_highlight_ids(self, overlay):
-        highlights = overlay.highlights
-        if not highlights:
-            return []
-
-        def recursive_get(cur, path):
-            for p in path:
-                cur = cur[p]
-            return cur
-
-        return [id(recursive_get(overlay.data, h)) for h in highlights]
-
     def draw_overlay(self, overlay):
         if not overlay.visible:
             return
@@ -477,19 +465,19 @@ class ImageCanvas(FigureCanvas):
             # It's already present. Skip it.
             return
 
-        # Keep track of any overlays we need to highlight
-        self.overlay_highlight_ids += self.get_overlay_highlight_ids(overlay)
-
         type = overlay.type
         style = overlay.style
         highlight_style = overlay.highlight_style
+        self.overlay_axes_data(overlay)
         for axis, det_key, data in self.overlay_axes_data(overlay):
+            highlights = [x[2] for x in overlay.highlights if x[0] == det_key]
             kwargs = {
                 'artist_key': overlay.name,
                 'det_key': det_key,
                 'axis': axis,
                 'data': data,
                 'style': style,
+                'highlight_indices': highlights,
                 'highlight_style': highlight_style,
             }
             self.overlay_draw_func(type)(**kwargs)
@@ -498,10 +486,11 @@ class ImageCanvas(FigureCanvas):
             self.draw_azimuthal_powder_lines(overlay)
 
     def draw_powder_overlay(self, artist_key, det_key, axis, data, style,
-                            highlight_style):
+                            highlight_indices, highlight_style):
         rings = data['rings']
         ranges = data['rbnds']
         rbnd_indices = data['rbnd_indices']
+        ring_idx_map = data['ring_idx_map']
 
         data_style = style['data']
         ranges_style = style['ranges']
@@ -511,13 +500,6 @@ class ImageCanvas(FigureCanvas):
 
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
         artists = overlay_artists.setdefault(det_key, {})
-
-        highlight_indices = []
-
-        if self.overlay_highlight_ids:
-            # Split up highlighted and non-highlighted components for all
-            highlight_indices = [i for i, x in enumerate(rings)
-                                 if id(x) in self.overlay_highlight_ids]
 
         def split(data):
             if not highlight_indices or len(data) == 0:
@@ -533,13 +515,18 @@ class ImageCanvas(FigureCanvas):
         h_ranges = []
         reg_ranges = []
 
+        highlight_indices_mapped = [ring_idx_map[i] for i in highlight_indices]
+
         found = False
         for i, ind in enumerate(rbnd_indices):
             if len(ind) > 1:
                 merged_ranges.append(ranges[i])
                 found = True
 
-            if highlight_indices and any(x in highlight_indices for x in ind):
+            if (
+                highlight_indices and
+                any(x in highlight_indices_mapped for x in ind)
+            ):
                 h_ranges.append(ranges[i])
                 found = True
 
@@ -620,7 +607,7 @@ class ImageCanvas(FigureCanvas):
         az_plot(merged_ranges, 'merged_ranges', merged_ranges_style)
 
     def draw_laue_overlay(self, artist_key, det_key, axis, data, style,
-                          highlight_style):
+                          highlight_indices, highlight_style):
         spots = data['spots']
         ranges = data['ranges']
         labels = data['labels']
@@ -629,13 +616,6 @@ class ImageCanvas(FigureCanvas):
         data_style = style['data']
         ranges_style = style['ranges']
         label_style = style['labels']
-
-        highlight_indices = []
-
-        if self.overlay_highlight_ids:
-            # Split up highlighted and non-highlighted components for all
-            highlight_indices = [i for i, x in enumerate(spots)
-                                 if id(x) in self.overlay_highlight_ids]
 
         def split(data):
             if not highlight_indices or len(data) == 0:
@@ -696,7 +676,8 @@ class ImageCanvas(FigureCanvas):
                 artists['h_labels'].append(plot_label(x, y, label, style))
 
     def draw_rotation_series_overlay(self, artist_key, det_key, axis, data,
-                                     style, highlight_style):
+                                     style, highlight_indices,
+                                     highlight_style):
         is_aggregated = HexrdConfig().is_aggregated
         ome_range = HexrdConfig().omega_ranges
         aggregated = data['aggregated'] or is_aggregated or ome_range is None
@@ -741,19 +722,12 @@ class ImageCanvas(FigureCanvas):
                                        animated=True, **ranges_style)
 
     def draw_const_chi_overlay(self, artist_key, det_key, axis, data, style,
-                               highlight_style):
+                               highlight_indices, highlight_style):
         points = data['data']
         data_style = style['data']
 
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
         artists = overlay_artists.setdefault(det_key, {})
-
-        highlight_indices = []
-
-        if self.overlay_highlight_ids:
-            # Split up highlighted and non-highlighted components for all
-            highlight_indices = [i for i, x in enumerate(points)
-                                 if id(x) in self.overlay_highlight_ids]
 
         def split(data):
             if not highlight_indices or len(data) == 0:
@@ -807,7 +781,6 @@ class ImageCanvas(FigureCanvas):
 
         self.iviewer.update_overlay_data()
 
-        self.overlay_highlight_ids = []
         for overlay in HexrdConfig().overlays:
             self.draw_overlay(overlay)
 
