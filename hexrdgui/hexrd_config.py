@@ -2586,11 +2586,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         set_intensity_subtract_minimum)
 
     @property
-    def any_intensity_corrections(self):
-        """Are we to perform any intensity corrections on the images?"""
-
+    def _intensity_correction_names(self) -> list[str]:
         # Add to the list here as needed
-        corrections = [
+        return [
             'apply_pixel_solid_angle_correction',
             'apply_polarization_correction',
             'apply_lorentz_correction',
@@ -2599,7 +2597,22 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'apply_median_filter_correction',
         ]
 
-        return any(getattr(self, x) for x in corrections)
+    @property
+    def any_intensity_corrections(self):
+        """Are we to perform any intensity corrections on the images?"""
+        return any(getattr(self, x) for x in self._intensity_correction_names)
+
+    def disable_all_intensity_corrections(self):
+        if not self.any_intensity_corrections:
+            # Nothing to do...
+            return
+
+        # Block our own signals as we disable all of these
+        with utils.block_signals(self):
+            for name in self._intensity_correction_names:
+                setattr(self, name, False)
+
+        self.deep_rerender_needed.emit()
 
     def get_show_saturation_level(self):
         return self._show_saturation_level
