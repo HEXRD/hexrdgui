@@ -273,6 +273,18 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             point_groups[det_key]['rings'] = ring_pts
             point_groups[det_key]['hkls'] = det_hkls
 
+            # Map of ring index to original two theta index
+            counter = 0
+            ring_idx_map = {}
+            for i in range(len(tths)):
+                if i in skipped_tth:
+                    counter += 1
+                    continue
+
+                ring_idx_map[i - counter] = i
+
+            point_groups[det_key]['ring_idx_map'] = ring_idx_map
+
             if plane_data.tThWidth is not None:
                 # Generate the ranges too
                 lower_pts, lower_skipped = self.generate_ring_points(
@@ -692,7 +704,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 'lw': 3.0
             }
         }
-
 
 # Constants
 nans_row = np.nan * np.ones((1, 2))
