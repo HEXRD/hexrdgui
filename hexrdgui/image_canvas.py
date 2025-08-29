@@ -1819,6 +1819,8 @@ class ImageCanvas(FigureCanvas):
         amorphous = HexrdConfig().wppf_amorphous_lineout
         if HexrdConfig().display_wppf_amorphous and amorphous:
             style = HexrdConfig().wppf_amorphous_style
+            if background:
+                amorphous = [a + b for a, b in zip(amorphous, background)]
             self.wppf_amorphous_plot, = axis.plot(*amorphous, **style)
 
         last_lineout = HexrdConfig().last_unscaled_azimuthal_integral_data
