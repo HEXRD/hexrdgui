@@ -1642,13 +1642,21 @@ def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model):
 
 
 def param_to_dict(param):
-    return {
+    # Make sure these are non-numpy types
+    def _dict_to_basic(d):
+        for k, v in list(d.items()):
+            if isinstance(v, np.generic):
+                d[k] = v.item()
+
+        return d
+
+    return _dict_to_basic({
         'name': param.name,
         'value': param.value,
         'min': param.min,
         'max': param.max,
         'vary': param.vary,
-    }
+    })
 
 
 def dict_to_param(d):
