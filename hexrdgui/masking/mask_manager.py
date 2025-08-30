@@ -30,11 +30,13 @@ class Mask(ABC):
         visible=True,
         show_border=False,
         mode=None,
-        xray_source=None
+        xray_source=None,
+        highlight=False,
     ):
         self.type = mtype
         self.visible = visible
         self.show_border = show_border
+        self._highlight = highlight
         self.masked_arrays = None
         self.masked_arrays_view_mode = ViewType.raw
         self.creation_view_mode = mode
@@ -86,6 +88,16 @@ class Mask(ABC):
     def serialize(self):
         pass
 
+    @property
+    @abstractmethod
+    def highlight(self):
+        pass
+
+    @highlight.setter
+    @abstractmethod
+    def highlight(self, value):
+        pass
+
     @classmethod
     def deserialize(cls, data):
         return cls(
@@ -106,9 +118,10 @@ class RegionMask(Mask):
         visible=True,
         show_border=False,
         mode=None,
-        xray_source=None
+        xray_source=None,
+        highlight=False
     ):
-        super().__init__(name, mtype, visible, show_border, mode, xray_source)
+        super().__init__(name, mtype, visible, show_border, mode, xray_source, highlight)
         self._raw = None
 
     @property
@@ -119,6 +132,16 @@ class RegionMask(Mask):
     def data(self, values):
         self._raw = values
         self.invalidate_masked_arrays()
+
+    @property
+    def highlight(self):
+        return self._highlight
+
+    @highlight.setter
+    def highlight(self, value):
+        if self.type == MaskType.powder:
+            return
+        self._highlight = value
 
     def update_masked_arrays(self, view=ViewType.raw, instr=None):
         self.masked_arrays_view_mode = view
@@ -205,6 +228,15 @@ class ThresholdMask(Mask):
         self.max_val = values[1]
         self.invalidate_masked_arrays()
 
+    @property
+    def highlight(self):
+        return False
+
+    @highlight.setter
+    def highlight(self, value):
+        # Threshold masks do not support highlight; ignore assignments
+        pass
+
     def update_masked_arrays(self, view=ViewType.raw):
         self.masked_arrays = recompute_raw_threshold_mask()
 
@@ -257,11 +289,16 @@ class MaskManager(QObject, metaclass=QSingleton):
     """
     export_masks_to_file = Signal(dict)
 
+    """Emitted when mask highlight states change"""
+    mask_highlights_changed = Signal()
+
     def __init__(self):
         super().__init__(None)
         self.masks = {}
         self.view_mode = None
         self.boundary_color = '#000'  # Default to black
+        self.highlight_color = '#FF0'  # Default to yellow
+        self.highlight_opacity = 0.5
         self.boundary_style = 'dashed'
         self.boundary_width = 1
         self.setup_connections()
@@ -273,6 +310,10 @@ class MaskManager(QObject, metaclass=QSingleton):
     @property
     def visible_boundaries(self):
         return [k for k, v in self.masks.items() if v.show_border]
+
+    @property
+    def visible_highlights(self):
+        return [k for k, v in self.masks.items() if v.highlight]
 
     @property
     def threshold_mask(self):
@@ -328,6 +369,9 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.view_mode = mode
         self.update_masks_for_active_beam()
 
+    def highlights_changed(self):
+        self.mask_highlights_changed.emit()
+
     def masks_changed(self):
         if self.view_mode in (ViewType.polar, ViewType.stereo):
             self.polar_masks_changed.emit()
@@ -368,6 +412,8 @@ class MaskManager(QObject, metaclass=QSingleton):
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
             '__boundary_width': self.boundary_width,
+            '__highlight_color': self.highlight_color,
+            '__highlight_opacity': self.highlight_opacity,
         }
         self.export_masks_to_file.emit(d)
 
@@ -376,6 +422,8 @@ class MaskManager(QObject, metaclass=QSingleton):
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
             '__boundary_width': self.boundary_width,
+            '__highlight_color': self.highlight_color,
+            '__highlight_opacity': self.highlight_opacity,
         }
         for name, mask_info in self.masks.items():
             d[name] = mask_info.serialize()
@@ -395,7 +443,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         actual_view_mode = self.view_mode
         self.view_mode = ViewType.raw
         for key, data in items.items():
-            if key.startswith('__boundary_'):
+            if key.startswith('__'):
                 setattr(self, key.split('__', 1)[1], data)
                 continue
             elif data['mtype'] == MaskType.threshold:

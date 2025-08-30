@@ -6,12 +6,12 @@ from itertools import groupby
 from operator import attrgetter
 import re
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
-    QMessageBox, QPushButton, QTreeWidgetItem, QVBoxLayout, QColorDialog
+    QMessageBox, QTreeWidgetItem, QVBoxLayout
 )
-from PySide6.QtGui import QCursor, QColor, QFont
+from PySide6.QtGui import QCursor, QFont
 
 from hexrdgui.constants import ViewType
 from hexrdgui.utils import block_signals
@@ -36,8 +36,8 @@ class MaskManagerDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        self.changed_masks = {}
         self.mask_tree_items = {}
+        self.selected_masks = []
 
         add_help_url(self.ui.button_box,
                      'configuration/masking/#managing-masks')
@@ -64,13 +64,13 @@ class MaskManagerDialog(QObject):
         self.ui.show_all_boundaries.clicked.connect(self.show_all_boundaries)
         MaskManager().export_masks_to_file.connect(self.export_masks_to_file)
         self.ui.border_style.clicked.connect(self.edit_style)
-        self.ui.apply_changes.clicked.connect(self.apply_changes)
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
         self.ui.masks_tree.itemSelectionChanged.connect(self.selected_changed)
         self.ui.presentation_selector.currentTextChanged.connect(
             self.change_presentation_for_selected)
         self.ui.export_selected.clicked.connect(self.export_selected)
         self.ui.remove_selected.clicked.connect(self.remove_selected_masks)
+        self.ui.finished.connect(self.ui.masks_tree.clearSelection)
 
     def create_mode_source_string(self, mode, source):
         if mode is None:
@@ -79,17 +79,19 @@ class MaskManagerDialog(QObject):
         source_str = f' - {source}' if source else ''
         return f'{mode_str}{source_str}'
 
-    def update_presentation_combo(self, item, mask):
+    def update_presentation_label(self, item, mask):
         mask_type = MaskManager().masks[mask.name].type
-        idx = MaskStatus.none
+        status = []
         if mask.name in MaskManager().visible_masks:
-            idx = MaskStatus.visible
+            status.append('Visible')
         if (mask_type == MaskType.region or
                 mask_type == MaskType.polygon or
                 mask_type == MaskType.pinhole):
             if mask.name in MaskManager().visible_boundaries:
-                idx += MaskStatus.boundary
-        self.ui.masks_tree.itemWidget(item, 1).setCurrentIndex(idx)
+                status.append('Boundary')
+        status_str = ' + '.join(status) if status else 'None'
+        item.setText(1, status_str)
+        item.setTextAlignment(1, Qt.AlignCenter)
 
     def create_mode_item(self, mode, source):
         text = self.create_mode_source_string(mode, source)
@@ -114,31 +116,13 @@ class MaskManagerDialog(QObject):
         parent_item.addChild(mask_item)
         self.mask_tree_items[mask.name] = mask_item
 
-        # Add combo box to select mask presentation
-        presentation_combo = QComboBox()
-        presentation_combo.addItem('None')
-        presentation_combo.addItem('Visible')
-        mask_type = MaskManager().masks[mask.name].type
-        if (mask_type == MaskType.region or
-                mask_type == MaskType.polygon or
-                mask_type == MaskType.pinhole):
-            presentation_combo.addItem('Boundary Only')
-            presentation_combo.addItem('Visible + Boundary')
-        self.ui.masks_tree.setItemWidget(mask_item, 1, presentation_combo)
-        self.update_presentation_combo(mask_item, mask)
-        presentation_combo.currentIndexChanged.connect(
-            lambda i, k=mask: self.track_mask_presentation_change(i, k))
-
-        # Add push button to remove mask
-        pb = QPushButton('Remove Mask')
-        self.ui.masks_tree.setItemWidget(mask_item, 2, pb)
-        pb.clicked.connect(
-            lambda checked, k=mask.name: self.remove_mask_item(k))
+        # Add label to indicate current mask presentation
+        self.update_presentation_label(mask_item, mask)
 
     def update_mask_item(self, mask):
         item = self.mask_tree_items[mask.name]
         item.setText(0, mask.name)
-        self.update_presentation_combo(item, mask)
+        self.update_presentation_label(item, mask)
 
     def remove_mask_item(self, name):
         if name not in MaskManager().mask_names:
@@ -221,11 +205,10 @@ class MaskManagerDialog(QObject):
         self.ui.masks_tree.expandAll()
         self.ui.masks_tree.resizeColumnToContents(0)
         self.ui.masks_tree.resizeColumnToContents(1)
-
-    def track_mask_presentation_change(self, index, mask):
-        self.changed_masks[mask.name] = index
-        if not self.ui.apply_changes.isEnabled():
-            self.ui.apply_changes.setEnabled(True)
+        size_hint = 200
+        header = self.ui.masks_tree.header()
+        header.resizeSection(1, size_hint)
+        header.resizeSection(0, header.width() - size_hint)
 
     def change_mask_presentation(self, index, name):
         match index:
@@ -263,9 +246,6 @@ class MaskManagerDialog(QObject):
             # Store the new name before updating the manager
             item.setData(0, Qt.UserRole, new_name)
             MaskManager().update_name(old_name, new_name)
-            # Update our tracking dictionaries
-            if old_name in self.changed_masks:
-                self.changed_masks[new_name] = self.changed_masks.pop(old_name)
             self.mask_tree_items[new_name] = self.mask_tree_items.pop(old_name)
 
     def update_collapsed(self):
@@ -380,14 +360,13 @@ class MaskManagerDialog(QObject):
                 for j in range(mode_item.childCount()):
                     mask_item = mode_item.child(j)
                     name = mask_item.text(0)
-                    cb = self.ui.masks_tree.itemWidget(mask_item, 1)
-                    idx = MaskStatus.none
+                    status = []
                     if name in MaskManager().visible_masks:
-                        idx += MaskStatus.visible
+                        status.append('Visible')
                     if name in MaskManager().visible_boundaries:
-                        idx += MaskStatus.boundary
-                    with block_signals(cb):
-                        cb.setCurrentIndex(idx)
+                        status.append('Boundary')
+                    status_str = ' + '.join(status) if status else 'None'
+                    mask_item.setText(1, status_str)
 
     def change_mask_visibility(self, mask_names, visible):
         for name in mask_names:
@@ -421,32 +400,42 @@ class MaskManagerDialog(QObject):
         dialog = MaskBorderStylePicker(
             MaskManager().boundary_color,
             MaskManager().boundary_style,
-            MaskManager().boundary_width
+            MaskManager().boundary_width,
+            MaskManager().highlight_color,
+            MaskManager().highlight_opacity
         )
         if dialog.exec():
-            color, style, width = dialog.result()
+            color, style, width, highlight, opacity = dialog.result()
             MaskManager().boundary_color = color
             MaskManager().boundary_style = style
             MaskManager().boundary_width = width
+            MaskManager().highlight_color = highlight
+            MaskManager().highlight_opacity = opacity
             MaskManager().masks_changed()
-
-    def apply_changes(self):
-        for name, index in self.changed_masks.items():
-            self.change_mask_presentation(index, name)
-        self.changed_masks = {}
-        self.ui.apply_changes.setEnabled(False)
 
     def selected_changed(self):
         with block_signals(self.ui.presentation_selector):
             selected = self.ui.masks_tree.selectedItems()
-            self.ui.presentation_selector.setEnabled(len(selected) > 1)
-            self.ui.export_selected.setEnabled(len(selected) > 1)
-            self.ui.remove_selected.setEnabled(len(selected) > 1)
+            self.ui.presentation_selector.setEnabled(len(selected) >= 1)
+            self.ui.export_selected.setEnabled(len(selected) >= 1)
+            self.ui.remove_selected.setEnabled(len(selected) >= 1)
+
+            # Update highlight states for masks
+            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
+            for mask in self.selected_masks:
+                mask.highlight = False
+            for mask in masks_from_names:
+                mask.highlight = True
+            if set(self.selected_masks) != set(masks_from_names):
+                # Only update the mask highlights if the selected masks have changed
+                # Debounce the update to avoid re-drawing too often
+                self.selected_masks = masks_from_names
+                MaskManager().highlights_changed()
+
             if len(selected) == 0:
                 return
 
             boundary_masks = [MaskType.region, MaskType.polygon, MaskType.pinhole]
-            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
             vis_only = any(mask.type not in boundary_masks for mask in masks_from_names)
             self.ui.presentation_selector.clear()
             self.ui.presentation_selector.addItem('None')
@@ -456,7 +445,7 @@ class MaskManagerDialog(QObject):
                 self.ui.presentation_selector.addItem('Visible + Boundary')
 
     def change_presentation_for_selected(self, text):
-        if len(self.ui.masks_tree.selectedItems()) <= 1:
+        if len(self.ui.masks_tree.selectedItems()) < 1:
             return
 
         mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
