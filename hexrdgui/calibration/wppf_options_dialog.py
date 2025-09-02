@@ -83,6 +83,9 @@ class WppfOptionsDialog(QObject):
         # Trigger logic for changing amorphous setting
         self.on_include_amorphous_toggled()
 
+        # Always default to the first tab
+        self.ui.tab_widget.setCurrentIndex(0)
+
         self.update_gui()
         self.setup_connections()
 

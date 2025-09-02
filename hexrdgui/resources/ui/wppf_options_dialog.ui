@@ -412,7 +412,7 @@
            <item row="2" column="1">
             <widget class="QCheckBox" name="plot_amorphous">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of amorphous model (default: red line) in the lineout.&lt;/p&gt;&lt;p&gt;The style of the amorphous model plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of amorphous model (default: red line) in the lineout. The background is added to the amorphous model automatically.&lt;/p&gt;&lt;p&gt;The style of the amorphous model plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Plot amorphous model?</string>
