@@ -88,9 +88,16 @@ class WppfRunner:
 
         amorphous_lineout = []
         if obj.amorphous_model is not None:
+            tth_list = obj.amorphous_model.tth_list
+            intensity = obj.amorphous_model.amorphous_lineout
+            if len(background) > 1:
+                # background[1] is the background intensity.
+                # We will automatically add the background, if present.
+                intensity += background[1]
+
             amorphous_lineout = [
-                obj.amorphous_model.tth_list,
-                obj.amorphous_model.amorphous_lineout,
+                tth_list,
+                intensity,
             ]
 
         HexrdConfig().wppf_amorphous_lineout = amorphous_lineout
