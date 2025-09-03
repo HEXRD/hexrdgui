@@ -971,10 +971,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # (such as polar or stereo)
         if HexrdConfig().apply_median_filter_correction:
             for name, img in images_dict.items():
+                # Since this is memoized, make a copy so we won't modify
+                # the original.
                 images_dict[name] = medfilt2d_memoized(
                     img,
                     kernel_size=HexrdConfig().median_filter_kernel_size
-                )
+                ).copy()
 
         # Create this corrections dict, even if we don't use it, because
         # it updates the `intensity_corrections_dict` that may be used
