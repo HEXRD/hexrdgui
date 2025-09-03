@@ -1045,7 +1045,8 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
     def save_picks_to_file(self, selected_file):
         # Reuse the same logic from the HKLPicksTreeViewDialog
-        self.edit_picks_dialog.export_picks(selected_file)
+        d = self.edit_picks_dialog
+        d.export_picks_from_overlays(selected_file, self.overlays)
 
     def load_picks_from_file(self, selected_file):
         # Reuse the same logic from the HKLPicksTreeViewDialog
