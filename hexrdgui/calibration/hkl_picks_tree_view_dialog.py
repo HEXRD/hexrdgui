@@ -16,6 +16,7 @@ from hexrdgui.tree_views.hkl_picks_tree_view import HKLPicksTreeView
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.conversions import angles_to_cart, cart_to_angles
 from hexrdgui.utils.dicts import ndarrays_to_lists
+from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class HKLPicksTreeViewDialog:
@@ -92,18 +93,28 @@ class HKLPicksTreeViewDialog:
             return self.export_picks(selected_file)
 
     def export_picks(self, filename):
+        return self._export_dict_to_file(filename, {
+            'angular': self.dictionary,
+            'cartesian': self.dict_with_cart_coords,
+        })
+
+    def export_picks_from_overlays(self, filename, overlays):
+        # Export picks from overlays using the same export logic as
+        # the regular dictionary.
+        return self._export_dict_to_file(filename, {
+            'angular': overlays_to_tree_format(overlays, polar=True),
+            'cartesian': overlays_to_tree_format(overlays, polar=False),
+        })
+
+    def _export_dict_to_file(self, filename: str, export_data: dict):
         filename = Path(filename)
 
         if filename.exists():
             filename.unlink()
 
-        # unwrap_dict_to_h5 unfortunately modifies the data
-        # make a deep copy to avoid the modification.
-        export_data = {
-            'angular': copy.deepcopy(self.dictionary),
-            'cartesian': self.dict_with_cart_coords,
-        }
-
+        # unwrap_dict_to_h5 unfortunately modifies the data.
+        # Make a deep copy to avoid the modification.
+        export_data = copy.deepcopy(export_data)
         with h5py.File(filename, 'w') as wf:
             unwrap_dict_to_h5(wf, export_data)
 
@@ -178,7 +189,7 @@ class HKLPicksTreeViewDialog:
         self.ui.button_box.setVisible(b)
 
 
-def convert_picks(picks, conversion_function, **kwargs):
+def convert_picks(picks, conversion_function):
     instr = create_hedm_instrument()
     ret = copy.deepcopy(picks)
     for name, detectors in ret.items():
@@ -191,25 +202,43 @@ def convert_picks(picks, conversion_function, **kwargs):
                         # Avoid the runtime warning
                         hkls[hkl] = [np.nan, np.nan]
                     else:
-                        hkls[hkl] = conversion_function([spot], panel,
-                                                        **kwargs)[0]
+                        hkls[hkl] = conversion_function([spot], panel)[0]
                 continue
 
             # Must be powder
             for hkl, line in hkls.items():
                 if len(line) != 0:
-                    hkls[hkl] = conversion_function(line, panel, **kwargs)
+                    hkls[hkl] = conversion_function(line, panel)
 
     return ret
 
 
 def picks_angles_to_cartesian(picks):
-    return convert_picks(picks, angles_to_cart)
+    # Create the conversion function
+    def func(angs, panel):
+        # Reverse the tth distortion first
+        angs = apply_tth_distortion_if_needed(
+            angs,
+            in_degrees=True,
+            reverse=True,
+        )
+        # Now convert to cart
+        return angles_to_cart(angs, panel)
+
+    return convert_picks(picks, func)
 
 
 def picks_cartesian_to_angles(picks):
-    kwargs = {'eta_period': HexrdConfig().polar_res_eta_period}
-    return convert_picks(picks, cart_to_angles, **kwargs)
+    # Create the conversion function
+    eta_period = HexrdConfig().polar_res_eta_period
+
+    def func(xys, panel):
+        angs = cart_to_angles(xys, panel, eta_period=eta_period)
+
+        # Apply tth distortion now as well
+        return apply_tth_distortion_if_needed(angs, in_degrees=True)
+
+    return convert_picks(picks, func)
 
 
 def generate_picks_results(overlays, polar=True):
@@ -249,8 +278,8 @@ def generate_picks_results(overlays, polar=True):
     return pick_results
 
 
-def overlays_to_tree_format(overlays):
-    picks = generate_picks_results(overlays)
+def overlays_to_tree_format(overlays, polar=True):
+    picks = generate_picks_results(overlays, polar=polar)
     return picks_to_tree_format(picks)
 
 
