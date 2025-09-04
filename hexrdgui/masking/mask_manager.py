@@ -326,6 +326,11 @@ class MaskManager(QObject, metaclass=QSingleton):
     def mask_names(self):
         return list(self.masks.keys())
 
+    def invalidate_detector_masks(self, det_keys: list[str]):
+        for mask in self.masks.values():
+            if any(v[0] in det_keys for v in mask.data):
+                mask.invalidate_masked_arrays()
+
     def setup_connections(self):
         self.threshold_mask_changed.connect(self.threshold_toggled)
         HexrdConfig().save_state.connect(self.save_state)

@@ -17,6 +17,7 @@ from hexrd import instrument
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
 tvec_c = ct.zeros_3
@@ -503,7 +504,6 @@ class PolarView:
 
     def apply_visible_masks(self, img):
         # Apply user-specified masks if they are present
-        from hexrdgui.masking.mask_manager import MaskManager
         img = img.copy()
         total_mask = self.warp_mask
         for mask in MaskManager().masks.values():
@@ -523,7 +523,6 @@ class PolarView:
 
     def apply_boundary_masks(self, img):
         # Apply user-specified masks if they are present
-        from hexrdgui.masking.mask_manager import MaskManager
         img = img.copy()
         total_mask = self.warp_mask
         for mask in MaskManager().masks.values():
@@ -592,6 +591,9 @@ class PolarView:
 
             # Update the individual detector image
             self.create_warp_image(det)
+
+        # Invalidate the masks that match these detectors
+        MaskManager().invalidate_detector_masks(detectors)
 
         # Generate the final image
         self.generate_image()
