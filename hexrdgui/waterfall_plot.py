@@ -195,6 +195,7 @@ class WaterfallPlotDialog(QDialog):
 
         # Add minimize, maximize, and close buttons
         self.setWindowFlags(
+            Qt.Tool |
             Qt.WindowMinimizeButtonHint |
             Qt.WindowMaximizeButtonHint |
             Qt.WindowCloseButtonHint
