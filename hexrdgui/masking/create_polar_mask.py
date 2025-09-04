@@ -1,6 +1,5 @@
 import numpy as np
 
-from hexrdgui.calibration.polarview import PolarView
 from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
@@ -45,6 +44,7 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
 
 
 def create_polar_mask(line_data):
+    from hexrdgui.calibration.polarview import PolarView
     from hexrdgui.masking.mask_manager import MaskManager
     # Calculate current image dimensions
     # If we pass `None` to the polar view, it is a dummy polar view
