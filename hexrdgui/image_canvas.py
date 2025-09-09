@@ -2282,6 +2282,7 @@ class ImageCanvas(FigureCanvas):
     def highlight_masks(self, axis, det=None):
         all_verts = self.get_mask_verts('highlights', det)
         if not all_verts:
+            self.blit_manager.update()
             return
 
         kwargs = {
