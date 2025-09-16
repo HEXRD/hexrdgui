@@ -4,7 +4,6 @@ from enum import Enum
 from numba import njit
 import numpy as np
 
-from hexrd import constants
 from hexrd.instrument import switch_xray_source
 from hexrd.transforms import xfcapi
 from hexrd.utils.hkl import hkl_to_str
@@ -27,7 +26,7 @@ class LaueOverlay(Overlay):
     data_key = 'spots'
     ranges_key = 'ranges'
 
-    def __init__(self, material_name, crystal_params=None, sample_rmat=None,
+    def __init__(self, material_name, crystal_params=None,
                  min_energy=5, max_energy=35, tth_width=None, eta_width=None,
                  width_shape=None, label_type=None, label_offsets=None,
                  **overlay_kwargs):
@@ -36,9 +35,6 @@ class LaueOverlay(Overlay):
         if crystal_params is None:
             crystal_params = default_crystal_params()
 
-        if sample_rmat is None:
-            sample_rmat = constants.identity_3x3.copy()
-
         if width_shape is None:
             width_shape = LaueRangeShape.ellipse
 
@@ -46,7 +42,6 @@ class LaueOverlay(Overlay):
             label_offsets = [1, 1]
 
         self.crystal_params = crystal_params
-        self.sample_rmat = sample_rmat
         self._min_energy = min_energy
         self._max_energy = max_energy
         self.tth_width = tth_width
@@ -61,7 +56,6 @@ class LaueOverlay(Overlay):
         # arguments to the __init__ method.
         return [
             'crystal_params',
-            'sample_rmat',
             'min_energy',
             'max_energy',
             'tth_width',
@@ -127,15 +121,6 @@ class LaueOverlay(Overlay):
     def max_energy(self, x):
         assert x > self.min_energy
         self._max_energy = x
-
-    @property
-    def sample_rmat(self):
-        return self._sample_rmat
-
-    @sample_rmat.setter
-    def sample_rmat(self, x):
-        assert isinstance(x, np.ndarray), 'input must be a (3, 3) array'
-        self._sample_rmat = x
 
     @property
     def widths_enabled(self):
@@ -234,7 +219,7 @@ class LaueOverlay(Overlay):
                 self.plane_data_no_exclusions,
                 minEnergy=self.min_energy,
                 maxEnergy=self.max_energy,
-                rmat_s=self.sample_rmat,
+                rmat_s=HexrdConfig().sample_rmat,
                 grain_params=[self.crystal_params, ])
 
         for det_key, psim in sim_data.items():
@@ -264,7 +249,7 @@ class LaueOverlay(Overlay):
             # !!! apply offset corrections to angles
             # convert to angles in LAB ref
             angles_corr, _ = xfcapi.detectorXYToGvec(
-                xy_data, panel.rmat, self.sample_rmat,
+                xy_data, panel.rmat, HexrdConfig().sample_rmat,
                 panel.tvec, instr.tvec, constants.zeros_3,
                 beamVec=instr.beam_vector,
                 etaVec=instr.eta_vector

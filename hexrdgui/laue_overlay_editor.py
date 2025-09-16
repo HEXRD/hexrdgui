@@ -47,6 +47,7 @@ class LaueOverlayEditor:
             self.euler_angle_convention_changed)
         HexrdConfig().instrument_config_loaded.connect(
             self.update_visibility_states)
+        HexrdConfig().sample_tilt_modified.connect(self.update_gui)
 
     def setup_combo_boxes(self):
         width_shapes = [x.value.capitalize() for x in LaueRangeShape]
@@ -77,7 +78,6 @@ class LaueOverlayEditor:
             overlay = self.overlay
             self.ui.min_energy.setValue(overlay.min_energy)
             self.ui.max_energy.setValue(overlay.max_energy)
-            self.sample_rmat = overlay.sample_rmat
             self.crystal_params = overlay.crystal_params
             self.refinements = overlay.refinements
             self.width_shape = overlay.width_shape
@@ -89,6 +89,8 @@ class LaueOverlayEditor:
             if overlay.has_widths:
                 self.ui.tth_width.setValue(np.degrees(overlay.tth_width))
                 self.ui.eta_width.setValue(np.degrees(overlay.eta_width))
+
+            self.sample_rmat = HexrdConfig().sample_rmat
 
             self.update_enable_states()
             self.update_orientation_suffixes()
@@ -151,11 +153,12 @@ class LaueOverlayEditor:
         overlay.tth_width = self.tth_width
         overlay.eta_width = self.eta_width
         overlay.width_shape = self.width_shape
-        overlay.sample_rmat = self.sample_rmat
         overlay.refinements = self.refinements
         overlay.label_type = self.label_type
         overlay.label_offsets = self.label_offsets
         overlay.xray_source = self.xray_source
+
+        HexrdConfig().sample_rmat = self.sample_rmat
 
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
