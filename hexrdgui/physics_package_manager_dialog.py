@@ -11,11 +11,18 @@ from PySide6.QtWidgets import QSizePolicy, QWidget
 from hexrdgui import resource_loader
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils import (
+    block_signals,
+    euler_angles_to_exp_map,
+    exp_map_to_euler_angles,
+)
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 
 import hexrd.resources as hexrd_resources
 from hexrd.material import _angstroms, _kev, Material
+from hexrd.instrument import calc_beam_vec
 from hexrd.instrument.constants import FILTER_DEFAULTS, PINHOLE_DEFAULTS
+from hexrd.rotations import rotMatOfExpMap
 
 
 class PhysicsPackageManagerDialog:
@@ -41,6 +48,8 @@ class PhysicsPackageManagerDialog:
         self.delete_if_canceled = delete_if_canceled
         self.setup_form()
         self.draw_diagram()
+        self.reset_sample_tilt()
+        self.update_tilt_suffixes()
         self.ui.show()
 
     @property
@@ -96,6 +105,14 @@ class PhysicsPackageManagerDialog:
         HexrdConfig().detectors_changed.connect(
             self.initialize_detector_coatings)
 
+        HexrdConfig().euler_angle_convention_changed.connect(
+            self.on_euler_angle_convention_changed)
+        HexrdConfig().sample_tilt_modified.connect(
+            self.reset_sample_tilt)
+
+        for w in self.sample_tilt_widgets:
+            w.valueChanged.connect(self.update_sample_normal)
+
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
@@ -107,6 +124,47 @@ class PhysicsPackageManagerDialog:
             HexrdConfig().physics_package = None
 
         self.delete_if_canceled = False
+
+    def on_euler_angle_convention_changed(self):
+        self.update_tilt_suffixes()
+        self.reset_sample_tilt()
+
+    @property
+    def sample_tilt_widgets(self):
+        return [getattr(self.ui, f'sample_tilt_{i}') for i in range(3)]
+
+    @property
+    def sample_normal_widgets(self):
+        return [getattr(self.ui, f'sample_normal_{i}') for i in range(3)]
+
+    @property
+    def sample_rmat(self):
+        angles = [w.value() for w in self.sample_tilt_widgets]
+        return rotMatOfExpMap(euler_angles_to_exp_map(angles))
+
+    def update_tilt_suffixes(self):
+        suffix = '' if HexrdConfig().euler_angle_convention is None else '°'
+        for w in self.sample_tilt_widgets:
+            w.setSuffix(suffix)
+
+    def reset_sample_tilt(self):
+        angles = exp_map_to_euler_angles(HexrdConfig().sample_tilt)
+        with block_signals(*self.sample_tilt_widgets):
+            for w, v in zip(self.sample_tilt_widgets, angles):
+                w.setValue(v)
+
+        self.update_sample_normal()
+
+    def save_sample_tilt(self):
+        angles = [w.value() for w in self.sample_tilt_widgets]
+        HexrdConfig().sample_tilt = euler_angles_to_exp_map(angles)
+
+    def update_sample_normal(self):
+        d = HexrdConfig().active_beam['vector']
+        bvec = calc_beam_vec(d['azimuth'], d['polar_angle'])
+        sample_normal = np.dot(self.sample_rmat, [0., 0., np.sign(bvec[2])])
+        for w, v in zip(self.sample_normal_widgets, sample_normal):
+            w.setValue(v)
 
     def initialize_detector_coatings(self):
         # Reset detector coatings to make sure they're in sync w/ current dets
@@ -294,6 +352,8 @@ class PhysicsPackageManagerDialog:
             kwargs[f'{name}_formula'] = self.chemical_formula(name)
 
         HexrdConfig().update_physics_package(**kwargs)
+
+        self.save_sample_tilt()
 
         if HexrdConfig().apply_absorption_correction:
             # Make sure changes are reflected

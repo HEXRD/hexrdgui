@@ -61,6 +61,7 @@ class ConstChiOverlayEditor(QObject):
 
         HexrdConfig().euler_angle_convention_changed.connect(
             self.euler_angle_convention_changed)
+        HexrdConfig().sample_tilt_modified.connect(self.update_gui)
 
         self.ui.add_chi_value_row.clicked.connect(
             self.add_chi_value)
