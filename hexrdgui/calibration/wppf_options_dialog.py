@@ -1,5 +1,7 @@
 import copy
+from functools import partial
 from pathlib import Path
+import sys
 
 import h5py
 import lmfit
@@ -9,26 +11,37 @@ import re
 import yaml
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox, QComboBox, QFileDialog, QHBoxLayout, QInputDialog, QMessageBox
+)
 
-from hexrdgui import resource_loader
+from hexrd import constants as ct
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
+from hexrd.projections.polar import bin_polar_view
+from hexrd.utils.hkl import hkl_to_str
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
+from hexrd.wppf.phase import Material_Rietveld
+from hexrd.wppf.texture import HarmonicModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
     background_methods, _generate_default_parameters_LeBail,
     _generate_default_parameters_Rietveld,
 )
 
+from hexrdgui import resource_loader
 from hexrdgui.calibration.tree_item_models import (
     _tree_columns_to_indices,
     DefaultCalibrationTreeItemModel,
     DeltaCalibrationTreeItemModel,
 )
+from hexrdgui.calibration.wppf_simulated_polar_dialog import (
+    WppfSimulatedPolarDialog,
+)
 from hexrdgui.dynamic_widget import DynamicWidget
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.html_delegate import aligned_sub_sup_html, HtmlDelegate
 from hexrdgui.point_picker_dialog import PointPickerDialog
 from hexrdgui.select_items_dialog import SelectItemsDialog
 from hexrdgui.tree_views.multi_column_dict_tree_view import (
@@ -69,8 +82,12 @@ class WppfOptionsDialog(QObject):
         self._wppf_object = None
         self._prev_background_method = None
         self._undo_stack = []
+        self._last_pv_binned = None
+        self._last_texture_pv_sim = None
+        self._texture_simulated_polar_dialog = None
 
         self.amorphous_experiment_files = []
+        self._texture_settings = self._default_texture_settings
 
         self.params = self.generate_params()
         self.initialize_tree_view()
@@ -120,6 +137,17 @@ class WppfOptionsDialog(QObject):
             self.on_num_amorphous_peaks_value_changed)
         self.ui.amorphous_select_experiment_files.clicked.connect(
             self.select_amorphous_experiment_files)
+
+        self.ui.selected_texture_material.currentIndexChanged.connect(
+            self.on_selected_texture_material_changed)
+        for w in self.texture_material_setting_widgets:
+            changed_signal(w).connect(self.on_texture_material_setting_changed)
+        for w in self.texture_binning_settings_widgets:
+            changed_signal(w).connect(self.on_texture_binning_setting_changed)
+        self.ui.texture_show_simulated_spectrum.clicked.connect(
+            self.on_texture_show_simulated_spectrum_clicked)
+        self.ui.texture_plot_pole_figures.clicked.connect(
+            self.on_texture_plot_pole_figures_clicked)
 
         self.ui.export_params.clicked.connect(self.export_params)
         self.ui.import_params.clicked.connect(self.import_params)
@@ -187,6 +215,8 @@ class WppfOptionsDialog(QObject):
 
         self.ui.show_difference_as_percent.setVisible(
             self.show_difference_curve)
+
+        self.update_texture_model_enable_states()
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
@@ -359,6 +389,13 @@ class WppfOptionsDialog(QObject):
                     msg = f'Failed to load amorphous experiment file: {e}'
                     raise Exception(msg)
 
+        if self.varying_texture_and_non_texture_params:
+            msg = (
+                'Texture parameters cannot be varied at the same time as '
+                'non-texture parameters.'
+            )
+            raise Exception(msg)
+
     def generate_params(self):
         kwargs = {
             'method': self.method,
@@ -366,6 +403,7 @@ class WppfOptionsDialog(QObject):
             'peak_shape': self.peak_shape_index,
             'bkgmethod': self.background_method_dict,
             'amorphous_model': None,
+            'texture_model': self.texture_model_dict,
         }
         if self.include_amorphous:
             kwargs['amorphous_model'] = Amorphous(
@@ -379,7 +417,7 @@ class WppfOptionsDialog(QObject):
         self.params = self.generate_params()
         self.update_tree_view()
 
-    def update_params(self):
+    def update_params(self, update_tree_view=True):
         if not hasattr(self, 'params'):
             # Params have not been created yet. Nothing to update.
             return
@@ -394,7 +432,9 @@ class WppfOptionsDialog(QObject):
             params[key] = param
 
         self.params = params
-        self.update_tree_view()
+
+        if update_tree_view:
+            self.update_tree_view()
 
     def show(self):
         self.ui.show()
@@ -404,9 +444,20 @@ class WppfOptionsDialog(QObject):
         selected = self.selected_materials
         items = [(name, name in selected) for name in materials]
         dialog = SelectItemsDialog(items, 'Select Materials', self.ui)
-        if dialog.exec() and self.selected_materials != dialog.selected_items:
-            self.selected_materials = dialog.selected_items
-            self.update_params()
+        while True:
+            if (
+                dialog.exec() and
+                self.selected_materials != dialog.selected_items
+            ):
+                if not dialog.selected_items:
+                    msg = 'At least one material must be selected'
+                    QMessageBox.critical(self.ui, 'Material Required', msg)
+                    print(msg, file=sys.stderr)
+                    continue
+
+                self.selected_materials = dialog.selected_items
+                self.update_params()
+            break
 
     @property
     def powder_overlay_materials(self):
@@ -427,6 +478,7 @@ class WppfOptionsDialog(QObject):
     @selected_materials.setter
     def selected_materials(self, v):
         self._selected_materials = v
+        self.update_texture_material_options()
 
     @property
     def materials(self):
@@ -794,6 +846,7 @@ class WppfOptionsDialog(QObject):
             'limit_tth',
             'min_tth',
             'max_tth',
+            'texture_settings',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -848,6 +901,8 @@ class WppfOptionsDialog(QObject):
             self.update_tree_view()
 
         self.update_enable_states()
+        self.update_texture_material_options()
+        self.update_texture_gui()
 
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
@@ -890,7 +945,7 @@ class WppfOptionsDialog(QObject):
 
         # We may need to update the parameters as well, since some background
         # methods have parameters.
-        self.update_params()
+        self.update_params(update_tree_view=False)
         self.reset_background_param_values()
 
     def clear_background_stderr(self):
@@ -921,9 +976,8 @@ class WppfOptionsDialog(QObject):
 
     def on_chebyshev_num_params_changed(self):
         # Reset the background parameters
-        self.update_params()
+        self.update_params(update_tree_view=False)
         self.reset_background_param_values()
-        self.update_tree_view()
 
     def on_include_amorphous_toggled(self):
         b = self.include_amorphous
@@ -1014,6 +1068,8 @@ class WppfOptionsDialog(QObject):
             parent=self.parent(),
             model_class=self.tree_view_model_class,
         )
+        # Use html so we can render superscripts and subscripts
+        self.tree_view.setItemDelegate(HtmlDelegate())
         self.tree_view.check_selection_index = 2
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
@@ -1034,10 +1090,22 @@ class WppfOptionsDialog(QObject):
         self.tree_view.verticalScrollBar().setValue(scroll_value)
 
     def update_tree_view(self):
+        # Keep the same scroll position
+        scrollbar = self.tree_view.verticalScrollBar()
+        scroll_value = scrollbar.value()
+
         tree_dict = self.tree_view_dict_of_params
         self.tree_view.model().config = tree_dict
         self.update_disabled_paths()
         self.tree_view.reset_gui()
+
+        if scroll_value != 0:
+            # Restore scroll bar position
+            # We only do this if the value wasn't zero because
+            # scrollbar.value() won't reflect the actual value until
+            # the next iteration of the event loop, and repeated calls
+            # to `scrollbar.value()` ultimately turn to 0.
+            scrollbar.setValue(scroll_value)
 
     @property
     def tree_view_dict_of_params(self):
@@ -1076,6 +1144,10 @@ class WppfOptionsDialog(QObject):
                     '_min': param.min,
                     '_max': param.max,
                 })
+
+            # Make a callback for when `vary` gets modified by the user.
+            f = partial(self.on_param_vary_modified, param=param)
+            param._on_vary_modified = f
 
             return d
 
@@ -1220,6 +1292,24 @@ class WppfOptionsDialog(QObject):
             this_template = copy.deepcopy(materials_template)
             recursively_format_mat(mat, this_config, this_template)
 
+        # Add texture parameters
+        if self.includes_texture:
+            texture_dict = tree_dict.setdefault('Texture', {})
+            for mat_name in self.textured_materials:
+                # Look for param names that match
+                prefix = f'{mat_name}_c_'
+                matching_names = [k for k in params if k.startswith(prefix)]
+                if not matching_names:
+                    continue
+
+                mat_config = texture_dict.setdefault(mat_name, {})
+                for name in matching_names:
+                    suffix = name[len(prefix):]
+                    ell, i, j = [int(k) for k in suffix.split('_')]
+                    # Align the superscript and subscript vertically
+                    k = aligned_sub_sup_html('C', f'{ell}', f'{i},{j}')
+                    mat_config[k] = create_param_item(params[name])
+
         # Now all keys should have been used. Verify this is true.
         if sorted(used_params) != sorted(list(params.keys())):
             used = ', '.join(sorted(used_params))
@@ -1284,6 +1374,7 @@ class WppfOptionsDialog(QObject):
         # Those will be disabled.
         results = []
         cur_path = []
+
         def recurse(d):
             if isinstance(d, list):
                 for i, v in enumerate(d):
@@ -1364,6 +1455,17 @@ class WppfOptionsDialog(QObject):
             k: v.stderr for k, v in res.params.items()
             if v.vary and v.stderr
         }
+
+    def on_param_vary_modified(self, param):
+        # If it is a texture parameter, mark all other texture
+        # parameters as the same for that material.
+        if '_c_' in param.name:
+            mat_name = param.name.split('_c_')[0]
+            for p in self.params.values():
+                if p.name.startswith(f'{mat_name}_c_'):
+                    p.vary = param.vary
+
+            self.update_tree_view()
 
     def on_show_difference_curve_toggled(self):
         HexrdConfig().show_wppf_difference_axis = (
@@ -1464,6 +1566,10 @@ class WppfOptionsDialog(QObject):
                 **self.amorphous_kwargs,
             )
 
+        extra_kwargs = {}
+        if self.includes_texture:
+            extra_kwargs['texture_model'] = self.texture_model_dict
+
         return {
             'expt_spectrum': expt_spectrum,
             'params': self.params,
@@ -1474,13 +1580,14 @@ class WppfOptionsDialog(QObject):
             'bkgmethod': self.background_method_dict,
             'peakshape': self.peak_shape,
             'amorphous_model': amorphous_model,
+            **extra_kwargs,
         }
 
     def update_wppf_object(self):
         obj = self._wppf_object
         kwargs = self.wppf_object_kwargs
 
-        skip_list = ['expt_spectrum', 'amorphous_model']
+        skip_list = ['expt_spectrum', 'amorphous_model', 'texture_model']
 
         for key, val in kwargs.items():
             if key in skip_list:
@@ -1608,6 +1715,9 @@ class WppfOptionsDialog(QObject):
 
         stack_item = {k: copy.deepcopy(v) for k, v in stack_item.items()}
 
+        # Copy texture figures over. We need to keep the originals.
+        self._copy_texture_figs(self._wppf_object, stack_item['_wppf_object'])
+
         self._undo_stack.append(stack_item)
         self.update_undo_enable_state()
 
@@ -1622,13 +1732,445 @@ class WppfOptionsDialog(QObject):
         self.update_enable_states()
         self.update_tree_view()
 
+        if self.varying_texture_params:
+            # The texture parameters must have changed from this "undo".
+            self.on_texture_params_modified()
+
         self.undo_clicked.emit()
 
     def update_undo_enable_state(self):
         self.ui.undo_last_run.setEnabled(len(self._undo_stack) > 0)
 
+    @property
+    def texture_material_setting_widgets(self) -> list:
+        return [
+            self.ui.include_texture_model,
+            self.ui.texture_ell_max,
+            self.ui.texture_sample_symmetry,
+        ]
 
-def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model):
+    @property
+    def texture_binning_settings_widgets(self) -> list:
+        return [
+            self.ui.texture_azimuthal_interval,
+            self.ui.texture_integration_range,
+        ]
+
+    def update_texture_material_options(self):
+        valid_mats = self.selected_materials
+
+        w = self.ui.selected_texture_material
+        prev_selected = w.currentText()
+        with block_signals(w):
+            w.clear()
+            w.addItems(valid_mats)
+            if prev_selected in valid_mats:
+                w.setCurrentText(prev_selected)
+
+        # Also verify all modeled materials are present. Remove any
+        # that are not.
+        self.prune_invalid_texture_materials()
+        self.on_selected_texture_material_changed()
+
+    def on_selected_texture_material_changed(self):
+        self.update_texture_model_gui()
+
+    def update_texture_model_gui(self):
+        mat_name = self.ui.selected_texture_material.currentText()
+        model_kwargs = self.texture_model_kwargs
+        checked = mat_name in model_kwargs
+        if checked:
+            settings = model_kwargs[mat_name]
+        else:
+            settings = self._default_texture_model_settings
+
+        with block_signals(*self.texture_material_setting_widgets):
+            self.ui.include_texture_model.setChecked(checked)
+            self.ui.texture_sample_symmetry.setCurrentText(settings['ssym'])
+            self.ui.texture_ell_max.setValue(settings['ell_max'])
+
+        self.update_texture_model_enable_states()
+
+    def update_texture_model_enable_states(self):
+        # Determine whether we should disable the model texture
+        # and
+        w = self.ui.include_texture_model
+        is_rietveld = self.method == 'Rietveld'
+        if not is_rietveld:
+            w.setChecked(False)
+
+        has_object = self._wppf_object is not None
+        enable = is_rietveld and not has_object
+        w.setEnabled(enable)
+
+        # Now enable/disable all the other widgets
+        enable = w.isChecked() and not has_object
+        widgets = [
+            self.ui.texture_sample_symmetry_label,
+            self.ui.texture_sample_symmetry,
+            self.ui.texture_ell_max_label,
+            self.ui.texture_ell_max,
+        ]
+
+        for w in widgets:
+            w.setEnabled(enable)
+
+        self.ui.spectrum_binning_group.setEnabled(is_rietveld)
+
+        # Now figure out if we should enable pole figure plotting
+        self.ui.texture_plot_pole_figures.setEnabled(
+            self.can_plot_pole_figures)
+
+    def on_texture_material_setting_changed(self):
+        mat_name = self.ui.selected_texture_material.currentText()
+        checked = self.ui.include_texture_model.isChecked()
+        model_kwargs = self.texture_model_kwargs
+
+        if not checked:
+            if mat_name in model_kwargs:
+                del model_kwargs[mat_name]
+        else:
+            ssym = self.ui.texture_sample_symmetry.currentText()
+            # Force ell_max to be an even number
+            ell_max = self.ui.texture_ell_max.value()
+            if ell_max % 2 != 0:
+                msg = 'Spherical harmonic max must be an even number'
+                QMessageBox.critical(self.ui, 'HEXRD', msg)
+                print(msg, file=sys.stderr)
+
+                ell_max += 1
+                w = self.ui.texture_ell_max
+                with block_signals(w):
+                    w.setValue(ell_max)
+
+            model_kwargs[mat_name] = {
+                'ssym': ssym,
+                'ell_max': ell_max,
+            }
+
+        self.update_texture_model_enable_states()
+
+        # New params might be present
+        # This will update the tree view
+        self.update_params()
+
+    def update_texture_binning_settings_gui(self):
+        settings = self.texture_settings
+        settings_map = {
+            'azimuthal_interval': 'texture_azimuthal_interval',
+            'integration_range': 'texture_integration_range',
+        }
+        for key, w_name in settings_map.items():
+            w = getattr(self.ui, w_name)
+            w.setValue(settings[key])
+
+    def save_texture_binning_settings(self):
+        settings = self.texture_settings
+        settings_map = {
+            'azimuthal_interval': 'texture_azimuthal_interval',
+            'integration_range': 'texture_integration_range',
+        }
+        for key, w_name in settings_map.items():
+            w = getattr(self.ui, w_name)
+            settings[key] = w.value()
+
+    def invalidate_texture_data(self):
+        self._last_pv_binned = None
+        self._last_texture_pv_sim = None
+        self.clear_texture_data()
+
+    def on_texture_binning_setting_changed(self):
+        self.save_texture_binning_settings()
+
+        # Invalidate the texture data
+        self.invalidate_texture_data()
+        self.update_simulated_polar_dialog()
+
+    def compute_binned_polar_view(self):
+        canvas = HexrdConfig().active_canvas
+        if canvas.mode != 'polar' or canvas.iviewer is None:
+            return
+
+        settings = self.texture_settings
+
+        self._last_pv_binned = bin_polar_view(
+            canvas.iviewer.pv,
+            canvas.iviewer.img,
+            settings['azimuthal_interval'],
+            settings['integration_range'],
+        )
+
+    @property
+    def polar_extent(self) -> list[float] | None:
+        canvas = HexrdConfig().active_canvas
+        if canvas.mode != 'polar' or canvas.iviewer is None:
+            return
+
+        return canvas.iviewer._extent
+
+    @property
+    def varying_texture_params(self):
+        for mat_name in self.textured_materials:
+            prefix = f'{mat_name}_c_'
+            for param in self.params.values():
+                if param.name.startswith(prefix) and param.vary:
+                    return True
+
+        return False
+
+    @property
+    def varying_texture_and_non_texture_params(self):
+        if not self.varying_texture_params:
+            return False
+
+        prefixes = [f'{mat_name}_c_' for mat_name in self.textured_materials]
+        for name, param in self.params.items():
+            if param.vary and not any(name.startswith(x) for x in prefixes):
+                return True
+
+        return False
+
+    @property
+    def can_plot_pole_figures(self) -> bool:
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            # Nothing to do
+            return False
+
+        def is_zero(v: float) -> bool:
+            return np.isclose(v, 0)
+
+        params = self.params
+
+        # If we find any non-zero parameters, we can plot pole figures
+        for model in obj.texture_model.values():
+            if model is None:
+                continue
+
+            for name in model.parameter_names:
+                if name in params and not is_zero(params[name].value):
+                    return True
+
+        return False
+
+    def _copy_texture_figs(self, obj1, obj2):
+        # We need to keep the original texture figures, so copy those over.
+        if obj1 is None or obj2 is None:
+            return
+
+        for model_key, model1 in obj1.texture_model.items():
+            model2 = obj2.texture_model[model_key]
+            if model1 is None or model2 is None:
+                continue
+
+            if hasattr(model1, 'fig_new'):
+                model2.fig_new = model1.fig_new
+                model2.ax_new = model1.ax_new
+
+    def clear_texture_data(self):
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            # Nothing to do
+            return
+
+        for model in obj.texture_model.values():
+            if model is None or not model.pfdata:
+                continue
+
+            # Clear it
+            model.pfdata = {}
+
+    def ensure_texture_data(self):
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            raise Exception('Cannot make texture data without Rietveld object')
+
+        if not obj.texture_models_have_pfdata:
+            self.update_texture_data()
+
+    def update_texture_data(self):
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            return
+
+        if self._last_pv_binned is None:
+            # A recompute is necessary
+            self.compute_binned_polar_view()
+
+        settings = self.texture_settings
+
+        # This also updates the texture data on all of the texture models
+        obj.compute_texture_data(
+            self._last_pv_binned,
+            bvec=HexrdConfig().beam_vector,
+            evec=ct.eta_vec,
+            azimuthal_interval=settings['azimuthal_interval'],
+        )
+
+    def on_texture_show_simulated_spectrum_clicked(self):
+        if self._last_pv_binned is None:
+            # A recompute is necessary
+            self.compute_binned_polar_view()
+
+        pv_bin = self._last_pv_binned
+        pv_sim = self._last_texture_pv_sim
+        extent = self.polar_extent
+
+        d = self._texture_simulated_polar_dialog
+        if d is None:
+            d = WppfSimulatedPolarDialog(pv_bin, pv_sim, extent)
+            self._texture_simulated_polar_dialog = d
+        else:
+            # Ensure the data is up-to-date
+            d.extent = extent
+            d.set_data(pv_bin, pv_sim)
+
+        d.ui.show()
+
+    def on_texture_plot_pole_figures_clicked(self):
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            return
+
+        if len(self.textured_materials) > 1:
+            # Get the user to pick a material
+            items = self.textured_materials
+            mat_name, ok = QInputDialog.getItem(
+                self.ui, 'Pole Figures', 'Select material', items, 0, False)
+            if not ok:
+                return
+        else:
+            mat_name = self.textured_materials[0]
+
+        mat = HexrdConfig().material(mat_name)
+        hkls = mat.planeData.getHKLs()
+
+        items = []
+        for hkl in hkls:
+            items.append([hkl_to_str(hkl), False])
+
+        # Only select the first one by default
+        items[0][1] = True
+
+        # Get the user to select HKLs to use
+        dialog = SelectItemsDialog(items, 'Select HKLs')
+        if not dialog.exec():
+            return
+
+        hkl_is_selected = [x[1] for x in dialog.items]
+        selected_hkls = hkls[hkl_is_selected]
+        if selected_hkls.size == 0:
+            return
+
+        model = obj.texture_model[mat_name]
+
+        if hasattr(model, 'fig_new'):
+            # Hide the old plot for this harmonic model
+            model.fig_new.canvas.manager.window.hide()
+
+        model.calc_new_pole_figure(self.params, selected_hkls, plot=True)
+
+    def on_texture_params_modified(self):
+        self.update_simulated_polar_dialog()
+        self.update_pole_figure_plots()
+
+    def update_simulated_polar_dialog(self):
+        # FIXME: recalculate `self._last_texture_pv_sim`
+        d = self._texture_simulated_polar_dialog
+        if d is None or not d.ui.isVisible():
+            return
+
+        if self._last_pv_binned is None:
+            self.compute_binned_polar_view()
+
+        d.set_data(self._last_pv_binned, self._last_texture_pv_sim)
+
+    def update_pole_figure_plots(self):
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            return
+
+        for model in obj.texture_model.values():
+            if model is None:
+                continue
+
+            if model.new_pf_plots_visible:
+                model.update_new_pf_plot_data(self.params)
+
+    def update_texture_gui(self):
+        self.update_texture_model_gui()
+        self.update_texture_binning_settings_gui()
+
+    @property
+    def texture_settings(self):
+        return self._texture_settings
+
+    @texture_settings.setter
+    def texture_settings(self, v):
+        self._texture_settings = v
+
+        # Validate materials in the texture model dict are selected
+        # materials. Remove materials that are not.
+        self.prune_invalid_texture_materials()
+        self.update_texture_gui()
+
+    def prune_invalid_texture_materials(self):
+        valid_mats = self.selected_materials
+        for name in list(self.texture_model_kwargs):
+            if name not in valid_mats:
+                self.texture_model_kwargs.pop(name)
+
+    @property
+    def _default_texture_settings(self):
+        return {
+            'model_kwargs': {},
+            'azimuthal_interval': 5,
+            'integration_range': 1,
+        }
+
+    @property
+    def _default_texture_model_settings(self):
+        return {
+            'ssym': 'axial',
+            'ell_max': 16,
+        }
+
+    @property
+    def includes_texture(self) -> bool:
+        return bool(self.textured_materials)
+
+    @property
+    def textured_materials(self) -> list[str]:
+        if self.method != 'Rietveld':
+            return []
+
+        return list(self.texture_model_kwargs)
+
+    @property
+    def texture_model_kwargs(self) -> dict[str]:
+        return self.texture_settings['model_kwargs']
+
+    @property
+    def texture_model_dict(self) -> dict[str, HarmonicModel]:
+        if self.method != 'Rietveld':
+            return {}
+
+        ret = {}
+        settings = self.texture_settings
+        for k, kwargs in settings['model_kwargs'].items():
+            mat = HexrdConfig().material(k)
+            ret[k] = HarmonicModel(**{
+                'material': Material_Rietveld(material_obj=mat),
+                'bvec': HexrdConfig().beam_vector,
+                'evec': ct.eta_vec,
+                'sample_normal': HexrdConfig().sample_normal,
+                **kwargs,
+            })
+        return ret
+
+
+def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model,
+                    texture_model):
     func_dict = {
         'LeBail': _generate_default_parameters_LeBail,
         'Rietveld': _generate_default_parameters_Rietveld,
@@ -1636,11 +2178,17 @@ def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model):
     if method not in func_dict:
         raise Exception(f'Unknown method: {method}')
 
+    kwargs = {
+        'amorphous_model': amorphous_model,
+    }
+    if method == 'Rietveld':
+        kwargs['texture_model'] = texture_model
+
     return func_dict[method](
         materials,
         peak_shape,
         bkgmethod,
-        amorphous_model=amorphous_model,
+        **kwargs,
     )
 
 
@@ -1691,6 +2239,9 @@ class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
 
+    def on_boolean_toggled(self, b, path):
+        pass
+
 
 class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
     COLUMNS = {
@@ -1699,6 +2250,18 @@ class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
     }
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
+
+    def on_boolean_toggled(self, b, path):
+        pass
+
+
+def changed_signal(w):
+    if isinstance(w, QCheckBox):
+        return w.toggled
+    elif isinstance(w, QComboBox):
+        return w.currentIndexChanged
+
+    return w.valueChanged
 
 
 if __name__ == '__main__':

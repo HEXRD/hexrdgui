@@ -27,6 +27,10 @@ class SelectItemsDialog(QDialog):
         self.button_box.rejected.connect(self.reject)
 
     @property
+    def items(self):
+        return self.select_items_widget.items
+
+    @property
     def selected_items(self):
         return self.select_items_widget.selected_items
 

@@ -57,16 +57,33 @@ class WppfRunner:
     def run_wppf(self):
         dialog = self.wppf_options_dialog
         self.wppf_object = dialog.wppf_object
+        varying_texture = dialog.varying_texture_params
+
+        if varying_texture:
+            # Ensure texture data is set on the WPPF object.
+            # This might be time-consuming.
+            dialog.ensure_texture_data()
+        else:
+            # If there are any non-texture refinements, we ought
+            # to clear the texture data.
+            dialog.clear_texture_data()
 
         # Work around differences in WPPF objects
         if isinstance(self.wppf_object, Rietveld):
-            refine_func = self.wppf_object.Refine
+            if varying_texture:
+                refine_func = self.wppf_object.RefineTexture
+            else:
+                refine_func = self.wppf_object.Refine
         else:
             refine_func = self.wppf_object.RefineCycle
 
         for i in range(dialog.refinement_steps):
             refine_func()
             self.rerender_wppf()
+
+        if varying_texture:
+            # Update the simulated spectrum (if needed)
+            dialog.on_texture_params_modified()
 
         self.push_undo_stack()
         self.write_params_to_materials()
