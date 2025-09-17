@@ -1,5 +1,6 @@
 import copy
 from pathlib import Path
+import sys
 
 import h5py
 import lmfit
@@ -9,19 +10,24 @@ import re
 import yaml
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox, QComboBox, QFileDialog, QHBoxLayout, QMessageBox, QWidget
+)
 
-from hexrdgui import resource_loader
+from hexrd import constants as ct
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
+from hexrd.wppf.phase import Material_Rietveld
+from hexrd.wppf.texture import HarmonicModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
     background_methods, _generate_default_parameters_LeBail,
     _generate_default_parameters_Rietveld,
 )
 
+from hexrdgui import resource_loader
 from hexrdgui.calibration.tree_item_models import (
     _tree_columns_to_indices,
     DefaultCalibrationTreeItemModel,
@@ -29,6 +35,7 @@ from hexrdgui.calibration.tree_item_models import (
 )
 from hexrdgui.dynamic_widget import DynamicWidget
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.html_delegate import aligned_sub_sup_html, HtmlDelegate
 from hexrdgui.point_picker_dialog import PointPickerDialog
 from hexrdgui.select_items_dialog import SelectItemsDialog
 from hexrdgui.tree_views.multi_column_dict_tree_view import (
@@ -71,6 +78,7 @@ class WppfOptionsDialog(QObject):
         self._undo_stack = []
 
         self.amorphous_experiment_files = []
+        self._texture_settings = self._default_texture_settings
 
         self.params = self.generate_params()
         self.initialize_tree_view()
@@ -120,6 +128,11 @@ class WppfOptionsDialog(QObject):
             self.on_num_amorphous_peaks_value_changed)
         self.ui.amorphous_select_experiment_files.clicked.connect(
             self.select_amorphous_experiment_files)
+
+        self.ui.selected_texture_material.currentIndexChanged.connect(
+            self.on_selected_texture_material_changed)
+        for w in self.texture_material_setting_widgets:
+            changed_signal(w).connect(self.on_texture_material_setting_changed)
 
         self.ui.export_params.clicked.connect(self.export_params)
         self.ui.import_params.clicked.connect(self.import_params)
@@ -187,6 +200,8 @@ class WppfOptionsDialog(QObject):
 
         self.ui.show_difference_as_percent.setVisible(
             self.show_difference_curve)
+
+        self.update_texture_model_enable_states()
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
@@ -366,6 +381,7 @@ class WppfOptionsDialog(QObject):
             'peak_shape': self.peak_shape_index,
             'bkgmethod': self.background_method_dict,
             'amorphous_model': None,
+            'texture_model': self.texture_model_dict,
         }
         if self.include_amorphous:
             kwargs['amorphous_model'] = Amorphous(
@@ -379,7 +395,7 @@ class WppfOptionsDialog(QObject):
         self.params = self.generate_params()
         self.update_tree_view()
 
-    def update_params(self):
+    def update_params(self, update_tree_view=True):
         if not hasattr(self, 'params'):
             # Params have not been created yet. Nothing to update.
             return
@@ -394,7 +410,9 @@ class WppfOptionsDialog(QObject):
             params[key] = param
 
         self.params = params
-        self.update_tree_view()
+
+        if update_tree_view:
+            self.update_tree_view()
 
     def show(self):
         self.ui.show()
@@ -404,9 +422,17 @@ class WppfOptionsDialog(QObject):
         selected = self.selected_materials
         items = [(name, name in selected) for name in materials]
         dialog = SelectItemsDialog(items, 'Select Materials', self.ui)
-        if dialog.exec() and self.selected_materials != dialog.selected_items:
-            self.selected_materials = dialog.selected_items
-            self.update_params()
+        while True:
+            if dialog.exec() and self.selected_materials != dialog.selected_items:
+                if not dialog.selected_items:
+                    msg = 'At least one material must be selected'
+                    QMessageBox.critical(self.ui, 'Material Required', msg)
+                    print(msg, file=sys.stderr)
+                    continue
+
+                self.selected_materials = dialog.selected_items
+                self.update_params()
+            break
 
     @property
     def powder_overlay_materials(self):
@@ -427,6 +453,7 @@ class WppfOptionsDialog(QObject):
     @selected_materials.setter
     def selected_materials(self, v):
         self._selected_materials = v
+        self.update_texture_material_options()
 
     @property
     def materials(self):
@@ -794,6 +821,7 @@ class WppfOptionsDialog(QObject):
             'limit_tth',
             'min_tth',
             'max_tth',
+            'texture_settings',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -848,6 +876,7 @@ class WppfOptionsDialog(QObject):
             self.update_tree_view()
 
         self.update_enable_states()
+        self.update_texture_material_options()
 
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
@@ -890,7 +919,7 @@ class WppfOptionsDialog(QObject):
 
         # We may need to update the parameters as well, since some background
         # methods have parameters.
-        self.update_params()
+        self.update_params(update_tree_view=False)
         self.reset_background_param_values()
 
     def clear_background_stderr(self):
@@ -921,9 +950,8 @@ class WppfOptionsDialog(QObject):
 
     def on_chebyshev_num_params_changed(self):
         # Reset the background parameters
-        self.update_params()
+        self.update_params(update_tree_view=False)
         self.reset_background_param_values()
-        self.update_tree_view()
 
     def on_include_amorphous_toggled(self):
         b = self.include_amorphous
@@ -1014,6 +1042,8 @@ class WppfOptionsDialog(QObject):
             parent=self.parent(),
             model_class=self.tree_view_model_class,
         )
+        # Use html so we can render superscripts and subscripts
+        self.tree_view.setItemDelegate(HtmlDelegate())
         self.tree_view.check_selection_index = 2
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
@@ -1034,10 +1064,22 @@ class WppfOptionsDialog(QObject):
         self.tree_view.verticalScrollBar().setValue(scroll_value)
 
     def update_tree_view(self):
+        # Keep the same scroll position
+        scrollbar = self.tree_view.verticalScrollBar()
+        scroll_value = scrollbar.value()
+
         tree_dict = self.tree_view_dict_of_params
         self.tree_view.model().config = tree_dict
         self.update_disabled_paths()
         self.tree_view.reset_gui()
+
+        if scroll_value != 0:
+            # Restore scroll bar position
+            # We only do this if the value wasn't zero because
+            # scrollbar.value() won't reflect the actual value until
+            # the next iteration of the event loop, and repeated calls
+            # to `scrollbar.value()` ultimately turn to 0.
+            scrollbar.setValue(scroll_value)
 
     @property
     def tree_view_dict_of_params(self):
@@ -1219,6 +1261,24 @@ class WppfOptionsDialog(QObject):
             this_config = mat_dict.setdefault(mat, {})
             this_template = copy.deepcopy(materials_template)
             recursively_format_mat(mat, this_config, this_template)
+
+        # Add texture parameters
+        if self.includes_texture:
+            texture_dict = tree_dict.setdefault('Texture', {})
+            for mat_name in self.textured_materials:
+                # Look for param names that match
+                prefix = f'{mat_name}_c_'
+                matching_names = [k for k in params if k.startswith(prefix)]
+                if not matching_names:
+                    continue
+
+                mat_config = texture_dict.setdefault(mat_name, {})
+                for name in matching_names:
+                    suffix = name[len(prefix):]
+                    ell, i, j = [int(k) for k in suffix.split('_')]
+                    # Align the superscript and subscript vertically
+                    k = aligned_sub_sup_html('C', f'{ell}', f'{i},{j}')
+                    mat_config[k] = create_param_item(params[name])
 
         # Now all keys should have been used. Verify this is true.
         if sorted(used_params) != sorted(list(params.keys())):
@@ -1464,6 +1524,10 @@ class WppfOptionsDialog(QObject):
                 **self.amorphous_kwargs,
             )
 
+        extra_kwargs = {}
+        if self.includes_texture:
+            extra_kwargs['texture_model'] = self.texture_model_dict
+
         return {
             'expt_spectrum': expt_spectrum,
             'params': self.params,
@@ -1474,6 +1538,7 @@ class WppfOptionsDialog(QObject):
             'bkgmethod': self.background_method_dict,
             'peakshape': self.peak_shape,
             'amorphous_model': amorphous_model,
+            **extra_kwargs,
         }
 
     def update_wppf_object(self):
@@ -1627,8 +1692,172 @@ class WppfOptionsDialog(QObject):
     def update_undo_enable_state(self):
         self.ui.undo_last_run.setEnabled(len(self._undo_stack) > 0)
 
+    @property
+    def texture_material_setting_widgets(self) -> list:
+        return [
+            self.ui.include_texture_model,
+            self.ui.texture_ell_max,
+            self.ui.texture_sample_symmetry,
+        ]
 
-def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model):
+    def update_texture_material_options(self):
+        valid_mats = self.selected_materials
+
+        w = self.ui.selected_texture_material
+        prev_selected = w.currentText()
+        with block_signals(w):
+            w.clear()
+            w.addItems(valid_mats)
+            if prev_selected in valid_mats:
+                w.setCurrentText(prev_selected)
+
+        # Also verify all modeled materials are present. Remove any
+        # that are not.
+        self.prune_invalid_texture_materials()
+        self.on_selected_texture_material_changed()
+
+    def on_selected_texture_material_changed(self):
+        self.update_texture_model_gui()
+
+    def update_texture_model_gui(self):
+        mat_name = self.ui.selected_texture_material.currentText()
+        model_kwargs = self.texture_model_kwargs
+        checked = mat_name in model_kwargs
+        if checked:
+            settings = model_kwargs[mat_name]
+        else:
+            settings = self._default_texture_model_settings
+
+        with block_signals(*self.texture_material_setting_widgets):
+            self.ui.include_texture_model.setChecked(checked)
+            self.ui.texture_sample_symmetry.setCurrentText(settings['ssym'])
+            self.ui.texture_ell_max.setValue(settings['ell_max'])
+
+        self.update_texture_model_enable_states()
+
+    def update_texture_model_enable_states(self):
+        # Determine whether we should disable the model texture
+        # and
+        w = self.ui.include_texture_model
+        if self.method != 'Rietveld':
+            w.setChecked(False)
+
+        has_object = self._wppf_object is not None
+        enable = self.method == 'Rietveld' and not has_object
+        w.setEnabled(enable)
+
+        # Now enable/disable all the other widgets
+        enable = w.isChecked() and not has_object
+        widgets = [
+            self.ui.texture_sample_symmetry_label,
+            self.ui.texture_sample_symmetry,
+            self.ui.texture_ell_max_label,
+            self.ui.texture_ell_max,
+        ]
+
+        for w in widgets:
+            w.setEnabled(enable)
+
+    def on_texture_material_setting_changed(self):
+        mat_name = self.ui.selected_texture_material.currentText()
+        checked = self.ui.include_texture_model.isChecked()
+        model_kwargs = self.texture_model_kwargs
+
+        if not checked:
+            if mat_name in model_kwargs:
+                del model_kwargs[mat_name]
+        else:
+            ssym = self.ui.texture_sample_symmetry.currentText()
+            # Force ell_max to be an even number
+            ell_max = self.ui.texture_ell_max.value()
+            if ell_max % 2 != 0:
+                msg = 'Spherical harmonic max must be an even number'
+                QMessageBox.critical(self.ui, 'HEXRD', msg)
+                print(msg, file=sys.stderr)
+
+                ell_max += 1
+                w = self.ui.texture_ell_max
+                with block_signals(w):
+                    w.setValue(ell_max)
+
+            model_kwargs[mat_name] = {
+                'ssym': ssym,
+                'ell_max': ell_max,
+            }
+
+        self.update_texture_model_enable_states()
+
+        # New params might be present
+        # This will update the tree view
+        self.update_params()
+
+    @property
+    def texture_settings(self):
+        return self._texture_settings
+
+    @texture_settings.setter
+    def texture_settings(self, v):
+        self._texture_settings = v
+
+        # Validate materials in the texture model dict are selected
+        # materials. Remove materials that are not.
+        self.prune_invalid_texture_materials()
+
+    def prune_invalid_texture_materials(self):
+        valid_mats = self.selected_materials
+        for name in list(self.texture_model_kwargs):
+            if name not in valid_mats:
+                self.texture_model_kwargs.pop(name)
+
+    @property
+    def _default_texture_settings(self):
+        return {
+            'model_kwargs': {},
+        }
+
+    @property
+    def _default_texture_model_settings(self):
+        return {
+            'ssym': 'axial',
+            'ell_max': 16,
+        }
+
+    @property
+    def includes_texture(self) -> bool:
+        return bool(self.textured_materials)
+
+    @property
+    def textured_materials(self) -> list[str]:
+        if self.method != 'Rietveld':
+            return []
+
+        return list(self.texture_model_kwargs)
+
+    @property
+    def texture_model_kwargs(self) -> dict[str]:
+        return self.texture_settings['model_kwargs']
+
+    @property
+    def texture_model_dict(self) -> dict[str, HarmonicModel]:
+        if self.method != 'Rietveld':
+            return {}
+
+        ret = {}
+        settings = self.texture_settings
+        for k, kwargs in settings['model_kwargs'].items():
+            mat = HexrdConfig().material(k)
+            ret[k] = HarmonicModel(**{
+                'material': Material_Rietveld(material_obj=mat),
+                'bvec': HexrdConfig().beam_vector,
+                'evec': ct.eta_vec,
+                'sample_normal': HexrdConfig().sample_normal,
+                **kwargs,
+            })
+        return ret
+
+
+def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model,
+                    texture_model):
     func_dict = {
         'LeBail': _generate_default_parameters_LeBail,
         'Rietveld': _generate_default_parameters_Rietveld,
@@ -1636,11 +1865,17 @@ def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model):
     if method not in func_dict:
         raise Exception(f'Unknown method: {method}')
 
+    kwargs = {
+        'amorphous_model': amorphous_model,
+    }
+    if method == 'Rietveld':
+        kwargs['texture_model'] = texture_model
+
     return func_dict[method](
         materials,
         peak_shape,
         bkgmethod,
-        amorphous_model=amorphous_model,
+        **kwargs,
     )
 
 
@@ -1699,6 +1934,15 @@ class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
     }
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
+
+
+def changed_signal(w):
+    if isinstance(w, QCheckBox):
+        return w.toggled
+    elif isinstance(w, QComboBox):
+        return w.currentIndexChanged
+
+    return w.valueChanged
 
 
 if __name__ == '__main__':

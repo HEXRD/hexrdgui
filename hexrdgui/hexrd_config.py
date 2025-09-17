@@ -14,7 +14,7 @@ import yaml
 
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
-from hexrd.instrument import HEDMInstrument
+from hexrd.instrument import calc_beam_vec, HEDMInstrument
 from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS, PINHOLE_DEFAULTS
 from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
@@ -2189,6 +2189,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def sample_rmat(self, v: np.ndarray):
         phi, n = angleAxisOfRotMat(v)
         self.sample_tilt = phi * n.flatten()
+
+    @property
+    def sample_normal(self) -> np.ndarray:
+        bvec = self.beam_vector
+        return np.dot(self.sample_rmat, [0., 0., np.sign(bvec[2])])
+
+    @property
+    def beam_vector(self) -> np.ndarray:
+        d = self.active_beam['vector']
+        return calc_beam_vec(d['azimuth'], d['polar_angle'])
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
