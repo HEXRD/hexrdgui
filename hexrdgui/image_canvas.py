@@ -1559,10 +1559,12 @@ class ImageCanvas(FigureCanvas):
             self.clear_mask_highlights()
             for det_name, ax in self.raw_axes.items():
                 self.highlight_masks(ax, det_name)
+            self.blit_manager.update()
             return
 
         if self.mode in (ViewType.polar, ViewType.stereo):
             self.update_mask_highlights(self.axis)
+            self.blit_manager.update()
 
     def polar_masks_changed(self):
         skip = (
@@ -2280,9 +2282,10 @@ class ImageCanvas(FigureCanvas):
         )
 
     def highlight_masks(self, axis, det=None):
+        # Don't update the blit manager here, so we can better control
+        # it elsewhere
         all_verts = self.get_mask_verts('highlights', det)
         if not all_verts:
-            self.blit_manager.update()
             return
 
         kwargs = {
@@ -2299,8 +2302,6 @@ class ImageCanvas(FigureCanvas):
             polygon.set_animated(True)
             axis.add_patch(polygon)
             highlight_artists.append(polygon)
-
-        self.blit_manager.update()
 
     def remove_all_mask_highlight_artists(self):
         self.blit_manager.remove_artists('mask_highlights')
