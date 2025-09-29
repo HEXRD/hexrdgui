@@ -2136,6 +2136,7 @@ class WppfOptionsDialog(QObject):
     def on_texture_params_modified(self):
         self.update_simulated_polar_dialog()
         self.update_pole_figure_plots()
+        self.update_texture_index_label()
 
     def update_simulated_polar_dialog(self):
         # FIXME: recalculate `self._last_texture_pv_sim`
@@ -2230,6 +2231,22 @@ class WppfOptionsDialog(QObject):
                 **kwargs,
             })
         return ret
+
+    def update_texture_index_label(self):
+        obj = self._wppf_object
+        mat_name = self.ui.selected_texture_material.currentText()
+        w = self.ui.texture_index_label
+
+        if (
+            not isinstance(obj, Rietveld) or
+            obj.texture_model.get(mat_name) is None
+        ):
+            v = 'None'
+        else:
+            j = obj.texture_model[mat_name].J(self.params)
+            v = f'{j:.2f}'
+
+        w.setText(f'Texture index: {v}')
 
 
 def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model,

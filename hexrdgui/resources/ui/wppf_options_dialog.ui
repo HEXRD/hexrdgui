@@ -637,6 +637,13 @@
               </property>
              </widget>
             </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="texture_index_label">
+              <property name="text">
+               <string>Texture Index: None</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
