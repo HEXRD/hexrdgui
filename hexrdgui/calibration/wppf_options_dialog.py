@@ -821,6 +821,10 @@ class WppfOptionsDialog(QObject):
             'background_method_dict',
         ]
 
+        skip_list = [
+            'params_dict',
+        ]
+
         with block_signals(*self.all_widgets):
             for k in apply_first_keys:
                 if k in settings:
@@ -832,14 +836,9 @@ class WppfOptionsDialog(QObject):
                     # as it is no longer compatible.
                     continue
 
-                if k == 'params_dict':
-                    # For backward-compatibility
-                    for d in v.values():
-                        if 'lb' in d:
-                            d['min'] = d.pop('lb')
-
-                        if 'ub' in d:
-                            d['max'] = d.pop('ub')
+                if k in skip_list:
+                    # We apply this later...
+                    continue
 
                 if not hasattr(self, k) or k in apply_first_keys:
                     # Skip it...
@@ -850,6 +849,21 @@ class WppfOptionsDialog(QObject):
         # Add/remove params depending on what are allowed
         self.update_params()
         self.update_enable_states()
+
+        # Now apply the params dict after updating default parameters.
+        # This is so that settings specific to things like texture, or
+        # Rietveld, can be loaded correctly.
+        if 'params_dict' in settings:
+            v = settings['params_dict']
+            # For backward-compatibility
+            for d in v.values():
+                if 'lb' in d:
+                    d['min'] = d.pop('lb')
+
+                if 'ub' in d:
+                    d['max'] = d.pop('ub')
+
+            self.params_dict = v
 
     def save_settings(self):
         settings = HexrdConfig().config['calibration'].setdefault('wppf', {})
@@ -1672,6 +1686,7 @@ class WppfOptionsDialog(QObject):
             self.params[key] = dict_to_param(import_params[key])
 
         self.update_tree_view()
+        self.save_settings()
 
     def validate_import_params(self, import_params, filename):
         here = self.params.keys()
@@ -2241,14 +2256,6 @@ def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model,
 
 
 def param_to_dict(param):
-    # Make sure these are non-numpy types
-    def _dict_to_basic(d):
-        for k, v in list(d.items()):
-            if isinstance(v, np.generic):
-                d[k] = v.item()
-
-        return d
-
     return _dict_to_basic({
         'name': param.name,
         'value': param.value,
@@ -2264,7 +2271,17 @@ def dict_to_param(d):
         d = d.copy()
         del d['stderr']
 
+    d = _dict_to_basic(d.copy())
     return lmfit.Parameter(**d)
+
+
+# Ensure dict values are basic types, and not numpy types
+def _dict_to_basic(d):
+    for k, v in list(d.items()):
+        if isinstance(v, np.generic):
+            d[k] = v.item()
+
+    return d
 
 
 LOADED_YAML_DICTS = {}

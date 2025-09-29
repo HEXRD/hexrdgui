@@ -80,6 +80,9 @@ class WppfRunner:
         self.write_params_to_materials()
         self.update_param_values()
 
+        # Save the new settings so state files will have them
+        dialog.save_settings()
+
     def rerender_wppf(self):
         self.clear_wppf_plots()
         obj = self.wppf_object
