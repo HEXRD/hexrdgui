@@ -59,15 +59,6 @@ class WppfRunner:
         self.wppf_object = dialog.wppf_object
         varying_texture = dialog.varying_texture_params
 
-        if varying_texture:
-            # Ensure texture data is set on the WPPF object.
-            # This might be time-consuming.
-            dialog.ensure_texture_data()
-        else:
-            # If there are any non-texture refinements, we ought
-            # to clear the texture data.
-            dialog.clear_texture_data()
-
         # Work around differences in WPPF objects
         if isinstance(self.wppf_object, Rietveld):
             if varying_texture:

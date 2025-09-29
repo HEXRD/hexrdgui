@@ -2,6 +2,7 @@ import copy
 from functools import partial
 from pathlib import Path
 import sys
+import time
 
 import h5py
 import lmfit
@@ -31,6 +32,7 @@ from hexrd.wppf.wppfsupport import (
 )
 
 from hexrdgui import resource_loader
+from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.calibration.tree_item_models import (
     _tree_columns_to_indices,
     DefaultCalibrationTreeItemModel,
@@ -96,6 +98,8 @@ class WppfOptionsDialog(QObject):
 
         # Default setting for delta boundaries
         self.delta_boundaries = False
+
+        self.async_runner = AsyncRunner(parent)
 
         # Trigger logic for changing amorphous setting
         self.on_include_amorphous_toggled()
@@ -352,6 +356,23 @@ class WppfOptionsDialog(QObject):
 
         self.save_settings()
         self.push_undo_stack()
+
+        if self.varying_texture_params:
+            # Ensure texture data is set on the WPPF object.
+            # This might be time-consuming.
+            # We also have to ensure there is a WPPF object
+            self.wppf_object
+            try:
+                self.ensure_texture_data()
+            except Exception:
+                # If there was some exception, remove the last undo stack entry
+                self.remove_last_undo_stack_entry()
+                raise
+        else:
+            # If there are any non-texture refinements, we ought
+            # to clear the texture data.
+            self.clear_texture_data()
+
         self.run.emit()
 
     def finish(self):
@@ -1738,6 +1759,13 @@ class WppfOptionsDialog(QObject):
 
         self.undo_clicked.emit()
 
+    def remove_last_undo_stack_entry(self):
+        if not self._undo_stack:
+            return
+
+        self._undo_stack.pop()
+        self.update_undo_enable_state()
+
     def update_undo_enable_state(self):
         self.ui.undo_last_run.setEnabled(len(self._undo_stack) > 0)
 
@@ -1980,13 +2008,33 @@ class WppfOptionsDialog(QObject):
             # Clear it
             model.pfdata = {}
 
-    def ensure_texture_data(self):
+    def ensure_texture_data(self) -> bool:
         obj = self._wppf_object
         if not isinstance(obj, Rietveld):
             raise Exception('Cannot make texture data without Rietveld object')
 
-        if not obj.texture_models_have_pfdata:
-            self.update_texture_data()
+        if obj.texture_models_have_pfdata:
+            # Nothing to do
+            return
+
+        had_error = False
+        def on_error():
+            nonlocal had_error
+            had_error = True
+
+        self.async_runner.progress_title = 'Generating texture data...'
+        self.async_runner.error_callback = on_error
+        self.async_runner.run(self.update_texture_data)
+        while not obj.texture_models_have_pfdata and not had_error:
+            # Process events until we have pfdata. This will allows the
+            # progress dialog to animate.
+            QCoreApplication.processEvents()
+            time.sleep(0.05)
+
+        if had_error:
+            msg = 'Failed to generate texture data'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            raise Exception(msg)
 
     def update_texture_data(self):
         obj = self._wppf_object
