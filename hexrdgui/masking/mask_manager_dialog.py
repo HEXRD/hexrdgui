@@ -444,6 +444,16 @@ class MaskManagerDialog(QObject):
                 self.ui.presentation_selector.addItem('Boundary Only')
                 self.ui.presentation_selector.addItem('Visible + Boundary')
 
+            if any(mask.visible for mask in masks_from_names):
+                if not vis_only and all(mask.show_border for mask in masks_from_names):
+                    self.ui.presentation_selector.setCurrentIndex(3)
+                else:
+                    self.ui.presentation_selector.setCurrentIndex(1)
+            elif not vis_only and any(mask.show_border for mask in masks_from_names):
+                self.ui.presentation_selector.setCurrentIndex(2)
+            else:
+                self.ui.presentation_selector.setCurrentIndex(0)
+
     def change_presentation_for_selected(self, text):
         if len(self.ui.masks_tree.selectedItems()) < 1:
             return
