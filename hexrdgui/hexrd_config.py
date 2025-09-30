@@ -18,7 +18,7 @@ from hexrd.instrument import HEDMInstrument
 from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS, PINHOLE_DEFAULTS
 from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
-from hexrd.rotations import RotMatEuler
+from hexrd.rotations import angleAxisOfRotMat, RotMatEuler, rotMatOfExpMap
 from hexrd.utils.decorators import memoize
 from hexrd.utils.yaml import NumpyToNativeDumper
 from hexrd.valunits import valWUnit
@@ -712,6 +712,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 else:
                     # Skip over ones that do not have a matching material
                     continue
+
+            if overlay_dict.get('sample_rmat') is not None:
+                # Legacy way of setting sample rmat was on Laue overlays.
+                # Now we have a global setting for it. Apply this to the
+                # global setting.
+                self.sample_rmat = overlay_dict.pop('sample_rmat')
 
             if overlay_dict.get('tth_distortion_type') is not None:
                 if not self.has_physics_package:
@@ -2174,6 +2180,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self._sample_tilt = v
         self.sample_tilt_modified.emit()
+
+    @property
+    def sample_rmat(self) -> np.ndarray:
+        return rotMatOfExpMap(self.sample_tilt)
+
+    @sample_rmat.setter
+    def sample_rmat(self, v: np.ndarray):
+        phi, n = angleAxisOfRotMat(v)
+        self.sample_tilt = phi * n.flatten()
 
     def _polar_pixel_size_tth(self):
         return self.config['image']['polar']['pixel_size_tth']
