@@ -84,8 +84,6 @@ class WppfOptionsDialog(QObject):
         self._wppf_object = None
         self._prev_background_method = None
         self._undo_stack = []
-        self._last_pv_binned = None
-        self._last_texture_pv_sim = None
         self._texture_simulated_polar_dialog = None
 
         self.amorphous_experiment_files = []
@@ -1603,7 +1601,15 @@ class WppfOptionsDialog(QObject):
 
         extra_kwargs = {}
         if self.includes_texture:
-            extra_kwargs['texture_model'] = self.texture_model_dict
+            extra_kwargs = {
+                **extra_kwargs,
+                'texture_model': self.texture_model_dict,
+                'eta_max': HexrdConfig().polar_res_eta_max,
+                'eta_min': HexrdConfig().polar_res_eta_min,
+                # We have to make sure this is correct every time we update
+                # the 2D spectrum.
+                'eta_step': self.texture_settings['azimuthal_interval'],
+            }
 
         return {
             'expt_spectrum': expt_spectrum,
@@ -1918,8 +1924,6 @@ class WppfOptionsDialog(QObject):
             settings[key] = w.value()
 
     def invalidate_texture_data(self):
-        self._last_pv_binned = None
-        self._last_texture_pv_sim = None
         self.clear_texture_data()
 
     def on_texture_binning_setting_changed(self):
@@ -1929,19 +1933,38 @@ class WppfOptionsDialog(QObject):
         self.invalidate_texture_data()
         self.update_simulated_polar_dialog()
 
-    def compute_binned_polar_view(self):
+    def _compute_2d_pv_bin(self):
         canvas = HexrdConfig().active_canvas
         if canvas.mode != 'polar' or canvas.iviewer is None:
             return
 
         settings = self.texture_settings
 
-        self._last_pv_binned = bin_polar_view(
+        return bin_polar_view(
             canvas.iviewer.pv,
             canvas.iviewer.img,
             settings['azimuthal_interval'],
             settings['integration_range'],
         )
+
+    def _compute_2d_pv_sim(self):
+        # We have to have an object to do this.
+        # If we must, temporarily create one and destroy it later...
+        had_object = self._wppf_object is not None
+
+        obj = self.wppf_object
+        if not isinstance(obj, Rietveld):
+            # Nothing we can do
+            return None
+
+        try:
+            # Make sure the `eta_step` is up-to-date
+            obj.eta_step = self.texture_settings['azimuthal_interval']
+            obj.computespectrum_2D()
+            return obj.simulated_2d
+        finally:
+            if not had_object:
+                self.reset_object()
 
     @property
     def polar_extent(self) -> list[float] | None:
@@ -2056,27 +2079,20 @@ class WppfOptionsDialog(QObject):
         if not isinstance(obj, Rietveld):
             return
 
-        if self._last_pv_binned is None:
-            # A recompute is necessary
-            self.compute_binned_polar_view()
-
+        pv_bin = self._compute_2d_pv_bin()
         settings = self.texture_settings
 
         # This also updates the texture data on all of the texture models
         obj.compute_texture_data(
-            self._last_pv_binned,
+            pv_bin,
             bvec=HexrdConfig().beam_vector,
             evec=ct.eta_vec,
             azimuthal_interval=settings['azimuthal_interval'],
         )
 
     def on_texture_show_simulated_spectrum_clicked(self):
-        if self._last_pv_binned is None:
-            # A recompute is necessary
-            self.compute_binned_polar_view()
-
-        pv_bin = self._last_pv_binned
-        pv_sim = self._last_texture_pv_sim
+        pv_bin = self._compute_2d_pv_bin()
+        pv_sim = self._compute_2d_pv_sim()
         extent = self.polar_extent
 
         d = self._texture_simulated_polar_dialog
@@ -2139,15 +2155,14 @@ class WppfOptionsDialog(QObject):
         self.update_texture_index_label()
 
     def update_simulated_polar_dialog(self):
-        # FIXME: recalculate `self._last_texture_pv_sim`
         d = self._texture_simulated_polar_dialog
         if d is None or not d.ui.isVisible():
             return
 
-        if self._last_pv_binned is None:
-            self.compute_binned_polar_view()
+        pv_bin = self._compute_2d_pv_bin()
+        pv_sim = self._compute_2d_pv_sim()
 
-        d.set_data(self._last_pv_binned, self._last_texture_pv_sim)
+        d.set_data(pv_bin, pv_sim)
 
     def update_pole_figure_plots(self):
         obj = self._wppf_object
