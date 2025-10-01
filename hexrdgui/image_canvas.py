@@ -468,7 +468,6 @@ class ImageCanvas(FigureCanvas):
         type = overlay.type
         style = overlay.style
         highlight_style = overlay.highlight_style
-        self.overlay_axes_data(overlay)
         for axis, det_key, data in self.overlay_axes_data(overlay):
             highlights = [x[2] for x in overlay.highlights if x[0] == det_key]
             kwargs = {
