@@ -59,6 +59,10 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
 
         setattr(param, attribute, value)
 
+        if attribute == 'vary' and hasattr(param, '_on_vary_modified'):
+            # Trigger the callback function
+            param._on_vary_modified()
+
     def data(self, index, role):
         if (
             role in (Qt.BackgroundRole, Qt.ForegroundRole) and

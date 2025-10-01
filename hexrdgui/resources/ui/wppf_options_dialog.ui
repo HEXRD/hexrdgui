@@ -546,6 +546,203 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="texture_tab">
+        <attribute name="title">
+         <string>Texture</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_8">
+         <item row="0" column="0">
+          <widget class="QLabel" name="selected_texture_material_label">
+           <property name="text">
+            <string>Texture Settings for Material:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="selected_texture_material"/>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QGroupBox" name="texture_settings_group">
+           <property name="title">
+            <string/>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_9">
+            <item row="0" column="2">
+             <widget class="QComboBox" name="texture_sample_symmetry">
+              <property name="currentText">
+               <string>monoclinic</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>monoclinic</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>orthorhombic</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>axial</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>triclinic</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="2" column="2">
+             <widget class="QSpinBox" name="texture_ell_max">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string/>
+              </property>
+              <property name="minimum">
+               <number>2</number>
+              </property>
+              <property name="maximum">
+               <number>10000000</number>
+              </property>
+              <property name="singleStep">
+               <number>2</number>
+              </property>
+              <property name="value">
+               <number>16</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="include_texture_model">
+              <property name="text">
+               <string>Model texture for this material?</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="texture_sample_symmetry_label">
+              <property name="text">
+               <string>Sample symmetry:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="texture_ell_max_label">
+              <property name="text">
+               <string>Spherical harmonic degree:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="texture_index_label">
+              <property name="text">
+               <string>Texture Index: None</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="2" column="0" colspan="2">
+          <widget class="QGroupBox" name="spectrum_binning_group">
+           <property name="title">
+            <string/>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0">
+             <widget class="QLabel" name="texture_azimuthal_interval_label">
+              <property name="text">
+               <string>Azimuthal Interval:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLabel" name="texture_integration_range_label">
+              <property name="text">
+               <string>Integration Range:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="ScientificDoubleSpinBox" name="texture_azimuthal_interval">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>0.000010000000000</double>
+              </property>
+              <property name="maximum">
+               <double>10000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>5.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="3">
+             <widget class="ScientificDoubleSpinBox" name="texture_integration_range">
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>0.000010000000000</double>
+              </property>
+              <property name="maximum">
+               <double>10000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="2" colspan="2">
+             <widget class="QPushButton" name="texture_plot_pole_figures">
+              <property name="text">
+               <string>Plot Pole Figures</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="texture_show_simulated_spectrum">
+              <property name="text">
+               <string>Show Simulated Spectrum</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>
@@ -585,6 +782,14 @@
   <tabstop>num_amorphous_peaks</tabstop>
   <tabstop>amorphous_select_experiment_files</tabstop>
   <tabstop>amorphous_expt_smoothing</tabstop>
+  <tabstop>selected_texture_material</tabstop>
+  <tabstop>include_texture_model</tabstop>
+  <tabstop>texture_sample_symmetry</tabstop>
+  <tabstop>texture_ell_max</tabstop>
+  <tabstop>texture_azimuthal_interval</tabstop>
+  <tabstop>texture_integration_range</tabstop>
+  <tabstop>texture_show_simulated_spectrum</tabstop>
+  <tabstop>texture_plot_pole_figures</tabstop>
   <tabstop>export_params</tabstop>
   <tabstop>import_params</tabstop>
   <tabstop>reset_params_to_defaults</tabstop>
