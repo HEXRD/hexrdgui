@@ -2242,7 +2242,7 @@ class WppfOptionsDialog(QObject):
                 'material': Material_Rietveld(material_obj=mat),
                 'bvec': HexrdConfig().beam_vector,
                 'evec': ct.eta_vec,
-                'sample_normal': HexrdConfig().sample_normal,
+                'sample_rmat': HexrdConfig().sample_rmat,
                 **kwargs,
             })
         return ret
