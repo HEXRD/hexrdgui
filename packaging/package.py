@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import subprocess
 import stat
 import sys
 import tarfile
@@ -14,7 +15,6 @@ import click
 import coloredlogs
 
 import conda
-import conda.cli.python_api as Conda
 from conda_build import api as CondaBuild
 from conda_build.config import Config
 from conda_pack import core as CondaPack
@@ -32,6 +32,10 @@ logger.addHandler(handler)
 package_env_name = 'hexrd_package_env'
 
 archive_format = 'zip' if platform.system() == 'Windows' else 'tar'
+
+def run_command(cmd: list[str]) -> str:
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    return result.stdout
 
 def patch_qt_config(base_path):
     # We could use "qt.conf" instead, but Qt is automatically producing a
@@ -116,15 +120,16 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
 
     # Determine the latest hexrd version in the hexrd_package_channel
     # (release or pre-release), and force that hexrd version to be used.
-    params = [
-        Conda.Commands.SEARCH,
+    cmd = [
+        'conda',
+        'search',
         '--override-channels',
         '--channel', hexrd_package_channel,
         '--json',
         'hexrd',
     ]
-    output = Conda.run_command(*params)
-    results = json.loads(output[0])
+    output = run_command(cmd)
+    results = json.loads(output)
     hexrd_version = results['hexrd'][-1]['version']
     config.variant['hexrd_version'] = hexrd_version
 
@@ -144,17 +149,20 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     if platform.system() == 'Darwin':
         channels = ['--channel', 'HEXRD'] + channels
 
-    Conda.run_command(
-        Conda.Commands.CREATE,
-        '--prefix', env_prefix
-    )
+    run_command([
+        'conda',
+        'create',
+        '-y',
+        '--prefix', env_prefix,
+    ])
 
     hexrdgui_output_folder_uri = Path(hexrdgui_output_folder).absolute().as_uri()
 
     logger.info('Installing hexrdgui into new environment.')
     # Install hexrdgui into new environment
-    params = [
-        Conda.Commands.INSTALL,
+    cmd = [
+        'conda',
+        'install',
         '--prefix', env_prefix,
         '--solver', 'libmamba',
         '--override-channels',
@@ -162,9 +170,9 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         '--channel', hexrd_package_channel,
         '--channel', 'conda-forge',
         f'hexrd=={hexrd_version}',
-        'hexrdgui'
+        'hexrdgui',
     ]
-    Conda.run_command(*params)
+    run_command(cmd)
 
     logger.info('Generating tar from environment using conda-pack.')
     # Now use conda-pack to create relocatable archive
