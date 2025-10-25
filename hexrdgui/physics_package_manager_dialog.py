@@ -310,6 +310,9 @@ class PhysicsPackageManagerDialog:
         w = getattr(self.ui, f'{name}_thickness')
         return w.value()
 
+    def layer_density(self, name: str) -> float:
+        return getattr(self.ui, f'{name}_density').value()
+
     def material_changed(self, index, category):
         material = self.material_selectors[category].currentText()
 
@@ -348,7 +351,10 @@ class PhysicsPackageManagerDialog:
             kwargs[f'{name}_material'] = materials[name]
             for key in ('density', 'thickness'):
                 attr = f'{name}_{key}'
-                kwargs[attr] = getattr(self.ui, attr).value()
+                # We MUST use the getter function, so the thickness will
+                # be automatically set to zero for disabled layers.
+                getter = getattr(self, f'layer_{key}')
+                kwargs[attr] = getter(name)
             kwargs[f'{name}_formula'] = self.chemical_formula(name)
 
         HexrdConfig().update_physics_package(**kwargs)
