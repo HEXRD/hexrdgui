@@ -2024,6 +2024,9 @@ class WppfOptionsDialog(QObject):
         if obj1 is None or obj2 is None:
             return
 
+        if any(not hasattr(x, 'texture_model') for x in (obj1, obj2)):
+            return
+
         for model_key, model1 in obj1.texture_model.items():
             model2 = obj2.texture_model[model_key]
             if model1 is None or model2 is None:
@@ -2242,7 +2245,7 @@ class WppfOptionsDialog(QObject):
                 'material': Material_Rietveld(material_obj=mat),
                 'bvec': HexrdConfig().beam_vector,
                 'evec': ct.eta_vec,
-                'sample_normal': HexrdConfig().sample_normal,
+                'sample_rmat': HexrdConfig().sample_rmat,
                 **kwargs,
             })
         return ret
