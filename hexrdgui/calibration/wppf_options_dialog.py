@@ -2024,18 +2024,17 @@ class WppfOptionsDialog(QObject):
         if obj1 is None or obj2 is None:
             return
 
-        if isinstance(obj1, LeBail):
+        if any(not hasattr(x, 'texture_model') for x in (obj1, obj2)):
             return
 
-        if hasattr(obj1, 'texture_model'):
-            for model_key, model1 in obj1.texture_model.items():
-                model2 = obj2.texture_model[model_key]
-                if model1 is None or model2 is None:
-                    continue
+        for model_key, model1 in obj1.texture_model.items():
+            model2 = obj2.texture_model[model_key]
+            if model1 is None or model2 is None:
+                continue
 
-                if hasattr(model1, 'fig_new'):
-                    model2.fig_new = model1.fig_new
-                    model2.ax_new = model1.ax_new
+            if hasattr(model1, 'fig_new'):
+                model2.fig_new = model1.fig_new
+                model2.ax_new = model1.ax_new
 
     def clear_texture_data(self):
         obj = self._wppf_object
