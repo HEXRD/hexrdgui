@@ -803,7 +803,12 @@ class WppfOptionsDialog(QObject):
             if key not in self.params:
                 continue
 
+            old_param = self.params[key]
             self.params[key] = dict_to_param(val)
+
+            if old_param.expr:
+                # If there was an expression, restore that expression
+                self.params[key].expr = old_param.expr
 
     def load_settings(self):
         settings = HexrdConfig().config['calibration'].get('wppf')
@@ -1688,8 +1693,11 @@ class WppfOptionsDialog(QObject):
         self.validate_import_params(import_params, filename)
 
         # Keep the ordering the same as the GUI currently has
-        for key in self.params.keys():
+        for key, old_param in self.params.items():
             self.params[key] = dict_to_param(import_params[key])
+            if old_param.expr:
+                # If there was an expression, restore that expression
+                self.params[key].expr = old_param.expr
 
         self.update_tree_view()
         self.save_settings()
