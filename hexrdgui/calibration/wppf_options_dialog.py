@@ -1335,7 +1335,8 @@ class WppfOptionsDialog(QObject):
             texture_dict = tree_dict.setdefault('Texture', {})
             for mat_name in self.textured_materials:
                 # Look for param names that match
-                prefix = f'{mat_name}_c_'
+                mat_name_sanitized = mat_name.replace('-', '_')
+                prefix = f'{mat_name_sanitized}_c_'
                 matching_names = [k for k in params if k.startswith(prefix)]
                 if not matching_names:
                     continue
@@ -1847,6 +1848,7 @@ class WppfOptionsDialog(QObject):
             self.ui.texture_ell_max.setValue(settings['ell_max'])
 
         self.update_texture_model_enable_states()
+        self.update_texture_index_label()
 
     def update_texture_model_enable_states(self):
         # Determine whether we should disable the model texture
@@ -1984,7 +1986,7 @@ class WppfOptionsDialog(QObject):
 
     @property
     def varying_texture_params(self):
-        for mat_name in self.textured_materials:
+        for mat_name in self.textured_materials_sanitized:
             prefix = f'{mat_name}_c_'
             for param in self.params.values():
                 if param.name.startswith(prefix) and param.vary:
@@ -1997,7 +1999,10 @@ class WppfOptionsDialog(QObject):
         if not self.varying_texture_params:
             return False
 
-        prefixes = [f'{mat_name}_c_' for mat_name in self.textured_materials]
+        prefixes = [
+            f'{mat_name}_c_' for mat_name in
+            self.textured_materials_sanitized
+        ]
         for name, param in self.params.items():
             if param.vary and not any(name.startswith(x) for x in prefixes):
                 return True
@@ -2235,6 +2240,10 @@ class WppfOptionsDialog(QObject):
             return []
 
         return list(self.texture_model_kwargs)
+
+    @property
+    def textured_materials_sanitized(self) -> list[str]:
+        return [name.replace('-', '_') for name in self.textured_materials]
 
     @property
     def texture_model_kwargs(self) -> dict[str]:
