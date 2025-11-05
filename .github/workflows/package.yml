@@ -18,17 +18,26 @@ jobs:
         - {
             name: "Linux",
             os: ubuntu-latest,
-            package: 'tar.gz'
+            arch: 'x86_64',
+            package: 'tar.gz',
+          }
+        - {
+            name: "MacOSX-intel",
+            os: macos-15-intel,
+            arch: 'x86_64',
+            package: 'dmg',
           }
         - {
             name: "MacOSX",
-            os: macos-13,
-            package: 'dmg'
+            os: macos-15,
+            arch: 'arm64',
+            package: 'dmg',
           }
         - {
             name: "Windows",
             os: windows-latest,
-            package: 'msi'
+            arch: 'amd64',
+            package: 'msi',
           }
     defaults:
       run:
@@ -110,7 +119,7 @@ jobs:
     - name: Upload installer package
       uses: actions/upload-artifact@v4
       with:
-        name: HEXRDGUI-v${{env.VERSION}}.${{ matrix.config.package }}
+        name: HEXRDGUI-v${{ env.VERSION }}-${{ matrix.config.arch }}.${{ matrix.config.package }}
         path: ${{ github.workspace }}/hexrdgui/packaging/HEXRDGUI-${{env.VERSION}}.${{ matrix.config.package }}
 
     - name: Upload installer package Zip ( Windows only )
