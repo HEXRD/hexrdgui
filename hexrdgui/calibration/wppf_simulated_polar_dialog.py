@@ -36,7 +36,7 @@ class WppfSimulatedPolarDialog:
     def setup_color_map(self):
         self.color_map_editor = ColorMapEditor(self, self.ui)
         self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
-        self.color_map_editor.update_bounds(self.scaled_image_data)
+        self.color_map_editor.update_bounds(unmasked(self.scaled_image_data))
         self.color_map_editor.data = self.data
 
     def setup_canvas(self):
@@ -133,7 +133,7 @@ class WppfSimulatedPolarDialog:
             ax_im.set_data(self.get_scaled_image_data(i))
             ax_im.set_extent(self.extent)
 
-        self.color_map_editor.data = self.data
+        self.color_map_editor.data = unmasked(self.data)
 
         self.draw_later()
 
@@ -148,3 +148,13 @@ class WppfSimulatedPolarDialog:
 
     def draw_later(self):
         self.figure.canvas.draw_idle()
+
+
+def unmasked(
+    array: np.ndarray | np.ma.MaskedArray,
+    fill_value=np.nan,
+) -> np.ndarray:
+    if isinstance(array, np.ma.MaskedArray):
+        return array.filled(fill_value)
+
+    return array
