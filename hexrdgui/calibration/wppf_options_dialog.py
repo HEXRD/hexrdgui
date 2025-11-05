@@ -1,6 +1,7 @@
 import copy
 from functools import partial
 from pathlib import Path
+import re
 import sys
 import time
 
@@ -8,7 +9,6 @@ import h5py
 import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
-import re
 import yaml
 
 from PySide6.QtCore import QObject, Signal
@@ -1158,14 +1158,45 @@ class WppfOptionsDialog(QObject):
         # Keep track of which params have been used.
         used_params = []
 
-        def create_param_item(param):
+        def create_param_item(param, units=None, conversion_funcs=None,
+                              min_max_inverted=False):
+
+            # Convert to display units if needed
+            def convert_if_needed(x):
+                if conversion_funcs is None:
+                    return x
+
+                return conversion_funcs['to_display'](x)
+
+            def convert_stderr_if_needed(x):
+                if x == '--':
+                    return x
+
+                if conversion_funcs is None:
+                    return x
+
+                if 'to_display_stderr' in conversion_funcs:
+                    # Special conversion needed
+                    return conversion_funcs['to_display_stderr'](
+                        param.value,
+                        x,
+                    )
+
+                # Default to the regular conversion
+                return convert_if_needed(x)
+
             used_params.append(param.name)
+            stderr = stderr_values.get(param.name, '--')
             d = {
                 '_param': param,
-                '_value': param.value,
+                '_value': convert_if_needed(param.value),
                 '_vary': bool(param.vary),
-                '_stderr': stderr_values.get(param.name, '--'),
+                '_stderr': convert_stderr_if_needed(stderr),
+                '_units': units,
+                '_conversion_funcs': conversion_funcs,
+                '_min_max_inverted': min_max_inverted,
             }
+
             if self.delta_boundaries:
                 if not hasattr(param, 'delta'):
                     # We store the delta on the param object
@@ -1176,12 +1207,15 @@ class WppfOptionsDialog(QObject):
                     ]
                     param.delta = min(diffs)
 
-                d['_delta'] = param.delta
+                d['_delta'] = convert_if_needed(param.delta)
             else:
                 d.update(**{
-                    '_min': param.min,
-                    '_max': param.max,
+                    '_min': convert_if_needed(param.min),
+                    '_max': convert_if_needed(param.max),
                 })
+                if min_max_inverted:
+                    # Swap the min and max
+                    d['_min'], d['_max'] = d['_max'], d['_min']
 
             # Make a callback for when `vary` gets modified by the user.
             f = partial(self.on_param_vary_modified, param=param)
@@ -1211,6 +1245,10 @@ class WppfOptionsDialog(QObject):
                 else:
                     # Assume it is a string. Grab it if in the params.
                     if v in params:
+                        units = None
+                        if v == 'zero_error':
+                            units = '°'
+
                         this_config[k] = create_param_item(params[v])
                         param_set = True
 
@@ -1321,8 +1359,42 @@ class WppfOptionsDialog(QObject):
                     if '{mat}' in v:
                         v = v.format(mat=sanitized_mat)
 
+                    # Determine if units and conversion funcs are needed
+                    # We can't have a global dict of these, because some
+                    # labels are the same. For example, 'α' is also in the
+                    # stacking fault parameters.
+                    units = None
+                    conversion_funcs = None
+                    min_max_inverted = False
+                    prefix = sanitized_mat
+                    if v == f'{prefix}_X':
+                        wlen = HexrdConfig().beam_wavelength
+                        conversion_funcs = mat_lx_to_p_funcs_factory(wlen)
+                        min_max_inverted = True
+                    elif v == f'{prefix}_Y':
+                        units = '%'
+                        conversion_funcs = mat_ly_to_s_funcs
+                    elif v == f'{prefix}_P':
+                        wlen = HexrdConfig().beam_wavelength
+                        conversion_funcs = mat_gp_to_p_funcs_factory(wlen)
+                        min_max_inverted = True
+                    elif v in [f'{prefix}_{k}' for k in ('a', 'b', 'c')]:
+                        units = ' Å'
+                        conversion_funcs = nm_to_angstroms_funcs
+                    elif v in [f'{prefix}_{k}' for k in ('α', 'β', 'γ')]:
+                        units = '°'
+                    elif re.search(rf'^{prefix}_s\d\d\d$', v):
+                        # It is a stacking parameter
+                        conversion_funcs = shkl_to_angstroms_minus_4_funcs
+                        units = ' Å⁻⁴'
+
                     if v in params:
-                        this_config[k] = create_param_item(params[v])
+                        this_config[k] = create_param_item(
+                            params[v],
+                            units,
+                            conversion_funcs,
+                            min_max_inverted,
+                        )
 
         mat_dict = tree_dict.setdefault('Materials', {})
         for mat in self.selected_materials:
@@ -2379,6 +2451,82 @@ def changed_signal(w):
         return w.currentIndexChanged
 
     return w.valueChanged
+
+
+nm_to_angstroms_funcs = {
+    'to_display': lambda x: x * 10,
+    'from_display': lambda x: x / 10,
+}
+
+
+shkl_to_angstroms_minus_4_funcs = {
+    'to_display': lambda x: x / 1000,
+    'from_display': lambda x: x * 1000,
+}
+
+
+mat_ly_to_s_funcs = {
+    'to_display': lambda ly: ly * 100 * np.pi / 18000,
+    'from_display': lambda s: s / 100 / np.pi * 18000,
+    'to_display_stderr': lambda ly, ly_stderr: 100 * np.pi / 18000 * ly_stderr
+}
+
+
+def mat_lx_to_p_funcs_factory(wlen: float) -> dict:
+    k = 0.91
+
+    def to_display(lx: float):
+        if abs(lx) <= 1e-8:
+            return np.inf
+        elif np.isinf(lx):
+            return 0
+
+        return 18000 * k * wlen / np.pi / lx
+
+    def from_display(p: float):
+        if abs(p) <= 1e-8:
+            return np.inf
+        elif np.isinf(p):
+            return 0
+
+        return 18000 * k * wlen / np.pi / p
+
+    def to_display_stderr(lx: float, lx_stderr: float) -> float:
+        return 18000 * k * wlen / np.pi / (lx**2) * lx_stderr
+
+    return {
+        'to_display': to_display,
+        'from_display': from_display,
+        'to_display_stderr': to_display_stderr,
+    }
+
+
+def mat_gp_to_p_funcs_factory(wlen: float) -> dict:
+    k = 0.91
+    def to_display(gp: float) -> float:
+        if abs(gp) <= 1e-8:
+            return np.inf
+        elif np.isinf(gp):
+            return 0
+
+        return 18000 * k * wlen / np.pi / np.sqrt(gp)
+
+    def from_display(p: float) -> float:
+        if abs(p) <= 1e-8:
+            return np.inf
+        elif np.isinf(p):
+            return 0
+
+        return (18000 * k * wlen / np.pi / p)**2
+
+    def to_display_stderr(gp: float, gp_stderr: float) -> float:
+        return 9000 * k * wlen / np.pi / (gp**1.5) * gp_stderr
+
+    return {
+        'to_display': to_display,
+        'from_display': from_display,
+        'to_display_stderr': to_display_stderr,
+    }
 
 
 if __name__ == '__main__':
