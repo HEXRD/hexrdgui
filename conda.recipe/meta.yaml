@@ -30,7 +30,12 @@ requirements:
     - pyhdf
     # This next one is needed to fix the app name on Mac
     - pyobjc-framework-cocoa  # [osx]
-    - pyside6
+    # Lock the PySide6 version to be less than 6.8 for Mac.
+    # This is because Qt 6.8 has some crashing issue we need
+    # to resolve. This issue is tracked in:
+    # https://github.com/HEXRD/hexrdgui/issues/1931
+    - pyside6<6.8  # [osx]
+    - pyside6  # [not osx]
     - pyyaml
     - silx-base
 
