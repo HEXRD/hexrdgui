@@ -502,10 +502,16 @@ class PolarView:
 
         return img
 
-    def apply_visible_masks(self, img):
-        # Apply user-specified masks if they are present
-        img = img.copy()
-        total_mask = self.warp_mask
+    @property
+    def all_masks_pv_array(self) -> np.ndarray:
+        return np.logical_or(
+            self.visible_mask_pv_array,
+            self.boundary_mask_pv_array,
+        )
+
+    @property
+    def visible_mask_pv_array(self) -> np.ndarray:
+        total_mask = np.zeros(self.shape, dtype=bool)
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
@@ -517,21 +523,31 @@ class PolarView:
             gt_mask = img > gt_val
             mask = np.logical_or(lt_mask, gt_mask)
             total_mask = np.logical_or(total_mask, mask)
-        img[total_mask] = np.nan
 
-        return img
+        return total_mask
 
-    def apply_boundary_masks(self, img):
-        # Apply user-specified masks if they are present
-        img = img.copy()
-        total_mask = self.warp_mask
+    @property
+    def boundary_mask_pv_array(self) -> np.ndarray:
+        total_mask = np.zeros(self.shape, dtype=bool)
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.show_border:
                 continue
             mask_arr = mask.get_masked_arrays(ViewType.polar, self.instr)
             total_mask = np.logical_or(total_mask, ~mask_arr)
-        img[total_mask] = np.nan
+        return total_mask
 
+    def apply_visible_masks(self, img):
+        # Apply user-specified masks if they are present
+        total_mask = np.logical_or(self.warp_mask, self.visible_mask_pv_array)
+        img = img.copy()
+        img[total_mask] = np.nan
+        return img
+
+    def apply_boundary_masks(self, img):
+        # Apply user-specified masks if they are present
+        total_mask = np.logical_or(self.warp_mask, self.boundary_mask_pv_array)
+        img = img.copy()
+        img[total_mask] = np.nan
         return img
 
     def reapply_masks(self):
