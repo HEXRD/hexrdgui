@@ -1368,14 +1368,18 @@ class WppfOptionsDialog(QObject):
                     min_max_inverted = False
                     prefix = sanitized_mat
                     if v == f'{prefix}_X':
-                        wlen = HexrdConfig().beam_wavelength
+                        # Provide wavelength in micrometers
+                        wlen = HexrdConfig().beam_wavelength / 1e4
+                        units = ' µm'
                         conversion_funcs = mat_lx_to_p_funcs_factory(wlen)
                         min_max_inverted = True
                     elif v == f'{prefix}_Y':
                         units = '%'
                         conversion_funcs = mat_ly_to_s_funcs
                     elif v == f'{prefix}_P':
-                        wlen = HexrdConfig().beam_wavelength
+                        # Provide wavelength in micrometers
+                        wlen = HexrdConfig().beam_wavelength / 1e4
+                        units = ' µm'
                         conversion_funcs = mat_gp_to_p_funcs_factory(wlen)
                         min_max_inverted = True
                     elif v in [f'{prefix}_{k}' for k in ('a', 'b', 'c')]:
@@ -2503,6 +2507,7 @@ def mat_lx_to_p_funcs_factory(wlen: float) -> dict:
 
 def mat_gp_to_p_funcs_factory(wlen: float) -> dict:
     k = 0.91
+
     def to_display(gp: float) -> float:
         if abs(gp) <= 1e-8:
             return np.inf
