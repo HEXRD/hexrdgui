@@ -18,8 +18,8 @@ Materials:
       β: '{mat}_twin_beta'
     Phase Fraction: '{mat}_phase_fraction'
     Peak Broadening:
-      Lorentzian Scherrer Broadening: '{mat}_X'
-      Gaussian Scherrer Broadening: '{mat}_P'
+      Lorentzian Particle Size: '{mat}_X'
+      Gaussian Particle Size: '{mat}_P'
       Microstrain: '{mat}_Y'
     Lattice Constants:
       a: '{mat}_a'

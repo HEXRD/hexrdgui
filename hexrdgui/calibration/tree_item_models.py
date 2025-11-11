@@ -1,3 +1,5 @@
+import numpy as np
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
@@ -34,15 +36,46 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
         # Now set the attribute on the param
         attribute = path[-1].removeprefix('_')
 
+        if attribute in ('value', 'min', 'max', 'delta'):
+            # Check if there is a conversion we need to make before proceeding
+            config = self.config_path(path[:-1])
+            if config.get('_conversion_funcs'):
+                # Apply the conversion
+                value = config['_conversion_funcs']['from_display'](value)
+                # Swap the min/max if they ought to be swapped
+                # (due to the conversion resulting in an inverse proportionality)
+                if (
+                    config.get('_min_max_inverted') and
+                    attribute in ('min', 'max')
+                ):
+                    attribute = 'max' if attribute == 'min' else 'min'
+
         if attribute == 'value':
             # Make sure the min/max are shifted to accomodate this value
             if value < param.min or value > param.max:
+                config = self.config_path(path[:-1])
+                conversion_funcs = config.get('_conversion_funcs')
+                min_key = '_min'
+                max_key = '_max'
+                if conversion_funcs and config.get('_min_max_inverted'):
+                    min_key, max_key = max_key, min_key
+
+                def convert_if_needed(v):
+                    if conversion_funcs is None:
+                        return v
+
+                    return conversion_funcs['to_display'](v)
+
                 # Shift the min/max to accomodate, because lmfit won't
                 # let us set the value otherwise.
                 param.min = value - (param.value - param.min)
                 param.max = value + (param.max - param.value)
-                super().set_config_val(path[:-1] + ['_min'], param.min)
-                super().set_config_val(path[:-1] + ['_max'], param.max)
+                super().set_config_val(
+                    path[:-1] + [min_key], convert_if_needed(param.min),
+                )
+                super().set_config_val(
+                    path[:-1] + [max_key], convert_if_needed(param.max),
+                )
 
                 col = list(self.COLUMNS.values()).index(path[-1]) + 1
                 index = self.create_index(path[:-1], col)
@@ -50,11 +83,14 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
 
                 if '_min' in self.COLUMNS.values():
                     # Get the GUI to update
-                    for name in ('_min', '_max'):
+                    for name, key in zip(('_min', '_max'), (min_key, max_key)):
                         col = list(self.COLUMNS.values()).index(name) + 1
                         index = self.create_index(path[:-1], col)
                         item = self.get_item(index)
-                        item.set_data(index.column(), getattr(param, name[1:]))
+                        item.set_data(
+                            index.column(),
+                            convert_if_needed(getattr(param, key[1:])),
+                        )
                         self.dataChanged.emit(index, index)
 
         setattr(param, attribute, value)
@@ -82,7 +118,29 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
 
                 return QColor(color)
 
-        return super().data(index, role)
+        data = super().data(index, role)
+
+        if (
+            role in (Qt.DisplayRole, Qt.EditRole) and
+            index.column() in self.BOUND_INDICES and
+            data is not None
+        ):
+            # Check if there are any units that should be displayed
+            item = self.get_item(index)
+            path = self.path_to_item(item)
+            config = self.config_path(path)
+
+            if role == Qt.DisplayRole and config.get('_units'):
+                if isinstance(data, float):
+                    # Make sure it is rounded to 3 decimal places
+                    data = round(data, 3)
+
+                # Don't attach units to infinity
+                is_inf = isinstance(data, float) and np.isinf(data)
+                if not is_inf:
+                    data = f"{data}{config['_units']}"
+
+        return data
 
 
 class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
@@ -116,7 +174,12 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
                     if index.column() not in pair:
                         continue
 
-                    if abs(item.data(pair[0]) - item.data(pair[1])) < atol:
+                    data0 = item.data(pair[0])
+                    data1 = item.data(pair[1])
+                    if (
+                        np.all([np.isinf(x) for x in (data0, data1)]) or
+                        abs(data0 - data1) < atol
+                    ):
                         return QColor('red')
 
         return super().data(index, role)
