@@ -1850,7 +1850,7 @@ class ImageCanvas(FigureCanvas):
 
             # When the difference plot resets, always set it to be
             # initially the same y range as the azimuthal.
-            new_ymin = min(diff_axis.get_ylim()[0], axis.get_ylim()[0])
+            new_ymin = min(diff_axis.get_ylim()[0], -axis.get_ylim()[1])
             new_ymax = max(diff_axis.get_ylim()[1], axis.get_ylim()[1])
             diff_axis.set_ylim((new_ymin, new_ymax))
 
