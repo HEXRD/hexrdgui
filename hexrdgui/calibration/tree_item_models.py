@@ -131,13 +131,13 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
             config = self.config_path(path)
 
             if role == Qt.DisplayRole and config.get('_units'):
-                if isinstance(data, float):
-                    # Make sure it is rounded to 3 decimal places
-                    data = round(data, 3)
-
-                # Don't attach units to infinity
                 is_inf = isinstance(data, float) and np.isinf(data)
+                # Don't attach units to infinity
                 if not is_inf:
+                    if isinstance(data, float):
+                        # Format it into a string
+                        data = f'{data:.6g}'
+
                     data = f"{data}{config['_units']}"
 
         return data
