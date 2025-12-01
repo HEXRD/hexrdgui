@@ -560,6 +560,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 # We loaded a state with the old statuses. Remove them.
                 self.remove_status(self.config['instrument'])
 
+        # Never allow WPPF difference curve to be set `True` from state
+        disable_wppf_difference = (
+            state.get('config_calibration',
+                      {}).get('wppf',
+                              {}).get('show_difference_axis')
+        )
+        if disable_wppf_difference:
+            state['config_calibration']['wppf']['show_difference_axis'] = False
+
         # Now load everything else
         try:
             for name, value in state.items():
