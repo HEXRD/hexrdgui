@@ -413,6 +413,10 @@ class ImageCanvas(FigureCanvas):
         return list(self.scaled_display_image_dict.values())
 
     @property
+    def image_ready(self) -> bool:
+        return self.iviewer is not None
+
+    @property
     def blit_artists(self):
         return self.blit_manager.artists
 
@@ -1692,11 +1696,13 @@ class ImageCanvas(FigureCanvas):
             image_names = list(self.raw_axes)
             self.load_images(image_names)
         else:
-            for axes_img, img in zip(
-                self.axes_images,
-                self.scaled_display_images,
-            ):
-                axes_img.set_data(img)
+            # If the image is not ready, these will be set later
+            if self.image_ready:
+                for axes_img, img in zip(
+                    self.axes_images,
+                    self.scaled_display_images,
+                ):
+                    axes_img.set_data(img)
 
         self.update_azimuthal_integral_plot()
         self.draw_idle()

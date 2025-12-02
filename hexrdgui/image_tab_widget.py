@@ -323,6 +323,10 @@ class ImageTabWidget(QTabWidget):
         # return the whole image data dict.
         return self.image_canvases[0].scaled_display_image_dict
 
+    @property
+    def image_ready(self) -> bool:
+        return self.image_canvases[0].image_ready
+
     def on_motion_notify_event(self, event):
         # Clear the info if the mouse leaves a plot
         if event.inaxes is None:
