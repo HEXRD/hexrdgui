@@ -1943,6 +1943,27 @@ class WppfOptionsDialog(QObject):
         self.invalidate_texture_data()
         self.update_simulated_polar_dialog()
 
+    def _compute_2d_pv_bin_mask(self):
+        canvas = HexrdConfig().active_canvas
+        if canvas.mode != 'polar' or canvas.iviewer is None:
+            return
+
+        settings = self.texture_settings
+
+        # Make a float image so that any pixels touched by nans
+        # in the binning will be nan.
+        mask_float = np.zeros(canvas.iviewer.pv.shape, dtype=float)
+        pv = canvas.iviewer.pv
+        mask = np.logical_or(pv.all_masks_pv_array, pv.warp_mask)
+        mask_float[mask] = np.nan
+        binned = bin_polar_view(
+            canvas.iviewer.pv,
+            mask_float,
+            settings['azimuthal_interval'],
+            settings['integration_range'],
+        )
+        return np.isnan(binned)
+
     def _compute_2d_pv_bin(self):
         canvas = HexrdConfig().active_canvas
         if canvas.mode != 'polar' or canvas.iviewer is None:
@@ -1967,11 +1988,16 @@ class WppfOptionsDialog(QObject):
             # Nothing we can do
             return None
 
+        # Compute the mask to apply
+        mask = self._compute_2d_pv_bin_mask()
+
         try:
             # Make sure the `eta_step` is up-to-date
             obj.eta_step = self.texture_settings['azimuthal_interval']
             obj.computespectrum_2D()
-            return obj.simulated_2d
+            img = obj.simulated_2d.copy()
+            img[mask] = np.nan
+            return img
         finally:
             if not had_object:
                 self.reset_object()
