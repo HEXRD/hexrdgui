@@ -1911,6 +1911,7 @@ class ImageCanvas(FigureCanvas):
         axis.autoscale_view(scalex=False)
 
         if diff_axis and wppf_data and last_lineout:
+            is_percent = HexrdConfig().show_wppf_difference_as_percent
             style = {
                 'c': '#000000',
                 'ls': 'solid',
@@ -1918,7 +1919,7 @@ class ImageCanvas(FigureCanvas):
             }
             x = wppf_data[0]
             y = wppf_data[1] - last_lineout[1].filled(np.nan)
-            if HexrdConfig().show_wppf_difference_as_percent:
+            if is_percent:
                 # Express `y` as a percentage instead
                 y *= 100 / last_lineout[1].filled(np.nan)
 
@@ -1928,11 +1929,15 @@ class ImageCanvas(FigureCanvas):
             diff_axis.relim()
             diff_axis.autoscale_view(scalex=False)
 
-            # When the difference plot resets, always set it to be
-            # initially the same y range as the azimuthal.
-            new_ymin = min(diff_axis.get_ylim()[0], -axis.get_ylim()[1])
-            new_ymax = max(diff_axis.get_ylim()[1], axis.get_ylim()[1])
-            diff_axis.set_ylim((new_ymin, new_ymax))
+            if is_percent:
+                # Force an auto-scale
+                diff_axis.autoscale(enable=True, axis='y')
+            else:
+                # When the difference plot resets, always set it to be
+                # initially the same y range as the azimuthal.
+                new_ymin = min(diff_axis.get_ylim()[0], -axis.get_ylim()[1])
+                new_ymax = max(diff_axis.get_ylim()[1], axis.get_ylim()[1])
+                diff_axis.set_ylim((new_ymin, new_ymax))
 
         # Update the difference label even if there's no data
         self.update_wppf_difference_labels()
