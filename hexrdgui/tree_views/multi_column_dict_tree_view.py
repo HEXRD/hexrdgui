@@ -324,6 +324,14 @@ class ColumnDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = super().createEditor(parent, option, index)
+
+        if isinstance(editor, ScientificDoubleSpinBox):
+            item = self.model.get_item(index)
+            path = self.model.path_to_item(item)
+            config = self.model.config_path(path)
+            if config.get('_units'):
+                editor.setSuffix(config['_units'])
+
         if self.tree_view.has_disabled_editors:
             item = self.model.get_item(index)
             path = self.model.path_to_item(item) + [index.column()]
