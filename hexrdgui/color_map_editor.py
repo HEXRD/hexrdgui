@@ -1,5 +1,6 @@
 import copy
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QColorDialog
 
@@ -24,6 +25,9 @@ class ColorMapEditor:
         # 2. set_norm: a function to set the norm on the image
         # 3. set_scaling: a function to set the scaling on the image
         # 4. scaled_image_data: a property to get the scaled image data
+        # 5. image_ready: an optional boolean property indicating if the image
+        #                 is ready. If not present, the image is assumed to
+        #                 be ready.
 
         self.image_object = image_object
 
@@ -268,4 +272,14 @@ class ColorMapEditor:
 
         # Reset the bounds, as the histogram could potentially have moved.
         # This will update the data too.
-        self.update_bounds(self.image_object.scaled_image_data)
+        # Wait until the image is ready to do the update.
+
+        def do_bound_update_if_ready():
+            if not getattr(self.image_object, 'image_ready', True):
+                # If the image is not ready, try again in 250 milliseconds
+                QTimer.singleShot(250, do_bound_update_if_ready)
+                return
+
+            self.update_bounds(self.image_object.scaled_image_data)
+
+        do_bound_update_if_ready()
