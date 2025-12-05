@@ -104,7 +104,7 @@ class LoadImagesDialog:
         for i in range(table.rowCount()):
             if self.manual_assign:
                 det_cb = QComboBox()
-                det_cb.addItems(list(set(self.detectors)))
+                det_cb.addItems(sorted(list(set(self.detectors))))
                 table.setCellWidget(i, 0, det_cb)
                 table.cellWidget(i, 0).currentTextChanged.connect(
                     lambda v, i=i: self.selection_changed(v, i))
