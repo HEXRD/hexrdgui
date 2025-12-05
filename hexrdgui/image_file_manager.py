@@ -147,12 +147,17 @@ class ImageFileManager(metaclass=Singleton):
         elif ext in self.HDF5_FILE_EXTS:
             regular_hdf5 = True
             with h5py.File(f, 'r') as data:
+                eiger_stream_format = None
                 if data.attrs.get('version') == 'CHESS_EIGER_STREAM_V1':
-                    ims_type = 'eiger-stream-v1'
+                    eiger_stream_format = 'eiger-stream-v1'
+                elif data.attrs.get('version') == 'CHESS_EIGER_STREAM_V2':
+                    eiger_stream_format = 'eiger-stream-v2'
+
+                if eiger_stream_format is not None:
                     registry = (
                         imageseries.load.registry.Registry.adapter_registry
                     )
-                    if ims_type not in registry:
+                    if eiger_stream_format not in registry:
                         msg = (
                             '"dectris-compression" must be installed to load '
                             'eiger stream files.\n\n'
@@ -160,7 +165,7 @@ class ImageFileManager(metaclass=Singleton):
                         )
                         raise Exception(msg)
 
-                    ims = imageseries.open(f, 'eiger-stream-v1')
+                    ims = imageseries.open(f, eiger_stream_format)
                     regular_hdf5 = False
                 else:
                     dset = data['/'.join(self.path)]
@@ -251,7 +256,7 @@ class ImageFileManager(metaclass=Singleton):
     def hdf5_path_exists(self, f):
         # If it is a special HDF5 file, just return True
         with h5py.File(f, 'r') as rf:
-            if rf.attrs.get('version') == 'CHESS_EIGER_STREAM_V1':
+            if rf.attrs.get('version', '').startswith('CHESS_EIGER_STREAM'):
                 return True
 
         all_paths = []
