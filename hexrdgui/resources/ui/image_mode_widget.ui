@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <property name="iconSize">
       <size>
@@ -88,14 +88,7 @@
          </item>
         </layout>
        </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QPushButton" name="raw_show_zoom_dialog">
-         <property name="text">
-          <string>Show Zoom Dialog</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="2">
+       <item row="3" column="0" colspan="2">
         <spacer name="verticalSpacer_5">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -107,6 +100,71 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QPushButton" name="raw_show_zoom_dialog">
+         <property name="text">
+          <string>Show Zoom Dialog</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QGroupBox" name="eiger_stream_v2_group">
+         <property name="title">
+          <string>Eiger Stream V2 Settings</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="eiger_stream_v2_setting_label">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to use energy threshold 1, energy threshold 2, or the following expression:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;threshold_1 - multiplier * threshold_2&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The multiplier is only used if &amp;quot;Difference&amp;quot; is selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Threshold Setting:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="eiger_stream_v2_setting">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether to use energy threshold 1, energy threshold 2, or the following expression:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;threshold_1 - multiplier * threshold_2&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The multiplier is only used if &amp;quot;Difference&amp;quot; is selected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="eiger_stream_v2_multiplier_label">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The multiplier to use when the &amp;quot;Threshold Setting&amp;quot; is &amp;quot;Difference&amp;quot;. The multiplier is used in the following expression:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;threshold_1 - multiplier * threshold_2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Multiplier:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="ScientificDoubleSpinBox" name="eiger_stream_v2_multiplier">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The multiplier to use when the &amp;quot;Threshold Setting&amp;quot; is &amp;quot;Difference&amp;quot;. The multiplier is used in the following expression:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;threshold_1 - multiplier * threshold_2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
+            <property name="decimals">
+             <number>8</number>
+            </property>
+            <property name="minimum">
+             <double>-10000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100000000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -352,8 +410,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>522</width>
-               <height>700</height>
+               <width>524</width>
+               <height>691</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -1106,10 +1164,13 @@
   <tabstop>raw_show_saturation</tabstop>
   <tabstop>raw_stitch_roi_images</tabstop>
   <tabstop>raw_show_zoom_dialog</tabstop>
+  <tabstop>eiger_stream_v2_setting</tabstop>
+  <tabstop>eiger_stream_v2_multiplier</tabstop>
   <tabstop>cartesian_pixel_size</tabstop>
   <tabstop>cartesian_plane_normal_rotate_x</tabstop>
   <tabstop>cartesian_virtual_plane_distance</tabstop>
   <tabstop>cartesian_plane_normal_rotate_y</tabstop>
+  <tabstop>polar_scroll_area</tabstop>
   <tabstop>polar_active_beam</tabstop>
   <tabstop>polar_pixel_size_tth</tabstop>
   <tabstop>polar_pixel_size_eta</tabstop>
