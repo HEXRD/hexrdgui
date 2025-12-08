@@ -7,6 +7,12 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 import matplotlib.pyplot as plt
 import numpy as np
 
+from hexrd.utils.panel_buffer import (
+    panel_buffer_from_str,
+    valid_panel_buffer_names,
+)
+
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
@@ -14,6 +20,7 @@ from hexrdgui.utils.dialog import add_help_url
 
 CONFIG_MODE_BORDER = 'border'
 CONFIG_MODE_NUMPY = 'numpy'
+CONFIG_MODE_NAME = 'name'
 
 
 class PanelBufferDialog(QObject):
@@ -41,6 +48,7 @@ class PanelBufferDialog(QObject):
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()
         self.setup_combo_box_data()
+        self.setup_valid_names()
 
         self.update_gui()
 
@@ -58,10 +66,16 @@ class PanelBufferDialog(QObject):
     def setup_combo_box_data(self):
         item_data = [
             CONFIG_MODE_BORDER,
-            CONFIG_MODE_NUMPY
+            CONFIG_MODE_NUMPY,
+            CONFIG_MODE_NAME,
         ]
         for i, data in enumerate(item_data):
             self.ui.config_mode.setItemData(i, data)
+
+    def setup_valid_names(self):
+        w = self.ui.selected_name
+        w.clear()
+        w.addItems(valid_panel_buffer_names())
 
     def show(self):
         self.ui.show()
@@ -114,13 +128,16 @@ class PanelBufferDialog(QObject):
         return [
             self.ui.file_name,
             self.ui.border_x_spinbox,
-            self.ui.border_y_spinbox
+            self.ui.border_y_spinbox,
+            self.ui.selected_name,
         ]
 
     @property
     def current_editing_buffer_value(self):
         if self.mode == CONFIG_MODE_BORDER:
             return [self.x_border, self.y_border]
+        elif self.mode == CONFIG_MODE_NAME:
+            return self.ui.selected_name.currentText()
         elif self.file_name == '':
             # Just return the currently saved buffer
             return copy.deepcopy(self.current_saved_buffer_value)
@@ -165,25 +182,49 @@ class PanelBufferDialog(QObject):
 
         self.detector_config['buffer'] = value
 
+        if isinstance(value, str):
+            # Check if this has ROIs and a group
+            # If so, ask if the user wants to apply this setting
+            # to all detectors in this group.
+            group = HexrdConfig().detector_group(self.detector)
+            if HexrdConfig().instrument_has_roi and group:
+                det_keys = HexrdConfig().detectors_in_group(group)
+                if len(det_keys) > 1:
+                    title = 'Apply to Other Detectors?'
+                    msg = (
+                        f'Set panel buffer "{value}" to all '
+                        f'detectors in the group "{group}"?'
+                    )
+                    response = QMessageBox.question(self.ui, title, msg)
+                    if response == QMessageBox.Yes:
+                        for det_key in det_keys:
+                            config = HexrdConfig().detector(det_key)
+                            config['buffer'] = value
+
         return True
 
     def update_gui(self):
         with block_signals(*self.widgets):
             if 'buffer' in self.detector_config:
-                buffer = np.asarray(self.detector_config['buffer'])
-
-                if buffer.size in (1, 2):
-                    self.mode = CONFIG_MODE_BORDER
-                    if np.array_equal(buffer, None):
-                        buffer = np.asarray([0])
-
-                    if buffer.size == 1:
-                        buffer = [buffer.item()] * 2
-
-                    self.ui.border_x_spinbox.setValue(buffer[0])
-                    self.ui.border_y_spinbox.setValue(buffer[1])
+                buffer = self.detector_config['buffer']
+                if isinstance(buffer, str):
+                    self.mode = CONFIG_MODE_NAME
+                    self.ui.selected_name.setCurrentText(buffer)
                 else:
-                    self.mode = CONFIG_MODE_NUMPY
+                    buffer = np.asarray(buffer)
+
+                    if buffer.size in (1, 2):
+                        self.mode = CONFIG_MODE_BORDER
+                        if np.array_equal(buffer, None):
+                            buffer = np.asarray([0])
+
+                        if buffer.size == 1:
+                            buffer = [buffer.item()] * 2
+
+                        self.ui.border_x_spinbox.setValue(buffer[0])
+                        self.ui.border_y_spinbox.setValue(buffer[1])
+                    else:
+                        self.mode = CONFIG_MODE_NUMPY
 
             self.update_mode_tab()
 
@@ -209,8 +250,11 @@ class PanelBufferDialog(QObject):
         self.update_enable_states()
 
     def update_enable_states(self):
-        buffer = np.asarray(self.current_editing_buffer_value)
-        has_numpy_array = buffer.size > 2
+        has_numpy_array = False
+        if not isinstance(self.current_editing_buffer_value, str):
+            buffer = np.asarray(self.current_editing_buffer_value)
+            has_numpy_array = buffer.size > 2
+
         self.ui.show_panel_buffer.setEnabled(has_numpy_array)
 
     def clear_panel_buffer(self):
@@ -224,10 +268,16 @@ class PanelBufferDialog(QObject):
         return [0., 0.]
 
     def show_panel_buffer(self):
-        buffer = np.asarray(self.current_editing_buffer_value)
-        if buffer.size <= 2:
-            # We only support showing numpy array buffers currently
-            return
+        buffer = self.current_editing_buffer_value
+        if isinstance(buffer, str):
+            instr = create_hedm_instrument()
+            panel = instr.detectors[self.detector]
+            buffer = panel_buffer_from_str(buffer, panel)
+        else:
+            buffer = np.asarray(buffer)
+            if buffer.size <= 2:
+                # We only support showing numpy array buffers currently
+                return
 
         fig, ax = plt.subplots()
         fig.canvas.manager.set_window_title(f'{self.detector}')
