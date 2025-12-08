@@ -492,7 +492,7 @@ class PolarView:
         # It's okay to have all nan-slices here, but it produces a warning.
         # Just ignore the warning.
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+            warnings.simplefilter('ignore', category=RuntimeWarning)
             correction_field = np.nanmean(stacked, axis=0)
 
         img *= correction_field
