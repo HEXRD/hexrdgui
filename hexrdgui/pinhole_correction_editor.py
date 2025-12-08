@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 
 import hexrd.resources
 from hexrd.material import _angstroms, _kev, Material
+from hexrd.utils.panel_buffer import panel_buffer_as_2d_array
 from hexrd.xrdutil.phutil import (
     JHEPinholeDistortion, RyggPinholeDistortion, LayerDistortion,
 )
@@ -342,31 +343,15 @@ class PinholeCorrectionEditor(QObject):
         # merge with any existing panel buffer
         for det_key, det in instr.detectors.items():
             # "True" means keep, "False" means ignore
-            pb = det.panel_buffer
-            if pb is not None:
-                if pb.ndim == 2:
-                    new_buff = np.logical_and(pb, ph_buffer[det_key])
-                elif pb.ndim == 1 and not np.allclose(pb, 0):
-                    # have edge buffer
-                    ebuff = np.ones(det.shape, dtype=bool)
-                    npix_row = int(np.ceil(pb[0]/det.pixel_size_row))
-                    npix_col = int(np.ceil(pb[1]/det.pixel_size_col))
-                    ebuff[:npix_row, :] = False
-                    ebuff[-npix_row:, :] = False
-                    ebuff[:, :npix_col] = False
-                    ebuff[:, -npix_col:] = False
-                    new_buff = np.logical_and(ebuff, ph_buffer[det_key])
-                else:
-                    new_buff = ph_buffer[det_key]
-
-                det.panel_buffer = new_buff
-            else:
-                det.panel_buffer = ph_buffer[det_key]
+            pb = panel_buffer_as_2d_array(det.panel_buffer)
+            det.panel_buffer = np.logical_and(pb, ph_buffer[det_key])
 
         # Now set them in the hexrdgui config
         iconfig = HexrdConfig().config['instrument']
         for det_key, det in instr.detectors.items():
             det_config = iconfig['detectors'][det_key]
+            # We know the panel buffer here is a 2D array since we set it
+            # earlier
             det_config['buffer'] = det.panel_buffer
 
         msg = 'Pinhole dimensions were applied to the panel buffers'

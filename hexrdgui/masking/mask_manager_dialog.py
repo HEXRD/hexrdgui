@@ -308,7 +308,12 @@ class MaskManagerDialog(QObject):
         selection = 'Replace buffer'
         for det in HexrdConfig().detectors.values():
             buff_val = det.get('buffer', None)
-            if isinstance(buff_val, np.ndarray) and buff_val.ndim == 2:
+            if (
+                isinstance(buff_val, str) or (
+                    isinstance(buff_val, np.ndarray) and
+                    buff_val.ndim == 2
+                )
+            ):
                 show_dialog = True
                 break
 
