@@ -425,7 +425,7 @@ def set_combobox_enabled_items(cb, enable_list):
     model = cb.model()
     for i, enable in enumerate(enable_list):
         item = model.item(i)
-        item.setEnabled(enable)
+        item.setEnabled(bool(enable))
 
     # Now see if we need to change to a new index
     new_index = cb.currentIndex()
