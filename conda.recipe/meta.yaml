@@ -1,3 +1,5 @@
+{% set python_min = "3.11" %}
+
 package:
   name: hexrdgui
   version: {{ environ.get('GIT_DESCRIBE_TAG', environ['GIT_FULL_HASH'][:8]) }}
@@ -7,20 +9,18 @@ source:
 
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  noarch: python
   entry_points:
     - hexrdgui = hexrdgui.main:main
 
 requirements:
-  build:
-    - python {{ python }}                    # [build_platform != target_platform]
-    - cross-python_{{ target_platform }}     # [build_platform != target_platform]
   host:
-    - python {{ python }}
+    - python {{ python_min }}
     - setuptools
     - setuptools_scm
 
   run:
-    - python
+    - python >={{ python_min }}
     - fabio
     - hexrd=={{ hexrd_version }}
     - matplotlib-base
