@@ -606,10 +606,14 @@ class MainWindow(QObject):
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Materials File', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            'HDF5 files (*.h5 *.hdf5), CIF (*.cif)')
+        if not selected_file:
+            return
 
-        if selected_file:
-            HexrdConfig().working_dir = os.path.dirname(selected_file)
+        HexrdConfig().working_dir = os.path.dirname(selected_file)
+        if Path(selected_file).suffix == '.cif':
+            HexrdConfig().import_material(selected_file)
+        else:
             HexrdConfig().load_materials(selected_file)
 
     def on_action_save_imageseries_triggered(self):
