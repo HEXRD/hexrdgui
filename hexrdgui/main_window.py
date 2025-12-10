@@ -203,8 +203,10 @@ class MainWindow(QObject):
             self.on_action_open_materials_triggered)
         self.ui.action_save_imageseries.triggered.connect(
             self.on_action_save_imageseries_triggered)
-        self.ui.action_save_materials.triggered.connect(
-            self.on_action_save_materials_triggered)
+        self.ui.action_save_materials_hdf5.triggered.connect(
+            self.on_action_save_materials_hdf5_triggered)
+        self.ui.action_save_materials_cif.triggered.connect(
+            self.on_action_save_materials_cif_triggered)
         self.ui.action_save_state.triggered.connect(
             self.on_action_save_state_triggered)
         self.ui.action_open_state.triggered.connect(
@@ -618,7 +620,7 @@ class MainWindow(QObject):
 
         SaveImagesDialog(self.ui).exec()
 
-    def on_action_save_materials_triggered(self):
+    def on_action_save_materials_hdf5_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Materials', HexrdConfig().working_dir,
             'HDF5 files (*.h5 *.hdf5)')
@@ -631,7 +633,18 @@ class MainWindow(QObject):
             if not any(selected_file.endswith(x) for x in acceptable_exts):
                 selected_file += '.h5'
 
-            return HexrdConfig().save_materials(selected_file)
+            return HexrdConfig().save_materials_hdf5(selected_file)
+
+    def on_action_save_materials_cif_triggered(self):
+        caption = 'Select directory to save CIF files to'
+        selected_dir = QFileDialog.getExistingDirectory(
+            self.ui, caption, dir=HexrdConfig().working_dir)
+        if not selected_dir:
+            return
+
+        HexrdConfig().working_dir = selected_dir
+        for material in HexrdConfig().materials.values():
+            HexrdConfig().save_material_cif(material, selected_dir)
 
     def on_action_export_current_plot_triggered(self):
         filters = 'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)'
