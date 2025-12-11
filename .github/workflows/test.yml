@@ -59,10 +59,6 @@ jobs:
       if: ${{ matrix.config.name == 'Linux' }}
       run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev
 
-    - name: Set environment variable to work around setuptools/numpy issue
-      run: echo 'SETUPTOOLS_USE_DISTUTILS=stdlib' >> $GITHUB_ENV
-      if: ${{ matrix.config.name == 'Windows' }}
-
     - name: Install HEXRD
       run: |
           pip install .
