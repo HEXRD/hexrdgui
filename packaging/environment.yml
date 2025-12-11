@@ -10,4 +10,3 @@ dependencies:
   - conda-build
   - conda-pack
   - click
-  - conda-libmamba-solver
