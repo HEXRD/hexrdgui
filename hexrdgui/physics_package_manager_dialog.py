@@ -17,6 +17,7 @@ from hexrdgui.utils import (
     exp_map_to_euler_angles,
 )
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
+from hexrdgui.utils.matplotlib import remove_artist
 
 import hexrd.resources as hexrd_resources
 from hexrd.material import _angstroms, _kev, Material
@@ -403,8 +404,8 @@ class PhysicsPackageDiagram:
 
     def clear(self):
         for text, patch in zip(self.ax.texts, self.ax.patches):
-            text.remove()
-            patch.remove()
+            remove_artist(text)
+            remove_artist(patch)
 
     def add_text(self, patch, label):
         if isinstance(patch, Polygon):

@@ -18,6 +18,7 @@ from hexrd.instrument import HEDMInstrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict
 from hexrdgui.utils.abc_qobject import ABCQObject
+from hexrdgui.utils.matplotlib import remove_artist
 
 
 # Number of decimal places to round calibration parameters
@@ -312,7 +313,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
     def clear_drawn_picks(self):
         while self.draw_picks_lines:
-            self.draw_picks_lines.pop(0).remove()
+            remove_artist(self.draw_picks_lines.pop(0))
 
         self.canvas.draw_idle()
 

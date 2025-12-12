@@ -26,6 +26,7 @@ from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.matplotlib import remove_artist
 
 
 COORDS_SLICE = slice(6, 9)
@@ -219,15 +220,15 @@ class FitGrainsResultsDialog(QObject):
     def clear_artists(self):
         # Colorbar must be removed before the scatter artist
         if self.colorbar is not None:
-            self.colorbar.remove()
+            remove_artist(self.colorbar)
             self.colorbar = None
 
         if self.scatter_artist is not None:
-            self.scatter_artist.remove()
+            remove_artist(self.scatter_artist)
             self.scatter_artist = None
 
         if self.highlight_artist is not None:
-            self.highlight_artist.remove()
+            remove_artist(self.highlight_artist)
             self.highlight_artist = None
 
     def on_colorby_changed(self):
@@ -444,7 +445,7 @@ class FitGrainsResultsDialog(QObject):
         selected_grain_ids = self.ui.table_view.selected_grain_ids
 
         if self.highlight_artist is not None:
-            self.highlight_artist.remove()
+            remove_artist(self.highlight_artist)
 
         # Now draw the highlight markers for these selected grains
         data = self.converted_data[:, COORDS_SLICE][selected_grain_ids].T

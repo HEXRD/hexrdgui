@@ -9,6 +9,7 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.fiber_pick_utils import _angles_from_orientation, _pick_to_fiber
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
+from hexrdgui.utils.matplotlib import remove_artist
 
 
 class HandPickedFibersWidget(QObject):
@@ -177,7 +178,7 @@ class HandPickedFibersWidget(QObject):
 
     def clear_current_plot(self):
         if hasattr(self, '_current_lines'):
-            self._current_lines.remove()
+            remove_artist(self._current_lines)
             del self._current_lines
 
     def update_current_plot(self):
@@ -269,7 +270,7 @@ class HandPickedFibersWidget(QObject):
     def clear_selected_artists(self):
         lines = getattr(self, '_selected_artists', [])
         while lines:
-            lines.pop(0).remove()
+            remove_artist(lines.pop(0))
 
     @property
     def selected_rows(self):

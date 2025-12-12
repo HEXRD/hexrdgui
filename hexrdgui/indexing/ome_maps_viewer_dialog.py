@@ -28,6 +28,7 @@ from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.matplotlib import remove_artist
 
 import hexrdgui.constants
 import hexrdgui.resources.indexing
@@ -540,7 +541,7 @@ class OmeMapsViewerDialog(QObject):
 
     def clear_spot_lines(self):
         if hasattr(self, '_spot_lines'):
-            self._spot_lines.remove()
+            remove_artist(self._spot_lines)
             del self._spot_lines
 
     def update_spots(self):

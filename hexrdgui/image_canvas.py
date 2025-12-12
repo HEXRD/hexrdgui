@@ -6,7 +6,6 @@ import sys
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
 
-from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
@@ -44,6 +43,7 @@ from hexrdgui.utils.conversions import (
     q_to_tth,
     tth_to_q,
 )
+from hexrdgui.utils.matplotlib import remove_artist
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 from hexrdgui.waterfall_plot import WaterfallPlotDialog
 
@@ -249,24 +249,24 @@ class ImageCanvas(FigureCanvas):
 
     def clear_wppf_plot(self):
         if self.wppf_plot:
-            self.wppf_plot.remove()
+            remove_artist(self.wppf_plot)
             self.wppf_plot = None
 
         if self.wppf_background_plot:
-            self.wppf_background_plot.remove()
+            remove_artist(self.wppf_background_plot)
             self.wppf_background_plot = None
 
         if self.wppf_amorphous_plot:
-            self.wppf_amorphous_plot.remove()
+            remove_artist(self.wppf_amorphous_plot)
             self.wppf_amorphous_plot = None
 
         if self.wppf_difference_plot:
-            self.wppf_difference_plot.remove()
+            remove_artist(self.wppf_difference_plot)
             self.wppf_difference_plot = None
 
     def clear_auto_picked_data_artists(self):
         while self.auto_picked_data_artists:
-            self.auto_picked_data_artists.pop(0).remove()
+            remove_artist(self.auto_picked_data_artists.pop(0))
 
     def load_images(self, image_names):
         HexrdConfig().emit_update_status_bar('Loading image view...')
@@ -852,7 +852,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_detector_borders(self):
         while self.cached_detector_borders:
-            _safe_remove_artist(self.cached_detector_borders.pop(0))
+            remove_artist(self.cached_detector_borders.pop(0))
 
         self.draw_idle()
 
@@ -876,7 +876,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_stereo_border_artists(self):
         while self.stereo_border_artists:
-            _safe_remove_artist(self.stereo_border_artists.pop(0))
+            remove_artist(self.stereo_border_artists.pop(0))
 
         self.draw_idle()
 
@@ -917,7 +917,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_saturation(self):
         for t in self.saturation_texts:
-            t.remove()
+            remove_artist(t)
         self.saturation_texts.clear()
         self.draw_idle()
 
@@ -982,7 +982,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_beam_marker(self):
         while self.beam_marker_artists:
-            self.beam_marker_artists.pop(0).remove()
+            remove_artist(self.beam_marker_artists.pop(0))
 
     def update_beam_marker(self):
         self.clear_beam_marker()
@@ -1767,7 +1767,7 @@ class ImageCanvas(FigureCanvas):
         while self.azimuthal_overlay_artists:
             item = self.azimuthal_overlay_artists.pop(0)
             for artist in item['artists'].values():
-                artist.remove()
+                remove_artist(artist)
 
     def save_azimuthal_plot(self):
         if self.mode != ViewType.polar:
@@ -1836,7 +1836,7 @@ class ImageCanvas(FigureCanvas):
             self.azimuthal_integral_axis.legend()
         elif (axis := self.azimuthal_integral_axis) and axis.get_legend():
             # Only remove the legend if the axis exists and it has a legend
-            axis.get_legend().remove()
+            remove_artist(axis.get_legend())
         self.draw_idle()
 
     def update_azimuthal_integral_plot(self):
@@ -2269,7 +2269,7 @@ class ImageCanvas(FigureCanvas):
 
     def clear_mask_boundaries(self):
         for artist in self._mask_boundary_artists:
-            artist.remove()
+            remove_artist(artist)
 
         self._mask_boundary_artists.clear()
 
@@ -2550,14 +2550,3 @@ def transform_from_plain_cartesian_func(mode):
         raise Exception(f'Unknown mode: {mode}')
 
     return funcs[mode]
-
-
-def _safe_remove_artist(artist: Artist):
-    # Starting in matplotlib 3.10, we cannot remove artists from a figure
-    # that has already been cleared. I don't know of any easy way to check
-    # if the axis has been cleared, though, so for now, we just try to
-    # remove the artist and ignore the relevant exception if it occurs.
-    try:
-        artist.remove()
-    except NotImplementedError:
-        pass

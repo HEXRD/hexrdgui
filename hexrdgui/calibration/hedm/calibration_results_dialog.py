@@ -7,6 +7,7 @@ import numpy as np
 
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils.matplotlib import remove_artist
 
 
 DEFAULT_STYLE = 'rx'
@@ -134,7 +135,7 @@ class HEDMCalibrationResultsDialog:
 
     def clear_artists(self):
         while self.artists:
-            self.artists.pop(0).remove()
+            remove_artist(self.artists.pop(0))
 
     def update_canvas(self):
         self.clear_artists()

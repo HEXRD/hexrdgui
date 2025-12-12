@@ -17,6 +17,7 @@ from hexrdgui.tree_views.base_dict_tree_item_model import (
 )
 from hexrdgui.tree_views.tree_item import TreeItem
 from hexrdgui.tree_views.value_column_delegate import ValueColumnDelegate
+from hexrdgui.utils.matplotlib import remove_artist
 
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
@@ -382,10 +383,10 @@ class GenericPicksTreeView(BaseDictTreeView):
 
     def clear_artists(self):
         while self.all_picks_line_artists:
-            self.all_picks_line_artists.pop(0).remove()
+            remove_artist(self.all_picks_line_artists.pop(0))
 
         while self.selected_picks_line_artists:
-            self.selected_picks_line_artists.pop(0).remove()
+            remove_artist(self.selected_picks_line_artists.pop(0))
 
         self.canvas.draw_idle()
 

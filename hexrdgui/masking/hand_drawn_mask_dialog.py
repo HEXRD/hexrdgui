@@ -11,6 +11,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import add_sample_points
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.matplotlib import remove_artist
 
 # TODO: How to handle image mode? Mode has changed byt the time the signal has been emitted.
 
@@ -91,7 +92,7 @@ class HandDrawnMaskDialog(QObject):
         self.ring_data.clear()
 
         while self.lines:
-            self.lines.pop(0).remove()
+            remove_artist(self.lines.pop(0))
 
         if self.linebuilder:
             self.linebuilder.disconnect()

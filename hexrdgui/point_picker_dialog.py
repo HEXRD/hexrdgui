@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout
 
+from hexrdgui.utils.matplotlib import remove_artist
+
 
 class PointPickerDialog(QDialog):
     def __init__(self, canvas, window_title='Pick Points', parent=None):
@@ -57,7 +59,7 @@ class PointPickerDialog(QDialog):
         self.disconnect()
 
         if self.scatter_artist is not None:
-            self.scatter_artist.remove()
+            remove_artist(self.scatter_artist)
             self.scatter_artist = None
 
     def disconnect(self):
