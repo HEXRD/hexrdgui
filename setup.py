@@ -8,9 +8,7 @@ install_reqs = [
     'fabio>=0.11',
     'matplotlib',
     'Pillow',
-    # PySide 6.8.0 is causing segmentation faults in the testing
-    # Keep this version downgraded until that is fixed.
-    'pyside6<6.8.0',
+    'pyside6',
     'pyyaml',
     'silx',
 ]
