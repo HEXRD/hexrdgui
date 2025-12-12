@@ -1,9 +1,11 @@
+import gc
 import os
 from pathlib import Path
 
 import pytest
 
 from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QApplication
 
 from hexrdgui.main_window import MainWindow
 
@@ -41,3 +43,25 @@ def main_window(qtbot):
     window.confirm_application_close = False
     qtbot.addWidget(window.ui)
     return window
+
+
+# This next fixture is necessary starting in Qt 6.8, to ensure
+# all Qt objects are destroyed before Python finalizes.
+# This may not be required anymore after we drop support
+# for Python 3.11. The Python3.14 tests pass without it. We
+# can try removing this after we drop support of Python versions.
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_qt():
+    """Clean up Qt objects before Python finalizes."""
+    yield
+    # After all tests complete, before Python exits
+    app = QApplication.instance()
+    if app:
+        # Close all windows
+        for widget in app.topLevelWidgets():
+            widget.close()
+            widget.deleteLater()
+        # Process pending events
+        app.processEvents()
+    # Force garbage collection
+    gc.collect()
