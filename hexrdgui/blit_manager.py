@@ -2,6 +2,8 @@ from collections.abc import Sequence, ValuesView
 
 from matplotlib.artist import Artist
 
+from hexrdgui.utils.matplotlib import remove_artist
+
 
 class BlitManager:
     def __init__(self, canvas):
@@ -63,7 +65,7 @@ class BlitManager:
             d = d[key]
 
         for artist in _recursive_yield_artists(d):
-            artist.remove()
+            remove_artist(artist)
 
         if parent:
             del parent[key]

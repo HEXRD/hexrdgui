@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from hexrdgui.constants import ViewType
 from hexrdgui.markers import igor_marker
 from hexrdgui.ui_loader import UiLoader
+from hexrdgui.utils.matplotlib import remove_artist
 from hexrdgui.zoom_canvas import ZoomCanvas
 
 
@@ -143,7 +144,7 @@ class LinePickerDialog(QObject):
 
     def clear(self):
         while self.lines:
-            self.lines.pop(0).remove()
+            remove_artist(self.lines.pop(0))
 
         self.linebuilder = None
         self.previous_linebuilders.clear()
@@ -193,7 +194,7 @@ class LinePickerDialog(QObject):
         self.unused_colors.append(self.lines[-1]._color)
 
         self.linebuilder = self.previous_linebuilders.pop()
-        self.lines.pop().remove()
+        remove_artist(self.lines.pop())
 
         self.canvas.draw_idle()
 

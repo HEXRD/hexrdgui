@@ -9,6 +9,7 @@ from hexrdgui.constants import (
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import has_nan
+from hexrdgui.utils.matplotlib import remove_artist
 from hexrdgui.utils.polygon import polygon_to_mask
 
 
@@ -160,7 +161,7 @@ class InteractiveTemplate:
 
     def clear(self):
         if self.shape in self.axis.patches:
-            self.shape.remove()
+            remove_artist(self.shape)
             self.redraw()
         self.total_rotation = 0.
 
@@ -186,7 +187,7 @@ class InteractiveTemplate:
                 self.axis.add_patch(shape)
             if self.shape:
                 self.shape = self.axis.patches[-1]
-                self.shape.remove()
+                remove_artist(self.shape)
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
                 self.axis.add_patch(self.shape)
                 self.connect_translate_rotate()

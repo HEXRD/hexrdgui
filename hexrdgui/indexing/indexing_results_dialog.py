@@ -20,6 +20,7 @@ from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.matplotlib import remove_artist
 
 
 class IndexingResultsDialog(QObject):
@@ -113,7 +114,7 @@ class IndexingResultsDialog(QObject):
         if filename.suffix.lower() == '.npz':
             # Save as an npz
             grain_data = GrainData.from_array(grains)
-            grain_data.save(selected_file)
+            grain_data.save(filename)
         else:
             # Save as txt
             write_grains_txt(grains, filename)
@@ -299,7 +300,7 @@ class IndexingResultsDialog(QObject):
 
     def clear_spot_lines(self):
         if hasattr(self, '_spot_lines'):
-            self._spot_lines.remove()
+            remove_artist(self._spot_lines)
             del self._spot_lines
 
     def update_spots(self):

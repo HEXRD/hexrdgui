@@ -9,6 +9,7 @@ from matplotlib.widgets import Cursor
 import numpy as np
 
 from hexrdgui.constants import ViewType
+from hexrdgui.utils.matplotlib import remove_artist
 
 
 class ZoomCanvas(FigureCanvas):
@@ -138,17 +139,17 @@ class ZoomCanvas(FigureCanvas):
 
     def remove_cursor(self):
         if self.cursor:
-            self.cursor.remove()
+            remove_artist(self.cursor)
             self.cursor = None
 
     def remove_main_cursor(self):
         if self.main_cursor:
-            self.main_cursor.remove()
+            remove_artist(self.main_cursor)
             self.main_cursor = None
 
     def remove_overlay_lines(self):
         if self.box_overlay_line is not None:
-            self.box_overlay_line.remove()
+            remove_artist(self.box_overlay_line)
             self.box_overlay_line = None
 
     def clear_crosshairs(self):
@@ -157,7 +158,7 @@ class ZoomCanvas(FigureCanvas):
 
     def remove_crosshairs(self):
         if self.crosshairs is not None:
-            self.crosshairs.remove()
+            remove_artist(self.crosshairs)
             self.crosshairs = None
 
     def on_axes_entered(self, event):
@@ -605,11 +606,11 @@ class RemovableCursor(Cursor):
         self.disconnect_events()
 
         if self.linev:
-            self.linev.remove()
+            remove_artist(self.linev)
             self.linev = None
 
         if self.lineh:
-            self.lineh.remove()
+            remove_artist(self.lineh)
             self.lineh = None
 
 
