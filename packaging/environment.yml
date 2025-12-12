@@ -3,11 +3,10 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.11
+  - python=3.13
   - coloredlogs
   - conda
   - cmake
   - conda-build
   - conda-pack
   - click
-  - conda-libmamba-solver

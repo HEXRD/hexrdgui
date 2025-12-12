@@ -95,6 +95,9 @@ jobs:
           # Use libmamba as the solver for all future conda commands
           export CONDA_SOLVER=libmamba
 
+          # Specify the Python version in the package here
+          export CONDA_PY=314
+
           HEXRD_PACKAGE_CHANNEL=${HEXRD_PACKAGE_CHANNEL} HEXRDGUI_OUTPUT_FOLDER=output/ cpack
       # This is need to ensure ~/.profile or ~/.bashrc are used so the activate
       # command works.
