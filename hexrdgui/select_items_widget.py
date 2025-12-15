@@ -53,7 +53,7 @@ class SelectItemsWidget(QObject):
 
     def create_checkbox(self, v):
         cb = QCheckBox(self.ui.table)
-        cb.setChecked(v)
+        cb.setChecked(bool(v))
         cb.toggled.connect(self.checkbox_toggled)
         self.checkboxes.append(cb)
         return self.create_table_widget(cb)
