@@ -1,3 +1,5 @@
+import atexit
+import gc
 import os
 import signal
 import sys
@@ -69,6 +71,40 @@ def apply_parsed_args_to_hexrd_config(parsed_args):
     for k, v in to_set.items():
         setattr(hexrd_config, v, getattr(parsed_args, k))
 
+
+def cleanup_widgets():
+    """Clean up Qt widgets before Python shutdown
+
+    This is necessary for newer versions of Qt (>= 6.8),
+    because there are some kinds of conflicts between Qt and
+    the Python's cleanup systems that can cause crashes.
+
+    This fix ensures that all Qt objects are deleted and cleaned
+    up before Python performs its cleanup.
+    """
+    app = QApplication.instance()
+    if app:
+        # Close all top-level widgets
+        for widget in app.topLevelWidgets()[:]:
+            try:
+                widget.close()
+                widget.deleteLater()
+            except RuntimeError:
+                # Already deleted by Qt - that's fine
+                pass
+
+        try:
+            # Process events to ensure deleteLater() is executed
+            app.processEvents()
+        except RuntimeError:
+            pass
+
+        # Force garbage collection
+        gc.collect()
+
+
+# Register cleanup to run before Python's atexit handlers
+atexit.register(cleanup_widgets)
 
 if __name__ == '__main__':
     main()
