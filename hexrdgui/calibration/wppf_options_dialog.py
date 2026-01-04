@@ -301,7 +301,7 @@ class WppfOptionsDialog(QObject):
         }
         if self.amorphous_model is not None:
             amp = obj.amorphous_model.amorphous_lineout()
-            data.update{**{'amorphous': amp}}
+            data.update(**{'amorphous': amp})
 
         # Delete the file if it already exists
         if filename.exists():
