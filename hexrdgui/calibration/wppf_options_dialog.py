@@ -299,9 +299,8 @@ class WppfOptionsDialog(QObject):
             'difference_curve': intensity - lineout_intensity,
             'background': bkg,
         }
-        if self.amorphous_model is not None:
-            amp = obj.amorphous_model.amorphous_lineout
-            data.update(**{'amorphous': amp})
+        if obj.amorphous_model is not None:
+            data['amorphous'] = obj.amorphous_model.amorphous_lineout
 
         # Delete the file if it already exists
         if filename.exists():
