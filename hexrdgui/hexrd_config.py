@@ -20,6 +20,7 @@ from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler, rotMatOfExpMap
 from hexrd.utils.decorators import memoize
+from hexrd.utils.panel_buffer import panel_buffer_from_str
 from hexrd.utils.yaml import NumpyToNativeDumper
 from hexrd.valunits import valWUnit
 
@@ -1699,6 +1700,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         det = self.detector(detector_name)
         return det.get('group', {})
 
+    def detectors_in_group(self, group: str) -> list[str]:
+        names = []
+        for det_key in self.detectors:
+            this_group = self.detector_group(det_key)
+            if this_group == group:
+                names.append(det_key)
+
+        return names
+
     def detector_pixel_size(self, detector_name):
         detector = self.detector(detector_name)
         return detector.get('pixels', {}).get('size', [0.1, 0.1])
@@ -3061,10 +3071,22 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def clean_panel_buffers(self):
         # Ensure that the panel buffer sizes match the pixel sizes.
         # If not, clear the panel buffer and print a warning.
+        instr = None
         for name, det_info in self.detectors.items():
             buffer = det_info.get('buffer')
             if buffer is None:
                 continue
+
+            if isinstance(buffer, str):
+                if instr is None:
+                    # This instrument is not fully set up properly like
+                    # the one from `create_hedm_instrument()` is, but it
+                    # has the shape and roi set up properly, which are
+                    # needed for the function.
+                    iconfig = self.instrument_config_none_euler_convention
+                    instr = HEDMInstrument(instrument_config=iconfig)
+
+                buffer = panel_buffer_from_str(buffer, instr.detectors[name])
 
             buffer = np.asarray(buffer)
             if buffer.ndim == 1:

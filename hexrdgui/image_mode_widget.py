@@ -5,6 +5,8 @@ import numpy as np
 from PySide6.QtCore import QEvent, QObject, QTimer, Signal
 from PySide6.QtWidgets import QApplication
 
+from hexrd.imageseries import ImageSeries
+
 from hexrdgui.azimuthal_overlay_manager import AzimuthalOverlayManager
 from hexrdgui.constants import PolarXAxisType, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -55,6 +57,7 @@ class ImageModeWidget(QObject):
         # FIXME: why is projecting from raw different?
         self.ui.stereo_project_from_polar.setVisible(False)
 
+        self.setup_eiger_stream_v2_options()
         self.setup_connections()
         self.update_gui_from_config()
 
@@ -67,6 +70,10 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_stitch_raw_roi_images)
         self.ui.raw_show_zoom_dialog.clicked.connect(
             self.raw_show_zoom_dialog)
+        self.ui.eiger_stream_v2_setting.currentIndexChanged.connect(
+            self.on_eiger_stream_v2_settings_modified)
+        self.ui.eiger_stream_v2_multiplier.valueChanged.connect(
+            self.on_eiger_stream_v2_settings_modified)
         self.ui.cartesian_pixel_size.valueChanged.connect(
             HexrdConfig()._set_cartesian_pixel_size)
         self.ui.cartesian_virtual_plane_distance.valueChanged.connect(
@@ -153,7 +160,80 @@ class ImageModeWidget(QObject):
             HexrdConfig().set_stereo_project_from_polar)
 
         ImageLoadManager().new_images_loaded.connect(
-            self.update_visibility_states)
+            self.on_new_images_loaded)
+
+    def setup_eiger_stream_v2_options(self):
+        combo = self.ui.eiger_stream_v2_setting
+        combo.clear()
+
+        options = {
+            'Threshold 1': 'threshold_1',
+            'Threshold 2': 'threshold_2',
+            'Difference': 'man_diff',
+        }
+        for k, v in options.items():
+            combo.addItem(k, v)
+
+    def on_new_images_loaded(self):
+        self.update_visibility_states()
+        self.update_eiger_stream_v2_settings()
+
+    def update_eiger_stream_v2_settings(self):
+        ims_dict = HexrdConfig().imageseries_dict
+
+        # We assume that all imageseries have the same options set
+        visible = False
+        if ims_dict:
+            ims = next(iter(ims_dict.values()))
+            visible = _is_eiger_stream_v2(ims)
+
+        self.ui.eiger_stream_v2_group.setVisible(visible)
+
+        if not visible:
+            # Nothing else to do
+            return
+
+        settings = ims.option_values()
+        w = self.ui.eiger_stream_v2_setting
+        idx = w.findData(settings['threshold_setting'])
+        if idx != -1:
+            with block_signals(w):
+                w.setCurrentIndex(idx)
+
+        mult_enabled = w.currentData() == 'man_diff'
+        mult_widgets = [
+            self.ui.eiger_stream_v2_multiplier_label,
+            self.ui.eiger_stream_v2_multiplier,
+        ]
+        for w in mult_widgets:
+            w.setEnabled(mult_enabled)
+
+        w = self.ui.eiger_stream_v2_multiplier
+        with block_signals(w):
+            w.setValue(settings['multiplier'])
+
+    def on_eiger_stream_v2_settings_modified(self):
+        ims_dict = HexrdConfig().imageseries_dict
+
+        if (
+            not ims_dict or
+            not _is_eiger_stream_v2(next(iter(ims_dict.values())))
+        ):
+            # This shouldn't have been triggered. Let's ignore it.
+            self.update_eiger_stream_v2_settings()
+            return
+
+        settings = {
+            'threshold_setting': self.ui.eiger_stream_v2_setting.currentData(),
+            'multiplier': self.ui.eiger_stream_v2_multiplier.value(),
+        }
+
+        for ims in ims_dict.values():
+            for k, v in settings.items():
+                ims.set_option(k, v)
+
+        # Trigger all the same logic as if we loaded new images
+        ImageLoadManager().new_images_loaded.emit()
 
     def eventFilter(self, target, event):
         if target is self.ui and event.type() == QEvent.Resize:
@@ -269,6 +349,7 @@ class ImageModeWidget(QObject):
             self.update_enable_states()
 
         self.update_visibility_states()
+        self.update_eiger_stream_v2_settings()
 
     def update_enable_states(self):
         apply_snip1d = self.ui.polar_apply_snip1d.isChecked()
@@ -369,7 +450,6 @@ class ImageModeWidget(QObject):
 
         # Get the GUI to update with the new values
         self.update_gui_from_config()
-
 
     @property
     def polar_apply_tth_distortion(self):
@@ -589,3 +669,23 @@ def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     ptth, peta = panel.pixel_angles()
     min_tth.append(np.degrees(np.min(ptth)))
     max_tth.append(np.degrees(np.max(ptth)))
+
+
+def _get_ims_format(ims: ImageSeries) -> str | None:
+    # If "None" is returned, the format could not be determined
+
+    # We have to recursively "dig" into the imageseries and adapters
+    # in order to find the original adapter.
+    adapter = ims
+    while hasattr(adapter, '_adapter') or hasattr(adapter, '_imser'):
+        if hasattr(adapter, '_adapter'):
+            adapter = adapter._adapter
+        else:
+            # ProcessedImageSeries have an '_imser' on them
+            adapter = adapter._imser
+
+    return getattr(adapter, 'format', None)
+
+
+def _is_eiger_stream_v2(ims: ImageSeries) -> bool:
+    return _get_ims_format(ims) == 'eiger-stream-v2'

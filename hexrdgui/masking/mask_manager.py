@@ -5,6 +5,7 @@ from PySide6.QtCore import Signal, QObject
 from hexrdgui import utils
 
 from hexrdgui.constants import ViewType
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.masking.constants import CURRENT_MASK_VERSION, MaskType
 from hexrdgui.masking.create_polar_mask import (
     create_polar_mask_from_raw, rebuild_polar_masks
@@ -18,6 +19,7 @@ from hexrdgui.singletons import QSingleton
 from hexrdgui.utils import unique_name
 
 from hexrd.instrument import unwrap_dict_to_h5
+from hexrd.utils.panel_buffer import panel_buffer_from_str
 
 from abc import ABC, abstractmethod
 
@@ -506,9 +508,18 @@ class MaskManager(QObject, metaclass=QSingleton):
     def masks_to_panel_buffer(self, selection):
         # Set the visible masks as the panel buffer(s)
         # We must ensure that we are using raw masks
+        instr = None
         for det, mask in HexrdConfig().raw_masks_dict.items():
             detector_config = HexrdConfig().detector(det)
             buffer_value = detector_config.get('buffer', None)
+            if isinstance(buffer_value, str):
+                # Convert to an array
+                if instr is None:
+                    instr = create_hedm_instrument()
+
+                panel = instr.detectors[det]
+                buffer_value = panel_buffer_from_str(buffer_value, panel)
+
             if isinstance(buffer_value, np.ndarray) and buffer_value.ndim == 2:
                 # NOTE: The `logical_and` and `logical_or` here are being
                 # applied to the *masks*, not the un-masked regions. This is

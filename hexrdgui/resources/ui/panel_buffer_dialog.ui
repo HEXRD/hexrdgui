@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>478</width>
-    <height>361</height>
+    <height>398</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>The panel buffer can be set in two ways. Either by provided the border in mm or through a NumPy array, interpretation is boolean with true marking valid pixels.</string>
+      <string>The panel buffer can be set in three ways. By providing the border in mm, through a NumPy array the shape of the detector (interpretation is boolean with true marking valid pixels), or by selecting a known panel buffer by name.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -59,6 +59,11 @@
        <item>
         <property name="text">
          <string>NumPy</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Name</string>
         </property>
        </item>
       </widget>
@@ -182,6 +187,30 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="name_tab">
+      <attribute name="title">
+       <string>Name</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <widget class="QLabel" name="selected_name_label">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a known panel buffer by name.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Either the shape of the known panel buffer must match the shape of the current detector, or, in the case of subpanels (where each panel has an ROI and a group defined), the known panel buffer for the monolith can still be selected, in which case the relevant subregion of the panel buffer is automatically extracted using the ROI information.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Name:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="selected_name">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a known panel buffer by name.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Either the shape of the known panel buffer must match the shape of the current detector, or, in the case of subpanels (where each panel has an ROI and a group defined), the known panel buffer for the monolith can still be selected, in which case the relevant subregion of the panel buffer is automatically extracted using the ROI information.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item row="5" column="0">
@@ -244,6 +273,8 @@
   <tabstop>file_name</tabstop>
   <tabstop>select_file_button</tabstop>
   <tabstop>show_panel_buffer</tabstop>
+  <tabstop>selected_name</tabstop>
+  <tabstop>clear_panel_buffer</tabstop>
  </tabstops>
  <resources/>
  <connections>
