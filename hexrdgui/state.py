@@ -156,7 +156,7 @@ def save(h5_file):
     _save_config(h5_file, state)
 
     # Write out the materials
-    HexrdConfig().save_materials(h5_file, '/materials')
+    HexrdConfig().save_materials_hdf5(h5_file, '/materials')
 
     # Write out the instrument
     HexrdConfig().save_instrument_config(h5_file)

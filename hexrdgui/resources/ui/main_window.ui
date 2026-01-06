@@ -92,10 +92,17 @@
       <addaction name="action_save_config_hexrd"/>
       <addaction name="action_save_config_yaml"/>
      </widget>
+     <widget class="QMenu" name="menu_save_materials">
+      <property name="title">
+       <string>&amp;Materials</string>
+      </property>
+      <addaction name="action_save_materials_hdf5"/>
+      <addaction name="action_save_materials_cif"/>
+     </widget>
      <addaction name="action_save_imageseries"/>
      <addaction name="action_save_state"/>
      <addaction name="menu_save_config"/>
-     <addaction name="action_save_materials"/>
+     <addaction name="menu_save_materials"/>
     </widget>
     <widget class="QMenu" name="menu_export">
      <property name="title">
@@ -542,11 +549,6 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show the saturation percentages of the images when in &amp;quot;Image View&amp;quot; mode. The saturation percentages will appear as white text in the bottom left corners of the images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
-  <action name="action_save_materials">
-   <property name="text">
-    <string>&amp;Materials</string>
-   </property>
-  </action>
   <action name="action_run_laue_and_powder_calibration">
    <property name="enabled">
     <bool>false</bool>
@@ -900,6 +902,16 @@
    </property>
    <property name="text">
     <string>Apply Median Filter</string>
+   </property>
+  </action>
+  <action name="action_save_materials_hdf5">
+   <property name="text">
+    <string>HDF5</string>
+   </property>
+  </action>
+  <action name="action_save_materials_cif">
+   <property name="text">
+    <string>CIF</string>
    </property>
   </action>
  </widget>

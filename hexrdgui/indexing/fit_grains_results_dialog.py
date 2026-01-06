@@ -714,7 +714,7 @@ class FitGrainsResultsDialog(QObject):
         HexrdConfig().working_dir = selected_directory
 
         HexrdConfig().save_indexing_config(full_path('workflow.yml'))
-        HexrdConfig().save_materials(full_path('materials.h5'))
+        HexrdConfig().save_materials_hdf5(full_path('materials.h5'))
         HexrdConfig().save_instrument_config(
             full_path('instrument.hexrd'),
             # Remove ROIs, since we are saving the imageseries without them
