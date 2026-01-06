@@ -13,7 +13,12 @@ import yaml
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QFileDialog, QHBoxLayout, QInputDialog, QMessageBox
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QMessageBox,
 )
 
 from hexrd import constants as ct
@@ -27,7 +32,8 @@ from hexrd.wppf.phase import Material_Rietveld
 from hexrd.wppf.texture import HarmonicModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
-    background_methods, _generate_default_parameters_LeBail,
+    background_methods,
+    _generate_default_parameters_LeBail,
     _generate_default_parameters_Rietveld,
 )
 
@@ -47,7 +53,7 @@ from hexrdgui.html_delegate import aligned_sub_sup_html, HtmlDelegate
 from hexrdgui.point_picker_dialog import PointPickerDialog
 from hexrdgui.select_items_dialog import SelectItemsDialog
 from hexrdgui.tree_views.multi_column_dict_tree_view import (
-    MultiColumnDictTreeView
+    MultiColumnDictTreeView,
 )
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, clear_layout, has_nan
@@ -61,7 +67,6 @@ DEFAULT_PEAK_SHAPE = 'pvtch'
 
 
 class WppfOptionsDialog(QObject):
-
     run = Signal()
     undo_clicked = Signal()
     object_reset = Signal()
@@ -113,43 +118,56 @@ class WppfOptionsDialog(QObject):
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
         self.ui.delta_boundaries.toggled.connect(
-            self.on_delta_boundaries_toggled)
+            self.on_delta_boundaries_toggled
+        )
         self.ui.select_experiment_file_button.pressed.connect(
-            self.select_experiment_file)
+            self.select_experiment_file
+        )
 
         self.ui.background_method.currentIndexChanged.connect(
-            self.update_background_parameters)
+            self.update_background_parameters
+        )
 
         self.ui.display_wppf_plot.toggled.connect(
-            self.display_wppf_plot_toggled)
+            self.display_wppf_plot_toggled
+        )
         self.ui.plot_background.toggled.connect(self.plot_background_toggled)
         self.ui.plot_amorphous.toggled.connect(self.plot_amorphous_toggled)
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
         self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
         self.ui.show_difference_curve.toggled.connect(
-            self.on_show_difference_curve_toggled)
+            self.on_show_difference_curve_toggled
+        )
         self.ui.show_difference_as_percent.toggled.connect(
-            self.on_show_difference_as_percent_toggled)
+            self.on_show_difference_as_percent_toggled
+        )
 
         self.ui.include_amorphous.toggled.connect(
-            self.on_include_amorphous_toggled)
+            self.on_include_amorphous_toggled
+        )
         self.ui.amorphous_model.currentIndexChanged.connect(
-            self.on_amorphous_model_changed)
+            self.on_amorphous_model_changed
+        )
         self.ui.num_amorphous_peaks.valueChanged.connect(
-            self.on_num_amorphous_peaks_value_changed)
+            self.on_num_amorphous_peaks_value_changed
+        )
         self.ui.amorphous_select_experiment_files.clicked.connect(
-            self.select_amorphous_experiment_files)
+            self.select_amorphous_experiment_files
+        )
 
         self.ui.selected_texture_material.currentIndexChanged.connect(
-            self.on_selected_texture_material_changed)
+            self.on_selected_texture_material_changed
+        )
         for w in self.texture_material_setting_widgets:
             changed_signal(w).connect(self.on_texture_material_setting_changed)
         for w in self.texture_binning_settings_widgets:
             changed_signal(w).connect(self.on_texture_binning_setting_changed)
         self.ui.texture_show_simulated_spectrum.clicked.connect(
-            self.on_texture_show_simulated_spectrum_clicked)
+            self.on_texture_show_simulated_spectrum_clicked
+        )
         self.ui.texture_plot_pole_figures.clicked.connect(
-            self.on_texture_plot_pole_figures_clicked)
+            self.on_texture_plot_pole_figures_clicked
+        )
 
         self.ui.export_params.clicked.connect(self.export_params)
         self.ui.import_params.clicked.connect(self.import_params)
@@ -216,7 +234,8 @@ class WppfOptionsDialog(QObject):
             self.ui.refinement_steps.setValue(1)
 
         self.ui.show_difference_as_percent.setVisible(
-            self.show_difference_curve)
+            self.show_difference_curve
+        )
 
         self.update_texture_model_enable_states()
 
@@ -250,8 +269,11 @@ class WppfOptionsDialog(QObject):
             raise Exception('No WPPF object!')
 
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Data', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Save Data',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
@@ -269,12 +291,16 @@ class WppfOptionsDialog(QObject):
 
         # Prepare the data to write out
         two_theta, intensity = obj.spectrum_sim.x, obj.spectrum_sim.y
+        bkg = obj.background.y
         data = {
             'two_theta': two_theta,
             'intensity': intensity,
             'lineout_intensity': lineout_intensity,
             'difference_curve': intensity - lineout_intensity,
+            'background': bkg,
         }
+        if obj.amorphous_model is not None:
+            data['amorphous'] = obj.amorphous_model.amorphous_lineout
 
         # Delete the file if it already exists
         if filename.exists():
@@ -335,9 +361,8 @@ class WppfOptionsDialog(QObject):
         # Pick experiment files for amorphous if needed
         if self.include_amorphous and self.amorphous_model_is_experimental:
             files = self.amorphous_experiment_files
-            if (
-                len(files) < self.num_amorphous_peaks or
-                any(not x for x in files)
+            if len(files) < self.num_amorphous_peaks or any(
+                not x for x in files
             ):
                 self.select_amorphous_experiment_files()
 
@@ -379,8 +404,9 @@ class WppfOptionsDialog(QObject):
     def validate(self):
         use_experiment_file = self.use_experiment_file
         if use_experiment_file and not Path(self.experiment_file).exists():
-            raise Exception(f'Experiment file, {self.experiment_file}, '
-                            'does not exist')
+            raise Exception(
+                f'Experiment file, {self.experiment_file}, ' 'does not exist'
+            )
 
         if not any(x.vary for x in self.params.values()):
             msg = 'All parameters are fixed. Need to vary at least one'
@@ -465,8 +491,8 @@ class WppfOptionsDialog(QObject):
         dialog = SelectItemsDialog(items, 'Select Materials', self.ui)
         while True:
             if (
-                dialog.exec() and
-                self.selected_materials != dialog.selected_items
+                dialog.exec()
+                and self.selected_materials != dialog.selected_items
             ):
                 if not dialog.selected_items:
                     msg = 'At least one material must be selected'
@@ -664,9 +690,9 @@ class WppfOptionsDialog(QObject):
         # Each amorphous phase will contain these defaults
         key_names = self.amorphous_peak_names
         defaults = {
-            'scale': 1.,
-            'shift': 0.,
-            'center': 30.,
+            'scale': 1.0,
+            'shift': 0.0,
+            'center': 30.0,
         }
 
         model_type = AMORPHOUS_MODEL_TYPES[self.amorphous_model]
@@ -687,12 +713,14 @@ class WppfOptionsDialog(QObject):
 
         # Space out the default centers to be 25 between them
         for i, k in enumerate(key_names):
-            kwargs['center'][k] += (i * 25)
+            kwargs['center'][k] += i * 25
 
         if self.amorphous_model_is_experimental:
             kwargs['model_data'] = {
-                key: np.loadtxt(path) for key, path in
-                zip(key_names, self.amorphous_experiment_files)
+                key: np.loadtxt(path)
+                for key, path in zip(
+                    key_names, self.amorphous_experiment_files
+                )
             }
             kwargs['smoothing'] = self.amorphous_expt_smoothing
 
@@ -711,8 +739,9 @@ class WppfOptionsDialog(QObject):
         ax.set_xlabel(r'2$\theta$')
         ax.set_ylabel(r'intensity (a.u.)')
 
-        dialog = PointPickerDialog(fig.canvas, 'Pick Background Points',
-                                   parent=self.ui)
+        dialog = PointPickerDialog(
+            fig.canvas, 'Pick Background Points', parent=self.ui
+        )
         if not dialog.exec():
             # User canceled.
             return
@@ -891,8 +920,11 @@ class WppfOptionsDialog(QObject):
 
     def select_experiment_file(self):
         selected_file, _ = QFileDialog.getOpenFileName(
-            self.ui, 'Select Experiment File', HexrdConfig().working_dir,
-            'TXT files (*.txt)')
+            self.ui,
+            'Select Experiment File',
+            HexrdConfig().working_dir,
+            'TXT files (*.txt)',
+        )
 
         if selected_file:
             path = Path(selected_file)
@@ -951,7 +983,8 @@ class WppfOptionsDialog(QObject):
 
         # Update the visibility of this button
         self.ui.pick_spline_points.setVisible(
-            self.background_method == 'spline')
+            self.background_method == 'spline'
+        )
 
         main_layout = self.ui.background_method_parameters_layout
         clear_layout(main_layout)
@@ -1158,9 +1191,9 @@ class WppfOptionsDialog(QObject):
         # Keep track of which params have been used.
         used_params = []
 
-        def create_param_item(param, units=None, conversion_funcs=None,
-                              min_max_inverted=False):
-
+        def create_param_item(
+            param, units=None, conversion_funcs=None, min_max_inverted=False
+        ):
             # Convert to display units if needed
             def convert_if_needed(x):
                 if conversion_funcs is None:
@@ -1209,10 +1242,12 @@ class WppfOptionsDialog(QObject):
 
                 d['_delta'] = convert_if_needed(param.delta)
             else:
-                d.update(**{
-                    '_min': convert_if_needed(param.min),
-                    '_max': convert_if_needed(param.max),
-                })
+                d.update(
+                    **{
+                        '_min': convert_if_needed(param.min),
+                        '_max': convert_if_needed(param.max),
+                    }
+                )
                 if min_max_inverted:
                     # Swap the min and max
                     d['_min'], d['_max'] = d['_max'], d['_min']
@@ -1306,8 +1341,9 @@ class WppfOptionsDialog(QObject):
         # Now generate the materials
         materials_template = template_dict['Materials'].pop('{mat}')
 
-        def recursively_format_site_id(mat, site_id, this_config,
-                                       this_template):
+        def recursively_format_site_id(
+            mat, site_id, this_config, this_template
+        ):
             sanitized_mat = mat.replace('-', '_')
             for k, v in this_template.items():
                 if isinstance(v, dict):
@@ -1419,7 +1455,7 @@ class WppfOptionsDialog(QObject):
 
                 mat_config = texture_dict.setdefault(mat_name, {})
                 for name in matching_names:
-                    suffix = name[len(prefix):]
+                    suffix = name[len(prefix) :]
                     ell, i, j = [int(k) for k in suffix.split('_')]
                     # Align the superscript and subscript vertically
                     k = aligned_sub_sup_html('C', f'{ell}', f'{i},{j}')
@@ -1444,9 +1480,9 @@ class WppfOptionsDialog(QObject):
 
         # Insert the background and peak shape dicts too
         method_dict['Background'] = self.background_tree_dict
-        method_dict['Instrumental Parameters']['Peak Parameters'] = (
-            self.peak_shape_tree_dict
-        )
+        method_dict['Instrumental Parameters'][
+            'Peak Parameters'
+        ] = self.peak_shape_tree_dict
         method_dict['Amorphous'] = self.amorphous_tree_dict
 
         return method_dict
@@ -1567,8 +1603,7 @@ class WppfOptionsDialog(QObject):
             return {}
 
         return {
-            k: v.stderr for k, v in res.params.items()
-            if v.vary and v.stderr
+            k: v.stderr for k, v in res.params.items() if v.vary and v.stderr
         }
 
     def on_param_vary_modified(self, param):
@@ -1583,9 +1618,7 @@ class WppfOptionsDialog(QObject):
             self.update_tree_view()
 
     def on_show_difference_curve_toggled(self):
-        HexrdConfig().show_wppf_difference_axis = (
-            self.show_difference_curve
-        )
+        HexrdConfig().show_wppf_difference_axis = self.show_difference_curve
         self.update_enable_states()
 
     def on_show_difference_as_percent_toggled(self):
@@ -1638,8 +1671,7 @@ class WppfOptionsDialog(QObject):
     @property
     def wppf_object_kwargs(self):
         wavelength = {
-            'synchrotron': [_angstroms(
-                HexrdConfig().beam_wavelength), 1.0]
+            'synchrotron': [_angstroms(HexrdConfig().beam_wavelength), 1.0]
         }
 
         if self.use_experiment_file:
@@ -1658,7 +1690,7 @@ class WppfOptionsDialog(QObject):
             kwargs = {
                 'data': expt_spectrum,
                 'mask': np.isnan(expt_spectrum),
-                'fill_value': 0.,
+                'fill_value': 0.0,
             }
             expt_spectrum = np.ma.masked_array(**kwargs)
 
@@ -1725,8 +1757,11 @@ class WppfOptionsDialog(QObject):
 
     def export_params(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export Parameters', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Export Parameters',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
@@ -1750,8 +1785,11 @@ class WppfOptionsDialog(QObject):
 
     def import_params(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Import Parameters', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Import Parameters',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
@@ -1795,9 +1833,11 @@ class WppfOptionsDialog(QObject):
                 entry['max'] = entry.pop('ub')
 
         if extra or missing:
-            msg = (f'Parameters in {filename} do not match current WPPF '
-                   'parameters internally. Please ensure the same settings '
-                   'are being used')
+            msg = (
+                f'Parameters in {filename} do not match current WPPF '
+                'parameters internally. Please ensure the same settings '
+                'are being used'
+            )
 
             if missing:
                 missing_str = ', '.join([f'"{x}"' for x in missing])
@@ -1954,7 +1994,8 @@ class WppfOptionsDialog(QObject):
 
         # Now figure out if we should enable pole figure plotting
         self.ui.texture_plot_pole_figures.setEnabled(
-            self.can_plot_pole_figures)
+            self.can_plot_pole_figures
+        )
 
     def on_texture_material_setting_changed(self):
         mat_name = self.ui.selected_texture_material.currentText()
@@ -2102,8 +2143,7 @@ class WppfOptionsDialog(QObject):
             return False
 
         prefixes = [
-            f'{mat_name}_c_' for mat_name in
-            self.textured_materials_sanitized
+            f'{mat_name}_c_' for mat_name in self.textured_materials_sanitized
         ]
         for name, param in self.params.items():
             if param.vary and not any(name.startswith(x) for x in prefixes):
@@ -2174,6 +2214,7 @@ class WppfOptionsDialog(QObject):
             return
 
         had_error = False
+
         def on_error():
             nonlocal had_error
             had_error = True
@@ -2233,7 +2274,8 @@ class WppfOptionsDialog(QObject):
             # Get the user to pick a material
             items = self.textured_materials
             mat_name, ok = QInputDialog.getItem(
-                self.ui, 'Pole Figures', 'Select material', items, 0, False)
+                self.ui, 'Pole Figures', 'Select material', items, 0, False
+            )
             if not ok:
                 return
         else:
@@ -2360,13 +2402,15 @@ class WppfOptionsDialog(QObject):
         settings = self.texture_settings
         for k, kwargs in settings['model_kwargs'].items():
             mat = HexrdConfig().material(k)
-            ret[k] = HarmonicModel(**{
-                'material': Material_Rietveld(material_obj=mat),
-                'bvec': HexrdConfig().beam_vector,
-                'evec': ct.eta_vec,
-                'sample_rmat': HexrdConfig().sample_rmat,
-                **kwargs,
-            })
+            ret[k] = HarmonicModel(
+                **{
+                    'material': Material_Rietveld(material_obj=mat),
+                    'bvec': HexrdConfig().beam_vector,
+                    'evec': ct.eta_vec,
+                    'sample_rmat': HexrdConfig().sample_rmat,
+                    **kwargs,
+                }
+            )
         return ret
 
     def update_texture_index_label(self):
@@ -2375,8 +2419,8 @@ class WppfOptionsDialog(QObject):
         w = self.ui.texture_index_label
 
         if (
-            not isinstance(obj, Rietveld) or
-            obj.texture_model.get(mat_name) is None
+            not isinstance(obj, Rietveld)
+            or obj.texture_model.get(mat_name) is None
         ):
             v = 'None'
         else:
@@ -2386,8 +2430,9 @@ class WppfOptionsDialog(QObject):
         w.setText(f'Texture index: {v}')
 
 
-def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model,
-                    texture_model):
+def generate_params(
+    method, materials, peak_shape, bkgmethod, amorphous_model, texture_model
+):
     func_dict = {
         'LeBail': _generate_default_parameters_LeBail,
         'Rietveld': _generate_default_parameters_Rietveld,
@@ -2410,13 +2455,15 @@ def generate_params(method, materials, peak_shape, bkgmethod, amorphous_model,
 
 
 def param_to_dict(param):
-    return _dict_to_basic({
-        'name': param.name,
-        'value': param.value,
-        'min': param.min,
-        'max': param.max,
-        'vary': param.vary,
-    })
+    return _dict_to_basic(
+        {
+            'name': param.name,
+            'value': param.value,
+            'min': param.min,
+            'max': param.max,
+            'vary': param.vary,
+        }
+    )
 
 
 def dict_to_param(d):
@@ -2498,7 +2545,7 @@ shkl_to_angstroms_minus_4_funcs = {
 mat_ly_to_s_funcs = {
     'to_display': lambda ly: ly * 100 * np.pi / 18000,
     'from_display': lambda s: s / 100 / np.pi * 18000,
-    'to_display_stderr': lambda ly, ly_stderr: 100 * np.pi / 18000 * ly_stderr
+    'to_display_stderr': lambda ly, ly_stderr: 100 * np.pi / 18000 * ly_stderr,
 }
 
 
@@ -2548,7 +2595,7 @@ def mat_gp_to_p_funcs_factory(wlen: float) -> dict:
         elif np.isinf(p):
             return 0
 
-        return (18000 * k * wlen / np.pi / p)**2
+        return (18000 * k * wlen / np.pi / p) ** 2
 
     def to_display_stderr(gp: float, gp_stderr: float) -> float:
         return 9000 * k * wlen / np.pi / (gp**1.5) * gp_stderr
