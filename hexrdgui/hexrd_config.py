@@ -1292,10 +1292,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def save_materials_hdf5(self, f, path=None):
         save_materials_hdf5(f, self.materials, path)
 
-    def save_material_cif(self, material, directory=None):
+    def save_material_cif(self, material, directory=None, filename=None):
         if directory is None:
             directory = HexrdConfig().working_dir
-        material.write_cif(f"{directory}/{material.name}.cif")
+        if filename is None:
+            filename = f"{material.name}.cif"
+        material.write_cif(f"{directory}/{filename}")
 
     def import_materials(self, file_paths: list[Path | str]):
         """Import materials from a list of files

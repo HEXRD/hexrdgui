@@ -69,20 +69,30 @@ class MaterialListEditor:
         HexrdConfig().add_material(new_name, material)
 
     def export_to_cif(self):
-        caption = 'Select directory to export CIF files to'
-        selected_dir = QFileDialog.getExistingDirectory(
-            self.ui, caption, dir=HexrdConfig().working_dir)
+        selections = self.editor.selected_items
+        filename = None
+        if len(selections) == 1:
+            caption = 'Save CIF file as'
+            selected_file, _ = QFileDialog.getSaveFileName(
+                self.ui, caption, HexrdConfig().working_dir,
+                'CIF files (*.cif)')
+            filename = str(Path(selected_file).name)
+            selected_dir = str(Path(selected_file).parent)
+        else:
+            caption = 'Select directory to export CIF files to'
+            selected_dir = QFileDialog.getExistingDirectory(
+                self.ui, caption, dir=HexrdConfig().working_dir)
+
         if not selected_dir:
             return
 
         HexrdConfig().working_dir = selected_dir
         # Export selected materials or all materials if none selected
-        selections = self.editor.selected_items
         if not selections:
             selections = HexrdConfig().materials.values()
-        for selected in self.editor.selected_items:
+        for selected in selections:
             material = HexrdConfig().material(selected)
-            HexrdConfig().save_material_cif(material, selected_dir)
+            HexrdConfig().save_material_cif(material, selected_dir, filename)
 
     def import_from_cif(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
