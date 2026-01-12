@@ -467,7 +467,7 @@ class MainWindow(QObject):
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Configuration', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd *.yml)')
+            'HEXRD files (*.hexrd *.yaml *.yml)')
 
         if selected_file:
             path = Path(selected_file)
