@@ -1289,8 +1289,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         beam_energy = valWUnit('beam', 'energy', self.beam_energy, 'keV')
         self.materials = load_materials_hdf5(f, kev=beam_energy)
 
-    def save_materials(self, f, path=None):
+    def save_materials_hdf5(self, f, path=None):
         save_materials_hdf5(f, self.materials, path)
+
+    def save_material_cif(self, material, directory=None, filename=None):
+        if directory is None:
+            directory = HexrdConfig().working_dir
+        if filename is None:
+            filename = f"{material.name}.cif"
+        material.write_cif(f"{directory}/{filename}")
 
     def import_materials(self, file_paths: list[Path | str]):
         """Import materials from a list of files

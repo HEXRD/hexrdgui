@@ -27,21 +27,28 @@
     <number>6</number>
    </property>
    <item row="2" column="0">
-    <widget class="QPushButton" name="import_from_defaults">
-     <property name="text">
-      <string>Import from Defaults</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
     <widget class="QPushButton" name="import_from_cif">
      <property name="text">
       <string>Import from CIF</string>
      </property>
     </widget>
    </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="import_from_defaults">
+     <property name="text">
+      <string>Import from Defaults</string>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="list_editor_layout"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPushButton" name="export_to_cif">
+     <property name="text">
+      <string>Export to CIF</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
