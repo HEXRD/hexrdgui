@@ -78,7 +78,7 @@ class AboutDialog(QObject):
             "HEXRD",
             "NumPy",
             "SciPy",
-            "PySide6"
+            "PySide6",
         ]
 
         for package in packages:
