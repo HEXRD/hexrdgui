@@ -19,9 +19,7 @@ from hexrdgui.calibration.material_calibration_dialog_callbacks import (
     format_material_params_func,
 )
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.indexing.create_config import (
-    create_indexing_config, OmegasNotFoundError
-)
+from hexrdgui.indexing.create_config import create_indexing_config, OmegasNotFoundError
 
 
 class HEDMCalibrationRunner(QObject):
@@ -103,15 +101,13 @@ class HEDMCalibrationRunner(QObject):
         # Verify the grain IDs are as we expect
         if not np.array_equal(grain_ids, np.arange(ngrains)):
             msg = (
-                f'Grain IDs ({grain_ids}) are not as expected: '
-                f'{np.arange(ngrains)}'
+                f'Grain IDs ({grain_ids}) are not as expected: ' f'{np.arange(ngrains)}'
             )
             raise Exception(msg)
 
         if not np.array_equal(grain_ids, list(spots_data_dict)):
             msg = (
-                f'Grain ID order mismatch: "{grain_ids}", '
-                f'"{list(spots_data_dict)}"'
+                f'Grain ID order mismatch: "{grain_ids}", ' f'"{list(spots_data_dict)}"'
             )
             raise Exception(msg)
 
@@ -137,8 +133,9 @@ class HEDMCalibrationRunner(QObject):
             'xyo_det': 'Measured',
         }
 
-        hkls, xyo_det, idx_0 = parse_spots_data(spots_data, instr, grain_ids,
-                                                ome_period)
+        hkls, xyo_det, idx_0 = parse_spots_data(
+            spots_data, instr, grain_ids, ome_period
+        )
 
         calibrators = []
         for i in grain_ids:
@@ -215,15 +212,15 @@ class HEDMCalibrationRunner(QObject):
             self.async_runner,
         )
         self._dialog_callback_handler.instrument_updated.connect(
-            self.on_calibration_finished)
+            self.on_calibration_finished
+        )
         dialog.show()
 
     def on_calibration_finished(self):
         overlays = self.active_overlays
         for overlay, calibrator in zip(overlays, self.ic.calibrators):
             modified = any(
-                self.ic.params[param_name].vary
-                for param_name in calibrator.param_names
+                self.ic.params[param_name].vary for param_name in calibrator.param_names
             )
             if not modified:
                 # Just skip over it
@@ -322,9 +319,7 @@ class HEDMCalibrationRunner(QObject):
         # This omega period is deprecated, but still used in some places.
         # Make sure it is synchronized with our overlays' omega period.
         cfg = HexrdConfig().indexing_config
-        cfg['find_orientations']['omega']['period'] = np.degrees(
-            self.ome_period
-        )
+        cfg['find_orientations']['omega']['period'] = np.degrees(self.ome_period)
 
     def pre_validate(self):
         # Validation to perform before we do anything else
@@ -335,10 +330,7 @@ class HEDMCalibrationRunner(QObject):
         ome_periods = []
         for overlay in self.active_overlays:
             if not overlay.has_widths:
-                msg = (
-                    'All visible rotation series overlays must have widths '
-                    'enabled'
-                )
+                msg = 'All visible rotation series overlays must have widths ' 'enabled'
                 raise Exception(msg)
 
             ome_periods.append(overlay.ome_period)
@@ -353,10 +345,7 @@ class HEDMCalibrationRunner(QObject):
 
         materials = [overlay.material_name for overlay in self.active_overlays]
         if not all(x == materials[0] for x in materials):
-            msg = (
-                'All visible rotation series overlays must have the same '
-                'material'
-            )
+            msg = 'All visible rotation series overlays must have the same ' 'material'
             raise Exception(msg)
 
         # Make sure the material is updated in the indexing config

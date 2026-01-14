@@ -43,8 +43,9 @@ def main():
     # Apply parsed arguments to the HexrdConfig() object
     apply_parsed_args_to_hexrd_config(parsed_args)
 
-    data = resource_loader.load_resource(hexrdgui.resources.icons,
-                                         'hexrd.ico', binary=True)
+    data = resource_loader.load_resource(
+        hexrdgui.resources.icons, 'hexrd.ico', binary=True
+    )
     pixmap = QPixmap()
     pixmap.loadFromData(data, 'ico')
     icon = QIcon(pixmap)

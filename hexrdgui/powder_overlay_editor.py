@@ -25,14 +25,12 @@ class PowderOverlayEditor:
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         pinhole_editor = self.pinhole_correction_editor
-        self.ui.distortion_pinhole_correction_layout.addWidget(
-            pinhole_editor.ui)
+        self.ui.distortion_pinhole_correction_layout.addWidget(pinhole_editor.ui)
         pinhole_editor.rygg_absorption_length_visible = False
         pinhole_editor.none_option_visible = False
 
         self.refinements_selector = SelectItemsWidget([], self.ui)
-        self.ui.refinements_selector_layout.addWidget(
-            self.refinements_selector.ui)
+        self.ui.refinements_selector_layout.addWidget(self.refinements_selector.ui)
 
         self.update_visibility_states()
         self.setup_connections()
@@ -46,23 +44,22 @@ class PowderOverlayEditor:
             elif isinstance(w, QComboBox):
                 w.currentIndexChanged.connect(self.update_config)
 
-        self.pinhole_correction_editor.settings_modified.connect(
-            self.update_config)
+        self.pinhole_correction_editor.settings_modified.connect(self.update_config)
 
         self.ui.enable_width.toggled.connect(self.update_enable_states)
-        self.refinements_selector.selection_changed.connect(
-            self.update_refinements)
+        self.refinements_selector.selection_changed.connect(self.update_refinements)
 
         self.ui.reflections_table.pressed.connect(self.show_reflections_table)
 
         HexrdConfig().material_tth_width_modified.connect(
-            self.material_tth_width_modified_externally)
+            self.material_tth_width_modified_externally
+        )
 
         self.ui.distortion_type.currentIndexChanged.connect(
-            self.distortion_type_changed)
+            self.distortion_type_changed
+        )
 
-        HexrdConfig().instrument_config_loaded.connect(
-            self.update_visibility_states)
+        HexrdConfig().instrument_config_loaded.connect(self.update_visibility_states)
 
     def update_refinement_options(self):
         if self.overlay is None:
@@ -77,10 +74,7 @@ class PowderOverlayEditor:
     @refinements.setter
     def refinements(self, v):
         if len(v) != len(self.refinements_with_labels):
-            msg = (
-                f'Mismatch in {len(v)=} and '
-                f'{len(self.refinements_with_labels)=}'
-            )
+            msg = f'Mismatch in {len(v)=} and ' f'{len(self.refinements_with_labels)=}'
             raise Exception(msg)
 
         with_labels = self.refinements_with_labels
@@ -136,8 +130,7 @@ class PowderOverlayEditor:
             self.distortion_type_gui = self.distortion_type_config
             self.distortion_kwargs_gui = self.distortion_kwargs_config
             self.refinements_with_labels = self.overlay.refinements_with_labels
-            self.clip_with_panel_buffer_gui = (
-                self.clip_with_panel_buffer_config)
+            self.clip_with_panel_buffer_gui = self.clip_with_panel_buffer_config
             self.xray_source_gui = self.xray_source_config
 
             self.update_enable_states()
@@ -295,8 +288,10 @@ class PowderOverlayEditor:
             return
 
         dtype, dconfig = v
-        if (self.overlay.tth_distortion_type == dtype and
-                self.overlay.tth_distortion_kwargs == dconfig):
+        if (
+            self.overlay.tth_distortion_type == dtype
+            and self.overlay.tth_distortion_kwargs == dconfig
+        ):
             return
 
         self.overlay.tth_distortion_type = dtype
@@ -318,10 +313,10 @@ class PowderOverlayEditor:
 
     @property
     def widgets(self):
-        distortion_widgets = (
-            self.offset_widgets +
-            [self.ui.distortion_type, self.pinhole_correction_editor]
-        )
+        distortion_widgets = self.offset_widgets + [
+            self.ui.distortion_type,
+            self.pinhole_correction_editor,
+        ]
         return [
             self.ui.enable_width,
             self.ui.tth_width,

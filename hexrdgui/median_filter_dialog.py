@@ -9,8 +9,7 @@ class MedianFilterDialog:
     def __init__(self, parent=None):
         loader = UiLoader()
         self.ui = loader.load_file(
-            'median_filter_intensity_correction_dialog.ui',
-            parent
+            'median_filter_intensity_correction_dialog.ui', parent
         )
 
         self.ui.kernel_size.setValue(self.kernel_size)
@@ -43,9 +42,7 @@ class MedianFilterDialog:
         value = self.ui.kernel_size.value()
         if value % 2 == 0:
             value -= 1
-            msg = (
-                f'Value must be odd. Kernel size has been reset to {value}'
-            )
+            msg = f'Value must be odd. Kernel size has been reset to {value}'
             QMessageBox.warning(self.ui.parent(), 'WARNING', msg)
 
         HexrdConfig().median_filter_kernel_size = value

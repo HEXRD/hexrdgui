@@ -79,9 +79,17 @@ class Overlay(ABC):
     ranges_key = None
     ranges_indices_key = None
 
-    def __init__(self, material_name, name=None, refinements=None,
-                 calibration_picks=None, xray_source=None, style=None,
-                 highlight_style=None, visible=True):
+    def __init__(
+        self,
+        material_name,
+        name=None,
+        refinements=None,
+        calibration_picks=None,
+        xray_source=None,
+        style=None,
+        highlight_style=None,
+        visible=True,
+    ):
 
         self._material_name = material_name
 
@@ -207,6 +215,7 @@ class Overlay(ABC):
     @property
     def material(self):
         from hexrdgui.hexrd_config import HexrdConfig
+
         return HexrdConfig().material(self.material_name)
 
     @property
@@ -216,6 +225,7 @@ class Overlay(ABC):
     @property
     def eta_period(self):
         from hexrdgui.hexrd_config import HexrdConfig
+
         return HexrdConfig().polar_res_eta_period
 
     @property

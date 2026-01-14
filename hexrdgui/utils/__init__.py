@@ -16,7 +16,10 @@ from PySide6.QtWidgets import QLayout
 from hexrd import imageutil
 from hexrd.imageseries.omega import OmegaImageSeries
 from hexrd.rotations import (
-    angleAxisOfRotMat, angles_from_rmat_xyz, RotMatEuler, rotMatOfExpMap
+    angleAxisOfRotMat,
+    angles_from_rmat_xyz,
+    RotMatEuler,
+    rotMatOfExpMap,
 )
 from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 from hexrd.utils.decorators import memoize
@@ -30,8 +33,7 @@ class SnipAlgorithmType(IntEnum):
     SNIP_2D = 2
 
 
-def convert_tilt_convention(iconfig, old_convention,
-                            new_convention):
+def convert_tilt_convention(iconfig, old_convention, new_convention):
     """
     convert the tilt angles from an old convention to a new convention
     """
@@ -105,8 +107,9 @@ def coords2index(im, x, y):
         ymin, ymax = ymax, ymin
     data_extent = mtransforms.Bbox([[ymin, xmin], [ymax, xmax]])
     array_extent = mtransforms.Bbox([[0, 0], im.get_array().shape[:2]])
-    trans = (mtransforms.BboxTransformFrom(data_extent) +
-             mtransforms.BboxTransformTo(array_extent))
+    trans = mtransforms.BboxTransformFrom(data_extent) + mtransforms.BboxTransformTo(
+        array_extent
+    )
 
     return trans.transform_point([y, x]).astype(int)
 
@@ -158,7 +161,7 @@ def remove_none_distortions(iconfig):
 
 
 class EventBlocker(QObject):
-    """ A context manager that can be used block a specific event """
+    """A context manager that can be used block a specific event"""
 
     def __init__(self, obj, event_type):
         super().__init__()
@@ -201,6 +204,7 @@ def wrap_with_callbacks(func):
     called before/after the member function, with the same arguments
     that are given to the member function.
     """
+
     def callback(self, when, *args, **kwargs):
         func_name = func.__name__
         callback_name = f'{when}_{func_name}_callback'
@@ -225,6 +229,7 @@ def compose(*functions):
 
 class lazy_property:
     """Cache and always return the results of the first fetch"""
+
     def __init__(self, function):
         self.function = function
         self.name = function.__name__
@@ -373,9 +378,9 @@ def unique_array_list(array_list):
 def format_big_int(x, decimals=2):
     labels = [
         (1e12, 'trillion'),
-        (1e9,  'billion'),
-        (1e6,  'million'),
-        (1e3,  'thousand'),
+        (1e9, 'billion'),
+        (1e6, 'million'),
+        (1e3, 'thousand'),
     ]
 
     for divisor, label in labels:
@@ -388,10 +393,10 @@ def format_big_int(x, decimals=2):
 def format_memory_int(x, decimals=2):
     labels = [
         (1e12, 'TB'),
-        (1e9,  'GB'),
-        (1e6,  'MB'),
-        (1e3,  'KB'),
-        (1e0,  'B'),
+        (1e9, 'GB'),
+        (1e6, 'MB'),
+        (1e3, 'KB'),
+        (1e0, 'B'),
     ]
 
     for divisor, label in labels:
@@ -489,8 +494,9 @@ def masks_applied_to_panel_buffers(instr):
 
     from hexrdgui.masking.mask_manager import MaskManager
 
-    panel_buffers = {k: copy.deepcopy(v.panel_buffer)
-                     for k, v in instr.detectors.items()}
+    panel_buffers = {
+        k: copy.deepcopy(v.panel_buffer) for k, v in instr.detectors.items()
+    }
 
     try:
         MaskManager().apply_masks_to_panel_buffers(instr)
@@ -523,13 +529,13 @@ def rmat_to_euler_angles(rmat):
 
 def euler_angles_to_exp_map(angles):
     from hexrdgui.hexrd_config import HexrdConfig
+
     # Convert to exp map parameters
     old_convention = HexrdConfig().euler_angle_convention
     if old_convention is not None:
         angles = np.radians(angles)
         new_convention = None
-        angles = convert_angle_convention(angles, old_convention,
-                                          new_convention)
+        angles = convert_angle_convention(angles, old_convention, new_convention)
 
     return np.asarray(angles)
 

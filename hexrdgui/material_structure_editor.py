@@ -5,7 +5,10 @@ import numpy as np
 
 from PySide6.QtCore import Qt, QItemSelectionModel, QObject, Signal
 from PySide6.QtWidgets import (
-    QLineEdit, QItemEditorFactory, QStyledItemDelegate, QTableWidgetItem
+    QLineEdit,
+    QItemEditorFactory,
+    QStyledItemDelegate,
+    QTableWidgetItem,
 )
 
 from hexrd.constants import ptable, ptableinverse
@@ -20,18 +23,8 @@ DEFAULT_SITE = {
     'name': 'Site',
     'fractional_coords': [0, 0, 0],
     'atoms': [
-        {
-            'symbol': 'O',
-            'charge': '0',
-            'occupancy': 0.5,
-            'U': 1e-6
-        },
-        {
-            'symbol': 'Ce',
-            'charge': '0',
-            'occupancy': 0.5,
-            'U': 1e-6
-        }
+        {'symbol': 'O', 'charge': '0', 'occupancy': 0.5, 'U': 1e-6},
+        {'symbol': 'Ce', 'charge': '0', 'occupancy': 0.5, 'U': 1e-6},
     ],
 }
 
@@ -63,11 +56,9 @@ class MaterialStructureEditor(QObject):
         self.ui.remove_site.pressed.connect(self.remove_site)
 
         self.ui.table.cellChanged.connect(self.name_changed)
-        self.ui.table.selectionModel().selectionChanged.connect(
-            self.selection_changed)
+        self.ui.table.selectionModel().selectionChanged.connect(self.selection_changed)
 
-        self.ui.remove_duplicate_atoms.clicked.connect(
-            self.remove_duplicate_atoms)
+        self.ui.remove_duplicate_atoms.clicked.connect(self.remove_duplicate_atoms)
         self.ui.apply.pressed.connect(self.update_material)
         self.ui.reset.pressed.connect(self.update_gui)
 
@@ -111,8 +102,7 @@ class MaterialStructureEditor(QObject):
 
         if not hasattr(self, 'material_site_editor'):
             self.material_site_editor = MaterialSiteEditor(site, self.ui)
-            self.ui.material_site_editor_layout.addWidget(
-                self.material_site_editor.ui)
+            self.ui.material_site_editor_layout.addWidget(self.material_site_editor.ui)
             self.material_site_editor.site_modified.connect(self.site_modified)
         else:
             self.material_site_editor.site = site
@@ -161,7 +151,7 @@ class MaterialStructureEditor(QObject):
             next_int = 1
         else:
             # Chop off the trailing int
-            s = s[:-len(str(trailing_int))]
+            s = s[: -len(str(trailing_int))]
             next_int = trailing_int + 1
 
         new_name = s + str(next_int)
@@ -224,10 +214,7 @@ class MaterialStructureEditor(QObject):
         if not self.sites:
             return
 
-        block_list = [
-            self.ui.table,
-            self.ui.table.selectionModel()
-        ]
+        block_list = [self.ui.table, self.ui.table.selectionModel()]
         with block_signals(*block_list):
             self.ui.table.setRowCount(len(self.sites))
             for i, site in enumerate(self.sites):
@@ -235,8 +222,11 @@ class MaterialStructureEditor(QObject):
                 self.ui.table.setItem(i, 0, w)
 
             if prev_selected is not None:
-                select_row = (prev_selected if prev_selected < len(self.sites)
-                              else len(self.sites) - 1)
+                select_row = (
+                    prev_selected
+                    if prev_selected < len(self.sites)
+                    else len(self.sites) - 1
+                )
                 self.select_row(select_row)
 
             # Just in case the selection actually changed...
@@ -251,8 +241,7 @@ class MaterialStructureEditor(QObject):
 
         for site in self.sites:
             for atom in site['atoms']:
-                pos_array.append((*site['fractional_coords'],
-                                  atom['occupancy']))
+                pos_array.append((*site['fractional_coords'], atom['occupancy']))
                 type_array.append(ptable[atom['symbol']])
                 charge_array.append(atom['charge'])
                 U_array.append(atom['U'])
@@ -295,11 +284,8 @@ class MaterialStructureEditor(QObject):
         mat = self.material
         site_indices = []
 
-        def coords_equal(v1, v2, tol=1.e-5):
-            return (
-                len(v1) == len(v2) and
-                all(abs(x - y) < tol for x, y in zip(v1, v2))
-            )
+        def coords_equal(v1, v2, tol=1.0e-5):
+            return len(v1) == len(v2) and all(abs(x - y) < tol for x, y in zip(v1, v2))
 
         pos_array = mat.atom_pos
         type_array = mat.atom_type
@@ -341,7 +327,7 @@ class MaterialStructureEditor(QObject):
                     'symbol': ptableinverse[type_array[i]],
                     'charge': charge_array[i],
                     'occupancy': pos_array[i][3],
-                    'U': U_array[i]
+                    'U': U_array[i],
                 }
                 site['atoms'].append(atom)
 

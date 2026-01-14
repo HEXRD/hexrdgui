@@ -4,7 +4,13 @@ import numpy as np
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QTreeWidgetItem, QAbstractItemView
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QMessageBox,
+    QTableWidgetItem,
+    QTreeWidgetItem,
+    QAbstractItemView,
+)
 
 from hexrdgui.constants import MAXIMUM_OMEGA_RANGE
 from hexrdgui.hexrd_config import HexrdConfig
@@ -25,8 +31,7 @@ class ImageStackDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/images/#image-stack')
+        add_help_url(self.ui.button_box, 'configuration/images/#image-stack')
 
         self.simple_image_series_dialog = simple_image_series_dialog
         self.detectors = HexrdConfig().detector_names
@@ -45,8 +50,7 @@ class ImageStackDialog(QObject):
         self.ui.search.clicked.connect(self.search)
         self.ui.empty_frames.valueChanged.connect(self.set_empty_frames)
         self.ui.max_file_frames.valueChanged.connect(self.set_max_file_frames)
-        self.ui.max_total_frames.valueChanged.connect(
-            self.set_max_total_frames)
+        self.ui.max_total_frames.valueChanged.connect(self.set_max_total_frames)
         self.ui.detectors.currentTextChanged.connect(self.change_detector)
         self.ui.files_by_selection.toggled.connect(self.file_selection_changed)
         self.ui.select_files.clicked.connect(self.select_files_manually)
@@ -55,10 +59,10 @@ class ImageStackDialog(QObject):
         self.ui.omega_wedges.cellChanged.connect(self.update_wedges)
         self.ui.all_detectors.toggled.connect(self.detector_selection)
         self.ui.search_directories.clicked.connect(self.search_directories)
-        self.ui.clear_file_selections.clicked.connect(
-            self.clear_selected_files)
+        self.ui.clear_file_selections.clicked.connect(self.clear_selected_files)
         self.clear_images.connect(
-            self.simple_image_series_dialog.clear_from_stack_dialog)
+            self.simple_image_series_dialog.clear_from_stack_dialog
+        )
         self.ui.add_omega.toggled.connect(self.add_omega_toggled)
         self.ui.reverse_frames.toggled.connect(self.reverse_frames)
         self.ui.button_box.accepted.connect(self.check_data)
@@ -66,10 +70,8 @@ class ImageStackDialog(QObject):
         HexrdConfig().detectors_changed.connect(self.detectors_changed)
 
     def setup_gui(self):
-        self.ui.current_directory.setText(
-            self.state[self.detector]['directory'])
-        self.ui.current_directory.setToolTip(
-            self.state[self.detector]['directory'])
+        self.ui.current_directory.setText(self.state[self.detector]['directory'])
+        self.ui.current_directory.setToolTip(self.state[self.detector]['directory'])
         self.ui.search_text.setText(self.state[self.detector]['search'])
         self.ui.empty_frames.setValue(self.state['empty_frames'])
         self.ui.max_file_frames.setValue(self.state['max_file_frames'])
@@ -84,19 +86,20 @@ class ImageStackDialog(QObject):
         self.ui.apply_to_all.setChecked(self.state['apply_to_all'])
         self.ui.all_detectors.setChecked(self.state['all_detectors'])
         self.ui.add_omega.setChecked(self.state['add_omega_data'])
-        self.ui.total_frames.setText(
-            str(self.state['total_frames'] * file_count))
+        self.ui.total_frames.setText(str(self.state['total_frames'] * file_count))
         self.update_files_tree()
         self.set_ranges(
-            self.state['total_frames'],
-            int(self.state[self.detector]['file_count']))
+            self.state['total_frames'], int(self.state[self.detector]['file_count'])
+        )
         if self.state['wedges']:
             self.set_wedges()
         self.total_frames()
 
     def setup_state(self):
-        if (sorted(self.state.get('dets', [])) != sorted(self.detectors)
-                or 'max_frame_file' in self.state.keys()):
+        if (
+            sorted(self.state.get('dets', [])) != sorted(self.detectors)
+            or 'max_frame_file' in self.state.keys()
+        ):
             self.state.clear()
         if self.state:
             self.find_previous_images(self.state[self.detector]['files'])
@@ -136,12 +139,12 @@ class ImageStackDialog(QObject):
             for i, wedge in enumerate(self.state['wedges']):
                 self.ui.omega_wedges.insertRow(i)
                 for j, value in enumerate(wedge):
-                    self.ui.omega_wedges.setItem(
-                        i, j, QTableWidgetItem(str(value)))
+                    self.ui.omega_wedges.setItem(i, j, QTableWidgetItem(str(value)))
 
     def select_directory(self):
         d = QFileDialog.getExistingDirectory(
-                self.ui, 'Select directory', self.ui.current_directory.text())
+            self.ui, 'Select directory', self.ui.current_directory.text()
+        )
         self.state[self.detector]['directory'] = d
         HexrdConfig().working_dir = d.rsplit('/', 1)[0]
         self.ui.current_directory.setText(d)
@@ -205,8 +208,8 @@ class ImageStackDialog(QObject):
 
     def select_omega_file(self):
         omega_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select file',
-            HexrdConfig().images_dir, 'NPY files (*.npy)')
+            self.ui, 'Select file', HexrdConfig().images_dir, 'NPY files (*.npy)'
+        )
         self.ui.omega_file.setText(omega_file)
         self.state['omega'] = omega_file
         wedges = np.load(omega_file)
@@ -256,8 +259,8 @@ class ImageStackDialog(QObject):
 
     def select_files_manually(self):
         files, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, 'Select file(s)',
-            dir=self.state[self.detector]['directory'])
+            self.ui, 'Select file(s)', dir=self.state[self.detector]['directory']
+        )
         if files:
             self.state[self.detector]['files'] = files
             self.state[self.detector]['file_count'] = len(files)
@@ -281,7 +284,8 @@ class ImageStackDialog(QObject):
         except Exception as e:
             msg = (
                 f'Unable to open previously loaded images, please make sure '
-                f'directory path is correct and that images still exist.')
+                f'directory path is correct and that images still exist.'
+            )
             QMessageBox.warning(self.parent(), 'HEXRD', msg)
             for det in self.detectors:
                 self.state[det]['files'] = []
@@ -325,7 +329,7 @@ class ImageStackDialog(QObject):
                 if det == self.ui.detectors.currentText():
                     self.ui.current_directory.setText(self.state[det]['directory'])
         else:
-            msg = (f'Could not find directory:\n{pattern}')
+            msg = f'Could not find directory:\n{pattern}'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
 
     def get_files(self):
@@ -370,9 +374,7 @@ class ImageStackDialog(QObject):
     def get_omega_values(self, num_files):
         # Returns the omega values that are used to populate the
         # SimpleImageSeries dialog table
-        ome_arr_dtype = np.dtype([('start', float),
-                                  ('stop', float),
-                                  ('steps', int)])
+        ome_arr_dtype = np.dtype([('start', float), ('stop', float), ('steps', int)])
         wedges = self.state['wedges']
         if self.state['omega_from_file'] and self.state['omega']:
             # user selected a file
@@ -384,11 +386,11 @@ class ImageStackDialog(QObject):
             max_total_frames = self.state['max_total_frames']
             steps = self.frames_per_image
             for i, (start, stop, nsteps) in enumerate(wedges):
-                last_wedge = (i == len(wedges) - 1)
+                last_wedge = i == len(wedges) - 1
                 images_per_wedge = math.ceil(nsteps / steps)
                 delta = (stop - start) / images_per_wedge
                 for j in range(images_per_wedge):
-                    last_image = (j == images_per_wedge - 1)
+                    last_image = j == images_per_wedge - 1
                     stop = start + delta
                     if last_wedge and last_image and max_total_frames:
                         steps = max_total_frames % steps
@@ -404,7 +406,9 @@ class ImageStackDialog(QObject):
             omega = np.linspace(
                 [0, 0 + delta],
                 [MAXIMUM_OMEGA_RANGE - delta, MAXIMUM_OMEGA_RANGE],
-                num_files, dtype=np.uint16)
+                num_files,
+                dtype=np.uint16,
+            )
             omega = [(b, e, self.frames_per_image) for [b, e] in omega]
             if max_total := self.state['max_total_frames']:
                 # The max_total is subtracted off of the end of the imageseries
@@ -433,7 +437,7 @@ class ImageStackDialog(QObject):
             'total_frames': [total_frames] * num_files,
             'frame_data': {
                 'max_file_frames': self.state['max_file_frames'],
-                'max_total_frames': self.state['max_total_frames']
+                'max_total_frames': self.state['max_total_frames'],
             },
             'reverse_frames': self.state.get('reverse_frames', False),
             'nframes': sum(nsteps),
@@ -485,23 +489,24 @@ class ImageStackDialog(QObject):
         if dets := [det for det in directories if not det]:
             msg = (
                 f'The directory has not been set for '
-                f'the following detector(s):\n{" ".join(dets)}.')
+                f'the following detector(s):\n{" ".join(dets)}.'
+            )
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
         elif any([c == 0 for c in counts]):
-            msg = (f'Files have not been selected for all detectors.')
+            msg = f'Files have not been selected for all detectors.'
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         elif any([c for c in counts if counts[0] != c]):
-            msg = (f'The number of files for each detector must match.')
+            msg = f'The number of files for each detector must match.'
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         elif steps != total_frames:
-            msg = (f'''
+            msg = f'''
                    The total number of steps must be equal to the total
                    number of frames:
                    {steps} total steps, {total_frames} total frames.
-                   ''')
+                   '''
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         self.build_data()

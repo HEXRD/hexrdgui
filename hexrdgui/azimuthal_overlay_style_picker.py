@@ -40,8 +40,8 @@ class AzimuthalOverlayStylePicker(QObject):
 
     def reset_style(self):
         any_changes = (
-            self.color != self.overlay['color'] or
-            self.opacity != self.overlay['opacity']
+            self.color != self.overlay['color']
+            or self.opacity != self.overlay['opacity']
         )
         if not any_changes:
             # Nothing really to do...
@@ -79,4 +79,5 @@ class AzimuthalOverlayStylePicker(QObject):
 
     def update_button_colors(self):
         self.ui.color.setStyleSheet(
-            'QPushButton {background-color: %s}' % self.ui.color.text())
+            'QPushButton {background-color: %s}' % self.ui.color.text()
+        )

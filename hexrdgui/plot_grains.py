@@ -11,8 +11,11 @@ def plot_grains(grains_table, ome_maps=None, parent=None):
 
     if ome_maps is None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            parent, 'Load Eta Omega Maps', HexrdConfig().working_dir,
-            'NPZ files (*.npz)')
+            parent,
+            'Load Eta Omega Maps',
+            HexrdConfig().working_dir,
+            'NPZ files (*.npz)',
+        )
 
         if not selected_file:
             return

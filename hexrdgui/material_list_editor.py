@@ -74,14 +74,15 @@ class MaterialListEditor:
         if len(selections) == 1:
             caption = 'Save CIF file as'
             selected_file, _ = QFileDialog.getSaveFileName(
-                self.ui, caption, HexrdConfig().working_dir,
-                'CIF files (*.cif)')
+                self.ui, caption, HexrdConfig().working_dir, 'CIF files (*.cif)'
+            )
             filename = str(Path(selected_file).name)
             selected_dir = str(Path(selected_file).parent)
         else:
             caption = 'Select directory to export CIF files to'
             selected_dir = QFileDialog.getExistingDirectory(
-                self.ui, caption, dir=HexrdConfig().working_dir)
+                self.ui, caption, dir=HexrdConfig().working_dir
+            )
 
         if not selected_dir:
             return
@@ -96,8 +97,8 @@ class MaterialListEditor:
 
     def import_from_cif(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Import Material', HexrdConfig().working_dir,
-            'CIF files (*.cif)')
+            self.ui, 'Import Material', HexrdConfig().working_dir, 'CIF files (*.cif)'
+        )
 
         if not selected_file:
             return
@@ -111,8 +112,9 @@ class MaterialListEditor:
     def import_from_defaults(self):
         label = 'Import Default Material'
         items = HexrdConfig().available_default_materials
-        selected, accepted = QInputDialog.getItem(self.ui, 'HEXRD', label,
-                                                  items, 0, False)
+        selected, accepted = QInputDialog.getItem(
+            self.ui, 'HEXRD', label, items, 0, False
+        )
         if not accepted:
             return
 

@@ -25,7 +25,9 @@ root.setLevel(logging.INFO)
 logger = logging.getLogger('hexrdgui')
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.INFO)
-formatter = coloredlogs.ColoredFormatter('%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - %(message)s')
+formatter = coloredlogs.ColoredFormatter(
+    '%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - %(message)s'
+)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -33,9 +35,11 @@ package_env_name = 'hexrd_package_env'
 
 archive_format = 'zip' if platform.system() == 'Windows' else 'tar'
 
+
 def run_command(cmd: list[str]) -> str:
     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
     return result.stdout
+
 
 def patch_qt_config(base_path):
     # We could use "qt.conf" instead, but Qt is automatically producing a
@@ -46,12 +50,14 @@ def patch_qt_config(base_path):
         fp.write('[Paths]\n')
         fp.write('Plugins=../lib/qt6/plugins/')
 
+
 def install_macos_script(base_path, package_path):
-   # Add hexrd bash start script
+    # Add hexrd bash start script
     executable_path = package_path / 'hexrdgui'
     shutil.copyfile(base_path / 'darwin' / 'hexrdgui', executable_path)
     st = os.stat(executable_path)
     os.chmod(executable_path, st.st_mode | stat.S_IXUSR)
+
 
 def build_mac_app_bundle(base_path, tar_path):
     package_path = base_path / 'package'
@@ -66,7 +72,9 @@ def build_mac_app_bundle(base_path, tar_path):
     hexrd_app_contents_resources.mkdir()
 
     # Add Info.plist
-    shutil.copyfile(base_path / 'darwin' / 'Info.plist', hexrd_app_contents / 'Info.plist')
+    shutil.copyfile(
+        base_path / 'darwin' / 'Info.plist', hexrd_app_contents / 'Info.plist'
+    )
 
     # Extract conda-pack tar into Resources/
     logger.info('Extracting tar into Resources/ directory.')
@@ -75,10 +83,14 @@ def build_mac_app_bundle(base_path, tar_path):
     tar.close()
 
     # Add icon
-    shutil.copyfile(base_path / 'darwin' / 'hexrdgui.icns', hexrd_app_contents_resources / 'hexrdgui.icns')
+    shutil.copyfile(
+        base_path / 'darwin' / 'hexrdgui.icns',
+        hexrd_app_contents_resources / 'hexrdgui.icns',
+    )
 
     patch_qt_config(hexrd_app_contents_resources)
     install_macos_script(base_path, hexrd_app_contents_macos)
+
 
 def install_linux_script(base_path, package_path):
     logger.info('Generating hexrd script.')
@@ -94,6 +106,7 @@ def install_linux_script(base_path, package_path):
     st = os.stat(hexrd_executable)
     os.chmod(hexrd_executable, st.st_mode | stat.S_IXUSR)
 
+
 def build_linux_package_dir(base_path, tar_path):
     logger.info('Extracting tar into package/ directory.')
     # Now extract the tar into to packge directory so it ready for cpack.
@@ -105,6 +118,7 @@ def build_linux_package_dir(base_path, tar_path):
 
     patch_qt_config(package_path)
     install_linux_script(base_path, package_path)
+
 
 def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_folder):
     # First build the hexrdgui package
@@ -124,7 +138,8 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
         'conda',
         'search',
         '--override-channels',
-        '--channel', hexrd_package_channel,
+        '--channel',
+        hexrd_package_channel,
         '--json',
         'hexrd',
     ]
@@ -149,12 +164,15 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     if platform.system() == 'Darwin':
         channels = ['--channel', 'HEXRD'] + channels
 
-    run_command([
-        'conda',
-        'create',
-        '-y',
-        '--prefix', env_prefix,
-    ])
+    run_command(
+        [
+            'conda',
+            'create',
+            '-y',
+            '--prefix',
+            env_prefix,
+        ]
+    )
 
     hexrdgui_output_folder_uri = Path(hexrdgui_output_folder).absolute().as_uri()
 
@@ -163,12 +181,17 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     cmd = [
         'conda',
         'install',
-        '--prefix', env_prefix,
-        '--solver', 'libmamba',
+        '--prefix',
+        env_prefix,
+        '--solver',
+        'libmamba',
         '--override-channels',
-        '--channel', hexrdgui_output_folder_uri,
-        '--channel', hexrd_package_channel,
-        '--channel', 'conda-forge',
+        '--channel',
+        hexrdgui_output_folder_uri,
+        '--channel',
+        hexrd_package_channel,
+        '--channel',
+        'conda-forge',
         f'hexrd=={hexrd_version}',
         'hexrdgui',
     ]
@@ -177,13 +200,10 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     logger.info('Generating tar from environment using conda-pack.')
     # Now use conda-pack to create relocatable archive
     archive_path = str(tmp / ('hexrdgui.%s' % archive_format))
-    CondaPack.pack(
-        prefix=env_prefix,
-        output=archive_path,
-        format=archive_format
-    )
+    CondaPack.pack(prefix=env_prefix, output=archive_path, format=archive_format)
 
     return archive_path
+
 
 # We install a script that ensure the current working directory in
 # the bin directory.
@@ -193,6 +213,7 @@ def install_windows_script(base_path, package_path):
     # Now install a shell script to call the setuptools script
     hexrdgui_script = str(package_path / 'Scripts' / 'hexrdgui-script.py')
     shutil.copyfile(base_path / 'windows' / 'hexrdgui-script.py', hexrdgui_script)
+
 
 def patch_qt_config_windows(base_path):
     # FIXME: this qt6.conf file appears to be completely ignored.
@@ -218,6 +239,7 @@ def patch_qt_config_windows(base_path):
         # and remove the above `shutil.move()` commands.
         # fp.write('Plugins = Library/lib/qt6/plugins\n')
 
+
 def build_windows_package_dir(base_path, archive_path):
     logger.info('Extracting %s into package/ directory.' % archive_format)
     # Now extract the archive into to packge directory so it ready for cpack.
@@ -238,14 +260,21 @@ def build_windows_package_dir(base_path, archive_path):
 
 @click.command()
 @click.option('-h', '--hexrd-package-channel', help='the channel to use for HEXRD.')
-@click.option('-o', '--hexrdgui-output-folder', type=click.Path(exists=True), help='the path to generate the package into.')
+@click.option(
+    '-o',
+    '--hexrdgui-output-folder',
+    type=click.Path(exists=True),
+    help='the path to generate the package into.',
+)
 def build_package(hexrd_package_channel, hexrdgui_output_folder):
     tmpdir = None
     try:
         tmp_dir = tempfile.mkdtemp()
         tmp = Path(tmp_dir)
         base_path = Path(__file__).parent
-        tar_path = build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_folder)
+        tar_path = build_conda_pack(
+            base_path, tmp, hexrd_package_channel, hexrdgui_output_folder
+        )
 
         package_path = base_path / 'package'
         # Remove first so we start fresh
@@ -265,8 +294,6 @@ def build_package(hexrd_package_channel, hexrdgui_output_folder):
             # our github worflow, so ignore the errors
             ignore = platform.system() == 'Windows'
             shutil.rmtree(tmp_dir, ignore_errors=ignore)
-
-
 
 
 if __name__ == '__main__':

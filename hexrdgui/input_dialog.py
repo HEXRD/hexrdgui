@@ -1,14 +1,13 @@
-from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QLabel, QVBoxLayout
-)
+from PySide6.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QLabel, QVBoxLayout
 
 from hexrdgui.utils.dialog import add_help_url
 
 
 class InputDialog(QDialog):
     @classmethod
-    def getItem(cls, parent, title, label, items, current=0, editable=True,
-                help_url=None):
+    def getItem(
+        cls, parent, title, label, items, current=0, editable=True, help_url=None
+    ):
         # This is made after `QInputDialog.getItem()`, but allows for help
         # text to also be provided.
         dialog = cls(parent=parent)

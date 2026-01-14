@@ -2,9 +2,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import (
-    QDialog, QDialogButtonBox, QMessageBox, QVBoxLayout
-)
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QMessageBox, QVBoxLayout
 
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
@@ -357,7 +355,7 @@ class BrightnessContrastEditor(QObject):
             'scaley': False,
             'color': 'black',
         }
-        self.line_artist, = self.axis.plot(xs, ys, **kwargs)
+        (self.line_artist,) = self.axis.plot(xs, ys, **kwargs)
 
     def update_line(self):
         if self.line_artist is None:

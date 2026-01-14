@@ -98,8 +98,11 @@ class IndexingResultsDialog(QObject):
 
     def on_export_grains_clicked(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Grains', HexrdConfig().working_dir,
-            'Output files (*.out *.txt);; NPZ files (*.npz)')
+            self.ui,
+            'Save Grains',
+            HexrdConfig().working_dir,
+            'Output files (*.out *.txt);; NPZ files (*.npz)',
+        )
 
         if not selected_file:
             return
@@ -264,8 +267,7 @@ class IndexingResultsDialog(QObject):
 
     def view_grains(self):
         if not hasattr(self, '_grains_viewer_dialog'):
-            self._grains_viewer_dialog = GrainsViewerDialog(self.grains_table,
-                                                            self.ui)
+            self._grains_viewer_dialog = GrainsViewerDialog(self.grains_table, self.ui)
             self._grains_viewer_dialog.plot_grains_visible = False
 
         self._grains_viewer_dialog.show()

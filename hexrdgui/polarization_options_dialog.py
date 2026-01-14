@@ -7,8 +7,7 @@ class PolarizationOptionsDialog:
 
     def __init__(self, parent=None):
         loader = UiLoader()
-        self.ui = loader.load_file('polarization_options_dialog.ui',
-                                   parent)
+        self.ui = loader.load_file('polarization_options_dialog.ui', parent)
 
         self.update_gui()
         self.setup_connections()

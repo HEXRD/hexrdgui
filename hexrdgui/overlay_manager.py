@@ -1,7 +1,12 @@
 from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QHBoxLayout, QHeaderView, QSizePolicy,
-    QTableWidgetItem, QWidget
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QHeaderView,
+    QSizePolicy,
+    QTableWidgetItem,
+    QWidget,
 )
 
 from hexrdgui.constants import OverlayType
@@ -41,8 +46,7 @@ class OverlayManager:
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.table.selectionModel().selectionChanged.connect(
-            self.selection_changed)
+        self.ui.table.selectionModel().selectionChanged.connect(self.selection_changed)
         self.ui.table.itemChanged.connect(self.table_item_changed)
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
@@ -132,10 +136,7 @@ class OverlayManager:
         self.ui.table.clearContents()
 
     def update_table(self):
-        block_list = [
-            self.ui.table,
-            self.ui.table.selectionModel()
-        ]
+        block_list = [self.ui.table, self.ui.table.selectionModel()]
 
         with block_signals(*block_list):
             prev_selected = self.selected_row
@@ -157,8 +158,11 @@ class OverlayManager:
                 self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
 
             if prev_selected is not None:
-                select_row = (prev_selected if prev_selected < len(overlays)
-                              else len(overlays) - 1)
+                select_row = (
+                    prev_selected
+                    if prev_selected < len(overlays)
+                    else len(overlays) - 1
+                )
                 self.select_row(select_row)
 
             self.ui.table.resizeColumnsToContents()
@@ -168,7 +172,8 @@ class OverlayManager:
             # Force it to stretch manually.
             last_column = max(v for v in COLUMNS.values())
             self.ui.table.horizontalHeader().setSectionResizeMode(
-                last_column, QHeaderView.Stretch)
+                last_column, QHeaderView.Stretch
+            )
 
             # Just in case the selection actually changed...
             self.selection_changed()
@@ -281,8 +286,7 @@ class OverlayManager:
         HexrdConfig().overlay_renamed.emit(old_name, new_name)
 
     def add(self):
-        HexrdConfig().append_overlay(self.active_material_name,
-                                     OverlayType.powder)
+        HexrdConfig().append_overlay(self.active_material_name, OverlayType.powder)
         self.update_table()
         self.select_row(len(HexrdConfig().overlays) - 1)
 

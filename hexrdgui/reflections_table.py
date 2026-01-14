@@ -37,13 +37,11 @@ class ReflectionsTable:
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/materials/#reflections-table')
+        add_help_url(self.ui.button_box, 'configuration/materials/#reflections-table')
 
         self.title_prefix = title_prefix
         self._material = material
-        self.selection_helper = ReflectionsSelectionHelper(self.material,
-                                                           self.ui)
+        self.selection_helper = ReflectionsSelectionHelper(self.material, self.ui)
 
         # If we are modifying the exclusions, skip updating the table, because
         # if we update the table during selection, it messes up something with
@@ -57,28 +55,26 @@ class ReflectionsTable:
         self.update_table(only_if_visible=False)
 
     def setup_connections(self):
-        self.ui.table.selectionModel().selectionChanged.connect(
-            self.update_selections)
+        self.ui.table.selectionModel().selectionChanged.connect(self.update_selections)
         self.ui.table.customContextMenuRequested.connect(
-            self.on_table_context_menu_requested)
+            self.on_table_context_menu_requested
+        )
 
         HexrdConfig().materials_removed.connect(self.on_materials_removed)
         HexrdConfig().material_renamed.connect(self.on_material_renamed)
-        HexrdConfig().materials_dict_modified.connect(
-            self.on_materials_dict_modified)
-        HexrdConfig().active_material_modified.connect(
-            self.active_material_modified)
+        HexrdConfig().materials_dict_modified.connect(self.on_materials_dict_modified)
+        HexrdConfig().active_material_modified.connect(self.active_material_modified)
         HexrdConfig().update_reflections_tables.connect(
-            self.update_table_if_name_matches)
+            self.update_table_if_name_matches
+        )
 
         self.ui.relative_scale_material.currentIndexChanged.connect(
-            self.on_relative_scale_material_changed)
+            self.on_relative_scale_material_changed
+        )
 
-        self.ui.show_selection_helper.clicked.connect(
-            self.show_selection_helper)
+        self.ui.show_selection_helper.clicked.connect(self.show_selection_helper)
 
-        self.selection_helper.apply_clicked.connect(
-            self.on_selection_helper_apply)
+        self.selection_helper.apply_clicked.connect(self.on_selection_helper_apply)
 
     def on_table_context_menu_requested(self, pos):
         # This is the item that was right-clicked
@@ -109,8 +105,9 @@ class ReflectionsTable:
             writer = csv.writer(string_io)
 
             # Write the headers
-            headers = [table.horizontalHeaderItem(j).text()
-                       for j in range(table.columnCount())]
+            headers = [
+                table.horizontalHeaderItem(j).text() for j in range(table.columnCount())
+            ]
             writer.writerow(headers)
 
             # Write the rows
@@ -291,10 +288,7 @@ class ReflectionsTable:
         material = self.material
         table = self.ui.table
 
-        block_list = [
-            table,
-            table.selectionModel()
-        ]
+        block_list = [table, table.selectionModel()]
 
         with block_signals(*block_list):
             plane_data = material.planeData
@@ -447,8 +441,7 @@ class ReflectionsTable:
             compare_sf = get_sfact(compare_pd)
 
         # Rescale the other structure factor to be between 0 and 100
-        return ((sf - compare_sf.min()) /
-                (compare_sf.max() - compare_sf.min()) * 100)
+        return (sf - compare_sf.min()) / (compare_sf.max() - compare_sf.min()) * 100
 
     def update_selection_helper_material(self):
         self.selection_helper.material = self.material
@@ -484,6 +477,7 @@ class ReflectionsTable:
 
 class HklTableItem(QTableWidgetItem):
     """Subclass so we can sort by HKLs instead of strings"""
+
     def __init__(self, data):
         super().__init__(data)
         self.setTextAlignment(Qt.AlignCenter)
@@ -498,6 +492,7 @@ class HklTableItem(QTableWidgetItem):
 
 class FloatTableItem(QTableWidgetItem):
     """Subclass so we can sort as floats instead of strings"""
+
     DATA_ROLE = Qt.UserRole
 
     def __init__(self, data):
@@ -515,6 +510,7 @@ class FloatTableItem(QTableWidgetItem):
 
 class IntTableItem(QTableWidgetItem):
     """Subclass so we can sort as ints instead of strings"""
+
     DATA_ROLE = Qt.UserRole
 
     def __init__(self, data):

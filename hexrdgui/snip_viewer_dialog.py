@@ -105,8 +105,11 @@ class SnipViewerDialog:
 
     def export(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Snip Background', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)')
+            self.ui,
+            'Save Snip Background',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)',
+        )
 
         if not selected_file:
             return

@@ -15,6 +15,7 @@ from hexrdgui.utils.matplotlib import remove_artist
 
 # TODO: How to handle image mode? Mode has changed byt the time the signal has been emitted.
 
+
 class HandDrawnMaskDialog(QObject):
 
     # Emits the ring data that was selected
@@ -28,8 +29,7 @@ class HandDrawnMaskDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.buttonBox,
-                     'configuration/masking/#polygon')
+        add_help_url(self.ui.buttonBox, 'configuration/masking/#polygon')
 
         self.canvas = canvas
         self.ring_data = []
@@ -59,12 +59,9 @@ class HandDrawnMaskDialog(QObject):
         # Ensure previous canvas connections are disconnected
         self.disconnect_canvas_connections()
 
-        self.bp_id = self.canvas.mpl_connect('button_press_event',
-                                            self.button_pressed)
-        self.enter_id = self.canvas.mpl_connect('axes_enter_event',
-                                                self.axes_entered)
-        self.exit_id = self.canvas.mpl_connect('axes_leave_event',
-                                            self.axes_exited)
+        self.bp_id = self.canvas.mpl_connect('button_press_event', self.button_pressed)
+        self.enter_id = self.canvas.mpl_connect('axes_enter_event', self.axes_entered)
+        self.exit_id = self.canvas.mpl_connect('axes_leave_event', self.axes_exited)
 
     def disconnect_canvas_connections(self):
         if self.bp_id:
@@ -140,8 +137,7 @@ class HandDrawnMaskDialog(QObject):
         linestyle = 'None'
 
         # empty line
-        line, = self.ax.plot([], [], color=color, marker=marker,
-                        linestyle=linestyle)
+        (line,) = self.ax.plot([], [], color=color, marker=marker, linestyle=linestyle)
         self.linebuilder = LineBuilder(line)
         self.lines.append(line)
         self.canvas.draw_idle()
@@ -226,9 +222,11 @@ class LineBuilder(QObject):
         Picker callback
         """
         if HexrdConfig().stitch_raw_roi_images:
-            print('Polygon masks do not yet support drawing on a stitched '
-                  'raw view. Please switch to an unstitched view to draw the '
-                  'masks.')
+            print(
+                'Polygon masks do not yet support drawing on a stitched '
+                'raw view. Please switch to an unstitched view to draw the '
+                'masks.'
+            )
             return
 
         if event.inaxes != self.line.axes:

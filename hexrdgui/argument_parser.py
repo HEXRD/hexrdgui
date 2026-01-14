@@ -33,12 +33,15 @@ class ArgumentParser(argparse.ArgumentParser):
     It is created and stored in the HexrdConfig() object, so that it is
     accessible throughout the program.
     """
+
     def __init__(self, *args, **kwargs):
 
         # Add hexrdgui-specific stuff here
-        kwargs.update(dict(
-            description='High energy x-ray diffraction data analysis',
-        ))
+        kwargs.update(
+            dict(
+                description='High energy x-ray diffraction data analysis',
+            )
+        )
 
         super().__init__(*args, **kwargs)
 
@@ -57,7 +60,8 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
-            '-n', '--ncpus',
+            '-n',
+            '--ncpus',
             help='Set the number of CPUs to use for parallel operations',
             type=check_positive_int,
         )

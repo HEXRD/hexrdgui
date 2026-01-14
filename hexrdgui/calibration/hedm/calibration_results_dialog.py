@@ -15,11 +15,11 @@ DEFAULT_LABEL = ''
 
 
 class HEDMCalibrationResultsDialog:
-    def __init__(self, data, styles, labels, grain_ids, cfg, title,
-                 ome_period, parent=None):
+    def __init__(
+        self, data, styles, labels, grain_ids, cfg, title, ome_period, parent=None
+    ):
         loader = UiLoader()
-        self.ui = loader.load_file('hedm_calibration_results_dialog.ui',
-                                   parent)
+        self.ui = loader.load_file('hedm_calibration_results_dialog.ui', parent)
 
         if isinstance(grain_ids, np.ndarray):
             # So we can easily use the .index() function...
@@ -56,10 +56,7 @@ class HEDMCalibrationResultsDialog:
         self.update_enable_states()
 
     def update_enable_states(self):
-        enable_grain_id = (
-            not self.show_all_grains and
-            self.ui.grain_id.count() > 1
-        )
+        enable_grain_id = not self.show_all_grains and self.ui.grain_id.count() > 1
         self.ui.grain_id.setEnabled(enable_grain_id)
         self.ui.grain_id_label.setEnabled(enable_grain_id)
 
@@ -172,8 +169,8 @@ class HEDMCalibrationResultsDialog:
             if i != 0:
                 label = None
 
-            artist1, = self.ax[0].plot(x, y1, style, label=label)
-            artist2, = self.ax[1].plot(x, y2, style, label=label)
+            (artist1,) = self.ax[0].plot(x, y1, style, label=label)
+            (artist2,) = self.ax[1].plot(x, y2, style, label=label)
 
             self.artists.extend([artist1, artist2])
 

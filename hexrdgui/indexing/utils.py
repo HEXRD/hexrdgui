@@ -12,9 +12,7 @@ def generate_grains_table(qbar):
     for i, q in enumerate(qbar.T):
         phi = 2 * np.arccos(q[0])
         n = xfcapi.unitRowVector(q[1:])
-        grain_params = np.hstack(
-            [phi * n, constants.zeros_3, constants.identity_6x1]
-        )
+        grain_params = np.hstack([phi * n, constants.zeros_3, constants.identity_6x1])
         gw.dump_grain(i, 1, 0, grain_params)
     gw.close()
     return grains_table

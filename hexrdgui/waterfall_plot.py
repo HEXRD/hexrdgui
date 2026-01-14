@@ -2,15 +2,11 @@ from typing import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QResizeEvent
-from PySide6.QtWidgets import (
-    QDialog, QLabel, QSizePolicy, QVBoxLayout, QWidget
-)
+from PySide6.QtWidgets import QDialog, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import FigureCanvasBase, KeyEvent, MouseEvent
-from matplotlib.backends.backend_qtagg import (
-    NavigationToolbar2QT as NavigationToolbar
-)
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy as np
 
@@ -24,6 +20,7 @@ class WaterfallPlot:
     This class manages button clicks and key events for interactions
     with a waterfall plot
     """
+
     def __init__(self, ax: Axes, line_data: LineData):
         self.ax = ax
         self.create_lines(line_data)
@@ -43,12 +40,14 @@ class WaterfallPlot:
 
         lines = []
         for i, (x, y) in enumerate(line_data):
-            lines.append(self.ax.plot(
-                x,
-                y + offset * i,
-                lw=2.5,
-                label=f'Frame {i + 1}',
-            )[0])
+            lines.append(
+                self.ax.plot(
+                    x,
+                    y + offset * i,
+                    lw=2.5,
+                    label=f'Frame {i + 1}',
+                )[0]
+            )
 
         self.lines = lines
 
@@ -167,7 +166,7 @@ class WaterfallPlot:
         min_distance = np.inf
         closest_line_idx = -1
         for i, data in enumerate(self._cached_line_data):
-            distances = np.sqrt((data - coords)**2).sum(axis=1)
+            distances = np.sqrt((data - coords) ** 2).sum(axis=1)
             min_dist = np.nanmin(distances)
             if min_dist < min_distance:
                 min_distance = min_dist
@@ -195,10 +194,10 @@ class WaterfallPlotDialog(QDialog):
 
         # Add minimize, maximize, and close buttons
         self.setWindowFlags(
-            Qt.Tool |
-            Qt.WindowMinimizeButtonHint |
-            Qt.WindowMaximizeButtonHint |
-            Qt.WindowCloseButtonHint
+            Qt.Tool
+            | Qt.WindowMinimizeButtonHint
+            | Qt.WindowMaximizeButtonHint
+            | Qt.WindowCloseButtonHint
         )
 
         self.waterfall_plot = WaterfallPlot(ax, line_data)

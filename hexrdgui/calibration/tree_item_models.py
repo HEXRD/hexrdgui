@@ -3,18 +3,11 @@ import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
-from hexrdgui.tree_views.multi_column_dict_tree_view import (
-    MultiColumnDictTreeItemModel
-)
+from hexrdgui.tree_views.multi_column_dict_tree_view import MultiColumnDictTreeItemModel
 
 
 def _tree_columns_to_indices(columns):
-    return {
-        'Key': 0,
-        **{
-            k: list(columns).index(k) + 1 for k in columns
-        }
-    }
+    return {'Key': 0, **{k: list(columns).index(k) + 1 for k in columns}}
 
 
 class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
@@ -44,10 +37,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
                 value = config['_conversion_funcs']['from_display'](value)
                 # Swap the min/max if they ought to be swapped
                 # (due to the conversion resulting in an inverse proportionality)
-                if (
-                    config.get('_min_max_inverted') and
-                    attribute in ('min', 'max')
-                ):
+                if config.get('_min_max_inverted') and attribute in ('min', 'max'):
                     attribute = 'max' if attribute == 'min' else 'min'
 
         if attribute == 'value':
@@ -71,10 +61,12 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
                 param.min = value - (param.value - param.min)
                 param.max = value + (param.max - param.value)
                 super().set_config_val(
-                    path[:-1] + [min_key], convert_if_needed(param.min),
+                    path[:-1] + [min_key],
+                    convert_if_needed(param.min),
                 )
                 super().set_config_val(
-                    path[:-1] + [max_key], convert_if_needed(param.max),
+                    path[:-1] + [max_key],
+                    convert_if_needed(param.max),
                 )
 
                 col = list(self.COLUMNS.values()).index(path[-1]) + 1
@@ -101,19 +93,16 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
 
     def data(self, index, role):
         if (
-            role in (Qt.BackgroundRole, Qt.ForegroundRole) and
-            index.column() in (self.VALUE_IDX, self.VARY_IDX) and
-            self.has_uneditable_paths
+            role in (Qt.BackgroundRole, Qt.ForegroundRole)
+            and index.column() in (self.VALUE_IDX, self.VARY_IDX)
+            and self.has_uneditable_paths
         ):
             # Check if this value is uneditable. If so, gray it out.
             item = self.get_item(index)
             path = tuple(self.path_to_item(item) + [self.VALUE_IDX])
             if path in self.uneditable_paths:
                 color = 'gray'
-                if (
-                    index.column() == self.VALUE_IDX and
-                    role == Qt.ForegroundRole
-                ):
+                if index.column() == self.VALUE_IDX and role == Qt.ForegroundRole:
                     color = 'white'
 
                 return QColor(color)
@@ -121,9 +110,9 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
         data = super().data(index, role)
 
         if (
-            role in (Qt.DisplayRole, Qt.EditRole) and
-            index.column() in self.BOUND_INDICES and
-            data is not None
+            role in (Qt.DisplayRole, Qt.EditRole)
+            and index.column() in self.BOUND_INDICES
+            and data is not None
         ):
             # Check if there are any units that should be displayed
             item = self.get_item(index)
@@ -145,6 +134,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
 
 class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
     """This model uses minimum/maximum for the boundary constraints"""
+
     COLUMNS = {
         'Value': '_value',
         'Vary': '_vary',
@@ -177,8 +167,8 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
                     data0 = item.data(pair[0])
                     data1 = item.data(pair[1])
                     if (
-                        np.all([np.isinf(x) for x in (data0, data1)]) or
-                        abs(data0 - data1) < atol
+                        np.all([np.isinf(x) for x in (data0, data1)])
+                        or abs(data0 - data1) < atol
                     ):
                         return QColor('red')
 
@@ -187,6 +177,7 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
 
 class DeltaCalibrationTreeItemModel(CalibrationTreeItemModel):
     """This model uses the delta for the parameters"""
+
     COLUMNS = {
         'Value': '_value',
         'Vary': '_vary',

@@ -25,8 +25,11 @@ from hexrdgui.calibration.pick_based_calibration import (
     create_instrument_calibrator,
 )
 from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
-    generate_picks_results, overlays_to_tree_format, HKLPicksTreeViewDialog,
-    picks_cartesian_to_angles, tree_format_to_picks,
+    generate_picks_results,
+    overlays_to_tree_format,
+    HKLPicksTreeViewDialog,
+    picks_cartesian_to_angles,
+    tree_format_to_picks,
 )
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.constants import OverlayType, ViewType
@@ -37,7 +40,8 @@ from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.select_item_dialog import SelectItemDialog
 from hexrdgui.utils import (
     array_index_in_list,
-    masks_applied_to_panel_buffers, unique_array_list
+    masks_applied_to_panel_buffers,
+    unique_array_list,
 )
 from hexrdgui.utils.dicts import ndarrays_to_lists
 
@@ -184,7 +188,10 @@ class CalibrationRunner(QObject):
 
         title = overlay.name
 
-        if overlay.xray_source is not None and overlay.xray_source != HexrdConfig().active_beam_name:
+        if (
+            overlay.xray_source is not None
+            and overlay.xray_source != HexrdConfig().active_beam_name
+        ):
             self.switch_xray_source(overlay.xray_source)
 
         # Only make the current overlay we are selecting visible
@@ -242,9 +249,7 @@ class CalibrationRunner(QObject):
         # Wait until canvas finishes updating
         progress_dialog = ProgressDialog(self.canvas)
         progress_dialog.setRange(0, 0)
-        progress_dialog.setWindowTitle(
-            f'Switching beam to {xray_source}'
-        )
+        progress_dialog.setWindowTitle(f'Switching beam to {xray_source}')
         progress_dialog.show()
         while self.canvas.iviewer is None:
             # We must process events so that when the polar view has been
@@ -259,8 +264,8 @@ class CalibrationRunner(QObject):
         title = f'Load Picks for {overlay.name}'
 
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.canvas, title, HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.canvas, title, HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
+        )
 
         if not selected_file:
             # User canceled
@@ -341,17 +346,18 @@ class CalibrationRunner(QObject):
         # normally called after accepted/rejected, so we will connect
         # to accepted/rejected directly.
         dialog.ui.accepted.connect(
-            partial(self.view_picks_finished, accepted=True, **kwargs))
+            partial(self.view_picks_finished, accepted=True, **kwargs)
+        )
         dialog.ui.rejected.connect(
-            partial(self.view_picks_finished, accepted=False, **kwargs))
+            partial(self.view_picks_finished, accepted=False, **kwargs)
+        )
 
         # Make sure focus mode is enabled while viewing the picks
         self.enable_focus_mode(True)
 
         return dialog
 
-    def view_picks_finished(self, accepted, dialog, highlighting,
-                            prev_visibilities):
+    def view_picks_finished(self, accepted, dialog, highlighting, prev_visibilities):
         # Turn off focus mode (which may be turned back on if the line picker
         # will reappear)
         self.enable_focus_mode(False)
@@ -363,9 +369,7 @@ class CalibrationRunner(QObject):
                 dialog.dictionary,
             )
             for i, new_picks in enumerate(updated_picks):
-                self.active_overlays[i].calibration_picks_polar = (
-                    new_picks['picks']
-                )
+                self.active_overlays[i].calibration_picks_polar = new_picks['picks']
 
             if self.active_overlay:
                 self.reset_overlay_picks()
@@ -442,9 +446,7 @@ class CalibrationRunner(QObject):
 
         img_dict = HexrdConfig().masked_images_dict
 
-        self.ic = create_instrument_calibrator(
-            picks, instr, img_dict, materials
-        )
+        self.ic = create_instrument_calibrator(picks, instr, img_dict, materials)
 
         format_extra_params_func = partial(
             format_material_params_func,
@@ -473,7 +475,8 @@ class CalibrationRunner(QObject):
             self.async_runner,
         )
         self._dialog_callback_handler.instrument_updated.connect(
-            self.on_calibration_finished)
+            self.on_calibration_finished
+        )
         dialog.show()
 
         self._calibration_dialog = dialog
@@ -484,8 +487,7 @@ class CalibrationRunner(QObject):
         overlays = self.active_overlays
         for overlay, calibrator in zip(overlays, self.ic.calibrators):
             modified = any(
-                self.ic.params[param_name].vary
-                for param_name in calibrator.param_names
+                self.ic.params[param_name].vary for param_name in calibrator.param_names
             )
             if not modified:
                 # Just skip over it
@@ -655,7 +657,8 @@ class CalibrationRunner(QObject):
 
     def save_overlay_picks(self):
         self.active_overlay.calibration_picks_polar = copy.deepcopy(
-            self.overlay_picks_with_hkls)
+            self.overlay_picks_with_hkls
+        )
 
     @property
     def current_data_path(self):
@@ -938,10 +941,7 @@ class CalibrationRunner(QObject):
 
         # These are the options the user chose earlier...
         options = HexrdConfig().config['calibration']['laue_auto_picker']
-        kwargs = {
-            'raw_img_dict': img_dict,
-            **options
-        }
+        kwargs = {'raw_img_dict': img_dict, **options}
         # Apply any masks to the panel buffer for our instrument.
         # This is done so that the auto picking will skip over masked regions.
         with masks_applied_to_panel_buffers(self.instr):
@@ -983,10 +983,7 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         self.update_edit_picks_dictionary()
         tree_view = self.edit_picks_dialog.tree_view
 
-        if (
-            HexrdConfig().has_multi_xrs and
-            not self.showing_picks_from_all_xray_sources
-        ):
+        if HexrdConfig().has_multi_xrs and not self.showing_picks_from_all_xray_sources:
             skip_items = []
             for item in tree_view.model().root_item.child_items:
                 overlay_name = item.data(0)
@@ -1027,10 +1024,7 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         # After the tree view is updated, disable paths that
         # don't match this XRS.
-        if (
-            HexrdConfig().has_multi_xrs and
-            not self.showing_picks_from_all_xray_sources
-        ):
+        if HexrdConfig().has_multi_xrs and not self.showing_picks_from_all_xray_sources:
             # Disable paths that don't match this XRS
             for item in model.root_item.child_items:
                 overlay_name = item.data(0)

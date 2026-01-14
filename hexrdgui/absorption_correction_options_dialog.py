@@ -8,8 +8,7 @@ class AbsorptionCorrectionOptionsDialog:
 
     def __init__(self, parent=None):
         loader = UiLoader()
-        self.ui = loader.load_file('absorption_correction_options_dialog.ui',
-                                   parent)
+        self.ui = loader.load_file('absorption_correction_options_dialog.ui', parent)
 
         self.additional_materials = {}
         self.mat_options = []
@@ -24,7 +23,7 @@ class AbsorptionCorrectionOptionsDialog:
         return {
             'filter': self.ui.filter_material,
             'coating': self.ui.coating_material,
-            'phosphor': self.ui.phosphor_material
+            'phosphor': self.ui.phosphor_material,
         }
 
     @property
@@ -32,7 +31,7 @@ class AbsorptionCorrectionOptionsDialog:
         return {
             'filter': self.ui.filter_material_input,
             'coating': self.ui.coating_material_input,
-            'phosphor': self.ui.phosphor_material_input
+            'phosphor': self.ui.phosphor_material_input,
         }
 
     @property
@@ -40,7 +39,7 @@ class AbsorptionCorrectionOptionsDialog:
         return {
             'filter': self.ui.filter_density,
             'coating': self.ui.coating_density,
-            'phosphor': self.ui.phosphor_density
+            'phosphor': self.ui.phosphor_density,
         }
 
     def chemical_formula(self, material_name: str) -> str | None:
@@ -122,10 +121,10 @@ class AbsorptionCorrectionOptionsDialog:
     def setup_connections(self):
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
-                lambda index, k=k: self.material_changed(k, index=index))
+                lambda index, k=k: self.material_changed(k, index=index)
+            )
         for k, w in self.material_inputs.items():
-            w.textChanged.connect(
-                lambda text, k=k: self.material_changed(k, text=text))
+            w.textChanged.connect(lambda text, k=k: self.material_changed(k, text=text))
         self.ui.filter_density.valueChanged.connect(self.filter_info_changed)
         self.ui.filter_thickness.valueChanged.connect(self.filter_info_changed)
         self.ui.detectors.currentTextChanged.connect(self.detector_changed)
@@ -179,7 +178,7 @@ class AbsorptionCorrectionOptionsDialog:
             self.ui.filter_material,
             self.ui.filter_material_input,
             self.ui.filter_density,
-            self.ui.filter_thickness
+            self.ui.filter_thickness,
         ]
 
         with block_signals(*filter_widgets):
@@ -194,9 +193,7 @@ class AbsorptionCorrectionOptionsDialog:
             self.ui.filter_density.setEnabled(custom_mat)
             # Update filter inputs
             self.ui.filter_density.setValue(self.filters[new_det]['density'])
-            self.ui.filter_thickness.setValue(
-                self.filters[new_det]['thickness']
-            )
+            self.ui.filter_thickness.setValue(self.filters[new_det]['thickness'])
 
     def accept_changes(self):
         materials = {}
@@ -272,5 +269,5 @@ class AbsorptionCorrectionOptionsDialog:
             self.filters[det] = {
                 'material': filter.material,
                 'density': filter.density,
-                'thickness': filter.thickness
+                'thickness': filter.thickness,
             }

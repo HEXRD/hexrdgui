@@ -16,8 +16,9 @@ class ZoomCanvas(FigureCanvas):
 
     point_picked = Signal(object)
 
-    def __init__(self, main_canvas, draw_crosshairs=True,
-                 display_sums_in_subplots=False):
+    def __init__(
+        self, main_canvas, draw_crosshairs=True, display_sums_in_subplots=False
+    ):
         self.figure = Figure()
         super().__init__(self.figure)
 
@@ -70,18 +71,20 @@ class ZoomCanvas(FigureCanvas):
 
     def setup_connections(self):
         self.mc_mne_id = self.main_canvas.mpl_connect(
-            'motion_notify_event', self.main_canvas_mouse_moved)
+            'motion_notify_event', self.main_canvas_mouse_moved
+        )
         self.mc_de_id = self.main_canvas.mpl_connect(
-            'draw_event', self.on_main_canvas_draw_event)
-        self.mc_ae_id = self.main_canvas.mpl_connect('axes_enter_event',
-                                                     self.on_axes_entered)
-        self.mc_al_id = self.main_canvas.mpl_connect('axes_leave_event',
-                                                     self.on_axes_exited)
+            'draw_event', self.on_main_canvas_draw_event
+        )
+        self.mc_ae_id = self.main_canvas.mpl_connect(
+            'axes_enter_event', self.on_axes_entered
+        )
+        self.mc_al_id = self.main_canvas.mpl_connect(
+            'axes_leave_event', self.on_axes_exited
+        )
 
-        self.mne_id = self.mpl_connect('motion_notify_event',
-                                       self.mouse_moved)
-        self.bp_id = self.mpl_connect('button_press_event',
-                                      self.button_pressed)
+        self.mne_id = self.mpl_connect('motion_notify_event', self.mouse_moved)
+        self.bp_id = self.mpl_connect('button_press_event', self.button_pressed)
 
         self.main_canvas.transform_modified.connect(self.recreate_rsimg)
         self.main_canvas.cmap_modified.connect(self.render)
@@ -89,8 +92,7 @@ class ZoomCanvas(FigureCanvas):
 
     def setup_box_overlay_lines(self):
         self.remove_overlay_lines()
-        self.box_overlay_line, = self.main_axis.plot([], [], 'm-',
-                                                     animated=True)
+        (self.box_overlay_line,) = self.main_axis.plot([], [], 'm-', animated=True)
         # We need to redraw the main canvas once so that the background
         # gets saved for blitting.
         self.main_canvas.draw_idle()
@@ -316,7 +318,7 @@ class ZoomCanvas(FigureCanvas):
             center - (0, ymag),
             (np.nan, np.nan),
             center + (xmag, 0),
-            center - (xmag, 0)
+            center - (xmag, 0),
         ]
 
         self.crosshairs.set_data(zip(*vals))
@@ -331,9 +333,7 @@ class ZoomCanvas(FigureCanvas):
             return
 
         invalid = (
-            self.xdata is None or
-            self.ydata is None or
-            self.box_overlay_line is None
+            self.xdata is None or self.ydata is None or self.box_overlay_line is None
         )
         if invalid:
             return
@@ -358,13 +358,11 @@ class ZoomCanvas(FigureCanvas):
         # In case the bounding box is out of bounds, we need to clip
         # the line and insert nans.
         a2_max = rsimg.shape[1]
-        a2_x, valid_a2, a2_low, a2_high = _clip_range(j_col[0], j_col[1],
-                                                      0, a2_max)
+        a2_x, valid_a2, a2_low, a2_high = _clip_range(j_col[0], j_col[1], 0, a2_max)
         a2_y = a2_x.copy()
 
         a3_max = rsimg.shape[0]
-        a3_x, valid_a3, a3_low, a3_high = _clip_range(i_row[1], i_row[2],
-                                                      0, a3_max)
+        a3_x, valid_a3, a3_low, a3_high = _clip_range(i_row[1], i_row[2], 0, a3_max)
         a3_y = a3_x.copy()
 
         if self.canvas_is_polar:
@@ -381,8 +379,8 @@ class ZoomCanvas(FigureCanvas):
             a3_x[valid_a3] = np.nansum(roi, axis=1)
         else:
             if self.in_zoom_axis and self.vhlines:
-                x, = self.vhlines[0].get_xdata()
-                y, = self.vhlines[1].get_ydata()
+                (x,) = self.vhlines[0].get_xdata()
+                (y,) = self.vhlines[1].get_ydata()
             else:
                 # Use the center of the plot
                 xlims = roi[0:2, 0]
@@ -416,10 +414,14 @@ class ZoomCanvas(FigureCanvas):
         self.axes[2].autoscale_view()
 
     def create_zoom_image(self, a1):
-        return a1.imshow(self.rsimg, extent=self.extent,
-                         cmap=self.main_canvas.cmap,
-                         norm=self.main_canvas.norm, picker=True,
-                         interpolation='none')
+        return a1.imshow(
+            self.rsimg,
+            extent=self.extent,
+            cmap=self.main_canvas.cmap,
+            norm=self.main_canvas.norm,
+            picker=True,
+            interpolation='none',
+        )
 
     def render(self):
         if self.disabled:
@@ -439,8 +441,11 @@ class ZoomCanvas(FigureCanvas):
             self.main_cursor.blit()
             return
 
-        roi_diff = (np.tile([self.zoom_width, self.zoom_height], (4, 1)) *
-                    0.5 * np.vstack([[-1, -1], [1, -1], [1, 1], [-1, 1]]))
+        roi_diff = (
+            np.tile([self.zoom_width, self.zoom_height], (4, 1))
+            * 0.5
+            * np.vstack([[-1, -1], [1, -1], [1, 1], [-1, 1]])
+        )
         roi = np.tile(point, (4, 1)) + roi_diff
 
         self.roi = roi
@@ -468,17 +473,17 @@ class ZoomCanvas(FigureCanvas):
             a1.label_outer()
             a3.label_outer()
             a3.tick_params(labelbottom=True)  # Label bottom anyways for a3
-            self.cursor = RemovableCursor(a1, useblit=True,
-                                          color=self.cursor_color, linewidth=1)
-            im2, = a2.plot([], [])
-            im3, = a3.plot([], [])
+            self.cursor = RemovableCursor(
+                a1, useblit=True, color=self.cursor_color, linewidth=1
+            )
+            (im2,) = a2.plot([], [])
+            (im3,) = a3.plot([], [])
             self.figure.suptitle(r"ROI zoom")
             a2.set_xlabel(self.x_label)
             a2.set_ylabel(r"intensity")
             a1.set_ylabel(self.y_label)
             a3.set_xlabel(r"intensity")
-            self.crosshairs = a1.plot([], [], self.cursor_color,
-                                      linestyle='-')[0]
+            self.crosshairs = a1.plot([], [], self.cursor_color, linestyle='-')[0]
             self.axes = [a1, a2, a3]
             self.axes_images = [im1, im2, im3]
             self.grid = grid

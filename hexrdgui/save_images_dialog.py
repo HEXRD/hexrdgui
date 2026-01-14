@@ -11,7 +11,10 @@ from hexrdgui.async_worker import AsyncWorker
 
 class SaveImagesDialog:
 
-    def __init__(self, parent=None, ):
+    def __init__(
+        self,
+        parent=None,
+    ):
         loader = UiLoader()
         self.ui = loader.load_file('save_images_dialog.ui', parent)
 
@@ -34,14 +37,15 @@ class SaveImagesDialog:
 
     @property
     def parent_dir(self):
-        if (Path(HexrdConfig().images_dir).exists()):
+        if Path(HexrdConfig().images_dir).exists():
             return HexrdConfig().images_dir
         return str(Path.cwd())
 
     def change_directory(self):
         caption = 'Select directory for images'
         new_dir = QFileDialog.getExistingDirectory(
-            self.ui, caption, dir=self.parent_dir)
+            self.ui, caption, dir=self.parent_dir
+        )
 
         if new_dir:
             HexrdConfig().set_images_dir(new_dir)
@@ -73,9 +77,9 @@ class SaveImagesDialog:
 
         if selected_format == 'frame-cache':
             # Get the user to pick a threshold
-            threshold, ok = QInputDialog.getDouble(self.ui, 'HEXRD',
-                                                   'Choose Threshold',
-                                                   10, 0, 1e12, 3)
+            threshold, ok = QInputDialog.getDouble(
+                self.ui, 'HEXRD', 'Choose Threshold', 10, 0, 1e12, 3
+            )
             if not ok:
                 # User canceled...
                 return
@@ -99,7 +103,12 @@ class SaveImagesDialog:
 
             worker = AsyncWorker(
                 HexrdConfig().save_imageseries,
-                ims_dict.get(det), det, path, selected_format, **kwargs)
+                ims_dict.get(det),
+                det,
+                path,
+                selected_format,
+                **kwargs,
+            )
             self.thread_pool.start(worker)
             self.progress_dialog.setWindowTitle(f'Saving {filename}')
             self.progress_dialog.setRange(0, 0)

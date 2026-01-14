@@ -10,6 +10,7 @@ class FixedPdb(pdb.Pdb):
     This class fixes the issue by getting pdb to always use
     the default stdout and stderr.
     """
+
     def set_trace(self, *args, **kwargs):
         self._use_default_stdout_stderr()
         return super().set_trace(*args, **kwargs)

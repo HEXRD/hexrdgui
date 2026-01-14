@@ -56,8 +56,7 @@ class LoadImagesDialog:
                     msg = 'Detectors do not match the current detectors'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
                     continue
-                elif (not self.using_roi and
-                        (Counter(matches) != Counter(image_files))):
+                elif not self.using_roi and (Counter(matches) != Counter(image_files)):
                     msg = 'Image files do not match the selected files'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
                     continue
@@ -68,8 +67,7 @@ class LoadImagesDialog:
     def setup_state(self):
         if 'trans' not in HexrdConfig().load_panel_state:
             num_dets = len(HexrdConfig().detector_names)
-            HexrdConfig().load_panel_state = {
-                'trans': [0 for x in range(num_dets)]}
+            HexrdConfig().load_panel_state = {'trans': [0 for x in range(num_dets)]}
 
     def setup_roi_table(self, table):
         # This use case is less common. For ROI configs images are re-used for
@@ -88,26 +86,29 @@ class LoadImagesDialog:
             trans_cb.setCurrentIndex(idx)
             table.setCellWidget(i, 1, trans_cb)
             table.cellWidget(i, 1).currentTextChanged.connect(
-                lambda v, i=i: self.selection_changed(v, i))
+                lambda v, i=i: self.selection_changed(v, i)
+            )
 
             img_cb = QComboBox()
             img_cb.addItems(list(set(self.image_files)))
             table.setCellWidget(i, 2, img_cb)
             table.cellWidget(i, 2).currentTextChanged.connect(
-                lambda v, i=i: self.selection_changed(v, i))
+                lambda v, i=i: self.selection_changed(v, i)
+            )
 
     def setup_standard_table(self, table):
         # The typical use case. This supports one or more images per detector.
         # The detector names are toggled to match the image for that row.
         table.setRowCount(len(self.image_files))
-        imgs_per_det = len(self.image_files)/len(HexrdConfig().detector_names)
+        imgs_per_det = len(self.image_files) / len(HexrdConfig().detector_names)
         for i in range(table.rowCount()):
             if self.manual_assign:
                 det_cb = QComboBox()
                 det_cb.addItems(sorted(list(set(self.detectors))))
                 table.setCellWidget(i, 0, det_cb)
                 table.cellWidget(i, 0).currentTextChanged.connect(
-                    lambda v, i=i: self.selection_changed(v, i))
+                    lambda v, i=i: self.selection_changed(v, i)
+                )
             else:
                 d = QTableWidgetItem(self.detectors[i])
                 table.setItem(i, 0, d)
@@ -116,12 +117,13 @@ class LoadImagesDialog:
             trans_cb.addItems(TRANSFORM_OPTIONS)
             idx = 0
             if 'trans' in HexrdConfig().load_panel_state:
-                det = int(i/imgs_per_det)
+                det = int(i / imgs_per_det)
                 idx = HexrdConfig().load_panel_state['trans'][det]
             trans_cb.setCurrentIndex(idx)
             table.setCellWidget(i, 1, trans_cb)
             table.cellWidget(i, 1).currentTextChanged.connect(
-                lambda v, i=i: self.selection_changed(v, i))
+                lambda v, i=i: self.selection_changed(v, i)
+            )
 
             f = QTableWidgetItem(Path(self.image_files[i]).name)
             table.setItem(i, 2, f)
@@ -158,7 +160,8 @@ class LoadImagesDialog:
                 img_cb.addItems(list(set(image_files)))
                 table.setCellWidget(i, 2, img_cb)
                 table.cellWidget(i, 2).currentTextChanged.connect(
-                    lambda v, i=i: self.selection_changed(v, i))
+                    lambda v, i=i: self.selection_changed(v, i)
+                )
             else:
                 f = QTableWidgetItem(Path(image_files[i]).name)
                 table.setItem(i, 2, f)

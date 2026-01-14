@@ -5,7 +5,8 @@ from hexrd.transforms.xfcapi import mapAngle
 
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.constants import (
-    crystal_refinement_labels, default_crystal_params,
+    crystal_refinement_labels,
+    default_crystal_params,
     default_crystal_refinements,
 )
 from hexrdgui.overlays.overlay import Overlay
@@ -18,12 +19,21 @@ class RotationSeriesOverlay(Overlay):
     data_key = 'data'
     ranges_key = 'ranges'
 
-    def __init__(self, material_name, crystal_params=None, eta_ranges=None,
-                 ome_ranges=None, ome_period=None, aggregated=True,
-                 ome_width=np.radians(1.5).item(),
-                 tth_width=np.radians(0.25).item(),
-                 eta_width=np.radians(1.0).item(),
-                 sync_ome_period=True, sync_ome_ranges=True, **overlay_kwargs):
+    def __init__(
+        self,
+        material_name,
+        crystal_params=None,
+        eta_ranges=None,
+        ome_ranges=None,
+        ome_period=None,
+        aggregated=True,
+        ome_width=np.radians(1.5).item(),
+        tth_width=np.radians(0.25).item(),
+        eta_width=np.radians(1.0).item(),
+        sync_ome_period=True,
+        sync_ome_ranges=True,
+        **overlay_kwargs
+    ):
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -123,10 +133,7 @@ class RotationSeriesOverlay(Overlay):
 
         # Even though we may have aggregated set to be True, do not
         # aggregate unless the conditions are right.
-        force_aggregated = (
-            HexrdConfig().is_aggregated or
-            not HexrdConfig().has_omegas
-        )
+        force_aggregated = HexrdConfig().is_aggregated or not HexrdConfig().has_omegas
         if force_aggregated:
             return True
 
@@ -210,10 +217,13 @@ class RotationSeriesOverlay(Overlay):
         instr = self.instrument
         display_mode = self.display_mode
         sim_data = instr.simulate_rotation_series(
-            self.plane_data, [self.crystal_params, ],
+            self.plane_data,
+            [
+                self.crystal_params,
+            ],
             eta_ranges=self.eta_ranges,
             ome_ranges=self.ome_ranges,
-            ome_period=self.ome_period
+            ome_period=self.ome_period,
         )
         point_groups = {}
         for det_key, psim in sim_data.items():
@@ -268,15 +278,11 @@ class RotationSeriesOverlay(Overlay):
         widths = (self.tth_width, self.eta_width)
         # Put the first point at the end to complete the square
         tol_box = np.array(
-            [[0.5, 0.5],
-             [0.5, -0.5],
-             [-0.5, -0.5],
-             [-0.5, 0.5],
-             [0.5, 0.5]]
+            [[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]
         )
         ranges = []
         for spot in spots:
-            corners = np.tile(spot, (5, 1)) + tol_box*np.tile(widths, (5, 1))
+            corners = np.tile(spot, (5, 1)) + tol_box * np.tile(widths, (5, 1))
             ranges.append(corners)
 
         return ranges
@@ -299,11 +305,14 @@ class RotationSeriesOverlay(Overlay):
             return np.degrees(range_corners)
         elif display_mode == ViewType.stereo:
             # Convert the angles to stereo ij
-            return [angles_to_stereo(
-                angles,
-                self.instrument,
-                HexrdConfig().stereo_size,
-            ) for angles in range_corners]
+            return [
+                angles_to_stereo(
+                    angles,
+                    self.instrument,
+                    HexrdConfig().stereo_size,
+                )
+                for angles in range_corners
+            ]
 
         # The range data is curved for raw and cartesian.
         # Get more intermediate points so the data reflects this.
@@ -326,31 +335,15 @@ class RotationSeriesOverlay(Overlay):
     @property
     def default_style(self):
         return {
-            'data': {
-                'c': '#00ffff',  # Cyan
-                'marker': 'o',
-                's': 2.0
-            },
-            'ranges': {
-                'c': '#00ff00',  # Green
-                'ls': 'dotted',
-                'lw': 1.0
-            }
+            'data': {'c': '#00ffff', 'marker': 'o', 's': 2.0},  # Cyan
+            'ranges': {'c': '#00ff00', 'ls': 'dotted', 'lw': 1.0},  # Green
         }
 
     @property
     def default_highlight_style(self):
         return {
-            'data': {
-                'c': '#ff00ff',  # Magenta
-                'ls': 'solid',
-                'lw': 3.0
-            },
-            'ranges': {
-                'c': '#ff00ff',  # Magenta
-                'ls': 'dotted',
-                'lw': 3.0
-            }
+            'data': {'c': '#ff00ff', 'ls': 'solid', 'lw': 3.0},  # Magenta
+            'ranges': {'c': '#ff00ff', 'ls': 'dotted', 'lw': 3.0},  # Magenta
         }
 
     def on_new_images_loaded(self):

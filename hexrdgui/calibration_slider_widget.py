@@ -27,8 +27,7 @@ class CalibrationSliderWidget(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.detector.currentIndexChanged.connect(
-            self.update_gui_from_config)
+        self.ui.detector.currentIndexChanged.connect(self.update_gui_from_config)
         for widget in self.config_widgets:
             widget.valueChanged.connect(self.update_widget_counterpart)
             widget.valueChanged.connect(self.update_config_from_gui)
@@ -40,12 +39,13 @@ class CalibrationSliderWidget(QObject):
         self.ui.push_reset_config.pressed.connect(self.reset_config)
 
         self.ui.lock_relative_transforms.toggled.connect(
-            self.on_lock_relative_transforms_toggled)
+            self.on_lock_relative_transforms_toggled
+        )
         self.ui.lock_relative_transforms_setting.currentIndexChanged.connect(
-            self.on_lock_relative_transforms_setting_changed)
+            self.on_lock_relative_transforms_setting_changed
+        )
 
-        HexrdConfig().euler_angle_convention_changed.connect(
-            self.update_labels)
+        HexrdConfig().euler_angle_convention_changed.connect(self.update_labels)
 
     def update_ranges(self):
         r = self.ui.sb_translation_range.value()
@@ -81,11 +81,7 @@ class CalibrationSliderWidget(QObject):
         prefixes = ['sb', 'slider']
         root = 'translation'
         suffixes = ['0', '1', '2']
-        widget_names = [
-            '_'.join([p, root, s])
-            for p in prefixes
-            for s in suffixes
-        ]
+        widget_names = ['_'.join([p, root, s]) for p in prefixes for s in suffixes]
 
         return [getattr(self.ui, x) for x in widget_names]
 
@@ -95,11 +91,7 @@ class CalibrationSliderWidget(QObject):
         prefixes = ['sb', 'slider']
         root = 'tilt'
         suffixes = ['0', '1', '2']
-        widget_names = [
-            '_'.join([p, root, s])
-            for p in prefixes
-            for s in suffixes
-        ]
+        widget_names = ['_'.join([p, root, s]) for p in prefixes for s in suffixes]
 
         return [getattr(self.ui, x) for x in widget_names]
 
@@ -114,10 +106,7 @@ class CalibrationSliderWidget(QObject):
         roots = ['energy', 'azimuth', 'polar']
         suffixes = ['0']
         widget_names = [
-            '_'.join([p, r, s])
-            for p in prefixes
-            for r in roots
-            for s in suffixes
+            '_'.join([p, r, s]) for p in prefixes for r in roots for s in suffixes
         ]
 
         return [getattr(self.ui, x) for x in widget_names]
@@ -181,8 +170,7 @@ class CalibrationSliderWidget(QObject):
 
     def update_enable_states(self):
         enable = not (
-            self.lock_relative_transforms and
-            self.transform_instrument_rigid_body
+            self.lock_relative_transforms and self.transform_instrument_rigid_body
         )
         widgets = [
             self.ui.detector_label,
@@ -313,10 +301,7 @@ class CalibrationSliderWidget(QObject):
         det_names = HexrdConfig().detector_names
         if self.transform_instrument_rigid_body:
             # All detectors will be transformed as a group
-            group_dets = {
-                name: HexrdConfig().detector(name)
-                for name in det_names
-            }
+            group_dets = {name: HexrdConfig().detector(name) for name in det_names}
 
             # We modify the arbitrary global params instead of a
             # specific detector.
@@ -357,8 +342,7 @@ class CalibrationSliderWidget(QObject):
             # It is tilt. Compute the center of rotation first.
             if self.locked_center_of_rotation == 'Mean Center':
                 detector_centers = np.array(
-                    [x['transform']['translation']
-                     for x in group_dets.values()]
+                    [x['transform']['translation'] for x in group_dets.values()]
                 )
                 center_of_rotation = detector_centers.mean(axis=0)
             elif self.locked_center_of_rotation == 'Origin':
@@ -429,14 +413,16 @@ class CalibrationSliderWidget(QObject):
         params = HexrdConfig()._instrument_rigid_body_params
         if not params:
             # Initialize to defaults
-            params.update(**{
-                'tilt': np.array([0, 0, 0], dtype=float),
-                'translation': np.array([0, 0, 0], dtype=float),
-            })
+            params.update(
+                **{
+                    'tilt': np.array([0, 0, 0], dtype=float),
+                    'translation': np.array([0, 0, 0], dtype=float),
+                }
+            )
 
         self._instrument_rigid_cache_params = {
             'tilt': _exp_map_to_euler_angles(params['tilt']).copy(),
-            'translation': params['translation'].copy()
+            'translation': params['translation'].copy(),
         }
 
     def update_transform_widgets(self):
@@ -453,10 +439,7 @@ class CalibrationSliderWidget(QObject):
         ind = int(ind)
 
         if key in ['tilt', 'translation']:
-            if (
-                self.lock_relative_transforms and
-                self.transform_instrument_rigid_body
-            ):
+            if self.lock_relative_transforms and self.transform_instrument_rigid_body:
                 # Instead of displaying individual detector transforms,
                 # display an arbitrary transform for the whole instrument
                 val = self._instrument_rigid_cache_params[key][ind]
@@ -513,9 +496,7 @@ def _tilt_to_rmat(tilt):
     # Convert the tilt to exponential map parameters, and then
     # to the rotation matrix, and return.
     convention = HexrdConfig().euler_angle_convention
-    return rotMatOfExpMap(np.asarray(
-        convert_angle_convention(tilt, convention, None)
-    ))
+    return rotMatOfExpMap(np.asarray(convert_angle_convention(tilt, convention, None)))
 
 
 def _rmat_to_tilt(rmat):
@@ -537,8 +518,7 @@ def _euler_angles_to_exp_map(angles: np.ndarray) -> np.ndarray:
     old_convention = HexrdConfig().euler_angle_convention
     if old_convention is not None:
         new_convention = None
-        angles = convert_angle_convention(angles, old_convention,
-                                          new_convention)
+        angles = convert_angle_convention(angles, old_convention, new_convention)
 
     return np.asarray(angles)
 

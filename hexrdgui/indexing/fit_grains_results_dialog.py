@@ -41,8 +41,7 @@ COLOR_ORIENTATIONS_IND = 23
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, material=None, parent=None,
-                 allow_export_workflow=True):
+    def __init__(self, data, material=None, parent=None, allow_export_workflow=True):
         super().__init__(parent)
 
         if material is None:
@@ -51,8 +50,9 @@ class FitGrainsResultsDialog(QObject):
             material = HexrdConfig().active_material
             if material:
                 # Warn the user so this is clear.
-                print(f'Assuming material of {material.name} for needed '
-                      'computations')
+                print(
+                    f'Assuming material of {material.name} for needed ' 'computations'
+                )
 
         self.async_runner = AsyncRunner(parent)
 
@@ -98,7 +98,7 @@ class FitGrainsResultsDialog(QObject):
         hydrostatic_strain = np.zeros(self.num_grains)
         for i, grain in enumerate(self.data):
             epsilon = vecMVToSymm(grain[ELASTIC_SLICE], scale=False)
-            deviator = epsilon - (1/3) * np.trace(epsilon) * np.identity(3)
+            deviator = epsilon - (1 / 3) * np.trace(epsilon) * np.identity(3)
             eqv_strain[i] = 2 * np.sqrt(np.sum(deviator**2)) / 3
             hydrostatic_strain[i] = 1 / 3 * np.trace(epsilon)
 
@@ -147,12 +147,11 @@ class FitGrainsResultsDialog(QObject):
                 # Convert strain to stress
                 # Multiply last three numbers by factor of 2
                 grain[ELASTIC_OFF_DIAGONAL_SLICE] *= 2
-                grain[ELASTIC_SLICE] = np.dot(self.compliance,
-                                              grain[ELASTIC_SLICE])
+                grain[ELASTIC_SLICE] = np.dot(self.compliance, grain[ELASTIC_SLICE])
 
                 # Compute the equivalent stress
                 sigma = vecMVToSymm(grain[ELASTIC_SLICE], scale=False)
-                deviator = sigma - (1/3) * np.trace(sigma) * np.identity(3)
+                deviator = sigma - (1 / 3) * np.trace(sigma) * np.identity(3)
                 grain[EQUIVALENT_IND] = 3 * np.sqrt(np.sum(deviator**2)) / 2
 
                 # Compute the hydrostatic stress
@@ -269,8 +268,11 @@ class FitGrainsResultsDialog(QObject):
 
     def on_export_button_pressed(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export Fit-Grains Results', HexrdConfig().working_dir,
-            'Output files (*.out)|All files(*.*)')
+            self.ui,
+            'Export Fit-Grains Results',
+            HexrdConfig().working_dir,
+            'Output files (*.out)|All files(*.*)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -285,8 +287,11 @@ class FitGrainsResultsDialog(QObject):
             raise Exception('Tensor type must be stress')
 
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export Fit-Grains Stresses', HexrdConfig().working_dir,
-            'Npz Files (*.npz)')
+            self.ui,
+            'Export Fit-Grains Stresses',
+            HexrdConfig().working_dir,
+            'Npz Files (*.npz)',
+        )
 
         if not selected_file:
             return
@@ -309,10 +314,7 @@ class FitGrainsResultsDialog(QObject):
 
     @property
     def projection(self):
-        name_map = {
-            'Perspective': 'persp',
-            'Orthographic': 'ortho'
-        }
+        name_map = {'Perspective': 'persp', 'Orthographic': 'ortho'}
         return name_map[self.ui.projection.currentText()]
 
     def projection_changed(self):
@@ -325,11 +327,9 @@ class FitGrainsResultsDialog(QObject):
 
     def setup_connections(self):
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
-        self.ui.export_stresses.clicked.connect(
-            self.on_export_stresses_button_pressed)
+        self.ui.export_stresses.clicked.connect(self.on_export_stresses_button_pressed)
         self.ui.projection.currentIndexChanged.connect(self.projection_changed)
-        self.ui.plot_color_option.currentIndexChanged.connect(
-            self.on_colorby_changed)
+        self.ui.plot_color_option.currentIndexChanged.connect(self.on_colorby_changed)
         self.ui.hide_axes.toggled.connect(self.update_axis_visibility)
         self.ui.depth_shading.toggled.connect(self.update_plot)
         self.ui.finished.connect(self.finished)
@@ -337,9 +337,9 @@ class FitGrainsResultsDialog(QObject):
         self.ui.glyph_size_slider.valueChanged.connect(self.update_plot)
         self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
         self.ui.cylindrical_reference.toggled.connect(
-            self.cylindrical_reference_toggled)
-        self.ui.export_workflow.clicked.connect(
-            self.on_export_workflow_clicked)
+            self.cylindrical_reference_toggled
+        )
+        self.ui.export_workflow.clicked.connect(self.on_export_workflow_clicked)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -351,10 +351,10 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.reset_ranges.pressed.connect(self.reset_ranges)
         self.ui.convert_strain_to_stress.toggled.connect(
-            self.convert_strain_to_stress_toggled)
+            self.convert_strain_to_stress_toggled
+        )
 
-        self.data_model.grains_table_modified.connect(
-            self.on_grains_table_modified)
+        self.data_model.grains_table_modified.connect(self.on_grains_table_modified)
 
         self.ui.table_view.selection_changed.connect(self.selection_changed)
 
@@ -414,7 +414,7 @@ class FitGrainsResultsDialog(QObject):
             x3, y3 = self.ax.transData.transform((x2, y2))
 
             # Compute the distance
-            d = np.sqrt((x3 - xx)**2 + (y3 - yy)**2)
+            d = np.sqrt((x3 - xx) ** 2 + (y3 - yy) ** 2)
 
             if d < dmin:
                 dmin = d
@@ -465,15 +465,8 @@ class FitGrainsResultsDialog(QObject):
     def setup_toolbar(self):
         # These don't work for 3D plots
         # "None" removes the separators
-        button_blacklist = [
-            None,
-            'Pan',
-            'Zoom',
-            'Subplots',
-            'Customize'
-        ]
-        self.toolbar = NavigationToolbar(self.canvas, self.ui, False,
-                                         button_blacklist)
+        button_blacklist = [None, 'Pan', 'Zoom', 'Subplots', 'Customize']
+        self.toolbar = NavigationToolbar(self.canvas, self.ui, False, button_blacklist)
         self.ui.toolbar_layout.addWidget(self.toolbar)
         self.ui.toolbar_layout.setAlignment(self.toolbar, Qt.AlignCenter)
 
@@ -498,12 +491,12 @@ class FitGrainsResultsDialog(QObject):
     def reset_view(self, direction):
         # The adjustment is to force the tick markers and label to
         # appear on one side.
-        adjust = 1.e-5
+        adjust = 1.0e-5
 
         angles_map = {
             'x': (0, 0),
             'y': (0, 90 - adjust),
-            'z': (90 - adjust, -90 - adjust)
+            'z': (90 - adjust, -90 - adjust),
         }
         self.ax.view_init(*angles_map[direction])
 
@@ -567,7 +560,7 @@ class FitGrainsResultsDialog(QObject):
             (f'ZZ {tensor_type}', 17),
             (f'YZ {tensor_type}', 18),
             (f'XZ {tensor_type}', 19),
-            (f'XY {tensor_type}', 20)
+            (f'XY {tensor_type}', 20),
         ]
 
         prev_ind = self.ui.plot_color_option.currentIndex()
@@ -686,8 +679,7 @@ class FitGrainsResultsDialog(QObject):
 
     def update_cmap(self):
         # Get the Colormap object from the name
-        self.cmap = matplotlib.colormaps.get_cmap(
-            self.ui.color_maps.currentText())
+        self.cmap = matplotlib.colormaps.get_cmap(self.ui.color_maps.currentText())
         self.update_plot()
 
     def reset_glyph_size(self, update_plot=True):
@@ -736,7 +728,8 @@ class FitGrainsResultsDialog(QObject):
 
     def on_export_workflow_clicked(self):
         selected_directory = QFileDialog.getExistingDirectory(
-                self.ui, 'Select Directory', HexrdConfig().working_dir)
+            self.ui, 'Select Directory', HexrdConfig().working_dir
+        )
 
         if not selected_directory:
             # User canceled
@@ -766,12 +759,13 @@ class FitGrainsResultsDialog(QObject):
         self.async_runner.progress_title = 'Saving workflow configuration'
         self.async_runner.run(self._save_workflow_files, selected_directory)
 
+
 if __name__ == '__main__':
     from PySide6.QtCore import QCoreApplication
     from PySide6.QtWidgets import QApplication
 
     # User specifies grains.out file
-    if (len(sys.argv) < 2):
+    if len(sys.argv) < 2:
         print()
         print('Load grains.out file and display as table')
         print('Usage: python fit_grains_resuls_model.py  <path-to-grains.out>')

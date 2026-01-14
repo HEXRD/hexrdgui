@@ -3,14 +3,20 @@ import numpy as np
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QMessageBox,
+    QSpinBox,
 )
 
 import hexrd.resources
 from hexrd.material import _angstroms, _kev, Material
 from hexrd.utils.panel_buffer import panel_buffer_as_2d_array
 from hexrd.xrdutil.phutil import (
-    JHEPinholeDistortion, RyggPinholeDistortion, LayerDistortion,
+    JHEPinholeDistortion,
+    RyggPinholeDistortion,
+    LayerDistortion,
 )
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -62,23 +68,22 @@ class PinholeCorrectionEditor(QObject):
                 w.currentIndexChanged.connect(self.on_settings_modified)
 
         self.ui.correction_type.currentIndexChanged.connect(
-            self.correction_type_changed)
+            self.correction_type_changed
+        )
 
         for w in self.apply_panel_buffer_buttons:
             w.clicked.connect(self.apply_panel_buffers)
 
         self.ui.rygg_absorption_length_selector.currentIndexChanged.connect(
-            self.on_rygg_absorption_length_selector_changed)
+            self.on_rygg_absorption_length_selector_changed
+        )
 
         HexrdConfig().material_modified.connect(self.on_material_modified)
-        HexrdConfig().beam_energy_modified.connect(
-            self.on_beam_energy_modified)
-        HexrdConfig().materials_dict_modified.connect(
-            self.on_materials_dict_modified)
+        HexrdConfig().beam_energy_modified.connect(self.on_beam_energy_modified)
+        HexrdConfig().materials_dict_modified.connect(self.on_materials_dict_modified)
         HexrdConfig().physics_package_modified.connect(self.synchronize_values)
 
-        self.ui.apply_to_polar_view.toggled.connect(
-            self.on_apply_to_polar_view_toggled)
+        self.ui.apply_to_polar_view.toggled.connect(self.on_apply_to_polar_view_toggled)
 
     def setup_layer_options(self):
         labels = list(REVERSED_LAYER_TYPES)
@@ -191,15 +196,21 @@ class PinholeCorrectionEditor(QObject):
             'layer_type': ('layer_type', 'sample'),
             'layer_standoff': ('layer_standoff', physics.window_thickness),
             'layer_thickness': ('layer_thickness', physics.sample_thickness),
-            'layer_pinhole_thickness': ('layer_pinhole_thickness',
-                                        physics.pinhole_thickness),
-            'layer_pinhole_diameter': ('layer_pinhole_diameter',
-                                       physics.pinhole_diameter),
+            'layer_pinhole_thickness': (
+                'layer_pinhole_thickness',
+                physics.pinhole_thickness,
+            ),
+            'layer_pinhole_diameter': (
+                'layer_pinhole_diameter',
+                physics.pinhole_diameter,
+            ),
             'rygg_diameter': ('pinhole_diameter', physics.pinhole_diameter),
             'rygg_thickness': ('pinhole_thickness', physics.pinhole_thickness),
             'rygg_num_phi_elements': ('num_phi_elements', 30),
             'rygg_absorption_length_value': (
-                'absorption_length', HexrdConfig().absorption_length()),
+                'absorption_length',
+                HexrdConfig().absorption_length(),
+            ),
             'jhe_diameter': ('pinhole_diameter', physics.pinhole_diameter),
             'jhe_thickness': ('pinhole_thickness', physics.pinhole_thickness),
         }
@@ -370,8 +381,7 @@ class PinholeCorrectionEditor(QObject):
                 mat_names = list(f.keys())
 
             for name in mat_names:
-                materials[name] = Material(name, file_path, dmin=dmin,
-                                           kev=energy)
+                materials[name] = Material(name, file_path, dmin=dmin, kev=energy)
 
         self.pinhole_materials = materials
 
@@ -401,8 +411,7 @@ class PinholeCorrectionEditor(QObject):
         ]
         self.ui.rygg_absorption_length_selector.addItems(options)
         self.ui.rygg_absorption_length_selector.insertSeparator(1)
-        self.ui.rygg_absorption_length_selector.insertSeparator(
-            2 + len(pinhole_names))
+        self.ui.rygg_absorption_length_selector.insertSeparator(2 + len(pinhole_names))
 
     @property
     def user_material_names_start_idx(self):
@@ -423,8 +432,7 @@ class PinholeCorrectionEditor(QObject):
             # Cannot update
             return
 
-        self.ui.rygg_absorption_length_value.setValue(
-            HexrdConfig().absorption_length())
+        self.ui.rygg_absorption_length_value.setValue(HexrdConfig().absorption_length())
 
     @property
     def none_option_visible(self):
@@ -525,8 +533,7 @@ class PinholeCorrectionEditor(QObject):
     @apply_to_polar_view.setter
     def apply_to_polar_view(self, b):
         if b:
-            obj = PolarDistortionObject(self.correction_type,
-                                        self.correction_kwargs)
+            obj = PolarDistortionObject(self.correction_type, self.correction_kwargs)
             HexrdConfig().custom_polar_tth_distortion_object = obj
             self.pinhole_distortion_object = obj
         else:
@@ -541,10 +548,10 @@ class PinholeCorrectionEditor(QObject):
     def update_polar_distortion_object(self):
         obj = self.pinhole_distortion_object
         if (
-            not obj or
-            not self.apply_to_polar_view_visible or
-            not self.apply_to_polar_view or
-            self.correction_type is None
+            not obj
+            or not self.apply_to_polar_view_visible
+            or not self.apply_to_polar_view
+            or self.correction_type is None
         ):
             return
 

@@ -1,13 +1,12 @@
-from hexrd.fitting.calibration.lmfit_param_handling import (
-    normalize_euler_convention
-)
+from hexrd.fitting.calibration.lmfit_param_handling import normalize_euler_convention
 
 from hexrdgui.calibration.calibration_dialog import TILT_LABELS_EULER
 from hexrdgui.calibration.calibration_dialog_callbacks import (
     CalibrationDialogCallbacks,
 )
 from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
-    overlays_to_tree_format, HKLPicksTreeViewDialog,
+    overlays_to_tree_format,
+    HKLPicksTreeViewDialog,
 )
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -106,8 +105,9 @@ class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
                 raise Exception(msg)
 
 
-def format_material_params_func(params_dict, tree_dict, create_param_item,
-                                overlays, calibrators):
+def format_material_params_func(
+    params_dict, tree_dict, create_param_item, overlays, calibrators
+):
     tree_dict.setdefault('Materials', {})
     for overlay, calibrator in zip(overlays, calibrators):
         if not calibrator.param_names:
@@ -118,14 +118,13 @@ def format_material_params_func(params_dict, tree_dict, create_param_item,
             for name in calibrator.param_names:
                 # Assume this for now...
                 lat_param_name = name.split('_')[-1]
-                d[lat_param_name] = create_param_item(
-                    params_dict[name]
-                )
+                d[lat_param_name] = create_param_item(params_dict[name])
         else:
             # Assume grain parameters
             d['Orientation'] = {}
             euler_convention = normalize_euler_convention(
-                HexrdConfig().euler_angle_convention)
+                HexrdConfig().euler_angle_convention
+            )
             labels = TILT_LABELS_EULER[euler_convention]
             for i in range(3):
                 param = params_dict[calibrator.param_names[i]]

@@ -8,7 +8,10 @@ import numpy as np
 from hexrd.instrument import centers_of_edge_vec
 
 from hexrdgui.indexing.spot_montage import (
-    create_labels, extract_hkls_from_spots_data, montage, SPOTS_DATA_MAP
+    create_labels,
+    extract_hkls_from_spots_data,
+    montage,
+    SPOTS_DATA_MAP,
 )
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.ui_loader import UiLoader
@@ -37,10 +40,8 @@ class ViewSpotsDialog:
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.grain_id.currentIndexChanged.connect(
-            self.grain_id_index_changed)
-        self.ui.detector.currentIndexChanged.connect(
-            self.detector_index_changed)
+        self.ui.grain_id.currentIndexChanged.connect(self.grain_id_index_changed)
+        self.ui.detector.currentIndexChanged.connect(self.detector_index_changed)
         self.ui.hkl.currentIndexChanged.connect(self.hkl_index_changed)
         self.ui.peak_id.currentIndexChanged.connect(self.update_canvas)
         self.ui.show_ome_centers.toggled.connect(self.update_canvas)
@@ -274,10 +275,7 @@ class ViewSpotsDialog:
         }
         labels = create_labels(**kwargs)
 
-        intensities = np.transpose(
-            data[data_map['patch_data']],
-            (1, 2, 0)
-        )
+        intensities = np.transpose(data[data_map['patch_data']], (1, 2, 0))
         self.intensities = intensities
 
         # make montage

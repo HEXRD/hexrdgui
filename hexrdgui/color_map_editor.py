@@ -150,9 +150,9 @@ class ColorMapEditor:
         self.bc_editor = None
 
         show_overlays = (
-            self.hide_overlays_during_bc_editing and
-            self._bc_previous_show_overlays and
-            not HexrdConfig().show_overlays
+            self.hide_overlays_during_bc_editing
+            and self._bc_previous_show_overlays
+            and not HexrdConfig().show_overlays
         )
         if show_overlays:
             # Show the overlays again

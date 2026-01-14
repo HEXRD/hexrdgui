@@ -1,6 +1,10 @@
 from PySide6.QtCore import QObject, QModelIndex, Qt
 from PySide6.QtWidgets import (
-    QCheckBox, QMenu, QMessageBox, QStyledItemDelegate, QTreeView
+    QCheckBox,
+    QMenu,
+    QMessageBox,
+    QStyledItemDelegate,
+    QTreeView,
 )
 from PySide6.QtGui import QCursor
 
@@ -48,8 +52,9 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         # If they are identical, don't do anything
         # (we exclude np.ndarray's from this)
-        is_numpy = isinstance(value, np.ndarray) or \
-            isinstance(item.data(index.column()), np.ndarray)
+        is_numpy = isinstance(value, np.ndarray) or isinstance(
+            item.data(index.column()), np.ndarray
+        )
         if not is_numpy and value == item.data(index.column()):
             return True
 
@@ -64,8 +69,12 @@ class CalTreeItemModel(BaseTreeItemModel):
             try:
                 value = type(old_value)(value)
             except ValueError:
-                msg = ('Could not convert ' + str(value) + ' to type ' +
-                       str(type(old_value).__name__))
+                msg = (
+                    'Could not convert '
+                    + str(value)
+                    + ' to type '
+                    + str(type(old_value).__name__)
+                )
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return False
 
@@ -77,9 +86,11 @@ class CalTreeItemModel(BaseTreeItemModel):
             if path == chi_path:
                 # Convert to radians before saving
                 value = np.radians(value).item()
-            if (parent == 'tilt' and
-                    HexrdConfig().rotation_matrix_euler() is not None and
-                    len(path) > 1):
+            if (
+                parent == 'tilt'
+                and HexrdConfig().rotation_matrix_euler() is not None
+                and len(path) > 1
+            ):
                 # Convert tilt values to radians before saving
                 value = np.radians(value).item()
             self.cfg.set_instrument_config_val(path, value)
@@ -103,16 +114,14 @@ class CalTreeItemModel(BaseTreeItemModel):
             'group',
         )
 
-        non_editable_parent_keys = (
-            'roi',
-        )
+        non_editable_parent_keys = ('roi',)
 
         # The second and third columns with no children are editable
         editable = (
-            index.column() == VALUE_COL and
-            item.child_count() == 0 and
-            item.data(KEY_COL) not in non_editable_keys and
-            item.parent_item.data(KEY_COL) not in non_editable_parent_keys
+            index.column() == VALUE_COL
+            and item.child_count() == 0
+            and item.data(KEY_COL) not in non_editable_keys
+            and item.parent_item.data(KEY_COL) not in non_editable_parent_keys
         )
 
         if editable:
@@ -136,7 +145,8 @@ class CalTreeItemModel(BaseTreeItemModel):
         for key in self.cfg.internal_instrument_config.keys():
             tree_item = self.add_tree_item(key, None, self.root_item)
             self.recursive_add_tree_items(
-                self.cfg.internal_instrument_config[key], tree_item)
+                self.cfg.internal_instrument_config[key], tree_item
+            )
 
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         if isinstance(cur_config, dict):
@@ -150,8 +160,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         blacklisted_keys = []
 
-        if ('source_distance' in keys and
-                cur_config['source_distance'] == np.inf):
+        if 'source_distance' in keys and cur_config['source_distance'] == np.inf:
             # Hide the source distance if it is infinite, as the infinite
             # value does not get displayed correctly by Qt
             # (maybe we need to register it as a custom type?)
@@ -178,8 +187,7 @@ class CalTreeItemModel(BaseTreeItemModel):
             chi_path = ['oscillation_stage', 'chi']
             if path == chi_path:
                 data = np.degrees(data).item()
-            elif (name == 'tilt' and
-                  HexrdConfig().rotation_matrix_euler() is not None):
+            elif name == 'tilt' and HexrdConfig().rotation_matrix_euler() is not None:
                 data = [np.degrees(rad).item() for rad in cur_config[key]]
 
             self.set_value(key, data, tree_item)
@@ -214,8 +222,7 @@ class CalTreeView(QTreeView):
     def __init__(self, parent=None):
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
-        self.setItemDelegateForColumn(
-            VALUE_COL, ValueColumnDelegate(self))
+        self.setItemDelegateForColumn(VALUE_COL, ValueColumnDelegate(self))
 
         self.expand_all_rows()
 
@@ -281,8 +288,7 @@ class CalTreeView(QTreeView):
 
             # Force open the editor for the panel buffer values
             if item.data(KEY_COL) == constants.BUFFER_KEY:
-                self.openPersistentEditor(self.model().index(i, VALUE_COL,
-                                          parent))
+                self.openPersistentEditor(self.model().index(i, VALUE_COL, parent))
 
             if collapsed_state and path in collapsed_state:
                 self.collapse(index)
@@ -292,15 +298,15 @@ class CalTreeView(QTreeView):
     def expand_selection(self, parent, index):
         for child in range(parent.child_count()):
             self.expand_selection(
-                parent.child_items[child],
-                self.model().index(child, KEY_COL, index))
+                parent.child_items[child], self.model().index(child, KEY_COL, index)
+            )
         self.expand(index)
 
     def collapse_selection(self, parent, index):
         for child in range(parent.child_count()):
             self.collapse_selection(
-                parent.child_items[child],
-                self.model().index(child, KEY_COL, index))
+                parent.child_items[child], self.model().index(child, KEY_COL, index)
+            )
         self.collapse(index)
 
     def update_collapsed_status(self, index):

@@ -7,9 +7,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.overlays import Overlay
 from hexrdgui.tree_views.base_dict_tree_item_model import BaseTreeItemModel
-from hexrdgui.tree_views.generic_picks_tree_view import (
-    GenericPicksTreeView, TreeItem
-)
+from hexrdgui.tree_views.generic_picks_tree_view import GenericPicksTreeView, TreeItem
 from hexrdgui.utils import hkl_str_to_array
 
 # Global constants

@@ -1,7 +1,11 @@
 from hexrd.xrdutil.phutil import (
-    polar_tth_corr_map_rygg_pinhole, JHEPinholeDistortion,
-    RyggPinholeDistortion, LayerDistortion, tth_corr_map_pinhole,
-    tth_corr_map_rygg_pinhole, tth_corr_map_layer,
+    polar_tth_corr_map_rygg_pinhole,
+    JHEPinholeDistortion,
+    RyggPinholeDistortion,
+    LayerDistortion,
+    tth_corr_map_pinhole,
+    tth_corr_map_rygg_pinhole,
+    tth_corr_map_layer,
 )
 
 
@@ -10,8 +14,10 @@ class PolarDistortionObject:
 
     The PowderOverlay class inherits from this.
     """
-    def __init__(self, pinhole_distortion_type, pinhole_distortion_kwargs,
-                 name='[Custom]'):
+
+    def __init__(
+        self, pinhole_distortion_type, pinhole_distortion_kwargs, name='[Custom]'
+    ):
         self.pinhole_distortion_type = pinhole_distortion_type
         self.pinhole_distortion_kwargs = pinhole_distortion_kwargs
         self.name = name

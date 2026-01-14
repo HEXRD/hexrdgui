@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout
 
 from hexrdgui.tree_views.base_dict_tree_item_model import (
-    BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
+    BaseTreeItemModel,
+    BaseDictTreeItemModel,
+    BaseDictTreeView,
 )
 from hexrdgui.tree_views.tree_item import TreeItem
 from hexrdgui.tree_views.value_column_delegate import ValueColumnDelegate
@@ -49,8 +51,7 @@ class DictTreeView(BaseDictTreeView):
         super().__init__(parent)
 
         self.setModel(model(dictionary, parent=self))
-        self.setItemDelegateForColumn(
-            VALUE_COL, ValueColumnDelegate(self))
+        self.setItemDelegateForColumn(VALUE_COL, ValueColumnDelegate(self))
 
         self.resizeColumnToContents(KEY_COL)
         self.resizeColumnToContents(VALUE_COL)

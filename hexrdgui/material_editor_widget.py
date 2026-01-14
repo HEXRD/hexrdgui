@@ -36,8 +36,7 @@ class MaterialEditorWidget(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.lattice_type.currentIndexChanged.connect(
-            self.lattice_type_changed)
+        self.ui.lattice_type.currentIndexChanged.connect(self.lattice_type_changed)
 
         for w in self.lattice_length_widgets:
             w.valueChanged.connect(self.lattice_length_modified)
@@ -46,10 +45,12 @@ class MaterialEditorWidget(QObject):
             w.valueChanged.connect(self.lattice_angle_modified)
 
         self.ui.space_group.currentIndexChanged.connect(
-            self.space_group_number_modified)
+            self.space_group_number_modified
+        )
 
         self.ui.space_group_setting.currentIndexChanged.connect(
-            self.space_group_setting_modified)
+            self.space_group_setting_modified
+        )
 
         full_idx_setters = [
             self.ui.hall_symbol,
@@ -63,12 +64,11 @@ class MaterialEditorWidget(QObject):
 
         # Flag overlays using this material for an update
         self.material_modified.connect(
-            lambda: HexrdConfig().flag_overlay_updates_for_material(
-                self.material.name))
+            lambda: HexrdConfig().flag_overlay_updates_for_material(self.material.name)
+        )
 
         # Emit that the ring config changed when the material is modified
-        self.material_modified.connect(
-            HexrdConfig().overlay_config_changed.emit)
+        self.material_modified.connect(HexrdConfig().overlay_config_changed.emit)
 
     def setup_space_group_widgets(self):
         self.ui.lattice_type.addItems(list(spacegroup._rqpDict.keys()))
@@ -205,8 +205,7 @@ class MaterialEditorWidget(QObject):
         set_combobox_enabled_items(self.ui.space_group, enable_list)
 
         # Now, do the enable list for the other combo boxes
-        enable_list = np.isin(_space_groups_without_settings,
-                              valid_space_groups)
+        enable_list = np.isin(_space_groups_without_settings, valid_space_groups)
 
         cb_list = [
             self.ui.hall_symbol,
@@ -292,7 +291,7 @@ class MaterialEditorWidget(QObject):
             m = self.material
             reqp = spacegroup.SpaceGroup(m.sgnum).reqParams
             nreq = len(reqp)
-            lp_red = nreq*[0.0]
+            lp_red = nreq * [0.0]
             for i in range(nreq):
                 boxi = self.lattice_widgets[reqp[i]]
                 lp_red[i] = boxi.value()
@@ -357,4 +356,5 @@ _ltype_to_sgrange = {
 
 _all_space_groups = list(spacegroup.sgid_to_hall.keys())
 _space_groups_without_settings = np.array(
-    [int(x.split(':')[0]) for x in _all_space_groups])
+    [int(x.split(':')[0]) for x in _all_space_groups]
+)

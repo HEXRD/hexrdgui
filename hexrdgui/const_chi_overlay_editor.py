@@ -3,8 +3,15 @@ import re
 from PySide6.QtCore import QObject, QTimer, Qt, Signal
 from PySide6.QtGui import QCursor, QKeyEvent
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QMenu, QSpinBox,
-    QStyledItemDelegate, QTableWidgetItem, QWidget
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QHBoxLayout,
+    QMenu,
+    QSpinBox,
+    QStyledItemDelegate,
+    QTableWidgetItem,
+    QWidget,
 )
 
 from hexrdgui.hexrd_config import HexrdConfig
@@ -12,7 +19,9 @@ from hexrdgui.overlays.const_chi_overlay import ChiValue
 from hexrdgui.tree_views.dict_tree_view import DictTreeItemModel, DictTreeView
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import (
-    block_signals, euler_angles_to_exp_map, exp_map_to_euler_angles
+    block_signals,
+    euler_angles_to_exp_map,
+    exp_map_to_euler_angles,
 )
 from hexrdgui.utils.const_chi import calc_angles_for_fiber
 
@@ -60,26 +69,23 @@ class ConstChiOverlayEditor(QObject):
                 w.currentIndexChanged.connect(self.update_config)
 
         HexrdConfig().euler_angle_convention_changed.connect(
-            self.euler_angle_convention_changed)
+            self.euler_angle_convention_changed
+        )
         HexrdConfig().sample_tilt_modified.connect(self.update_gui)
 
-        self.ui.add_chi_value_row.clicked.connect(
-            self.add_chi_value)
+        self.ui.add_chi_value_row.clicked.connect(self.add_chi_value)
         self.chi_table.itemChanged.connect(self.update_config)
         self.chi_table.itemSelectionChanged.connect(self.update_enable_states)
 
-        self.ui.delete_selected_chi_values.clicked.connect(
-            self.delete_selected_rows)
+        self.ui.delete_selected_chi_values.clicked.connect(self.delete_selected_rows)
 
         for w in self.fiber_widgets:
             w.valueChanged.connect(self.update_fiber_tree)
 
         self.fiber_tree.selection_changed.connect(self.update_enable_states)
-        self.fiber_tree.add_selected_chi_values.connect(
-            self.add_selected_chi_values)
+        self.fiber_tree.add_selected_chi_values.connect(self.add_selected_chi_values)
 
-        self.ui.add_selected_chi_values.clicked.connect(
-            self.add_selected_chi_values)
+        self.ui.add_selected_chi_values.clicked.connect(self.add_selected_chi_values)
 
     def eventFilter(self, obj, event):
         if obj is self.chi_table:
@@ -247,11 +253,15 @@ class ConstChiOverlayEditor(QObject):
         results = []
         table = self.chi_table
         for i in range(table.rowCount()):
-            results.append(ChiValue(**{
-                'value': float(table.item(i, COLUMNS['value']).text()),
-                'hkl': table.item(i, COLUMNS['hkl']).text(),
-                'visible': self.visibility_boxes[i].isChecked(),
-            }))
+            results.append(
+                ChiValue(
+                    **{
+                        'value': float(table.item(i, COLUMNS['value']).text()),
+                        'hkl': table.item(i, COLUMNS['hkl']).text(),
+                        'visible': self.visibility_boxes[i].isChecked(),
+                    }
+                )
+            )
 
         return results
 
@@ -286,11 +296,17 @@ class ConstChiOverlayEditor(QObject):
         if unique_value is None:
             raise Exception('Unable to create a unique chi value')
 
-        self.add_chi_values([ChiValue(**{
-            'value': unique_value,
-            'hkl': 'None',
-            'visible': True,
-        })])
+        self.add_chi_values(
+            [
+                ChiValue(
+                    **{
+                        'value': unique_value,
+                        'hkl': 'None',
+                        'visible': True,
+                    }
+                )
+            ]
+        )
 
     def add_chi_values(self, v):
         self.chi_values_config = self.chi_values_config + v
@@ -361,11 +377,16 @@ class ConstChiOverlayEditor(QObject):
         self.fiber_tree.expand_rows(rows=[0, 1, 2])
 
     def add_selected_chi_values(self):
-        self.add_chi_values([{
-            'value': x.data(1),
-            'hkl': x.parent_item.data(0),
-            'visible': True,
-        } for x in self.fiber_tree.selected_items])
+        self.add_chi_values(
+            [
+                {
+                    'value': x.data(1),
+                    'hkl': x.parent_item.data(0),
+                    'visible': True,
+                }
+                for x in self.fiber_tree.selected_items
+            ]
+        )
 
 
 class FloatTableItem(QTableWidgetItem):
@@ -455,9 +476,11 @@ class FiberTreeView(DictTreeView):
 
         if len(path) == 2 and selected_items:
             # Find the selected items
-            add_actions({
-                'Add Chi Values': self.add_selected_chi_values.emit,
-            })
+            add_actions(
+                {
+                    'Add Chi Values': self.add_selected_chi_values.emit,
+                }
+            )
 
         if not actions:
             # No context menu

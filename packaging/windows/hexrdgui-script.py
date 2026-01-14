@@ -8,7 +8,7 @@ from pathlib import Path
 # Start in the bin directory so that everything load OK. Also patch the path so DLL can be found
 bin_path = Path(__file__).parent / '..' / 'Library' / 'bin'
 os.chdir(bin_path)
-os.environ['PATH'] = '%s;%s' % (os.environ['PATH'],  bin_path)
+os.environ['PATH'] = '%s;%s' % (os.environ['PATH'], bin_path)
 
 from hexrdgui.main import main
 

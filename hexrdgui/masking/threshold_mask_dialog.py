@@ -25,8 +25,7 @@ class ThresholdMaskDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/masking/#threshold')
+        add_help_url(self.ui.button_box, 'configuration/masking/#threshold')
 
         self.values = []
 
@@ -53,8 +52,7 @@ class ThresholdMaskDialog(QObject):
         apply_button = self.ui.button_box.button(QDialogButtonBox.Apply)
         apply_button.clicked.connect(self.accept)
         reset_button = self.ui.button_box.button(QDialogButtonBox.RestoreDefaults)
-        reset_button.clicked.connect(
-            functools.partial(self.setup_gui, reset=True))
+        reset_button.clicked.connect(functools.partial(self.setup_gui, reset=True))
 
     def gather_input(self):
         self.values.clear()
@@ -64,8 +62,7 @@ class ThresholdMaskDialog(QObject):
     def accept(self):
         self.gather_input()
         if MaskManager().threshold_mask is None:
-            MaskManager().add_mask(
-                self.values, MaskType.threshold, name='threshold')
+            MaskManager().add_mask(self.values, MaskType.threshold, name='threshold')
         else:
             MaskManager().threshold_mask.data = self.values
         self.mask_applied.emit()

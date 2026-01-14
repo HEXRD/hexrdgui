@@ -49,12 +49,12 @@ class InstrumentViewer:
 
         dist = HexrdConfig().cartesian_virtual_plane_distance
         sgn = get_xray_propagation_sign(self.instr)
-        dplane_tvec = np.array([0., 0., sgn*dist])
+        dplane_tvec = np.array([0.0, 0.0, sgn * dist])
 
         rotate_x = HexrdConfig().cartesian_plane_normal_rotate_x
         rotate_y = HexrdConfig().cartesian_plane_normal_rotate_y
 
-        dplane_tilt = np.radians(np.array(([rotate_x, rotate_y, 0.])))
+        dplane_tilt = np.radians(np.array(([rotate_x, rotate_y, 0.0])))
 
         self.dplane = DisplayPlane(tvec=dplane_tvec, tilt=dplane_tilt)
         self.update_panel_sizes()
@@ -68,9 +68,11 @@ class InstrumentViewer:
     def check_keys_match(self):
         # Make sure each key in the image dict is in the panel_ids
         if self.images_dict.keys() != self.instr._detectors.keys():
-            msg = ('Images do not match the panel ids!\n'
-                   f'Images: {str(list(self.images_dict.keys()))}\n'
-                   f'PanelIds: {str(list(self.instr._detectors.keys()))}')
+            msg = (
+                'Images do not match the panel ids!\n'
+                f'Images: {str(list(self.images_dict.keys()))}\n'
+                f'PanelIds: {str(list(self.instr._detectors.keys()))}'
+            )
             raise Exception(msg)
 
     def check_angles_feasible(self):
@@ -113,10 +115,12 @@ class InstrumentViewer:
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
 
     def make_dpanel(self):
-        self.dpanel = self.dplane.display_panel(self.dpanel_sizes,
-                                                self.pixel_size,
-                                                self.instr.beam_vector,
-                                                self.instr.source_distance)
+        self.dpanel = self.dplane.display_panel(
+            self.dpanel_sizes,
+            self.pixel_size,
+            self.instr.beam_vector,
+            self.instr.source_distance,
+        )
         self.dpanel.name = 'dpanel'
         self.dpanel._distortion = FakeDistortionObject(self.dpanel, self.instr)
 
@@ -197,8 +201,10 @@ class InstrumentViewer:
 
             def out_of_frame(p):
                 # Check if point p is out of the frame
-                return (not x_range[0] <= p[0] <= x_range[1] or
-                        not y_range[0] <= p[1] <= y_range[1])
+                return (
+                    not x_range[0] <= p[0] <= x_range[1]
+                    or not y_range[0] <= p[1] <= y_range[1]
+                )
 
             def move_point_into_frame(p, p2):
                 # Make sure we don't divide by zero
@@ -264,14 +270,14 @@ class InstrumentViewer:
 
         # map corners
         corners = np.vstack(
-            [panel.corner_ll,
-             panel.corner_lr,
-             panel.corner_ur,
-             panel.corner_ul,
-             ]
+            [
+                panel.corner_ll,
+                panel.corner_lr,
+                panel.corner_ur,
+                panel.corner_ul,
+            ]
         )
-        mp = panel.map_to_plane(corners, self.dplane.rmat,
-                                self.dplane.tvec)
+        mp = panel.map_to_plane(corners, self.dplane.rmat, self.dplane.tvec)
 
         col_edges = self.dpanel.col_edge_vec
         row_edges = self.dpanel.row_edge_vec
@@ -289,9 +295,13 @@ class InstrumentViewer:
         tform3 = tf.ProjectiveTransform()
         tform3.estimate(src, dst)
 
-        res = tf.warp(img, tform3,
-                      output_shape=(self.dpanel.rows, self.dpanel.cols),
-                      preserve_range=True, cval=np.nan)
+        res = tf.warp(
+            img,
+            tform3,
+            output_shape=(self.dpanel.rows, self.dpanel.cols),
+            preserve_range=True,
+            cval=np.nan,
+        )
         nan_mask = np.isnan(res)
 
         self.warp_dict[detector_id] = np.ma.masked_array(
@@ -320,7 +330,7 @@ class InstrumentViewer:
 
         # In case there were any nans...
         nan_mask = np.isnan(img)
-        self.img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.)
+        self.img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.0)
 
     def update_images_dict(self):
         if HexrdConfig().any_intensity_corrections:
@@ -343,8 +353,10 @@ class InstrumentViewer:
         # This is so that interactively moving detectors outside of the
         # image will trigger a resize.
         new_panel_size = self.dplane.panel_size(self.instr)
-        if (self.dpanel_sizes[0] < new_panel_size[0] or
-                self.dpanel_sizes[1] < new_panel_size[1]):
+        if (
+            self.dpanel_sizes[0] < new_panel_size[0]
+            or self.dpanel_sizes[1] < new_panel_size[1]
+        ):
             # The panel size has increased. Let's re-create the display panel
             # We will only increase the panel size in this function.
             # Also bump up the sizes by 15% as well for better interaction.
@@ -392,6 +404,7 @@ class FakeDistortionObject:
 
     This maps the xys to the correct panel and applies the distortion
     """
+
     def __init__(self, dpanel, instr):
         self.dpanel = dpanel
         self.instr = instr

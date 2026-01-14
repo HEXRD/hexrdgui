@@ -17,8 +17,7 @@ class PinholeMaskDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('pinhole_mask_dialog.ui', parent)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/masking/#pinhole')
+        add_help_url(self.ui.button_box, 'configuration/masking/#pinhole')
 
         self.set_values()
         self.setup_connections()
@@ -41,9 +40,11 @@ class PinholeMaskDialog(QObject):
 
     def set_values(self):
         self.ui.pinhole_diameter.setValue(
-            HexrdConfig().physics_package.pinhole_diameter)
+            HexrdConfig().physics_package.pinhole_diameter
+        )
         self.ui.pinhole_thickness.setValue(
-            HexrdConfig().physics_package.pinhole_thickness)
+            HexrdConfig().physics_package.pinhole_thickness
+        )
 
     def save_settings(self):
         for name in self.settings:

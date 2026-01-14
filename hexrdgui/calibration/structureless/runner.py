@@ -75,10 +75,7 @@ class StructurelessCalibrationRunner(QObject):
 
         distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
         distortion_object = HexrdConfig().polar_tth_distortion_object
-        if (
-                distortion_overlay is not None and
-                distortion_object is distortion_overlay
-           ):
+        if distortion_overlay is not None and distortion_object is distortion_overlay:
             msg = (
                 'tth distortion to the polar view from an overlay '
                 'is not supported during structureless calibration.\n\n'
@@ -146,9 +143,7 @@ class StructurelessCalibrationRunner(QObject):
 
         # We don't support viewing these yet, so hide it
         picker.ui.view_picks.setVisible(False)
-        picker.start_new_line_label = (
-            'Right-click to move on to the next ring.'
-        )
+        picker.start_new_line_label = 'Right-click to move on to the next ring.'
 
         ring_idx = 0
 
@@ -179,9 +174,7 @@ class StructurelessCalibrationRunner(QObject):
         # Wait until canvas finishes updating
         progress_dialog = ProgressDialog(self.canvas)
         progress_dialog.setRange(0, 0)
-        progress_dialog.setWindowTitle(
-            f'Switching beam to {xray_source}'
-        )
+        progress_dialog.setWindowTitle(f'Switching beam to {xray_source}')
         progress_dialog.show()
         while self.canvas.iviewer is None:
             # We must process events so that when the polar view has been
@@ -199,8 +192,11 @@ class StructurelessCalibrationRunner(QObject):
         while True:
             # Pick from a file
             selected_file, selected_filter = QFileDialog.getOpenFileName(
-                self.file_dialog_parent, title, HexrdConfig().working_dir,
-                'HDF5 files (*.h5 *.hdf5)')
+                self.file_dialog_parent,
+                title,
+                HexrdConfig().working_dir,
+                'HDF5 files (*.h5 *.hdf5)',
+            )
 
             if not selected_file:
                 # User canceled
@@ -275,8 +271,8 @@ class StructurelessCalibrationRunner(QObject):
         self.calibrator = StructurelessCalibrator(**kwargs)
 
         prefixes = tth_parameter_prefixes(self.instr)
-        def format_extra_params_func(params_dict, tree_dict,
-                                     create_param_item):
+
+        def format_extra_params_func(params_dict, tree_dict, create_param_item):
             # Make the debye scherrer ring means
             key = 'Debye-Scherrer ring means'
             base_dict = tree_dict.setdefault(key, {})
@@ -305,15 +301,17 @@ class StructurelessCalibrationRunner(QObject):
             'parent': self.parent,
             'engineering_constraints': engineering_constraints,
             'window_title': 'Structureless Calibration Dialog',
-            'help_url': 'calibration/structureless'
+            'help_url': 'calibration/structureless',
         }
         dialog = CalibrationDialog(**kwargs)
 
         # Connect interactions to functions
         self._dialog_callback_handler = StructurelessCalibrationCallbacks(
-            dialog, self.calibrator, self.instr, self.async_runner)
+            dialog, self.calibrator, self.instr, self.async_runner
+        )
         self._dialog_callback_handler.instrument_updated.connect(
-            self.instrument_updated.emit)
+            self.instrument_updated.emit
+        )
         dialog.show()
 
         self._calibration_dialog = dialog
@@ -375,8 +373,7 @@ def polar_lines_to_cart(data, instr):
             if line.size == 0:
                 continue
 
-            line = apply_tth_distortion_if_needed(line, in_degrees=True,
-                                                  reverse=True)
+            line = apply_tth_distortion_if_needed(line, in_degrees=True, reverse=True)
 
             calibrator_line = {}
             panel_found = np.zeros(line.shape[0], dtype=bool)
@@ -482,16 +479,17 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         for xray_source, lines in polar_lines.items():
             if not self.showing_picks_from_all_xray_sources:
                 if (
-                    HexrdConfig().has_multi_xrs and
-                    xray_source != HexrdConfig().active_beam_name
+                    HexrdConfig().has_multi_xrs
+                    and xray_source != HexrdConfig().active_beam_name
                 ):
                     # Skip over all x-ray sources except the active one
                     continue
 
             for points in lines:
                 color = next(color_cycler)
-                artist, = self.canvas.axis.plot(points[:, 0], points[:, 1],
-                                                color=color, **line_settings)
+                (artist,) = self.canvas.axis.plot(
+                    points[:, 0], points[:, 1], color=color, **line_settings
+                )
                 self.draw_picks_lines.append(artist)
 
         self.canvas.draw_idle()
@@ -512,9 +510,9 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
             ring_indices[xray_source] = ring_idx
 
             if (
-                HexrdConfig().has_multi_xrs and
-                not self.showing_picks_from_all_xray_sources and
-                xray_source != HexrdConfig().active_beam_name
+                HexrdConfig().has_multi_xrs
+                and not self.showing_picks_from_all_xray_sources
+                and xray_source != HexrdConfig().active_beam_name
             ):
                 disabled_paths.append((xray_source,))
 
@@ -524,8 +522,9 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
             ring_indices[xray_source] += 1
             return f'DS ring {ring_indices[xray_source] + 1}'
 
-        dialog = GenericPicksTreeViewDialog(dictionary, canvas=self.canvas,
-                                            parent=self.canvas)
+        dialog = GenericPicksTreeViewDialog(
+            dictionary, canvas=self.canvas, parent=self.canvas
+        )
         dialog.tree_view.new_line_name_generator = new_line_name_generator
         dialog.tree_view.model().disabled_paths = disabled_paths
         dialog.accepted.connect(self.on_edit_picks_accepted)

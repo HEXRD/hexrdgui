@@ -25,6 +25,7 @@ def log_log_sqrt(x: np.ndarray) -> np.ndarray:
     y = np.log(np.log(np.sqrt(x + 1) + 1) + 1)
     return y - np.nanmin(y)
 
+
 # This decorator automatically rescales the transform output to have
 # the same range as the transform input.
 def rescale_to_original(func):

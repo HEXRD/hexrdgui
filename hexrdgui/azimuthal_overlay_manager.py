@@ -1,8 +1,13 @@
 import random
 from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QHBoxLayout, QHeaderView, QSizePolicy,
-    QTableWidgetItem, QWidget
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QHeaderView,
+    QSizePolicy,
+    QTableWidgetItem,
+    QWidget,
 )
 from hexrdgui import utils
 
@@ -38,17 +43,16 @@ class AzimuthalOverlayManager:
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.table.selectionModel().selectionChanged.connect(
-            self.selection_changed)
+        self.ui.table.selectionModel().selectionChanged.connect(self.selection_changed)
         self.ui.table.itemChanged.connect(self.table_item_changed)
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
         self.ui.show_legend.toggled.connect(self.show_legend)
-        self.ui.show_legend.setChecked(
-            HexrdConfig().show_azimuthal_legend)
+        self.ui.show_legend.setChecked(HexrdConfig().show_azimuthal_legend)
         self.ui.save_plot.clicked.connect(
-            HexrdConfig().azimuthal_plot_save_requested.emit)
+            HexrdConfig().azimuthal_plot_save_requested.emit
+        )
         HexrdConfig().materials_added.connect(self.update_table)
         HexrdConfig().material_renamed.connect(self.on_material_renamed)
         HexrdConfig().materials_removed.connect(self.update_table)
@@ -102,10 +106,7 @@ class AzimuthalOverlayManager:
         self.ui.table.clearContents()
 
     def update_table(self):
-        block_list = [
-            self.ui.table,
-            self.ui.table.selectionModel()
-        ]
+        block_list = [self.ui.table, self.ui.table.selectionModel()]
 
         with block_signals(*block_list):
             prev_selected = self.selected_row
@@ -124,7 +125,8 @@ class AzimuthalOverlayManager:
 
             if prev_selected is not None:
                 select_row = (
-                    prev_selected if prev_selected < len(self.overlays)
+                    prev_selected
+                    if prev_selected < len(self.overlays)
                     else len(self.overlays) - 1
                 )
                 self.select_row(select_row)
@@ -136,7 +138,8 @@ class AzimuthalOverlayManager:
             # Force it to stretch manually.
             last_column = max(v for v in COLUMNS.values())
             self.ui.table.horizontalHeader().setSectionResizeMode(
-                last_column, QHeaderView.Stretch)
+                last_column, QHeaderView.Stretch
+            )
 
             # Just in case the selection actually changed...
             self.selection_changed()
@@ -252,7 +255,7 @@ class AzimuthalOverlayManager:
             'material': self.active_material_name,
             'visible': True,
             'fwhm': 2.0,
-            'scale': np.max(sum)/100,
+            'scale': np.max(sum) / 100,
             'color': f'#{random.randint(0, 0xFFFFFF):06x}',
             'opacity': 0.3,
         }
@@ -270,8 +273,7 @@ class AzimuthalOverlayManager:
         HexrdConfig().azimuthal_options_modified.emit()
 
     def edit_style(self):
-        self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay,
-                                                         self.ui)
+        self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay, self.ui)
         self._style_picker.exec()
 
     def show_legend(self, value):

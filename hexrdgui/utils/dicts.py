@@ -13,9 +13,7 @@ def ensure_all_keys_match(dict1, dict2):
         if this_keys != other_keys:
             this_keys_str = ', '.join(f'"{x}"' for x in this_keys)
             other_keys_str = ', '.join(f'"{x}"' for x in other_keys)
-            msg = (
-                f'keys1 {this_keys_str} failed to match keys2 {other_keys_str}'
-            )
+            msg = f'keys1 {this_keys_str} failed to match keys2 {other_keys_str}'
             if path:
                 path_str = ' -> '.join(path)
                 msg += f' for path "{path_str}"'

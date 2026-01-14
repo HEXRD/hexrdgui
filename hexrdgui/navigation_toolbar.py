@@ -8,8 +8,14 @@ class NavigationToolbar(NavigationToolbar2QT):
 
     default_button_blacklist = ['Subplots', 'Customize']
 
-    def __init__(self, canvas, parent, coordinates=True,
-                 button_blacklist=None, tight_savefig=True):
+    def __init__(
+        self,
+        canvas,
+        parent,
+        coordinates=True,
+        button_blacklist=None,
+        tight_savefig=True,
+    ):
         # This adds the option to blacklist some of the buttons for the
         # toolbar. Options are currently: Home, Back, Forward, Pan, Zoom,
         # Subplots, Save.
@@ -23,8 +29,7 @@ class NavigationToolbar(NavigationToolbar2QT):
 
         old_toolitems = NavigationToolbar2QT.toolitems
         NavigationToolbar2QT.toolitems = [
-            x for x in NavigationToolbar2QT.toolitems
-            if x[0] not in button_blacklist
+            x for x in NavigationToolbar2QT.toolitems if x[0] not in button_blacklist
         ]
 
         super().__init__(canvas, parent, coordinates)

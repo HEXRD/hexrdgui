@@ -7,8 +7,8 @@ from matplotlib import cm
 import numpy as np
 
 # Wavelength to kilo electron volt conversion
-WAVELENGTH_TO_KEV = constants.keVToAngstrom(1.)
-KEV_TO_WAVELENGTH = constants.keVToAngstrom(1.)
+WAVELENGTH_TO_KEV = constants.keVToAngstrom(1.0)
+KEV_TO_WAVELENGTH = constants.keVToAngstrom(1.0)
 MAXIMUM_OMEGA_RANGE = 360
 
 DEFAULT_CMAP = 'Greys'
@@ -57,10 +57,7 @@ class PolarXAxisType:
     q = 'q'
 
 
-DEFAULT_EULER_ANGLE_CONVENTION = {
-    'axes_order': 'xyz',
-    'extrinsic': True
-}
+DEFAULT_EULER_ANGLE_CONVENTION = {'axes_order': 'xyz', 'extrinsic': True}
 
 DEFAULT_WPPF_PLOT_STYLE = {
     'marker': 'x',
@@ -94,7 +91,7 @@ DOCUMENTATION_URL = 'https://hexrdgui.readthedocs.io/'
 
 FIDDLE_HDF5_PATH = [
     'ATTRIBUTES/SHOT_IMAGE/ATTRIBUTES/FRAME_IMAGESFRAME_IMAGES/0/DATA',
-    'DATA'
+    'DATA',
 ]
 
 KNOWN_HDF5_PATHS = [
@@ -110,7 +107,14 @@ KNOWN_HDF5_PATHS = [
 ]
 
 DEFAULT_LIMITED_CMAPS = [
-    'Greys', 'inferno', 'plasma', 'viridis', 'magma', 'Reds', 'Blues']
+    'Greys',
+    'inferno',
+    'plasma',
+    'viridis',
+    'magma',
+    'Reds',
+    'Blues',
+]
 ALL_CMAPS = sorted(i[:-2] for i in dir(cm) if i.endswith('_r'))
 
 
@@ -149,7 +153,7 @@ KNOWN_DETECTOR_NAMES = {
     'EIGER_COMPOSITE': [
         'eiger_0_0',
         # There are others, but let's just check the first one
-    ]
+    ],
 }
 
 KEY_ROTATE_ANGLE_FINE = 0.00175
@@ -164,7 +168,7 @@ TRANSFORM_OPTIONS = [
     "Transpose",
     "Rotate 90°",
     "Rotate 180°",
-    "Rotate 270°"
+    "Rotate 270°",
 ]
 
 FIDDLE_FRAMES = 4
@@ -172,39 +176,43 @@ FIDDLE_FRAMES = 4
 # These are the coordinates of markers in the FIDDLE barrel as measured on the
 # CMM machine. The coordinates of the corners of the detectors are defined with
 # respect to these coordinates.
-FIDDLE_SMR_CMM = np.array([
-[43.972019, -106.1935, 64.037102],
-[-81.404037,-81.252281, 63.97414],
-[-0.052700002, 0.0232, 45.5084],
-[43.992062, 106.41276, 64.018463],
-[-81.384537, 81.431839, 63.94804],
-])
+FIDDLE_SMR_CMM = np.array(
+    [
+        [43.972019, -106.1935, 64.037102],
+        [-81.404037, -81.252281, 63.97414],
+        [-0.052700002, 0.0232, 45.5084],
+        [43.992062, 106.41276, 64.018463],
+        [-81.384537, 81.431839, 63.94804],
+    ]
+)
 
 # Corners of the icarus sensors
-FIDDLE_ICARUS_CORNERS_CMM = np.array([
-    # CAMERA-2
-    [31.937,  5.6820002,   -8.5372839],
-    [57.692001,   5.5879998,   -8.6448994],
-    [57.737,  18.537001,   -8.5957537],
-    [31.987,  18.629999,   -8.488966],
-    # CAMERA-3
-    [20.086, -17.768, -8.4924898],
-    [45.838001,   -17.684, -8.6409159],
-    [45.794998,   -4.7360001,  -8.5523138],
-    [20.045,  -4.8189998,  -8.4037161],
-    # CAMERA-5
-    [-18.223, -53.772999,  -8.6976423],
-    [-5.276,  -53.859001,  -8.6674118],
-    [-5.0999999,  -28.108999,  -8.4557629],
-    [-18.051001,  -28.018, -8.485177],
-    # CAMERA-7
-    [-58.099998,  5.6259999,   -8.5679913],
-    [-32.348, 5.573,   -8.2579985],
-    [-32.321999,  18.521999,   -8.2983227],
-    [-58.073002,  18.573999,   -8.6142473],
-    # CAMERA-8
-    [-58.043999,  28.996,  -8.6096296],
-    [-32.297001,  28.989,  -8.2864666],
-    [-32.291, 41.937,  -8.3263569],
-    [-58.040001,  41.943001,   -8.6484022],
-])
+FIDDLE_ICARUS_CORNERS_CMM = np.array(
+    [
+        # CAMERA-2
+        [31.937, 5.6820002, -8.5372839],
+        [57.692001, 5.5879998, -8.6448994],
+        [57.737, 18.537001, -8.5957537],
+        [31.987, 18.629999, -8.488966],
+        # CAMERA-3
+        [20.086, -17.768, -8.4924898],
+        [45.838001, -17.684, -8.6409159],
+        [45.794998, -4.7360001, -8.5523138],
+        [20.045, -4.8189998, -8.4037161],
+        # CAMERA-5
+        [-18.223, -53.772999, -8.6976423],
+        [-5.276, -53.859001, -8.6674118],
+        [-5.0999999, -28.108999, -8.4557629],
+        [-18.051001, -28.018, -8.485177],
+        # CAMERA-7
+        [-58.099998, 5.6259999, -8.5679913],
+        [-32.348, 5.573, -8.2579985],
+        [-32.321999, 18.521999, -8.2983227],
+        [-58.073002, 18.573999, -8.6142473],
+        # CAMERA-8
+        [-58.043999, 28.996, -8.6096296],
+        [-32.297001, 28.989, -8.2864666],
+        [-32.291, 41.937, -8.3263569],
+        [-58.040001, 41.943001, -8.6484022],
+    ]
+)

@@ -9,8 +9,11 @@ from hexrd import indexer, instrument
 from hexrd.cli.find_orientations import write_scored_orientations
 from hexrd.cli.fit_grains import write_results as write_fit_grains_results
 from hexrd.findorientations import (
-    create_clustering_parameters, filter_maps_if_requested,
-    generate_eta_ome_maps, generate_orientation_fibers, run_cluster
+    create_clustering_parameters,
+    filter_maps_if_requested,
+    generate_eta_ome_maps,
+    generate_orientation_fibers,
+    run_cluster,
 )
 from hexrd.fitgrains import fit_grains
 from hexrd.xrdutil import EtaOmeMaps
@@ -18,7 +21,8 @@ from hexrd.xrdutil import EtaOmeMaps
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing.create_config import (
-    create_indexing_config, get_indexing_material
+    create_indexing_config,
+    get_indexing_material,
 )
 from hexrdgui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrdgui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
@@ -253,9 +257,11 @@ class IndexingRunner(Runner):
         qfib_warning_threshold = 1e8
         if self.qfib.shape[1] > qfib_warning_threshold:
             formatted = format_big_int(self.qfib.shape[1])
-            msg = (f'Over {formatted} test orientations were '
-                   'generated. This may use up too much memory.\n\n'
-                   'Proceed anyways?')
+            msg = (
+                f'Over {formatted} test orientations were '
+                'generated. This may use up too much memory.\n\n'
+                'Proceed anyways?'
+            )
 
             response = QMessageBox.question(self.parent, 'WARNING', msg)
             if response == QMessageBox.No:
@@ -285,7 +291,8 @@ class IndexingRunner(Runner):
             omePeriod=np.radians(config.find_orientations.omega.period),
             threshold=config.find_orientations.threshold,
             doMultiProc=ncpus > 1,
-            nCPUs=ncpus)
+            nCPUs=ncpus,
+        )
         print('paintGrid complete')
 
         orientations_cfg = HexrdConfig().indexing_config['find_orientations']
@@ -294,7 +301,7 @@ class IndexingRunner(Runner):
             results = {}
             results['scored_orientations'] = {
                 'test_quaternions': self.qfib,
-                'score': self.completeness
+                'score': self.completeness,
             }
             print(f'Writing scored orientations in {config.working_dir} ...')
             write_scored_orientations(results, config)
@@ -309,9 +316,11 @@ class IndexingRunner(Runner):
         num_orientations_warning_threshold = 1e6
         if num_orientations > num_orientations_warning_threshold:
             formatted = format_big_int(num_orientations)
-            msg = (f'Over {formatted} orientations are staged for '
-                   'clustering. This may use up too much memory.\n\n'
-                   'Proceed anyways?')
+            msg = (
+                f'Over {formatted} orientations are staged for '
+                'clustering. This may use up too much memory.\n\n'
+                'Proceed anyways?'
+            )
 
             response = QMessageBox.question(self.parent, 'WARNING', msg)
             if response == QMessageBox.No:
@@ -323,8 +332,9 @@ class IndexingRunner(Runner):
         worker = AsyncWorker(self.run_cluster_functions)
         self.thread_pool.start(worker)
 
-        worker.signals.result.connect(self._on_run_cluster_functions_finished,
-                                      Qt.QueuedConnection)
+        worker.signals.result.connect(
+            self._on_run_cluster_functions_finished, Qt.QueuedConnection
+        )
         worker.signals.error.connect(self.on_async_error)
 
     def _on_run_cluster_functions_finished(self):
@@ -342,10 +352,12 @@ class IndexingRunner(Runner):
     def clustering_needs_min_samples(self):
         # Determine whether we need the min_samples for clustering
         find_orientations = HexrdConfig().indexing_config['find_orientations']
-        return all((
-            find_orientations['use_quaternion_grid'] is None,
-            find_orientations['clustering']['algorithm'] != 'fclusterdata',
-        ))
+        return all(
+            (
+                find_orientations['use_quaternion_grid'] is None,
+                find_orientations['clustering']['algorithm'] != 'fclusterdata',
+            )
+        )
 
     def run_cluster_functions(self):
         if self.clustering_needs_min_samples:
@@ -359,8 +371,7 @@ class IndexingRunner(Runner):
         print('Creating cluster parameters...')
         self.update_progress_text('Creating cluster parameters')
         config = create_indexing_config()
-        self.min_samples, mean_rpg = create_clustering_parameters(
-            config, self.ome_maps)
+        self.min_samples, mean_rpg = create_clustering_parameters(config, self.ome_maps)
 
     def run_cluster(self):
         print('Running cluster...')
@@ -373,7 +384,7 @@ class IndexingRunner(Runner):
             'cfg': config,
             'min_samples': self.min_samples,
             'compl_thresh': config.find_orientations.clustering.completeness,
-            'radius': config.find_orientations.clustering.radius
+            'radius': config.find_orientations.clustering.radius,
         }
         self.qbar, cl = run_cluster(**kwargs)
 
@@ -396,8 +407,7 @@ class IndexingRunner(Runner):
         print(msg)
 
         self.grains_table = generate_grains_table(self.qbar)
-        HexrdConfig().find_orientations_grains_table = copy.deepcopy(
-            self.grains_table)
+        HexrdConfig().find_orientations_grains_table = copy.deepcopy(self.grains_table)
 
     def confirm_indexing_results(self):
         if self.grains_table is None:
@@ -405,8 +415,7 @@ class IndexingRunner(Runner):
             QMessageBox.critical(self.parent, msg, msg)
             return
 
-        dialog = IndexingResultsDialog(self.ome_maps, self.grains_table,
-                                       self.parent)
+        dialog = IndexingResultsDialog(self.ome_maps, self.grains_table, self.parent)
 
         # We will automatically start fit grains after the indexing
         # is complete. The user can cancel this if they don't want to do it.
@@ -444,8 +453,13 @@ class IndexingRunner(Runner):
 
 class FitGrainsRunner(Runner):
 
-    def __init__(self, grains_table=None, indexing_runner=None,
-                 started_from_indexing=False, parent=None):
+    def __init__(
+        self,
+        grains_table=None,
+        indexing_runner=None,
+        started_from_indexing=False,
+        parent=None,
+    ):
         """
         If the grains_table is set, the user will not be asked to specify a
         grains table. Otherwise, a dialog will appear asking the user to
@@ -494,8 +508,7 @@ class FitGrainsRunner(Runner):
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         quaternion_method = find_orientations.get('_quaternion_method')
         ensure_active_hkls_not_excluded = (
-            self.started_from_indexing and
-            quaternion_method == 'seed_search'
+            self.started_from_indexing and quaternion_method == 'seed_search'
         )
 
         # Run dialog for user options
@@ -547,9 +560,7 @@ class FitGrainsRunner(Runner):
             'write_spots_files': write_spots,
         }
         if self.cancel_tracker:
-            kwargs['check_if_canceled_func'] = (
-                self.cancel_tracker.get_need_to_cancel
-            )
+            kwargs['check_if_canceled_func'] = self.cancel_tracker.get_need_to_cancel
 
         self.fit_grains_results = fit_grains(**kwargs)
         if self.operation_canceled:
@@ -558,8 +569,7 @@ class FitGrainsRunner(Runner):
 
         self.result_grains_table = create_grains_table(self.fit_grains_results)
         print('Fit Grains Complete')
-        HexrdConfig().fit_grains_grains_table = copy.deepcopy(
-            self.result_grains_table)
+        HexrdConfig().fit_grains_grains_table = copy.deepcopy(self.result_grains_table)
 
         # If we wrote out the spots, let's write out the grains.out file too
         if write_spots:
@@ -585,8 +595,7 @@ class FitGrainsRunner(Runner):
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         quaternion_method = find_orientations.get('_quaternion_method')
         allow_export_workflow = (
-            self.started_from_indexing and
-            quaternion_method == 'seed_search'
+            self.started_from_indexing and quaternion_method == 'seed_search'
         )
 
         kwargs = {
@@ -605,6 +614,7 @@ class CancelTracker:
     This will definitely be accessed by multiple threads, and a lock
     might be necessary in the future if it becomes more complex.
     """
+
     def __init__(self):
         self.need_to_cancel = False
 
@@ -623,8 +633,9 @@ def create_grains_table(fit_grains_results):
     return grains_table
 
 
-def create_fit_grains_results_dialog(grains_table, parent=None,
-                                     allow_export_workflow=True):
+def create_fit_grains_results_dialog(
+    grains_table, parent=None, allow_export_workflow=True
+):
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
     name = indexing_config.get('_selected_material')

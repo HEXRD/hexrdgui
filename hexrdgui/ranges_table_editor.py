@@ -37,7 +37,8 @@ class RangesTableEditor(QObject):
         self.ui.remove.pressed.connect(self.remove_row)
 
         self.ui.table.selectionModel().selectionChanged.connect(
-            self.update_enable_states)
+            self.update_enable_states
+        )
 
     def update_enable_states(self):
         enable_remove = self.num_rows > 1 and self.selected_row is not None
@@ -151,10 +152,7 @@ class RangesTableEditor(QObject):
         if self._data is None:
             return
 
-        block_list = [
-            self.ui.table,
-            self.ui.table.selectionModel()
-        ]
+        block_list = [self.ui.table, self.ui.table.selectionModel()]
 
         with block_signals(*block_list):
 
@@ -169,8 +167,11 @@ class RangesTableEditor(QObject):
                     self.ui.table.setCellWidget(i, j, w)
 
             if prev_selected is not None:
-                select_row = (prev_selected if prev_selected < len(self._data)
-                              else len(self._data) - 1)
+                select_row = (
+                    prev_selected
+                    if prev_selected < len(self._data)
+                    else len(self._data) - 1
+                )
                 self.select_row(select_row)
 
             # Just in case the selection actually changed...

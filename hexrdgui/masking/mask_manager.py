@@ -8,10 +8,13 @@ from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.masking.constants import CURRENT_MASK_VERSION, MaskType
 from hexrdgui.masking.create_polar_mask import (
-    create_polar_mask_from_raw, rebuild_polar_masks
+    create_polar_mask_from_raw,
+    rebuild_polar_masks,
 )
 from hexrdgui.masking.create_raw_mask import (
-    recompute_raw_threshold_mask, create_raw_mask, rebuild_raw_masks
+    recompute_raw_threshold_mask,
+    create_raw_mask,
+    rebuild_raw_masks,
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.mask_compatibility import load_masks
@@ -44,8 +47,9 @@ class Mask(ABC):
         self.creation_view_mode = mode
         self.xray_source = xray_source
         if (
-            mode == ViewType.polar and
-            HexrdConfig().has_multi_xrs and xray_source is None
+            mode == ViewType.polar
+            and HexrdConfig().has_multi_xrs
+            and xray_source is None
         ):
             # The x-ray source is only relevant for polar masks
             self.xray_source = HexrdConfig().active_beam_name
@@ -121,9 +125,11 @@ class RegionMask(Mask):
         show_border=False,
         mode=None,
         xray_source=None,
-        highlight=False
+        highlight=False,
     ):
-        super().__init__(name, mtype, visible, show_border, mode, xray_source, highlight)
+        super().__init__(
+            name, mtype, visible, show_border, mode, xray_source, highlight
+        )
         self._raw = None
 
     @property
@@ -159,10 +165,7 @@ class RegionMask(Mask):
             )
 
     def get_masked_arrays(self, image_mode=ViewType.raw, instr=None):
-        if (
-            self.masked_arrays is None or
-            self.masked_arrays_view_mode != image_mode
-        ):
+        if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
             self.update_masked_arrays(image_mode, instr)
 
         return self.masked_arrays
@@ -208,14 +211,7 @@ class RegionMask(Mask):
 
 
 class ThresholdMask(Mask):
-    def __init__(
-        self,
-        name='',
-        mtype='',
-        visible=True,
-        mode=None,
-        xray_source=None
-    ):
+    def __init__(self, name='', mtype='', visible=True, mode=None, xray_source=None):
         super().__init__(name, mtype, visible, mode, xray_source)
         self.min_val = -math.inf
         self.max_val = math.inf
@@ -273,6 +269,7 @@ class ThresholdMask(Mask):
 
 class MaskManager(QObject, metaclass=QSingleton):
     """Emitted when a new raw mask has been created"""
+
     raw_masks_changed = Signal()
 
     """Emitted when a new polar mask has been created"""
@@ -339,8 +336,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         HexrdConfig().load_state.connect(self.load_state)
         HexrdConfig().detectors_changed.connect(self.clear_all)
         HexrdConfig().state_loaded.connect(self.rebuild_masks)
-        HexrdConfig().active_beam_switched.connect(
-            self.update_masks_for_active_beam)
+        HexrdConfig().active_beam_switched.connect(self.update_masks_for_active_beam)
 
     def update_masks_for_active_beam(self):
         if self.view_mode != ViewType.polar:
@@ -349,10 +345,7 @@ class MaskManager(QObject, metaclass=QSingleton):
         xrs = HexrdConfig().active_beam_name
         for mask in self.masks.values():
             # If mask's mode or source doesn't match current, hide it
-            if (
-                mask.creation_view_mode == ViewType.polar and
-                mask.xray_source != xrs
-            ):
+            if mask.creation_view_mode == ViewType.polar and mask.xray_source != xrs:
                 if not hasattr(mask, '_original_visible'):
                     # Remember original states so we can toggle back
                     mask._original_visible = mask.visible
@@ -362,10 +355,8 @@ class MaskManager(QObject, metaclass=QSingleton):
             else:
                 # Restore original states if they exist
                 if hasattr(mask, '_original_visible'):
-                    self.update_mask_visibility(
-                        mask.name, mask._original_visible)
-                    self.update_border_visibility(
-                        mask.name, mask._original_show_border)
+                    self.update_mask_visibility(mask.name, mask._original_visible)
+                    self.update_border_visibility(mask.name, mask._original_show_border)
                     # Clear the stored states
                     delattr(mask, '_original_visible')
                     delattr(mask, '_original_show_border')
@@ -489,15 +480,13 @@ class MaskManager(QObject, metaclass=QSingleton):
         # are different from computed images, and require extra computation.
         # If this returns False, we can skip that extra computation and
         # set display images and computed images to be the same.
-        return any(x.show_border and not x.visible
-                   for x in self.masks.values())
+        return any(x.show_border and not x.visible for x in self.masks.values())
 
     def threshold_toggled(self):
         if self.threshold_mask:
             self.remove_mask(self.threshold_mask.name)
         else:
-            self.add_mask(
-                [-math.inf, math.inf], MaskType.threshold, name='threshold')
+            self.add_mask([-math.inf, math.inf], MaskType.threshold, name='threshold')
         self.mask_mgr_dialog_update.emit()
 
     def update_name(self, old_name, new_name):
